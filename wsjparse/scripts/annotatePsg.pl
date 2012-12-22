@@ -258,6 +258,8 @@ debug($step, ":( $_") ||
 #        s/{(RP)([^ ]*?)(-[fghilop][^ ]*) <(RB|ADVP)([^>]*)> ([^\|]*<(?:JJ|ADJP|VB|VP|RB|IN|TO|[^ ]*-PRD).*)}/{\1\2\3 <RR-lM-f\4\5> <\1\2-lI-fNIL \6>}/ ||
 #        s/{(AP|RP)([^ ]*?)(-[fghilop][^ ]*) <(RB|ADVP|ADJP)([^>]*)> ([^\|]*<(?:JJ|ADJP|VB|VP|RB|IN|TO).*)}/{\1\2\3 <RR-lM-f\4\5> <\1\2-lI-fNIL \6>}/ ||
 ##           s/{(AP|RP)([^ ]*)(-f[^ ]*) (<TO.*<VP.*)}/{\1\2\3 <IP\2-fNIL \4>}/ ||
+        # for good / for now
+        s/{(RP)([^ ]*?)(-[fghilop][^ ]*) <(IN[^>]* for)> <(?![^>]* long[^>]*)(?![^>]* awhile[^>]*)(RB[^>]*|ADVP[^ ]* \[RB[^>]*)>}/{\1\2\3 <RP-uNP-lI-f\4> <NP-lA-f\5>}/ ||
 
         #### initial filler
         # content question: branch off initial interrogative NP
