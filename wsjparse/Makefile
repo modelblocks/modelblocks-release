@@ -271,31 +271,31 @@ genmodel/brown%.linetrees: user-treebank-location.txt $$(shell cat user-treebank
 .PRECIOUS: genmodel/lr%.ans
 
 genmodel/lr%oerr.sents: user-lrbank-location.txt $$(shell cat user-lrbank-location.txt)/obj_extract_red_rel/%.raw.obj_extract_red_rel
-	cat $(word 2,$^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;" > $@
+	cat $(word 2,$^) | perl -pe "s/\(/-RRB-/g;s/\)/-LRB-/g;" > $@
 genmodel/lr%oerr.ans: user-lrbank-location.txt $$(shell cat user-lrbank-location.txt)/obj_extract_red_rel/%.obj_extract_red_rel
 	cp $(word 2,$^) $@
 genmodel/lr%oer.sents: user-lrbank-location.txt $$(shell cat user-lrbank-location.txt)/obj_extract_rel_clause/%.raw.obj_extract_rel_clause
-	cat $(word 2,$^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;" > $@
+	cat $(word 2,$^) | perl -pe "s/\(/-RRB-/g;s/\)/-LRB-/g;" > $@
 genmodel/lr%oer.ans: user-lrbank-location.txt $$(shell cat user-lrbank-location.txt)/obj_extract_rel_clause/%.obj_extract_rel_clause
 	cp $(word 2,$^) $@
 genmodel/lr%ofr.sents: user-lrbank-location.txt $$(shell cat user-lrbank-location.txt)/obj_free_rels/%.raw.obj_free_rels
-	cat $(word 2,$^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;" > $@
+	cat $(word 2,$^) | perl -pe "s/\(/-RRB-/g;s/\)/-LRB-/g;" > $@
 genmodel/lr%ofr.ans: user-lrbank-location.txt $$(shell cat user-lrbank-location.txt)/obj_free_rels/%.obj_free_rels
 	cp $(word 2,$^) $@
 genmodel/lr%oq.sents: user-lrbank-location.txt $$(shell cat user-lrbank-location.txt)/obj_qus/%.raw.obj_qus
-	cat $(word 2,$^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;" > $@
+	cat $(word 2,$^) | perl -pe "s/\(/-RRB-/g;s/\)/-LRB-/g;" > $@
 genmodel/lr%oq.ans: user-lrbank-location.txt $$(shell cat user-lrbank-location.txt)/obj_qus/%.obj_qus
 	cp $(word 2,$^) $@
 genmodel/lr%rnr.sents: user-lrbank-location.txt $$(shell cat user-lrbank-location.txt)/right_node_raising/%.raw.right_node_raising
-	cat $(word 2,$^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;" > $@
+	cat $(word 2,$^) | perl -pe "s/\(/-RRB-/g;s/\)/-LRB-/g;" > $@
 genmodel/lr%rnr.ans: user-lrbank-location.txt $$(shell cat user-lrbank-location.txt)/right_node_raising/%.right_node_raising
 	cp $(word 2,$^) $@
 genmodel/lr%se.sents: user-lrbank-location.txt $$(shell cat user-lrbank-location.txt)/sbj_embedded/%.raw.sbj_embedded
-	cat $(word 2,$^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;" > $@
+	cat $(word 2,$^) | perl -pe "s/\(/-RRB-/g;s/\)/-LRB-/g;" > $@
 genmodel/lr%se.ans: user-lrbank-location.txt $$(shell cat user-lrbank-location.txt)/sbj_embedded/%.sbj_embedded
 	cp $(word 2,$^) $@
 genmodel/lr%ser.sents: user-lrbank-location.txt $$(shell cat user-lrbank-location.txt)/sbj_extract_rel_clause/%.raw.sbj_extract_rel_clause
-	cat $(word 2,$^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;" > $@
+	cat $(word 2,$^) | perl -pe "s/\(/-RRB-/g;s/\)/-LRB-/g;" > $@
 genmodel/lr%ser.ans: user-lrbank-location.txt $$(shell cat user-lrbank-location.txt)/sbj_extract_rel_clause/%.sbj_extract_rel_clause
 	cp $(word 2,$^) $@
 
