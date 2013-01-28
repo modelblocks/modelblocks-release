@@ -61,9 +61,9 @@ def interpret_psg(t,args=[],gaps=[],cons=[]):
     # if gaps not propagated down, add gap referent to args
     if re.search('-g',t.c) != None:
         if quants.none_of ( t.ch, lambda st: re.search('-g',st.c) ):
-            if re.search('-gNP|-g.S|-g.E',t.c) != None:
+            if re.search('-gNS|-g.S|-g.E',t.c) != None:
                 args += gaps
-            else:
+            else: # re.search('-gAC|-gRP',t.c) != None:
                 for g in gaps:
                     props.append( (g.e, 1, t.e+'#-') )
             gaps = []
@@ -125,26 +125,26 @@ def interpret_psg(t,args=[],gaps=[],cons=[]):
         # pass non-gapped child referent to newly-gapped child
         for b in range(0,len(t.ch)):
             # if child has gap/relpro tag
-            if re.search('-g|-oR',t.ch[b].c) != None:
+            if re.search('-g|-rN',t.ch[b].c) != None:
                 # if parent has gap/relpro tag and no sibling or sibling has no relpro tag, pass gap fillers down from parent
-                if re.search('-g|-oR',t.c) != None and (len(t.ch)<2 or re.search('-oR',t.ch[1-b].c) == None):
+                if re.search('-g|-rN',t.c) != None and (len(t.ch)<2 or re.search('-rN',t.ch[1-b].c) == None):
                     child_gaps[b] = gaps[0:]
                 # otherwise, if sibling not AC gap, add sibling as child's gap filler
                 else:
-                    if re.search('-gAC',t.ch[1-b].c) == None:
+                    if re.search('-gZ[R|S]',t.ch[1-b].c) == None:
                         child_gaps[b] = [ t.ch[1-b] ]
 
         # pass new argument referent to head
         for b in range(0,len(t.ch)):
             if re.search ('-lA',t.ch[b].c) != None:
                 child_args[1-b] += [ t.ch[b] ]
-                if re.search('^(VP|IP|BP|LP|AP|RP|GP|NP|NN)',t.ch[b].c) != None:
+                if re.search('^(VP|IP|BP|LP|AP|RP|GP|NS|NP)',t.ch[b].c) != None:
                     child_args[b] += [ '-' ] #[ args[0] if len(args)>0 else '-' ]
         # no first argument for non-related phrases
         for b in range(0,len(t.ch)):
             if re.search ('-lN',t.ch[b].c) != None:
-                # phrasal projections need placeholder for missing subj; NP.*-oR nominal rel pro needs placeholder so antecedent will always be second arg
-                if re.search('(^VP|^IP|^BP|^LP|^AP|^RP|^GP|^NP.*-oR)',t.ch[b].c) != None:
+                # phrasal projections need placeholder for missing subj; NS.*-rN nominal rel pro needs placeholder so antecedent will always be second arg
+                if re.search('(^VP|^IP|^BP|^LP|^AP|^RP|^GP|^NS.*-rN)',t.ch[b].c) != None:
                     child_args[b] += [ '-' ]
 
         # pass new conjunct referent to head
@@ -339,7 +339,7 @@ for line in opts.treeFile:
     else:
         P = interpret(t)
     
-    P = sorted(P, key=keyFunc)
+    P = sorted(P, key=keyFunc)    
     for p in P:
         print(p[0]+'/'+str(p[1])+'/'+p[2], end=' ')
     print()
