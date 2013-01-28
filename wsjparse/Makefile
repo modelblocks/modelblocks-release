@@ -59,7 +59,7 @@ include $(wildcard */*.d)      ## don't comment out, it breaks make!
 ################################################################################
 
 ## reannotate/unbounded-dependency paper (nguyen et al 2012)
-pub: lrtest.wsj02to21-psg-1671-3sm.berk.parsed.gapeval
+pub: lrtest.wsj02to21-gcg-1671-3sm.berk.parsed.gapeval
 
 ################################################################################
 #
@@ -68,9 +68,9 @@ pub: lrtest.wsj02to21-psg-1671-3sm.berk.parsed.gapeval
 ################################################################################
 
 ## std model, berk parser
-all: wsj22-10first.wsj01to21-psg-nol-1671-3sm.berk.parsed.cnftrees
+all: wsj22-10first.wsj01to21-gcg-nol-1671-3sm.berk.parsed.cnftrees
 ## std model, cpt parser (deprecated)
-all: wsj22-10first.wsj01to21-psg-nol-1671-3sm.unked.wsj01to21-psg-nol-1671-3sm-bd.x-cfp.-xa_parsed.nosm.cnftrees
+all: wsj22-10first.wsj01to21-gcg-nol-1671-3sm.unked.wsj01to21-gcg-nol-1671-3sm-bd.x-cfp.-xa_parsed.nosm.cnftrees
 
 ################################################################################
 #
@@ -346,12 +346,12 @@ genmodel/brownTRAIN.linetrees: $(foreach sect,$(BROWNTRAINSECTS),genmodel/brown$
 %.nounary.linetrees:  %.linetrees  scripts/killUnaries.pl
 	cat $<  |  perl $(word 2,$^)  >  $@
 
-.PRECIOUS: %.psg.cnftrees  ## NOTE: inline seds dispose of reannotation failures, then remove -f tags, then shift -l tags to end
-%.psg.cnftrees:  %.linetrees  scripts/annotateFixes.pl  scripts/annotatePsg.pl  scripts/killUnaries.pl
+.PRECIOUS: %.gcg.cnftrees  ## NOTE: inline seds dispose of reannotation failures, then remove -f tags, then shift -l tags to end
+%.gcg.cnftrees:  %.linetrees  scripts/annotateFixes.pl  scripts/annotateGcg.pl  scripts/killUnaries.pl
 	cat $<  |  perl $(word 2,$^) -p |  perl $(word 3,$^)  |  perl $(word 4,$^) -l  |  perl -pe 's/.*\([A-Z]+ .*//'  |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' | perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
 
-.PRECIOUS: %.psg.hy.cnftrees ## this breaks hyphenated and slashed words for conll08 eval
-%.psg.hy.cnftrees:  %.psg.cnftrees scripts/dehyphenate.py scripts/conll08Common.py
+.PRECIOUS: %.gcg.hy.cnftrees ## this breaks hyphenated and slashed words for conll08 eval
+%.gcg.hy.cnftrees:  %.gcg.cnftrees scripts/dehyphenate.py scripts/conll08Common.py
 	python3 $(word 2,$^) -c $< -d1 >  $@
 
 %first.cnftrees:  $$(basename %).cnftrees
@@ -620,12 +620,12 @@ genmodel/wsjTRAIN.sentrelns: $(foreach sect,$(WSJTRAINSECTS),genmodel/wsj$(sect)
 %.nosm.cnftrees: %.cnftrees scripts/removeAt.py scripts/repairToEdited.rb
 	cat $<  |  perl -pe 's/\(([^ ]+)-[0-9]+ /\(\1 /g;s/\_[0-9]+//g;s/\^g//g;s/[ ]+/ /g;s/\) \)/\)\)/g'  |  python $(word 2,$^) | ruby $(word 3,$^) >  $@
 
-# input is like: wsj23.wsj01to21-psg-nol-1671-5sm.berk.parsed.nosm.cnftrees
+# input is like: wsj23.wsj01to21-gcg-nol-1671-5sm.berk.parsed.nosm.cnftrees
 .PRECIOUS: %.addl.cnftrees
 %.addl.cnftrees: %.cnftrees scripts/gen-l-feats.py scripts/annotateL.py 
-	$(PYTHON) $(word 2,$^) -t genmodel/wsj01to21.psg.cnftrees > genmodel/wsj01to21.psg.cnftrees.lfeats
-	../maxent-20061005/src/opt/maxent -v -i3000 -g100 genmodel/wsj01to21.psg.cnftrees.lfeats --model genmodel/wsj01to21.psg.cnftrees.lmodel
-	$(PYTHON) $(word 3,$^) -w genmodel/wsj01to21.psg.cnftrees.lmodel -n $< > $@ 
+	$(PYTHON) $(word 2,$^) -t genmodel/wsj01to21.gcg.cnftrees > genmodel/wsj01to21.gcg.cnftrees.lfeats
+	../maxent-20061005/src/opt/maxent -v -i3000 -g100 genmodel/wsj01to21.gcg.cnftrees.lfeats --model genmodel/wsj01to21.gcg.cnftrees.lmodel
+	$(PYTHON) $(word 3,$^) -w genmodel/wsj01to21.gcg.cnftrees.lmodel -n $< > $@ 
 
 #### turn cnftrees into more standard, flatter parse format
 .PRECIOUS: %.evalform
@@ -646,15 +646,15 @@ genmodel/wsjTRAIN.sentrelns: $(foreach sect,$(WSJTRAINSECTS),genmodel/wsj$(sect)
 	cat $<  |  $(PYTHON) $(word 2,$^) $(word 3,$^)  >  $@
 
 #### obtain syntactic dependency eval on enju parser
-%.enju.depeval:  scripts/depeval.py  genmodel/$$(notdir $$(word 1,$$(subst ., ,$$@))).psg.melconts  %.enju.melconts
+%.enju.depeval:  scripts/depeval.py  genmodel/$$(notdir $$(word 1,$$(subst ., ,$$@))).gcg.melconts  %.enju.melconts
 	$(PYTHON) $< -l $(word 2,$^) $(word 3,$^)  |  grep -n ''  >  $@
 
 #### obtain syntactic dependency eval
-%.depeval:  scripts/depeval.py  genmodel/$$(notdir $$(word 1,$$(subst ., ,$$@))).psg.melconts  %.melconts
+%.depeval:  scripts/depeval.py  genmodel/$$(notdir $$(word 1,$$(subst ., ,$$@))).gcg.melconts  %.melconts
 	$(PYTHON) $< $(word 2,$^) $(word 3,$^)  |  grep -n ''  >  $@
 
 #### obtain syntactic dependency eval
-%.hydepeval:  scripts/depeval.py  genmodel/$$(notdir $$(word 1,$$(subst ., ,$$@))).psg.hy.melconts  %.melconts
+%.hydepeval:  scripts/depeval.py  genmodel/$$(notdir $$(word 1,$$(subst ., ,$$@))).gcg.hy.melconts  %.melconts
 	$(PYTHON) $< $(word 2,$^) $(word 3,$^)  |  grep -n ''  >  $@
 
 #### obtain long-distance dependency eval
