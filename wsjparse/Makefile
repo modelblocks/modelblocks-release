@@ -22,6 +22,7 @@
 #  i. Macros & variables
 #
 ################################################################################
+.SECONDARY:
 
 SHELL = /bin/bash
 INCLUDES = -Iinclude -I../rvtl/include -I../slush/include #-I/sw/include #-I/Users/dingcheng/Documents/boost/boost_1_44_0
@@ -46,6 +47,10 @@ WSJTRAINSECTS02  = 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21  
 WSJHELDOUTSECTS  = 00
 BROWNTRAINSECTS = cf cg ck cl cm cn cp cr
 LRSECTS = oerr oer ofr oq rnr se ser
+SWBDTRAINSECTS = 2 3
+DUNDEESECTS = 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20
+DUNDEESUBJS = sa sb sc sd se sf sg sh si sj
+BNCTRAINDIRS = A B C D E F G H J
 
 include $(wildcard */*.d)      ## don't comment out, it breaks make!
 
@@ -58,8 +63,10 @@ include $(wildcard */*.d)      ## don't comment out, it breaks make!
 #
 ################################################################################
 
-## reannotate/unbounded-dependency paper (nguyen et al 2012)
-pub: lrtest.wsj02to21-gcg-1671-3sm.berk.parsed.gapeval
+## reannotate/unbounded-dependency paper
+vanschijndeletal12: wsj23.wsj02to21-1671-5sm-bd.x-fabp.-b2000_parsed.nosm.syneval
+nguyenetal12: lrtest.wsj02to21-gcg-1671-3sm.berk.parsed.gapeval
+vanschijndelschuler13naacl: dundee.wsj02to21-1671-5sm-bd.x-fabp.-c_-b2000_parsed.-nlLgRw.-A.arg.dundeeeval
 
 ################################################################################
 #
@@ -119,6 +126,31 @@ user-propbank-location.txt:
 	@echo ''
 	@echo 'ATTENTION: I had to create "$@" for you, which may be wrong'
 	@echo 'edit it to point at your propbank repository, and re-run make to continue!'
+	@echo ''
+
+#### location of srilm
+user-srilm-location.txt:
+	echo '/home/compling/srilm/bin' > $@
+	echo 'i686-m64' >> $@
+	@echo ''
+	@echo 'ATTENTION: I had to create "$@" for you, which may be wrong'
+	@echo 'edit it to point at your srilm binaries directory, and re-run make to continue!'
+	@echo ''
+
+#### location of bnc
+user-bnc-location.txt:
+	echo '/home/corpora/original/english/bnc' > $@
+	@echo ''
+	@echo 'ATTENTION: I had to create "$@" for you, which may be wrong'
+	@echo 'edit it to point at your bnc repository, and re-run make to continue!'
+	@echo ''
+ 
+#### location of dundee
+user-dundee-location.txt:
+	echo '/home/corpora/original/english/dundee' > $@
+	@echo ''
+	@echo 'ATTENTION: I had to create "$@" for you, which may be wrong'
+	@echo 'edit it to point at your dundee repository, and re-run make to continue!'
 	@echo ''
 
 #### includes for user sub-projects
@@ -210,7 +242,11 @@ berkeley-parser/berkeleyParser.jar: | berkeley-parser
 	javac edu/berkeley/nlp/PCFGLA/WriteGrammarToTextFile.java
 	jar -cf berkeley-parser/berkeleyParser.jar edu/ fig/
 
-
+#### R packages
+rpkgs:
+	mkdir rpkgs
+	scripts/installR.r
+	echo 'R_LIBS="rpkgs"' > .Renviron
 
 ################################################################################
 #
@@ -226,13 +262,52 @@ berkeley-parser/berkeleyParser.jar: | berkeley-parser
 	cat $< | perl -pe "s/\"(?! )(?!\))/\`\`/g;  s/(?<! )\"/''/g" | perl -pe "s/(?<! c)(?<! ca)([\.!?])(\)|'')? */ \1 \2\n/g;  s/(\(|\`\`)(?! )/\1 /g;  s/(?<! )(\)|,|;|:|'')(?![0-9])/ \1/g;  y/[A-Z]/[a-z]/"  |  perl -pe "s/\(/\!lrb\!/g;  s/\)/\!rrb\!/g;  s/;/\!semi\!/g;  s/:/\!colon\!/g"  >  $@
 
 #### obtain lexicon of terms that appear more than 5 times
-.PRECIOUS: %.lexicon
-%.lexicon: %.sents scripts/buildLexicon.py
+.PRECIOUS: %.wordcounts
+%.wordcounts: %.sents scripts/buildLexicon.py
 	$(PYTHON) $(word 2,$^) $< -u5 > $@
 
 ################################################################################
 #
-#  2. Syntax formatting items
+#  1b. Eye-tracking data formatting items
+#
+################################################################################
+ 
+## for dundee eyetracking corpus
+.PRECIOUS: genmodel/dundee%.sents
+.PRECIOUS: genmodel/dundee.sents
+genmodel/dundee%.sents: user-dundee-location.txt $$(shell cat user-dundee-location.txt)/tx%wrdp.dat scripts/builddundeecorpus.py
+	cat $(word 2,$^) | python $(word 3,$^) > $@.raw
+	cat $@.raw | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" > $@
+	rm -f $@.raw
+
+.PRECIOUS: genmodel/dundee.%.textdata
+genmodel/dundee.%.textdata: user-dundee-location.txt $$(shell cat user-dundee-location.txt)/tx%wrdp.dat
+	echo 'WORD ' > $@
+	cat $(word 2,$^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;" >> $@
+
+genmodel/dundee.%.textdata:  $(foreach sect,$(DUNDEESECTS),genmodel/dundee.$(sect).textdata)
+	cat $^  >  $@
+
+.PRECIOUS: genmodel/dundee.%.eventdata
+genmodel/dundee.%.eventdata: user-dundee-location.txt $$(shell cat user-dundee-location.txt)/%ma1p.dat
+	cat $(word 2,$^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;" > $@
+
+genmodel/dundee.%.eventdata:  $(foreach sect,$(DUNDEESECTS),genmodel/dundee.%$(sect).eventdata)
+	cat $^  >  $@
+
+.PRECIOUS: genmodel/dundee.%.eyedata
+genmodel/dundee.%.eyedata: user-dundee-location.txt $$(shell cat user-dundee-location.txt)/%ma2p.dat
+	cat $(word 2,$^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;" > $@
+
+genmodel/dundee.%.eyedata: $(foreach sect,$(DUNDEESECTS),genmodel/dundee.%$(sect).eyedata)
+	cat $^ > $@
+
+genmodel/dundee.%: $(foreach sect,$(DUNDEESECTS),genmodel/dundee$(sect).%)
+	cat $^ > $@
+
+################################################################################
+#
+#  2. Surface Syntax formatting items
 #
 #  to construct the following file types:
 #    <x>.linetrees    : treebank-tagset phase structure trees, one sentence per line, bracketed by parens
@@ -303,6 +378,22 @@ lrdev.%:  lrdevoerr.%  lrdevoer.%  lrdevofr.%  lrdevoq.%  lrdevrnr.%  lrdevse.% 
 	more $^  >  $@
 lrtest.%: lrtestoerr.% lrtestoer.% lrtestofr.% lrtestoq.% lrtestrnr.% lrtestse.% lrtestser.%
 	more $^  >  $@
+
+define BNCDIRMACRO
+.PRECIOUS: genmodel/bnc$(1).sents
+genmodel/bnc$(1).sents: $$(shell cat user-bnc-location.txt)/Texts/$(1)/*/*
+	cat $$^ | sed 's|<teiHeader.*</teiHeader>||g;s|<[^<>]*>||g;s|^\s*\n||g;/^$$$$/d;s|  *| |g;' > $$@
+endef
+
+$(foreach dir,$(BNCTRAINDIRS),$(eval $(call BNCDIRMACRO,$(dir))))
+
+.PRECIOUS: genmodel/bncTRAIN.sents
+genmodel/bncTRAIN.sents: $(foreach sect,$(BNCTRAINDIRS),genmodel/bnc$(sect).sents)
+	cat $^ > $@
+genmodel/swbdTRAIN.linetrees: $(foreach sect,$(SWBDTRAINSECTS),genmodel/swbd$(sect).linetrees)
+	cat $^ > $@
+genmodel/%qb.linetrees: genmodel/%.linetrees genmodel/qb.linetrees
+	cat $^ > $@
 
 #### collections
 genmodel/wsj00to21.linetrees: $(foreach sect,$(WSJMAPTRAINSECTS),genmodel/wsj$(sect).linetrees)
@@ -535,6 +626,13 @@ genmodel/wsjTRAIN.sentrelns: $(foreach sect,$(WSJTRAINSECTS),genmodel/wsj$(sect)
 %.x-fawp.model:  %.x-ccp.model  bin/calc-fawp-model  scripts/sortbyprob.pl
 	cat $<  |  grep -v '^PX '  | sed 's/^Cr : \(.*\^[Ll],1\) =/CC REST^R,0 : \1 REST^R,0 =/;s/ - - / -\^.,. -\^.,. /' \
 		|  sed 's/CC \(.*\)\^\(.\),\(.\) : \(.*\)\^.,. \(.*\)\^.,. = \(.*\)/CC \2 \3 \1 : \4 \5 = \6/' |  $(word 2,$^)  |  perl $(word 3,$^)  >  $@
+.PRECIOUS: %.x-fabp.probmodel
+%.x-fabp.probmodel:  %.x-ccp.model  bin/calc-fabp-model
+	cat $<  |  grep -v '^PX '  | sed 's/^Cr : \(.*\^[Ll],1\) =/CC REST^R,0 : \1 REST^R,0 =/;s/ - - / -\^.,. -\^.,. /' \
+		|  sed 's/CC \(.*\)\^\(.\),\(.\) : \(.*\)\^.,. \(.*\)\^.,. = \(.*\)/CC \2 \3 \1 : \4 \5 = \6/' |  $(word 2,$^)  >  $@
+.PRECIOUS: %.x-fabp.model
+%.x-fabp.model:  %.x-fabp.probmodel  scripts/sortbyprob.pl
+	cat $<  |  perl $(word 2,$^)  >  $@
 
 ####
 %.t2m.x-rtue.model:  %.cnftrees scripts/cnftrees2rtuemodel.py  scripts/relfreq.pl  scripts/sortbyprob.pl
@@ -667,6 +765,91 @@ genmodel/wsjTRAIN.sentrelns: $(foreach sect,$(WSJTRAINSECTS),genmodel/wsj$(sect)
 ### scores
 %.scores: %.syneval
 	cat $< | grep -v '^2 or' | grep -v '^    ' | grep '^[ 0-9]' | perl -na -e 'if ($$F[1]<=40) {print "$$F[0] $$F[3]\n";}' > $@
+
+################################################################################
+#
+#  6. Eyetracking
+#
+#  to construct the following file types:
+#    <x>.eyemodel           : a model of eyetracking behavior
+#    <x>.eyemodels          : a model of eyetracking behavior from a variety of subjects
+#    <x>.ngrams             : unigram and bigram models
+#    <x>.srilmngrams        : unigram and forward and backward bigram models calculated using SRILM, smoothed with Kneser-Ney
+#    <x>.dundeeeval         : A linear mixed effects model fitting the datapoints of <x>.eyemodels (typically from the Dundee Corpus)
+#
+################################################################################
+
+.PRECIOUS: %.complex
+%.complex: %.errlog
+	cp $< $@
+
+.PRECIOUS: %.unfiltered.ccomplex
+%.unfiltered.ccomplex: scripts/analyzeComplexity.py $$(basename %).complex \
+	$$(basename $$(basename $$(basename $$(basename %)))).sents \
+	genmodel/broadcoveragetraining.srilmngrams genmodel/wsj02to21.wordcounts
+	$(PYTHON) $< $(basename $(subst .,,$(suffix $*))) $(word 2,$^) $(word 3,$^) $(word 4,$^) $(word 5,$^) > $@
+
+%.unfiltered.ccomplex: scripts/analyzeComplexity.py %.complex \
+	$$(basename $$(basename $$(basename %))).sents \
+	genmodel/broadcoveragetraining.srilmngrams genmodel/wsj02to21.wordcounts
+	$(PYTHON) $< $(word 2,$^) $(word 3,$^) $(word 4,$^) $(word 5,$^) > $@
+
+.PRECIOUS: %.ccomplex
+%.ccomplex: scripts/filterComplex.py %.unfiltered.ccomplex
+	$(PYTHON) $< $(word 2,$^) > $@
+
+genmodel/broadcoveragetraining.sents: genmodel/brownTRAIN.sents genmodel/wsj02to21.sents genmodel/bncTRAIN.sents genmodel/dundee.sents
+	cat $^ | grep -v '\*x\*' > $@
+
+genmodel/broadcoveragetraining.revsents: genmodel/broadcoveragetraining.sents
+	cat $^ | sed 's/\n/ <LINEBREAK> /g;' | sed 's/ /\n/g;' > $@.tmp
+	tac $@.tmp | sed 's/\n/ /g;' | sed 's/ <LINEBREAK> /\n/g;' > $@
+	rm -f $@.tmp
+
+.PRECIOUS: %.srilmngrams
+%.srilmngrams: %.sents %.revsents scripts/convert_srilm.py user-srilm-location.txt
+	cat $< | sed 's/\([^A-Za-z0-9]\)/ \1 /g;s/  */ /g;' > $@.fwtmp
+	cat $(word 2, $^) | sed 's/\([^A-Za-z0-9]\)/ \1 /g;s/  */ /g;' > $@.bwtmp
+	$(SRILM)/$(SRILMSUB)/ngram-count -order 1 -kndiscount -text $@.fwtmp -lm $@.uprobs
+	$(SRILM)/$(SRILMSUB)/ngram-count -order 2 -kndiscount -interpolate -text $@.fwtmp -lm $@.fwprobs
+	$(SRILM)/$(SRILMSUB)/ngram-count -order 2 -kndiscount -interpolate -text $@.bwtmp -lm $@.bwprobs
+	$(PYTHON) $(word 3,$^) $@.uprobs -U > $@
+	$(PYTHON) $(word 3,$^) $@.fwprobs -BF >> $@
+	$(PYTHON) $(word 3,$^) $@.bwprobs -BB >> $@
+	rm -f $@.{uprobs,fwtmp,fwprobs,bwtmp,bwprobs}
+
+.PRECIOUS: %.eyemodel
+%.eyemodel: scripts/analyzeComplexity.py $$(basename %).complex \
+	genmodel/$$(notdir $$(basename $$(basename $$(basename $$(basename $$*))))).$$(subst .,,$$(suffix $$(subst _,.,$$*))).textdata \
+	genmodel/$$(notdir $$(basename $$(basename $$(basename $$(basename $$*))))).$$(subst .,,$$(suffix $$(subst _,.,$$*))).eyedata \
+	genmodel/$$(notdir $$(basename $$(basename $$(basename $$(basename $$*))))).$$(subst .,,$$(suffix $$(subst _,.,$$*))).eventdata \
+	genmodel/broadcoveragetraining.srilmngrams genmodel/wsj02to21.wordcounts
+	$(PYTHON) $< $(basename $(subst _,.,$(subst .,,$(suffix $*)))) $(word 2,$^) $(word 3,$^) $(word 4,$^) $(word 5,$^) $(word 6,$^) $(word 7,$^) > $@
+
+.PRECIOUS: %.unfiltered.eyemodels
+%.unfiltered.eyemodels: $(foreach subj,$(DUNDEESUBJS),%_$(subj).eyemodel)
+	head -1 $< > $@
+	cat $^ | grep -v '^subject word' >> $@
+
+.PRECIOUS: %.eyemodels
+%.eyemodels: scripts/filterComplex.py %.unfiltered.eyemodels
+	$(PYTHON) $< $(word 2,$^) > $@
+
+.PRECIOUS: %.canonsubset.eyemodels
+%.canonsubset.eyemodels: $$(dirname %)dundee.canonsubset %.unfiltered.eyemodels scripts/filterComplexSubset.py
+	$(PYTHON) $(word 3,$^) $< $(word 2,$^) > $@
+
+.PRECIOUS: %.noncanonsubset.eyemodels
+%.noncanonsubset.eyemodels: $$(dirname %)dundee.canonsubset %.unfiltered.eyemodels scripts/filterComplexSubset.py
+	$(PYTHON) $(word 3,$^) -v $< $(word 2,$^) > $@
+
+.PRECIOUS: %.dundeeeval
+%.arg.dundeeeval: $$(basename %).eyemodels scripts/dundeeLME.r rpkgs
+	$(word 2,$^) $(subst .,,$(suffix $*)) $< > $@
+
+%.dundeeeval: %.eyemodels scripts/dundeeLME.r rpkgs
+	$(word 2,$^) - $< > $@
+
 
 ################################################################################
 #
