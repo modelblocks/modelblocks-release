@@ -27,7 +27,7 @@
 .SUFFIXES:
 .SECONDEXPANSION:
 
-THISDIR := $(dir $(abspath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
+THISDIR  := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 SRC      := $(THISDIR)src
 SCRIPTS  := $(THISDIR)scripts
@@ -69,9 +69,9 @@ user-treebank-directory.txt:
 
 # CODE REVIEW: some of these are bogus!!!!
 SHELL = /bin/bash
-INCLUDES = -I../rvtl/include #-Iinclude -I../slush/include #-I/sw/include #-I/Users/dingcheng/Documents/boost/boost_1_44_0
-CFLAGS = -Wall `cat user-cflags.txt` -g #-DNDEBUG -O3 #-DNOWARNINGS #-g #
-CC = g++
+#INCLUDES = -I../rvtl/include #-Iinclude -I../slush/include #-I/sw/include #-I/Users/dingcheng/Documents/boost/boost_1_44_0
+#CFLAGS = -Wall `cat user-cflags.txt` -g #-DNDEBUG -O3 #-DNOWARNINGS #-g #
+#CC = g++
 
 #### bin directory (ignored by git b/c empty)
 bin:
@@ -84,7 +84,7 @@ bin/evalb: $(SRC)/evalb.c | bin
 #### c++ executables
 .PRECIOUS: bin/%
 bin/%:  $(SRC)/$$(notdir $$@).cpp  user-cflags.txt  |  bin  #$$(abspath $$(dir $$@))  #$$(realpath $$(dir $$@))  #$(BIN)  #$(CURDIR)/$$(notdir $$(dir $$@))  #
-	$(CC) $(CFLAGS) -lm $(INCLUDES) $< -o $@
+	g++ -I../rvtl/include -Wall `cat $(word 2,$^)` -g -lm  $<  -o $@
 
 ################################################################################
 #
@@ -143,6 +143,8 @@ genmodel/wsj%.linetrees:  user-treebank-directory.txt  $$(shell cat user-treeban
 	tail -n +$(subst .,,$(suffix $*)) $<  >  $@
 %last.linetrees:  $$(basename %).linetrees
 	tail -$(subst .,,$(suffix $*)) $<  >  $@
+%maxwords.linetrees: $$(basename %).linetrees
+	cat $< | perl -na -e "if (split(/[\)]+/)<=1+$(subst .,,$(suffix $*))) {print $$_;}"  >  $@ 
 
 #### obtain input sentences from linetrees
 .PRECIOUS: %.sents
@@ -157,8 +159,11 @@ genmodel/wsj%.linetrees:  user-treebank-directory.txt  $$(shell cat user-treeban
 
 #### unlabeled trees (for evaluation)
 %.nolabel.linetrees:  %.linetrees
-	cat $^  |  perl -pe 's/\([^ ]*/\(X/g'  >  $@
-	
+	cat $^  |  perl -pe 's/\(\)//'| perl -pe 's/\([^ ]*/\(X/g'  >  $@
+
+%.nolabel.nopuncE.linetrees:%.nolabel.linetrees
+	cat $<  |  perl -pe "s/ \(X (,|\.|``|--|-RRB-|-LRB-|-LCB-|-RCB-|''|\.\.\.|\?|\:|\;)\)//g" | perl ../general/scripts/make-trees-nounary.pl > $@
+
 #### use only the first/last N trees
 %first.sents:  $$(basename %).sents
 	head -$(subst .,,$(suffix $*)) $<  >  $@
@@ -189,6 +194,13 @@ genmodel/wsj%.linetrees:  user-treebank-directory.txt  $$(shell cat user-treeban
             $(SRCMODEL)/new.prm \
             genmodel/$$(subst -,.,$$(basename $$(basename $$(basename $$(notdir $$*))))).linetrees \
             $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$(basename $$(basename $$*)))$$(suffix $$(basename $$*))$$(suffix $$*).nounary.nolabel.linetrees
+	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
+
+#### syntactic evaluation for nounary nolabel nopunctuation post-process
+%.nounary.nolabel.nopuncE.syneval:  bin/evalb \
+            $(SRCMODEL)/new.prm \
+            genmodel/$$(subst -,.,$$(basename $$(basename $$(basename $$(notdir $$*))))).linetrees \
+            $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$(basename $$(basename $$*)))$$(suffix $$(basename $$*))$$(suffix $$*).nounary.nolabel.nopuncE.linetrees
 	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
 
 #### signif testing

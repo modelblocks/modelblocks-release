@@ -27,7 +27,7 @@
 .SUFFIXES:
 .SECONDEXPANSION:
 
-THISDIR := $(dir $(abspath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
+THISDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 SCRIPTS := $(THISDIR)scripts
 SRC     := $(THISDIR)src
@@ -72,11 +72,11 @@ all:  wsj23-comparativized-gcg15-nofail.wsj02to21-comparativized-gcg15-1671-5sm.
 	cat $<  |  perl -pe 's/([^\(])\-[^ \)]+ /\1 /g'  >  $@
 
 #### annotate branch and depth
-%.bd.linetrees:  %.linetrees  scripts/annotateDepth.py
+%.bd.linetrees:  %.linetrees  $(SCRIPTS)/annotateDepth.py
 	cat $<  |  python3 $(word 2,$^)  >  $@
 
 #### remove unary branches
-%.nounary.linetrees:  %.linetrees  scripts/killUnaries.pl
+%.nounary.linetrees:  %.linetrees  $(SCRIPTS)/killUnaries.pl
 	cat $<  |  perl $(word 2,$^)  >  $@
 
 

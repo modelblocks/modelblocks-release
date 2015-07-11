@@ -27,20 +27,20 @@
 .SUFFIXES:
 .SECONDEXPANSION:
 
-THISLCPARSEDIR := $(dir $(abspath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
+THISDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 # included...
 #include $(dir $(CURDIR))general/Makefile
 #include $(dir $(CURDIR))gcg/Makefile
 #include $(dir $(CURDIR))lvpcfg/Makefile
 
-SCRIPTS := $(THISLCPARSEDIR)scripts
-INCLUDE := $(THISLCPARSEDIR)include
-SRC     := $(THISLCPARSEDIR)src
+SCRIPTS := $(THISDIR)scripts
+INCLUDE := $(THISDIR)include
+SRC     := $(THISDIR)src
 
 BIN     := bin
 
-include $(wildcard $(THISLCPARSEDIR)*/*.d)      ## don't comment out, it breaks make!
+include $(wildcard $(THISDIR)*/*.d)      ## don't comment out, it breaks make!
 
 all: wsj23.wsj02to21-gcg14b-1671-3sm-bd.x-efabp.-c_-b2000_parsed.linetrees
 
@@ -51,22 +51,22 @@ all: wsj23.wsj02to21-gcg14b-1671-3sm-bd.x-efabp.-c_-b2000_parsed.linetrees
 ################################################################################
 
 SHELL = /bin/bash
-INCLUDES = -I$(INCLUDE) -I../rvtl/include 
-CFLAGS = $(INCLUDES) -Wall `cat user-cflags.txt` -fpermissive
-CC = g++
+#INCLUDES = -I$(INCLUDE) -I../rvtl/include 
+#CFLAGS = $(INCLUDES) -Wall `cat user-cflags.txt` -fpermissive
+#CC = g++
 
 #### obtain c++ dependencies by compiling local source and include files
-.PRECIOUS: $(THISLCPARSEDIR)%.d
-$(THISLCPARSEDIR)%.d: $(THISLCPARSEDIR)%.cpp
+.PRECIOUS: $(THISDIR)%.d
+$(THISDIR)%.d:  $(THISDIR)%.cpp  $(INCLUDE)
 	echo '$*.d: \' > $@   #' ##
-	echo `$(CC) $(INCLUDES) -MM $<` | sed 's/^.*:.*\.cpp */ $$(wildcard /;s/\\ *//g;s/$$/)/' >> $@
+	echo `g++ -I$(word 2,$^) -I../rvtl/include -MM $<` | sed 's/^.*:.*\.cpp */ $$(wildcard /;s/\\ *//g;s/$$/)/' >> $@
 	cat $@ | sed 's/\.d:/\.cpp:/' >> $@
 #       $(CC) -MM $< | sed 's/^.*://' >> $@
 
 #### obtain binaries by compiling local source and include files
 .PRECIOUS: bin/%
-bin/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  user-cflags.txt  |  bin  #$$(abspath $$(dir $$@))  #$$(realpath $$(dir $$@))  #$(BIN)  #$(CURDIR)/$$(notdir $$(dir $$@))  #
-	$(CC) $(CFLAGS) -lm $< -o $@
+bin/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(INCLUDE)  user-cflags.txt  |  bin  #$$(abspath $$(dir $$@))  #$$(realpath $$(dir $$@))  #$(BIN)  #$(CURDIR)/$$(notdir $$(dir $$@))  #
+	g++ -I$(word 3,$^) -I../rvtl/include -Wall `cat $(word 4,$^)` -fpermissive -lm $< -o $@
 
 ################################################################################
 #

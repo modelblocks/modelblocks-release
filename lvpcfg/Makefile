@@ -49,8 +49,16 @@ GENMODEL := genmodel
 user-javaflags.txt:
 	echo '-Xmx8g' > $@
 	@echo ''
-	@echo 'ATTENTION: I had to create "$@" for you, which may not be to your liking'
-	@echo 'edit it to give java as much memory as you want to, and re-run make to continue!'
+	@echo 'ATTENTION: I had to create a "$@" file for you, which may not be to your liking'
+	@echo 'edit this "$@" file (not the Makefile) to give java as much memory as you want to, and re-run make to continue!'
+	@echo ''
+
+#### external berkeleyparser jarfile directory
+user-berkeleyparserjar-directory.txt:
+	echo '/home/compling/berkeleyparser' > $@
+	@echo ''
+	@echo 'ATTENTION: I had to create a "$@" file for you, which may not be to your liking'
+	@echo 'edit this "$@" file (not the Makefile) to point at the appropriate directory, and re-run make to continue!'
 	@echo ''
 
 ################################################################################
@@ -64,11 +72,19 @@ user-javaflags.txt:
 %.class:  %.java  #$$(addsuffix .class,$$(subst .,/,$$(subst import ,,$$(shell grep -o 'import edu[.a-zA-Z0-9]*' $$(subst .class,.java,$$@)))))
 	javac -cp $(dir $(EDU)) $<
 
-#### berkeley parser shortcut "executable"
+#### berkeley parser shortcut "executable" -- external jarfile
+.PRECIOUS: bin/parser-berk
+bin/parser-berk:  user-javaflags.txt  user-berkeleyparserjar-directory.txt  $$(shell cat user-berkeleyparserjar-directory.txt)/berkeleyParser.jar  |  bin  #$$(abspath $$(dir $$@))
+	echo "#!/bin/sh" > $@
+	echo "java $(shell cat $(word 1,$^)) -cp $(word 3,$^) edu.berkeley.nlp.PCFGLA.BerkeleyParser -substates -gr \$$1" >> $@
+	chmod u+x $@
+#### berkeley parser shortcut "executable" -- internal version
+.PRECIOUS: bin/parser-fullberk
 bin/parser-fullberk:  user-javaflags.txt  $(EDU)/berkeley/nlp/PCFGLA/BerkeleyParser.class  |  bin  #$$(abspath $$(dir $$@))
 	echo "#!/bin/sh" > $@
 	echo "java $(shell cat $(word 1,$^)) -cp $(dir $(EDU)) edu/berkeley/nlp/PCFGLA/BerkeleyParser -substates -gr \$$1" >> $@
 	chmod u+x $@
+.PRECIOUS: bin/parser-vitberk
 bin/parser-vitberk:  user-javaflags.txt  $(EDU)/berkeley/nlp/PCFGLA/BerkeleyParser.class  |  bin  #$$(abspath $$(dir $$@))
 	echo "#!/bin/sh" > $@
 	echo "java $(shell cat $(word 1,$^)) -cp $(dir $(EDU)) edu/berkeley/nlp/PCFGLA/BerkeleyParser -viterbi -substates -gr \$$1" >> $@
@@ -89,11 +105,24 @@ bin/parser-vitberk:  user-javaflags.txt  $(EDU)/berkeley/nlp/PCFGLA/BerkeleyPars
 
 #### sm grammar using berkeley trainer
 .PRECIOUS: %sm.gr
+## no validation -- external jarfile
+%sm.gr:  user-javaflags.txt  user-berkeleyparserjar-directory.txt  $$(shell cat user-berkeleyparserjar-directory.txt)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees
+	java  $(shell cat $(word 1,$^))  -cp $(word 3,$^)  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 4,$^)  -treebank SINGLEFILE  -out $@
+## validation -- internal version
 %sm.gr:  $(EDU)/berkeley/nlp/PCFGLA/GrammarTrainer.class  $$(basename $$(basename %)).extrparplusops.linetrees  $$(basename %)last.extrparplusops.linetrees  user-javaflags.txt
 	java  $(shell cat $(word 4,$^))  -cp $(dir $(EDU))  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 2,$^)  -validation $(word 3,$^)  -treebank SINGLEFILE  -out $@
-#	java  -cp $(EDU)  $(shell cat $(word 4,$^))  $(subst /,.,$(basename $<))  -SMcycles $(subst .,,$(suffix $*))  -path $(word 2,$^)  -validation $(word 3,$^)  -treebank SINGLEFILE  -out $@
+## no validation -- internal version
+#%sm.gr:  $(EDU)/berkeley/nlp/PCFGLA/GrammarTrainer.class  $$(basename %).extrparplusops.linetrees  user-javaflags.txt
+#	java  $(shell cat $(word 3,$^))  -cp $(dir $(EDU))  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 2,$^)  -treebank SINGLEFILE  -out $@
+
+
+#%sm.gr:  $(EDU)/berkeley/nlp/PCFGLA/GrammarTrainer.class  $$(basename %).extrparplusops.linetrees $$(basename $$(basename %)).last.extrparplusops.linetrees  user-javaflags.txt
+#	java  $(shell cat $(word 4,$^))  -cp $(dir $(EDU))  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 2,$^)  -validation $(word 3,$^)  -treebank SINGLEFILE  -out $@
+##	java  -cp $(EDU)  $(shell cat $(word 4,$^))  $(subst /,.,$(basename $<))  -SMcycles $(subst .,,$(suffix $*))  -path $(word 2,$^)  -validation $(word 3,$^)  -treebank SINGLEFILE  -out $@
 
 #### silly shortcut for berkeley parser
+%.berk.model:  %.gr
+	ln -sf $(notdir $<) $@
 %.fullberk.model:  %.gr
 	ln -sf $(notdir $<) $@
 %.vitberk.model:  %.gr
