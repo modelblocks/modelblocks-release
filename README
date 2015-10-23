@@ -4,6 +4,11 @@ resources for constructing and evaluating broad-coverage probabilistic
 models of cognitive processes, organized into projects centered around
 different tasks and data sets.
 
+QUICKSTART:
+To quickly get started using modelblocks, read through the quickstart
+guide in the neighboring QUICKSTART file. Below is more info about
+the structure of modelblocks.
+
 USE OF MAKEFILES:
 Each project exists in a subdirectory of the main modelblocks
 directory.  In order to ensure the reproducibility of experiments
