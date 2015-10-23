@@ -56,7 +56,7 @@ for line in sys.stdin.readlines():
         if FIRST:
           complex.append(line.strip() + ' sentid\n')
         elif idlist == []:
-          complex.append(line.strip() + ' ' +str(idctr/2) + '\n')
+          complex.append(line.strip() + ' ' +str(int(idctr/2)) + '\n')
         else:
           complex.append(line.strip() + ' ' + idlist[int(idctr/2)] + '\n')
       else:

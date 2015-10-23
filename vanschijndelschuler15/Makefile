@@ -173,10 +173,10 @@ genmodel/brownTRAIN.linetrees: $(foreach sect,$(BROWNTRAINSECTS),genmodel/brown$
 
 genmodel/broadcoveragetraining.sents: user-tokenizer-directory.txt $(cat user-tokenizer-directory.txt)/ptb_tokenizer.sed \
 					genmodel/brownTRAIN.sents genmodel/wsj02to21.sents genmodel/bncTRAIN.sents genmodel/dundee.sents | genmodel
-	cat $(word 4,$^) | sed "s/&bquo;/\'/g;s/&equo;/\'/g;s/&hellip;/.../g;s/&percnt;/%/g;s/&ndash;/-/g;s/&amp;/\&/g;s/&mdash;/--/g;" | \
-	$(word 1,$^) > genmodel/tmp.bnc
-	$(word 1,$^) $(word 5,$^) > genmodel/tmp.dundee
-	cat $(word 2,$^) $(word 3,$^) genmodel/tmp.bnc genmodel/tmp.dundee | grep -v '\*x\*' | sed 's/  */ /g;' > $@
+	cat $(word 5,$^) | sed "s/&bquo;/\'/g;s/&equo;/\'/g;s/&hellip;/.../g;s/&percnt;/%/g;s/&ndash;/-/g;s/&amp;/\&/g;s/&mdash;/--/g;" | \
+	$(word 2,$^) > genmodel/tmp.bnc
+	$(word 2,$^) $(word 6,$^) > genmodel/tmp.dundee
+	cat $(word 3,$^) $(word 4,$^) genmodel/tmp.bnc genmodel/tmp.dundee | grep -v '\*x\*' | sed 's/  */ /g;' > $@
 	rm -f genmodel/tmp.bnc genmodel/tmp.dundee
 
 # Doesn't seem to work well with gigaword; possibly too big?
@@ -339,9 +339,9 @@ genmodel/dundee.%.ngramtimetoks: genmodel/dundee.%.timetoks genmodel/dundee.ngra
 	python3 $(word 4,$^) $(word 5,$^) $@.tmp > $@
 	rm -f $@.tmp
 
-%.complextoks: %_parsed.output scripts/convert_latin-1.py scripts/spargeComplexity.py
+%.complextoks: %_parsed.output scripts/spargeComplexity.py
 	# This rule is good for generic, pre-tokenized output
-	cat $< | python3 $(word 3,$^) > $@
+	cat $< | python3 $(word 2,$^) > $@
 
 .PRECIOUS: %.fulltoks
 #dundee.wsj02to21-gcg14-1671-3sm-bd.x-efabp.-c_-b2000.fp.fulltoks
