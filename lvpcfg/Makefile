@@ -130,8 +130,12 @@ bin/parser-vitberk:  user-javaflags.txt  $(EDU)/berkeley/nlp/PCFGLA/BerkeleyPars
 
 #### obtain text grammar from javadump
 .PRECIOUS: %.splits %.grammar %.lexicon
-%.splits %.grammar %.lexicon:  $(EDU)/berkeley/nlp/PCFGLA/WriteGrammarToTextFile.class  %.gr  user-javaflags.txt
-	java  $(shell cat $(word 3,$^))  -cp $(dir $(EDU))  edu.berkeley.nlp.PCFGLA.WriteGrammarToTextFile  $(word 2,$^)  $(basename $@)
+#%.splits %.grammar %.lexicon:  $(EDU)/berkeley/nlp/PCFGLA/WriteGrammarToTextFile.class  %.gr  user-javaflags.txt
+#	java  $(shell cat $(word 3,$^))  -cp $(dir $(EDU))  edu.berkeley.nlp.PCFGLA.WriteGrammarToTextFile  $(word 2,$^)  $(basename $@)
+## external jarfile
+%.splits %.grammar %.lexicon:  user-javaflags.txt  user-berkeleyparserjar-directory.txt  $$(shell cat user-berkeleyparserjar-directory.txt)/berkeleyParser.jar  %.gr
+	java  $(shell cat $(word 1,$^))  -cp $(word 3,$^)  edu.berkeley.nlp.PCFGLA.WriteGrammarToTextFile  $(word 4,$^)  $(basename $@)
+
 
 ################################################################################
 #
