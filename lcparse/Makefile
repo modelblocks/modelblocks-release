@@ -23,7 +23,6 @@
 #
 ################################################################################
 
-.SECONDARY:
 .SUFFIXES:
 .SECONDEXPANSION:
 
@@ -75,23 +74,23 @@ bin/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(INCLUDE)  user-cfl
 ################################################################################
 
 #### obtain '.model' format pcfg (with unaries) from berkeley text grammar
-.PRECIOUS: %.x-ccu.model
+#.PRECIOUS: %.x-ccu.model
 %.x-ccu.model:  %.grammar  %.lexicon  $(SCRIPTS)/berkgrammar2ckygr.py  $(SCRIPTS)/berklexicon2ckylex.py
 	cat $(word 1,$^)  |  python3 $(word 3,$^)  >   $@
 	cat $(word 2,$^)  |  python3 $(word 4,$^)  >>  $@
 
 #### obtain strict binary-branching pcfg model (with no unaries) from pcfg model with unaries
-.PRECIOUS: %.x-cc.model
+#.PRECIOUS: %.x-cc.model
 %.x-cc.model:  %.x-ccu.model  $(SCRIPTS)/ccu2cc.py
 	cat $<  |  python3 $(word 2,$^)  >  $@
 
 #### obtain branch- and depth-annotated grammar with preterm nodes generated seperately
-.PRECIOUS: %.bd.x-ccp.model
+#.PRECIOUS: %.bd.x-ccp.model
 %.bd.x-ccp.model:  %.x-cc.model  $(SCRIPTS)/pcfg2pxmodel.py
 	cat $<  |  python3 $(word 2,$^)  >  $@
 
 #### obtain incremental probability model from strict binary-branching pcfg
-.PRECIOUS: %.x-fabp.probmodel
+#.PRECIOUS: %.x-fabp.probmodel
 %.x-fabp.probmodel:  %.x-ccp.model  bin/calc-fabp-model
 	cat $<  |  grep -v '^PX '  | sed 's/^Cr : \(.*\^[Ll],1\) =/CC REST^R,0 : \1 REST^R,0 =/;s/ - - / -\^.,. -\^.,. /' \
                 |  sed 's/CC \(.*\)\^\(.\),\(.\) : \(.*\)\^.,. \(.*\)\^.,. = \(.*\)/CC \2 \3 \1 : \4 \5 = \6/' |  $(word 2,$^)  >  $@

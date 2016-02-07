@@ -23,17 +23,16 @@
 #
 ################################################################################
 
-.SECONDARY:
 .SUFFIXES:
 .SECONDEXPANSION:
 
 naacl15: prereqs \
 	scripts/intersectComplexity.r \
 	scripts/querydataframe.py \
-	dundee.wsj02to21-nodashtags-1671-5sm-bd.x-efabp.-c_-b5000.fp.fulltoks \
-	dundee.wsj02to21-gcg14-1671-3sm-bd.x-efabp.-c_-b5000.fp.fulltoks \
-	dundee.wsj02to21-nodashtags-1671-5sm-bd.x-efabp.-c_-b5000.gp.fulltoks \
-	dundee.wsj02to21-gcg14-1671-3sm-bd.x-efabp.-c_-b5000.gp.fulltoks
+	dundee.wsj02to21-nodashtags-5sm-bd.x-efabp.-c_-b5000.fp.fulltoks \
+	dundee.wsj02to21-gcg14-3sm-bd.x-efabp.-c_-b5000.fp.fulltoks \
+	dundee.wsj02to21-nodashtags-5sm-bd.x-efabp.-c_-b5000.gp.fulltoks \
+	dundee.wsj02to21-gcg14-3sm-bd.x-efabp.-c_-b5000.gp.fulltoks
 	$(word 2,$^) $(word 4,$^) $(word 5,$^)
 	$(word 2,$^) $(word 6,$^) $(word 7,$^)
 	python $(word 3,$^) --input $(word 4,$^) --i totsurp | sed '1s/.*/ptbsurp/' | paste -d' ' $(word 5,$^) - > $(word 5,$^).tmp
@@ -332,7 +331,7 @@ genmodel/dundee.%.ngramtimetoks: genmodel/dundee.%.timetoks genmodel/dundee.ngra
 	rm -rf $@.tmp
 
 .PRECIOUS: %.complextoks
-#dundee.wsj02to21-gcg14-1671-3sm-bd.x-efabp.-c_-b2000.complextoks
+#dundee.wsj02to21-gcg14-3sm-bd.x-efabp.-c_-b2000.complextoks
 %.complextoks: %_parsed.output scripts/convert_latin-1.py scripts/spargeComplexity.py scripts/compileComplexity.py genmodel/$$(basename $$(basename $$(basename $$(basename $$(notdir $$@))))).textdata | genmodel
 	# This rule is good for dundee data, which is in an odd format and needs to be re-tokenized
 	cat $< | python3 $(word 3,$^) > $@.tmp
@@ -344,7 +343,7 @@ genmodel/dundee.%.ngramtimetoks: genmodel/dundee.%.timetoks genmodel/dundee.ngra
 	cat $< | python3 $(word 2,$^) > $@
 
 .PRECIOUS: %.fulltoks
-#dundee.wsj02to21-gcg14-1671-3sm-bd.x-efabp.-c_-b2000.fp.fulltoks
+#dundee.wsj02to21-gcg14-3sm-bd.x-efabp.-c_-b2000.fp.fulltoks
 %.fulltoks: $$(basename %).complextoks scripts/removeBadToks.py scripts/accumulateMetrics.py scripts/tagPunctuation.py scripts/addLagMetrics.py \
 	scripts/padMetrics.py scripts/addLineNums.py $(foreach subj,$(DUNDEESUBJS),genmodel/dundee.$(subj)_$$(subst .,,$$(suffix $$*)).ngramtimetoks) | genmodel
 	cut -d" " -f2- $(word 1,$^) > $@.tmp
@@ -359,7 +358,7 @@ genmodel/dundee.%.ngramtimetoks: genmodel/dundee.%.timetoks genmodel/dundee.ngra
 	$< $(word 2,$^)
 
 .PRECIOUS: %.dundeeeval
-#dundee.wsj02to21-gcg14-1671-3sm-bd.x-efabp.-c_-b2000.fp.-fl_-fsc_-fse_-ff_-totsurp.arg.dundeeeval
+#dundee.wsj02to21-gcg14-3sm-bd.x-efabp.-c_-b2000.fp.-fl_-fsc_-fse_-ff_-totsurp.arg.dundeeeval
 %.arg.dundeeeval: $$(basename %).fulltoks scripts/dundeeLME.r #| rpkgs
 	$(word 2,$^) $< $(subst _, ,$(subst .,,$(suffix $*))) > $@
 

@@ -2,7 +2,6 @@
 #### default item: the main product of this directory...
 genmodel/starcg-test-nounary-nolabel-40maxwords..chgcg-train-5sm..chccg-train-5sm..berk.parsed.nounary.nolabel.syneval.bootstrapsignif:
 
-.SECONDARY:
 .SUFFIXES:
 .SECONDEXPANSION:
 SHELL = /bin/bash
