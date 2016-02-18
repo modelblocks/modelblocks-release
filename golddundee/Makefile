@@ -34,6 +34,7 @@ SCRIPTS  := $(THISDIR)scripts
 include $(dir $(CURDIR))general/Makefile
 include $(dir $(CURDIR))resource-golddundee/Makefile
 
+
 ################################################################################
 #
 #  1. Recipes

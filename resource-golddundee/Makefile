@@ -40,7 +40,7 @@
 THISDIR := $(dir $(abspath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 SRCMODEL := $(THISDIR)srcmodel
 SCRIPTS  := $(THISDIR)scripts
-
+DUNDEESECTS = 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20
 
 
 ################################################################################
@@ -87,6 +87,8 @@ endif
 	echo '/home/corpora/original/english/dundee' > $@
 
 
+dundee:
+	@echo $(DUNDEE)
     
 ################################################################################
 #
@@ -98,7 +100,9 @@ endif
 golddata:
 	mkdir golddata
 
-    
+.PRECIOUS: srcmodel
+srcmodel:
+	mkdir srcmodel
     
     
 ################################################################################
@@ -132,7 +136,7 @@ genmodel/dundee.notoksents: $(foreach sect,$(DUNDEESECTS),genmodel/dundee$(sect)
 
 .PRECIOUS: %dundee.gold.linetrees
 %dundee.gold.linetrees: $(SRCMODEL)/dundee.stripped.linetrees genmodel/dundee.sents \
-			$(SCRIPTS)/plugDundee.py | genmodel
+			$(SCRIPTS)/plugDundee.py | genmodel srcmodel
 	cat $(word 2, $^) | sed 's/garbage\/sentimental/garbage \/ sentimental/g' \
 	| sed 's/Oxford-educated/Oxford- educated/g' \
 	| sed 's/4'\''s/4 '\''s/g' \

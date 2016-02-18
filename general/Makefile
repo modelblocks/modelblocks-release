@@ -115,7 +115,8 @@ bin/%:  $(SRC)/$$(notdir $$@).cpp  user-cflags.txt  |  bin  #$$(abspath $$(dir $
 #$(GENMODEL):
 genmodel:
 	if [ ! -d $@ ]; then mkdir $@; fi
-    
+
+.PRECIOUS: %config    
 %config:
 	if [ ! -d $@ ]; then mkdir $@; fi
 
