@@ -31,6 +31,7 @@ THISDIR := $(dir $(abspath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 SRCMODEL := $(THISDIR)srcmodel
 SCRIPTS  := $(THISDIR)scripts
 
+include $(dir $(CURDIR))general/Makefile
 include $(dir $(CURDIR))resource-golddundee/Makefile
 
 ################################################################################
