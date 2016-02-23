@@ -1,0 +1,6 @@
+conll05st-release
+*.d
+*.pyc
+*~
+\#*
+extraScripts/
