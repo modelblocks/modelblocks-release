@@ -375,9 +375,9 @@ genmodel/lr%ser.ans: user-lrbank-location.txt $$(shell cat user-lrbank-location.
 	cp $(word 2,$^) $@
 
 lrdev.%:  lrdevoerr.%  lrdevoer.%  lrdevofr.%  lrdevoq.%  lrdevrnr.%  lrdevse.%  lrdevser.%
-	more $^  >  $@
+	cat $^  >  $@
 lrtest.%: lrtestoerr.% lrtestoer.% lrtestofr.% lrtestoq.% lrtestrnr.% lrtestse.% lrtestser.%
-	more $^  >  $@
+	cat $^  >  $@
 
 define BNCDIRMACRO
 .PRECIOUS: genmodel/bnc$(1).sents
