@@ -30,6 +30,7 @@ You can get a PTB tokenizer from:
 https://github.com/vansky/extended_penn_tokenizer
 
 to use the tokenizer:
+
     > extended_penn_tokenizer/ptb_tokenizer.sed < NEWCORPUS.untoksents > NEWCORPUS.sents
 
 Training Complexity Metrics
@@ -65,9 +66,11 @@ so you can come back later when it's done.
     > make NEWCORPUS.wsj02to21-gcg14-1671-3sm-bd.x-efabp.-c_-b5000.complextoks
 
 To leave the screen:
+
     > Ctrl+a d
 
 To reaccess the screen to check on the build progress:
+
     > screen -r
 
 You can look at the output parses in:
