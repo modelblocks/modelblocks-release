@@ -47,6 +47,7 @@ include $(RESOURCE-INCRSEM)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
 include $(RESOURCE-CHILDES)/Makefile
 include $(RESOURCE-RT)/Makefile
+include $(RESOURCE-RHACKS)/Makefile
 include $(RESOURCE-LMEFIT)/Makefile
 
 ################################################################################

@@ -17,7 +17,6 @@ library(lme4)
 library(languageR)
 #The below scripts cannot be distributed with Modelblocks
 source("../resource-rhacks/scripts/mer-utils.R") #obtained from https://github.com/aufrank
-source("../resource-rhacks/scripts/mtoolbox.R")  
 source("../resource-rhacks/scripts/regression-utils.R") #obtained from https://github.com/aufrank
 
 opt_parser <- OptionParser(option_list=opt_list)

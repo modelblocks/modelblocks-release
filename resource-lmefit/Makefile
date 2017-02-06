@@ -98,7 +98,7 @@ scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform
 %.lrtsignif:  $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
 $$(basename $$(basename $$(basename $$*))).-a_$$(subst .,,$$(suffix $$(basename $$(basename $$*))))_-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$(RHACKS-SCRIPTS)/mtoolbox.R $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
+$(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
 	$^ $(subst _, ,$(subst .,,$(suffix $*))) > $@
 
 # Same as above, only don't add main effect as a random slope
@@ -106,7 +106,7 @@ $(RHACKS-SCRIPTS)/mtoolbox.R $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/reg
 %.noadd.lrtsignif:  $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
 $$(basename $$(basename $$(basename $$*))).-a_$$(subst .,,$$(suffix $$(basename $$(basename $$*))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $$(basename $$(basename $$(basename $$*))).-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$(RHACKS-SCRIPTS)/mtoolbox.R $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
+$(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
 	$^ $(subst _, ,$(subst .,,$(suffix $*))) > $@
 
   
@@ -136,7 +136,7 @@ $$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix
 $$(basename $$(basename $$(basename $$*))).-a_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))+$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $$(basename $$(basename $$(basename $$*))).-a_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$(RHACKS-SCRIPTS)/mtoolbox.R $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
+$(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
 	$^ -t '$(subst _,-vs-,$(subst .,,$(suffix $(basename $(basename $*)))))' \
   -l $(word 1, $(subst _, ,$(subst .,,$(suffix $(basename $(basename $*)))))) \
   -r $(word 2, $(subst _, ,$(subst .,,$(suffix $(basename $(basename $*)))))) > $@

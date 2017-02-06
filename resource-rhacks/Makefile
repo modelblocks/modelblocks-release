@@ -59,7 +59,7 @@ Targets with dependencies to this file will fail until it is fixed.
 endef
 
 ifndef MAKECONFIG
-CONFIG := $(CONFIGDIR)/user-treebank-directory.txt
+CONFIG := $(CONFIGDIR)/user-rhacks-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
 $(info $(CONFIGWARN))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
@@ -84,9 +84,6 @@ endif
 
 $(RESOURCE-RHACKS)/scripts:
 	mkdir $(RESOURCE-RHACKS)/scripts
-
-$(RHACKS-SCRIPTS)/mtoolbox.R: $(RHACKSDIR)/mtoolbox.R | $(RESOURCE-RHACKS)/scripts
-	cp $< $@
 
 $(RHACKS-SCRIPTS)/mer-utils.R: $(RHACKSDIR)/mer-utils.R | $(RESOURCE-RHACKS)/scripts
 	cp $< $@

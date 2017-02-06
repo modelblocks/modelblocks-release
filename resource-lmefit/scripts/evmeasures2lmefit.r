@@ -23,7 +23,6 @@ library(ggplot2)
 library(optparse)
 # The below scripts cannot be distributed with Modelblocks
 source('../resource-rhacks/scripts/mer-utils.R') #obtained from https://github.com/aufrank
-source('../resource-rhacks/scripts/mtoolbox.R')  
 source('../resource-rhacks/scripts/regression-utils.R') #obtained from https://github.com/aufrank
 source('../resource-lmefit/scripts/lmetools.r')
 options('warn'=1) #report non-convergences, etc
