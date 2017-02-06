@@ -1,0 +1,26 @@
+iv	ivName	dv	dvName	title
+iter	Iteration	allF1	Overall (char spans) F-Measure	Overall F-Measure by iteration
+iter	Iteration	allP	Overall (char spans) Precision	Overall precision by iteration
+iter	Iteration	allR	Overall (char spans) Recall	Overall recall by iteration
+iter	Iteration	segF1	Segmentation F-Measure	Segmentation F-Measure by iteration
+iter	Iteration	segP	Segmentation Precision	Segmentation precision by iteration
+iter	Iteration	segR	Segmentation Recall	Segmentation recall by iteration
+iter	Iteration	bracF1	Bracketing F-Measure	Bracketing F-Measure by iteration
+iter	Iteration	bracP	Bracketing Precision	Bracketing precision by iteration
+iter	Iteration	bracR	Bracketing Recall	Bracketing recall by iteration
+iter	Iteration	homogTag	Tagging Homogeneity	Tagging homogeneity by iteration
+iter	Iteration	completTag	Tagging Completeness	Tagging completeness by iteration
+iter	Iteration	vmTag	Tagging V-Measure	Tagging V-Measure by iteration
+iter	Iteration	homogLab	Labeling Homogeneity	Constituent labeling homogeneity by iteration
+iter	Iteration	completLab	Labeling Completeness	Constituent labeling completeness by iteration
+iter	Iteration	vmLab	Labeling V-Measure	Constituent labeling V-Measure by iteration
+iter	Iteration	depth2	Depth=2 Frequency	Depth=2 frequency by iteration
+iter	Iteration	np_predict_p	NP Prediction Precision	NP prediction precision by iteration
+iter	Iteration	np_predict_r	NP Prediction Recall	NP prediction recall by iteration
+iter	Iteration	np_predict_f1	NP Prediction F-Measure	NP prediction F-Measure by iteration
+iter	Iteration	percentNPIdent	NP Recall	NP recall by iteration
+iter	Iteration	percentVPIdent	VP Recall	VP recall by iteration
+iter	Iteration	percentADJPIdent	ADJP Recall	ADJP recall by iteration
+iter	Iteration	percentADVPIdent	ADVP Recall	ADVP recall by iteration
+iter	Iteration	percentPPIdent	PP Recall	PP recall by iteration
+iter	Iteration	percentSIdent	S Recall	S recall by iteration

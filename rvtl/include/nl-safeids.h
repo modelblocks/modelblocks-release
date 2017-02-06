@@ -129,6 +129,7 @@ class DelimitedStaticSafeArray : public StaticSafeArray<I,T> {
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
 template<char* SD1,class V1,char* SD2,class V2,char* SD3>
 class DelimitedPair : public pair<V1,V2> {
  public:
@@ -151,6 +152,7 @@ class DelimitedPair : public pair<V1,V2> {
                             : is>>SD1>>x.first>>SD2>>x.second>>SD3>>psDlm );
   }
 };
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

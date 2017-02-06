@@ -61,13 +61,13 @@ viewconfig:
 
 MSG1 := The current config file 
 MSG2 :=  points to an incorrect location (
-MSG3 := ). Fix it before re-running make
+MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
 
 define CONFIGWARN =
 
 ATTENTION! I had to create $(CONFIG),
-which may contain an incorrect default value.
-Fix it before re-running make.
+which contains an incorrect default value (".").
+Targets with dependencies to this file will fail until it is fixed.
 
 endef
 
@@ -84,7 +84,10 @@ endif
 endif
 
 %/user-dundee-directory.txt: | %
-	echo '/home/corpora/original/english/dundee' > $@
+	echo '.' > $@
+
+%/user-dundee-directory.txt.cocomo: | %
+	echo '/home/corpora/original/english/dundee' > $(basename $@)
 
 
 dundee:

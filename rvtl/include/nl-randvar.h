@@ -30,6 +30,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef DONT_USE_UNMAPPABLE_TUPLES /////////
 template <class A, class B, class C>
 class trip {
  public:
@@ -53,7 +54,6 @@ class quad {
   friend ostream& operator<< ( ostream& os, const quad<A,B,C,D>& a ) { return os<<a.first<<","<<a.second<<","<<a.third<<","<<a.fourth; }
 };
 
-
 template <class A, class B, class C, class D,class E>
 class penta {
  public:
@@ -66,6 +66,7 @@ class penta {
   E fifth;
   friend ostream& operator<< ( ostream& os, const penta<A,B,C,D,E>& a ) { return os<<a.first<<","<<a.second<<","<<a.third<<","<<a.fourth<<","<<a.fifth; }
 };
+#endif ////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -331,6 +332,8 @@ class Joint3DRV {
   bool      operator!= ( const Joint3DRV<V1,V2,V3>& j ) const { return ( !(first==j.first && second==j.second && third==j.third) ); }
 };
 
+#ifndef DONT_USE_UNMAPPABLE_TUPLES /////////
+
 ////////////////////////////////////////////////////////////
 template<char* SD1,class V1,char* SD2,class V2,char* SD3,class V3,char* SD4>
 class DelimitedJoint3DRV : public Joint3DRV<V1,V2,V3> {
@@ -536,6 +539,7 @@ class DelimitedJoint5DRV : public Joint5DRV<V1,V2,V3,V4,V5> {
   }
 };
 
+#endif ///////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
