@@ -62,11 +62,16 @@
 # Generates the parsevals from all competing systems (and right-branching baseline)
 # as presented in Shain et al. (2016).
 coling2016: \
-projects/coling2016/eve-nt-lower-nounary.ccl.induc.constiteval.txt \
-projects/coling2016/eve-nt-lower-nounary.upparse.induc.constiteval.txt \
-projects/coling2016/eve-nt-lower-nounary.45-10-dmv.induc.constiteval.txt \
-projects/coling2016/eve-nt-lower-nounary.45-10-u-dmv.induc.constiteval.txt \
-projects/coling2016/eve-nt-lower-nounary.rb.induc.constiteval.txt
+genmodel/eve.eve-nt-lower-nounary-ccl.induc.constiteval.txt \
+genmodel/eve.eve-nt-lower-nounary-upparse.induc.constiteval.txt \
+genmodel/eve.eve-nt-lower-nounary-45-10-dmv.induc.constiteval.txt \
+genmodel/eve.eve-nt-lower-nounary-45-10-u-dmv.induc.constiteval.txt \
+genmodel/eve.eve-nt-lower-nounary-rb.induc.constiteval.txt \
+genmodel/eve.eve-nt-lower-nounary-nopunc-ccl.induc.constiteval.txt \
+genmodel/eve.eve-nt-lower-nounary-nopunc-upparse.induc.constiteval.txt \
+genmodel/eve.eve-nt-lower-nounary-nopunc-45-10-dmv.induc.constiteval.txt \
+genmodel/eve.eve-nt-lower-nounary-nopunc-45-10-u-dmv.induc.constiteval.txt \
+genmodel/eve.eve-nt-lower-nounary-nopunc-rb.induc.constiteval.txt
 
 ################################################################################
 #
@@ -95,14 +100,3 @@ include $(RESOURCE-DMV)/Makefile
 .SUFFIXES:
 .SECONDEXPANSION:
 
-################################################################################
-#
-#  Experiments
-#
-################################################################################
-
-plots: projects/eve/eve_d2-448/eve-nt-lower-nounary-nolabel-nopunc.recall_curve.jpg \
-projects/eve/eve_d2-448/eve_d2-448.uhhmm.logprobs.jpg \
-projects/eve/eve_d2-448/eve_d2-448.uhhmm.d2freq.jpg
-
-eve-ccl: projects/eve/ccl/eve.induc.ccl.syneval
