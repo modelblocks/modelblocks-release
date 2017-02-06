@@ -72,11 +72,10 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(SRILMDIR)$(MSG3))
 endif
 endif
 
-%/user-srilm-directory.txt: | %
-	echo '.' > $@
 
-%/user-srilm-directory.txt.cocomo: | %
-	echo '/home/compling/srilm/bin/i686-m64' > $(basename $@)
+
+%/user-srilm-directory.txt: | %
+	echo '/home/compling/srilm/bin/i686-m64' > $@
 
 ################################################################################
 #

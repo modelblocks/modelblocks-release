@@ -81,11 +81,10 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(NATSTORDIR)$(MSG3))
 endif
 endif
 
-%/user-naturalstories-directory.txt: | %   
-	echo '.' > $@
+
   
-%/user-naturalstories-directory.txt.cocomo: | %   
-	echo '/home/corpora/original/english/naturalstories' > $(basename $@)
+%/user-naturalstories-directory.txt: | %   
+	echo '/home/corpora/original/english/naturalstories' > $@
   
 ################################################################################
 #

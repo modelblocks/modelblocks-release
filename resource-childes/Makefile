@@ -71,11 +71,10 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(CHILDESDIR)$(MSG3))
 endif
 endif
 
-%/user-childes-directory.txt: | %   
-	echo '.' > $@
 
-%/user-childes-directory.txt.cocomo: | %   
-	echo '/home/corpora/original/english/childes' > $(basename $@)
+
+%/user-childes-directory.txt: | %   
+	echo '/home/corpora/original/english/childes' > $@
 
 ################################################################################
 #

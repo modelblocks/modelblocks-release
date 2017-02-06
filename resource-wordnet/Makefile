@@ -57,11 +57,10 @@ $(error The current config file "$(CONFIG)" points to an incorrect location "$(W
 endif
 endif
 
-%/user-wordnet-directory.txt: | % 
-	echo '.' > $@
 
-%/user-wordnet-directory.txt.cocomo: | % 
-	echo '/home/corpora/original/english/wordnet-3.1' > $(basename $@)
+
+%/user-wordnet-directory.txt: | % 
+	echo '/home/corpora/original/english/wordnet-3.1' > $@
 
 ################################################################################
 #

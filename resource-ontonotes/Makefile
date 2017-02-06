@@ -72,11 +72,10 @@ endif
 endif
 
 #### directory of ccgbank
-%/user-ontonotes-directory.txt: | %   
-	echo '.' > $@
 
-%/user-ontonotes-directory.txt.cocomo: | %   
-	echo '/home/corpora/original/various/ontonotes' > $(basename $@)
+
+%/user-ontonotes-directory.txt: | %   
+	echo '/home/corpora/original/various/ontonotes' > $@
 
 ################################################################################
 #

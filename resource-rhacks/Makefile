@@ -70,11 +70,10 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(RHACKSDIR)$(MSG3))
 endif
 endif
 
-%/user-rhacks-directory.txt: | %   
-	echo '.' > $@
+
     
-%/user-rhacks-directory.txt.cocomo: | %   
-	echo '/home/compling/R-hacks' > $(basename $@)
+%/user-rhacks-directory.txt: | %   
+	echo '/home/compling/R-hacks' > $@
 
 ################################################################################
 #

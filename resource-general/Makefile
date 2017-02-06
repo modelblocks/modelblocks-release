@@ -163,14 +163,6 @@ endif
 
 ################################################################################
 #
-#  Set all config files to their CoCoMo lab defaults
-#
-################################################################################
-
-cocomo: $$(foreach file, $$(wildcard $$(MBDIR)/config/*directory.txt), $$(file).cocomo);
-
-################################################################################
-#
 #  Printout
 #
 #  to construct the following file types:

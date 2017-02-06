@@ -69,9 +69,8 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(TOKENIZERDIR)$(MSG3))
 endif
 endif
 
-%/user-tokenizer-directory.txt: | %
-	echo '.' > $@
 
-%/user-tokenizer-directory.txt.cocomo: | %
-	echo '/home/compling/extended_penn_tokenizer' > $(basename $@)
+
+%/user-tokenizer-directory.txt: | %
+	echo '/home/compling/extended_penn_tokenizer' > $@
 

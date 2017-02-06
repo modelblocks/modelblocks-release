@@ -72,11 +72,10 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(TREEBANKDIR)$(MSG3))
 endif
 endif
 
-%/user-treebank-directory.txt: | %   
-	echo '.' > $@
+
     
-%/user-treebank-directory.txt.cocomo: | %   
-	echo '/home/corpora/original/english/penn_treebank_3' > $(basename $@)
+%/user-treebank-directory.txt: | %   
+	echo '/home/corpora/original/english/penn_treebank_3' > $@
     
 ################################################################################
 #

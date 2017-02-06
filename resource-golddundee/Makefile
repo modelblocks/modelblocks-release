@@ -83,11 +83,10 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(DUNDEE)$(MSG3))
 endif
 endif
 
-%/user-dundee-directory.txt: | %
-	echo '.' > $@
 
-%/user-dundee-directory.txt.cocomo: | %
-	echo '/home/corpora/original/english/dundee' > $(basename $@)
+
+%/user-dundee-directory.txt: | %
+	echo '/home/corpora/original/english/dundee' > $@
 
 
 dundee:

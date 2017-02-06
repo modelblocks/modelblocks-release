@@ -27,11 +27,6 @@ be output at the console. For example, `user-treebank-directory.txt`
 points to the Wall Street Journal corpus. You need to edit these files 
 to point to your local locations of each resource.
 
-To view precisely which versions of each external resource are expected
-by the Modelblocks code, simply type "make -n cocomo" from any project
-directory, which will print a list of the resource paths used internally
-in the CoCoMo lab.
-
 Test Corpus Construction
 ------------------------
 Most likely, you'll want to extract incremental complexity metrics

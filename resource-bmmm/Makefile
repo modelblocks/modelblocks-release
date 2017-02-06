@@ -74,11 +74,10 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(BMMMDIR)$(MSG3))
 endif
 endif
 
-%/user-bmmm-directory.txt: | %
-	echo '.' > $@
 
-%/user-bmmm-directory.txt.cocomo: | %
-	echo '/home/compling/bmmm' > $(basename $@)
+
+%/user-bmmm-directory.txt: | %
+	echo '/home/compling/bmmm' > $@
 
 ################################################################################
 #

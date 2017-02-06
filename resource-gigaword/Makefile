@@ -72,11 +72,10 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(GIGADIR)$(MSG3))
 endif
 endif
 
-%/user-gigaword4-directory.txt: | %
-	echo '.' > $@
 
-%/user-gigaword4-directory.txt.cocomo: | %
-	echo '/home/corpora/original/english/gigaword-4' > $(basename $@)
+
+%/user-gigaword4-directory.txt: | %
+	echo '/home/corpora/original/english/gigaword-4' > $@
 
 ################################################################################
 #

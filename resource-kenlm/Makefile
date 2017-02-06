@@ -80,17 +80,15 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(KENLMMODDIR)$(MSG3))
 endif
 endif
 
+
+
 %/user-kenlm-directory.txt: | %
-	echo '.' > $@
+	echo '/home/compling/kenlm_git' > $@
 
-%/user-kenlm-directory.txt.cocomo: | %
-	echo '/home/compling/kenlm_git' > $(basename $@)
 
-%/user-kenlm-model-directory.txt: | %
-	echo '.' > $@
   
-%/user-kenlm-model-directory.txt.cocomo: | %
-	echo '/home/compling/kenlm_models' > $(basename $@)
+%/user-kenlm-model-directory.txt: | %
+	echo '/home/compling/kenlm_models' > $@
   
   
 

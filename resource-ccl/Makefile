@@ -70,11 +70,10 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(CCLDIR)$(MSG3))
 endif
 endif
 
-%/user-ccl-directory.txt: | %
-	echo '.' > $@
 
-%/user-ccl-directory.txt.cocomo: | %
-	echo '/home/compling/cclparser' > $(basename $@)
+
+%/user-ccl-directory.txt: | %
+	echo '/home/compling/cclparser' > $@
 
 ################################################################################
 #

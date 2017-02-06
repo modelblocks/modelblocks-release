@@ -72,11 +72,10 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(BNCDIR)$(MSG3))
 endif
 endif
 
-%/user-bnc-directory.txt: | %   
-	echo '.' > $@
 
-%/user-bnc-directory.txt.cocomo: | %   
-	echo '/home/corpora/original/english/bnc' > $(basename $@)
+
+%/user-bnc-directory.txt: | %   
+	echo '/home/corpora/original/english/bnc' > $@
 
 ################################################################################
 #

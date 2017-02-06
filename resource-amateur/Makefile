@@ -107,23 +107,20 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(GENIATAGDIR)$(MSG3))
 endif
 endif
 
-%/user-amateur-directory.txt: | %
-	echo '.' > $@
 
-%/user-amateur-directory.txt.cocomo: | %
-	echo '/home/corpora/original/english/amateur_novels' > $(basename $@)
+
+%/user-amateur-directory.txt: | %
+	echo '/home/corpora/original/english/amateur_novels' > $@
+
+
 
 %/user-esn-directory.txt: | %
-	echo '.' > $@
+	echo '/home/corpora/original/english/dundee/echo_state' > $@
 
-%/user-esn-directory.txt.cocomo: | %
-	echo '/home/corpora/original/english/dundee/echo_state' > $(basename $@)
+
 
 %/user-geniatagger-directory.txt: | %
-	echo '.' > $@
-
-%/user-geniatagger-directory.txt.cocomo: | %
-	echo '/home/compling/geniatagger-2.0.2' > $(basename $@)
+	echo '/home/compling/geniatagger-2.0.2' > $@
 
 
 ################################################################################

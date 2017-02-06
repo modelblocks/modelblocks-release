@@ -70,11 +70,10 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(UPPARSEDIR)$(MSG3))
 endif
 endif
 
-%/user-upparse-directory.txt: | %
-	echo '.' > $@
 
-%/user-upparse-directory.txt.cocomo: | %
-	echo '/home/compling/upparse' > $(basename $@)
+
+%/user-upparse-directory.txt: | %
+	echo '/home/compling/upparse' > $@
 
 ################################################################################
 #

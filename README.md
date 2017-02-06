@@ -47,11 +47,11 @@ included, the Makefile will generate an appropriately-named
 `user-*.txt` configuration file in `modelblocks-repository/config/`,
 in which a user may specify a path to an external copy of the resource.
 When make is first invoked, Modelblocks will create an incorrect
-pointer to the current working directory for each configuration file
-in the dependency chain, along with console output indicating which 
-configuration files are needed to create the recipe. Before re-running 
-make, the needed third-party resources will need to be downloaded 
-and the pointers updated in modelblocks-repository/config. This use of 
-`user-*.txt` files is intended to allow users to specify external 
-resources or other user-specific data without having to modify the 
-Makefile, which may be overwritten in subsequent updates to Modelblocks.
+pointer for each configuration file in the dependency chain, along with
+console output indicating which configuration files are needed to create 
+the recipe. Before re-running make, the needed third-party resources 
+will need to be downloaded and the pointers updated in 
+modelblocks-repository/config. This use of `user-*.txt` files is 
+intended to allow users to specify external resources or other user-
+specific data without having to modify the Makefile, which may be 
+overwritten in subsequent updates to Modelblocks.

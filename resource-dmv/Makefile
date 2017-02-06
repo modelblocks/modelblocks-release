@@ -73,11 +73,10 @@ $(error $(MSG1)$(CONFIG)$(MSG2)$(DMVDIR)$(MSG3))
 endif
 endif
 
-%/user-dmv-directory.txt: | %
-	echo '.' > $@
 
-%/user-dmv-directory.txt.cocomo: | %
-	echo '/home/compling/pr-dep-parsing.WILS' > $(basename $@)
+
+%/user-dmv-directory.txt: | %
+	echo '/home/compling/pr-dep-parsing.WILS' > $@
 
 ################################################################################
 #
