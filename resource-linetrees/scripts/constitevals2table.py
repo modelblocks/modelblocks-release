@@ -114,23 +114,25 @@ with open(args.constitevallist[0], 'rb') as list:
       vmLab = measure.search(line).group(1)
 
       line = f.readline()
-      while line and not line.startswith('NP prediction'):
+      while line and not (line.startswith('NP prediction') or line.startswith('Depth counts:')):
 	line = f.readline()
-      line = f.readline()
-      assert line.startswith('  Precision:'), 'Badly-formed input'
-      np_predict_p = measure.search(line).group(1)
-      line = f.readline()
-      assert line.startswith('  Recall:'), 'Badly-formed input'
-      np_predict_r = measure.search(line).group(1)
-      line = f.readline()
-      assert line.startswith('  F-Measure:'), 'Badly-formed input'
-      np_predict_f1 = measure.search(line).group(1)
+      if line.startswith('NP prediction'):
+        line = f.readline()
+        assert line.startswith('  Precision:'), 'Badly-formed input'
+        np_predict_p = measure.search(line).group(1)
+        line = f.readline()
+        assert line.startswith('  Recall:'), 'Badly-formed input'
+        np_predict_r = measure.search(line).group(1)
+        line = f.readline()
+        assert line.startswith('  F-Measure:'), 'Badly-formed input'
+        np_predict_f1 = measure.search(line).group(1)
 
+        line = f.readline()
+        while line and not line.startswith('Depth counts:'):
+          line = f.readline()
+
+      line = f.readline()
       depths = {1:0, 2:0, 3:0, 4:0, 5:0}
-      line = f.readline()
-      while line and not line.startswith('Depth counts:'):
-	line = f.readline()
-      line = f.readline()
       while line and line.startswith('  Depth = '):
 	d, count = depth.match(line).groups()
 	depths[int(d)] = int(count)
