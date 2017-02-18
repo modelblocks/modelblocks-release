@@ -16,8 +16,16 @@ opt_list <- list(
 library(lme4)
 library(languageR)
 #The below scripts cannot be distributed with Modelblocks
-source("../resource-rhacks/scripts/mer-utils.R") #obtained from https://github.com/aufrank
-source("../resource-rhacks/scripts/regression-utils.R") #obtained from https://github.com/aufrank
+# Relative path code from Suppressingfire on StackExchange
+initial.options <- commandArgs(trailingOnly = FALSE)
+file.arg.name <- "--file="
+script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
+script.basename <- dirname(script.name)
+wd = getwd()
+setwd(script.basename)
+source('../../resource-rhacks/scripts/mer-utils.R') #obtained from https://github.com/aufrank
+source('../../resource-rhacks/scripts/regression-utils.R') #obtained from https://github.com/aufrank
+setwd(wd)
 
 opt_parser <- OptionParser(option_list=opt_list)
 opts <- parse_args(opt_parser, positional_arguments=4)

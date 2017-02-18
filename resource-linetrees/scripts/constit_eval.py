@@ -514,17 +514,18 @@ def main():
   lab_c = homog(same_g2t, same_t2g, brac_tp)
   lab_vm = (2 * lab_h * lab_c) / (lab_h + lab_c)
 
-  # Get NP prediction scores.
-  # Start with overlapping bracketings...
-  test_np = None
-  test_np_count = 0
-  total_same = 0
-  test_np = max(t_cat_counts, key=lambda x: t_cat_counts[x])
-  test_np_count = t_cat_counts[test_np]
-  np_predict_tp = same_t2g[test_np]['NP']
-  np_predict_fn = max_proj_scores['NP']['hit'] + max_proj_scores['NP']['miss'] - np_predict_tp
-  np_predict_fp = t_cat_counts[test_np] - np_predict_tp
-  np_predict_p, np_predict_r, np_predict_f1 = accuracy(np_predict_tp, np_predict_fp, np_predict_fn)
+  if 'NP' in same_g2t:
+    # Get NP prediction scores.
+    # Start with overlapping bracketings...
+    test_np = None
+    test_np_count = 0
+    total_same = 0
+    test_np = max(t_cat_counts, key=lambda x: t_cat_counts[x])
+    test_np_count = t_cat_counts[test_np]
+    np_predict_tp = same_t2g[test_np]['NP']
+    np_predict_fn = max_proj_scores['NP']['hit'] + max_proj_scores['NP']['miss'] - np_predict_tp
+    np_predict_fp = t_cat_counts[test_np] - np_predict_tp
+    np_predict_p, np_predict_r, np_predict_f1 = accuracy(np_predict_tp, np_predict_fp, np_predict_fn)
 
   # Print final evaluation scores
   print('')
@@ -563,12 +564,13 @@ def main():
   print('  Completeness: %.4f' %lab_c)
   print('  V-Measure: %.4f' %lab_vm)
   print('')
-  print('NP prediction accuracy -- map most frequent test label ("%s") to "NP":' %test_np)
-  print(np_predict_tp, np_predict_fp, np_predict_fn)
-  print('  Precision: %.4f' %np_predict_p)
-  print('  Recall: %.4f' %np_predict_r)
-  print('  F-Measure: %.4f' %np_predict_f1)
-  print('')
+  if 'NP' in same_g2t:
+    print('NP prediction accuracy -- map most frequent test label ("%s") to "NP":' %test_np)
+    print(np_predict_tp, np_predict_fp, np_predict_fn)
+    print('  Precision: %.4f' %np_predict_p)
+    print('  Recall: %.4f' %np_predict_r)
+    print('  F-Measure: %.4f' %np_predict_f1)
+    print('')
   print('Depth counts:')
   for depth in depth_counts:
     print('  Depth = %d: %d' %(depth, depth_counts[depth]))
