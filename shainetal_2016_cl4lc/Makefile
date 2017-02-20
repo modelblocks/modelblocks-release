@@ -35,7 +35,6 @@ include $(dir $(CURDIR))resource-general/Makefile
 include $(RESOURCE-TOKENIZER)/Makefile
 include $(RESOURCE-LTREES)/Makefile
 include $(RESOURCE-GCG)/Makefile
-include $(RESOURCE-RT)/Makefile
 include $(RESOURCE-LVPCFG)/Makefile
 include $(RESOURCE-LCPARSE)/Makefile
 include $(RESOURCE-BNC)/Makefile

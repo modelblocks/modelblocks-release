@@ -189,9 +189,10 @@ if (params$boxcox) {
 #
 ########################################################
 
-
-smartPrint(paste0('SD of main effect z.(', params$addEffects, '): ', sd(data[[params$addEffects]])))
-smartPrint(paste0('Range of main effect z.(', params$addEffects, '): ', max(data[[params$addEffects]])-min(data[[params$addEffects]])))
+for (effect in params$addEffects) {
+    smartPrint(paste0('SD of main effect z.(', effect, '): ', sd(data[[effect]])))
+    smartPrint(paste0('Range of main effect z.(', effect, '): ', max(data[[effect]])-min(data[[effect]])))
+}
 
 
 if (length(params$groupingfactor) > 0) {
