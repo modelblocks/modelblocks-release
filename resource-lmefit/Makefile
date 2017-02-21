@@ -99,7 +99,7 @@ scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform
 $$(basename $$(basename $$(basename $$*))).-a_$$(subst .,,$$(suffix $$(basename $$(basename $$*))))_-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
-	$(words 2,3,$^) $(subst _, ,$(subst .,,$(suffix $*))) > $@
+	$(wordlist 1,3,$^) $(subst _, ,$(subst .,,$(suffix $*))) > $@
 
 # Same as above, only don't add main effect as a random slope
 .PRECIOUS: %.noadd.lrtsignif
@@ -107,7 +107,7 @@ $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
 $$(basename $$(basename $$(basename $$*))).-a_$$(subst .,,$$(suffix $$(basename $$(basename $$*))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $$(basename $$(basename $$(basename $$*))).-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
-	$(words 2,3,$^) $(subst _, ,$(subst .,,$(suffix $*))) > $@
+	$(wordlist 1,3,$^) $(subst _, ,$(subst .,,$(suffix $*))) > $@
 
   
 # Runs a diamond LME evaluation based on the following template:
@@ -137,7 +137,7 @@ $$(basename $$(basename $$(basename $$*))).-a_$$(word 2,$$(subst _, ,$$(subst .,
 $$(basename $$(basename $$(basename $$*))).-a_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
-	$(words 2,5) -t '$(subst _,-vs-,$(subst .,,$(suffix $(basename $(basename $*)))))' \
+	$(wordlist 1,5) -t '$(subst _,-vs-,$(subst .,,$(suffix $(basename $(basename $*)))))' \
   -l $(word 1, $(subst _, ,$(subst .,,$(suffix $(basename $(basename $*)))))) \
   -r $(word 2, $(subst _, ,$(subst .,,$(suffix $(basename $(basename $*)))))) > $@
 

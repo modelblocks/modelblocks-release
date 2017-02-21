@@ -130,6 +130,8 @@ with open(args.constitevallist[0], 'rb') as list:
         line = f.readline()
         while line and not line.startswith('Depth counts:'):
           line = f.readline()
+      else:
+        np_predict_p = np_predict_r = np_predict_f1 = 0.0
 
       line = f.readline()
       depths = {1:0, 2:0, 3:0, 4:0, 5:0}
@@ -178,6 +180,7 @@ with open(args.constitevallist[0], 'rb') as list:
             str(brac_p) + ' ' + str(brac_r) + ' ' + str(brac_f1) + ' ' + \
 	    str(mTo1Tag) + ' ' + str(oneToMTag) + ' ' + str(homogTag) + ' ' + str(completTag) + ' ' + str(vmTag) + ' ' + \
 	    str(mTo1Lab) + ' ' + str(oneToMLab) + ' ' + str(homogLab) + ' ' + str(completLab) + ' ' + str(vmLab) + ' ' + \
+            str(np_predict_p) + ' ' + str(np_predict_r) + ' ' + str(np_predict_f1) + ' ' + \
 	    ' '.join([str(depths[x]) for x in range(1,6)]) + ' ' + \
 	    ' '.join(['%s %s %s' %(proj_stats[x]['found'], proj_stats[x]['not_found'], proj_stats[x]['percent_ident']) for x in gLabs]))
 
