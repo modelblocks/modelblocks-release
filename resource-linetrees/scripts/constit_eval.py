@@ -566,7 +566,6 @@ def main():
   print('')
   if 'NP' in same_g2t:
     print('NP prediction accuracy -- map most frequent test label ("%s") to "NP":' %test_np)
-    print(np_predict_tp, np_predict_fp, np_predict_fn)
     print('  Precision: %.4f' %np_predict_p)
     print('  Recall: %.4f' %np_predict_r)
     print('  F-Measure: %.4f' %np_predict_f1)
