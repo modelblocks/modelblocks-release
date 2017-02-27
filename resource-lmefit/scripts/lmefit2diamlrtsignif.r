@@ -29,7 +29,7 @@ source('../../resource-rhacks/scripts/regression-utils.R') #obtained from https:
 setwd(wd)
 
 opt_parser <- OptionParser(option_list=opt_list)
-opts <- parse_args(opt_parser, positional_arguments=6)
+opts <- parse_args(opt_parser, positional_arguments=4)
 params <- opts$options
 
 basefile <- load(opts$args[1])
