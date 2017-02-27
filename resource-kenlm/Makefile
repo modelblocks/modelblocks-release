@@ -145,6 +145,13 @@ $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmo
 	$< -\n $(word 4,$^) < $(word 2,$^) | python3 $(word 3,$^) --fwprobs - | \
 	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
 
+%.kenlm.ngram.itemmeasures: $(KENLMDIR)/bin/query \
+$$(basename %).lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
+$(KENLMMODDIR)/gigaword4$$(suffix $$*).kenlm \
+$(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
+	$< -\n $(word 4,$^) < $(word 2,$^) | python3 $(word 3,$^) --fwprobs - | \
+	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
+
 .PRECIOUS: %.multikenlm.ngram.itemmeasures
 %.multikenlm.ngram.itemmeasures: %.2.kenlm.ngram.itemmeasures \
 %.3.kenlm.ngram.itemmeasures %.4.kenlm.ngram.itemmeasures \
@@ -152,4 +159,11 @@ $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmo
 	paste -d' ' $< <(cat $(word 2, $^) | python $(word 5, $^) -c fwprob3) \
 	<(cat $(word 3, $^) | python $(word 5, $^) -c fwprob4) \
 	<(cat $(word 4, $^) | python $(word 5, $^) -c fwprob5) > $@
+
+.PRECIOUS: %.multishortkenlm.ngram.itemmeasures
+%.multishortkenlm.ngram.itemmeasures: %.2.kenlm.ngram.itemmeasures \
+%.3.kenlm.ngram.itemmeasures %.4.kenlm.ngram.itemmeasures \
+$(RT-SCRIPTS)/filter_cols.py
+	paste -d' ' $< <(cat $(word 2, $^) | python $(word 4, $^) -c fwprob3) \
+	<(cat $(word 3, $^) | python $(word 4, $^) -c fwprob4) > $@
 
