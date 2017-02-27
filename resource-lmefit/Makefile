@@ -137,7 +137,7 @@ $$(basename $$(basename $$(basename $$*))).-a_$$(word 2,$$(subst _, ,$$(subst .,
 $$(basename $$(basename $$(basename $$*))).-a_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
-	$(wordlist 1,5) -t '$(subst _,-vs-,$(subst .,,$(suffix $(basename $(basename $*)))))' \
+	$(wordlist 1,5,$^) -t '$(subst _,-vs-,$(subst .,,$(suffix $(basename $(basename $*)))))' \
   -l $(word 1, $(subst _, ,$(subst .,,$(suffix $(basename $(basename $*)))))) \
   -r $(word 2, $(subst _, ,$(subst .,,$(suffix $(basename $(basename $*)))))) > $@
 
