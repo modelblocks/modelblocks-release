@@ -133,7 +133,10 @@ genmodel/amateur.merge_tables.params: | genmodel
 	echo 'word sentid sentpos' > $@
   
 genmodel/amateur.accumulateMetrics.params: | genmodel
-	echo fwprob5 totsurp $(ALL-MEM-SPILL) -f fdurFP > $@
+	echo 'fwprob5 totsurp' $(ALL-MEM-SPILL) '-f fdurFP' > $@
+
+genmodel/amateur.futureMetrics.params: | genmodel
+	echo 'cumfwprob5 cumtotsurp' > $@
 
 genmodel/amateur.rm_unfix_items.params: | genmodel
 	echo '-f fdurFP' > $@
