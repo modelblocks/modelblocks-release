@@ -76,14 +76,14 @@ Targets with dependencies to this file will fail until it is fixed.
 endef
 
 ifndef MAKECONFIG
-CONFIG := $(CONFIGDIR)/user-amateur-directory.txt
+CONFIG := $(CONFIGDIR)/user-ucl-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
 $(info $(CONFIGWARN))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
-AMATEURDIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(AMATEURDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(AMATEURDIR)$(MSG3))
+UCLDIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(UCLDIR))))
+$(error $(MSG1)$(CONFIG)$(MSG2)$(UCLDIR)$(MSG3))
 endif
 
 CONFIG := $(CONFIGDIR)/user-esn-directory.txt
@@ -109,8 +109,8 @@ endif
 
 
 
-%/user-amateur-directory.txt: | %
-	echo '/home/corpora/original/english/amateur_novels' > $@
+%/user-ucl-directory.txt: | %
+	echo '/home/corpora/original/english/ucl_novels' > $@
 
 
 
@@ -129,34 +129,34 @@ endif
 #
 ################################################################################
 
-genmodel/amateur.merge_tables.params: | genmodel
+genmodel/ucl.merge_tables.params: | genmodel
 	echo 'word sentid sentpos' > $@
   
-genmodel/amateur.accumulateMetrics.params: | genmodel
+genmodel/ucl.accumulateMetrics.params: | genmodel
 	echo 'fwprob5 totsurp' $(ALL-MEM-SPILL) '-f fdurFP' > $@
 
-genmodel/amateur.futureMetrics.params: | genmodel
+genmodel/ucl.futureMetrics.params: | genmodel
 	echo 'cumfwprob5 cumtotsurp' > $@
 
-genmodel/amateur.rm_unfix_items.params: | genmodel
+genmodel/ucl.rm_unfix_items.params: | genmodel
 	echo '-f fdurFP' > $@
   
-genmodel/amateur.linetoks: $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-amateur-directory.txt \
-$(AMATEURDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | genmodel
+genmodel/ucl.linetoks: $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
+$(UCLDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | genmodel
 	cut -f 2 $(word 3,$^) | tail -n+2 | $(word 4,$^) > $@
 
-genmodel/amateur.lineitems: $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-amateur-directory.txt \
-$(AMATEURDIR)/eye_movement/stimuli.txt | genmodel
+genmodel/ucl.lineitems: $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
+$(UCLDIR)/eye_movement/stimuli.txt | genmodel
 	cut -f 2 $(word 3,$^) | tail -n+2 > $@
 
-%amateur.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-AMATEUR)/srcmodel/amateur.stripped.linetrees %amateur.linetoks
+%ucl.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-UCL)/srcmodel/ucl.stripped.linetrees %ucl.linetoks
 	python $^ > $@
 
 # The *.fp.* component is vacuous here since these data contain both FP and GP.
 # It's just there to make the %.itemmeasures generation work downstream.
-genmodel/amateur.fp.src.evmeasures: $(CONFIGDIR)/user-amateur-directory.txt \
-$(AMATEUR-SCRIPTS)/build_amateur_corpus.py \
-$(AMATEURDIR)/eye_movement/eyetracking.RT.txt | genmodel
+genmodel/ucl.fp.src.evmeasures: $(CONFIGDIR)/user-ucl-directory.txt \
+$(UCL-SCRIPTS)/build_ucl_corpus.py \
+$(UCLDIR)/eye_movement/eyetracking.RT.txt | genmodel
 	cat $(word 3, $^) | python $(word 2,$^) > $@
 
 .PRECIOUS: $(THISDIR)/esns
@@ -169,10 +169,10 @@ esns/ESN.mat: ESN.zip | esns
 	cp $(word 1,$^) esns/
 	unzip esns/ESN.zip -d esns/
 
-.PRECIOUS: genmodel/amateur_postags.mat
-genmodel/amateur_postags.mat: $(CONFIGDIR)/user-geniatagger-directory.txt \
-$(GENIATAGDIR)/geniatagger genmodel/amateur.linetoks \
-$(AMATEUR-SCRIPTS)/build_tagseqs.py esns/ESN.mat
+.PRECIOUS: genmodel/ucl_postags.mat
+genmodel/ucl_postags.mat: $(CONFIGDIR)/user-geniatagger-directory.txt \
+$(GENIATAGDIR)/geniatagger genmodel/ucl.linetoks \
+$(UCL-SCRIPTS)/build_tagseqs.py esns/ESN.mat
 	#requires geniatagger
 	ln -s $(shell cat user-geniatagger-directory.txt)/morphdic morphdic
 	ln -s $(shell cat user-geniatagger-directory.txt)/models_medline models_medline
@@ -180,9 +180,9 @@ $(AMATEUR-SCRIPTS)/build_tagseqs.py esns/ESN.mat
 	$(word 2,$^) < $(word 3,$^) | cut -f3 | python $(word 4,$^)
 	rm -f morphdic models_medline models_chunking
 
-.PRECIOUS: genmodel/amateur.esnsurps
-genmodel/amateur.esnsurps: genmodel/amateur_postags.mat \
-$(AMATEUR-SCRIPTS)/do_testESN.m $(AMATEUR-SCRIPTS)/pull_surp.py
-	#uses amateur_postags.mat, though they aren't explicitly referenced in the recipe
+.PRECIOUS: genmodel/ucl.esnsurps
+genmodel/ucl.esnsurps: genmodel/ucl_postags.mat \
+$(UCL-SCRIPTS)/do_testESN.m $(UCL-SCRIPTS)/pull_surp.py
+	#uses ucl_postags.mat, though they aren't explicitly referenced in the recipe
 	matlab -nosplash -nodesktop -r "run('$(basename $(word 2,$^))');quit;"
 	python $(word 3,$^) > $@
