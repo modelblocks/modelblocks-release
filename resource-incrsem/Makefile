@@ -73,13 +73,13 @@ $(INCRSEM-SCRIPTS)/%.d:  $(INCRSEM-SCRIPTS)/%.py
 .PRECIOUS:  $(SRC)/%.d
 $(SRC)/%.d:  $(SRC)/%.cpp  |  $(INCLUDE)
 	echo '$@: \' > $@   #' ##
-	echo `g++ -I$| -I$(MBDIR)/resource-logreg/include -I$(MBDIR)/rvtl/include -std=c++11 -MM $<` | sed 's/^.*:.*\.cpp */ $$(wildcard /;s/\\ *//g;s/$$/)/' >> $@
+	echo `g++ -I$| -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl/) -std=c++11 -MM $<` | sed 's/^.*:.*\.cpp */ $$(wildcard /;s/\\ *//g;s/$$/)/' >> $@
 	cat $@ | sed 's/\.d:/\.cpp:/' >> $@
 
 #### c++ executables
 .PRECIOUS: $(BIN)/%
 $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user-cflags.txt  |  $(BIN)  $(INCLUDE)
-	g++ -I/usr/include/libxml2/ -I$(word 2,$|) -I$(MBDIR)/resource-logreg/include -I$(MBDIR)/rvtl/include -Wall `cat $(word 3,$^)` -fpermissive -std=c++11 -lm -larmadillo -lmlpack -lpthread $< -o $@
+	g++ -I/usr/include/libxml2/ -I$(word 2,$|) -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 3,$^)` -fpermissive -std=c++11 -lm -larmadillo -lmlpack -lpthread $< -o $@
 
 ################################################################################
 #
