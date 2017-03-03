@@ -65,9 +65,9 @@ if line.strip().startswith('word'):
           IN_COMPLEX = True
 # If not mixed EFABP output, just pass through
 else:
-  complex.append(line)
+  output.append(line)
   for line in sys.stdin.readlines():
-    complex.append(line)
+    output.append(line)
 
 if REPORT_COMPLEX:
   #output the complexity corpus
