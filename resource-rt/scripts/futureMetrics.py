@@ -16,7 +16,7 @@ def main():
     data = pd.read_csv(sys.stdin,sep=' ',skipinitialspace=True)
     data.sort([args.subj, args.sentid, args.sentpos], inplace=True)
     for col in args.fut_cols:
-        data['fut' + col] = data.col.shift(-1)
+        data['fut' + col] = data[col].shift(-1)
     data.to_csv(sys.stdout, ' ', index=False, na_rep='nan')
            
 main()
