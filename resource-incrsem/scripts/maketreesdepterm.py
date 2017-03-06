@@ -1,6 +1,5 @@
-import sys
-import collections
-sys.path.append('../resource-gcg/scripts')
+import sys, os, collections
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import tree
 
 def makedepterm ( t, DepDict, w=0 ):

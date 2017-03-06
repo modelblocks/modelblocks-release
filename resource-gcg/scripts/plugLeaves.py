@@ -1,6 +1,6 @@
-import sys
+import sys, os
 from itertools import izip
-sys.path.append('../resource-gcg/scripts/')
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import tree
 
 # File containing stripped linetrees

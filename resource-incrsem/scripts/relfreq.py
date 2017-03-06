@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../resource-gcg/scripts')
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import model
 
 counts = model.CondModel() 
