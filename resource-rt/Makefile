@@ -244,7 +244,14 @@ $$(word 1, $$(subst ., , %)).gold.embd.tokmeasures $(RT-SCRIPTS)/spilloverMetric
 	sed 's/  */ /g;1s/F-/fm/g;1s/F+/fp/g;1s/L-/lm/g;1s/L+/lp/g;1s/B-/bm/g;1s/B+/bp/g;1s/Badd/ba/g;1s/Bcdr/bc/g;1s/BNil/bo/g;1s/Bsto/bsto/g;' | \
 	python $(word 4, $^) -n3 -p $(DLT) $(FJ) $(EXTRA-SPILL) > $@
 
-%.itemmeasures: $$(basename %).syn.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
+%.relabeledpcfg.tokmeasures: %.pcfg.tokmeasures
+	sed 's/  */ /g;1s/F-/fm/g;1s/F+/fp/g;1s/L-/lm/g;1s/L+/lp/g;1s/B-/bm/g;1s/B+/bp/g;1s/Badd/ba/g;1s/Bcdr/bc/g;1s/BNil/bo/g;1s/Bsto/bsto/g;' $< > $@
+
+%.preitem.tokmeasures: %.syn.tokmeasures
+%.preitem.tokmeasures: %.relabeledpcfg.tokmeasures
+	mv $< $@
+
+%.itemmeasures: $$(basename %).preitem.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py
 	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepth embddepthS1 embddepthS2 embddepthS3 -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d > $@
@@ -257,11 +264,11 @@ $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py
 
 .PRECIOUS: %.full.evmeasures
 %.full.evmeasures: $$(basename %).itemmeasures $$(word 1, $$(subst ., , %))$$(suffix $$*).src.evmeasures \
-$(RT-SCRIPTS)/merge_tables.py $(RT-SCRIPTS)/accumulateMetrics.py $(RT-SCRIPTS)/rm_unfix_items.py \
-$$(word 1, $$(subst ., , %)).merge_tables.params $$(word 1, $$(subst ., , %)).accumulateMetrics.params \
+$(RT-SCRIPTS)/merge_tables.py $(RT-SCRIPTS)/accumulateMetrics.py $(RT-SCRIPTS)/futureMetrics.py $(RT-SCRIPTS)/rm_unfix_items.py \
+$$(word 1, $$(subst ., , %)).merge_tables.params $$(word 1, $$(subst ., , %)).accumulateMetrics.params $$(word 1, $$(subst ., , %)).futureMetrics.params \
 $$(word 1, $$(subst ., , %)).rm_unfix_items.params
-	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 6, $^)) | \
-	python $(word 4, $^) $(shell cat $(word 7, $^)) | python $(word 5, $^) $(shell cat $(word 8, $^)) > $@
+	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 7, $^)) | \
+	python $(word 4, $^) $(shell cat $(word 8, $^)) | python $(word 6, $^) $(shell cat $(word 10, $^)) | python $(word 5, $^) $(shell cat $(word 9, $^)) > $@
 
 # Just here to preserve old buggy dev/test split
 .PRECIOUS: %.o.full.evmeasures

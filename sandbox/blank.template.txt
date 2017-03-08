@@ -47,7 +47,7 @@ include ../../resource-general/Makefile
 #include $(RESOURCE-KENLM)/Makefile
 #include $(RESOURCE-SRILM)/Makefile
 #include $(RESOURCE-INCRSEM)/Makefile
-#include $(RESOURCE-AMATEUR)/Makefile
+#include $(RESOURCE-UCL)/Makefile
 #include $(RESOURCE-DUNDEE)/Makefile
 #include $(RESOURCE-GOLDDUNDEE)/Makefile
 #include $(RESOURCE-NATSTORIES)/Makefile

@@ -36,9 +36,6 @@
 MBDIR := $(realpath $(dir $(abspath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))/..)
 CONFIGDIR := $(abspath $(MBDIR)/config)
 
-RESOURCE-AMATEUR := $(abspath $(MBDIR)/resource-amateur)
-AMATEUR-SCRIPTS := $(RESOURCE-AMATEUR)/scripts
-
 RESOURCE-BNC := $(abspath $(MBDIR)/resource-bnc)
 BNC-SCRIPTS := $(RESOURCE-BCN)/scripts
 
@@ -110,6 +107,9 @@ TOKENIZER-SCRIPTS := $(RESOURCE-TOKENIZER)/scripts
 
 RESOURCE-TREEBANK := $(abspath $(MBDIR)/resource-treebank)
 TREEBANK-SCRIPTS := $(RESOURCE-TREEBANK)/scripts
+
+RESOURCE-UCL := $(abspath $(MBDIR)/resource-ucl)
+UCL-SCRIPTS := $(RESOURCE-UCL)/scripts
 
 RESOURCE-UHHMM := $(abspath $(MBDIR)/resource-uhhmm)
 UHHMM-SCRIPTS := $(RESOURCE-UHHMM)/scripts

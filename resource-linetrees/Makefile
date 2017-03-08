@@ -46,7 +46,7 @@ GENMODEL := genmodel
 
 # CODE REVIEW: some of these are bogus!!!!
 SHELL = /bin/bash
-#INCLUDES = -I../rvtl/include #-Iinclude -I../slush/include #-I/sw/include #-I/Users/dingcheng/Documents/boost/boost_1_44_0
+#INCLUDES = -I$(abspath $(MBDIR)/resource-rvtl) #-Iinclude -I../slush/include #-I/sw/include #-I/Users/dingcheng/Documents/boost/boost_1_44_0
 #CFLAGS = -Wall `cat user-cflags.txt` -g #-DNDEBUG -O3 #-DNOWARNINGS #-g #
 #CC = g++
 
@@ -60,7 +60,7 @@ bin/evalb: $(RESOURCE-LTREES)/src/evalb.c | bin
 #### c++ executables
 .PRECIOUS: bin/%
 bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt  |  bin
-	g++ -I$(MBDIR)/rvtl/include -Wall `cat $(word 2,$^)` -g -lm  $<  -o $@
+	g++ -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 2,$^)` -g -lm  $<  -o $@
 
 ################################################################################
 #

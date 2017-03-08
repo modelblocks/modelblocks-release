@@ -43,7 +43,7 @@ def main():
     rlen = len(header)
     skey = header.index(args.key)
     gkey = gold[0].index(args.key)
-    skip = [skey] + [header.index(col) for col in args.skip_cols]
+    skip = [skey] + [header.index(col) for col in args.skip_cols if col in header]
     row = None
     for line in sys.stdin:
         line = line.rstrip()

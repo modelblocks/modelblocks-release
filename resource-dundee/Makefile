@@ -186,10 +186,13 @@ $(GENERAL-SCRIPTS)/convert_latin-1.py $(CONFIGDIR)/user-dundee-directory.txt
 
 genmodel/dundee.merge_tables.params: | genmodel
 	echo 'word sentid sentpos' > $@
-  
+
 genmodel/dundee.accumulateMetrics.params: | genmodel
-	echo fwprob5 totsurp $(ALL-MEM-SPILL) > $@ 
-  
+	echo 'fwprob5 totsurp' $(ALL-MEM-SPILL) > $@
+
+genmodel/dundee.futureMetrics.params: | genmodel
+	echo 'cumfwprob5 cumtotsurp' > $@
+
 genmodel/dundee.rm_unfix_items.params: | genmodel
 	echo '' > $@
 
@@ -201,10 +204,9 @@ genmodel/dundee.rm_unfix_items.params: | genmodel
 
 %dundee.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees %dundee.linetoks
 	python $^ > $@
-    
+
 %dundee.gold.edit.editabletrees: $$(dir %)dundee.gold.linetrees bin/indent
 	cat $(word 1, $^) | bin/indent > $@
 
 %.goldrules: %.linetrees $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(GENERAL-SCRIPTS)/trees2rules.pl
 	cat $(word 1, $^) | perl $(word 2, $^) | perl $(word 3, $^) | sort | uniq -c > $@
- 

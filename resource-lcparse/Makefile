@@ -53,7 +53,7 @@ include $(wildcard $(RESOURCE-LCPARSE)/*/*.d)      ## don't comment out, it brea
 ################################################################################
 
 SHELL = /bin/bash
-#INCLUDES = -I$(INCLUDE) -I../rvtl/include 
+#INCLUDES = -I$(INCLUDE) -I$(abspath $(MBDIR)/resource-rvtl)
 #CFLAGS = $(INCLUDES) -Wall `cat user-cflags.txt` -fpermissive
 #CC = g++
 
@@ -61,14 +61,14 @@ SHELL = /bin/bash
 .PRECIOUS: $(RESOURCE-LCPARSE)/%.d
 $(RESOURCE-LCPARSE)/%.d:  $(RESOURCE-LCPARSE)/%.cpp  |  $(INCLUDE)
 	echo '$*.d: \' > $@   #' ##
-	echo `g++ -I$| -I$(abspath $(MBDIR)/rvtl/include) -std=c++11 -MM $<` | sed 's/^.*:.*\.cpp */ $$(wildcard /;s/\\ *//g;s/$$/)/' >> $@
+	echo `g++ -I$| -I$(abspath $(MBDIR)/resource-rvtl) -std=c++11 -MM $<` | sed 's/^.*:.*\.cpp */ $$(wildcard /;s/\\ *//g;s/$$/)/' >> $@
 	cat $@ | sed 's/\.d:/\.cpp:/' >> $@
 #       $(CC) -MM $< | sed 's/^.*://' >> $@
 
 #### obtain binaries by compiling local source and include files
 .PRECIOUS: bin/%
 bin/%:  $(RESOURCE-LCPARSE)/src/$$(notdir $$@).cpp  $(RESOURCE-LCPARSE)/src/$$(notdir $$@).d  $(CONFIGDIR)/user-cflags.txt  |  bin  $(INCLUDE)  #$$(abspath $$(dir $$@))  #$$(realpath $$(dir $$@))  #$(BIN)  #$(CURDIR)/$$(notdir $$(dir $$@))  #
-	g++ -I$(word 2,$|) -I$(abspath $(MBDIR)/rvtl/include) -Wall `cat $(word 3,$^)` -fpermissive -std=c++11 -lm $< -o $@
+	g++ -I$(word 2,$|) -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 3,$^)` -fpermissive -std=c++11 -lm $< -o $@
 
 ################################################################################
 #

@@ -45,7 +45,7 @@ include $(wildcard $(RESOURCE-LOGREG)*/*.d)
 ################################################################################
 
 #SHELL    := /bin/bash
-#INCLUDES := -I /usr/include/libxml2/ -I$(INCLUDE) -I../rvtl/include
+#INCLUDES := -I /usr/include/libxml2/ -I$(INCLUDE) -I$(abspath $(MBDIR)/resource-rvtl)
 #CFLAGS   := $(INCLUDES) -Wall `cat $(CONFIGDIR)/user-cflags.txt` -fpermissive
 #CC       := g++
 
@@ -59,7 +59,7 @@ $(RESOURCE-LOGREG)%.d:  $(RESOURCE-LOGREG)%.cpp  |  $(INCLUDE)
 #### c++ executables
 .PRECIOUS: $(BIN)/%
 $(BIN)/%:  $(RESOURCE-LOGREG)/src/$$(notdir $$@).cpp  $(RESOURCE-LOGREG)/src/$$(notdir $$@).d  $(CONFIGDIR)/user-cflags.txt  |  $(BIN)  $(INCLUDE)
-	g++ -I/usr/include/libxml2/ -I$(word 2,$|) -I../rvtl/include -Wall `cat $(word 3,$^)` -fpermissive -std=c++11 -lm -larmadillo -lmlpack -lpthread $< -o $@
+	g++ -I/usr/include/libxml2/ -I$(word 2,$|) -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 3,$^)` -fpermissive -std=c++11 -lm -larmadillo -lmlpack -lpthread $< -o $@
 
 ################################################################################
 #

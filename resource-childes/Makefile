@@ -82,17 +82,17 @@ endif
 #
 ################################################################################
 
-%adam.linetrees: $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(CHILDESDIR)/CHILDES-Treebank/brown-adam.parsed \
+%adam.linetrees: $(CHILDES-SCRIPTS)/get_linetrees.py $(CHILDESDIR)/CHILDES-Treebank/brown-adam.parsed \
 $(CONFIGDIR)/user-childes-directory.txt | genmodel
-	cat $(word 2, $^) | perl $< > $@
-  
-%eve.linetrees: $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(CHILDESDIR)/CHILDES-Treebank/brown-eve.parsed \
-$(CONFIGDIR)/user-childes-directory.txt | genmodel
-	cat $(word 2, $^) | perl $< > $@
+	cat $(word 2, $^) | sed 's/\r//g;'| python $< > $@
 
-%sarah.linetrees: $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(CHILDESDIR)/CHILDES-Treebank/brown-sarah.parsed \
+%eve.linetrees: $(CHILDES-SCRIPTS)/get_linetrees.py $(CHILDESDIR)/CHILDES-Treebank/brown-eve.parsed \
 $(CONFIGDIR)/user-childes-directory.txt | genmodel
-	cat $(word 2, $^) | perl $< > $@
-  
+	cat $(word 2, $^) | sed 's/\r//g;'| python $< > $@
+
+%sarah.linetrees: $(CHILDES-SCRIPTS)/get_linetrees.py $(CHILDESDIR)/CHILDES-Treebank/brown-sarah.parsed \
+$(CONFIGDIR)/user-childes-directory.txt | genmodel
+	cat $(word 2, $^) | sed 's/\r//g;'| python $< > $@
+
 %childes_brown_all.linetrees: genmodel/adam.linetrees genmodel/eve.linetrees genmodel/sarah.linetrees | genmodel
 	cat $^ > $@
