@@ -44,9 +44,10 @@ all:  wsj23-comparativized-gcg15-nofail.wsj02to21-comparativized-gcg15-1671-5sm.
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.morphed.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  %.linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
-.PRECIOUS: %.linetrees
-%.linetrees:  $(GCG-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
-	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
+### THIS HAPPENS ALL THE TIME; JUST CREATE MAKE ITEM IF YOU NEED IT
+# .PRECIOUS: %.linetrees
+# %.linetrees:  $(GCG-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
+# 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
   
 #### gcg reannotation
 %.decoupled.linetrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl $$(basename %).fixed.linetrees $(GCG-SCRIPTS)/killUnaries.pl

@@ -76,9 +76,10 @@ bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt 
 %.numbered.editabletrees:  %.editabletrees  $(LTREES-SCRIPTS)/make-trees-numbered.pl
 	cat $<  |  perl $(word 2,$^)  >  $@
 
-#### generalized operations on linetrees
-%.linetrees:  $(LTREES-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
-	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
+### HAPPENS TOO MUCH; JUST CREATE MAKE ITEM IF YOU NEED IT
+##### generalized operations on linetrees
+#%.linetrees:  $(LTREES-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
+#	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.lower.linetrees:  $(LTREES-SCRIPTS)/make-trees-lower.py  %.linetrees
 	cat $(word 2,$^)  |  python $(word 1,$^)  >  $@
 #### generate right-branching linetrees from linetoks
