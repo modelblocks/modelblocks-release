@@ -69,8 +69,8 @@ bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt 
 ################################################################################
 
 #### obtain (flat) linetrees from (indented) editabletrees
-%.linetrees:  %.editabletrees  $(LTREES-SCRIPTS)/editabletrees2linetrees.pl
-	cat $<  |  perl -pe 's/^[0-9]*://'  |  perl $(word 2,$^)  >  $@
+#%.linetrees:  %.editabletrees  $(LTREES-SCRIPTS)/editabletrees2linetrees.pl
+#	cat $<  |  perl -pe 's/^[0-9]*://'  |  perl $(word 2,$^)  >  $@
 %.fromlinetrees.editabletrees:  %.linetrees  bin/indent
 	cat $<  |  $(word 2,$^)  >  $@
 %.numbered.editabletrees:  %.editabletrees  $(LTREES-SCRIPTS)/make-trees-numbered.pl
@@ -78,8 +78,8 @@ bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt 
 
 ### HAPPENS TOO MUCH; JUST CREATE MAKE ITEM IF YOU NEED IT
 ##### generalized operations on linetrees
-#%.linetrees:  $(LTREES-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
-#	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
+%.linetrees:  $(LTREES-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
+	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.lower.linetrees:  $(LTREES-SCRIPTS)/make-trees-lower.py  %.linetrees
 	cat $(word 2,$^)  |  python $(word 1,$^)  >  $@
 #### generate right-branching linetrees from linetoks
@@ -95,6 +95,14 @@ bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt 
 	tail -$(subst .,,$(suffix $*)) $<  >  $@
 %maxwords.linetrees: $$(basename %).linetrees
 	cat $< | perl -na -e "if (split(/[\)]+/)<=1+$(subst .,,$(suffix $*))) {print $$_;}"  >  $@ 
+
+#### remove unary branches
+%.nounary.linetrees:  %.linetrees  $(LTREES-SCRIPTS)/killUnaries.pl
+	cat $<  |  perl $(word 2,$^)  >  $@
+
+#### use treebank reannotation
+%.nodashtags.linetrees:  %.linetrees
+	cat $<  |  perl -pe 's/([^\(])\-[^ \)]+ /\1 /g'  >  $@
 
 #### obtain tokenized input sentences from linetrees
 %.linetoks:  $(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.linetrees)))
@@ -190,16 +198,16 @@ bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt 
             genmodel/$$(subst -,.,$$(word 1,$$(subst ., ,$$*)))$$(suffix $$(basename $$*)).linetrees \
             $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).linetrees
 	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
-.PRECIOUS: %.nounary.syneval
-%.nounary.syneval:  bin/evalb \
+.PRECIOUS: %.nounary_syneval
+%.nounary_syneval:  bin/evalb \
             $(RESOURCE-GENERAL)/srcmodel/new.prm \
-            genmodel/$$(subst -,.,$$(word 1,$$(subst ., ,$$*)))$$(suffix $$(basename $$*)).linetrees \
+            genmodel/$$(subst -,.,$$(word 1,$$(subst ., ,$$*)))$$(suffix $$(basename $$*)).nounary.linetrees \
             $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).nounary.linetrees
 	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
-.PRECIOUS: %.noberkstuff.nounary.syneval
-%.noberkstuff.nounary.syneval:  bin/evalb \
+.PRECIOUS: %.noberkstuff_nounary_syneval
+%.noberkstuff_nounary_syneval:  bin/evalb \
             $(RESOURCE-GENERAL)/srcmodel/new.prm \
-            genmodel/$$(subst -,.,$$(word 1,$$(subst ., ,$$*)))$$(suffix $$(basename $$*)).linetrees \
+            genmodel/$$(subst -,.,$$(word 1,$$(subst ., ,$$*)))$$(suffix $$(basename $$*)).nounary.linetrees \
             $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).noberkstuff.nounary.linetrees
 	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
 #%.syneval:  bin/evalb \
