@@ -1,6 +1,5 @@
-import sys
-sys.path.append('../resource-gcg/scripts/')
-import math
+import sys, os, math
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 from model import Model,CondModel
 
 srif = open(sys.argv[1],mode='r',encoding='latin-1')

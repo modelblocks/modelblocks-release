@@ -1,7 +1,5 @@
-import sys
-import re
-import getopt
-sys.path.append('../resource-gcg/scripts')
+import sys, os, re, getopt
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import tree
 
 

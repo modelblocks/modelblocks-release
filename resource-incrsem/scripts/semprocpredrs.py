@@ -1,7 +1,5 @@
-import sys
-import re
-import collections
-sys.path.append('../resource-gcg/scripts')
+import sys, os, re, collections
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import tree
 from storestate import Sign, StoreState, getArity   #, getParentContexts, getRchildContexts
 

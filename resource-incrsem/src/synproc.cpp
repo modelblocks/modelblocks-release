@@ -21,6 +21,8 @@
 #include <fstream>
 #include <list>
 #include <algorithm>
+#include <thread>
+#include <mutex>
 using namespace std;
 #define DONT_USE_UNMAPPABLE_TUPLES
 #include <nl-randvar.h>
@@ -97,6 +99,8 @@ class StreamTrellis : public vector<Beam> {
 ////////////////////////////////////////////////////////////////////////////////
 
 int main ( int nArgs, char* argv[] ) {
+
+  uint numThreads = 10;
 
   // Define model structures...
   map<FPredictor,map<F,double>> modF;
@@ -192,8 +196,13 @@ int main ( int nArgs, char* argv[] ) {
       // Create beam for current time step...
       beams[++t].clear();
 
-      // For each hypothesized storestate at previous time step...
-      for( auto& be_tdec1 : beams[t-1] ) {
+      mutex mutexBeam;
+      vector<thread> vtWorkers;
+      for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&] (uint numt) {
+       // For each hypothesized storestate at previous time step...
+       uint i=0; for( auto& be_tdec1 : beams[t-1] ) if( i++%numThreads==numt ){
+       //for( auto& i=beams[t-1].begin()+numt; i<beams[t-1].end(); i+=numThreads ) {
+       // auto&             be_tdec1   = *i; //beams[t-1][i];
         double            lgpr_tdec1 = be_tdec1.first.first;     // prob of prev storestate
         const Sign&       p_tdec1    = be_tdec1.second.first();  // prev P
         F                 f_tdec1    = be_tdec1.second.second(); // prev F
@@ -252,13 +261,15 @@ int main ( int nArgs, char* argv[] ) {
 
                     // Calculate probability and storestate and add to beam...
                     //double probJoin = tjp.second * tpA.second * tpB.second;
-                    if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(tjp.second) > beams[t].rbegin()->first.first ) {
-                      //StoreState ss( q_tdec1, f, j, tpA.first, tpB.first, aPretrm );
-                      if( (t<lwSent.size() && ss.size()+f-j>0) || (t==lwSent.size() && ss.size()+f-j==0) ) {
-//                        if( beams[t].size()>=BEAM_WIDTH ) { pop_heap( beams[t].begin(), beams[t].end(), [] (const BeamElement& a, const BeamElement& b) { return b<a; } ); beams[t].pop_back(); }
-                        beams[t].tryAdd( BeamElement( aPretrm, f, j, ss ), ProbBack( lgpr_tdec1 + log(probFork) + log(tjp.second), be_tdec1.second ) );
-                        if( VERBOSE>1 ) cout << "                send (" << be_tdec1.second << ") to (" << ss << ") with " << (lgpr_tdec1 + log(probFork) + log(tjp.second)) << endl;
-//                        push_heap( beams[t].begin(), beams[t].end(), [] (const BeamElement& a, const BeamElement& b) { return b<a; } );
+                    { lock_guard<mutex> guard( mutexBeam );
+                      if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(tjp.second) > beams[t].rbegin()->first.first ) {
+                        //StoreState ss( q_tdec1, f, j, tpA.first, tpB.first, aPretrm );
+                        if( (t<lwSent.size() && ss.size()+f-j>0) || (t==lwSent.size() && ss.size()+f-j==0) ) {
+//                          if( beams[t].size()>=BEAM_WIDTH ) { pop_heap( beams[t].begin(), beams[t].end(), [] (const BeamElement& a, const BeamElement& b) { return b<a; } ); beams[t].pop_back(); }
+                          beams[t].tryAdd( BeamElement( aPretrm, f, j, ss ), ProbBack( lgpr_tdec1 + log(probFork) + log(tjp.second), be_tdec1.second ) );
+                          if( VERBOSE>1 ) cout << "                send (" << be_tdec1.second << ") to (" << ss << ") with " << (lgpr_tdec1 + log(probFork) + log(tjp.second)) << endl;
+//                          push_heap( beams[t].begin(), beams[t].end(), [] (const BeamElement& a, const BeamElement& b) { return b<a; } );
+                        }
                       }
                     }
                   }
@@ -267,7 +278,10 @@ int main ( int nArgs, char* argv[] ) {
             }
           }
         }
-      }
+       }
+      }, numtglobal ));
+
+      for( auto& w : vtWorkers ) w.join();
 
 //      // Sort beam...
 //      std::sort( beams[t].begin(), beams[t].end(), [] (const BeamElement& a, const BeamElement& b) { return b<a; } );

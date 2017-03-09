@@ -44,25 +44,22 @@ all:  wsj23-comparativized-gcg15-nofail.wsj02to21-comparativized-gcg15-1671-5sm.
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.morphed.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  %.linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
-.PRECIOUS: %.linetrees
-%.linetrees:  $(GCG-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
-	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
+### THIS HAPPENS ALL THE TIME; JUST CREATE MAKE ITEM IF YOU NEED IT
+# .PRECIOUS: %.linetrees
+#%.linetrees:  $(GCG-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
+#	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
   
 #### gcg reannotation
-%.decoupled.linetrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl $$(basename %).fixed.linetrees $(GCG-SCRIPTS)/killUnaries.pl
+%.decoupled.linetrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl $$(basename %).fixed.linetrees $(LTREES-SCRIPTS)/killUnaries.pl
 	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  perl -pe 's/.*\([-A-Z]+ .*//'  |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' | perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
         
 #### NOTE: inline seds dispose of reannotation failures, then remove -f tags, then shift -l tags to end
-%.linetrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).fixed.nommed.linetrees  $(GCG-SCRIPTS)/killUnaries.pl
+%.linetrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).fixed.nommed.linetrees  $(LTREES-SCRIPTS)/killUnaries.pl
 	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  perl -pe 's/.*\([-A-Z]+ .*//'  |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' | perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
 
 #### remove entries with no reannotation
 %.nofail.linetrees:  %.linetrees
 	cat $<  |  grep -v '^$$'  >  $@
-
-#### remove gcg reannotation
-%.nodashtags.linetrees:  %.linetrees
-	cat $<  |  perl -pe 's/([^\(])\-[^ \)]+ /\1 /g'  >  $@
 
 #### annotate branch and depth
 %.bd.linetrees:  %.linetrees  $(GCG-SCRIPTS)/annotateDepth.py
@@ -79,10 +76,6 @@ all:  wsj23-comparativized-gcg15-nofail.wsj02to21-comparativized-gcg15-1671-5sm.
 #### apply semantic left-corner transform
 %.semlctrans.linetrees: %.linetrees ../incrsem/scripts/semlctrans.pl 
 	cat $< | perl $(word 2,$^) > $@
-
-#### remove unary branches
-%.nounary.linetrees:  %.linetrees  $(GCG-SCRIPTS)/killUnaries.pl
-	cat $<  |  perl $(word 2,$^)  >  $@
 
 #### Remove traces
 %.nt.linetrees: %.linetrees

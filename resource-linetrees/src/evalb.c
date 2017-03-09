@@ -1194,13 +1194,13 @@ char *label;
 {
     char *p;
 
-    for(p=label;*p!='\0';p++){
-/*	if(*p=='-' || *p=='='){
-/*	    *p='\0';
-/*	    break;
-/*	}
-/* dont do this anymore because it is (a) crazy and (b) a pain to work around */
-    }
+/*    for(p=label;*p!='\0';p++){
+	if(*p=='-' || *p=='='){
+	    *p='\0';
+	    break;
+	}
+ dont do this anymore because it is (a) crazy and (b) a pain to work around
+    }*/
 }
 
 

@@ -5,3 +5,7 @@ blank: blank.template.txt
 naturalstories: natural_stories.template.txt
 	mkdir naturalstories
 	cp $< naturalstories/Makefile
+
+%: blank.template.txt
+	mkdir $@
+	cp $< $@/Makefile

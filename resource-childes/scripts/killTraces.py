@@ -1,5 +1,5 @@
-import sys, re
-sys.path.append('../resource-gcg/scripts')
+import sys, os, re
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import tree
 
 def kill_traces(T):

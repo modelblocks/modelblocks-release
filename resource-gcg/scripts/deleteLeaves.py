@@ -1,7 +1,7 @@
 # Replaces leaves from a linetrees file with the string 'LEAF'
 
-import sys
-sys.path.append('../resource-gcg/scripts/')
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import tree
 
 def replaceLeaves(t):

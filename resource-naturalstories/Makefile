@@ -82,10 +82,10 @@ endif
 endif
 
 
-  
+
 %/user-naturalstories-directory.txt: | %   
 	echo '/home/corpora/original/english/naturalstories' > $@
-  
+
 ################################################################################
 #
 #  Reading time data formatting items
@@ -99,9 +99,12 @@ endif
 
 genmodel/naturalstories.merge_tables.params: | genmodel
 	echo 'word sentid sentpos' > $@
-  
+
 genmodel/naturalstories.accumulateMetrics.params: | genmodel
 	echo 'fwprob5 totsurp -f fdur' > $@
+
+genmodel/naturalstories.futureMetrics.params: | genmodel
+	echo 'cumfwprob5 cumtotsurp' > $@
 
 genmodel/naturalstories.rm_unfix_items.params: | genmodel
 	echo '-f fdur' > $@

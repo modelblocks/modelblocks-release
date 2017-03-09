@@ -199,6 +199,6 @@ $$(basename %)last.extrparplusops.linetrees  $(CONFIGDIR)/user-javaflags.txt
 
 #### Remove Berkeley split-merge annotation information
 %.noberkstuff.linetrees: %.linetrees
-	cat $^ | perl -pe 's/\^[^ ]*//g;s/_[0-9]+ / /g' | python $(GCG-SCRIPTS)/removeAt.py > $@ 
+	cat $^ | perl -pe 's/\^[^ ]*//g;s/_[0-9]+ / /g' | python $(RESOURCE-LVPCFG)/scripts/removeAt.py > $@ 
 
 
