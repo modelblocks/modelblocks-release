@@ -1,7 +1,6 @@
 
-import re
-import sys
-sys.path.insert(0, '../resource-gcg/scripts/')
+import re, sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 from tree import Tree
 
 def A(q):
