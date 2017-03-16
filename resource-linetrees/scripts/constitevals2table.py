@@ -138,7 +138,11 @@ with open(args.constitevallist[0], 'rb') as list:
       while line and line.startswith('  Depth = '):
 	d, count = depth.match(line).groups()
 	depths[int(d)] = int(count)
-	line = f.readline()
+        f.readline()
+        line = f.readline()
+        while line and line.startswith('      D'):
+	    line = f.readline()
+        line = f.readline()
 
       proj_stats = {}
 
