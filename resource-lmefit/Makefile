@@ -68,7 +68,7 @@
 # to the evaluation, run "resource-rt/scripts/evmeasures2lmefit-mem.r -h" from the repository
 # root.
 #
-.PRECIOUS: %.rdata
+#.PRECIOUS: %.rdata ##Disabled for now because it fills the disk quickly. Re-enable for simulations
 %.rdata:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r genmodel/$$(basename $$(basename $$*)).full.evmeasures \
 scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform 
 	$< $(word 2, $^) $@ $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) > $*.lmefit
