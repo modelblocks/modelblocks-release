@@ -43,6 +43,7 @@ include ../../resource-general/Makefile
 #include $(RESOURCE-LCPARSE)/Makefile
 #include $(RESOURCE-BNC)/Makefile
 #include $(RESOURCE-TREEBANK)/Makefile
+#include $(RESOURCE-TIGER)/Makefile
 #include $(RESOURCE-GIGAWORD)/Makefile
 #include $(RESOURCE-KENLM)/Makefile
 #include $(RESOURCE-SRILM)/Makefile
