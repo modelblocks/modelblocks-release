@@ -1,3 +1,5 @@
+Makefile: ;
+
 blank: blank.template.txt
 	mkdir blank
 	cp $< blank/Makefile
