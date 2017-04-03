@@ -82,6 +82,7 @@ mv $@{.tmp,};
 SPILLOVER := S1 S2 S3
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
 FJ := fjprob noFprob endembd embdlen embdlendr embdlendrv noF noFlen noFlendr noFlendrv reinst reinstlen reinstlendr reinstlendrv
+COREF := corefbin coreflenw coreflenr corefsize
 EXTRA-SPILL := dc dcv pos depdirSyn depdirSynM depdirSem depdirSemM Ad AdPrim Bd BdPrim Bdm1 Bdm1Prim noFprob embddepth embdif
 GCG-CATS := A B C D F G
 EMBDDEPTHS := 1 2 3 4 5
@@ -146,10 +147,14 @@ $(foreach var, $(DLT), $(eval $(call PRINTL,$(var)-$(1):$(BASENAME).$(var)$(1).-
 $(foreach var, $(DLT), $(eval $(call PRINTL,$(var)-$(1)_%:$(BASENAME).$(var)$(1).-%..lrtsignif;)))
 $(foreach var, $(FJ), $(eval $(call PRINTL,$(var)-$(1):$(BASENAME).$(var)$(1).-$(LMEDEFAULT)..lrtsignif)))
 $(foreach var, $(FJ), $(eval $(call PRINTL,$(var)-$(1)_%:$(BASENAME).$(var)$(1).-%..lrtsignif;)))
+$(foreach var, $(COREF), $(eval $(call PRINTL,$(var)-$(1):$(BASENAME).$(var)$(1).-$(LMEDEFAULT)..lrtsignif)))
+$(foreach var, $(COREF), $(eval $(call PRINTL,$(var)-$(1)_%:$(BASENAME).$(var)$(1).-%..lrtsignif;)))
 DLT-$(1): $(foreach var, $(DLT), $(var)-$(1))
 DLT-$(1)_%: $(foreach var, $(DLT), $(var)-$(1)_%);
 FJ-$(1): $(foreach var, $(FJ), $(var)-$(1))
 FJ-$(1)_%: $(foreach var, $(FJ), $(var)-$(1)_%);
+COREF-$(1): $(foreach var, $(COREF), $(var)-$(1))
+COREF-$(1)_%: $(foreach var, $(COREF), $(var)-$(1)_%);
 MEM-$(1): DLT-$(1) FJ-$(1)
 MEM-$(1)_%: DLT-$(1)_% FJ-$(1)_%;
 
@@ -157,10 +162,14 @@ $(foreach var, $(DLT), $(eval $(call PRINTL,$(var)-cum-$(1):$(BASENAME).cum$(var
 $(foreach var, $(DLT), $(eval $(call PRINTL,$(var)-cum-$(1)_%:$(BASENAME).cum$(var)$(1).-%..lrtsignif;)))
 $(foreach var, $(FJ), $(eval $(call PRINTL,$(var)-cum-$(1):$(BASENAME).cum$(var)$(1).-$(LMEDEFAULT)..lrtsignif)))
 $(foreach var, $(FJ), $(eval $(call PRINTL,$(var)-cum-$(1)_%:$(BASENAME).cum$(var)$(1).-%..lrtsignif;)))
+$(foreach var, $(COREF), $(eval $(call PRINTL,$(var)-cum-$(1):$(BASENAME).cum$(var)$(1).-$(LMEDEFAULT)..lrtsignif)))
+$(foreach var, $(COREF), $(eval $(call PRINTL,$(var)-cum-$(1)_%:$(BASENAME).cum$(var)$(1).-%..lrtsignif;)))
 DLT-cum-$(1): $(foreach var, $(DLT), $(var)-cum-$(1))
 DLT-cum-$(1)_%: $(foreach var, $(DLT), $(var)-cum-$(1)_%);
 FJ-cum-$(1): $(foreach var, $(FJ), $(var)-cum-$(1))
 FJ-cum-$(1)_%: $(foreach var, $(FJ), $(var)-cum-$(1)_%);
+COREF-cum-$(1): $(foreach var, $(COREF), $(var)-cum-$(1))
+COREF-cum-$(1)_%: $(foreach var, $(COREF), $(var)-cum-$(1)_%);
 MEM-cum-$(1): DLT-cum-$(1) FJ-cum-$(1)
 MEM-cum-$(1)_%: DLT-cum-$(1)_% FJ-cum-$(1)_%;
 endef
@@ -170,10 +179,14 @@ $(foreach var, $(DLT), $(eval $(call PRINTL,$(var):$(BASENAME).$(var).-$(LMEDEFA
 $(foreach var, $(DLT), $(eval $(call PRINTL,$(var)_%:$(BASENAME).$(var).-%..lrtsignif;)))
 $(foreach var, $(FJ), $(eval $(call PRINTL,$(var):$(BASENAME).$(var).-$(LMEDEFAULT)..lrtsignif)))
 $(foreach var, $(FJ), $(eval $(call PRINTL,$(var)_%:$(BASENAME).$(var).-%..lrtsignif;)))
+$(foreach var, $(COREF), $(eval $(call PRINTL,$(var):$(BASENAME).$(var).-$(LMEDEFAULT)..lrtsignif)))
+$(foreach var, $(COREF), $(eval $(call PRINTL,$(var)_%:$(BASENAME).$(var).-%..lrtsignif;)))
 DLT: $(DLT)
 DLT_%: $(foreach var, $(DLT), $(var)_%);
 FJ: $(FJ)
 FJ_%: $(foreach var, $(FJ), $(var)_%);
+COREF: $(COREF)
+COREF_%: $(foreach var, $(COREF), $(var)_%);
 MEM: DLT FJ
 MEM_%: DLT_% FJ_%;
 
@@ -181,10 +194,14 @@ $(foreach var, $(DLT), $(eval $(call PRINTL,$(var)-cum:$(BASENAME).cum$(var).-$(
 $(foreach var, $(DLT), $(eval $(call PRINTL,$(var)-cum_%:$(BASENAME).cum$(var).-%..lrtsignif;)))
 $(foreach var, $(FJ), $(eval $(call PRINTL,$(var)-cum:$(BASENAME).cum$(var).-$(LMEDEFAULT)..lrtsignif)))
 $(foreach var, $(FJ), $(eval $(call PRINTL,$(var)-cum_%:$(BASENAME).cum$(var).-%..lrtsignif;)))
+$(foreach var, $(COREF), $(eval $(call PRINTL,$(var)-cum:$(BASENAME).cum$(var).-$(LMEDEFAULT)..lrtsignif)))
+$(foreach var, $(COREF), $(eval $(call PRINTL,$(var)-cum_%:$(BASENAME).cum$(var).-%..lrtsignif;)))
 DLT-cum: $(foreach var, $(DLT), $(var)-cum)
 DLT-cum_%: $(foreach var, $(DLT), $(var)-cum_%);
 FJ-cum: $(foreach var, $(FJ), $(var)-cum)
 FJ-cum_%: $(foreach var, $(FJ), $(var)-cum_%);
+COREF-cum: $(foreach var, $(COREF), $(var)-cum)
+COREF-cum_%: $(foreach var, $(COREF), $(var)-cum_%);
 MEM-cum: DLT-cum FJ-cum
 MEM-cum_%: DLT-cum_% FJ-cum_%;
 
@@ -194,10 +211,14 @@ $(foreach var, $(DLT), $(eval $(call PRINTL,$(var)-ALLSPILL:$(foreach s,$(SPILLO
 $(foreach var, $(DLT), $(eval $(call PRINTL,$(var)-ALLSPILL_%:$(foreach s,$(SPILLOVER),$(var)-$(s)_%);)))
 $(foreach var, $(FJ), $(eval $(call PRINTL,$(var)-ALLSPILL:$(foreach s,$(SPILLOVER),$(var)-$(s)))))
 $(foreach var, $(FJ), $(eval $(call PRINTL,$(var)-ALLSPILL_%:$(foreach s,$(SPILLOVER),$(var)-$(s)_%);)))
+$(foreach var, $(COREF), $(eval $(call PRINTL,$(var)-ALLSPILL:$(foreach s,$(SPILLOVER),$(var)-$(s)))))
+$(foreach var, $(COREF), $(eval $(call PRINTL,$(var)-ALLSPILL_%:$(foreach s,$(SPILLOVER),$(var)-$(s)_%);)))
 DLT-ALLSPILL: DLT $(foreach var, $(DLT), $(var)-ALLSPILL)
 DLT-ALLSPILL_%: DLT_% $(foreach var, $(DLT), $(var)-ALLSPILL_%);
 FJ-ALLSPILL: FJ $(foreach var, $(FJ), $(var)-ALLSPILL)
 FJ-ALLSPILL_%: FJ_% $(foreach var, $(FJ), $(var)-ALLSPILL_%);
+COREF-ALLSPILL: COREF $(foreach var, $(COREF), $(var)-ALLSPILL)
+COREF-ALLSPILL_%: COREF_% $(foreach var, $(COREF), $(var)-ALLSPILL_%);
 MEM-ALLSPILL: DLT-ALLSPILL FJ-ALLSPILL
 MEM-ALLSPILL_%: DLT-ALLSPILL_% FJ-ALLSPILL_%;
 
@@ -205,10 +226,14 @@ $(foreach var, $(DLT), $(eval $(call PRINTL,$(var)-cum-ALLSPILL:$(foreach s,$(SP
 $(foreach var, $(DLT), $(eval $(call PRINTL,$(var)-cum-ALLSPILL_%:$(foreach s,$(SPILLOVER),$(var)-cum-$(s)_%);)))
 $(foreach var, $(FJ), $(eval $(call PRINTL,$(var)-cum-ALLSPILL:$(foreach s,$(SPILLOVER),$(var)-cum-$(s)))))
 $(foreach var, $(FJ), $(eval $(call PRINTL,$(var)-cum-ALLSPILL_%:$(foreach s,$(SPILLOVER),$(var)-cum-$(s)_%);)))
+$(foreach var, $(COREF), $(eval $(call PRINTL,$(var)-cum-ALLSPILL:$(foreach s,$(SPILLOVER),$(var)-cum-$(s)))))
+$(foreach var, $(COREF), $(eval $(call PRINTL,$(var)-cum-ALLSPILL_%:$(foreach s,$(SPILLOVER),$(var)-cum-$(s)_%);)))
 DLT-cum-ALLSPILL: DLT-cum $(foreach var, $(DLT), $(var)-cum-ALLSPILL)
 DLT-cum-ALLSPILL_%: DLT-cum_% $(foreach var, $(DLT), $(var)-cum-ALLSPILL_%);
 FJ-cum-ALLSPILL: FJ-cum $(foreach var, $(FJ), $(var)-cum-ALLSPILL)
 FJ-cum-ALLSPILL_%: FJ-cum_% $(foreach var, $(FJ), $(var)-cum-ALLSPILL_%);
+COREF-cum-ALLSPILL: COREF-cum $(foreach var, $(COREF), $(var)-cum-ALLSPILL)
+COREF-cum-ALLSPILL_%: COREF-cum_% $(foreach var, $(COREF), $(var)-cum-ALLSPILL_%);
 MEM-cum-ALLSPILL: DLT-cum-ALLSPILL FJ-cum-ALLSPILL
 MEM-cum-ALLSPILL_%: DLT-cum-ALLSPILL_% FJ-cum-ALLSPILL_%;
 
@@ -235,9 +260,20 @@ genmodel/rename_cols.params: | genmodel
 %.dlt.d.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
 	cat $< | python $(word 2, $^) -d > $@
 
+$.coref.tokmeasures: $(RT-SCRIPTS)/extract_coref_predictors.py %.linetrees
+	python $^ > $@
+
 %.pcfg.tokmeasures: %_parsed.output $(LCPARSE-SCRIPTS)/spargeComplexity.py $(RT-SCRIPTS)/calcFJProb.py
 	cat $< | python3 $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;' | python $(word 3, $^) > $@
 
+# With co-ref features
+%.syn.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).gold.dlt.tokmeasures \
+$$(word 1, $$(subst ., , %)).gold.embd.tokmeasures $$(word 1, $$(subst ., , %)).gold.coref.tokmeasures $(RT-SCRIPTS)/spilloverMetrics.py
+	cat $< | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) <(cut -f 2- -d' ' $(word 3, $^)) <(cut -f 2- -d'\t') | \
+	sed 's/  */ /g;1s/F-/fm/g;1s/F+/fp/g;1s/L-/lm/g;1s/L+/lp/g;1s/B-/bm/g;1s/B+/bp/g;1s/Badd/ba/g;1s/Bcdr/bc/g;1s/BNil/bo/g;1s/Bsto/bsto/g;' | \
+	python $(word 5, $^) -n3 -p $(DLT) $(FJ) $(COREF) $(EXTRA-SPILL) > $@
+
+# Without co-ref features
 %.syn.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).gold.dlt.tokmeasures \
 $$(word 1, $$(subst ., , %)).gold.embd.tokmeasures $(RT-SCRIPTS)/spilloverMetrics.py
 	cat $< | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) <(cut -f 2- -d' ' $(word 3, $^)) | \
