@@ -108,6 +108,9 @@ TOKENIZER-SCRIPTS := $(RESOURCE-TOKENIZER)/scripts
 RESOURCE-TREEBANK := $(abspath $(MBDIR)/resource-treebank)
 TREEBANK-SCRIPTS := $(RESOURCE-TREEBANK)/scripts
 
+RESOURCE-TIGER := $(abspath $(MBDIR)/resource-tiger)
+TIGER-SCRIPTS := $(RESOURCE-TIGER)/scripts
+
 RESOURCE-UCL := $(abspath $(MBDIR)/resource-ucl)
 UCL-SCRIPTS := $(RESOURCE-UCL)/scripts
 

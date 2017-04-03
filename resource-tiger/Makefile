@@ -19,51 +19,14 @@
 
 ################################################################################
 #
-#  Default recipe
-#
-################################################################################
-
-default: ; #Enter default recipe if desired
-
-################################################################################
-#
 #  Includes
 #
+#  Include statements to this file should be preceded by the following includes
+#
+#  include $(dir $(CURDIR))resource-general/Makefile
+#  include $(RESOURCE-LTREES)/Makefile
+#
 ################################################################################
-
-include ../../resource-general/Makefile
-
-# Available resources (uncomment to include).
-# Depending on needs, may need to reorder.
-#include $(RESOURCE-TOKENIZER)/Makefile
-#include $(RESOURCE-SEGMENT-TOKENIZE)/Makefile
-#include $(RESOURCE-LTREES)/Makefile
-#include $(RESOURCE-GCG)/Makefile
-#include $(RESOURCE-LVPCFG)/Makefile
-#include $(RESOURCE-LCPARSE)/Makefile
-#include $(RESOURCE-BNC)/Makefile
-#include $(RESOURCE-TREEBANK)/Makefile
-#include $(RESOURCE-TIGER)/Makefile
-#include $(RESOURCE-GIGAWORD)/Makefile
-#include $(RESOURCE-KENLM)/Makefile
-#include $(RESOURCE-SRILM)/Makefile
-#include $(RESOURCE-INCRSEM)/Makefile
-#include $(RESOURCE-UCL)/Makefile
-#include $(RESOURCE-DUNDEE)/Makefile
-#include $(RESOURCE-GOLDDUNDEE)/Makefile
-#include $(RESOURCE-NATSTORIES)/Makefile
-#include $(RESOURCE-RT)/Makefile
-#include $(RESOURCE-RHACKS)/Makefile
-#include $(RESOURCE-LMEFIT)/Makefile
-#include $(RESOURCE-CHILDES)/Makefile
-#include $(RESOURCE-BMMM)/Makefile
-#include $(RESOURCE-DMV)/Makefile
-#include $(RESOURCE-CCL)/Makefile
-#include $(RESOURCE-UPPARSE)/Makefile
-#include $(RESOURCE-LOGREG)/Makefile
-#include $(RESOURCE-LOGREG-TORCH)/Makefile
-#include $(RESOURCE-WORD)/Makefile
-#include $(RESOURCE-ONTONOTES)/Makefile
 
 ################################################################################
 #
@@ -73,13 +36,57 @@ include ../../resource-general/Makefile
 
 .SUFFIXES:
 .SECONDEXPANSION:
-.DELETE_ON_ERROR:
 
 ################################################################################
 #
-#  Experiments
+#  User-specific parameter files (not shared; created by default with default values)
+#
+#  These parameter files differ from user to user, and should not be checked in.
+#  This script just establishes 'official' default values for these parameters.
 #
 ################################################################################
 
-## Your experiments go here...
+MSG1 := The current config file, 
+MSG2 := , points to a non-existent location (
+MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
 
+define CONFIGWARN =
+
+ATTENTION! I had to create $(CONFIG),
+which contains an incorrect default value (".").
+Targets with dependencies to this file will fail until it is fixed.
+
+endef
+
+ifndef MAKECONFIG
+CONFIG := $(CONFIGDIR)/user-tiger-directory.txt
+ifeq (,$(firstword $(wildcard $(CONFIG))))
+$(info $(CONFIGWARN))
+DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
+endif
+TIGERDIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(TIGERDIR))))
+$(error $(MSG1)$(CONFIG)$(MSG2)$(TIGERDIR)$(MSG3))
+endif
+endif
+
+
+    
+%/user-tiger-directory.txt: | %   
+	echo '/home/corpora/original/german/tigercorpus1' > $@
+    
+################################################################################
+#
+#  Recipes
+#
+################################################################################
+    
+genmodel/tiger.linetrees: $(TIGERDIR) $(LTREES-SCRIPTS)/editabletrees2linetrees.pl \
+$(CONFIGDIR)/user-tiger-directory.txt | genmodel
+	grep -v '^%' $</corpus/*.penn | sed 's/($$[^ ]* \([^)]*\))/(\1 \1)/g' | perl $(word 2,$^) > $@
+
+genmodel/tigerTRAIN.linetrees: genmodel/tiger.linetrees | genmodel
+	head -n 20894 $^ > $@
+
+genmodel/tigerTEST.linetrees: genmodel/tiger.linetrees | genmodel
+	tail -n 2611 $^ > $@

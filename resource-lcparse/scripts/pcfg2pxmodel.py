@@ -1,9 +1,8 @@
 
 #### create branch- and depth-specific pcfg
 
-import sys
-import re
-sys.path.insert(0, '../resource-gcg/scripts/')
+import re, sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import model
 
 MAX_ITER = 20

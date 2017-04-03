@@ -1,9 +1,8 @@
 #python calcngramprobtoks.py ngramFile textFile 
 
 from __future__ import division
-import math
-import sys
-sys.path.insert(1, '../resource-gcg/scripts/') #grant access to model.py 
+import math, sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 from model import Model,CondModel
 
 ngramfileix = 1

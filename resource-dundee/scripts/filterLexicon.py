@@ -1,8 +1,8 @@
 #python scripts/filterLexicon.py wordcounts
 # flags all words that are not in the wordcounts file
 
-import sys
-sys.path.insert(1, '../resource-gcg/scripts/') #grant access to model.py 
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 from model import Model
 
 lexicon = Model('L')
