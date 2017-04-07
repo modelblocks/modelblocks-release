@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -13,8 +15,10 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import edu.berkeley.nlp.util.Method;
+import edu.berkeley.nlp.util.CollectionUtils;
 import edu.berkeley.nlp.util.MapFactory;
+import edu.berkeley.nlp.util.MyMethod;
+import edu.berkeley.nlp.util.Pair;
 
 /**
  * Represent linguistic trees, with each node consisting of a label and a list
@@ -22,9 +26,10 @@ import edu.berkeley.nlp.util.MapFactory;
  * 
  * @author Dan Klein
  * 
- * Added function to get a map of subtrees to constituents.
+ *         Added function to get a map of subtrees to constituents.
  */
-public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree<L>> {
+public class Tree<L> implements Serializable, Comparable<Tree<L>>,
+		Iterable<Tree<L>> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -32,12 +37,20 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 
 	List<Tree<L>> children;
 
+	public void setChild(int i, Tree<L> child) {
+		children.set(i, child);
+	}
+
 	public void setChildren(List<Tree<L>> c) {
 		this.children = c;
 	}
 
 	public List<Tree<L>> getChildren() {
 		return children;
+	}
+
+	public Tree<L> getChild(int i) {
+		return children.get(i);
 	}
 
 	public L getLabel() {
@@ -73,6 +86,26 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 		return constituents;
 	}
 
+	public Map<Pair<Integer, Integer>, List<Tree<L>>> getSpanMap() {
+		Map<Tree<L>, Constituent<L>> cMap = getConstituents();
+		Map<Pair<Integer, Integer>, List<Tree<L>>> spanMap = new HashMap();
+		for (Map.Entry<Tree<L>, Constituent<L>> entry : cMap.entrySet()) {
+			Tree<L> t = entry.getKey();
+			Constituent<L> c = entry.getValue();
+			Pair<Integer, Integer> span = Pair.newPair(c.getStart(),
+					c.getEnd() + 1);
+			CollectionUtils.addToValueList(spanMap, span, t);
+		}
+		for (List<Tree<L>> trees : spanMap.values()) {
+			Collections.sort(trees, new Comparator<Tree<L>>() {
+				public int compare(Tree<L> t1, Tree<L> t2) {
+					return t2.getDepth() - t1.getDepth();
+				}
+			});
+		}
+		return spanMap;
+	}
+
 	public Map<Tree<L>, Constituent<L>> getConstituents(MapFactory mf) {
 		Map<Tree<L>, Constituent<L>> constituents = mf.buildMap();
 		appendConstituent(this, constituents, 0);
@@ -90,7 +123,8 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 			for (Tree<L> kid : tree.getChildren()) {
 				nextIndex += appendConstituent(kid, constituents, nextIndex);
 			}
-			Constituent<L> c = new Constituent<L>(tree.getLabel(), index, nextIndex - 1);
+			Constituent<L> c = new Constituent<L>(tree.getLabel(), index,
+					nextIndex - 1);
 			constituents.put(tree, c);
 			return nextIndex - index; // Length of a leaf constituent
 		}
@@ -107,36 +141,36 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 			for (Tree<L> kid : tree.getChildren()) {
 				nextIndex += appendConstituent(kid, constituents, nextIndex);
 			}
-			Constituent<L> c = new Constituent<L>(tree.getLabel(), index, nextIndex - 1);
+			Constituent<L> c = new Constituent<L>(tree.getLabel(), index,
+					nextIndex - 1);
 			constituents.add(c);
 			return nextIndex - index; // Length of a leaf constituent
 		}
 	}
 
 	private static <L> void appendNonTerminals(Tree<L> tree, List<Tree<L>> yield) {
-	  	if (tree.isLeaf()) {
-	  	
-	  		return;
-	  	}
-	  	yield.add(tree);
-	    for (Tree<L> child : tree.getChildren()) {
-	      appendNonTerminals(child, yield);
-	    }
+		if (tree.isLeaf()) {
+
+			return;
+		}
+		yield.add(tree);
+		for (Tree<L> child : tree.getChildren()) {
+			appendNonTerminals(child, yield);
+		}
 	}
-	  
+
 	public List<Tree<L>> getTerminals() {
 		List<Tree<L>> yield = new ArrayList<Tree<L>>();
 		appendTerminals(this, yield);
 		return yield;
 	}
 
-    public List<Tree<L>> getNonTerminals(){
-	  	List<Tree<L>> yield = new ArrayList<Tree<L>>();
-	  	appendNonTerminals(this, yield);
-	  	return yield;
-    }
+	public List<Tree<L>> getNonTerminals() {
+		List<Tree<L>> yield = new ArrayList<Tree<L>>();
+		appendNonTerminals(this, yield);
+		return yield;
+	}
 
-	
 	private static <L> void appendTerminals(Tree<L> tree, List<Tree<L>> yield) {
 		if (tree.isLeaf()) {
 			yield.add(tree);
@@ -228,7 +262,8 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 		}
 	}
 
-	private static <L> void appendTreesOfDepth(Tree<L> tree, List<Tree<L>> yield, int depth) {
+	private static <L> void appendTreesOfDepth(Tree<L> tree,
+			List<Tree<L>> yield, int depth) {
 		if (tree.getDepth() == depth) {
 			yield.add(tree);
 			return;
@@ -250,31 +285,34 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 		return traversal;
 	}
 
-	private static <L> void traversalHelper(Tree<L> tree, List<Tree<L>> traversal,
-			boolean preOrder) {
-		if (preOrder) traversal.add(tree);
+	private static <L> void traversalHelper(Tree<L> tree,
+			List<Tree<L>> traversal, boolean preOrder) {
+		if (preOrder)
+			traversal.add(tree);
 		for (Tree<L> child : tree.getChildren()) {
 			traversalHelper(child, traversal, preOrder);
 		}
-		if (!preOrder) traversal.add(tree);
+		if (!preOrder)
+			traversal.add(tree);
 	}
 
 	public int getDepth() {
 		int maxDepth = 0;
 		for (Tree<L> child : children) {
 			int depth = child.getDepth();
-			if (depth > maxDepth) maxDepth = depth;
+			if (depth > maxDepth)
+				maxDepth = depth;
 		}
 		return maxDepth + 1;
 	}
 
-  public int size() {
-    int sum = 0;
-    for (Tree<L> child : children) {
-      sum += child.size();
-    }
-    return sum + 1;
-  }
+	public int size() {
+		int sum = 0;
+		for (Tree<L> child : children) {
+			sum += child.size();
+		}
+		return sum + 1;
+	}
 
 	public List<Tree<L>> getAtDepth(int depth) {
 		List<Tree<L>> yield = new ArrayList<Tree<L>>();
@@ -282,8 +320,10 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 		return yield;
 	}
 
-	private static <L> void appendAtDepth(int depth, Tree<L> tree, List<Tree<L>> yield) {
-		if (depth < 0) return;
+	private static <L> void appendAtDepth(int depth, Tree<L> tree,
+			List<Tree<L>> yield) {
+		if (depth < 0)
+			return;
 		if (depth == 0) {
 			yield.add(tree);
 			return;
@@ -305,7 +345,8 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 	}
 
 	public void toStringBuilder(StringBuilder sb) {
-		if (!isLeaf()) sb.append('(');
+		if (!isLeaf())
+			sb.append('(');
 		if (getLabel() != null) {
 			sb.append(getLabel());
 		}
@@ -313,6 +354,42 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 			for (Tree<L> child : getChildren()) {
 				sb.append(' ');
 				child.toStringBuilder(sb);
+			}
+			sb.append(')');
+		}
+	}
+
+	/**
+	 * Same as toString(), but escapes terminals like so: ( becomes -LRB- )
+	 * becomes -RRB- \ becomes -BACKSLASH- ("\" does not occur in PTB; this is
+	 * our own convention) This is useful because otherwise it's hard to tell a
+	 * "(" terminal from the tree's bracket structure, or tell an escaping \
+	 * from a literal.
+	 */
+	public String toEscapedString() {
+		StringBuilder sb = new StringBuilder();
+		toStringBuilderEscaped(sb);
+		return sb.toString();
+	}
+
+	public void toStringBuilderEscaped(StringBuilder sb) {
+		if (!isLeaf())
+			sb.append('(');
+		if (getLabel() != null) {
+			if (isLeaf()) {
+				String escapedLabel = getLabel().toString();
+				escapedLabel = escapedLabel.replaceAll("\\(", "-LRB-");
+				escapedLabel = escapedLabel.replaceAll("\\)", "-RRB-");
+				escapedLabel = escapedLabel.replaceAll("\\\\", "-BACKSLASH-");
+				sb.append(escapedLabel);
+			} else {
+				sb.append(getLabel());
+			}
+		}
+		if (!isLeaf()) {
+			for (Tree<L> child : getChildren()) {
+				sb.append(' ');
+				child.toStringBuilderEscaped(sb);
 			}
 			sb.append(')');
 		}
@@ -330,8 +407,8 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 
 	/**
 	 * Get the set of all subtrees inside the tree by returning a tree rooted at
-	 * each node. These are <i>not</i> copies, but all share structure. The
-	 * tree is regarded as a subtree of itself.
+	 * each node. These are <i>not</i> copies, but all share structure. The tree
+	 * is regarded as a subtree of itself.
 	 * 
 	 * @return the <code>Set</code> of all subtrees in the tree.
 	 */
@@ -424,7 +501,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 	 *            The transformation to apply
 	 * @return Transformed tree
 	 */
-	public <O> Tree<O> transformNodes(Method<L, O> trans) {
+	public <O> Tree<O> transformNodes(MyMethod<L, O> trans) {
 		ArrayList<Tree<O>> newChildren = new ArrayList<Tree<O>>(children.size());
 		for (Tree<L> child : children) {
 			newChildren.add(child.transformNodes(trans));
@@ -441,7 +518,7 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 	 * @param trans
 	 * @return
 	 */
-	public <O> Tree<O> transformNodesUsingNode(Method<Tree<L>, O> trans) {
+	public <O> Tree<O> transformNodesUsingNode(MyMethod<Tree<L>, O> trans) {
 		ArrayList<Tree<O>> newChildren = new ArrayList<Tree<O>>(children.size());
 		O newLabel = trans.call(this);
 		for (Tree<L> child : children) {
@@ -450,7 +527,8 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 		return new Tree<O>(newLabel, newChildren);
 	}
 
-	public <O> Tree<O> transformNodesUsingNodePostOrder(Method<Tree<L>, O> trans) {
+	public <O> Tree<O> transformNodesUsingNodePostOrder(
+			MyMethod<Tree<L>, O> trans) {
 		ArrayList<Tree<O>> newChildren = new ArrayList<Tree<O>>(children.size());
 		for (Tree<L> child : children) {
 			newChildren.add(child.transformNodesUsingNode(trans));
@@ -472,16 +550,23 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj) return true;
-		if (obj == null) return false;
-		if (getClass() != obj.getClass()) return false;
-		if (!(obj instanceof Tree)) return false;
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		if (!(obj instanceof Tree))
+			return false;
 		final Tree<L> other = (Tree<L>) obj;
-		if (!this.label.equals(other.label)) return false;
-		if (this.getChildren().size() != other.getChildren().size()) return false;
+		if (!this.label.equals(other.label))
+			return false;
+		if (this.getChildren().size() != other.getChildren().size())
+			return false;
 		for (int i = 0; i < getChildren().size(); ++i) {
 
-			if (!getChildren().get(i).equals(other.getChildren().get(i))) return false;
+			if (!getChildren().get(i).equals(other.getChildren().get(i)))
+				return false;
 		}
 		return true;
 
@@ -491,13 +576,17 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 		if (!(o.getLabel() instanceof Comparable && getLabel() instanceof Comparable))
 			throw new IllegalArgumentException("Tree labels are not comparable");
 		int cmp = ((Comparable) o.getLabel()).compareTo(getLabel());
-		if (cmp != 0) return cmp;
-		int cmp2 = Double.compare(this.getChildren().size(), o.getChildren().size());
-		if (cmp2 != 0) return cmp2;
+		if (cmp != 0)
+			return cmp;
+		int cmp2 = Double.compare(this.getChildren().size(), o.getChildren()
+				.size());
+		if (cmp2 != 0)
+			return cmp2;
 		for (int i = 0; i < getChildren().size(); ++i) {
 
 			int cmp3 = getChildren().get(i).compareTo(o.getChildren().get(i));
-			if (cmp3 != 0) return cmp3;
+			if (cmp3 != 0)
+				return cmp3;
 		}
 		return 0;
 
@@ -520,8 +609,8 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 		return getTopTreeForSpanHelper(this, 0, yield.size(), i, j);
 	}
 
-	private static <L> Tree<L> getTopTreeForSpanHelper(Tree<L> tree, int start, int end,
-			int i, int j) {
+	private static <L> Tree<L> getTopTreeForSpanHelper(Tree<L> tree, int start,
+			int end, int i, int j) {
 
 		assert i <= j;
 		if (start == i && end == j) {
@@ -543,10 +632,11 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 		return null;
 	}
 
-	private static <L> Constituent<L> getLeastCommonAncestorConstituentHelper(Tree<L> tree,
-			int start, int end, int i, int j) {
+	private static <L> Constituent<L> getLeastCommonAncestorConstituentHelper(
+			Tree<L> tree, int start, int end, int i, int j) {
 
-		if (start == i && end == j) return new Constituent<L>(tree.getLabel(), start, end);
+		if (start == i && end == j)
+			return new Constituent<L>(tree.getLabel(), start, end);
 
 		Queue<Tree<L>> queue = new LinkedList<Tree<L>>();
 		queue.addAll(tree.getChildren());
@@ -558,76 +648,76 @@ public class Tree<L> implements Serializable, Comparable<Tree<L>>, Iterable<Tree
 			if (currStart <= i && currEnd >= j) {
 				final Constituent<L> leastCommonAncestorConstituentHelper = getLeastCommonAncestorConstituentHelper(
 						remove, currStart, currEnd, i, j);
-				if (leastCommonAncestorConstituentHelper != null) return leastCommonAncestorConstituentHelper;
-				else break;
+				if (leastCommonAncestorConstituentHelper != null)
+					return leastCommonAncestorConstituentHelper;
+				else
+					break;
 			}
 			currStart += currYield.size();
 		}
 		return new Constituent<L>(tree.getLabel(), start, end);
 	}
 
-	  public boolean hasUnariesOtherThanRoot()
-	  {
-	  	assert children.size() == 1;
-	  	return hasUnariesHelper(children.get(0));
-	  	
-	  }
-	  
-	  private boolean hasUnariesHelper(Tree<L> tree)
-	  {
-	  	if (tree.isPreTerminal())
-	  		return false;
-	  	if (tree.getChildren().size() == 1)
-	  		return true;
-	  	for (Tree<L> child : tree.getChildren())
-	  	{
-	  		if (hasUnariesHelper(child))
-	  			return true;
-	  	}
-	  	return false;
-	  }
-	  
-	  public boolean hasUnaryChain(){
-	  	return hasUnaryChainHelper(this, false);
-	  }
-	  	
-	  private boolean hasUnaryChainHelper(Tree<L> tree, boolean unaryAbove){
-	  	boolean result = false;
-			if (tree.getChildren().size()==1){
-				if (unaryAbove) return true;
-				else if (tree.getChildren().get(0).isPreTerminal()) return false;
-				else return hasUnaryChainHelper(tree.getChildren().get(0), true);
-	  	}
-	  	else {
-	  		for (Tree<L> child : tree.getChildren()){
-	  			if (!child.isPreTerminal()) 
-	  				result = result || hasUnaryChainHelper(child,false);
-	  		}
-	  	}
-	  	return result;
-	  }
-	  
-	  public void removeUnaryChains(){
-	  	removeUnaryChainHelper(this, null);
-	  }
-	  	
-	  private void removeUnaryChainHelper(Tree<L> tree, Tree<L> parent){
-	  	if (tree.isLeaf()) return;
-	  	if (tree.getChildren().size()==1&&!tree.isPreTerminal()){
-				if (parent!=null) {
-					tree = tree.getChildren().get(0);
-					parent.getChildren().set(0, tree);
-					removeUnaryChainHelper(tree, parent);
-				}
-				else 
-					removeUnaryChainHelper(tree.getChildren().get(0), tree);
-	  	}
-	  	else {
-	  		for (Tree<L> child : tree.getChildren()){
-	  			if (!child.isPreTerminal()) 
-	  				removeUnaryChainHelper(child,null);
-	  		}
-	  	}
-	  }
+	public boolean hasUnariesOtherThanRoot() {
+		assert children.size() == 1;
+		return hasUnariesHelper(children.get(0));
+
+	}
+
+	private boolean hasUnariesHelper(Tree<L> tree) {
+		if (tree.isPreTerminal())
+			return false;
+		if (tree.getChildren().size() == 1)
+			return true;
+		for (Tree<L> child : tree.getChildren()) {
+			if (hasUnariesHelper(child))
+				return true;
+		}
+		return false;
+	}
+
+	public boolean hasUnaryChain() {
+		return hasUnaryChainHelper(this, false);
+	}
+
+	private boolean hasUnaryChainHelper(Tree<L> tree, boolean unaryAbove) {
+		boolean result = false;
+		if (tree.getChildren().size() == 1) {
+			if (unaryAbove)
+				return true;
+			else if (tree.getChildren().get(0).isPreTerminal())
+				return false;
+			else
+				return hasUnaryChainHelper(tree.getChildren().get(0), true);
+		} else {
+			for (Tree<L> child : tree.getChildren()) {
+				if (!child.isPreTerminal())
+					result = result || hasUnaryChainHelper(child, false);
+			}
+		}
+		return result;
+	}
+
+	public void removeUnaryChains() {
+		removeUnaryChainHelper(this, null);
+	}
+
+	private void removeUnaryChainHelper(Tree<L> tree, Tree<L> parent) {
+		if (tree.isLeaf())
+			return;
+		if (tree.getChildren().size() == 1 && !tree.isPreTerminal()) {
+			if (parent != null) {
+				tree = tree.getChildren().get(0);
+				parent.getChildren().set(0, tree);
+				removeUnaryChainHelper(tree, parent);
+			} else
+				removeUnaryChainHelper(tree.getChildren().get(0), tree);
+		} else {
+			for (Tree<L> child : tree.getChildren()) {
+				if (!child.isPreTerminal())
+					removeUnaryChainHelper(child, null);
+			}
+		}
+	}
 
 }

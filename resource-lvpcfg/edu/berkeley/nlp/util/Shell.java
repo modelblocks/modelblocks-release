@@ -8,7 +8,7 @@ import java.util.concurrent.Semaphore;
 
 /**
  * Runs stuff in a shell
- *
+ * 
  * @author denero
  */
 public class Shell {
@@ -28,6 +28,7 @@ public class Shell {
 			this.prefix = prefix;
 		}
 
+		@Override
 		public void run() {
 			StringBuilder outputBuilder = new StringBuilder();
 			try {
@@ -36,7 +37,8 @@ public class Shell {
 				String line = null;
 				while ((line = br.readLine()) != null) {
 					outputBuilder.append(line + "\n");
-					if(echo) System.out.println(prefix + line);
+					if (echo)
+						System.out.println(prefix + line);
 				}
 			} catch (IOException ioe) {
 				throw new RuntimeException(ioe);
@@ -55,12 +57,14 @@ public class Shell {
 	public static String execute(String cmd) {
 		return execute(cmd, false);
 	}
-	
+
 	public static String execute(String cmd, boolean echo) {
 		try {
 			Process proc = Runtime.getRuntime().exec(cmd);
-			StreamGobbler errorGobbler = new StreamGobbler(proc.getErrorStream(), "ERR> ", echo);
-			StreamGobbler outputGobbler = new StreamGobbler(proc.getInputStream(), "OUT> ", echo);
+			StreamGobbler errorGobbler = new StreamGobbler(
+					proc.getErrorStream(), "ERR> ", echo);
+			StreamGobbler outputGobbler = new StreamGobbler(
+					proc.getInputStream(), "OUT> ", echo);
 
 			// kick them off
 			errorGobbler.start();

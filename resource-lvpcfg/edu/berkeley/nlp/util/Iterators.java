@@ -1,5 +1,7 @@
 package edu.berkeley.nlp.util;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -7,17 +9,15 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import fig.basic.Pair;
-
 public class Iterators {
 
-	public static <T> void fillList(Iterator<T> it, List<T> lst) {
+	public static <T> void fillList(Iterator<? extends T> it, List<T> lst) {
 		while (it.hasNext()) {
 			lst.add(it.next());
 		}
 	}
 
-	public static <T> List<T> fillList(Iterator<T> it) {
+	public static <T> List<T> fillList(Iterator<? extends T> it) {
 		List<T> lst = new ArrayList<T>();
 		fillList(it, lst);
 		return lst;
@@ -80,7 +80,8 @@ public class Iterators {
 			boolean used = false;
 
 			public Iterator<T> iterator() {
-				if (used) throw new RuntimeException("One use iterable");
+				if (used)
+					throw new RuntimeException("One use iterable");
 				used = true;
 				return it;
 			}
@@ -119,7 +120,8 @@ public class Iterators {
 			}
 
 			public T next() {
-				if (!running) thread.start();
+				if (!running)
+					thread.start();
 				running = true;
 				try {
 					return els.take();
@@ -134,7 +136,8 @@ public class Iterators {
 		};
 	}
 
-	public static <S, T> Iterator<Pair<S, T>> zip(final Iterator<S> s, final Iterator<T> t) {
+	public static <S, T> Iterator<Pair<S, T>> zip(final Iterator<S> s,
+			final Iterator<T> t) {
 		return new Iterator<Pair<S, T>>() {
 			public boolean hasNext() {
 				return s.hasNext() && t.hasNext();
@@ -153,7 +156,8 @@ public class Iterators {
 	/**
 	 * Provides a max number of elements for an underlying base iterator.
 	 */
-	public static <T> Iterator<T> maxLengthIterator(final Iterator<T> base, final int max) {
+	public static <T> Iterator<T> maxLengthIterator(final Iterator<T> base,
+			final int max) {
 		return new Iterator<T>() {
 			int count = 0;
 
@@ -162,7 +166,8 @@ public class Iterators {
 			}
 
 			public T next() {
-				if (!hasNext()) throw new NoSuchElementException("No more elements");
+				if (!hasNext())
+					throw new NoSuchElementException("No more elements");
 				count++;
 				return base.next();
 			}
@@ -196,9 +201,11 @@ public class Iterators {
 		private Iterator<T> getNextIterator() {
 			Iterator<T> next = null;
 			while (next == null) {
-				if (!keys.hasNext()) break;
+				if (!keys.hasNext())
+					break;
 				next = iterFactory.newInstance(keys.next());
-				if (!next.hasNext()) next = null;
+				if (!next.hasNext())
+					next = null;
 			}
 			return next;
 		}
@@ -209,7 +216,8 @@ public class Iterators {
 
 		public T next() {
 			T next = current.next();
-			if (!current.hasNext()) current = getNextIterator();
+			if (!current.hasNext())
+				current = getNextIterator();
 			return next;
 		}
 
@@ -245,7 +253,8 @@ public class Iterators {
 			next = null;
 			while (next == null && base.hasNext()) {
 				next = base.next();
-				if (!filter.accept(next)) next = null;
+				if (!filter.accept(next))
+					next = null;
 			}
 		}
 
@@ -266,10 +275,11 @@ public class Iterators {
 	}
 
 	public static class TransformingIterator<I, O> implements Iterator<O> {
-		private Method<I, O> transformer;
+		private MyMethod<I, O> transformer;
 		private Iterator<I> inputIterator;
 
-		public TransformingIterator(Iterator<I> inputIterator, Method<I, O> transformer) {
+		public TransformingIterator(Iterator<I> inputIterator,
+				MyMethod<I, O> transformer) {
 			this.inputIterator = inputIterator;
 			this.transformer = transformer;
 		}
@@ -292,16 +302,16 @@ public class Iterators {
 		return new FilteredIterator<T>(filter, iterator);
 	}
 
-  public static <T> Iterator<T> concat(Iterable<Iterator<? extends T>> args) {
-    Factory<Iterator<T>> factory = new Factory<Iterator<T>>() {
+	public static <T> Iterator<T> concat(Iterable<Iterator<? extends T>> args) {
+		Factory<Iterator<T>> factory = new Factory<Iterator<T>>() {
 
-      public Iterator<T> newInstance(Object... args) {
-        return (Iterator<T>) args[0];
-      }
+			public Iterator<T> newInstance(Object... args) {
+				return (Iterator<T>) args[0];
+			}
 
-    };
-    return new IteratorIterator<T>(Arrays.asList(args).iterator(), factory);
-  }
+		};
+		return new IteratorIterator<T>(Arrays.asList(args).iterator(), factory);
+	}
 
 	public static <T> Iterator<T> concat(Iterator<? extends T>... args) {
 		Factory<Iterator<T>> factory = new Factory<Iterator<T>>() {
@@ -353,6 +363,46 @@ public class Iterators {
 
 	public static <T> Iterable<T> concat(Iterable<T> a, Iterable<T> b) {
 		return able(concat(a.iterator(), b.iterator()));
+	}
+
+	public static <T> List<T> nextList(List<Iterator<T>> iterators) {
+		List<T> items = new ArrayList<T>(iterators.size());
+		for (Iterator<T> iter : iterators) {
+			items.add(iter.next());
+		}
+		return items;
+	}
+
+	public static Iterator<Object> objectIterator(
+			final ObjectInputStream instream) {
+		return new Iterator<Object>() {
+			Object next = softRead();
+
+			public boolean hasNext() {
+				return next != null;
+			}
+
+			private Object softRead() {
+				try {
+					return instream.readObject();
+				} catch (IOException e) {
+					return null;
+				} catch (ClassNotFoundException e) {
+					return null;
+				}
+			}
+
+			public Object next() {
+				Object curr = next;
+				next = softRead();
+				return curr;
+			}
+
+			public void remove() {
+				throw new UnsupportedOperationException();
+			}
+
+		};
 	}
 
 }

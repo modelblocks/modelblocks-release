@@ -11,18 +11,17 @@ import java.io.PrintWriter;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import fig.basic.CharEncUtils;
-import fig.basic.StrUtils;
-
 /**
- * Just like IOUtils, but reads and writes .gz files.  File name extensions are required!
+ * Just like IOUtils, but reads and writes .gz files. File name extensions are
+ * required!
  * 
  * THIS IS NOW OBSOLETE, THANK GOODNESS!
  * 
  * @author denero
  */
 public class GZIPUtils {
-	private GZIPUtils() {} // No instantiation
+	private GZIPUtils() {
+	} // No instantiation
 
 	// openIn
 	public static BufferedReader openIn(String path) throws IOException {
@@ -48,12 +47,14 @@ public class GZIPUtils {
 	}
 
 	public static BufferedReader openInEasy(String path) {
-		if (StrUtils.isEmpty(path)) return null;
+		if (StrUtils.isEmpty(path))
+			return null;
 		return openInEasy(new File(path));
 	}
 
 	public static BufferedReader openInEasy(File path) {
-		if (path == null) return null;
+		if (path == null)
+			return null;
 		try {
 			return openIn(path);
 		} catch (Exception e) {
@@ -89,12 +90,14 @@ public class GZIPUtils {
 	}
 
 	public static PrintWriter openOutEasy(String path) {
-		if (StrUtils.isEmpty(path)) return null;
+		if (StrUtils.isEmpty(path))
+			return null;
 		return openOutEasy(new File(path));
 	}
 
 	public static PrintWriter openOutEasy(File path) {
-		if (path == null) return null;
+		if (path == null)
+			return null;
 		try {
 			return openOut(path);
 		} catch (Exception e) {
