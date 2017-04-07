@@ -15,14 +15,18 @@ import java.util.Set;
  * 
  * @param <K>
  */
-public class ConcatenationMap<K, V> extends AbstractMap<K, V> {
+public class ConcatenationMap<K, V> extends AbstractMap<K, V>
+{
 	private Set<Entry<K, V>> entrySet;
 
 	@Override
-	public Set<Entry<K, V>> entrySet() {
-		if (entrySet == null) {
+	public Set<Entry<K, V>> entrySet()
+	{
+		if (entrySet == null)
+		{
 			List<Set<Entry<K, V>>> list = new ArrayList<Set<Entry<K, V>>>();
-			for (Map<K, V> map : maps) {
+			for (Map<K, V> map : maps)
+			{
 				list.add(map.entrySet());
 			}
 			entrySet = new ConcatenationSet<Entry<K, V>>(list);
@@ -31,20 +35,24 @@ public class ConcatenationMap<K, V> extends AbstractMap<K, V> {
 	}
 
 	@Override
-	public V get(Object arg0) {
-		for (Map<K, V> map : maps) {
+	public V get(Object arg0)
+	{
+		for (Map<K, V> map : maps)
+		{
 			V v = map.get(arg0);
-			if (v != null)
-				return v;
+			if (v != null) return v;
 		}
 		return null;
 	}
 
+
+
 	@Override
-	public boolean containsKey(Object arg0) {
-		for (Map<K, V> map : maps) {
-			if (map.containsKey(arg0))
-				return true;
+	public boolean containsKey(Object arg0)
+	{
+		for (Map<K, V> map : maps)
+		{
+			if (map.containsKey(arg0)) return true;
 		}
 		return false;
 	}
@@ -53,16 +61,21 @@ public class ConcatenationMap<K, V> extends AbstractMap<K, V> {
 
 	private int size = 0;
 
-	public ConcatenationMap(Collection<Map<K, V>> maps) {
+	public ConcatenationMap(Collection<Map<K, V>> maps)
+	{
 		this.maps = maps;
-		for (Map<K, V> set : maps) {
+		for (Map<K, V> set : maps)
+		{
 
 			size += set.size();
 		}
 	}
 
+	
+	
 	@Override
-	public int size() {
+	public int size()
+	{
 		return size;
 
 	}

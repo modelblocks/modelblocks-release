@@ -8,17 +8,15 @@ import java.util.List;
 
 /**
  * @author petrov
- * 
+ *
  */
 public class StateSetWithFeatures extends StateSet {
 
 	public List<Integer> features;
-
 	public StateSetWithFeatures(short state, short nSubStates) {
 		super(state, nSubStates);
 		// TODO Auto-generated constructor stub
 	}
-
 	/**
 	 * @param stateSet
 	 */

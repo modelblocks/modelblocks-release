@@ -8,15 +8,14 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * A priority queue based on a binary heap. Note that this implementation does
+ * A priority queue based on a binary heap.  Note that this implementation does
  * not efficiently support containment, removal, or element promotion
- * (decreaseKey) -- these methods are therefore not yet implemented. It is a
- * maximum priority queue, so next() gives the highest-priority object.
- * 
+ * (decreaseKey) -- these methods are therefore not yet implemented.  It is a maximum
+ * priority queue, so next() gives the highest-priority object.
+ *
  * @author Dan Klein
  */
-public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable,
-		PriorityQueueInterface<E> {
+public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable, PriorityQueueInterface<E> {
 	private static final long serialVersionUID = 1L;
 	int size;
 	int capacity;
@@ -48,8 +47,7 @@ public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable,
 	}
 
 	protected void heapifyUp(int loc) {
-		if (loc == 0)
-			return;
+		if (loc == 0) return;
 		int parent = parent(loc);
 		if (priorities[loc] > priorities[parent]) {
 			swap(loc, parent);
@@ -63,18 +61,15 @@ public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable,
 		if (leftChild < size()) {
 			double priority = priorities[loc];
 			double leftChildPriority = priorities[leftChild];
-			if (leftChildPriority > priority)
-				max = leftChild;
+			if (leftChildPriority > priority) max = leftChild;
 			int rightChild = rightChild(loc);
 			if (rightChild < size()) {
 				double rightChildPriority = priorities[rightChild(loc)];
 				if (rightChildPriority > priority
-						&& rightChildPriority > leftChildPriority)
-					max = rightChild;
+						&& rightChildPriority > leftChildPriority) max = rightChild;
 			}
 		}
-		if (max == loc)
-			return;
+		if (max == loc) return;
 		swap(loc, max);
 		heapifyDown(max);
 	}
@@ -89,26 +84,21 @@ public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable,
 	}
 
 	protected void removeFirst() {
-		if (size < 1)
-			return;
+		if (size < 1) return;
 		swap(0, size - 1);
 		size--;
 		elements.remove(size);
 		heapifyDown(0);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
+	/* (non-Javadoc)
 	 * @see edu.berkeley.nlp.util.PriorityQueueInterface#hasNext()
 	 */
 	public boolean hasNext() {
 		return !isEmpty();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
+	/* (non-Javadoc)
 	 * @see edu.berkeley.nlp.util.PriorityQueueInterface#next()
 	 */
 	public E next() {
@@ -117,61 +107,48 @@ public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable,
 		return first;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
+	/* (non-Javadoc)
 	 * @see edu.berkeley.nlp.util.PriorityQueueInterface#remove()
 	 */
 	public void remove() {
 		throw new UnsupportedOperationException();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
+	/* (non-Javadoc)
 	 * @see edu.berkeley.nlp.util.PriorityQueueInterface#peek()
 	 */
 	public E peek() {
-		if (size() > 0)
-			return elements.get(0);
+		if (size() > 0) return elements.get(0);
 		throw new NoSuchElementException();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
+	/* (non-Javadoc)
 	 * @see edu.berkeley.nlp.util.PriorityQueueInterface#getPriority()
 	 */
 	public double getPriority() {
-		if (size() > 0)
-			return priorities[0];
+		if (size() > 0) return priorities[0];
 		throw new NoSuchElementException();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
+	/* (non-Javadoc)
 	 * @see edu.berkeley.nlp.util.PriorityQueueInterface#size()
 	 */
 	public int size() {
 		return size;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
+	/* (non-Javadoc)
 	 * @see edu.berkeley.nlp.util.PriorityQueueInterface#isEmpty()
 	 */
 	public boolean isEmpty() {
 		return size == 0;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
+	/* (non-Javadoc)
 	 * @see edu.berkeley.nlp.util.PriorityQueueInterface#add(E, double)
 	 */
-	public boolean add(E key, double priority) {
+	public boolean add(E key, double priority)
+	{
 		if (size == capacity) {
 			grow(2 * capacity + 1);
 		}
@@ -181,8 +158,9 @@ public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable,
 		size++;
 		return true;
 	}
-
-	public void put(E key, double priority) {
+	
+	public void put(E key, double priority)
+	{
 		add(key, priority);
 	}
 
@@ -191,47 +169,41 @@ public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable,
 	 */
 	@Override
 	public String toString() {
-		return toString(size(), false);
+		return toString(size());
 	}
 
 	/**
 	 * Returns a representation of the queue in decreasing priority order,
-	 * displaying at most maxKeysToPrint elements and optionally printing one
-	 * element per line.
-	 * 
+	 * displaying at most maxKeysToPring elements.
+	 *
 	 * @param maxKeysToPrint
-	 * @param multiline
-	 *            TODO
 	 */
-	public String toString(int maxKeysToPrint, boolean multiline) {
+	public String toString(int maxKeysToPrint) {
 		PriorityQueue<E> pq = clone();
-		StringBuilder sb = new StringBuilder(multiline ? "" : "[");
+		StringBuilder sb = new StringBuilder("[");
 		int numKeysPrinted = 0;
 		NumberFormat f = NumberFormat.getInstance();
 		f.setMaximumFractionDigits(5);
 		while (numKeysPrinted < maxKeysToPrint && pq.hasNext()) {
 			double priority = pq.getPriority();
 			E element = pq.next();
-			sb.append(element == null ? "null" : element.toString());
+			sb.append(element.toString());
 			sb.append(" : ");
 			sb.append(f.format(priority));
-			if (numKeysPrinted < size() - 1)
-				sb.append(multiline ? "\n" : ", ");
+			if (numKeysPrinted < size() - 1) sb.append(", ");
 			numKeysPrinted++;
 		}
-		if (numKeysPrinted < size())
-			sb.append("...");
-		if (!multiline)
-			sb.append("]");
+		if (numKeysPrinted < size()) sb.append("...");
+		sb.append("]");
 		return sb.toString();
 	}
 
 	/**
 	 * Returns a counter whose keys are the elements in this priority queue, and
-	 * whose counts are the priorities in this queue. In the event there are
+	 * whose counts are the priorities in this queue.  In the event there are
 	 * multiple instances of the same element in the queue, the counter's count
 	 * will be the sum of the instances' priorities.
-	 * 
+	 *
 	 * @return
 	 */
 	public Counter<E> asCounter() {
@@ -246,7 +218,7 @@ public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable,
 	}
 
 	/**
-	 * Returns a clone of this priority queue. Modifications to one will not
+	 * Returns a clone of this priority queue.  Modifications to one will not
 	 * affect modifications to the other.
 	 */
 	@Override
@@ -286,7 +258,7 @@ public class PriorityQueue<E> implements Iterator<E>, Serializable, Cloneable,
 		System.out.println(pq);
 		pq.put("two", 2);
 		System.out.println(pq);
-		System.out.println(pq.toString(2, false));
+		System.out.println(pq.toString(2));
 		while (pq.hasNext()) {
 			System.out.println(pq.next());
 		}

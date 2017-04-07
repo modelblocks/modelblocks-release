@@ -9,10 +9,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface Option {
 	String name();
-
 	String usage() default "";
-
 	boolean required() default false;
-
 	String defaultValue() default "";
 }

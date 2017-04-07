@@ -1,17 +1,18 @@
 package edu.berkeley.nlp.mapper;
 
+import java.util.List;
 
 public interface MapWorkerFactory<Item> {
 	public MapWorker<Item> newMapWorker();
-
-	public static class DefaultFactory<Item> implements MapWorkerFactory<Item> {
+	
+	public static class DefaultFactory<Item> implements MapWorkerFactory<Item>  {
 
 		private Class c;
-
+		
 		public DefaultFactory(Class c) {
 			this.c = c;
 		}
-
+		
 		public MapWorker<Item> newMapWorker() {
 			// TODO Auto-generated method stub
 			try {
@@ -22,6 +23,6 @@ public interface MapWorkerFactory<Item> {
 			}
 			throw new RuntimeException();
 		}
-
+				
 	}
 }

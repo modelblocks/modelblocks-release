@@ -16,15 +16,16 @@ import java.util.NoSuchElementException;
  * @author Christopher Manning For each entry, uses ~ 24 (entry) + 16?
  *         (Map.Entry) + 4 (List entry) = 44 bytes?
  */
-public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
-		Serializable {
+public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>, Serializable
+{
 
 	/**
 	 * An <code>Entry</code> stores an object in the queue along with its
 	 * current location (array position) and priority. uses ~ 8 (self) + 4 (key
 	 * ptr) + 4 (index) + 8 (priority) = 24 bytes?
 	 */
-	public static final class Entry<E> implements Serializable {
+	public static final class Entry<E> implements Serializable
+	{
 		public E key;
 
 		public int index;
@@ -32,28 +33,32 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 		public double priority;
 
 		@Override
-		public String toString() {
+		public String toString()
+		{
 			return key + " at " + index + " (" + priority + ")";
 		}
 	}
 
-	public boolean hasNext() {
+	public boolean hasNext()
+	{
 		return size() > 0;
 	}
 
-	public E next() {
-
+	public E next()
+	{
+		
 		final E removeFirst = removeFirst();
 		return removeFirst;
 	}
 
-	public void remove() {
+	public void remove()
+	{
 		throw new UnsupportedOperationException();
 	}
 
 	/**
-	 * <code>indexToEntry</code> maps linear array locations (not priorities) to
-	 * heap entries.
+	 * <code>indexToEntry</code> maps linear array locations (not priorities)
+	 * to heap entries.
 	 */
 	private List<Entry<E>> indexToEntry;
 
@@ -62,42 +67,45 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	 */
 	private Map<E, Entry<E>> keyToEntry;
 
-	public GeneralPriorityQueue<E> deepCopy() {
+	public GeneralPriorityQueue<E> deepCopy()
+	{
 		GeneralPriorityQueue<E> pq = new GeneralPriorityQueue<E>();
-		for (Entry<E> entry : indexToEntry) {
+		for (Entry<E> entry : indexToEntry)
+		{
 			pq.setPriority(entry.key, entry.priority);
 		}
 		return pq;
 	}
 
-	private Entry<E> parent(Entry<E> entry) {
+	private Entry<E> parent(Entry<E> entry)
+	{
 		int index = entry.index;
 		return (index > 0 ? getEntry((index - 1) / 2) : null);
 	}
 
-	private Entry<E> leftChild(Entry<E> entry) {
+	private Entry<E> leftChild(Entry<E> entry)
+	{
 		int leftIndex = entry.index * 2 + 1;
 		return (leftIndex < size() ? getEntry(leftIndex) : null);
 	}
 
-	private Entry<E> rightChild(Entry<E> entry) {
+	private Entry<E> rightChild(Entry<E> entry)
+	{
 		int index = entry.index;
 		int rightIndex = index * 2 + 2;
 		return (rightIndex < size() ? getEntry(rightIndex) : null);
 	}
 
-	private int compare(Entry<E> entryA, Entry<E> entryB) {
+	private int compare(Entry<E> entryA, Entry<E> entryB)
+	{
 		return compare(entryA.priority, entryB.priority);
 	}
 
-	protected int compare(double a, double b) {
+	protected int compare(double a, double b)
+	{
 		double diff = a - b;
-		if (diff > 0.0) {
-			return 1;
-		}
-		if (diff < 0.0) {
-			return -1;
-		}
+		if (diff > 0.0) { return 1; }
+		if (diff < 0.0) { return -1; }
 		return 0;
 	}
 
@@ -107,7 +115,8 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	 * @param entryA
 	 * @param entryB
 	 */
-	private void swap(Entry<E> entryA, Entry<E> entryB) {
+	private void swap(Entry<E> entryA, Entry<E> entryB)
+	{
 		int indexA = entryA.index;
 		int indexB = entryB.index;
 		entryA.index = indexB;
@@ -119,7 +128,8 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	/**
 	 * Remove the last element of the heap (last in the index array).
 	 */
-	private void removeLastEntry() {
+	private void removeLastEntry()
+	{
 		Entry entry = indexToEntry.remove(size() - 1);
 		keyToEntry.remove(entry.key);
 	}
@@ -127,7 +137,8 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	/**
 	 * Get the entry by key (null if none).
 	 */
-	protected Entry<E> getEntry(Object key) {
+	protected Entry<E> getEntry(Object key)
+	{
 		Entry<E> entry = keyToEntry.get(key);
 		return entry;
 	}
@@ -135,12 +146,14 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	/**
 	 * Get entry by index, exception if none.
 	 */
-	private Entry<E> getEntry(int index) {
+	private Entry<E> getEntry(int index)
+	{
 		Entry<E> entry = indexToEntry.get(index);
 		return entry;
 	}
 
-	protected Entry<E> makeEntry(E key) {
+	protected Entry<E> makeEntry(E key)
+	{
 		Entry<E> entry = new Entry<E>();
 		entry.index = size();
 		entry.key = key;
@@ -153,13 +166,17 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	/**
 	 * iterative heapify up: move item o at index up until correctly placed
 	 */
-	protected void heapifyUp(Entry<E> entry) {
-		while (true) {
-			if (entry.index == 0) {
+	protected void heapifyUp(Entry<E> entry)
+	{
+		while (true)
+		{
+			if (entry.index == 0)
+			{
 				break;
 			}
 			Entry<E> parentEntry = parent(entry);
-			if (compare(entry, parentEntry) <= 0) {
+			if (compare(entry, parentEntry) <= 0)
+			{
 				break;
 			}
 			swap(entry, parentEntry);
@@ -173,28 +190,35 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	 * obvious recursive formulation with an iterative one to gain (marginal)
 	 * speed
 	 */
-	private void heapifyDown(Entry<E> entry) {
+	private void heapifyDown(Entry<E> entry)
+	{
 		Entry<E> currentEntry = entry;
 		Entry<E> bestEntry = null;
 
-		do {
+		do
+		{
 			bestEntry = currentEntry;
 
 			Entry<E> leftEntry = leftChild(currentEntry);
-			if (leftEntry != null) {
-				if (compare(bestEntry, leftEntry) < 0) {
+			if (leftEntry != null)
+			{
+				if (compare(bestEntry, leftEntry) < 0)
+				{
 					bestEntry = leftEntry;
 				}
 			}
 
 			Entry<E> rightEntry = rightChild(currentEntry);
-			if (rightEntry != null) {
-				if (compare(bestEntry, rightEntry) < 0) {
+			if (rightEntry != null)
+			{
+				if (compare(bestEntry, rightEntry) < 0)
+				{
 					bestEntry = rightEntry;
 				}
 			}
 
-			if (bestEntry != currentEntry) {
+			if (bestEntry != currentEntry)
+			{
 				// Swap min and current
 				swap(bestEntry, currentEntry);
 				// at start of next loop, we set currentIndex to largestIndex
@@ -205,7 +229,8 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 		// verify();
 	}
 
-	private void heapify(Entry<E> entry) {
+	private void heapify(Entry<E> entry)
+	{
 		heapifyUp(entry);
 		heapifyDown(entry);
 	}
@@ -215,7 +240,8 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	 * 
 	 * @return the object with highest priority
 	 */
-	public E removeFirst() {
+	public E removeFirst()
+	{
 		E first = getFirst();
 		removeKey(first);
 		return first;
@@ -227,9 +253,9 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	 * 
 	 * @return the object with minimum key
 	 */
-	public E getFirst() {
-		if (isEmpty())
-			throw new NoSuchElementException();
+	public E getFirst()
+	{
+		if (isEmpty()) throw new NoSuchElementException();
 		return getEntry(0).key;
 	}
 
@@ -242,9 +268,9 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	 * @return null if the object is not in the queue, otherwise returns the
 	 *         object.
 	 */
-	public E getObject(E key) {
-		if (!containsKey(key))
-			return null;
+	public E getObject(E key)
+	{
+		if (!containsKey(key)) return null;
 		Entry<E> e = getEntry(key);
 		return e.key;
 	}
@@ -256,36 +282,39 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	 * @param key
 	 * @return
 	 */
-	public double getPriority(E key) {
+	public double getPriority(E key)
+	{
 		Entry entry = getEntry(key);
-		if (entry == null) {
-			return Double.NEGATIVE_INFINITY;
-		}
+		if (entry == null) { return Double.NEGATIVE_INFINITY; }
 		return entry.priority;
 	}
 
-	public double removeKey(E key) {
+	public double removeKey(E key)
+	{
 		Entry<E> entry = getEntry(key);
-		if (entry == null) {
-			return Double.NEGATIVE_INFINITY;
-		}
+		if (entry == null) { return Double.NEGATIVE_INFINITY; }
 		removeEntry(entry);
 		return entry.priority;
 	}
 
-	private void removeEntry(Entry<E> entry) {
+	private void removeEntry(Entry<E> entry)
+	{
 		Entry<E> lastEntry = getLastEntry();
-		if (entry != lastEntry) {
+		if (entry != lastEntry)
+		{
 			swap(entry, lastEntry);
 			removeLastEntry();
 			heapify(lastEntry);
-		} else {
+		}
+		else
+		{
 			removeLastEntry();
 		}
 		return;
 	}
 
-	private Entry<E> getLastEntry() {
+	private Entry<E> getLastEntry()
+	{
 		return getEntry(size() - 1);
 	}
 
@@ -298,18 +327,20 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	 *            an <code>Object</code> value
 	 * @return whether the priority actually improved.
 	 */
-	public boolean relaxPriority(E key, double priority) {
+	public boolean relaxPriority(E key, double priority)
+	{
 		Entry<E> entry = getEntry(key);
-		if (entry == null) {
+		if (entry == null)
+		{
 			entry = makeEntry(key);
 		}
-		if (compare(priority, entry.priority) <= 0) {
-			return false;
-		}
+		if (compare(priority, entry.priority) <= 0) { return false; }
 		entry.priority = priority;
 		heapifyUp(entry);
 		return true;
 	}
+	
+	
 
 	/**
 	 * Demotes a key in the queue, adding it if it wasn't there already. If the
@@ -321,14 +352,14 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	 *            an <code>Object</code> value
 	 * @return whether the priority actually improved.
 	 */
-	public boolean decreasePriority(E key, double priority) {
+	public boolean decreasePriority(E key, double priority)
+	{
 		Entry<E> entry = getEntry(key);
-		if (entry == null) {
+		if (entry == null)
+		{
 			entry = makeEntry(key);
 		}
-		if (compare(priority, entry.priority) >= 0) {
-			return false;
-		}
+		if (compare(priority, entry.priority) >= 0) { return false; }
 		entry.priority = priority;
 		heapifyDown(entry);
 		return true;
@@ -341,41 +372,34 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	 * @param key
 	 *            an <code>Object</code> value
 	 */
-	public void setPriority(E key, double priority) {
+	public void setPriority(E key, double priority)
+	{
 		Entry<E> entry = getEntry(key);
 
-		if (entry == null) {
+		if (entry == null)
+		{
 			entry = makeEntry(key);
-		} else {
-			if (entry.key != key) {
+		}
+		else
+		{
+			if (entry.key != key)
+			{
 
 				entry.key = key;
 				keyToEntry.put(key, entry);
 			}
 		}
 
-		if (compare(priority, entry.priority) == 0) {
-			return;
-		}
+		if (compare(priority, entry.priority) == 0) { return; }
 
 		entry.priority = priority;
 		heapify(entry);
-
-		// isValid(entry);
-	}
-
-	/**
-	 * @param entry
-	 * @param count
-	 */
-	private boolean isValid(Entry<E> entry) {
 		int count = 0;
-		for (int i = 0; i < indexToEntry.size(); ++i) {
-			if (indexToEntry.get(i).key == entry.key)
-				count++;
+		for (int i = 0; i < indexToEntry.size(); ++i)
+		{
+			if (indexToEntry.get(i).key == entry.key) count++;
 		}
 		assert count == 1;
-		return count == 1;
 	}
 
 	/**
@@ -383,7 +407,8 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	 * 
 	 * @return a <code>boolean</code> value
 	 */
-	public boolean isEmpty() {
+	public boolean isEmpty()
+	{
 		return indexToEntry.isEmpty();
 	}
 
@@ -392,56 +417,64 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 	 * 
 	 * @return queue size
 	 */
-	public int size() {
+	public int size()
+	{
 		return indexToEntry.size();
 	}
 
-	public List<E> toSortedList() {
+	public List<E> toSortedList()
+	{
 		List<E> sortedList = new ArrayList<E>(size());
 		GeneralPriorityQueue<E> queue = deepCopy();
-		while (queue.hasNext()) {
+		while (queue.hasNext())
+		{
 			sortedList.add(queue.next());
 		}
 		return sortedList;
 	}
 
-	public Iterator<E> iterator() {
+	public Iterator<E> iterator()
+	{
 		return Collections.unmodifiableCollection(toSortedList()).iterator();
 	}
 
 	/**
 	 * Clears the queue.
 	 */
-	public void clear() {
+	public void clear()
+	{
 		indexToEntry.clear();
 		keyToEntry.clear();
 	}
 
-	// private void verify() {
-	// for (int i = 0; i < indexToEntry.size(); i++) {
-	// if (i != 0) {
-	// // check ordering
-	// if (compare(getEntry(i), parent(getEntry(i))) < 0) {
-	// System.err.println("Error in the ordering of the heap! ("+i+")");
-	// System.exit(0);
-	// }
-	// }
-	// // check placement
-	// if (i != ((Entry)indexToEntry.get(i)).index)
-	// System.err.println("Error in placement in the heap!");
-	// }
-	// }
+	//  private void verify() {
+	//    for (int i = 0; i < indexToEntry.size(); i++) {
+	//      if (i != 0) {
+	//        // check ordering
+	//        if (compare(getEntry(i), parent(getEntry(i))) < 0) {
+	//          System.err.println("Error in the ordering of the heap! ("+i+")");
+	//          System.exit(0);
+	//        }
+	//      }
+	//      // check placement
+	//      if (i != ((Entry)indexToEntry.get(i)).index)
+	//        System.err.println("Error in placement in the heap!");
+	//    }
+	//  }
 
 	@Override
-	public String toString() {
+	public String toString()
+	{
 		List<E> sortedKeys = toSortedList();
 		StringBuffer sb = new StringBuffer("[");
-		for (Iterator<E> keyI = sortedKeys.iterator(); keyI.hasNext();) {
+		for (Iterator<E> keyI = sortedKeys.iterator(); keyI.hasNext();)
+		{
 			E key = keyI.next();
 			sb.append(key);
 			sb.append("=");
 			sb.append(getPriority(key));
-			if (keyI.hasNext()) {
+			if (keyI.hasNext())
+			{
 				sb.append(", ");
 			}
 		}
@@ -449,60 +482,69 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 		return sb.toString();
 	}
 
-	public String toVerticalString() {
+	public String toVerticalString()
+	{
 		List<E> sortedKeys = toSortedList();
 		StringBuffer sb = new StringBuffer();
-		for (Iterator<E> keyI = sortedKeys.iterator(); keyI.hasNext();) {
+		for (Iterator<E> keyI = sortedKeys.iterator(); keyI.hasNext();)
+		{
 			E key = keyI.next();
 			sb.append(key);
 			sb.append(" : ");
 			sb.append(getPriority(key));
-			if (keyI.hasNext()) {
+			if (keyI.hasNext())
+			{
 				sb.append("\n");
 			}
 		}
 		return sb.toString();
 	}
 
-	public double getPriority() {
+	public double getPriority()
+	{
 		return getPriority(getFirst());
 	}
 
-	public boolean containsKey(E e) {
+	public boolean containsKey(E e)
+	{
 		return keyToEntry.containsKey(e);
 	}
 
-	public String toString(int maxKeysToPrint) {
+	public String toString(int maxKeysToPrint)
+	{
 		GeneralPriorityQueue<E> pq = deepCopy();
 		StringBuilder sb = new StringBuilder("[");
 		int numKeysPrinted = 0;
-		while (numKeysPrinted < maxKeysToPrint && !pq.isEmpty()) {
+		while (numKeysPrinted < maxKeysToPrint && !pq.isEmpty())
+		{
 			double priority = pq.getPriority();
 			E element = pq.removeFirst();
 			sb.append(element.toString());
 			sb.append(" : ");
 			sb.append(priority);
 			if (numKeysPrinted < size() - 1)
-				// sb.append("\n");
+			//        sb.append("\n");
 				sb.append(", ");
 			numKeysPrinted++;
 		}
-		if (numKeysPrinted < size())
-			sb.append("...");
+		if (numKeysPrinted < size()) sb.append("...");
 		sb.append("]");
 		return sb.toString();
 	}
 
-	public GeneralPriorityQueue() {
+	public GeneralPriorityQueue()
+	{
 		this(new MapFactory.HashMapFactory<E, Entry<E>>());
 	}
 
-	public GeneralPriorityQueue(MapFactory<E, Entry<E>> mapFactory) {
+	public GeneralPriorityQueue(MapFactory<E, Entry<E>> mapFactory)
+	{
 		indexToEntry = new ArrayList<Entry<E>>();
 		keyToEntry = mapFactory.buildMap();
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args)
+	{
 		GeneralPriorityQueue<String> queue = new GeneralPriorityQueue<String>();
 		queue.setPriority("a", 1.0);
 		System.out.println("Added a:1 " + queue);
@@ -522,13 +564,15 @@ public class GeneralPriorityQueue<E> implements PriorityQueueInterface<E>,
 		System.out.println("queue=" + queue);
 	}
 
-	public void put(E key, double priority) {
+	public void put(E key, double priority)
+	{
 
 		setPriority(key, priority);
 
 	}
 
-	public E peek() {
+	public E peek()
+	{
 		return getFirst();
 	}
 

@@ -1,9 +1,7 @@
-//
 //package edu.berkeley.nlp.math;
 //
 //import Jama.Matrix;
 //import Jama.EigenvalueDecomposition;
-//import Jama.SingularValueDecomposition;
 //import fig.basic.Pair;
 //import fig.basic.NumUtils;
 //
@@ -74,24 +72,12 @@
 //  {
 //    int n = logPotentials.length;
 //    double[][] potentials = new double[n][];
-////    double max = Double.NEGATIVE_INFINITY;
-////    for (int i = 0; i < n; i++) {
-////      for (int j = 0; j < n; j++) {
-////        if (logPotentials[i][j] < Double.POSITIVE_INFINITY) {
-////          max = Math.max(logPotentials[i][j],max);
-////        }
-////      }
-////    }
-////    for (int i = 0; i < n; i++) {
-////      for (int j = 0; j < n; j++) {
-////        logPotentials[i][j] -= max;
-////      }
-////    }
 //    for (int i = 0; i < n; i++) {
 //      potentials[i] = DoubleArrays.exponentiate(logPotentials[i]);
 //      DoubleArrays.checkValid(potentials[i]);
-//      DoubleArrays.checkNonNegative(potentials[i]);
 //    }
+//    //Logger.logs("max of potentials: " + DoubleArrays.max(potentials));
+//    //Logger.logs("min of potentials: " + DoubleArrays.min(potentials));
 //    double[][] laplacian = new double[n][n];
 //    for (int j = 0; j < n; j++) {
 //      double sum = 0.0;
@@ -103,18 +89,10 @@
 //      }
 //    }
 //    DoubleArrays.checkValid(laplacian);
+//    //Logger.logs("max of laplacian: " + DoubleArrays.max(laplacian));
+//    //Logger.logs("min of laplacian: " + DoubleArrays.min(laplacian));    
 //    Matrix L = new Matrix(laplacian);
-//    SingularValueDecomposition svd = new SingularValueDecomposition(L);
-//    Matrix U = svd.getU();
-//    Matrix Sigma = svd.getS();
-//    for (int i = 0; i < n; i++) {
-//      double s= Sigma.get(i,i);
-//      Sigma.set(i,i, s > 0.0 ? 1.0/s : s);
-//    }
-//    Matrix V = svd.getV();
-//    Matrix Linv = V.times(Sigma).times(U.transpose());
-//    EigenvalueDecomposition evd = L.eig();
-//    //Matrix Linv = L.inverse();
+//    Matrix Linv = L.inverse();
 //    double[][] posteriors = new double[n][n];
 //    for (int i = 0; i < n; i++) {
 //      for (int j = 0; j < n; j++) {
@@ -132,6 +110,7 @@
 //      }
 //    }
 //    DoubleArrays.checkValid(posteriors);
+//    EigenvalueDecomposition evd = L.eig();
 //    double logSumTree = 0.0;
 //    for (double ev : evd.getRealEigenvalues()) {
 //      logSumTree += Math.log(ev);
@@ -154,4 +133,4 @@
 //    Pair<Double,double[][]> res = computeMultiRoot(potentials);
 //    System.out.println("sumTrees: " + Math.exp(res.getFirst()));
 //  }
-// }
+//}

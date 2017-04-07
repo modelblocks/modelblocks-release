@@ -11,14 +11,19 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 
+
 /**
  * 
  * @author adpauls
  */
 
-public class EfficientBufferedReader extends BufferedReader {
+public class EfficientBufferedReader extends BufferedReader
+{
 
-	public EfficientBufferedReader(Reader in) {
+
+    
+    public EfficientBufferedReader(Reader in)
+	{
 		super(in);
 		// TODO Auto-generated constructor stub
 	}
@@ -31,21 +36,19 @@ public class EfficientBufferedReader extends BufferedReader {
 	 * @return
 	 * @throws IOException
 	 */
-	public boolean readLineToBuffer(StringBuilder sb) throws IOException
-
-	{
-		sb.delete(0, sb.length());
-
-		while (true) {
-			int c = read();
-			if (c == -1)
-				return true;
-			else if (c == '\n')
-				break;
-			if (c != '\r')
-				sb.append((char) c);
-		}
-		return false;
-	}
+    public boolean readLineToBuffer(StringBuilder sb) throws IOException
+    
+    {
+    	sb.delete(0,sb.length());
+    	
+    	while (true)
+    	{
+    		int c = read();
+			if (c == -1) return true;
+			else if (c == '\n') break;
+			if (c != '\r') sb.append((char) c);
+    	}
+    	return false;
+    }
 
 }
