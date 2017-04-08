@@ -28,8 +28,6 @@
 
 # Only use the following directory variables in prerequisites.
 # Otherwise, they may break when this makefile is called by another.
-EDU     := $(RESOURCE-LVPCFG)/edu
-FIG     := $(RESOURCE-LVPCFG)/fig
 BIN      := bin
 GENMODEL := genmodel
 
@@ -86,28 +84,18 @@ endif
 #
 ################################################################################
 
-#### java executable objects
-.PRECIOUS: %.class
-%.class:  %.java  #$$(addsuffix .class,$$(subst .,/,$$(subst import ,,$$(shell grep -o 'import edu[.a-zA-Z0-9]*' $$(subst .class,.java,$$@)))))
-	javac -cp $(dir $(EDU)) $<
-
 #### berkeley parser shortcut "executable" -- external jarfile
-.PRECIOUS: bin/parser-berk
-bin/parser-berk: $(CONFIGDIR)/user-javaflags.txt $(CONFIGDIR)/user-berkeleyparserjar-directory.txt \
+.PRECIOUS: bin/parser-fullberk
+bin/parser-fullberk: $(CONFIGDIR)/user-javaflags.txt $(CONFIGDIR)/user-berkeleyparserjar-directory.txt \
 $(BERKPARSEDIR)/berkeleyParser.jar  |  bin  #$$(abspath $$(dir $$@))
 	echo "#!/bin/sh" > $@
 	echo "java $(shell cat $(word 1,$^)) -cp $(word 3,$^) edu.berkeley.nlp.PCFGLA.BerkeleyParser -substates -gr \$$1" >> $@
 	chmod u+x $@
-#### berkeley parser shortcut "executable" -- internal version
-.PRECIOUS: bin/parser-fullberk
-bin/parser-fullberk:  $(CONFIGDIR)/user-javaflags.txt  $(EDU)/berkeley/nlp/PCFGLA/BerkeleyParser.class  |  bin  #$$(abspath $$(dir $$@))
+
+bin/parser-vitberk: $(CONFIGDIR)/user-javaflags.txt $(CONFIGDIR)/user-berkeleyparserjar-directory.txt \
+$(BERKPARSEDIR)/berkeleyParser.jar  |  bin  #$$(abspath $$(dir $$@))
 	echo "#!/bin/sh" > $@
-	echo "java $(shell cat $(word 1,$^)) -cp $(dir $(EDU)) edu/berkeley/nlp/PCFGLA/BerkeleyParser -substates -gr \$$1" >> $@
-	chmod u+x $@
-.PRECIOUS: bin/parser-vitberk
-bin/parser-vitberk:  $(CONFIGDIR)/user-javaflags.txt  $(EDU)/berkeley/nlp/PCFGLA/BerkeleyParser.class  |  bin  #$$(abspath $$(dir $$@))
-	echo "#!/bin/sh" > $@
-	echo "java $(shell cat $(word 1,$^)) -cp $(dir $(EDU)) edu/berkeley/nlp/PCFGLA/BerkeleyParser -viterbi -substates -gr \$$1" >> $@
+	echo "java $(shell cat $(word 1,$^)) -cp $(word 3,$^) edu.berkeley.nlp.PCFGLA.BerkeleyParser -viterbi -substates -gr \$$1" >> $@
 	chmod u+x $@
 
 ################################################################################
@@ -130,22 +118,12 @@ bin/parser-vitberk:  $(CONFIGDIR)/user-javaflags.txt  $(EDU)/berkeley/nlp/PCFGLA
 %sm.gr:  $(CONFIGDIR)/user-javaflags.txt  $(CONFIGDIR)/user-berkeleyparserjar-directory.txt  \
 $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees
 	java  $(shell cat $(word 1,$^))  -cp $(word 3,$^)  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 4,$^)  -treebank SINGLEFILE  -out $@
-## validation -- internal version
-%sm.gr:  $(EDU)/berkeley/nlp/PCFGLA/GrammarTrainer.class  $$(basename $$(basename %)).extrparplusops.linetrees  \
-$$(basename %)last.extrparplusops.linetrees  $(CONFIGDIR)/user-javaflags.txt
-	java  $(shell cat $(word 4,$^))  -cp $(dir $(EDU))  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 2,$^)  -validation $(word 3,$^)  -treebank SINGLEFILE  -out $@
-## no validation -- internal version
-#%sm.gr:  $(EDU)/berkeley/nlp/PCFGLA/GrammarTrainer.class  $$(basename %).extrparplusops.linetrees  user-javaflags.txt
-#	java  $(shell cat $(word 3,$^))  -cp $(dir $(EDU))  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 2,$^)  -treebank SINGLEFILE  -out $@
-
-
-#%sm.gr:  $(EDU)/berkeley/nlp/PCFGLA/GrammarTrainer.class  $$(basename %).extrparplusops.linetrees $$(basename $$(basename %)).last.extrparplusops.linetrees  user-javaflags.txt
-#	java  $(shell cat $(word 4,$^))  -cp $(dir $(EDU))  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 2,$^)  -validation $(word 3,$^)  -treebank SINGLEFILE  -out $@
-##	java  -cp $(EDU)  $(shell cat $(word 4,$^))  $(subst /,.,$(basename $<))  -SMcycles $(subst .,,$(suffix $*))  -path $(word 2,$^)  -validation $(word 3,$^)  -treebank SINGLEFILE  -out $@
+## validation -- external version
+%sm.gr:  $(CONFIGDIR)/user-javaflags.txt  $(CONFIGDIR)/user-berkeleyparserjar-directory.txt  \
+$(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees $$(basename %)last.extrparplusops.linetrees
+	java  $(shell cat $(word 1,$^))  -cp $(word 3,$^)  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 4,$^)  -validation $(word 5,$^)  -treebank SINGLEFILE  -out $@
 
 #### silly shortcut for berkeley parser
-%.berk.model:  %.gr
-	ln -sf $(notdir $<) $@
 %.fullberk.model:  %.gr
 	ln -sf $(notdir $<) $@
 %.vitberk.model:  %.gr
@@ -154,8 +132,8 @@ $$(basename %)last.extrparplusops.linetrees  $(CONFIGDIR)/user-javaflags.txt
 #### obtain text grammar from javadump
 # Should these really be precious?
 .PRECIOUS: %.splits %.grammar %.lexicon
-%.splits %.grammar %.lexicon:  $(EDU)/berkeley/nlp/PCFGLA/WriteGrammarToTextFile.class  %.gr  $(CONFIGDIR)/user-javaflags.txt
-	java  $(shell cat $(word 3,$^))  -cp $(dir $(EDU))  edu.berkeley.nlp.PCFGLA.WriteGrammarToTextFile  $(word 2,$^)  $(basename $@)
+%.splits %.grammar %.lexicon:  $(CONFIGDIR)/user-javaflags.txt  $(CONFIGDIR)/user-berkeleyparserjar-directory.txt  $(BERKPARSEDIR)/berkeleyParser.jar  %.gr
+	java  $(shell cat $(word 1,$^))  -cp $(word 3,$^)  edu.berkeley.nlp.PCFGLA.WriteGrammarToTextFile  $(word 4,$^)  $(basename $@)
 
 ################################################################################
 #
