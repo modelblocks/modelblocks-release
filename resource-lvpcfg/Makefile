@@ -159,7 +159,7 @@ $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees $$(b
 	cat $<  |  $(word 2,$^)  $(subst _, ,$(subst .,,$(suffix $*)))  $(word 3,$^)  >  $@
 ## this is to spec; above is deprecated
 %parsed.output: $$(basename %).linetoks \
-		$(BIN)/parser-berk \
+		$(BIN)/parser-fullberk \
 		$(GENMODEL)/$$(basename $$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*))))).berk.model
 	@echo "WARNING: long build for '$@'!  Press CTRL-C to abort!"
 	@sleep 5
