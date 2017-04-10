@@ -1,7 +1,7 @@
 MODELBLOCKS RESOURCES
 ===========
 
-This file describes the purpose of each resource-* directory, so users will have a better idea of when each should be included. Any directory with [*] link to resources that are not distributed with Modelblocks and so must be obtained separately.
+This file describes the purpose of each resource-* directory, so users will have a better idea of when each should be included. Any directory with [*] links to resources that are not distributed with Modelblocks and so must be obtained separately.
 
 resource-bmmm
 --------------------
