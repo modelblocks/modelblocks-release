@@ -1,39 +1,39 @@
 MODELBLOCKS RESOURCES
 ===========
 
-This file describes the purpose of each resource-* directory, so users will have a better idea of when each should be included. Any directory with [*] links to resources that are not distributed with Modelblocks and so must be obtained separately. Modelblocks needs to know where to access external resources, so each such resource has an associated config/user-*.txt file, which you will need to edit so that it contains the absolute path of that resource on your system.
+This file describes the purpose of each resource-&ast; directory, so users will have a better idea of when each should be included. Any directory with [+] links to resources that are not distributed with Modelblocks and so must be obtained separately. Modelblocks needs to know where to access external resources, so each such resource has an associated config/user-&ast;.txt file, which you will need to edit so that it contains the absolute path of that resource on your system.
 
-resource-bmmm[*]
+resource-bmmm[+]
 --------------------
 TBA
 
 Pointed to by `config/user-bmmm-directory.txt`.
 
-resource-bnc[*]
+resource-bnc[+]
 ------------------
 This directory provides hooks to the British National Corpus (BNC; BNC Consortium 2007).
 
 Pointed to by `config/user-bnc-directory.txt`.
 
-resource-ccl[*]
+resource-ccl[+]
 -----------------------
 TBA
 
 Pointed to by `config/user-ccl-directory.txt`.
 
-resource-childes[*]
+resource-childes[+]
 --------------------------
 Provides hooks for the Adam, Eve, and Sarah portions of the CHILDES corpus (Macwhinney 2000).
 
 Pointed to by `config/user-childes-directory.txt`.
 
-resource-dmv[*]
+resource-dmv[+]
 ------------------------
 TBA
 
 Pointed to by `config/user-dmv-directory.txt`.
 
-resource-dundee[*]
+resource-dundee[+]
 ------------------------
 Provides hooks for the Dundee eye-tracking corpus (Kennedy et al., 2003).
 
@@ -51,7 +51,7 @@ The main Modelblocks hub directory, which generates pointers to each resource di
 
 `config/user-numthreads.txt` handles the number of threads a given project should have access to.
 
-resource-gigaword[*]
+resource-gigaword[+]
 ------------------------
 Provides hooks for the Gigaword text corpus (Graff and Cieri, 2003).
 
@@ -61,7 +61,7 @@ resource-incrsem
 ------------------------
 TBA
 
-resource-kenlm[*]
+resource-kenlm[+]
 ------------------------
 Provides hooks to the KenLM N-gram Language Modeling toolkit (Heafield et al., 2013).
 
@@ -97,19 +97,19 @@ The Berkeley Parser jar file is pointed to by `config/user-berkeleyparserjar-dir
 
 Java compile flags are given in `config/user-javaflags.txt`.
 
-resource-naturalstories[*]
+resource-naturalstories[+]
 ------------------------
 Provides hooks to the Natural Stories self-paced reading corpus (Futrell et al., in prep).
 
 Pointed to by `config/user-naturalstories-directory.txt`.
 
-resource-ontonotes[*]
+resource-ontonotes[+]
 ------------------------
 Provides hooks to the Ontonotes corpus (Weischedel et al., 2013).
 
 Pointed to by `config/user-ontonotes-directory.txt`.
 
-resource-rhacks[*]
+resource-rhacks[+]
 ------------------------
 Provides hooks to externally available R tools, especially for mixed effects models.
 
@@ -127,43 +127,43 @@ resource-segment-tokenize
 ------------------------
 TBA
 
-resource-srilm[*]
+resource-srilm[+]
 ------------------------
 Provides hooks to the SRI N-gram Language Modeling toolkit (SRILM; Stolcke, 2002). Generally deprecated in favor of KenLM now.
 
 Pointed to by `config/user-srilm-directory.txt`.
 
-resource-tiger[*]
+resource-tiger[+]
 ------------------------
 Provides hooks to the Tiger German treebank corpus (Brants et al., 2004).
 
 Pointed to by `config/user-tiger-directory.txt`.
 
-resource-tokenizer[*]
+resource-tokenizer[+]
 ------------------------
 Provides hook to external extended Penn tokenizer, which tries to tokenize sentences as in the Penn Treebank to standardize input to parsers trained on that data.
 
 Pointed to by `config/user-tokenizer-directory.txt`.
 
-resource-treebank[*]
+resource-treebank[+]
 ------------------------
 Provides hooks to the Penn Treebank corpus (Marcus et al., 1993). Often used to train the parser.
 
 Pointed to by `config/user-treebank-directory.txt`.
 
-resource-ucl[*]
+resource-ucl[+]
 ------------------------
 Provides hooks to the University College London (UCL) eye-tracking corpus (Frank et al., 2013).
 
 Pointed to by `config/user-ucl-directory.txt`.
 
-resource-upparse[*]
+resource-upparse[+]
 ------------------------
 TBA
 
 Pointed to by `config/user-upparse-directory.txt`.
 
-resource-wordnet[*]
+resource-wordnet[+]
 ------------------------
 `BROKEN` Provides hooks to the wordnet corpus. *Currently missing the wordnet2hyps.py script.*
 

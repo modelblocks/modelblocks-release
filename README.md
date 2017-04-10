@@ -60,5 +60,5 @@ specific data without having to modify the Makefile, which may be
 overwritten in subsequent updates to Modelblocks. 
 
 External resources are described in `RESOURCES.md`
-and denoted by a [*] next to their name. `RESOURCES.md` also specifies which
+and denoted by a [+] next to their name. `RESOURCES.md` also specifies which
 `user-*.txt` files are associated with each external resource.
