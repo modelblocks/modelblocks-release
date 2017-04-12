@@ -154,3 +154,7 @@ $(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
   
 %naturalstories.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.linetrees %naturalstories.linetoks
 	python $^ > $@
+
+%naturalstories.gold.coref.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.coref.linetrees %naturalstories.linetoks
+	python $^ > $@
+

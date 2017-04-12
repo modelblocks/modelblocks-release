@@ -36,6 +36,9 @@
 MBDIR := $(realpath $(dir $(abspath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))/..)
 CONFIGDIR := $(abspath $(MBDIR)/config)
 
+RESOURCE-ALICE := $(abspath $(MBDIR)/resource-alice)
+ALICE-SCRIPTS := $(RESOURCE-ALICE)/scripts
+
 RESOURCE-BNC := $(abspath $(MBDIR)/resource-bnc)
 BNC-SCRIPTS := $(RESOURCE-BCN)/scripts
 

@@ -260,7 +260,7 @@ genmodel/rename_cols.params: | genmodel
 %.dlt.d.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
 	cat $< | python $(word 2, $^) -d > $@
 
-$.coref.tokmeasures: $(RT-SCRIPTS)/extract_coref_predictors.py %.linetrees
+%.coref.tokmeasures: $(RT-SCRIPTS)/extract_coref_predictors.py %.coref.fromlinetrees.numbered.editabletrees
 	python $^ > $@
 
 %.pcfg.tokmeasures: %_parsed.output $(LCPARSE-SCRIPTS)/spargeComplexity.py $(RT-SCRIPTS)/calcFJProb.py
@@ -269,7 +269,7 @@ $.coref.tokmeasures: $(RT-SCRIPTS)/extract_coref_predictors.py %.linetrees
 # With co-ref features
 %.syn.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).gold.dlt.tokmeasures \
 $$(word 1, $$(subst ., , %)).gold.embd.tokmeasures $$(word 1, $$(subst ., , %)).gold.coref.tokmeasures $(RT-SCRIPTS)/spilloverMetrics.py
-	cat $< | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) <(cut -f 2- -d' ' $(word 3, $^)) <(cut -f 2- -d'\t') | \
+	cat $< | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) <(cut -f 2- -d' ' $(word 3, $^)) <(cut -f 2- $(word 4, $^) | sed 's/\t/ /g') | \
 	sed 's/  */ /g;1s/F-/fm/g;1s/F+/fp/g;1s/L-/lm/g;1s/L+/lp/g;1s/B-/bm/g;1s/B+/bp/g;1s/Badd/ba/g;1s/Bcdr/bc/g;1s/BNil/bo/g;1s/Bsto/bsto/g;' | \
 	python $(word 5, $^) -n3 -p $(DLT) $(FJ) $(COREF) $(EXTRA-SPILL) > $@
 
