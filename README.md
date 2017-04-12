@@ -39,6 +39,9 @@ required by other software.  All resources included in this package
 are distributed under the Gnu General Public License (see LICENSE file
 in this directory).
 
+Included resources are described in `RESOURCES.md`
+and denoted by a lack of [*] next to their name.
+
 External Resources and `USER-*.TXT` Files
 -----------------------------------------
 When licenses of resources used in Modelblocks projects do not permit
@@ -54,4 +57,8 @@ will need to be downloaded and the pointers updated in
 modelblocks-repository/config. This use of `user-*.txt` files is 
 intended to allow users to specify external resources or other user-
 specific data without having to modify the Makefile, which may be 
-overwritten in subsequent updates to Modelblocks.
+overwritten in subsequent updates to Modelblocks. 
+
+External resources are described in `RESOURCES.md`
+and denoted by a [+] next to their name. `RESOURCES.md` also specifies which
+`user-*.txt` files are associated with each external resource.
