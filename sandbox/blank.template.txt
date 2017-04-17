@@ -42,6 +42,7 @@ include ../../resource-general/Makefile
 #include $(RESOURCE-LVPCFG)/Makefile
 #include $(RESOURCE-LCPARSE)/Makefile
 #include $(RESOURCE-BNC)/Makefile
+#include $(RESOURCE-FMRI)/Makefile
 #include $(RESOURCE-TREEBANK)/Makefile
 #include $(RESOURCE-TIGER)/Makefile
 #include $(RESOURCE-GIGAWORD)/Makefile
@@ -49,6 +50,8 @@ include ../../resource-general/Makefile
 #include $(RESOURCE-SRILM)/Makefile
 #include $(RESOURCE-INCRSEM)/Makefile
 #include $(RESOURCE-UCL)/Makefile
+#include $(RESOURCE-ALICE)/Makefile
+#include $(RESOURCE-FORREST)/Makefile
 #include $(RESOURCE-DUNDEE)/Makefile
 #include $(RESOURCE-GOLDDUNDEE)/Makefile
 #include $(RESOURCE-NATSTORIES)/Makefile
