@@ -23,6 +23,8 @@
 #
 ################################################################################
 
+$(info $(VPATH))
+
 default: DEV-ALL
 
 ################################################################################
@@ -59,14 +61,10 @@ include $(RESOURCE-LMEFIT)/Makefile
 .SECONDEXPANSION:
 .DELETE_ON_ERROR:
 
-VPATH := $(RESOURCE-RT)
-
-.SUFFIXES:
-.SECONDEXPANSION:
-
 LMEDEFAULT := NSCFX
 # Buggy published exploratory/confirmatory split:
-BASENAME := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.5-kenlm-iz.fp.o.spr
+BASENAME := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.5-kenlm-iz.fp.sprS1
+BASENAME-NB := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.5-kenlm-iz.fp
 # More sensible non-published exploratory/confurmatory split:
 # BASENAME := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.5-kenlm.fp.spr
 
@@ -97,3 +95,4 @@ genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.5-
 genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.5-kenlm-iz.fp.o.spr.noFS1.-NSCFX_-R_noVNAdPrimS2..lrtsignif \
 genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.5-kenlm-iz.fp.o.spr.noFS1.-NSCFX_-R_noVNposS1..lrtsignif
 
+BASELINE-SPILL-EVAL: $(foreach b, $(wildcard $(RT-SCRIPTS)/fw*.lmeform), $(BASENAME-NB).$(basename $(notdir $(b))).-c_naturalstories_-$(LMEDEFAULT).rdata);

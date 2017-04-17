@@ -57,6 +57,9 @@ DMV-SCRIPTS := $(RESOURCE-DMV)/scripts
 RESOURCE-DUNDEE := $(abspath $(MBDIR)/resource-dundee)
 DUNDEE-SCRIPTS := $(RESOURCE-DUNDEE)/scripts
 
+RESOURCE-FMRI := $(abspath $(MBDIR)/resource-fmri)
+FMRI-SCRIPTS := $(RESOURCE-FMRI)/scripts
+
 RESOURCE-GCG := $(abspath $(MBDIR)/resource-gcg)
 GCG-SCRIPTS := $(RESOURCE-GCG)/scripts
 
