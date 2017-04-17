@@ -36,6 +36,9 @@
 MBDIR := $(realpath $(dir $(abspath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))/..)
 CONFIGDIR := $(abspath $(MBDIR)/config)
 
+RESOURCE-ALICE := $(abspath $(MBDIR)/resource-alice)
+ALICE-SCRIPTS := $(RESOURCE-ALICE)/scripts
+
 RESOURCE-BNC := $(abspath $(MBDIR)/resource-bnc)
 BNC-SCRIPTS := $(RESOURCE-BCN)/scripts
 
@@ -53,6 +56,9 @@ DMV-SCRIPTS := $(RESOURCE-DMV)/scripts
 
 RESOURCE-DUNDEE := $(abspath $(MBDIR)/resource-dundee)
 DUNDEE-SCRIPTS := $(RESOURCE-DUNDEE)/scripts
+
+RESOURCE-FMRI := $(abspath $(MBDIR)/resource-fmri)
+FMRI-SCRIPTS := $(RESOURCE-FMRI)/scripts
 
 RESOURCE-GCG := $(abspath $(MBDIR)/resource-gcg)
 GCG-SCRIPTS := $(RESOURCE-GCG)/scripts

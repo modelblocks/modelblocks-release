@@ -1,0 +1,8 @@
+# Use 'allbut' instruction to exclude data rows without key-val.
+# Use 'noneof' instruction to exclude data rows with key-val.
+# Each row consists of "<instruction> <column/key> <val>".
+# Instructions are processed in order.
+noneof AdPrimS2 V
+noneof AdPrimS2 Vnon
+noneof AdPrimS2 N
+noneof AdPrimS2 null

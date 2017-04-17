@@ -49,7 +49,7 @@ that you will use the Penn Treebank for training. In that case,
 You can get a PTB tokenizer from:
 https://github.com/vansky/extended_penn_tokenizer
 
-to use the tokenizer:
+To use the tokenizer:
 
     > extended_penn_tokenizer/ptb_tokenizer.sed < NEWCORPUS.untoksents > NEWCORPUS.linetoks
 
