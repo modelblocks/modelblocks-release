@@ -49,7 +49,7 @@ processArgs <- function(cliargs) {
         make_option(c('-a', '--abl'), type='character', default=NULL, help='Effect(s) to ablate, delimited by "+". Effects that are not already in the baseline specification will be ignored (to add new effects to the baseline formula in order to ablate them, use the -A (--all) option.'),
         make_option(c('-A', '--all'), type='character', default=NULL, help='All main effects, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
         make_option(c('-x', '--extra'), type='character', default=NULL, help='All main effects, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
-        make_option(c('-c', '--corpus'), type='character', default='corpus', help='Name of corpus (for output labeling).'),
+        make_option(c('-c', '--corpus'), type='character', default=NULL, help='Name of corpus (for output labeling). If not specified, will try to infer from output filename.'),
         make_option(c('-R', '--restrdomain'), type='character', default=NULL, help='Basename of *.restrdomain.txt file (must be in modelblocks-repository/resource-lmefit/scripts/) containing key-val pairs for restricting domain (see file "noNVposS1.restrdomain.txt" in this directory for formatting).'),
         make_option(c('-d', '--dev'), type='logical', action='store_true', default=FALSE, help='Run evaluation on dev dataset.'),
         make_option(c('-t', '--test'), type='logical', action='store_true', default=FALSE, help='Run evaluation on test dataset.'),
@@ -77,6 +77,13 @@ processArgs <- function(cliargs) {
     opts <- parse_args(opt_parser, positional_arguments=2)
     params <- opts$options
 
+    if (is.null(params$corpus)) {
+        filename = strsplit(opts$args[2], '/', fixed=T)[[1]]
+        corpus = strsplit(filename[length(filename)], '.', fixed=T)[[1]][1]
+        opts$options$corpus = corpus
+        smartPrint(paste0('Corpus: ', opts$options$corpus))
+    }
+
     if (!is.null(params$all)) {
         opts$options$addEffects <- strsplit(params$all,'+',fixed=T)[[1]]
     } else opts$options$addEffects <- c()
@@ -84,6 +91,8 @@ processArgs <- function(cliargs) {
     if (!is.null(params$abl)) {
         opts$options$ablEffects <- strsplit(params$abl,'+',fixed=T)[[1]]
     } else opts$options$ablEffects <- c()
+
+    opts$options$addEffects = c(opts$options$addEffects, opts$options$ablEffects)
 
     if (!is.null(params$extra)) {
         opts$options$extraEffects <- strsplit(params$extra,'+',fixed=T)[[1]]        

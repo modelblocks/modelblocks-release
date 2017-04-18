@@ -1,0 +1,1117 @@
+\documentclass[12pt]{report}
+\setcounter{secnumdepth}{4}
+%\setcounter{tocdepth}{1}
+\usepackage{amsmath}
+\usepackage{times}
+\usepackage{helvet}
+\usepackage{txfonts}  %% WS: NEEDED TO KEEP SOME VERBATIM LINES FROM EXCEEDING PAGE WIDTH
+%\usepackage{natbib}
+%%\usepackage{epsfig}
+%%\usepackage{psfig}
+%\usepackage{array}
+%\usepackage{needspace}
+
+\usepackage{vmargin}
+\setpapersize{USletter}
+\setmarginsrb{1.0in}{1.0in}{1.0in}{0.6in}{0pt}{0pt}{0pt}{0.4in}
+
+% HOW TO USE THE ABOVE:
+%\setmarginsrb{leftmargin}{topmargin}{rightmargin}{bottommargin}{headheight}{headsep}{footheight}{footskip}
+%\raggedbottom
+% paragraphs indent & skip:
+%\parindent  0.3cm
+%\parskip    -0.01cm
+
+%\usepackage{amsfonts}
+\usepackage{tikz}
+\usetikzlibrary{fit,shapes, backgrounds}
+\usepackage[T1,safe]{tipa}
+
+% hyphenation:
+\sloppy
+
+% notes-style paragraph spacing and indentation:
+\usepackage{parskip}
+\setlength{\parindent}{0cm}
+
+%\bibliographystyle{apacite}
+\bibliographystyle{apalike}
+
+%\usepackage{../../styles/schuler}
+\newcommand{\tuple}[1]{\langle #1 \rangle}
+
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=1em}
+
+\usepackage{titlesec}
+\usepackage{etoolbox}
+
+\makeatletter
+\patchcmd{\ttlh@hang}{\parindent\z@}{\parindent\z@\leavevmode}{}{}
+\patchcmd{\ttlh@hang}{\noindent}{}{}{}
+\makeatother
+
+\titlespacing\section{0pt}{0pt}{0pt}
+\titlespacing\subsection{0pt}{0pt}{0pt}
+\titlespacing\subsubsection{0pt}{0pt}{0pt}
+
+\titleformat{\chapter}[display]
+  {\normalfont\sffamily\Huge\bfseries}
+  {\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titleformat{\section}
+  {\normalfont\sffamily\Large\bfseries}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\sffamily\large\bfseries}
+  {\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalfont\sffamily\bfseries}
+  {\thesubsubsection}{1em}{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\blue{\color{blue}}
+\def\magenta{\color{magenta}}
+\def\red{\color{red}}
+\def\dec{-}
+\def\inc{+}
+%\def\dec{\text{-}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\begin{titlepage}
+      \begin{tikzpicture}
+      \begin{pgfinterruptboundingbox}
+      \begin{pgfonlayer}{background}
+      \fill[cyan] (-2,-1) rectangle (0,-3);
+      \fill[cyan!80] (0,-1) rectangle (2,-3);
+      \fill[cyan!60] (-2,-3) rectangle (0,-5);
+      \end{pgfonlayer}
+      \end{pgfinterruptboundingbox}
+      \end{tikzpicture}
+      \centering\sffamily
+      {\scshape\large The Ohio State University \par}
+      \vspace{3cm}
+      {\Huge Modelblocks\par}
+      \vspace{2cm}
+      {\large\itshape Repository documentation\par}
+      \vfill
+      {\normalsize Last updated: \today\par}
+\end{titlepage}
+
+\newcommand{\dtype}[1]{{\blue\tuple{\text{\em #1}}}}
+\newcommand{\dexpr}[1]{{\blue\tuple{\text{\tt #1}}}}
+\newcommand{\dcode}[1]{{\blue\text{`{\tt #1}'}}}
+\newcommand{\dvar}[1]{{\blue\tuple{#1}}}
+
+\bigskip
+
+\tableofcontents
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Overview}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Modelblocks is a collection of recipes related to cognitive modeling of sentence processing.
+
+It is implemented as a set of directories containing Makefiles, consisting of:
+%
+\begin{itemize}
+
+\item a {\bf config} directory (`{\blue\tt config}') which contains a set of `{\blue\tt user-*-directory.txt}' files
+
+      (these files contain locations of external code or data not part of Modelblocks);
+
+\item a set of {\bf resource} directories, prefixed with `{\blue\tt resource-}'
+
+      (recipes and code in these directories are designed to be reusable); and
+
+\item a set of {\bf project} directories (those not prefixed with `{\blue\tt resource-}', other than `{\blue\tt config}')
+
+      (recipes and code in these directories are designed to perform a single experiment).
+
+\end{itemize}
+
+Each resource or project directory contains a `{\blue\tt Makefile}' file, containing its relevant recipes.
+
+Resource and project directories also contain scripts, code, and curated data used in their recipes.
+
+\bigskip
+
+Makefiles in project directories usually begin with a default item, which replicates the main result of the project, followed by a colon, e.g.:
+%
+{\magenta\begin{verbatim}
+#### default item: the main product of this directory...
+genmodel/wsj02to21.gcg15.linetrees:
+\end{verbatim}
+}
+%
+This allows the main result of the project to be replicated by moving to that directory and typing:
+%
+{\blue\begin{verbatim}
+make
+\end{verbatim}
+}
+
+Project Makefiles then contain a preamble, consisting of some useful make commands:
+%
+{\magenta\begin{verbatim}
+#### preamble...
+.SUFFIXES:
+.SECONDEXPANSION:
+\end{verbatim}
+}
+%
+followed by a list of defined subdirectories which included files will make use of:
+%
+{\magenta\begin{verbatim}
+#### directories used by included items...
+BIN := bin
+GENMODEL := genmodel
+\end{verbatim}
+}
+
+Project Makefiles can then inherit recipes from resource directories:
+%
+{\magenta\begin{verbatim}
+#### included make items...
+include $(dir $(CURDIR))resource-general/Makefile
+\end{verbatim}
+}
+
+Resource directories {\red cannot} include other resource directories because of limitations in the GNU make {\blue\tt include} command.
+
+Please note that because Modelblocks primarily uses GNU Make to automate the code in experiments, dependencies to targets are created before the targets themselves. Thus, even though the recipes below are presented in API format with inputs and outputs, \textbf{you do not need to make the inputs before making an output target}. It should be sufficient to just type
+
+\vspace{1em}
+
+{\blue\tt make <stem>.<extension>}
+
+\vspace{1em}
+
+from the relevant directory to produce an output --- make will handle the rest. For that reason, generally the most important information in the following entries is the ``Stem template'' field, which explains how to write and delimit parameters to targets so that they can be successfully made.
+
+Generally, targets with extensions like `widgetgadgets' will be formatted as plain-text matrices with rows for `widgets' (delimited by newlines) and columns for `gadgets' (delimited by spaces).
+
+E.g.\ `tokdecs' files are formatted as matrices with a row for each `tok(en)' (delimited by newlines) and a column for each `dec(ision)' (delimited by spaces).
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Repository Policy}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Modelblocks has a local OSU git repository, which {\blue\tt ling.osu.edu} account holders can access with:\!\!\!\!\!\!\!
+%
+{\blue\begin{verbatim}
+git clone ssh://<username>@ling.osu.edu/home/compling/modelblocks-repository
+\end{verbatim}
+}
+
+Here are a few guidelines about repository etiquette within this project:
+%
+\begin{enumerate}
+
+\item {\red VERY IMPORTANT: Do not push any code or data that is available elsewhere, especially if the license is not open-source!
+      If you do, someone will have to purge the comp ling copy of the repo and ask all users to delete their local repos!}
+
+      This should instead be handled using `{\blue\tt config/user-*-directory.txt}' pointer files.
+
+\item Only add project or resource directories to the repo that are likely to be useful to other people.
+
+      Course projects, etc., can be maintained in private repos within your modelblocks directory.
+
+\item Only create resource directories for recipes that are shared by more than one project.
+
+\end{enumerate}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Terms}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Modelblocks assumes the following definitions of terms:
+%
+\begin{itemize}
+
+\item `{\blue line}': a sentence, title, or caption, which is syntactically independent of its neighbors.
+
+      (e.g.\ `{\magenta\tt April in Poetry}')
+
+\item `{\blue token}' (`{\blue tok}'): an (arbitrary) elementary unit of syntactic annotation (may not be a word).
+
+      (e.g.\ `{\magenta\tt they}', `{\magenta\tt do}', `{\magenta\tt n't}', `{\magenta\tt ?}')
+
+\item `{\blue item}': a word as delimited in a source corpus.\footnote{In some cases, parser input may need be tokenized more finely than the experimental stimuli are (e.g.\ splitting out punctuation and contractions). In these cases, the `token'/`item' distinction becomes important. Tokens are always nested inside items.}
+
+      (e.g.\ `{\magenta\tt they}', `{\magenta\tt don't?}')
+
+%\item `prediction' (`pred'): an elementary unit of happening in a model
+
+%\item `outcome' (`out'): an element of happening in a model
+
+%\item `observation' (`obs'): an observed event in human subject data
+
+\item %`state': an individual step in processing a corpus.
+      `{\blue decision}' (`{\blue dec}'): an elementary unit of (processing) activity, as defined in annotated corpora.\!\!
+
+      (e.g.\ {\magenta a decision to fork at token 3})
+
+\item `{\blue parameter}' (`{\blue par}'): the predictors and result of a decision according to a model.
+
+      (e.g.\ `{\magenta\tt F 2 VP : 1}')
+
+%\item `{\blue weight}': the value assigned to a parameter by a model.
+%
+%      (e.g.\ `{\magenta\tt 0.0049}')
+
+\item `{\blue event}' (`{\blue ev}'): an elementary unit of stimulus in human subject data (i.e.\ regression targets).
+      %`{\blue trial}': a unit of stimulus in human subject data (i.e.\ regression targets).
+
+      (e.g.\ {\magenta exposure of subject 3 to region 22 of the stimulus})
+
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{RESOURCE-LINETREES}
+%%%% FROM NOW ON, DON'T SHOW ITEM BULLETS
+\renewcommand{\labelitemi}{}
+\renewcommand{\labelitemii}{}
+\renewcommand{\labelitemiii}{}
+\renewcommand{\labelitemiv}{}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+{\tt RESOURCE-LINETREES} contains methods for generating and manipulating syntactic annotations and evaluating parser accuracy.
+
+\section{\blue\tt \%.linetoks}
+
+Extracts word sequences from an input {\blue\tt \%.linetrees} file (i.e.\ deletes structure from a phrase-structure tree).
+
+\begin{itemize}
+\item\textbf{File format:}
+\begin{itemize}
+\item\textit{Specification:}
+
+\begin{itemize}
+\item $\dtype{row} \rightarrow \Big( \ \dtype{token} \ \Big( \ \dcode{\ } \ \dtype{token} \ \Big)^* \ \Big)^?$
+\end{itemize}
+
+\item\textbf{Example:}
+
+{\magenta\begin{verbatim}
+The cat did n't sleep .
+\end{verbatim}
+}
+\end{itemize}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.linetoks}}
+
+Extracts word sequences from input trees.
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.linetoks}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.linetrees}$
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.morph.linetoks}}
+
+Uses Morfessor to segment input {\blue\tt \%.linetoks}.
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.morph.linetoks}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.linetoks}$
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.rev.linetoks}}
+
+Reverses input {\blue\tt \%.linetoks}.
+
+\begin{itemize}
+      \item \textbf{Stem template:} $\dtype{corpus-specification} \ \dcode{.rev.linetoks}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.linetoks}$
+      \end{itemize}
+\end{itemize}
+
+
+\section{\blue\tt \%.linetrees}
+
+Defines trees for each `line' (sentence, title, caption, etc.) in a corpus using a generalization of the Penn Treebank standard.
+
+\begin{itemize}
+\item\textbf{File format:}
+\begin{itemize}
+\item\textit{Specification:}
+\begin{itemize}
+\item $\dtype{row} \rightarrow \dtype{tree}$
+\item $\dtype{tree}  \rightarrow \dcode{(} \ \dtype{node-label} \ \ \smash{\Big( \ \dcode{\ } \ \dtype{tree} \ \Big)^+} \ \dcode{)}$
+\item $\dtype{tree}  \rightarrow \dtype{node-label}$
+%\item $\dtype{node-label}  \rightarrow \dexpr{[a-z]*}$
+\end{itemize}
+
+\item\textit{Example:}
+{\magenta\begin{verbatim}
+(S (S (NP The cat) (VP did n't sleep)) (. .))
+\end{verbatim}
+}
+\end{itemize}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.linetrees}}
+
+
+Generates a specification-conformant linetrees file from another file containing syntactic annotations.
+
+\begin{itemize}
+      \item \textit{Option 1: Converting external annotations}
+      \begin{itemize}
+            \item \textbf{Stem template:}\\
+            $\dtype{corpus-specification} \ \dcode{.linetrees}$
+            \item \textbf{Input(s):}
+            \begin{itemize}
+                  \item External annotation (handlers provided by associated {\tt RESOURCE-*} directory).
+            \end{itemize}
+      \end{itemize}
+      \item \textit{Option 2: Converting from {\blue\tt \%.tokdecs}}
+      \begin{itemize}
+            \item \textbf{Stem template:}\\
+            $\dtype{corpus-specification} \ \dcode{.linetrees}$
+            \item \textbf{Input(s):}
+            \begin{itemize}
+                  \item $\dtype{corpus-specification} \ \dcode{.tokdecs}$
+            \end{itemize}
+      \end{itemize}
+      \item \textit{Option 3: Parsing source text using a probability model}
+      \begin{itemize}
+            \item \textbf{Stem template:}\\
+            $\dtype{test-set-specification} \ \dcode{.} \ \dtype{dash-delimited-trained-model-name} \ \dcode{-parsed.linetrees}$
+            \item \textbf{Input(s):}
+            \begin{itemize}
+                  \item $\dtype{test-set-specification} \ \dcode{.linetoks}$
+                  \item $\dtype{dot-delimited-trained-model-name} \ \dcode{.parweights}$
+            \end{itemize}
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.first.linetrees}}
+
+Extracts the first $\dtype{number}$ of lines from the input.
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.} \ \dtype{number} \ \dcode{first.linetrees}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.linetrees}$
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.last.linetrees}}
+
+Extracts the last $\dtype{number}$ of lines from the input.
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.} \ \dtype{number} \ \dcode{last.linetrees}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.linetrees}$
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.onward.linetrees}}
+
+Extracts lines $\dtype{number}$ and onward from the input.
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.} \ \dtype{number} \ \dcode{onward.linetrees}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.linetrees}$
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.maxwords.linetrees}}
+
+Extracts only lines from the input containing at most $\dtype{number}$ words.
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.} \ \dtype{number} \ \dcode{maxwords.linetrees}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.linetrees}$
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.nolabel.linetrees}}
+
+Removes syntactic labels from the input.
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.nolabel.linetrees}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.linetrees}$
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.nopunc.linetrees}}
+
+Removes punctuation from the input.
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.nopunc.linetrees}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.linetrees}$
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.fromdeps.linetrees}}
+
+Converts dependency representations into constituency tree representations using the \cite{collinsetal99} algorith (produces the flattest constituency trees permitted by the dependency graph).
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.fromdeps.linetrees}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.tokdeps}$
+      \end{itemize}
+\end{itemize}
+
+
+\section{\blue\tt \%.lineitems}
+
+Extracts word sequences from a corpus of psycholinguistic stimuli (where tokenizations generally differ from those used for parsing), preserving original tokenization.
+
+\begin{itemize}
+\item\textbf{File format:}
+\begin{itemize}
+\item\textit{Specification:}
+
+\begin{itemize}
+\item $\dtype{row} \rightarrow \Big( \ \dtype{item} \ \Big( \ \dcode{\ } \ \dtype{item} \ \Big)^* \ \Big)^?$
+\end{itemize}
+
+\item\textbf{Example:}
+
+{\magenta\begin{verbatim}
+The cat didn't sleep.
+\end{verbatim}
+}
+\end{itemize}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.lineitems}}
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.lineitems}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item External corpus
+      \end{itemize}
+\end{itemize}
+
+
+\section{\blue\tt \%.conll}
+
+Generates CoNLL-style dependencies from input {\blue\tt \%.linetrees} by assigning the most frequently co-occurring child as the head.
+
+\begin{itemize}
+\item\textbf{File format:} \textit{See CoNLL documentation}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.conll}}
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.conll}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.linetrees}$
+      \end{itemize}
+\end{itemize}
+
+\section{\blue\tt \%.tokdeps}
+
+Generates Stanford-style dependencies from input {\blue\tt \%.linetrees} by assigning the most frequently co-occurring child as the head.
+
+\begin{itemize}
+\item\textbf{File format:} \textit{See Stanford Dependencies documentation}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.tokdeps}}
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.tokdeps}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.linetrees}$
+      \end{itemize}
+\end{itemize}
+
+
+\section{\blue\tt \%.syneval}
+
+Generates human-readable report of differences between two {\blue\tt \%.linetrees} inputs (typically a gold and a hypothesized sequence of trees).
+
+\begin{itemize}
+\item\textbf{File format:} \textit{Human-readable}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.syneval}}
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{dash-delimited-test-set-name}$ $\dtype{dot-delimited-gold-edits}$ $\dcode{.}$ $\dtype{processing-specifications}$ $\dcode{.syneval}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item {\tt RESOURCE-GENERAL/srcmodel/new.prm}
+            \item $\dtype{dot-delimited-test-set-name} \ \dtype{dot-delimited-gold-edits} \ \dcode{.linetrees}$ (control/baseline linetrees)
+            \item  $\dtype{dot-delimited-test-set-name} \ \dcode{.} \ \dtype{processing-specifications} \ \dcode{.linetrees}$ (test linetrees)
+      \end{itemize}
+\end{itemize}
+
+\section{\blue\tt \%.bootstrapsignif}
+
+Generates human-readable report of statistical significance of difference between two {\blue\tt \%.syneval} files (typically a control and a test sequence of eval scores) obtained via bootstrap resampling.
+
+\begin{itemize}
+\item\textbf{File format:} \textit{Human-readable}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.bootstrapsignif}}
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{common-onset}$ $\dcode{..}$ $\dtype{distinct-ctrl}$ $\dcode{..}$ $\dtype{distinct-test}$ $\dcode{..}$ $\dtype{common-coda}$ $\dcode{.bootstrapsignif}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item {\tt RESOURCE-GENERAL/srcmodel/new.prm}
+            \item  $\dtype{common-onset} \ \dcode{.} \ \dtype{distinct-ctrl} \ \dcode{.} \ \ \dtype{common-coda} \ \dcode{.syneval} \ \dtype{common-coda}$ (control/baseline syneval)
+            \item  $\dtype{common-onset} \ \dcode{.} \ \dtype{distinct-test} \ \dcode{.} \ \dtype{common-coda} \ \dcode{.syneval} \ \dtype{common-coda}$ (test syneval)
+      \end{itemize}
+\end{itemize}
+
+
+\section{\blue\tt \%(.d).constiteval.txt}
+
+Alternative to {\blue\tt \%.syneval} with additional measures relevant to unsupervised PoS tagging, parsing, and word segmentation (e.g.\ tagging and consituent labeling V-Measures, segmentation accuracy, etc.). Can be used when gold and test tokenizations differ arbitrarily. Generates human-readable report of differences between two {\blue\tt \%.linetrees} inputs (typically a gold and a hypothesized sequence of trees).
+
+\begin{itemize}
+\item\textbf{File format:} \textit{Human-readable}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%(.d.)constiteval.txt}}
+
+Without the {\blue\tt .d.} option, generates summary metrics for entire input corpus. With it, generates additional per-sentence metrics (more informative but consumes much more disk space).
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{dash-delimited-test-set-name}$ $\dtype{dot-delimited-gold-edits}$ $\dcode{.}$ $\dtype{processing-specifications}$ $\dcode{.syneval}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item  $\dtype{distinct-ctrl} \ \dcode{.} \ \ \dtype{common-coda} \ \dtype{.} \ \dcode{.syneval} \ \dtype{common-coda}$ (control/baseline linetrees)
+            \item  $\dtype{distinct-test} \ \dcode{.} \ \\dtype{common-coda} \ \dtype{.} \ dcode{.syneval} \ \dtype{common-coda}$ (test linetrees)
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.constiteval.txt}}
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{distinct-ctrl}$ $\dcode{..}$ $\dtype{distinct-test}$ $\dcode{..}$ $\dtype{common-coda}$ $\dcode{.constiteval.txt}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item  $\dtype{distinct-ctrl} \ \dcode{.} \ \dtype{common-coda}$ (control/baseline constiteval)
+            \item  $\dtype{common-onset} \ \dcode{.} \ \dtype{distinct-test} \ \dcode{.} \ \dtype{common-coda}$ (test constiteval)
+      \end{itemize}
+\end{itemize}
+
+
+\section{\blue\tt \%.constitevaltable.txt}
+
+Generates human-readable summary table of multiple {\blue\tt \%.constiteval.txt} results that can be used for plotting.
+
+\begin{itemize}
+      \item \textbf{File format:}
+      \begin{itemize}
+            \item \textit{Specification}:
+            \begin{itemize}
+                  \item $\dtype{row} \rightarrow \Big( \ \dtype{index} \ \Big( \ \dcode{\ } \ \dtype{eval-measure} \ \Big)^* \ \Big)^?$
+            \end{itemize}
+      \end{itemize}
+      \item \textbf{Example:}\\
+      {\magenta\tt
+      iter bracketingF1 segmentationF1 ...\\
+      1 0.5611 0.9175 ...}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.constitevaltable.txt}}
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification}$ $\dcode{.}$ $\dtype{distinct-test}$ $\dcode{.}$ $\dtype{common-coda}$ $\dcode{.}$ $\dtype{constiteval-list}$ $\dcode{.constitevaltable.txt}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item  $\dtype{basename} \ \dcode{.constitevallist}$ (file containing paths to {\blue\tt \%.constiteval} files to aggregate, in most cases must be created by hand)
+      \end{itemize}
+\end{itemize}
+
+\section{\blue\tt \%.learning\textunderscore curves}
+
+Convenience target. Generates plots of a variety of learning curves from a {\blue\tt \%.constitevaltable.txt} file.
+
+\begin{itemize}
+      \item \textbf{File format:} \textit{Plot images}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.learning\textunderscore curves}}
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{constiteval-list-specification}$ $\dcode{.learning\textunderscore curves}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{constiteval-list-specification}$ $\dcode{.constitevallist.txt}$
+      \end{itemize}
+\end{itemize}
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{RESOURCE-LCPARSE}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+{\tt RESOURCE-LCPARSE} contains methods for generating representations of incremental left-corner parsing operations.
+
+\section{{\blue\tt \%.linedeps}}
+Generates sorted set of dependencies for each `line' (sentence, title, caption, etc.) in a corpus. If present, `0' dependencies are used to indicate vertex types.
+
+\begin{itemize}
+      \item \textbf{File format:}
+      \begin{itemize}
+            \item \textit{Specification:}
+            \begin{itemize}
+                  \item {\small $\dtype{row}        \rightarrow \Big( \ \dtype{dependency} \ \Big( \ \dcode{\ } \ \dtype{dependency} \ \Big)^* \ \Big)^?$}
+                  \item {\small $\dtype{dependency} \rightarrow \dtype{(source-)vertex} \ \dcode{,} \ \dtype{dependency-label} \ \dcode{,} \ \dtype{(destination-)vertex}$}
+            \end{itemize}
+            \item \textit{Example:}\\
+            {\magenta\tt
+            01,0,cats 02,0,sleep 02,1,01
+            }
+      \end{itemize}
+\end{itemize}
+
+TODO: Is this used? I don't see any recipes anywhere in MB with this extension.
+
+\section{{\blue\tt \%.tokdecs}}
+
+Generates list of modeled decisions for each token position in a corpus.
+
+\begin{itemize}
+      \item \textbf{File format:}
+      \begin{itemize}
+            \item \textit{Specification:}
+            \begin{itemize}
+                  \item {\small $\dtype{row} \rightarrow \dtype{word} \ \dcode{\ } \ \dtype{(preterminal-)sign} \ \dcode{\ } \ \dtype{fork} \ \dcode{\ } \ \dtype{join} \ \dcode{\ } \ \Big( \ \dtype{deriv-frag} \ \Big( \ \dcode{;} \ \dtype{deriv-frag} \ \Big)^* \ \Big)^?$}
+                  %\item $\dtype{derivation-fragment-sequence} \rightarrow \Big( \ \dtype{derivation-fragment} \ \Big( \ \dcode{;} \ \dtype{derivation-fragment} \ \Big)^* \ \Big)^?$
+                  \item {\small $\dtype{deriv-frag} \rightarrow \dtype{(top-)sign} \ \dcode{/} \ \dtype{(bottom-)sign}$
+                  \item $\dtype{sign} \rightarrow \dcode{[} \ \Big( \ \dtype{referential-context} \ \Big( \ \dcode{,} \ \dtype{referential-context} \ \Big)^* \ \Big)^? \ \dcode{]:} \ \dtype{category-label}$}
+                  %\item $\dtype{referential-context-set} \rightarrow \Big( \ \dtype{referential-context} \ \Big( \ \dcode{,} \ \dtype{referential-context} \ \Big)^* \ \Big)^?$
+            \end{itemize}
+            \item \textit{Example:}\\
+            {\magenta\tt
+            the [the\textunderscore 0]:D 1 0 [the\textunderscore 1]:NP/[the\textunderscore 1]:N\\
+            very [very\textunderscore 0]:Adv 1 0 [the\textunderscore 1]:NP/[the\textunderscore 1]:N;[very\textunderscore 1]:AP/[very\textunderscore 1]:A\\
+            }
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: \blue\tt \%.fromlinetrees.tokdecs}
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.fromlinetrees.tokdecs}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.linetrees}$
+      \end{itemize}
+\end{itemize}
+
+
+\section{{\blue\tt \%.decpars}}
+
+Generates list of parameterizations for training decisions. There are separate formats for ordinary conditional probability and logistic regression parameters.
+
+\subsection{Recipe: \blue\tt \%.cpt.decpars}
+
+Conditional probability decpars.
+
+\begin{itemize}
+      \item \textbf{File format:}
+      \begin{itemize}
+            \item \textit{Specification:}
+            \begin{itemize}
+                  \item {\small $\dtype{row} \rightarrow \dtype{decision-type} \ \ \smash{\Big( \ \dcode{\ } \ \dtype{predictor-value} \ \Big)^*} \ \dcode{ :} \ \ \smash{\Big( \ \dcode{\ } \ \dtype{result-value} \ \Big)^+}$}
+            \end{itemize}
+            \item \textit{Example:}\\
+            {\magenta\tt
+            P 2 0 1 VP : VT
+            }
+            \item \textit{Note:} This ordering has the advantage that, when sorted, parameters are grouped by condition
+      \end{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{training-set-specifications}  \ \dcode{.cpt.decpars}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{training-set-specification} \ \dcode{.tokdecs}$
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: \blue\tt \%.mlr.decpars}
+
+Multinomial logistic regression decpars.
+
+\begin{itemize}
+      \item \textbf{File format:}
+      \begin{itemize}
+            \item \textit{Specification:}
+            \begin{itemize}
+                  \item {\small $\dtype{row} \rightarrow \dtype{decision-type} \ \dcode{\ } \ \Big( \ \dtype{predictor} \ \Big( \ \dcode{,} \ \dtype{predictor} \ \Big)^* \ \Big)^? \ \dcode{\ :\ } \ \dtype{result-value}$}
+                  \item {\small $\dtype{predictor} \rightarrow \dtype{predictor-name} \ \dcode{=} \ \dtype{predictor-value}$}
+            \end{itemize}
+            \item \textit{Example:}\\
+            {\magenta\tt
+            F d0\&tT=1,d0\&Top=1 : f1\&N-xX*:doctor\textunderscore 1
+            }
+            \item \textit{Note:} This ordering has the advantage that, when sorted, parameters are grouped by condition
+      \end{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{training-set-specifications}  \ \dcode{.mlr.decpars}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{training-set-specification} \ \dcode{.tokdecs}$
+      \end{itemize}
+\end{itemize}
+
+
+
+\section{{\blue\tt \%.parweights} files}
+
+Generates list of estimated parameter weights of a model. There are separate formats for ordinary conditional probability and logistic regression parameters.
+
+
+\subsection{Recipe: \blue\tt \%.cpt.parweights}
+
+Conditional probability parweights.
+
+\begin{itemize}
+      \item \textbf{File format:}
+      \begin{itemize}
+            \item \textit{Specification:}
+            \begin{itemize}
+                  \item {\small $\dtype{row} \rightarrow \dtype{decision-type} \ \ \smash{\Big( \ \dcode{\ } \ \dtype{predictor-value} \ \Big)^*} \ \dcode{ :} \ \ \smash{\Big( \ \dcode{\ } \ \dtype{result-value} \ \Big)^+} \ \dcode{ = } \ \dtype{weight}$}
+            \end{itemize}
+            \item \textit{Example:}\\
+            {\magenta\tt
+            P 2 0 1 VP : VT = 0.4237643
+            }
+            \item \textit{Note:} This ordering has the advantage that, when sorted, parameters are grouped by condition
+      \end{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{training-set-specifications}  \ \dcode{.cpt.parweights}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{training-set-specification} \ \dcode{.cpt.decpars}$
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: \blue\tt \%.mlr.parweights}
+
+Multinomial logistic regression parweights.
+
+\begin{itemize}
+      \item \textbf{File format:}
+      \begin{itemize}
+            \item \textit{Specification:}
+            \begin{itemize}
+                  \item {\small $\dtype{row} \rightarrow \dtype{decision-type} \ \dcode{\ } \ \dtype{predictor-name} \ \dcode{\ :\ } \ \dtype{result-value} \ \dcode{\ =\ } \ \dtype{weight}$}
+            \end{itemize}
+            \item \textit{Example:}\\
+            {\magenta\tt
+            F d0\&tT : f0\&N-aD:doctor\textunderscore 1 = 0.318317
+            }
+            \item \textit{Note:} This ordering has the advantage that, when sorted, parameters are grouped by condition
+      \end{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{training-set-specifications}  \ \dcode{.mlr.parweights}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{training-set-specification} \ \dcode{.decpars}$
+      \end{itemize}
+\end{itemize}
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{RESOURCE-RT}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+{\tt RESOURCE-RT} contains methods for aggregating measures from time-series psycholinguistic experiments into a single data table. It also contains convenience recipes for a number of reading-time experiment types.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{{\blue\tt \%.tokmeasures}}
+
+Generates a data table containing space-delimited columns of measurements for each token in a corpus.
+
+\begin{itemize}
+      \item \textbf{File format:}
+      \begin{itemize}
+            \item \textit{Specification:}\\
+                  \begin{itemize}
+                  \item $\dtype{row} \rightarrow \Big( \ \dtype{token} \ \Big( \ \dcode{\ } \ \dtype{measure} \ \Big)^* \ \Big)^?$
+                  \end{itemize}
+            \item \textit{Example:}\\
+                  {\magenta\tt
+                  word totsurp ...\\
+                  Are 10.2871 ...\\
+                  n't 2.1029 ...
+                  }
+      \end{itemize}
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{{\blue\tt \%.itemmeasures}}
+
+Generates a data table containing space-delimited columns of measurements for each item in a corpus.
+
+\begin{itemize}
+      \item \textbf{File format:}
+      \begin{itemize}
+            \item \textit{Specification:}\\
+                  \begin{itemize}
+                  \item $\dtype{row} \rightarrow \Big( \ \dtype{item} \ \Big( \ \dcode{\ } \ \dtype{measure} \ \Big)^* \ \Big)^?$
+                  \end{itemize}
+            \item \textit{Example:}\\
+                  {\magenta\tt
+                  word fwprob5 ...\\
+                  Aren't -11.0926 ...\\
+                  }
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: \blue\tt \%.itemmeasures}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{{\blue\tt \%.evmeasures}}
+
+Generates a data table containing space-delimited columns of measurements for each event (unit of stimulus) in a psycholinguistic experiment.
+
+\begin{itemize}
+      \item \textbf{File format:}
+      \begin{itemize}
+            \item \textit{Specification:}\\
+            \begin{itemize}
+                  \item $\dtype{row} \rightarrow \Big( \ \dtype{event} \ \Big( \ \dcode{\ } \ \dtype{measure} \ \Big)^* \ \Big)^?$
+            \end{itemize}
+            \item \textit{Example:}\\
+            {\magenta\tt
+            word subject RT ...\\
+            Aren't A 187 ...\\
+            Aren't B 411 ...\\
+            }
+      \end{itemize}
+\end{itemize}
+
+\subsection{Recipe: \blue\tt \%.evmeasures}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{RESOURCE-LMEFIT}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+{\tt RESOURCE-LMEFIT} contains methods for statistical analysis of psycholinguistic measures. The methods are primarily designed for use in reading time studies but should be generalizable to other kinds of dependent measures, as long as those measures can be associated with words/tokens in the stimuli.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{{\blue\tt \%.rdata} files}
+
+Generates saved binary of fitted linear mixed-effects regression model, along with a human-readable summary file in {\blue\tt \%.lmefit} (same stem, different extension).
+
+\begin{itemize}
+\item\textbf{File format:} \textit{Binary file}
+\item\textbf{Stem template:}\\
+$\dtype{evmeasures} \dcode{.} \dtype{LME-formula-name} \dcode{.} \dtype{LME-cli-args} \dcode{.rdata}$
+
+\begin{itemize}
+\item
+$\dtype{evmeasures}$: Stem of a {\tt\blue *.full.evmeasures} data file from which to extract predictors.
+
+$\dtype{LME-formula-name}$: Basename of a {\tt\blue *.lmeform} file.
+For example, if the LME formula file is named {\tt\blue spr.lmeform}, its formula name will be {\tt\blue spr}.
+The formula file must have the following structure:
+\begin{itemize}
+\item \textbf{Line 1:} Name of dependent variable (e.g.\ {\tt\blue fdur})
+\item \textbf{Line 2:} List of fixed effects (e.g.\ {\tt\blue z.(sentid) + z.(sentpos) + z.(wlen)})
+\item \textbf{Line 3:} List of by-subject random effects --- do not include {\tt\blue | subject)}; this will be handled by the script (e.g.\ {\tt\blue z.(sentpos) + z.(wlen)})
+\item \textbf{Line 4: (optional)} Any additional random effects specifications
+\end{itemize}
+The formula file must live in your experiment's {\tt\blue scripts} directory.
+For an example of a working formula file, see {\tt\blue resource-rt/scripts/spr.lmeform}.
+
+$\dtype{LME-cli-args}$: List of command line arguments to pass to the regression script, with underscores used in place of spaces.
+Most importantly, use {\tt\blue -a} to pass field names to add to the by-subject random effects structure only and {\tt\blue -A} to pass field names to add as both fixed and by-subject random effects.
+Lists are delimited by {\tt\blue +} (e.g.\ to add two columns, {\tt\blue dlt} and {\tt\blue noF}, to the model, use {\tt\blue -A\_ dlt+noF}).
+For detailed documentation of available arguments and their functions, run: {\tt\blue resource-lmefit/scripts/evmeasures2lmefit.r -h}.
+\end{itemize}
+\item\textbf{Inputs:}
+\begin{itemize}
+\item Data: $\dtype{evmeasures} \dcode{.full.evmeasures}$
+\item Model specification: $\dtype{LME-formula-name} \dcode{.lmeform}$ 
+\end{itemize}
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{{\blue\tt \%.lmefit} files}
+
+Contains summary data from a fitted linear mixed-effects regression model. Generated as a secondary output of {\blue\tt \%.rdata}, but for convenience can be called as a Make target in addition to {\blue \tt \%.rdata} with identical results.
+
+\begin{itemize}
+\item\textbf{File format:} \textit{Human-readable}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{{\blue\tt \%.lrtsignif} files}
+
+Generates a human-readable summary of results of likelihood ratio testing (LRT) two linear mixed-effects regression models.
+
+\begin{itemize}
+\item\textbf{File format:} \textit{Human-readable}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.lrtsignif}}
+Single-predictor LRT.
+
+\begin{itemize}
+\item\textbf{Stem template:}\\
+$\dtype{evmeasures} \dcode{.} \dtype{LME-formula-name} \dcode{.} \dtype{main-effect} \dcode{.} \dtype{LME-cli-args} \dcode{.} \dtype{LRT-cli-args} \dcode{.lrtsignif}$
+\begin{itemize}
+\item
+$\dtype{evmeasures}$: See {\tt\blue \%.rdata} for description
+
+$\dtype{LME-formula-name}$: See {\tt\blue \%.rdata} for description
+
+$\dtype{main-effect}$: Name of main effect (e.g.\ {\tt\blue dlt})
+
+$\dtype{LME-cli-args}$: See {\tt\blue \%.rdata} for description.
+Note that this target excludes args for adding effects (i.e.\ {\tt\blue -a} and {\tt\blue -A}), since these will be computed automatically by Make.
+
+$\dtype{LRT-cli-args}$: Command line arguments to LRT, if any (if none, leave empty keeping period as delimiter)
+
+\end{itemize}
+
+\item\textbf{Inputs:}
+\begin{itemize}
+\item Baseline model: $\dtype{evmeasures} \dcode{.} \dtype{LME-formula-name} \dcode{.-a\_} \dtype{main-effect} \dcode{\_} \dtype{LME-cli-args} \dcode{.rdata}$ 
+\item Main effect model: $\dtype{evmeasures} \dcode{.} \dtype{LME-formula-name} \dcode{.-A\_} \dtype{main-effect} \dcode{\_} \dtype{LME-cli-args} \dcode{.rdata}$ 
+\end{itemize}
+\end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.diamond.lrtsignif}}
+
+Two-predictor LRT.
+Contains results from a `diamond' LRT comparing two predictors against a baseline and against each other (i.e.\ four LRT comparisons rather than two).
+
+\begin{itemize}
+\item\textbf{Stem template:}\\
+{\small $\dtype{evmeasures} \dcode{.} \dtype{LME-formula-name} \dcode{.} \dtype{effect1\_effect2} \dcode{.} \dtype{LME-cli-args} \dcode{.} \dtype{LRT-cli-args} \dcode{.diamond.lrtsignif}$}
+
+\begin{itemize}
+\item
+%See {\tt\blue \%.lrtsignif} for details about stem template components.
+The only difference is that {\tt\blue \%.diamond.lrtsignif} evaluates two main effects instead of one, and that these must be supplied with an underscore delimiter as $\dtype{effect1\_effect2}$.
+\end{itemize}
+
+\item\textbf{Inputs:}
+\begin{itemize}
+\item Baseline: $\dtype{evmeasures} \dcode{.} \dtype{LME-formula-name} \dcode{.-a\_} \dtype{effect1+effect2} \dcode{\_} \dtype{LME-cli-args} \dcode{.rdata}$
+\item Effect 1: $\dtype{evmeasures} \dcode{.} \dtype{LME-formula-name} \dcode{.-a\_} \dtype{effect2} \dcode{\_-A\_} \dtype{effect1} \dcode{.} \dtype{LME-cli-args} \dcode{.rdata}$
+\item Effect 2: $\dtype{evmeasures} \dcode{.} \dtype{LME-formula-name} \dcode{.-a\_} \dtype{effect1} \dcode{\_-A\_} \dtype{effect2} \dcode{.} \dtype{LME-cli-args} \dcode{.rdata}$
+\item Both: $\dtype{evmeasures} \dcode{.} \dtype{LME-formula-name} \dcode{.-A\_} \dtype{effect1+effect2} \dcode{\_} \dtype{LME-cli-args} \dcode{.rdata}$
+\end{itemize}
+\end{itemize}
+
+
+\bibliography{bibliography}
+
+\end{document}

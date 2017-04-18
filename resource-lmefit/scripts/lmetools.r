@@ -412,6 +412,7 @@ lmefit <- function(dataset, output, params) {
         corpus = params$corpus,
         model = outputModel
     )
+    smartPrint(fitOutput$ablEffects)
     save(fitOutput, file=output)
 }
 

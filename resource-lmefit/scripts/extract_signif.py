@@ -72,7 +72,7 @@ if len(pair_evals) > 0:
     print('Pairwise evaluation of significance')
     print('===================================')
 
-    headers = ['effect', 'corpus', 'estimate', 't value', 'signif', 'rel_grad_base', 'rel_grad_main']
+    headers = ['effect', 'corpus', 'estimate', 't value', 'signif', 'rel_grad_base', 'rel_grad_main', 'filename']
     
     header_row = {}
     for h in headers:
@@ -82,7 +82,10 @@ if len(pair_evals) > 0:
 
     for path in pair_evals:
         with open(path, 'rb') as f:
-            rows.append(compute_row(f))
+            filename = path.split('/')[-1]
+            row = compute_row(f)
+            row['filename'] = filename
+            rows.append(row)
 
     converged = [header_row] + sorted([x for x in rows if (float(x['rel_grad_base']) < 0.002 and float(x['rel_grad_main']) < 0.002)], \
                 key = lambda y: float(y['signif']))
@@ -105,7 +108,7 @@ if len(diam_evals) > 0:
     print('Diamond evaluation of significance')
     print('==================================')
 
-    headers = ['effect', 'corpus', 'diamondname', 'pair', 'estimate', 't value', 'signif', 'rel_grad_base', 'rel_grad_main']
+    headers = ['effect', 'corpus', 'diamondname', 'pair', 'estimate', 't value', 'signif', 'rel_grad_base', 'rel_grad_main', 'filename']
 
     header_row = {}
     for h in headers:
@@ -115,6 +118,7 @@ if len(diam_evals) > 0:
 
     for path in diam_evals:
         with open(path, 'rb') as f:
+            filename = path.split('/')[-1]
             line = f.readline()
             while line and not line.startswith('[1] "Diamond Anova'):
                 line = f.readline()
@@ -123,19 +127,27 @@ if len(diam_evals) > 0:
             while line and not line.startswith('[1] "Effect 1 ('):
                 line = f.readline()
             assert line, 'Input not properly formatted'
-            rows.append(compute_row(f, diamName, 'baseline'))
+            row = compute_row(f, diamName, 'baseline')
+            row['filename'] = filename
+            rows.append(row)
             while line and not line.startswith('[1] "Effect 2 ('):
                 line = f.readline()
             assert line, 'Input not properly formatted'
-            rows.append(compute_row(f, diamName, 'baseline'))
+            row = compute_row(f, diamName, 'baseline')
+            row['filename'] = filename
+            rows.append(row)
             while line and not line.startswith('[1] "Both vs. Effect 1'):
                 line = f.readline()
             assert line, 'Input not properly formatted'
-            rows.append(compute_row(f, diamName, 'both'))
+            row = compute_row(f, diamName, 'both')
+            row['filename'] = filename
+            rows.append(row)
             while line and not line.startswith('[1] "Both vs. Effect 2'):
                 line = f.readline()
             assert line, 'Input not properly formatted'
-            rows.append(compute_row(f, diamName, 'both'))
+            row = compute_row(f, diamName, 'both')
+            row['filename'] = filename
+            rows.append(row)
 
     converged = [header_row] + sorted([x for x in rows if (float(x['rel_grad_base']) < 0.002 and float(x['rel_grad_main']) < 0.002)], \
                 key = lambda y: float(y['signif']))
