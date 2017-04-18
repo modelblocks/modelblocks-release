@@ -40,7 +40,7 @@ are distributed under the Gnu General Public License (see LICENSE file
 in this directory).
 
 Included resources are described in `RESOURCES.md`
-and denoted by a lack of [*] next to their name.
+and denoted by a lack of [+] next to their name.
 
 External Resources and `USER-*.TXT` Files
 -----------------------------------------
