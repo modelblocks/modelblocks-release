@@ -102,6 +102,9 @@ genmodel/alice.futureMetrics.params: | genmodel
 genmodel/alice.rm_unfix_items.params: | genmodel
 	echo '-f fdur' > $@
 
+genmodel/alice.spilloverMetrics.params: | genmodel
+	echo '-n1 -p fwprob5 totsurp' > $@
+
 genmodel/alice.time.tokmeasures: $(ALICE-SCRIPTS)/textGrid2tokmeasures.py $(ALICEDIR)/alice_stim_shared/DownTheRabbitHoleFinal_exp120_pad_1.TextGrid | genmodel
 	cat $(word 2, $^) | python $(word 1, $^) 1 > $@
 

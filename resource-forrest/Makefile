@@ -50,7 +50,7 @@
 
 VPATH += $(RESOURCE-FORREST)
 
-#SAMPLE-START := 20.05891632653599
+SAMPLE-START := 1.3 #20.05891632653599
 FORREST-SUBJECTS := 001 002 003 004 005 006 007 008 009 011 012 013 014 015 016 017 018 019 020
 # NOTE: Subject 010 doesn't have atlas-aligned data, and so was omitted from analysis
 
@@ -102,14 +102,26 @@ genmodel/forrest.futureMetrics.params: | genmodel
 genmodel/forrest.rm_unfix_items.params: | genmodel
 	echo '-f fdur' > $@
 
+genmodel/forrest.spilloverMetrics.params: | genmodel
+	echo '-n1 -p fwprob5 totsurp' > $@
+
+genmodel/forrest.pred_list.txt: | genmodel
+	echo 'wlen' > $@
+
 genmodel/forrest.time.tokmeasures: $(FORREST-SCRIPTS)/annotations2tokmeasures.py $(FORRESTDIR)/stimulus/task001/annotations/german_audio_description.csv | genmodel
 	python $(word 1, $^) $(word 2, $^) > $@
 
 genmodel/forrest.linetoks: $(FORREST-SCRIPTS)/tokmeasures2linetoks.py genmodel/forrest.time.tokmeasures $(TOKENIZERDIR)/ptb_tokenizer.sed | genmodel
 	cat $(word 2, $^) | python $(word 1, $^) | $(word 3, $^) > $@
 
-genmodel/forrest.lineitems: $(FORREST-SCRIPTS)/tokmeasures2linetoks.py genmodel/forrest.time.tokmeasures | genmodel
-	cat $(word 2, $^) | python $(word 1, $^) > $@
+genmodel/forrest.lineitems: genmodel/forrest.linetoks $(TOKENIZERDIR)/ptb_untokenizer.sed | genmodel
+	cat $(word 1, $^) | $(word 2, $^) > $@
+
+#genmodel/forrest.lineitems: $(FORREST-SCRIPTS)/tokmeasures2linetoks.py genmodel/forrest.time.tokmeasures | genmodel
+#	cat $(word 2, $^) | python $(word 1, $^) > $@
+
+#genmodel/forrest.lineitems: $(FORREST-SCRIPTS)/pastePunc.py genmodel/forrest.linetoks | genmodel
+#	cat $(word 2, $^) | python $(word 1, $^) > $@
 
 genmodel/forrest.src.evmeasures: $(CONFIGDIR)/user-forrest-directory.txt $(FORREST-SCRIPTS)/compile_forrest_subjects.py $(foreach s, $(FORREST-SUBJECTS), $(foreach r, $(shell seq 1 8), $(FORRESTDIR)/phase1/sub$(s)/BOLD/task001_run00$(r)/atlas_timeseries_dico7Tad2grpbold7Tad_nl.csv.gz)) | genmodel
 	python $(word 2, $^) 001 $(foreach r, $(shell seq 1 8),$(FORRESTDIR)/phase1/sub001/BOLD/task001_run00$(r)/atlas_timeseries_dico7Tad2grpbold7Tad_nl.csv.gz) > $@

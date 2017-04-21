@@ -138,6 +138,9 @@ genmodel/ucl.accumulateMetrics.params: | genmodel
 genmodel/ucl.futureMetrics.params: | genmodel
 	echo 'cumfwprob5 cumtotsurp' > $@
 
+genmodel/ucl.spilloverMetrics.params: | genmodel
+	echo '-n1 -p fwprob5 totsurp' > $@
+
 genmodel/ucl.rm_unfix_items.params: | genmodel
 	echo '-f fdurFP' > $@
   
