@@ -293,6 +293,9 @@ $$(word 1, $$(subst ., , %)).gold.embd.tokmeasures
 %.preitem.tokmeasures: %.relabeledpcfg.tokmeasures
 	mv $< $@
 
+%.t.preitem.tokmeasures: %.relabeledpcfg.tokmeasures
+	mv $< $@
+
 %.itemmeasures: $$(basename %).preitem.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py $$(word 1, $$(subst ., , %)).spilloverMetrics.params
 	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepth timestamp -e latin-1 | \
