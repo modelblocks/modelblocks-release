@@ -82,8 +82,8 @@ mv $@{.tmp,};
 SPILLOVER := S1 S2 S3
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
 FJ := fjprob noFprob endembd embdlen embdlendr embdlendrv noF noFlen noFlendr noFlendrv reinst reinstlen reinstlendr reinstlendrv
-COREF := corefbin coreflenw coreflenr corefsize
-EXTRA-SPILL := dc dcv pos depdirSyn depdirSynM depdirSem depdirSemM Ad AdPrim Bd BdPrim Bdm1 Bdm1Prim noFprob embddepth embdif
+COREF := corefbin coreflenw coreflenr corefsize 
+EXTRA-SPILL := dc dcv pos depdirSyn depdirSynM depdirSem depdirSemM Ad AdPrim Bd BdPrim Bdm1 Bdm1Prim noFprob embddepth embdif isanaphpro
 GCG-CATS := A B C D F G
 EMBDDEPTHS := 1 2 3 4 5
 
