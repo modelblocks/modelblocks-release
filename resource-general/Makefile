@@ -57,6 +57,12 @@ DMV-SCRIPTS := $(RESOURCE-DMV)/scripts
 RESOURCE-DUNDEE := $(abspath $(MBDIR)/resource-dundee)
 DUNDEE-SCRIPTS := $(RESOURCE-DUNDEE)/scripts
 
+RESOURCE-FMRI := $(abspath $(MBDIR)/resource-fmri)
+FMRI-SCRIPTS := $(RESOURCE-FMRI)/scripts
+
+RESOURCE-FORREST := $(abspath $(MBDIR)/resource-forrest)
+FORREST-SCRIPTS := $(RESOURCE-FORREST)/scripts
+
 RESOURCE-GCG := $(abspath $(MBDIR)/resource-gcg)
 GCG-SCRIPTS := $(RESOURCE-GCG)/scripts
 
@@ -191,6 +197,9 @@ endif
 ################################################################################
 
 genmodel:
+	if [ ! -d $@ ]; then mkdir $@; fi
+
+scripts:
 	if [ ! -d $@ ]; then mkdir $@; fi
 
 %config:

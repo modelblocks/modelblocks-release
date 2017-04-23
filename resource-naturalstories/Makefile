@@ -103,6 +103,9 @@ genmodel/naturalstories.merge_tables.params: | genmodel
 genmodel/naturalstories.accumulateMetrics.params: | genmodel
 	echo 'fwprob5 totsurp -f fdur' > $@
 
+genmodel/naturalstories.spilloverMetrics.params: | genmodel
+	echo '-n1 -p fwprob5 totsurp' > $@
+
 genmodel/naturalstories.futureMetrics.params: | genmodel
 	echo 'cumfwprob5 cumtotsurp' > $@
 

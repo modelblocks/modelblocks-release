@@ -75,7 +75,7 @@ cleanupData <- function(data, params) {
             l = gsub('^\\s*|\\s*$', '', l)
             if (!(l == "" || substr(l, 1, 1) == '#')) {
                 filter = strsplit(l, '\\s+')[[1]]
-                if (filter[1] == 'allbut') {
+                if (filter[1] == 'only') {
                     smartPrint(paste0('Filtering out all rows with ', filter[2], ' != ', filter[3]))
                     data = data[data[[filter[2]]] == filter[3],]
                     smartPrint(paste0('Number of data rows after filtering out ', filter[2], ' != ', filter[3], ': ', nrow(data)))
@@ -91,17 +91,36 @@ cleanupData <- function(data, params) {
     return(data)
 }
 
+addColumns <- function(data) {
+    for (x in colnames(data)[grepl('dlt',colnames(data))]) {
+        data[[paste(x, 'bin', sep='')]] <- sapply(data[[x]], binEffect)
+    }
+    for (x in colnames(data)[grepl('prob',colnames(data))]) {
+        data[[paste(x, 'surp', sep='')]] <- as.numeric(as.character(-data[[x]]))
+    }
+    data$wlen <- as.integer(nchar(as.character(data$word)))
+    for (x in colnames(data)[grepl('Ad|Bd', colnames(data))]) {
+        data[[paste0(x, 'prim')]] <- substr(data[[x]], 1, 1)
+    }
+    return(data)
+}
+
 recastEffects <- function(data, params) {
     smartPrint("Recasting Effects")
-    data$sentid <- as.numeric(as.character(data$sentid))
-    data$subject <- as.numeric(as.factor(as.character(data$subject)))
-    
-    if (params$firstpass) {
-        data$fdur <- as.numeric(as.character(data$fdurFP))
-    } else if (params$gopast) {
-        data$fdur <- as.numeric(as.character(data$fdurGP))
-    } else {
-        data$fdur <- as.numeric(as.character(data$fdur))
+    if ('sentid' %in% colnames(data)) {
+        data$sentid <- as.numeric(as.character(data$sentid))
+    }
+    if ('subject' %in% colnames(data)) {
+        data$subject <- as.numeric(as.factor(as.character(data$subject)))
+    }
+    if ('fdur' %in% colnames(data)) {
+        if (params$firstpass) {
+            data$fdur <- as.numeric(as.character(data$fdurFP))
+        } else if (params$gopast) {
+            data$fdur <- as.numeric(as.character(data$fdurGP))
+        } else {
+            data$fdur <- as.numeric(as.character(data$fdur))
+        }
     }
     if ('sentpos' %in% colnames(data)) {
         data$sentpos <- as.integer(data$sentpos)
@@ -120,19 +139,19 @@ recastEffects <- function(data, params) {
     }
     for (x in colnames(data)[grepl('dlt',colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
-        data[[paste(x, 'bin', sep='')]] <- as.character(sapply(data[[x]], binEffect))
     }
     for (x in colnames(data)[grepl('surp',colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
     for (x in colnames(data)[grepl('prob',colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
-        data[[paste(x, 'surp', sep='')]] <- as.numeric(as.character(-data[[x]]))
     }
     if ('word' %in% colnames(data)) {
         data$word <- as.character(data$word)
     }
-    data$wlen <- as.integer(nchar(data$word))
+    if ('wlen' %in% colnames(data)) {
+        data$wlen <- as.integer(data$wlen)
+    }
     if ('subject' %in% colnames(data)) {
         data$subject <- as.character(data$subject)
     }
@@ -150,9 +169,6 @@ recastEffects <- function(data, params) {
     if ('depdir' %in% colnames(data)) {
         data$depdir <- as.numeric(as.character(data$depdir))
         data$depdir[data$rolled == 1] <- 0
-    }
-    for (x in colnames(data)[grepl('Ad|Bd', colnames(data))]) {
-        data[[paste0(x, 'prim')]] <- substr(data[[x]], 1, 1)
     }
 
     data$splitID <- 0
@@ -215,9 +231,11 @@ baseFormula <- function(params) {
     bform <- list(
         dep=depvar,
         fixed=flines[2],
-        by_subject=flines[3],
-        other=flines[4]
+        by_subject=flines[3]
     )
+    if (length(flines) > 3) {
+        bform$other = flines[4]
+    }
     close(f)
     return(bform)
 }
@@ -312,9 +330,11 @@ formlist2form <- function(formList, interact) {
     formStr <- paste(formList$dep, ' ~ ', formList$fixed, ' + (', coef, ' + ',
                formList$by_subject, ' | subject)', sep='')
     formList[c('dep', 'fixed', 'by_subject')] <- NULL
-    other <- paste(formList, collapse=' + ')
     if (!interact) formStr <- paste(formStr, '+ (1 | subject)')
-    formStr <- paste(formStr, '+', other)
+    if ('other' %in% names(formList)) {
+        other <- paste(formList, collapse=' + ')
+        formStr <- paste(formStr, '+', other)
+    }
     form <- as.formula(formStr)
     return(form)
 }
@@ -368,12 +388,12 @@ printSummary <- function(reg) {
 # Generate logarithmically binned categorical effect
 # from discrete/continouous effect
 binEffect <- function(x) {
-    if (x == 0) return("0") else
-    if (x <= 1) return("1") else
-    if (x <= 2) return("2") else
-    if (x > 2 && x <= 4) return("3-4") else
-    if (x > 4 && x <= 8) return("5-8") else
-    if (x > 8) return("9+") else
+    if (x == 0) return(0) else
+    if (x <= 1) return(1) else
+    if (x <= 2) return(2) else
+    if (x > 2 && x <= 4) return(3) else
+    if (x > 4 && x <= 8) return(4) else
+    if (x > 8) return(5) else
     return ("negative")
 }
 
@@ -392,6 +412,7 @@ lmefit <- function(dataset, output, params) {
         corpus = params$corpus,
         model = outputModel
     )
+    smartPrint(fitOutput$ablEffects)
     save(fitOutput, file=output)
 }
 

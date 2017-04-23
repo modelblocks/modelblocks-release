@@ -190,6 +190,9 @@ genmodel/dundee.merge_tables.params: | genmodel
 genmodel/dundee.accumulateMetrics.params: | genmodel
 	echo 'fwprob5 totsurp' $(ALL-MEM-SPILL) > $@
 
+genmodel/dundee.spilloverMetrics.params: | genmodel
+	echo '-n1 -p fwprob5 totsurp' > $@
+
 genmodel/dundee.futureMetrics.params: | genmodel
 	echo 'cumfwprob5 cumtotsurp' > $@
 

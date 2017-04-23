@@ -65,15 +65,15 @@
 # the correct key in the target for this recipe.
 #
 # For information about available parameters
-# to the evaluation, run "resource-rt/scripts/evmeasures2lmefit-mem.r -h" from the repository
+# to the evaluation, run "resource-rt/scripts/evmeasures2lmefit.r -h" from the repository
 # root.
 #
 #.PRECIOUS: %.rdata ##Disabled for now because it fills the disk quickly. Re-enable for simulations
-%.rdata:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r genmodel/$$(basename $$(basename $$*)).full.evmeasures \
+%.rdata %.lmefit:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r genmodel/$$(basename $$(basename $$*)).full.evmeasures \
 scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform 
-	$< $(word 2, $^) $@ $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) > $*.lmefit
+	$< $(word 2, $^) $*.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) > $*.lmefit
 
-# Runs a diamond LME evaluation based on the following template:
+# Runs an LRT evaluation based on the following template:
 #
 #    <path>/<evmeasures-basename>.<formula-key>.<main-effect>.<eval-params>.<anova-params>.diamond.lrtsignif
 #
@@ -96,21 +96,12 @@ scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform
 #
 .PRECIOUS: %.lrtsignif
 %.lrtsignif:  $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
-$$(basename $$(basename $$(basename $$*))).-a_$$(subst .,,$$(suffix $$(basename $$(basename $$*))))_-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
+$$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
+$$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
 	$(wordlist 1,3,$^) $(subst _, ,$(subst .,,$(suffix $*))) > $@
 
-# Same as above, only don't add main effect as a random slope
-.PRECIOUS: %.noadd.lrtsignif
-%.noadd.lrtsignif:  $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
-$$(basename $$(basename $$(basename $$*))).-a_$$(subst .,,$$(suffix $$(basename $$(basename $$*))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$$(basename $$(basename $$(basename $$*))).-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
-	$(wordlist 1,3,$^) $(subst _, ,$(subst .,,$(suffix $*))) > $@
-
-  
-# Runs a diamond LME evaluation based on the following template:
+# Runs a diamond LRT evaluation based on the following template:
 #     
 #    <path>/<evmeasures-basename>.<formula-key>.<effect1>_<effect2>.<eval-params>.<anova-params>.diamond.lrtsignif
 #
@@ -132,10 +123,10 @@ $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
 #    
 .PRECIOUS: %.diamond.lrtsignif
 %.diamond.lrtsignif: $(LMEFIT-SCRIPTS)/lmefit2diamlrtsignif.r \
-$$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$$(basename $$(basename $$(basename $$*))).-a_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))+$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$$(basename $$(basename $$(basename $$*))).-a_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix $$(basename %))).rdata \
+$$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
+$$(basename $$(basename $$(basename $$*))).-a_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
+$$(basename $$(basename $$(basename $$*))).-a_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
+$$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
 	$(wordlist 1,5,$^) -t '$(subst _,-vs-,$(subst .,,$(suffix $(basename $(basename $*)))))' \
   -l $(word 1, $(subst _, ,$(subst .,,$(suffix $(basename $(basename $*)))))) \
