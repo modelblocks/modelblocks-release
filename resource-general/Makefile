@@ -199,5 +199,8 @@ endif
 genmodel:
 	if [ ! -d $@ ]; then mkdir $@; fi
 
+scripts:
+	if [ ! -d $@ ]; then mkdir $@; fi
+
 %config:
 	if [ ! -d $@ ]; then mkdir $@; fi

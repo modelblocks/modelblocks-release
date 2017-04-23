@@ -13,16 +13,14 @@ def getPrintTable(row_collection, key_list, field_sep=' '):
 
 assert len(sys.argv) > 1
 
-dir = sys.argv[1]
-
-fit_list = [x for x in os.listdir(dir) if x.endswith('.lmefit')]
+fit_list = sys.argv[1:]
 
 rows = []
 
 for path in fit_list:
     relgrad = inf
     aic = -inf
-    with open(dir + '/' + path, 'rb') as f:
+    with open(path, 'rb') as f:
         text = f.readlines()
         name = path.split('.')[-3]
         for i,l in enumerate(text):

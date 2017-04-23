@@ -53,6 +53,7 @@ VPATH += $(RESOURCE-ALICE)
 SAMPLE-START := 20.05891632653599
 # NOTE: Dataset also contains an s33 but BOLD values are all zero, so excluded from analysis
 ALICE-SUBJECTS := s18 s22 s23 s24 s26 s28 s30 s31 s35 s36 s37 s38 s39 s40 s41 s42 s43 s44 s45 s46 s47 s48 s49 s50 s51 s52 s53
+ALICE-ROI := LATL LIFG LIPL LPreM LPreM LPTL RATL
 
 ################################################################################
 #
@@ -95,6 +96,17 @@ endif
 #  Reading time data formatting items
 #
 ################################################################################
+
+define 10MMFORM = 
+scripts/$(1)%10mm.lmeform: scripts/%10mm.template.lmeform | scripts
+	cat $$< | sed 's/ALICEROI/$(1)/g;' > $$@
+endef
+
+define ALICE-FORMS 
+$(foreach ROI, $(ALICE-ROI), $(eval $(call 10MMFORM,$(ROI))))
+endef
+
+$(eval $(ALICE-FORMS))
 
 genmodel/alice.futureMetrics.params: | genmodel
 	echo 'cumfwprob5 cumtotsurp' > $@

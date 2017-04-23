@@ -163,6 +163,10 @@ opts <- processArgs()
 params <- opts$options
 input <- opts$args[1] # positional arg, input file specification
 output <- opts$args[2] # positional arg, output file specification
+smartPrint('Added effects')
+smartPrint(params$addEffects)
+smartPrint('Ablated effects')
+smartPrint(params$ablEffects)
 
 smartPrint('Reading data from file')
 data <- read.table(input, header=TRUE, quote='', comment.char='')
