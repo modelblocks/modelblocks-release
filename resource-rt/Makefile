@@ -85,7 +85,7 @@ SPILLOVER := S1 S2 S3
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
 FJ := fjprob noFprob endembd embdlen embdlendr embdlendrv noF noFlen noFlendr noFlendrv reinst reinstlen reinstlendr reinstlendrv
 COREF := corefbin coreflenw coreflenr corefsize
-EXTRA-SPILL := dc dcv pos depdirSyn depdirSynM depdirSem depdirSemM Ad AdPrim Bd BdPrim Bdm1 Bdm1Prim noFprob embddepth embdif totsurp fwprob5surp sentpos sentid wlen word
+EXTRA-SPILL := dc dcv pos depdirSyn depdirSynM depdirSem depdirSemM Ad AdPrim Bd BdPrim Bdm1 Bdm1Prim noFprob embddepth embdif totsurp fwprob5surp sentpos sentid wlen word isanaphpro
 GCG-CATS := A B C D F G
 EMBDDEPTHS := 1 2 3 4 5
 
@@ -268,6 +268,10 @@ genmodel/rename_cols.params: | genmodel
 %.pcfg.tokmeasures: %_parsed.output $(LCPARSE-SCRIPTS)/spargeComplexity.py $(RT-SCRIPTS)/calcFJProb.py
 	cat $< | python3 $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;' | python $(word 3, $^) > $@
 
+# pcfg.tokmeasures with a time column, requires %.time.tokmeasures with timestamps for tokens in stimulus
+%.t.pcfg.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).time.tokmeasures
+	cat $(word 1, $^) | paste -d' ' - <(cut -f 4- -d' ' $(word 2, $^)) > $@
+
 # With co-ref features
 %.syn.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).gold.dlt.tokmeasures \
 $$(word 1, $$(subst ., , %)).gold.embd.tokmeasures $$(word 1, $$(subst ., , %)).gold.coref.tokmeasures
@@ -280,10 +284,6 @@ $$(word 1, $$(subst ., , %)).gold.embd.tokmeasures
 	cat $< | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) <(cut -f 2- -d' ' $(word 3, $^)) | \
 	sed 's/  */ /g;1s/F-/fm/g;1s/F+/fp/g;1s/L-/lm/g;1s/L+/lp/g;1s/B-/bm/g;1s/B+/bp/g;1s/Badd/ba/g;1s/Bcdr/bc/g;1s/BNil/bo/g;1s/Bsto/bsto/g;' > $@
 
-# syn.tokmeasures with a time column, requires %.time.tokmeasures with timestamps for tokens in stimulus
-%.t.syn.tokmeasures: %.syn.tokmeasures $$(word 1, $$(subst ., , %)).time.tokmeasures
-	cat $(word 1, $^) | paste -d' ' - <(cut -f 4- -d' ' $(word 2, $^)) > $@
-
 %.relabeledpcfg.tokmeasures: %.pcfg.tokmeasures
 	sed 's/  */ /g;1s/F-/fm/g;1s/F+/fp/g;1s/L-/lm/g;1s/L+/lp/g;1s/B-/bm/g;1s/B+/bp/g;1s/Badd/ba/g;1s/Bcdr/bc/g;1s/BNil/bo/g;1s/Bsto/bsto/g;' $< > $@
 
@@ -293,20 +293,17 @@ $$(word 1, $$(subst ., , %)).gold.embd.tokmeasures
 %.preitem.tokmeasures: %.relabeledpcfg.tokmeasures
 	mv $< $@
 
-%.t.preitem.tokmeasures: %.relabeledpcfg.tokmeasures
-	mv $< $@
-
 %.itemmeasures: $$(basename %).preitem.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py $$(word 1, $$(subst ., , %)).spilloverMetrics.params
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py # $$(word 1, $$(subst ., , %)).spilloverMetrics.params
 	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepth timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
-	$(word 5, $^) | python $(word 6, $^) $(shell cat $(word 7,$^)) > $@
+	$(word 5, $^) | python $(word 6, $^) -a -n3 > $@
 
 %.t.itemmeasures: $$(basename %).t.preitem.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py $$(word 1, $$(subst ., , %)).spilloverMetrics.params
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py # $$(word 1, $$(subst ., , %)).spilloverMetrics.params
 	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepth timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
-	$(word 5, $^) | python $(word 6, $^) $(shell cat $(word 7,$^)) > $@
+	$(word 5, $^) | python $(word 6, $^) -a -n3 > $@
 
 # Keep old buggy roll operation which messes up sentid
 %.o.itemmeasures: $$(basename %).syn.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
