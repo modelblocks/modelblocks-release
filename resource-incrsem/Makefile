@@ -328,7 +328,7 @@ FmodelLabelIndexUnked.pkl: $(INCRSEM-SCRIPTS)/getFlabelIndex.py genmodel/simplew
 %parsed.tokdecs:  bin/$$(subst .,,$$(suffix $$(basename $$(subst +,-,$$(subst -,.,$$*))))) \
                   $$(basename %).linetoks \
                   genmodel/$$(basename $$(subst +,-,$$(subst -,.,$$(subst .,,$$(suffix $$*)))))model
-	cat $(word 2,$^)  |  $(word 1,$^) $(subst _, ,$(subst +,-,$(lastword $(subst -, ,$*)))) $(word 3,$^)  >  $@
+	cat $(word 2,$^)  |  $(word 1,$^) $(subst _, ,$(subst +,-,$(subst .,,$(suffix $(subst -,.,$*))))) $(word 3,$^)  >  $@
 
 ### obtain parsed token states for sem proc model...
 ##.PRECIOUS: %semproc-parsed.tokdecs

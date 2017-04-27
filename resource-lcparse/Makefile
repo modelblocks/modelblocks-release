@@ -130,7 +130,7 @@ bin/%:  $(RESOURCE-LCPARSE)/src/$$(notdir $$@).cpp  $(RESOURCE-LCPARSE)/src/$$(n
 %parsed.output:  bin/parser-$$(subst .,,$$(suffix $$(basename $$(subst +,-,$$(subst -,.,$$*))))) \
                   $$(basename %).linetoks \
                   genmodel/$$(basename $$(subst +,-,$$(subst -,.,$$(subst .,,$$(suffix $$*))))).model
-	cat $(word 2,$^)  |  $(word 1,$^) $(subst _, ,$(subst +,-,$(lastword $(subst -, ,$*)))) $(word 3,$^)  >  $@
+	cat $(word 2,$^)  |  $(word 1,$^) $(subst _, ,$(subst +,-,$(subst .,,$(suffix $(subst -,.,$*))))) $(word 3,$^)  >  $@
 
 ## support squirrely old efabp output item from new syneval item...
 %parsed.linetrees: %parsed.output $(LCPARSE-SCRIPTS)/$$(lastword $$(subst +, ,$$(basename $$(subst -,.,$$*))))out2linetrees.py  $(LCPARSE-SCRIPTS)/remove-at-cats.pl $(LCPARSE-SCRIPTS)/spargeComplexity.py

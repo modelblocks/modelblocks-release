@@ -151,19 +151,25 @@ $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees $$(b
 ##### <testset>.<trainset>.<model>.(<params>_)parsed  ---->  genmodel/<testset>.linetoks  bin/parser-<model>  genmodel/<trainset>.<model>.model
 # $$(basename $$(basename $$(basename %))).$$(findstring hy,$$*)sents
 .PRECIOUS: %parsed.output
-%parsed.output: $$(basename $$(basename $$(basename %))).linetoks \
-		$(BIN)/parser-$$(subst .,,$$(suffix $$(basename $$*))) \
-		$(GENMODEL)/$$(subst -,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))$$(suffix $$(basename $$*)).model
-	@echo "WARNING: long build for '$@'!  Press CTRL-C to abort!"
-	@sleep 5
-	cat $<  |  $(word 2,$^)  $(subst _, ,$(subst .,,$(suffix $*)))  $(word 3,$^)  >  $@
+## obsolete
+#%parsed.output: $$(basename $$(basename $$(basename %))).linetoks \
+#		$(BIN)/parser-$$(subst .,,$$(suffix $$(basename $$*))) \
+#		$(GENMODEL)/$$(subst -,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))$$(suffix $$(basename $$*)).model
+#	@echo "WARNING: long build for '$@'!  Press CTRL-C to abort!"
+#	@sleep 5
+#	cat $<  |  $(word 2,$^)  $(subst _, ,$(subst .,,$(suffix $*)))  $(word 3,$^)  >  $@
 ## this is to spec; above is deprecated
-%parsed.output: $$(basename %).linetoks \
-		$(BIN)/parser-fullberk \
-		$(GENMODEL)/$$(basename $$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*))))).berk.model
-	@echo "WARNING: long build for '$@'!  Press CTRL-C to abort!"
-	@sleep 5
-	cat $<  |  $(word 2,$^)  $(subst _, ,$(subst .,,$(suffix $(subst -,.,$*))))  $(word 3,$^)  >  $@
+%parsed.output: $(BIN)/parser-$$(subst .,,$$(suffix $$(basename $$(subst +,-,$$(subst -,.,$$*))))) \
+		$$(basename %).linetoks \
+		$(GENMODEL)/$$(basename $$(subst +,-,$$(subst -,.,$$(subst .,,$$(suffix $$*))))).model
+	cat $(word 2,$^)  |  $(word 1,$^) $(subst _, ,$(subst +,-,$(subst .,,$(suffix $(subst -,.,$*))))) $(word 3,$^)  >  $@
+## broken now
+#%parsed.output: $$(basename $$(basename %)).linetoks \
+#		$(BIN)/parser-$$(subst .,,$$(suffix $$(basename $$*))) \
+#		$(GENMODEL)/$$(basename $$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*)))))$$(suffix $$(basename $$*)).model
+#	@echo "WARNING: long build for '$@'!  Press CTRL-C to abort!"
+#	@sleep 5
+#	cat $<  |  $(word 2,$^)  $(subst _, ,$(subst .,,$(suffix $(subst -,.,$*))))  $(word 3,$^)  >  $@
 
 #### obtain linetrees by removing extra parens and converting '+'s in categories to '-'s
 # Should this really be precious?
