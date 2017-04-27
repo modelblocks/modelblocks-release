@@ -316,7 +316,15 @@ int main ( int nArgs, char* argv[] ) {
         cout << endl;
       }
     }
-    if( mls.size()==0 ) cout << "FAIL FAIL 1 1 " << endl;
+    if( mls.size()==0 ) {
+      int u=1; auto iw=lwSent.begin(); for( ; iw!=lwSent.end(); iw++, u++ ) {
+        cout << *iw << " FAIL 1 1 ";
+        if( OUTPUT_MEASURES ) cout << " " << vdSurp[u];
+        cout << endl;
+      }
+    }
+        
+    //if( mls.size()==0 ) cout << "FAIL FAIL 1 1 " << endl;
   }
 }
 
