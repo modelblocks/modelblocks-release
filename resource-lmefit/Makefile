@@ -69,7 +69,7 @@
 # root.
 #
 #.PRECIOUS: %.rdata ##Disabled for now because it fills the disk quickly. Re-enable for simulations
-%.rdata %.lmefit:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r genmodel/$$(basename $$(basename $$*)).full.evmeasures \
+%.rdata %.lmefit:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py $$(subst .,,$$(suffix $$*))).filt.evmeasures \
 scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform 
 	$< $(word 2, $^) $*.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) > $*.lmefit
 

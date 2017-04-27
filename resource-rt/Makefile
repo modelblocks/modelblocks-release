@@ -72,6 +72,10 @@
 .SUFFIXES:
 SECONDEXPANSION:
 
+EMPTY := 
+SPACE :=$(EMPTY) $(EMPTY)
+COMMA :=, 
+
 VPATH += $(RESOURCE-RT)
 
 MERGESURP = python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).full.evmeasures --i totsurp | \
@@ -294,23 +298,23 @@ $$(word 1, $$(subst ., , %)).gold.embd.tokmeasures
 	mv $< $@
 
 %.itemmeasures: $$(basename %).preitem.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py # $$(word 1, $$(subst ., , %)).spilloverMetrics.params
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py
 	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepth timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
-	$(word 5, $^) | python $(word 6, $^) -a -n3 > $@
+	$(word 5, $^) | python $(word 6, $^) -a -n4 > $@
 
 %.t.itemmeasures: $$(basename %).t.preitem.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py # $$(word 1, $$(subst ., , %)).spilloverMetrics.params
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py
 	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepth timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
-	$(word 5, $^) | python $(word 6, $^) -a -n3 > $@
+	$(word 5, $^) | python $(word 6, $^) -a -n4 > $@
 
 # Keep old buggy roll operation which messes up sentid
 %.o.itemmeasures: $$(basename %).syn.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py $$(word 1, $$(subst ., , %)).spilloverMetrics.params
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py
 	cat <(cat $< | sed 's/\[/!/g;s/\]/!/g;') | python $(word 3, $^) $(word 2, $^) embddepth -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
-	$(word 5, $^) | python $(word 6, $^) -n3 -p $(shell cat $(word 7, $^)) > $@
+	$(word 5, $^) | python $(word 6, $^) -n3 -p $(DLT) $(FJ) $(EXTRA-SPILL) > $@
 
 .PRECIOUS: %.full.evmeasures
 %.full.evmeasures: $$(basename %).itemmeasures $$(word 1, $$(subst ., , %))$$(suffix $$*).src.evmeasures \
@@ -328,6 +332,10 @@ $$(word 1, $$(subst ., , %)).merge_tables.params $$(word 1, $$(subst ., , %)).ac
 $$(word 1, $$(subst ., , %)).rm_unfix_items.params
 	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 6, $^)) | python $(word 4, $^) $(shell cat $(word 7, $^)) | python $(word 5, $^) $(shell cat $(word 8, $^)) > $@
 
+
+%.filt.evmeasures: $$(basename %).full.evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
+$(RT-SCRIPTS)/inferPredictors.py $(RT-SCRIPTS)/filter_cols.awk
+	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(shell cat $(word 2, $^) | python $(word 3, $^)) $(word 2, $(subst _, ,$(subst +,:,$(subst .,,$(suffix $*))))))) $< > $@
 
 # Generate and merge parser data from multiple grammars
 # Template: mydata.training-GRAMMAR-other-args.stuff.parser1_parser2_parser3.merged.full.evmeasures
