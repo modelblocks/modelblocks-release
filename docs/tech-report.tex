@@ -917,8 +917,25 @@ Multinomial logistic regression parweights.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-{\tt RESOURCE-RT} contains methods for aggregating measures from time-series psycholinguistic experiments into a single data table. It also contains convenience recipes for a number of reading-time experiment types.
+{\tt RESOURCE-RT} contains methods for aggregating measures from time-series psycholinguistic experiments into a single data table.
+It also contains convenience recipes for a number of reading-time experiment types.
 
+Note that in order to set up a new experiment using the targets in {\tt RESOURCE-RT}, you must first supply recipes to create the following input files from your experiment data:
+
+\begin{itemize}
+\item {\tt\blue $\dtype{corpus} \dcode{.lineitems}$}: parser-tokenized sentences
+\item {\tt\blue $\dtype{corpus} \dcode{.linetoks}$}: experiment-tokenized sentences
+\item {\tt\blue $\dtype{corpus} \dcode{.src.evmeasures}$}: space-delimited table of event data from the experiment source (IMPORTANT: this must contain {\tt\blue sentid} and {\tt\blue sentpos} columns)
+\item Parameter files:
+\begin{itemize}
+\item {\tt\blue $\dtype{corpus} \dcode{.merge\_tables.params}$}: field(s) to use for inner merge between item and event data (typically: {\tt\blue word sentid sentpos})
+\item {\tt\blue $\dtype{corpus} \dcode{.accumulateMetrics.params}$}: field(s) to accumulate over saccade regions in eye movement studies (can be empty if not relevant) 
+\item {\tt\blue $\dtype{corpus} \dcode{.rm\_bad\_toks.params}$}: params to pass to {\tt\blue resource-rt/scripts/rm$\_$bad$\_$toks.py} (see script for details) 
+\end{itemize}
+\end{itemize}
+
+Generally, these recipes will be supplied by creating and including a Makefile in a directory called {\tt RESOURCE-$\dtype{corpus}$}.
+For example, for the Natural Stories corpus, these recipes are provided by {\tt RESOURCE-NATURALSTORIES}, which must be included before {\tt RESOURCE-RT} in the experiment directory's Makefile.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{{\blue\tt \%.tokmeasures}}
@@ -940,6 +957,20 @@ Generates a data table containing space-delimited columns of measurements for ea
                   }
       \end{itemize}
 \end{itemize}
+
+\subsection{Recipe: {\blue\tt \%.pcfg.tokmeasures}}
+Generates a table of complexity metrics from the output of an incremental parser.
+
+\subsection{Recipe: {\blue\tt \%.t.pcfg.tokmeasures}}
+Generates a table of complexity metrics from the output of an incremental parser, along with timestamps for each event in the data.
+Timestamps must be provided by corpus resource named {\tt\blue $\dtype{corpus} \dcode{.time.tokmeasures}$}.
+This target is a prerequisite for e.g.\ hemodynamic response convolution for fMRI studies.
+
+\subsection{Recipe: {\blue\tt \%.syn.tokmeasures}}
+Generates all token-level syntactic predictors, including parser complexity metrics as well as a number of additional predictors computed from gold trees.
+Requires a corpus resource called {\tt\blue $\dtype{corpus} \dcode{.gold.linetrees}$}, and can also use coreference annotations if a {\tt\blue $\dtype{corpus} \dcode{.gold.coref.linetrees}$} file is also supplied.
+If creating hand-corrected trees is not feasible, silver trees can be used by simply generating a GCG15+-style parse using any Modelblocks-supported parser and renaming the output to {\tt\blue $\dtype{corpus} \dcode{.gold.linetrees}$}.
+Your {\tt RESOURCE-$\dtype{corpus}$} directory must supply targets to create or copy the gold/silver trees to the appropriate location (usually the {\tt\blue genmodel} directory of the experiment).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -963,6 +994,10 @@ Generates a data table containing space-delimited columns of measurements for ea
 \end{itemize}
 
 \subsection{Recipe: \blue\tt \%.itemmeasures}
+Rolls tokens from a {\tt\blue \%.syn.tokmeasures} file into items (summing relevant columns along the way) and performs an inner merge with \textit{n}-gram surprisal metrics.
+
+\subsection{Recipe: \blue\tt \%.ngram.itemmeasures}
+Computes \textit{n}-gram surprisal columns for the items in the corpus using SRILM or KENLM.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -986,10 +1021,16 @@ Generates a data table containing space-delimited columns of measurements for ea
       \end{itemize}
 \end{itemize}
 
-\subsection{Recipe: \blue\tt \%.evmeasures}
+\subsection{Recipe: \blue\tt \%.full.evmeasures}
+Performs an inner merge between item-level and event-level data, along with some post-processing (spillover, accumulation, removal of bad events).
 
+\subsection{Recipe: \blue\tt \%.filt.evmeasures}
+Extracts relevant columns from {\blue\tt \%.full.evmeasures}.
+Designed for use as a preprocess to LME fitting, since it can dramatically reduce memory overhead, especially with multiple regressions run in parallel.
+The {\blue\tt \%.rdata} target automatically infers the relevant columns based on the model specification and the command line arguments to the regression script, so this target generally does not need to be made directly.
 
-
+\subsection{Recipe: \blue\tt \%.filt.evmeasures}
+Generates surprisal measures from multiple grammar specifications and pastes them into a single data table.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1035,7 +1076,7 @@ For detailed documentation of available arguments and their functions, run: {\tt
 \end{itemize}
 \item\textbf{Inputs:}
 \begin{itemize}
-\item Data: $\dtype{evmeasures} \dcode{.full.evmeasures}$ (NOTE: to reduce memory overhead, only the relevant columns will be extracted from this file prior to loading into the regression script)
+\item Data:\footnote{To reduce memory overhead, only the relevant columns will be extracted from this file prior to loading into the regression script} $\dtype{evmeasures} \dcode{.full.evmeasures}$
 \item Model specification: $\dtype{LME-formula-name} \dcode{.lmeform}$ 
 \end{itemize}
 \end{itemize}
