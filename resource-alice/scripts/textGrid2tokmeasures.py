@@ -2,7 +2,7 @@ import sys, re
 
 addPunc = False
 if len(sys.argv) > 1:
-    addPunc = bool(sys.argv[1])
+    addPunc = bool(int(sys.argv[1]))
 
 wrds = []
 
@@ -76,6 +76,12 @@ for i in xrange(len(wrds)):
     else:
         wrds_out.append((wrd[0],str(sentid),str(sentpos),wrd[1]))
         sentpos += 1
+
+print('word timestamp')
+for wrd in wrds_out:
+    print('%s %s' %(wrd[0], wrd[3]))
+
+exit()
 
 print('word sentid sentpos timestamp')
 for wrd in wrds_out:

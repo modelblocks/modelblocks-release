@@ -175,7 +175,7 @@ int main ( int nArgs, char* argv[] ) {
     }
   }
 
-  if( OUTPUT_MEASURES ) cout << "word pos f j store surp" << endl;
+  if( OUTPUT_MEASURES ) cout << "word pos f j store totsurp" << endl;
 
   // For each line in stdin...
   for( int linenum=1; cin && EOF!=cin.peek(); linenum++ ) {

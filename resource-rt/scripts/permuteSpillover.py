@@ -50,7 +50,7 @@ def printPermPreds(bform, preds, perms, outdir):
         form_name = []
         for i in xrange(len(preds)):
             form_name.append(preds[i][:2] + str(perm[i]))
-        form_name = '_'.join(form_name)
+        form_name = ''.join(form_name)
         bform_out = bform[:1]
         preds_new = updatePreds(preds, perm)
         for l in bform[1:]:

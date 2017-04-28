@@ -117,14 +117,20 @@ genmodel/alice.rm_unfix_items.params: | genmodel
 genmodel/alice.spilloverMetrics.params: | genmodel
 	echo '-n1 -p fwprob5 totsurp' > $@
 
-genmodel/alice.time.tokmeasures: $(ALICE-SCRIPTS)/textGrid2tokmeasures.py $(ALICEDIR)/alice_stim_shared/DownTheRabbitHoleFinal_exp120_pad_1.TextGrid | genmodel
-	cat $(word 2, $^) | python $(word 1, $^) 1 > $@
+genmodel/alice.original.linetoks: srcmodel/alice.original.txt $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | genmodel
+	cat $< | sed "s/‘/\'/g;s/’/\'/g;s/—/ -/g;s/“/\'/g;s/”/\'/g;" | $(word 2, $^) > $@
+
+genmodel/alice.lineitems: srcmodel/alice.original.txt | genmodel
+	cat $< | sed "s/‘/\'/g;s/’/\'/g;s/—/ -/g;s/“/\'/g;s/”/\'/g;s/(/-LRB-/g;s/)/-RRB-/g;" > $@
+
+genmodel/alice.src.time.tokmeasures: $(ALICE-SCRIPTS)/textGrid2tokmeasures.py $(ALICEDIR)/alice_stim_shared/DownTheRabbitHoleFinal_exp120_pad_1.TextGrid | genmodel
+	cat $(word 2, $^) | python $(word 1, $^) 0 > $@
+
+genmodel/alice.time.tokmeasures: $(ALICE-SCRIPTS)/alignSrcToks2OrigToks.py genmodel/alice.src.time.tokmeasures genmodel/alice.original.linetoks | genmodel
+	python $^ >$@
 
 genmodel/alice.linetoks: $(ALICE-SCRIPTS)/tokmeasures2linetoks.py genmodel/alice.time.tokmeasures | genmodel
 	cat $(word 2, $^) | python $(word 1, $^) > $@
-
-genmodel/alice.lineitems: genmodel/alice.linetoks $(ALICE-SCRIPTS)/pastePunc.py | genmodel
-	cat $(word 1, $^) | python $(word 2, $^) > $@
 
 %alice.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-ALICE)/srcmodel/alice.stripped.linetrees %alice.linetoks
 	python $^ > $@

@@ -48,7 +48,7 @@ processArgs <- function(cliargs) {
         make_option(c('-b', '--bformfile'), type='character', default='../resource-rt/scripts/mem.lmeform', help='Path to LME formula specification file (<name>.lmeform'),
         make_option(c('-a', '--abl'), type='character', default=NULL, help='Effect(s) to ablate, delimited by "+". Effects that are not already in the baseline specification will be ignored (to add new effects to the baseline formula in order to ablate them, use the -A (--all) option.'),
         make_option(c('-A', '--all'), type='character', default=NULL, help='All main effects, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
-        make_option(c('-x', '--extra'), type='character', default=NULL, help='All main effects, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
+        make_option(c('-x', '--extra'), type='character', default=NULL, help='All additional effects to add to both baseline and test models, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
         make_option(c('-c', '--corpus'), type='character', default=NULL, help='Name of corpus (for output labeling). If not specified, will try to infer from output filename.'),
         make_option(c('-R', '--restrdomain'), type='character', default=NULL, help='Basename of *.restrdomain.txt file (must be in modelblocks-repository/resource-lmefit/scripts/) containing key-val pairs for restricting domain (see file "noNVposS1.restrdomain.txt" in this directory for formatting).'),
         make_option(c('-d', '--dev'), type='logical', action='store_true', default=FALSE, help='Run evaluation on dev dataset.'),
@@ -163,10 +163,6 @@ opts <- processArgs()
 params <- opts$options
 input <- opts$args[1] # positional arg, input file specification
 output <- opts$args[2] # positional arg, output file specification
-smartPrint('Added effects')
-smartPrint(params$addEffects)
-smartPrint('Ablated effects')
-smartPrint(params$ablEffects)
 
 smartPrint('Reading data from file')
 data <- read.table(input, header=TRUE, quote='', comment.char='')
