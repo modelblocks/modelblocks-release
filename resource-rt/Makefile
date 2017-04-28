@@ -87,7 +87,7 @@ mv $@{.tmp,};
 
 SPILLOVER := S1 S2 S3
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
-FJ := fjprob noFprob endembd embdlen embdlendr embdlendrv noF noFlen noFlendr noFlendrv reinst reinstlen reinstlendr reinstlendrv
+FJ := fjprob noFprob endembd embdlen embdlendr embdlendrv noF noFlen noFlendr noFlendrv yesJ reinst reinstlen reinstlendr reinstlendrv
 COREF := corefbin coreflenw coreflenr corefsize
 EXTRA-SPILL := dc dcv pos depdirSyn depdirSynM depdirSem depdirSemM Ad AdPrim Bd BdPrim Bdm1 Bdm1Prim noFprob embddepth embdif totsurp fwprob5surp sentpos sentid wlen word isanaphpro
 GCG-CATS := A B C D F G
@@ -272,9 +272,13 @@ genmodel/rename_cols.params: | genmodel
 %.pcfg.tokmeasures: %_parsed.output $(LCPARSE-SCRIPTS)/spargeComplexity.py $(RT-SCRIPTS)/calcFJProb.py
 	cat $< | python3 $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;' | python $(word 3, $^) > $@
 
+# TODO: merges surprisal columns from multiple parses together
+%.merged.pcfg.tokmeasures: scripts/$$(subst .,,$$(suffix $$*)).PCFGmerge.txt 
+	@echo 'Merging PCFGs'
+
 # pcfg.tokmeasures with a time column, requires %.time.tokmeasures with timestamps for tokens in stimulus
 %.t.pcfg.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).time.tokmeasures
-	cat $(word 1, $^) | paste -d' ' - <(cut -f 4- -d' ' $(word 2, $^)) > $@
+	cat $(word 1, $^) | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) > $@
 
 # With co-ref features
 %.syn.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).gold.dlt.tokmeasures \
@@ -348,6 +352,30 @@ $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst G
 	sed 's/ totsurp / $(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))totsurp /' > $@.tmp
 	mv $@{.tmp,}
 	$(foreach grammar,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))),$(MERGESURP))
+
+# Spillover evaluation for a baseline model, comparing all permutations of adjacent spillover values
+# Because the *.lmeform names are unpredictable this is a weird target that will not be able to clean
+# up the intermediate *.lmeform files it creates. To delete them manually, just run:
+#     
+#     rm -f scripts/*SP.lmeform
+#
+# NOTE: this assumes you have not created any *.lmeform files of your own that end in *.SP.lmeform.
+# If you have, it would be best to rename them before running this target.
+BASELINE-SPILL-EVAL-%: $(RT-SCRIPTS)/permuteSpillover.py $(RT-SCRIPTS)/%.lmeform \
+$$(foreach b, \
+$$(shell cat $$(RT-SCRIPTS)/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 scripts) \
+$$(shell cat $$(RT-SCRIPTS)/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 scripts) \
+$$(shell cat $$(RT-SCRIPTS)/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 scripts) \
+$$(shell cat $$(RT-SCRIPTS)/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 scripts), \
+$$(BASENAME-NB).$$(basename $$(notdir $$(b))).-c_naturalstories_-$$(LMEDEFAULT).rdata);
+
+BASELINE-SPILL-EVAL-%: $(RT-SCRIPTS)/permuteSpillover.py $(CURDIR)/scripts/%.lmeform \
+$$(foreach b, \
+$$(shell cat scripts/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 scripts) \
+$$(shell cat scripts/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 scripts) \
+$$(shell cat scripts/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 scripts) \
+$$(shell cat scripts/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 scripts), \
+$$(BASENAME-NB).$$(basename $$(notdir $$(b))).-c_naturalstories_-$$(LMEDEFAULT).rdata);
 
 ################################################################################
 #

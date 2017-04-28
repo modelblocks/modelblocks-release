@@ -1,4 +1,0 @@
-fdur
-z.(sentposS2) + z.(wlenS1) + z.(fwprob5surpS2) + z.(totsurpS2)
-z.(sentidS2) + z.(sentposS2) + z.(wlenS1) + z.(fwprob5surpS2) + z.(totsurpS2)
-(1 | wordS1) + (1 | sentidS2)

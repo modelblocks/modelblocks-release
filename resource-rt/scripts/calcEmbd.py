@@ -13,11 +13,14 @@ disc_ref = []
 disc_ref_v = []
 store_start_ix = []
 noF_start_ix = [0]
+yesJ_start_ix = [0]
 nofork = False
+yesjoin = False
 i = 0
 s = re.compile('----(.*)$')
 w = re.compile('W .* ([^ ]+)$')
 f = re.compile('F .* : f([01])')
+j = re.compile('J .* : j([01])')
 p = re.compile('P .* ([^ ]+)$')
 frag = re.compile(' *[^\]]+\]:([^\/]+)\/*[^\]]+\]:([^\/]+)')
 r = re.compile('====(.*)$')
@@ -25,6 +28,7 @@ r = re.compile('====(.*)$')
 print('word embddepth dc dcv ' \
     + 'endembd embdlen embdlendr embdlendrv ' \
     + 'noF noFlen noFlendr noFlendrv ' \
+    + 'yesJ ' \
     + 'reinst reinstlen reinstlendr reinstlendrv ' \
     + 'Ad AdPrim Bd BdPrim Bdm1 Bdm1Prim')
 
@@ -61,6 +65,7 @@ def get_primitive_cat(s):
  
 def process_tok(buffer, line, i):
     global nofork
+    global yesjoin
 
     storestr = s.match(line.strip()).group(1)
     while line and not line.startswith('F '):
@@ -75,6 +80,10 @@ def process_tok(buffer, line, i):
         line = buffer.readline()
     assert line, 'Badly-formed input'
     word = w.match(line.strip()).group(1)
+    while line and not line.startswith('J '):
+       line = buffer.readline()
+    assert line, 'Badly-formed input'
+    J = int(j.match(line.strip()).group(1))
 
     disc_ref.append(dr(pos, word))
     disc_ref_v.append(drv(pos, word))
@@ -100,6 +109,10 @@ def process_tok(buffer, line, i):
     noFlen = 0
     noFlendr = 0
     noFlendrv = 0
+    yesJstart = None
+    yesJlen = 0
+    yesJlendr = 0
+    yesJlendrv = 0
     reinstlen = 0
     reinstlendr = 0
     reinstlendrv = 0
@@ -124,16 +137,26 @@ def process_tok(buffer, line, i):
         noFlendr = sum(disc_ref[noFstart:i])
         noFlendrv = sum(disc_ref_v[noFstart:i])
         noF_start_ix[-1] = i
+    yesJ = int(yesjoin)
+    #if yesJ == 1:
+    #    if yesJstart == None:
+    #        yesJstart = yesJ_start_ix[-1]
+    #    yesJlen = i - yesJstart
+    #    yesJlendr = sum(disc_ref[yesJstart:i])
+    #    yesJlendrv = sum(disc_ref_v[yesJstart:i])
+    #    yesJ_start_ix[-1] = i
     reinst = int(noF == 1 or endembd == 1)
     if reinst == 1:
         reinstlen = max(noFlen, embdlen)
         reinstlendr = max(noFlendr, embdlendr)
         reinstlendrv = max(noFlendrv, embdlendrv)
     nofork = F != 1
-#    print(' '.join([str(x) for x in [word, endembd, noF, store_start_ix, noF_start_ix]]))
+    yesjoin = J == 1
+#    print(' '.join([str(x) for x in [word, endembd, noF, store_start_ix, noF_start_ix, yesJ]]))
     return(word, depth, \
            endembd, embdlen, embdlendr, embdlendrv, \
            noF, noFlen, noFlendr, noFlendrv, \
+           yesJ, \
            reinst, reinstlen, reinstlendr, reinstlendrv, \
            Ad, Bd, Bdm1, \
            i+1)
@@ -144,6 +167,7 @@ with open(args.decpars[0], 'rb') as decpars:
         word, depth, \
               endembd, embdlen, embdlendr, embdlendrv, \
               noF, noFlen, noFlendr, noFlendrv, \
+              yesJ, \
               reinst, reinstlen, reinstlendr, reinstlendrv, \
               Ad, Bd, Bdm1, \
               i = process_tok(decpars, line, i)
@@ -153,12 +177,13 @@ with open(args.decpars[0], 'rb') as decpars:
         if len(rows) > 0:
             rows[-1] += [endembd, embdlen, embdlendr, embdlendrv, \
                          noF, noFlen, noFlendr, noFlendrv, \
+                         yesJ, \
                          reinst, reinstlen, reinstlendr, reinstlendrv, \
                          Ad, AdPrim, Bd, BdPrim, Bdm1, Bdm1Prim]
         rows.append([word, depth, disc_ref[i-1], disc_ref_v[i-1]])
         line = next_tok(decpars)
  
-rows[-1] += [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'null', 'null', 'null', 'null', 'null', 'null']
+rows[-1] += [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'null', 'null', 'null', 'null', 'null', 'null']
 depth = 0
 
 for line in sys.stdin:
@@ -176,5 +201,5 @@ for line in sys.stdin:
             Bdm1Prim = row[-1]
         else:
             # Is a punctuation token
-            print(str(word) + ' ' + str(depth) + ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ' + Ad + ' ' + AdPrim + ' ' + Bd + ' ' + BdPrim + ' ' + Bdm1 + ' ' + Bdm1Prim)
+            print(str(word) + ' ' + str(depth) + ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ' + Ad + ' ' + AdPrim + ' ' + Bd + ' ' + BdPrim + ' ' + Bdm1 + ' ' + Bdm1Prim)
 assert len(rows) == 0, 'The *.semprocdecpars file was not fully consumed during printing. Check to make sure that there are no mismatches between wordforms in the *.linetoks file and the *.semprocdecpars file.'

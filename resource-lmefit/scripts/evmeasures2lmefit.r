@@ -43,7 +43,7 @@ options('warn'=1) #report non-convergences, etc
 ########################################################
 
 processArgs <- function(cliargs) {
-    # -abl, -dev, -test, -fl, -fse, -fsc, -ff, -logfdur, -fp, -gp, #-subj, sentid
+    # -abl, -dev, -test, -fl, -fse, -fsc, -ff, -logdepvar, -fp, -gp, #-subj, sentid
     opt_list <- list(
         make_option(c('-b', '--bformfile'), type='character', default='../resource-rt/scripts/mem.lmeform', help='Path to LME formula specification file (<name>.lmeform'),
         make_option(c('-a', '--abl'), type='character', default=NULL, help='Effect(s) to ablate, delimited by "+". Effects that are not already in the baseline specification will be ignored (to add new effects to the baseline formula in order to ablate them, use the -A (--all) option.'),
@@ -63,7 +63,7 @@ processArgs <- function(cliargs) {
         make_option(c('-p', '--filterpunc'), type='logical', action='store_true', default=FALSE, help='Filter out events containing phrasal punctuation.'),
         make_option(c('-f', '--firstpass'), type='logical', action='store_true', default=FALSE, help='Use first-pass durations as the dependent variable.'),
         make_option(c('-g', '--gopast'), type='logical', action='store_true', default=FALSE, help='Use go-past durations as the dependent variable.'),
-        make_option(c('-l', '--logfdur'), type='logical', action='store_true', default=FALSE, help='Log transform fixation durations.'),
+        make_option(c('-l', '--logdepvar'), type='logical', action='store_true', default=FALSE, help='Log transform fixation durations.'),
         make_option(c('-X', '--boxcox'), type='logical', action='store_true', default=FALSE, help='Use Box & Cox (1964) to find and apply the best power transform of the dependent variable.'),
         make_option(c('-L', '--logmain'), type='logical', action='store_true', default=FALSE, help='Log transform main effect.'),
         make_option(c('-G', '--groupingfactor'), type='character', default=NULL, help='A grouping factor to run as an interaction with the main effect (if numeric, will be coerced to categorical).'),
@@ -130,7 +130,7 @@ processArgs <- function(cliargs) {
        smartPrint(paste0('Grouping the main effect by factor ', params$groupingfactor))
     }
     
-    if (params$logfdur && params$boxcox) {
+    if (params$logdepvar && params$boxcox) {
         stop('Incompatible options: cannot apply logarithmic and power transformations simultaneously')
     }
     if (length(params$groupingfactor) > 0 && length(params$crossfactor) > 0) {
@@ -142,7 +142,7 @@ processArgs <- function(cliargs) {
         } else smartPrint(paste0('Using indicator variable for ', params$groupingfactor, '=', params$indicatorlevel, '.'))
     } 
 
-    if (params$logfdur) {
+    if (params$logdepvar) {
         smartPrint('Log-transforming fdur')
     }
     if (params$boxcox) {
@@ -166,8 +166,8 @@ output <- opts$args[2] # positional arg, output file specification
 
 smartPrint('Reading data from file')
 data <- read.table(input, header=TRUE, quote='', comment.char='')
-data <- cleanupData(data, params)
-data <- recastEffects(data, params)
+data <- cleanupData(data, params$filterfiles, params$filterlines, params$filtersents, params$filterscreens, params$filterpunc, params$restrdomain)
+data <- recastEffects(data, params$firstpass, params$gopast, params$splitcols, params$indicatorlevel, params$groupingfactor)
 
 if (params$dev) {
     data <- create.dev(data, params$partition)
@@ -221,4 +221,7 @@ if (length(params$groupingfactor) > 0) {
 }
 
 
-lmefit(data, output, params)
+lmefit(data, output, params$bformfile, params$logmain, params$logdepvar, params$lambda,
+                     params$addEffects, params$extraEffects, params$ablEffects,
+                     params$groupingfactor, params$indicatorlevel, params$crossfactor,
+                     params$interact, params$corpus)
