@@ -6,81 +6,95 @@ while ( <> ) {
   ## remove old -lI tag
   s/-lI//g;
 
-  ######## NOUNS:
+  ######## N -> N:
 
   #### irregular nouns:
   ## this
-  s/\((N)([^ %]*) ([Tt]his)\)/\(\1\2-x\1%\L\3\E|N%\L\3\E \3\)/g;
-  ## X*y
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?[^aeou])(y|ies)\)/\(\1\2-x\1%\4|N%y \3\4\)/g;
-  ## Xs* (/es/ed/ing)
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:ss|focus))(|es)\)/\(\1\2-x\1%s\4|N%s \3\4\)/g;
-  ## Xz* (/es/ed/ing)
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?zz)(|es)\)/\(\1\2-x\1%z\4|N%z \3\4\)/g;
-  ## Xh* (/es/ed/ing)
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?[cs](?<! ac)h)(|es)\)/\(\1\2-x\1%h\4|N%h \3\4\)/g;
-  ## Xx* (/es/ed/ing)
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?x)(|es)\)/\(\1\2-x\1%x\4|N%x \3\4\)/g;
+  s/\((N(?!-b{N-aD}))([^ %]*) ([Tt]his|[Ss]pecies)\)/\(\1\2-o\1%\L\3\E|N%\L\3\E \3\)/g;
+  ## %y
+  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?[^aeou])(y|ies)\)/\(\1\2-o\1%\4|N%y \3y\)/g;
+  ## %* (/es/ed/ing)
+  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:s|focu))(s)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/g;
+  ## %z (/es/ed/ing)
+  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?z)(z)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/g;
+  ## %h (/es/ed/ing)
+  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?[cs](?<! ac))(h)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/g;
+  ## %x (/es/ed/ing)
+  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?)(x)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/g;
 
   #### regular nouns:
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?)(|s)\)/\(\1\2-x\1%\4|N% \3\4\)/g;
+  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?)(|s)\)/\(\1\2-o\1%\4|N% \3\)/g;
 
-  ######## ADVERBS:
+  ######## N -> A:
+
+  ## %iness|%y
+  s/\((N)([^ ]*) ([^ ]*?)(iness)\)/\(\1\2-oN%\4|A%y \3y\)/g;
+  ## %ness|%
+  s/\((N)([^ ]*) ([^ ]*?)(ness)\)/\(\1\2-oN%\4|A% \3\)/g;
+  ## %lty|%l
+  s/\((N)([^ ]*) ([^ ]*?)(l)(ty)\)/\(\1\2-oN%\4\5|A%\4 \3\4\)/g;
+  ## %bility|%ble
+  s/\((N)([^ ]*) ([^ ]*?)(b)(ility)\)/\(\1\2-oN%\4\5|A%\4le \3\4le\)/g;
+#  ## %ity|%e
+#  s/\((N)([^ ]*) ([^ ]*?)(ity)\)/\(\1\2-oN%\4|A%e \3e\)/g;
+
+  ######## R -> A:
 
   ## false cognates: early, only (not to become ear, on)
-  s/\((R)([^ %]*) (early|only)()\)/\(\1\2-x\1%\4|A% \3\4\)/g;
+  s/\((R)([^ %]*) (early|only)()\)/\(A\2-o\1%\4|A% \3\)/g;
   ## well|good
-  s/\((R)([^ %]*) ()(well)\)/\(\1\2-x\1%\4|A%good \3\4\)/g;
+  s/\((R)([^ %]*) ()(well)\)/\(A\2-o\1%\4|A%good good\)/g;
   ## easy|ily gay|ily
-  s/\((R)([^ %]*) ([^ ]*?)(ily)\)/\(\1\2-x\1%\4|A%y \3\4\)/g;
+  s/\((R)([^ %]*) ([^ ]*?)(ily)\)/\(A\2-o\1%\4|A%y \3y\)/g;
   ## probable|y, simple|y, singly|e, not cheap|ly
-  s/\((R)([^ %]*) ([^ ]*?[^aeiou][aeiou]|si[mn])([bgp]l)(y)\)/\(\1\2-x\1%\4\5|A%\4e \3\4\5\)/g;
-  ## R%ly|A%
-  s/\((R)([^ %]*) ([^ ]*?)(ly)\)/\(\1\2-x\1%\4|A% \3\4\)/g;
-  ## simple adverbs
-  s/\((R)([^ %]*) ([^ ]*?)()\)/\(\1\2-x\1%\4|A% \3\4\)/g;
+  s/\((R)([^ %]*) ([^ ]*?[^aeiou][aeiou]|si[mn])([bgp]l)(y)\)/\(A\2-o\1%\4\5|A%\4e \3\4e\)/g;
+  ## R%ly|A% -- note A% is not unique
+  s/\((R)([^ %]*) ([^ ]*?)(ly)\)/\(A\2-o\1%\4|A% \3\)/g;
+  ## simple adverbs -- note A% is not unique
+  s/\((R)([^ %]*) ([^ ]*?)()\)/\(A\2-o\1%\4|A% \3\)/g;
 
-  ######## ADJECTIVES COMPARATIVES: -- converts to lemma w tag -o, then converts back to -x
+  ######## A COMPARATIVE -> A: -- converts to lemma w tag -o, then converts back to -x
 
   ## better, worse
-  s/\((A|R)([^ ]*) ()([Bb]etter)\)/\(\1\2-oA%\L\4\E|A%good \3good\)/g;
-  s/\((A|R)([^ ]*) ()([Ww]orse)\)/\(\1\2-oA%\L\4\E|A%bad \3bad\)/g;
-  s/\((A|R)([^ ]*) ([Ff])(arther|urther)\)/\(\1\2-oA%\4|A%ar \3ar\)/g;
+  s/\((A)([^ ]*) ()([Bb]etter)\)/\(\1\2-oA%\L\4\E|A%good \3good\)/g;
+  s/\((A)([^ ]*) ()([Ww]orse)\)/\(\1\2-oA%\L\4\E|A%bad \3bad\)/g;
+  s/\((A)([^ ]*) ([Ff])(arther|urther)\)/\(\1\2-oA%\4|A%ar \3ar\)/g;
   ## %der comparatives
-  s/\((A|R)([^ ]*) ([^ ]*?)(d)(der)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((A)([^ ]*) ([^ ]*?)(d)(der)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## %ger comparatives
-  s/\((A|R)([^ ]*) ([^ ]*?)(g)(ger)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((A)([^ ]*) ([^ ]*?)(g)(ger)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## %ter comparatives
-  s/\((A|R)([^ ]*) ([^ ]*?)(t)(ter)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((A)([^ ]*) ([^ ]*?)(t)(ter)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## %ier comparatives
-  s/\((A|R)([^ ]*) (?![CcFf]ourier)([^ ]*?)(ier)\)/\(\1\2-o\1%\4|A%y \3y\)/g;
+  s/\((A)([^ ]*) (?![CcFf]ourier)([^ ]*?)(ier)\)/\(\1\2-o\1%\4|A%y \3y\)/g;
   ## %r comparatives
-  s/\((A|R)([^ ]*) (?![Uu]nderwater|[Ww]einer)([^ ]*?(?:os|in|arg|at|pl))(e)(r)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((A)([^ ]*) (?![Uu]nderwater|[Ww]einer)([^ ]*?(?:os|in|arg|at|pl))(e)(r)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## %er comparatives
-  s/\((A|R)([^ ]*) (?![Aa]fter|[Aa]nother|[Ee]ager|[Ee]ither|[^ ]*[Ee]ver|[Ff]iller|[Ff]ormer|[Ff]ourier|[Gg]ender|[Ii]nner|[^ ]*[Oo]ther|[Oo]uter|[^ ]*[Oo]ver|[Oo]rder|[Pp]er|[Pp]roper|[Rr]ather|[Tt]ogether|[Uu]nder|[Uu]nderwater|[Uu]pper|[Ww]hether|[Cc]omputer|[Mm]eter|[Ww]einer)([^ ]*?)(er)\)/\(\1\2-o\1%\4|A% \3\)/g;
+  s/\((A)([^ ]*) (?![Aa]fter|[Aa]nother|[Ee]ager|[Ee]ither|[^ ]*[Ee]ver|[Ff]iller|[Ff]ormer|[Ff]ourier|[Gg]ender|[Ii]nner|[^ ]*[Oo]ther|[Oo]uter|[^ ]*[Oo]ver|[Oo]rder|[Pp]er|[Pp]roper|[Rr]ather|[Tt]ogether|[Uu]nder|[Uu]nderwater|[Uu]pper|[Ww]hether|[Cc]omputer|[Mm]eter|[Ww]einer)([^ ]*?)(er)\)/\(\1\2-o\1%\4|A% \3\)/g;
 
-  ######## ADJECTIVES SUPERLATIVES: -- converts to lemma w tag -o, then converts back to -x
+  ######## A SUPERLATIVE -> A: -- converts to lemma w tag -o, then converts back to -x
 
   ## best, worst
-  s/\((A|R)([^ ]*) ()(best)\)/\(\1\2-oA%\4|A%good \3good\)/g;
-  s/\((A|R)([^ ]*) ()(worst)\)/\(\1\2-oA%\4|A%bad \3bad\)/g;
+  s/\((A)([^ ]*) ()(best)\)/\(\1\2-oA%\4|A%good \3good\)/g;
+  s/\((A)([^ ]*) ()(worst)\)/\(\1\2-oA%\4|A%bad \3bad\)/g;
   ## %dest superlatives
-  s/\((A|R)([^ ]*) ([^ ]*?)(d)(dest)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((A)([^ ]*) ([^ ]*?)(d)(dest)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## %gest superlatives
-  s/\((A|R)([^ ]*) ([^ ]*?)(g)(gest)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((A)([^ ]*) ([^ ]*?)(g)(gest)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## %test superlatives
-  s/\((A|R)([^ ]*) ([^ ]*?)(t)(test)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((A)([^ ]*) ([^ ]*?)(t)(test)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## %iest superlatives
-  s/\((A|R)([^ ]*) ([^ ]*?)(iest)\)/\(\1\2-o\1%\4|A%y \3y\)/g;
+  s/\((A)([^ ]*) ([^ ]*?)(iest)\)/\(\1\2-o\1%\4|A%y \3y\)/g;
   ## %st superlatives
-  s/\((A|R)([^ ]*) ([^ ]*?(?:os|in|arg|at|pl))(e)(st)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((A)([^ ]*) ([^ ]*?(?:os|in|arg|at|pl))(e)(st)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## %est superlatives
-  s/\((A|R)([^ ]*) (?![Ww]est)([^ ]*?)(est)\)/\(\1\2-o\1%\4|A% \3\)/g;
+  s/\((A)([^ ]*) (?![Ww]est|[Mm]odest)([^ ]*?)(est)\)/\(\1\2-o\1%\4|A% \3\)/g;
 
-  ## convert lemma w tag -o back to observed form w tag -x
-  while( s/\((.)([^ ]*)-o(.)%([^\|]*)\|(.)%([^- ]*)([^ ]*?) ([^\)]*)\6\)/\(\1\2-x\3%\4\|\5%\6\7 \8\4\)/g ) { }
+  ## convert lemma w tag -o back to observed form w tag -x, working bottom-up
+  while( #s/\((A-aN)([^ ]*)-o(N)%([^\|]*)\|(A)%([^- ]*)(-[^ ]*)? ([^\)]*)\6\)/\(N-aD\2-x\3%\4\|\5%\6\7 \8\4\)/g ||
+         s/\((.)([^ ]*)-o(.)%([^\|]*)\|(.)%([^- ]*)(-[^ ]*?)? ([^\)]*)\6\)/\(\3\2-x\3%\4\|\5%\6\7 \8\4\)/g ) { }
 
-  ######## VERBS:
+  ######## V|B|L|G -> B:
 
   #### irregular verbs:
   ## arise/rise
