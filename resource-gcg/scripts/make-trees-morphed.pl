@@ -25,6 +25,60 @@ while ( <> ) {
   #### regular nouns:
   s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?)(|s)\)/\(\1\2-x\1%\4|N% \3\4\)/g;
 
+  ######## ADVERBS:
+
+  ## false cognates: early, only (not to become ear, on)
+  s/\((R)([^ %]*) (early|only)()\)/\(\1\2-x\1%\4|A% \3\4\)/g;
+  ## well|good
+  s/\((R)([^ %]*) ()(well)\)/\(\1\2-x\1%\4|A%good \3\4\)/g;
+  ## easy|ily gay|ily
+  s/\((R)([^ %]*) ([^ ]*?)(ily)\)/\(\1\2-x\1%\4|A%y \3\4\)/g;
+  ## probable|y, simple|y, singly|e, not cheap|ly
+  s/\((R)([^ %]*) ([^ ]*?[^aeiou][aeiou]|si[mn])([bgp]l)(y)\)/\(\1\2-x\1%\4\5|A%\4e \3\4\5\)/g;
+  ## R%ly|A%
+  s/\((R)([^ %]*) ([^ ]*?)(ly)\)/\(\1\2-x\1%\4|A% \3\4\)/g;
+  ## simple adverbs
+  s/\((R)([^ %]*) ([^ ]*?)()\)/\(\1\2-x\1%\4|A% \3\4\)/g;
+
+  ######## ADJECTIVES COMPARATIVES: -- converts to lemma w tag -o, then converts back to -x
+
+  ## better, worse
+  s/\((A|R)([^ ]*) ()([Bb]etter)\)/\(\1\2-oA%\L\4\E|A%good \3good\)/g;
+  s/\((A|R)([^ ]*) ()([Ww]orse)\)/\(\1\2-oA%\L\4\E|A%bad \3bad\)/g;
+  s/\((A|R)([^ ]*) ([Ff])(arther|urther)\)/\(\1\2-oA%\4|A%ar \3ar\)/g;
+  ## %der comparatives
+  s/\((A|R)([^ ]*) ([^ ]*?)(d)(der)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  ## %ger comparatives
+  s/\((A|R)([^ ]*) ([^ ]*?)(g)(ger)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  ## %ter comparatives
+  s/\((A|R)([^ ]*) ([^ ]*?)(t)(ter)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  ## %ier comparatives
+  s/\((A|R)([^ ]*) (?![CcFf]ourier)([^ ]*?)(ier)\)/\(\1\2-o\1%\4|A%y \3y\)/g;
+  ## %r comparatives
+  s/\((A|R)([^ ]*) (?![Uu]nderwater|[Ww]einer)([^ ]*?(?:os|in|arg|at|pl))(e)(r)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  ## %er comparatives
+  s/\((A|R)([^ ]*) (?![Aa]fter|[Aa]nother|[Ee]ager|[Ee]ither|[^ ]*[Ee]ver|[Ff]iller|[Ff]ormer|[Ff]ourier|[Gg]ender|[Ii]nner|[^ ]*[Oo]ther|[Oo]uter|[^ ]*[Oo]ver|[Oo]rder|[Pp]er|[Pp]roper|[Rr]ather|[Tt]ogether|[Uu]nder|[Uu]nderwater|[Uu]pper|[Ww]hether|[Cc]omputer|[Mm]eter|[Ww]einer)([^ ]*?)(er)\)/\(\1\2-o\1%\4|A% \3\)/g;
+
+  ######## ADJECTIVES SUPERLATIVES: -- converts to lemma w tag -o, then converts back to -x
+
+  ## best, worst
+  s/\((A|R)([^ ]*) ()(best)\)/\(\1\2-oA%\4|A%good \3good\)/g;
+  s/\((A|R)([^ ]*) ()(worst)\)/\(\1\2-oA%\4|A%bad \3bad\)/g;
+  ## %dest superlatives
+  s/\((A|R)([^ ]*) ([^ ]*?)(d)(dest)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  ## %gest superlatives
+  s/\((A|R)([^ ]*) ([^ ]*?)(g)(gest)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  ## %test superlatives
+  s/\((A|R)([^ ]*) ([^ ]*?)(t)(test)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  ## %iest superlatives
+  s/\((A|R)([^ ]*) ([^ ]*?)(iest)\)/\(\1\2-o\1%\4|A%y \3y\)/g;
+  ## %st superlatives
+  s/\((A|R)([^ ]*) ([^ ]*?(?:os|in|arg|at|pl))(e)(st)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  ## %est superlatives
+  s/\((A|R)([^ ]*) (?![Ww]est)([^ ]*?)(est)\)/\(\1\2-o\1%\4|A% \3\)/g;
+
+  ## convert lemma w tag -o back to observed form w tag -x
+  while( s/\((.)([^ ]*)-o(.)%([^\|]*)\|(.)%([^- ]*)([^ ]*?) ([^\)]*)\6\)/\(\1\2-x\3%\4\|\5%\6\7 \8\4\)/g ) { }
 
   ######## VERBS:
 
