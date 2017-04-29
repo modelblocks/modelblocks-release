@@ -108,19 +108,21 @@ addColumns <- function(data) {
     return(data)
 }
 
-recastEffects <- function(data, firstpass=FALSE, gopast=FALSE, splitcols=NULL, indicatorlevel=NULL, groupingfactor=NULL) {
+recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfactor=NULL) {
+    ## Ensures that data columns are interpreted with the correct dtype, since R doesn't always infer this correctly
     smartPrint("Recasting Effects")
-    
-    if ('fdur' %in% colnames(data)) {
-        if (firstpass) {
-            data$fdur <- as.numeric(as.character(data$fdurFP))
-        } else if (gopast) {
-            data$fdur <- as.numeric(as.character(data$fdurGP))
-        } else {
-            data$fdur <- as.numeric(as.character(data$fdur))
-        }
+
+    ## DEPENDENT VARIABLES
+    ## Reading times
+    for (x in colnames(data)[grepl('^fdur', colnames(data))]) {
+        data[[x]] <- as.numeric(as.character(data[[x]]))
+    }
+    ## BOLD levels (fMRI)    
+    for (x in colnames(data)[grepl('^bold', colnames(data))]) {
+        data[[x]] <- as.numeric(as.character(data[[x]]))
     }
 
+    ## NUISANCE VARIABLES
     for (x in colnames(data)[grepl('^sentid', colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
@@ -128,7 +130,7 @@ recastEffects <- function(data, firstpass=FALSE, gopast=FALSE, splitcols=NULL, i
         data[[x]] <- as.numeric(as.factor(as.character(data[[x]])))
     }
     for (x in colnames(data)[grepl('^sentpos', colnames(data))]) {
-        data[[x]] <- as.integer(data[[x]])
+        data[[x]] <- as.integer(as.character(data[[x]]))
     }
     for (x in colnames(data)[grepl('^cumwdelta', colnames(data))]) {
         data[[x]] <- as.integer(as.character(data[[x]]))
@@ -136,11 +138,25 @@ recastEffects <- function(data, firstpass=FALSE, gopast=FALSE, splitcols=NULL, i
     for (x in colnames(data)[grepl('^prevwasfix', colnames(data))]) {
         data[[x]] <- as.logical(as.character(data[[x]]))
     }
+    for (x in colnames(data)[grepl('^word',colnames(data))]) {
+        data[[x]] <- as.character(data[[x]])
+    }
+    for (x in colnames(data)[grepl('^wlen',colnames(data))]) {
+        data[[x]] <- as.integer(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('^rolled',colnames(data))]) {
+        data[[x]] <- as.logical(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('^pos',colnames(data))]) {
+        data[[x]] <- as.character(data[[x]])
+    }
+
+    ## MAIN EFFECTS
     for (x in colnames(data)[grepl('^embd', colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
     for (x in colnames(data)[grepl('^endembd', colnames(data))]) {
-        data[[x]] <- as.logical(data[[x]])
+        data[[x]] <- as.logical(as.character(data[[x]]))
     }
     for (x in colnames(data)[grepl('^dlt',colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
@@ -163,24 +179,14 @@ recastEffects <- function(data, firstpass=FALSE, gopast=FALSE, splitcols=NULL, i
     for (x in colnames(data)[grepl('prob',colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
-    for (x in colnames(data)[grepl('^word',colnames(data))]) {
-        data[[x]] <- as.character(data[[x]])
-    }
-    for (x in colnames(data)[grepl('^wlen',colnames(data))]) {
-        data[[x]] <- as.integer(as.character(data[[x]]))
-    }
-    for (x in colnames(data)[grepl('^rolled',colnames(data))]) {
-        data[[x]] <- as.logical(as.character(data[[x]]))
-    }
-    for (x in colnames(data)[grepl('^pos',colnames(data))]) {
-        data[[x]] <- as.character(data[[x]])
-    }
 
+    ## Exploratory/confirmatory partition utility column
     data$splitID <- 0
     for (col in splitcols) {
         data$splitID <- data$splitID + as.numeric(data[[col]])
     }
 
+    ## Columns if using categorical grouping variables
     if (length(indicatorlevel) > 0) {
         for (level in levels(as.factor(data[[groupingfactor]]))) {
             data[[paste0(groupingfactor, 'Yes', level)]] = data[[groupingfactor]] == level
@@ -192,6 +198,7 @@ recastEffects <- function(data, firstpass=FALSE, gopast=FALSE, splitcols=NULL, i
     smartPrint('The data frame contains the following columns:')
     smartPrint(paste(colnames(data), collapse=' '))
 
+    ## NAN removal
     na_cols <- colnames(data)[colSums(is.na(data)) > 0]
     if (length(na_cols) > 0) {
         smartPrint('The following columns contain NA values:')

@@ -61,8 +61,6 @@ processArgs <- function(cliargs) {
         make_option(c('-C', '--filterscreens'), type='logical', action='store_true', default=FALSE, help='Filter out events at screen boundaries.'),
         make_option(c('-F', '--filterfiles'), type='logical', action='store_true', default=FALSE, help='Filter out events at file boundaries.'),
         make_option(c('-p', '--filterpunc'), type='logical', action='store_true', default=FALSE, help='Filter out events containing phrasal punctuation.'),
-        make_option(c('-f', '--firstpass'), type='logical', action='store_true', default=FALSE, help='Use first-pass durations as the dependent variable.'),
-        make_option(c('-g', '--gopast'), type='logical', action='store_true', default=FALSE, help='Use go-past durations as the dependent variable.'),
         make_option(c('-l', '--logdepvar'), type='logical', action='store_true', default=FALSE, help='Log transform fixation durations.'),
         make_option(c('-X', '--boxcox'), type='logical', action='store_true', default=FALSE, help='Use Box & Cox (1964) to find and apply the best power transform of the dependent variable.'),
         make_option(c('-L', '--logmain'), type='logical', action='store_true', default=FALSE, help='Log transform main effect.'),
@@ -120,12 +118,6 @@ processArgs <- function(cliargs) {
         smartPrint(paste0('Splitting dev/test on ', paste(opts$options$splitcols, collapse=' + ')))
     } 
 
-    if (params$firstpass) {
-        smartPrint('Evaluating on first-pass fixation durations')
-    } else if (params$gopast) {
-        smartPrint('Evaluating on go-past fixation durations')
-    }
-
     if (length(params$groupingfactor) > 0) {
        smartPrint(paste0('Grouping the main effect by factor ', params$groupingfactor))
     }
@@ -167,7 +159,7 @@ output <- opts$args[2] # positional arg, output file specification
 smartPrint('Reading data from file')
 data <- read.table(input, header=TRUE, quote='', comment.char='')
 data <- cleanupData(data, params$filterfiles, params$filterlines, params$filtersents, params$filterscreens, params$filterpunc, params$restrdomain)
-data <- recastEffects(data, params$firstpass, params$gopast, params$splitcols, params$indicatorlevel, params$groupingfactor)
+data <- recastEffects(data, params$splitcols, params$indicatorlevel, params$groupingfactor)
 
 if (params$dev) {
     data <- create.dev(data, params$partition)

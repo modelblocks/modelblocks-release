@@ -138,8 +138,7 @@ $(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
 	paste -d' ' <(cat $< | python $(word 4, $^) -x sentid) <(cat $(word 3, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/-LRB-/(/g;s/-RRB-/)/g;' | \
   python $(word 2, $^) $< -e latin-1 | python $(word 4, $^) -c sentid) > $@
   
-# The *.fp.* component is vacuous here since these are SPR data. It's just there to make the RT toks generation work.
-genmodel/naturalstories.fp.src.evmeasures: $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv \
+genmodel/naturalstories.src.evmeasures: $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv \
 $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/merge_tables.py genmodel/naturalstories.mfields.itemmeasures \
 $(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
 	python $(word 3, $^) <(cat $< | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word 2, $^) WorkerId subject RT fdur) \

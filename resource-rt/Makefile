@@ -321,16 +321,16 @@ $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r 
 	$(word 5, $^) | python $(word 6, $^) -n3 -p $(DLT) $(FJ) $(EXTRA-SPILL) > $@
 
 .PRECIOUS: %.full.evmeasures
-%.full.evmeasures: $$(basename %).itemmeasures $$(word 1, $$(subst ., , %))$$(suffix $$*).src.evmeasures \
+%.full.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
 $(RT-SCRIPTS)/merge_tables.py $(RT-SCRIPTS)/accumulateMetrics.py $(RT-SCRIPTS)/futureMetrics.py $(RT-SCRIPTS)/rm_unfix_items.py \
 $$(word 1, $$(subst ., , %)).merge_tables.params $$(word 1, $$(subst ., , %)).accumulateMetrics.params $$(word 1, $$(subst ., , %)).futureMetrics.params \
 $$(word 1, $$(subst ., , %)).rm_unfix_items.params
 	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 7, $^)) | \
 	python $(word 4, $^) $(shell cat $(word 8, $^)) | python $(word 6, $^) $(shell cat $(word 10, $^)) | python $(word 5, $^) $(shell cat $(word 9, $^)) > $@
 
-# Just here to preserve old buggy dev/test split
+# Just here to preserve old buggy dev/test split from Shain et al. (2016): CL4LC
 .PRECIOUS: %.o.full.evmeasures
-%.o.full.evmeasures: $$(basename %).o.itemmeasures $$(word 1, $$(subst ., , %))$$(suffix $$*).src.o.evmeasures \
+%.o.full.evmeasures: %.o.itemmeasures $$(word 1, $$(subst ., , %)).src.o.evmeasures \
 $(RT-SCRIPTS)/merge_tables.py $(RT-SCRIPTS)/accumulateMetrics.py $(RT-SCRIPTS)/rm_unfix_items.py \
 $$(word 1, $$(subst ., , %)).merge_tables.params $$(word 1, $$(subst ., , %)).accumulateMetrics.params \
 $$(word 1, $$(subst ., , %)).rm_unfix_items.params
