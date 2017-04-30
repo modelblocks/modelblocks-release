@@ -316,7 +316,7 @@ $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
 # Keep old buggy roll operation which messes up sentid
 %.o.itemmeasures: $$(basename %).syn.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py
-	cat <(cat $< | python $(word 6, $^) -n3 -p -a | sed 's/\[/!/g;s/\]/!/g;') | python $(word 3, $^) $(word 2, $^) embddepth -e latin-1 | \
+	cat <(cat $< | python $(word 6, $^) -n3 -p -a -s | sed 's/\[/!/g;s/\]/!/g;') | python $(word 3, $^) $(word 2, $^) embddepth -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
@@ -332,7 +332,7 @@ $(RT-SCRIPTS)/futureMetrics.py
 	python $(word 5, $^) -a | \
 	python $(word 6, $^) | \
 	python $(word 7, $^) -n4 -a | \
-	python $(word 8, $^) -a > $@
+	python $(word 8, $^) -a -I > $@
 
 .PRECIOUS: %.spr_full.evmeasures
 %.spr_full.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
@@ -342,7 +342,7 @@ $(RT-SCRIPTS)/spilloverMetrics.py \
 $(RT-SCRIPTS)/futureMetrics.py 
 	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 4, $^)) | \
 	python $(word 5, $^) -n4 -a | \
-	python $(word 6, $^) -a > $@
+	python $(word 6, $^) -a -I > $@
 
 # Just here to preserve old buggy dev/test split from Shain et al. (2016): CL4LC
 .PRECIOUS: %.o.full.evmeasures

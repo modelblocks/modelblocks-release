@@ -7,6 +7,7 @@ argparser.add_argument('-n', '--number', dest='n', action='store', nargs=1, defa
 argparser.add_argument('-p', '--skippunc', dest='p', action='store_true', help='Skip punctuation when shifting for spillover calculation.')
 argparser.add_argument('-a', '--allcols', dest='a', action='store_true', help='Spillover all columns.')
 argparser.add_argument('-I', '--ignoresents', dest='ignoresents', action='store_true', help='Spillover across sentence boundaries.')
+argparser.add_argument('-s', '--nosubjects', dest='nosubjects', action='store_true', help='Input does not contain by-subject information.')
 args, unknown = argparser.parse_known_args()
 args.n = int(args.n[0])
 
@@ -16,41 +17,27 @@ data = pd.read_csv(sys.stdin, sep=' ', skipinitialspace=True)
 sys.stderr.write('Computing spillover metrics.\n')
 
 if args.a:
-    cols = data.columns.values
+    cols = data.columns.values[:]
 else:
     cols = args.cols 
 
 if args.p:
-    data_no_punc = data[~data['word'].isin(punc)]
+    data = data[~data['word'].isin(punc)]
+
+group_cols = []
+if not args.nosubjects:
+    group_cols.append('subject')
+if not args.ignoresents:
+    group_cols.append('sentid')
+if len(group_cols) > 0:
+    grouped = data.groupby(group_cols)
+else:
+    grouped = data
 
 for col in cols:
     for i in range(1,args.n+1):
         s_name = col + 'S' + str(i)
-        if i == 1:
-            if args.p:
-                if args.ignoresents:
-                    data_no_punc[s_name] = data_no_punc.groupby('subject')[col].shift()
-                else:
-                    data_no_punc[s_name] = data_no_punc.groupby(['subject','sentid'])[col].shift()
-            else:
-                if args.ignoresents:
-                    data[s_name] = data.groupby('subject')[col].shift()
-                else:
-                    data[s_name] = data.groupby(['subject','sentid'])[col].shift()
-        else:
-            prev_name = col + 'S' + str(i-1)
-            if args.p:
-                if args.ignoresents:
-                    data_no_punc[s_name] = data_no_punc.groupby('subject')[prev_name].shift()
-                else:
-                    data_no_punc[s_name] = data_no_punc.groupby(['subject','sentid'])[prev_name].shift()
-            else:
-                if args.ignoresents:
-                    data[s_name] = data.groupby('subject')[prev_name].shift()
-                else:
-                    data[s_name] = data.groupby(['subject','sentid'])[prev_name].shift()
-        if args.p:
-            data[s_name] = data_no_punc[s_name]
+        data[s_name] = grouped[col].shift(i)
         if data[s_name].dtype == object:
             data[s_name].fillna('null', inplace=True)
         else:
