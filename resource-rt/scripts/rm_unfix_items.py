@@ -1,14 +1,17 @@
-import sys, argparse, pandas as pd
-
-argparser = argparse.ArgumentParser('''
-Removes unfixated rows (fixation duration = 0) from a space-delimited table of reading time data. 
-''')
-argparser.add_argument('-f', '--fdur', dest='fdur', action='store', default='fdur', help='Name of column containing fixation duration information (defaults to "fdur")')
-args, unknown = argparser.parse_known_args()
+import sys, pandas as pd
 
 def main():
     data = pd.read_csv(sys.stdin, sep=' ', skipinitialspace=True)
-    data = data[data[args.fdur] > 0]
+    sys.stderr.write('Removing unfixated tokens.\n')
+    fdur = None
+    for name in ['fdur', 'fdurFP', 'fdurGP']:
+        if name in data.columns.values:
+            fdur = name
+            break
+    if fdur:
+        data = data[data[fdur] > 0]
+    else:
+        sys.stderr.write('No duration column to filter on. Returning input DF.')
     data.to_csv(sys.stdout, ' ', index=False, na_rep='nan')
     
 main()
