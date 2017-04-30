@@ -14,7 +14,7 @@ def cleanParens(l):
     return l
 
 def getPreds(bform, exclude=['0', '1']):
-    preds = set(['subject','sentid', 'punc', 'startoffile', 'endoffile', 'startofline', 'endofline', 'startofsentence', 'endofsentence', 'startofscreen', 'endofscreen'])
+    preds = ['word', 'subject', 'sentid', 'punc', 'startoffile', 'endoffile', 'startofline', 'endofline', 'startofsentence', 'endofsentence', 'startofscreen', 'endofscreen']
     for l in bform:
         if l.startswith('('):
             l = splitter.split(l.strip())
@@ -25,7 +25,7 @@ def getPreds(bform, exclude=['0', '1']):
         for p in p_list:
             name = pred_name.match(p).group(2)
             if name not in exclude and name not in preds:
-                preds.add(name)
+                preds.append(name)
     return preds
 
 bform = sys.stdin.readlines()

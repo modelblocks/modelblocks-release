@@ -155,9 +155,7 @@ $(UCLDIR)/eye_movement/stimuli.txt | genmodel
 %ucl.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-UCL)/srcmodel/ucl.stripped.linetrees %ucl.linetoks
 	python $^ > $@
 
-# The *.fp.* component is vacuous here since these data contain both FP and GP.
-# It's just there to make the %.itemmeasures generation work downstream.
-genmodel/ucl.fp.src.evmeasures: $(CONFIGDIR)/user-ucl-directory.txt \
+genmodel/ucl.src.evmeasures: $(CONFIGDIR)/user-ucl-directory.txt \
 $(UCL-SCRIPTS)/build_ucl_corpus.py \
 $(UCLDIR)/eye_movement/eyetracking.RT.txt | genmodel
 	cat $(word 3, $^) | python $(word 2,$^) > $@

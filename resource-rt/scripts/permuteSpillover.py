@@ -6,6 +6,7 @@ Takes a mixed effects model as input and computes spillover permutations
 argparser.add_argument('outdir')
 argparser.add_argument('-m', '--min', type=int, default=0)
 argparser.add_argument('-M', '--max', type=int, default=1)
+argparser.add_argument('-D', '--dryrun', action='store_true')
 argparser.add_argument('exclude', type=str, nargs='*', default=['0', '1', 'subject'])
 args, unknown = argparser.parse_known_args()
 
@@ -45,12 +46,12 @@ def updatePreds(preds, perm):
             preds_new[i] = x + 'S%d' %perm[i]
     return preds_new
 
-def printPermPreds(bform, preds, perms, outdir):
+def printPermPreds(bform, preds, perms, outdir, dryrun=True):
     for perm in perms:
         form_name = []
         for i in xrange(len(preds)):
             form_name.append(preds[i][:2] + str(perm[i]))
-        form_name = ''.join(form_name)
+        form_name = ''.join(form_name) + 'SP'
         bform_out = bform[:1]
         preds_new = updatePreds(preds, perm)
         for l in bform[1:]:
@@ -58,11 +59,15 @@ def printPermPreds(bform, preds, perms, outdir):
                 l = l.replace(preds[i], preds_new[i])
             bform_out.append(l)
         path = outdir + '/' + form_name + '.lmeform'
-        if not os.path.exists(path):
+        if not dryrun and not os.path.exists(path):
             with open(path, 'wb') as f:
                 f.write(''.join(bform_out))
+        sys.stdout.write('%s ' %form_name)
 
 bform = sys.stdin.readlines()
+
+if len(bform) == 0:
+    exit()
 
 preds = getPreds(bform)
 preds = list(preds)
@@ -71,5 +76,5 @@ n_pred = len(preds)
 
 perms = list(itertools.product(range(args.min, args.max+1), repeat=n_pred))
 
-printPermPreds(bform, preds, perms, args.outdir)
+printPermPreds(bform, preds, perms, args.outdir, args.dryrun)
 

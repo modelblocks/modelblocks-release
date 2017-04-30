@@ -1,4 +1,4 @@
-fdur
+fdurGP
 z.(sentpos) + z.(wlen) + z.(cumwdelta) + z.(prevwasfix) + z.(fwprob5surp) + z.(cumfwprob5surp) + z.(totsurp) + z.(cumtotsurp)
 z.(sentid) + z.(sentpos) + z.(wlen) + z.(cumwdelta) + z.(prevwasfix) + z.(fwprob5surp) + z.(cumfwprob5surp) + z.(totsurp) + z.(cumtotsurp)
 (1 | word) + (1 | sentid)

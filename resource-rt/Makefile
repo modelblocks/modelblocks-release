@@ -87,7 +87,7 @@ mv $@{.tmp,};
 
 SPILLOVER := S1 S2 S3
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
-FJ := fjprob noFprob endembd embdlen embdlendr embdlendrv noF noFlen noFlendr noFlendrv reinst reinstlen reinstlendr reinstlendrv
+FJ := fjprob noFprob endembd embdlen embdlendr embdlendrv noF noFlen noFlendr noFlendrv yesJ reinst reinstlen reinstlendr reinstlendrv
 COREF := corefbin coreflenw coreflenr corefsize
 EXTRA-SPILL := dc dcv pos depdirSyn depdirSynM depdirSem depdirSemM Ad AdPrim Bd BdPrim Bdm1 Bdm1Prim noFprob embddepth embdif totsurp fwprob5surp sentpos sentid wlen word isanaphpro
 GCG-CATS := A B C D F G
@@ -272,9 +272,13 @@ genmodel/rename_cols.params: | genmodel
 %.pcfg.tokmeasures: %_parsed.output $(LCPARSE-SCRIPTS)/spargeComplexity.py $(RT-SCRIPTS)/calcFJProb.py
 	cat $< | python3 $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;' | python $(word 3, $^) > $@
 
+# TODO: merges surprisal columns from multiple parses together
+%.merged.pcfg.tokmeasures: scripts/$$(subst .,,$$(suffix $$*)).PCFGmerge.txt 
+	@echo 'Merging PCFGs'
+
 # pcfg.tokmeasures with a time column, requires %.time.tokmeasures with timestamps for tokens in stimulus
 %.t.pcfg.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).time.tokmeasures
-	cat $(word 1, $^) | paste -d' ' - <(cut -f 4- -d' ' $(word 2, $^)) > $@
+	cat $(word 1, $^) | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) > $@
 
 # With co-ref features
 %.syn.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).gold.dlt.tokmeasures \
@@ -298,42 +302,58 @@ $$(word 1, $$(subst ., , %)).gold.embd.tokmeasures
 	mv $< $@
 
 %.itemmeasures: $$(basename %).preitem.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
 	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepth timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
-	$(word 5, $^) | python $(word 6, $^) -a -n4 > $@
+	$(word 5, $^) > $@
 
 %.t.itemmeasures: $$(basename %).t.preitem.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
 	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepth timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
-	$(word 5, $^) | python $(word 6, $^) -a -n4 > $@
+	$(word 5, $^) > $@
 
 # Keep old buggy roll operation which messes up sentid
 %.o.itemmeasures: $$(basename %).syn.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py
-	cat <(cat $< | sed 's/\[/!/g;s/\]/!/g;') | python $(word 3, $^) $(word 2, $^) embddepth -e latin-1 | \
+	cat <(cat $< | python $(word 6, $^) -n3 -p -a | sed 's/\[/!/g;s/\]/!/g;') | python $(word 3, $^) $(word 2, $^) embddepth -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
-	$(word 5, $^) | python $(word 6, $^) -n3 -p $(DLT) $(FJ) $(EXTRA-SPILL) > $@
+	$(word 5, $^) > $@
 
-.PRECIOUS: %.full.evmeasures
-%.full.evmeasures: $$(basename %).itemmeasures $$(word 1, $$(subst ., , %))$$(suffix $$*).src.evmeasures \
-$(RT-SCRIPTS)/merge_tables.py $(RT-SCRIPTS)/accumulateMetrics.py $(RT-SCRIPTS)/futureMetrics.py $(RT-SCRIPTS)/rm_unfix_items.py \
-$$(word 1, $$(subst ., , %)).merge_tables.params $$(word 1, $$(subst ., , %)).accumulateMetrics.params $$(word 1, $$(subst ., , %)).futureMetrics.params \
-$$(word 1, $$(subst ., , %)).rm_unfix_items.params
-	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 7, $^)) | \
-	python $(word 4, $^) $(shell cat $(word 8, $^)) | python $(word 6, $^) $(shell cat $(word 10, $^)) | python $(word 5, $^) $(shell cat $(word 9, $^)) > $@
+.PRECIOUS: %.eye_full.evmeasures
+%.eye_full.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
+$(RT-SCRIPTS)/merge_tables.py \
+$$(word 1, $$(subst ., , %)).merge_tables.params \
+$(RT-SCRIPTS)/accumulateMetrics.py \
+$(RT-SCRIPTS)/rm_unfix_items.py \
+$(RT-SCRIPTS)/spilloverMetrics.py \
+$(RT-SCRIPTS)/futureMetrics.py 
+	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 4, $^)) | \
+	python $(word 5, $^) -a | \
+	python $(word 6, $^) | \
+	python $(word 7, $^) -n4 -a | \
+	python $(word 8, $^) -a > $@
 
-# Just here to preserve old buggy dev/test split
+.PRECIOUS: %.spr_full.evmeasures
+%.spr_full.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
+$(RT-SCRIPTS)/merge_tables.py \
+$$(word 1, $$(subst ., , %)).merge_tables.params \
+$(RT-SCRIPTS)/spilloverMetrics.py \
+$(RT-SCRIPTS)/futureMetrics.py 
+	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 4, $^)) | \
+	python $(word 5, $^) -n4 -a | \
+	python $(word 6, $^) -a > $@
+
+# Just here to preserve old buggy dev/test split from Shain et al. (2016): CL4LC
 .PRECIOUS: %.o.full.evmeasures
-%.o.full.evmeasures: $$(basename %).o.itemmeasures $$(word 1, $$(subst ., , %))$$(suffix $$*).src.o.evmeasures \
+%.o.full.evmeasures: %.o.itemmeasures $$(word 1, $$(subst ., , %)).src.o.evmeasures \
 $(RT-SCRIPTS)/merge_tables.py $(RT-SCRIPTS)/accumulateMetrics.py $(RT-SCRIPTS)/rm_unfix_items.py \
 $$(word 1, $$(subst ., , %)).merge_tables.params $$(word 1, $$(subst ., , %)).accumulateMetrics.params \
 $$(word 1, $$(subst ., , %)).rm_unfix_items.params
 	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 6, $^)) | python $(word 4, $^) $(shell cat $(word 7, $^)) | python $(word 5, $^) $(shell cat $(word 8, $^)) > $@
 
 
-%.filt.evmeasures: $$(basename %).full.evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
+%.filt.evmeasures: $$(basename %)_full.evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
 $(RT-SCRIPTS)/inferPredictors.py $(RT-SCRIPTS)/filter_cols.awk
 	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(shell cat $(word 2, $^) | python $(word 3, $^)) $(word 2, $(subst _, ,$(subst +,:,$(subst .,,$(suffix $*))))))) $< > $@
 
@@ -348,6 +368,30 @@ $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst G
 	sed 's/ totsurp / $(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))totsurp /' > $@.tmp
 	mv $@{.tmp,}
 	$(foreach grammar,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))),$(MERGESURP))
+
+# Spillover evaluation for a baseline model, comparing all permutations of adjacent spillover values
+# Because the *.lmeform names are unpredictable this is a weird target that will not be able to clean
+# up the intermediate *.lmeform files it creates. To delete them manually, just run:
+#     
+#     rm -f scripts/*SP.lmeform
+#
+# NOTE: this assumes you have not created any *.lmeform files of your own that end in *.SP.lmeform.
+# If you have, it would be best to rename them before running this target.
+BASELINE-SPILL-EVAL-%: $(RT-SCRIPTS)/permuteSpillover.py $(RT-SCRIPTS)/%.lmeform \
+$$(foreach b, \
+$$(shell cat $$(RT-SCRIPTS)/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 scripts) \
+$$(shell cat $$(RT-SCRIPTS)/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 scripts) \
+$$(shell cat $$(RT-SCRIPTS)/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 scripts) \
+$$(shell cat $$(RT-SCRIPTS)/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 scripts), \
+$$(BASENAME-NB).$$(basename $$(notdir $$(b))).-c_naturalstories_-$$(LMEDEFAULT).rdata);
+
+BASELINE-SPILL-EVAL-%: $(RT-SCRIPTS)/permuteSpillover.py $(CURDIR)/scripts/%.lmeform \
+$$(foreach b, \
+$$(shell cat scripts/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 scripts) \
+$$(shell cat scripts/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 scripts) \
+$$(shell cat scripts/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 scripts) \
+$$(shell cat scripts/$$*.lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 scripts), \
+$$(BASENAME-NB).$$(basename $$(notdir $$(b))).-c_naturalstories_-$$(LMEDEFAULT).rdata);
 
 ################################################################################
 #

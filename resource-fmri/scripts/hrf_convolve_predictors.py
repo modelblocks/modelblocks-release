@@ -10,15 +10,16 @@ argparser.add_argument('--debug', action='store_true', help='Print verbose outpu
 args, unknown = argparser.parse_known_args()
 
 def main():
-    predictors = args.predictors
-    assert len(predictors) > 0, 'ERROR: no predictors to convolve'
     data = pd.read_csv(args.data,sep=' ',skipinitialspace=True)
+    predictors = [x for x in args.predictors if x in data.columns.values]
+    assert len(predictors) > 0, 'ERROR: no predictors to convolve'
     step = args.step
     start = args.start
     end = data['timestamp'].iat[-1]
     n = int((end-start) / step) + 1
     assert n > 0, 'Time interval contains no fMRI samples'
     out = data[predictors].head(n)
+    out[predictors] = out[predictors].astype(np.float64)
     time = lambda x: start + (step*i)
 
     t_col = data[['timestamp']]
@@ -31,7 +32,7 @@ def main():
             
             if n_prec > 0:
                 t_conv = tmp['timestamp'].apply(lambda x: hrf(t - x))
-                p_conv = (t_conv*data.head(n_prec)[p].astype(float)).sum()
+                p_conv = (t_conv*data.head(n_prec)[p]).sum()
             else:
                 p_conv = 0
             out.at[i,p] = p_conv
