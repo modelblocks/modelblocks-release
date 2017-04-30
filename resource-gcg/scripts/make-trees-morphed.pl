@@ -90,6 +90,12 @@ while ( <> ) {
   ## %est superlatives
   s/\((A)([^ ]*) (?![Ww]est|[Mm]odest)([^ ]*?)(est)\)/\(\1\2-o\1%\4|A% \3\)/g;
 
+  ######## A NEGATIVE -> A
+
+  $NOTUN = '(?!canny|der\)|dercut|derlie|derline|derly|derpin|derscore|derstand|dertake|ited?\)|til\)|less\)|iqu)';
+
+  ## un%
+  s/\((A)([^ ]*) ([Uu]n)$NOTUN([^ ]*?)()\)/\(\1\2-o\1NEG%:\3\4\5|\1%:un% \4\5\)/g;
 
   ######## V|B|L|G -> B:
 
@@ -346,71 +352,94 @@ while ( <> ) {
   ## X*
   s/\(([BVLG])([^ %]*) ([^ ]*?)(|s|ed|ing)\)/\(B\2-o\1%\4|B% \3\)/g;
 
+  ######## NEGATIVE FOR VERBS
+
+  ## un%
+  s/\((B)([^ ]*) ([Uu]n)$NOTUN([^ ]*?)()\)/\(\1\2-o\1NEG%:\3\4\5|\1%:un% \4\5\)/g;
+
+  ######## REPETITIVE
+
+  $NORE = '(?!ap|ach|ad|alize|ason|buff|buke|call|cede|ceive|cite|cognize|commend|cord|cruit|ctify|deem|duce|fer|flect|fresh|fund|fuse|gard|gister|ly|gulate|ject|late|lease|main|mark|member|mind|move|new|novate|plicate|ply|port|present|prove|quest|quire|sign|sist|solve|sonate|spond|store|strict|sult|sume|tain|taliate|tard|tire|tort|turn|view|vise|vive|ward)';
+
+  ## re%
+  s/\((B)([^ ]*) ([Rr]e)$NORE([^ ]*?)()\)/\(B\2-o\1REP%:\3\4\5|B%:re% \4\5\)/g;
 
   ######## CAUSAL, INCHOATIVE, STATIVE
 
   ## unergatives
   @CI = ('abate','accelerate','adapt','adjust','advance','arm','audition',
          'balance','balloon','band','begin','benefit','bleed','blow','blur','boom','bounce','bow','branch','break','brew','buckle','budge','burn','buzz',
-         'capitalize','careen','change','charge','cheer','circulate','clash','cling','close','cohere','coincide','collapse','collect','concentrate','confer','conform','continue','contract','convert','coordinate','count','cover','crack','crash','crawl','creak','crest','crumble',
+         'capitalize','careen','change','cheer','circulate','clash','cling','close','cohere','coincide','collapse','collect','concentrate','confer','conform','continue','contract','convert','coordinate','crack','crash','crawl','creak','crest','crumble',
          'dance','debut','decrease','default','defect','degenerate','deteriorate','develop','differentiate','diminish','dip','disappear','disarm','dissipate','dissociate','dissolve','distribute','diverge','diversify','double','dress','drift','drill','drive',
          'ease','ebb','economize','edge','embark','emerge','end','engage','enroll','erode','erupt','evaporate','evolve','expand','explode','extend',
          'fade','fail','fester','finish','fire','firm','fit','flash','flatten','flinch','flip','float','flow','fly','focus','fold','form','formulate','freeze',
-         'gather','generalize','glaze','glide','group','grow',
+         'gather','glaze','glide','group','grow',
          'hang','head','hold','hum','hurt',
-         'improve','inch','increase','industrialize','inflate','integrate','intensify','invest',
-         'jump',
+         'improve','inch','increase','inflate','integrate','intensify','invest',
          'kowtow',
-         'land','leap','leapfrog','level','liberalize','light','liquify','liquidate','locate','lodge',
+         'land','leap','leapfrog','level','light','liquify','liquidate','lodge',
          'maneuver','materialize','mature','melt','merge','mesh','migrate','militate','mobilize','move',
          'nosedive',
          'operate','order','originate',
-         'panic','parachute','part','pass','peak','pile','plummet','plunge','point','pop','pose','premiere','prepare','press','progress','pull',
+         'panic','parachute','part','peak','pile','plummet','plunge','point','pop','pose','premiere','prepare','press','progress','pull',
          'qualify','quit',
          'rally','range','rank','rebound','register','relax','renew','resolve','rest','restructure','resume','retail','retire','retreat','return','reverberate','reverse','revive','revolve','roll','run','rush',
          'segregate','separate','set','settle','shift','shine','shiver','shrink','side','sink','sit','skid','slide','slip','slog','slow','slump','smahs','smoke','soar','sort','spin','split','spread','stampede','stand','start','steam','steer','stem','step','stick','stop','strain','stray','stretch','subscribe','surface','surge','sway','swell','swing','switch',
          'team','terminate','tilt','tiptoe','touch','transfer','translate','triple','tumble','turn','twitch',
          'undulate','unite','unravel',
          'vacillate','vary','venture','volunteer',
-         'wade','walk','wane','wedge','weigh','widen','wind','withdraw','work','worry','worsen','zoom');
+         'wade','walk','wane','wedge','widen','wind','withdraw','work','worry','worsen','zoom');
   foreach $c (@CI) {
     s/\((B-aN)-bN([^ ]*) ($c)\)/\(\1\2-oBCAU%\3|B%$c $c\)/g;
   }
 
   ##         sign type    causative     inchoative    bstative  astative
-  @CISA = ([ 'B-aN',      'awaken',     'awaken',     '',       'awake'   ],
-           [ 'B-aN-bPup', 'blow',       'blow',       '',       ''        ],
-           [ 'B-aN',      'cheer',      'cheer',      '',       ''        ],
-           [ 'B-aN',      'cool',       'cool',       '',       'cool'    ],
-           [ 'B-aN',      'complete',   'complete',   '',       'complete'],
-           [ 'B-aN',      'drop',       'fall',       '',       ''        ],
-           [ 'B-aN',      'dry',        'dry',        '',       'dry'     ],
-           [ 'B-aN-bN',   'feed',       'eat',        '',       ''        ],
-           [ 'B-aN-bN',   'gain',       'gain',       '',       ''        ],
-           [ 'B-aN-bN',   'give',       'get',        'have',   'with'    ],
-           [ 'B-aN',      'heat',       'heat',       '',       'hot'     ],
-           [ 'B-aN',      'kill',       'die',        '',       'dead'    ],
-           [ 'B-aN',      'narrow',     'narrow',     '',       'narrow'  ],
-           [ 'B-aN',      'open',       'open',       '',       'open'    ],
-           [ 'B-aN-bN',   'show',       'see',        '',       ''        ],
-           [ 'B-aN',      'shut',       'shut',       '',       'shut'    ],
-           [ 'B-aN',      'strengthen', 'strengthen', '',       'strong'  ],
-           [ 'B-aN-bC',   'teach',      'learn',      'know',   ''        ],
-           [ 'B-aN-bPup', 'wake',       'wake',       '',       ''        ],
-           [ 'B-aN',      'warm',       'warm',       '',       'warm'    ],
-           [ 'B-aN',      'wet',        '',           '',       'wet'     ]);
+  @CISA = ([ '-aN',      'awaken',     'awaken',     '',       'awake'   ],
+           [ '-aN-bPup', 'blow',       'blow',       '',       ''        ],
+           [ '-aN',      'cheer',      'cheer',      '',       ''        ],
+           [ '-aN',      'cool',       'cool',       '',       'cool'    ],
+           [ '-aN',      'complete',   'complete',   '',       'complete'],
+           [ '-aN',      'drop',       'fall',       '',       ''        ],
+           [ '-aN',      'dry',        'dry',        '',       'dry'     ],
+           [ '-aN-bN',   'feed',       'eat',        '',       ''        ],
+           [ '-aN-bN',   'gain',       'gain',       '',       ''        ],
+           [ '-aN-bN',   'give',       'get',        'have',   'with'    ],
+           [ '-aN',      'heat',       'heat',       '',       'hot'     ],
+           [ '-aN',      'kill',       'die',        '',       'dead'    ],
+           [ '-aN',      'narrow',     'narrow',     '',       'narrow'  ],
+           [ '-aN',      'open',       'open',       '',       'open'    ],
+           [ '-aN-bN',   'show',       'see',        '',       ''        ],
+           [ '-aN',      'shut',       'shut',       '',       'shut'    ],
+           #[ '-aN',      'strengthen', 'strengthen', '',       'strong'  ],
+           [ '-aN-bC',   'teach',      'learn',      'know',   ''        ],
+           [ '-aN-bPup', 'wake',       'wake',       '',       ''        ],
+           [ '-aN',      'warm',       'warm',       '',       'warm'    ],
+           [ '-aN',      'wet',        '',           '',       'wet'     ]);
   for( $i=0; $i<scalar(@CISA); $i++ ) {
-    if( length($CISA[$i][1])>0 && length($CISA[$i][2])>0 ) { s/\(($CISA[$i][0])-bN([^ ]*) ($CISA[$i][1])\)/\(\1\2-oBCAU%\3|B%$CISA[$i][2] $CISA[$i][2]\)/g; }
-    if( length($CISA[$i][2])>0 && length($CISA[$i][3])>0 ) { s/\(($CISA[$i][0])([^ ]*) ($CISA[$i][2])\)/\(\1\2-oBINC%\3|B%$CISA[$i][3] $CISA[$i][3]\)/g; }
-    if( length($CISA[$i][3])>0 && length($CISA[$i][4])>0 ) { s/\(($CISA[$i][0])([^ ]*) ($CISA[$i][3])\)/\(\1\2-oB%\3|A%$CISA[$i][4] $CISA[$i][4]\)/g; }
-    if( length($CISA[$i][2])>0 && length($CISA[$i][4])>0 ) { s/\(($CISA[$i][0])([^ ]*) ($CISA[$i][2])\)/\(\1\2-oB%\3|A%$CISA[$i][4] $CISA[$i][4]\)/g; }
+    if( length($CISA[$i][1])>0 && length($CISA[$i][2])>0 ) { s/\(B($CISA[$i][0])-bN([^ ]*) ($CISA[$i][1])\)/\(B\1\2-oBCAU%\3|B%$CISA[$i][2] $CISA[$i][2]\)/g; }
+    if( length($CISA[$i][2])>0 && length($CISA[$i][3])>0 ) { s/\(B($CISA[$i][0])([^ ]*) ($CISA[$i][2])\)/\(B\1\2-oBINC%\3|B%$CISA[$i][3] $CISA[$i][3]\)/g; }
+    if( length($CISA[$i][3])>0 && length($CISA[$i][4])>0 ) { s/\(B($CISA[$i][0])([^ ]*) ($CISA[$i][3])\)/\(A\1\2-oB%\3|A%$CISA[$i][4] $CISA[$i][4]\)/g; }
+    if( length($CISA[$i][2])>0 && length($CISA[$i][4])>0 ) { s/\(B($CISA[$i][0])([^ ]*) ($CISA[$i][2])\)/\(A\1\2-oBINC%\3|A%$CISA[$i][4] $CISA[$i][4]\)/g; }
   }
+
+  ## %ize
+#  s/\((B)([^ ]*) ([^ ]*?)(ize)\)/\(A\2-o\1%\4|A% \3\)/g;
+  ## %engthen
+  s/\((B)([^ ]*) ([^ ]*?)()(engthen)\)/\(A\2-o\1%\4\5|A%\4ong \3\4ong\)/g;
+  ## %ipen
+  s/\((B)([^ ]*) ([^ ]*?ip)(e)(n)\)/\(A\2-o\1%\4\5|A%\4 \3\4\)/g;
+  ## %dden
+  s/\((B)([^ ]*) ([^ ]*?)(d)(den)\)/\(A\2-o\1%\4\5|A%\4 \3\4\)/g;
+  ## %tten
+  s/\((B)([^ ]*) ([^ ]*?)(t)(ten)\)/\(A\2-o\1%\4\5|A%\4 \3\4\)/g;
+  ## %en
+  s/\((B)([^ ]*) (?![^ ]*open|threaten|happen)([^ ]*?)(en)\)/\(A\2-o\1%\4|A% \3\)/g;
 
   ######## CLEANUP
 
   ## convert lemma w tag -o back to observed form w tag -x, working bottom-up
-  while( s/\((.)([^ ]*)-o(.)([^%]*)%([^\|]*)\|(.)%([^- ]*)(-[^ ]*?)? ([^\)]*)\7\)/\(\3\2-x\3\4%\5\|\6%\7\8 \9\5\)/g ) { }
-
+  while( s/\((.)([^ ]*)-o(.)([^% ]*)%:([^% ]*)%([^\| ]*)\|(.)%:([^% ]*)%([^- ]*)(-[^ ]*?)? \8([^\)]*)\9\)/\(\3\2-x\3\4%:\5%\6\|\7%:\8%\9\10 \5\11\6\)/g ||
+         s/\((.)([^ ]*)-o(.)([^% ]*)%([^\| ]*)\|(.)%([^- ]*)(-[^ ]*?)? ([^\)]*)\7\)/\(\3\2-x\3\4%\5\|\6%\7\8 \9\5\)/g ) { }
 
   #### remove -x tag
   s/\(([BVLGAR][^ ]*)-x-([^\(\)]*)\)/\(\1-\2\)/g;
