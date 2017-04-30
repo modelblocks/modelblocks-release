@@ -32,7 +32,7 @@ while ( <> ) {
   ## %ness|%
   s/\((N)([^ ]*) ([^ ]*?)(ness)\)/\(\1\2-oN%\4|A% \3\)/g;
   ## %lty|%l
-  s/\((N)([^ ]*) ([^ ]*?)(l)(ty)\)/\(\1\2-oN%\4\5|A%\4 \3\4\)/g;
+  s/\((N)([^ ]*) (?!salty)([^ ]*?)(l)(ty)\)/\(\1\2-oN%\4\5|A%\4 \3\4\)/g;
   ## %bility|%ble
   s/\((N)([^ ]*) ([^ ]*?)(b)(ility)\)/\(\1\2-oN%\4\5|A%\4le \3\4le\)/g;
 #  ## %ity|%e
@@ -44,10 +44,12 @@ while ( <> ) {
   s/\((R)([^ %]*) (early|only)()\)/\(A\2-o\1%\4|A% \3\)/g;
   ## well|good
   s/\((R)([^ %]*) ()(well)\)/\(A\2-o\1%\4|A%good good\)/g;
-  ## easy|ily gay|ily
+  ## easy|ily day|ily
   s/\((R)([^ %]*) ([^ ]*?)(ily)\)/\(A\2-o\1%\4|A%y \3y\)/g;
   ## probable|y, simple|y, singly|e, not cheap|ly
-  s/\((R)([^ %]*) ([^ ]*?[^aeiou][aeiou]|si[mn])([bgp]l)(y)\)/\(A\2-o\1%\4\5|A%\4e \3\4e\)/g;
+  s/\((R)([^ %]*) ([^ ]*?[^aeiou][aeiou]|si[mn]|[^ ]*ia)([bgp]l)(y)\)/\(A\2-o\1%\4\5|A%\4e \3\4e\)/g;
+  ## %lly|A%ll (fully)
+  s/\((R)([^ %]*) (fu)(ll)(y)\)/\(A\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## R%ly|A% -- note A% is not unique
   s/\((R)([^ %]*) ([^ ]*?)(ly)\)/\(A\2-o\1%\4|A% \3\)/g;
   ## simple adverbs -- note A% is not unique
@@ -68,9 +70,9 @@ while ( <> ) {
   ## %ier comparatives
   s/\((A)([^ ]*) (?![CcFf]ourier)([^ ]*?)(ier)\)/\(\1\2-o\1%\4|A%y \3y\)/g;
   ## %r comparatives
-  s/\((A)([^ ]*) (?![Uu]nderwater|[Ww]einer)([^ ]*?(?:os|in|arg|at|pl))(e)(r)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((A)([^ ]*) (?![Gg]reater|[Uu]nderwater|[Ww]einer)([^ ]*?(?:os|in|arg|at|pl))(e)(r)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## %er comparatives
-  s/\((A)([^ ]*) (?![Aa]fter|[Aa]nother|[Ee]ager|[Ee]ither|[^ ]*[Ee]ver|[Ff]iller|[Ff]ormer|[Ff]ourier|[Gg]ender|[Ii]nner|[^ ]*[Oo]ther|[Oo]uter|[^ ]*[Oo]ver|[Oo]rder|[Pp]er|[Pp]roper|[Rr]ather|[Tt]ogether|[Uu]nder|[Uu]nderwater|[Uu]pper|[Ww]hether|[Cc]omputer|[Mm]eter|[Ww]einer)([^ ]*?)(er)\)/\(\1\2-o\1%\4|A% \3\)/g;
+  s/\((A)([^ ]*) (?![Aa]fter|[Aa]nother|[Ee]ager|[Ee]ither|[^ ]*[Ee]ver|[Ff]iller|[Ff]ormer|[Ff]ourier|[Gg]ender|[Ii]nner|[^ ]*[Ll]uster|[^ ]*[Oo]ther|[Oo]uter|[^ ]*[Oo]ver|[Oo]rder|[Pp]er|[^ ]*[Pp]roper|[Rr]ather|[Ss]inister|[Ss]ummer|[^ ]*[Tt]ogether|[Uu]nder|[Uu]nderwater|[Uu]pper|[Ww]hether|[Cc]omputer|[Mm]eter|[Ww]einer|[Ww]inter)([^ ]*?)(er)\)/\(\1\2-o\1%\4|A% \3\)/g;
 
   ######## A SUPERLATIVE -> A:
 
@@ -86,13 +88,13 @@ while ( <> ) {
   ## %iest superlatives
   s/\((A)([^ ]*) ([^ ]*?)(iest)\)/\(\1\2-o\1%\4|A%y \3y\)/g;
   ## %st superlatives
-  s/\((A)([^ ]*) ([^ ]*?(?:os|in|arg|at|pl))(e)(st)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((A)([^ ]*) (?![Gg]reat)([^ ]*?(?:os|in|arg|at|pl))(e)(st)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## %est superlatives
   s/\((A)([^ ]*) (?![Ww]est|[Mm]odest)([^ ]*?)(est)\)/\(\1\2-o\1%\4|A% \3\)/g;
 
   ######## A NEGATIVE -> A
 
-  $NOTUN = '(?!canny|der\)|dercut|derlie|derline|derly|derpin|derscore|derstand|dertake|ited?\)|til\)|less\)|iqu)';
+  $NOTUN = '(?!canny|der\)|dercut|derlie|derline|derly|derpin|derscore|derstand|dertake|ited?\)|iversal|til\)|less\)|iqu)';
 
   ## un%
   s/\((A)([^ ]*) ([Uu]n)$NOTUN([^ ]*?)()\)/\(\1\2-o\1NEG%:\3\4\5|\1%:un% \4\5\)/g;
@@ -334,7 +336,7 @@ while ( <> ) {
 
 
   ## X*e (e|es|ed|ing) -- regular e, that would otherwise qualify as complex vowel or complex consonant
-  s/\(([BVLG])([^ %]*) ([^ ]*?(?:iec|oic|[nrs]c|[st]uad|(?<= )guid|af|ieg|[dlr]g|[bcdfgkptyz]l|ym|sum|[ct]ap|hop|[^s]ip|yp|uar|uir|sur|[aeiou]{2}s(?<!vous|bias)|ens|abus|ccus|mus|[Cc]reat|rmeat|[isu]at|uot|eav|iev|[aeo]lv|[ae]iv|rv|u|(?<= )ow|[es]iz|eez|ooz|yz))(e|es|ed|ing)\)/\(B\2-o\1%\4|B%e \3e\)/g;
+  s/\(([BVLG])([^ %]*) ([^ ]*?(?:gaug|iec|oic|[nrs]c|[st]uad|(?<= )guid|af|ieg|[dlr]g|[bcdfgkptyz]l|ym|sum|[ct]ap|hop|[^s]ip|yp|uar|uir|sur|[aeiou]{2}s(?<!vous|bias)|ens|abus|ccus|mus|[Cc]reat|rmeat|[isu]at|uot|eav|iev|[aeo]lv|[ae]iv|rv|u|(?<= )ow|[es]iz|eez|ooz|yz))(e|es|ed|ing)\)/\(B\2-o\1%\4|B%e \3e\)/g;
 
   ## X* -- regular no e, with complex vowel or complex consonant
   s/\(([BVLG])([^ %]*) ([^ ]*?[aeiou]{2,}[bcdfghjklmnpqrstvwxyz](?<!oed))(|s|ed|ing)\)/\(B\2-o\1%\4|B% \3\)/g;
@@ -359,7 +361,7 @@ while ( <> ) {
 
   ######## REPETITIVE
 
-  $NORE = '(?!ap|ach|ad|alize|ason|buff|buke|call|cede|ceive|cite|cognize|commend|cord|cruit|ctify|deem|duce|fer|flect|fresh|fund|fuse|gard|gister|ly|gulate|ject|late|lease|main|mark|member|mind|move|new|novate|plicate|ply|port|present|prove|quest|quire|sign|sist|solve|sonate|spond|store|strict|sult|sume|tain|taliate|tard|tire|tort|turn|view|vise|vive|ward)';
+  $NORE = '(?!ach|act|ad|alize|ap|ason|buff|buke|call|cede|ceive|cite|cogni[sz]e|commend|cord|cruit|ctify|deem|duce|fer|flect|fresh|fund|fuse|gard|gister|ly|gulate|inforce|ject|late|lease|main|mark|member|mind|move|new|novate|pel|plicate|ply|port|present|prove|quest|quire|sign|sist|solve|sonate|spond|store|strict|sult|sume|tain|taliate|tard|tire|tort|turn|veal|view|vise|vive|ward)';
 
   ## re%
   s/\((B)([^ ]*) ([Rr]e)$NORE([^ ]*?)()\)/\(B\2-o\1REP%:\3\4\5|B%:re% \4\5\)/g;
@@ -422,18 +424,21 @@ while ( <> ) {
     if( length($CISA[$i][2])>0 && length($CISA[$i][4])>0 ) { s/\(B($CISA[$i][0])([^ ]*) ($CISA[$i][2])\)/\(A\1\2-oBINC%\3|A%$CISA[$i][4] $CISA[$i][4]\)/g; }
   }
 
+  ## %en trans -> caus
+  s/\((B)-aN-bN([^ ]*) (?!threaten)([^ ]*?en)\)/\(B-aN\2-o\1CAU%|B% \3\)/g;
+
   ## %ize
-#  s/\((B)([^ ]*) ([^ ]*?)(ize)\)/\(A\2-o\1%\4|A% \3\)/g;
+#  s/\((B)([^ ]*) ([^ ]*?)(ize)\)/\(B\2-o\1INC%\4|A% \3\)/g;
   ## %engthen
-  s/\((B)([^ ]*) ([^ ]*?)()(engthen)\)/\(A\2-o\1%\4\5|A%\4ong \3\4ong\)/g;
+  s/\((B)([^ ]*) ([^ ]*?)()(engthen)\)/\(B\2-o\1INC%\4\5|A%\4ong \3\4ong\)/g;
   ## %ipen
-  s/\((B)([^ ]*) ([^ ]*?ip)(e)(n)\)/\(A\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((B)([^ ]*) ([^ ]*?ip)(e)(n)\)/\(B\2-o\1INC%\4\5|A%\4 \3\4\)/g;
   ## %dden
-  s/\((B)([^ ]*) ([^ ]*?)(d)(den)\)/\(A\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((B)([^ ]*) ([^ ]*?)(d)(den)\)/\(B\2-o\1INC%\4\5|A%\4 \3\4\)/g;
   ## %tten
-  s/\((B)([^ ]*) ([^ ]*?)(t)(ten)\)/\(A\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((B)([^ ]*) ([^ ]*?)(t)(ten)\)/\(B\2-o\1INC%\4\5|A%\4 \3\4\)/g;
   ## %en
-  s/\((B)([^ ]*) (?![^ ]*open|threaten|happen)([^ ]*?)(en)\)/\(A\2-o\1%\4|A% \3\)/g;
+  s/\((B)([^ ]*) (?![^ ]*open|threaten|happen)([^ ]*?)(en)\)/\(B\2-o\1INC%\4|A% \3\)/g;
 
   ######## CLEANUP
 
