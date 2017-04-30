@@ -320,8 +320,8 @@ $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r 
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
-.PRECIOUS: %.full.evmeasures
-%.full.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
+.PRECIOUS: %.eye_full.evmeasures
+%.eye_full.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
 $(RT-SCRIPTS)/merge_tables.py \
 $$(word 1, $$(subst ., , %)).merge_tables.params \
 $(RT-SCRIPTS)/accumulateMetrics.py \
@@ -334,6 +334,16 @@ $(RT-SCRIPTS)/futureMetrics.py
 	python $(word 7, $^) -n4 -a | \
 	python $(word 8, $^) -a > $@
 
+.PRECIOUS: %.spr_full.evmeasures
+%.spr_full.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
+$(RT-SCRIPTS)/merge_tables.py \
+$$(word 1, $$(subst ., , %)).merge_tables.params \
+$(RT-SCRIPTS)/spilloverMetrics.py \
+$(RT-SCRIPTS)/futureMetrics.py 
+	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 4, $^)) | \
+	python $(word 5, $^) -n4 -a | \
+	python $(word 6, $^) -a > $@
+
 # Just here to preserve old buggy dev/test split from Shain et al. (2016): CL4LC
 .PRECIOUS: %.o.full.evmeasures
 %.o.full.evmeasures: %.o.itemmeasures $$(word 1, $$(subst ., , %)).src.o.evmeasures \
@@ -343,7 +353,7 @@ $$(word 1, $$(subst ., , %)).rm_unfix_items.params
 	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 6, $^)) | python $(word 4, $^) $(shell cat $(word 7, $^)) | python $(word 5, $^) $(shell cat $(word 8, $^)) > $@
 
 
-%.filt.evmeasures: $$(basename %).full.evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
+%.filt.evmeasures: $$(basename %)_full.evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
 $(RT-SCRIPTS)/inferPredictors.py $(RT-SCRIPTS)/filter_cols.awk
 	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(shell cat $(word 2, $^) | python $(word 3, $^)) $(word 2, $(subst _, ,$(subst +,:,$(subst .,,$(suffix $*))))))) $< > $@
 
