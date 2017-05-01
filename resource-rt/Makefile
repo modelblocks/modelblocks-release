@@ -326,23 +326,23 @@ $(RT-SCRIPTS)/merge_tables.py \
 $$(word 1, $$(subst ., , %)).merge_tables.params \
 $(RT-SCRIPTS)/accumulateMetrics.py \
 $(RT-SCRIPTS)/rm_unfix_items.py \
-$(RT-SCRIPTS)/spilloverMetrics.py \
-$(RT-SCRIPTS)/futureMetrics.py 
+$(RT-SCRIPTS)/futureMetrics.py \
+$(RT-SCRIPTS)/spilloverMetrics.py
 	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 4, $^)) | \
 	python $(word 5, $^) -a | \
 	python $(word 6, $^) | \
-	python $(word 7, $^) -n4 -a | \
-	python $(word 8, $^) -a -I > $@
+	python $(word 7, $^) -a -I | \
+	python $(word 8, $^) -n4 -a > $@
 
 .PRECIOUS: %.spr_full.evmeasures
 %.spr_full.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
 $(RT-SCRIPTS)/merge_tables.py \
 $$(word 1, $$(subst ., , %)).merge_tables.params \
-$(RT-SCRIPTS)/spilloverMetrics.py \
-$(RT-SCRIPTS)/futureMetrics.py 
+$(RT-SCRIPTS)/futureMetrics.py \
+$(RT-SCRIPTS)/spilloverMetrics.py
 	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 4, $^)) | \
-	python $(word 5, $^) -n4 -a | \
-	python $(word 6, $^) -a -I > $@
+	python $(word 5, $^) -a -I | \
+	python $(word 6, $^) -n4 -a > $@
 
 # Just here to preserve old buggy dev/test split from Shain et al. (2016): CL4LC
 .PRECIOUS: %.o.full.evmeasures
