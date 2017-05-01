@@ -32,7 +32,7 @@ while ( <> ) {
   ## %ness|%
   s/\((N)([^ ]*) ([^ ]*?)(ness)\)/\(\1\2-oN%\4|A% \3\)/g;
   ## %lty|%l
-  s/\((N)([^ ]*) ([^ ]*?)(l)(ty)\)/\(\1\2-oN%\4\5|A%\4 \3\4\)/g;
+  s/\((N)([^ ]*) (?!salty)([^ ]*?)(l)(ty)\)/\(\1\2-oN%\4\5|A%\4 \3\4\)/g;
   ## %bility|%ble
   s/\((N)([^ ]*) ([^ ]*?)(b)(ility)\)/\(\1\2-oN%\4\5|A%\4le \3\4le\)/g;
 #  ## %ity|%e
@@ -44,10 +44,12 @@ while ( <> ) {
   s/\((R)([^ %]*) (early|only)()\)/\(A\2-o\1%\4|A% \3\)/g;
   ## well|good
   s/\((R)([^ %]*) ()(well)\)/\(A\2-o\1%\4|A%good good\)/g;
-  ## easy|ily gay|ily
+  ## easy|ily day|ily
   s/\((R)([^ %]*) ([^ ]*?)(ily)\)/\(A\2-o\1%\4|A%y \3y\)/g;
   ## probable|y, simple|y, singly|e, not cheap|ly
-  s/\((R)([^ %]*) ([^ ]*?[^aeiou][aeiou]|si[mn])([bgp]l)(y)\)/\(A\2-o\1%\4\5|A%\4e \3\4e\)/g;
+  s/\((R)([^ %]*) ([^ ]*?[^aeiou][aeiou]|si[mn]|[^ ]*ia)([bgp]l)(y)\)/\(A\2-o\1%\4\5|A%\4e \3\4e\)/g;
+  ## %lly|A%ll (fully)
+  s/\((R)([^ %]*) (fu)(ll)(y)\)/\(A\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## R%ly|A% -- note A% is not unique
   s/\((R)([^ %]*) ([^ ]*?)(ly)\)/\(A\2-o\1%\4|A% \3\)/g;
   ## simple adverbs -- note A% is not unique
@@ -68,9 +70,9 @@ while ( <> ) {
   ## %ier comparatives
   s/\((A)([^ ]*) (?![CcFf]ourier)([^ ]*?)(ier)\)/\(\1\2-o\1%\4|A%y \3y\)/g;
   ## %r comparatives
-  s/\((A)([^ ]*) (?![Uu]nderwater|[Ww]einer)([^ ]*?(?:os|in|arg|at|pl))(e)(r)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((A)([^ ]*) (?![Gg]reater|[Uu]nderwater|[Ww]einer)([^ ]*?(?:os|in|arg|at|pl))(e)(r)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## %er comparatives
-  s/\((A)([^ ]*) (?![Aa]fter|[Aa]nother|[Ee]ager|[Ee]ither|[^ ]*[Ee]ver|[Ff]iller|[Ff]ormer|[Ff]ourier|[Gg]ender|[Ii]nner|[^ ]*[Oo]ther|[Oo]uter|[^ ]*[Oo]ver|[Oo]rder|[Pp]er|[Pp]roper|[Rr]ather|[Tt]ogether|[Uu]nder|[Uu]nderwater|[Uu]pper|[Ww]hether|[Cc]omputer|[Mm]eter|[Ww]einer)([^ ]*?)(er)\)/\(\1\2-o\1%\4|A% \3\)/g;
+  s/\((A)([^ ]*) (?![Aa]fter|[Aa]nother|[Ee]ager|[Ee]ither|[^ ]*[Ee]ver|[Ff]iller|[Ff]ormer|[Ff]ourier|[Gg]ender|[Ii]nner|[^ ]*[Ll]uster|[^ ]*[Oo]ther|[Oo]uter|[^ ]*[Oo]ver|[Oo]rder|[Pp]er|[^ ]*[Pp]roper|[Rr]ather|[Ss]inister|[Ss]ummer|[^ ]*[Tt]ogether|[Uu]nder|[Uu]nderwater|[Uu]pper|[Ww]hether|[Cc]omputer|[Mm]eter|[Ww]einer|[Ww]inter)([^ ]*?)(er)\)/\(\1\2-o\1%\4|A% \3\)/g;
 
   ######## A SUPERLATIVE -> A:
 
@@ -86,10 +88,16 @@ while ( <> ) {
   ## %iest superlatives
   s/\((A)([^ ]*) ([^ ]*?)(iest)\)/\(\1\2-o\1%\4|A%y \3y\)/g;
   ## %st superlatives
-  s/\((A)([^ ]*) ([^ ]*?(?:os|in|arg|at|pl))(e)(st)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
+  s/\((A)([^ ]*) (?![Gg]reat)([^ ]*?(?:os|in|arg|at|pl))(e)(st)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## %est superlatives
   s/\((A)([^ ]*) (?![Ww]est|[Mm]odest)([^ ]*?)(est)\)/\(\1\2-o\1%\4|A% \3\)/g;
 
+  ######## A NEGATIVE -> A
+
+  $NOTUN = '(?!canny|der\)|dercut|derlie|derline|derly|derpin|derscore|derstand|dertake|ited?\)|iversal|til\)|less\)|iqu)';
+
+  ## un%
+  s/\((A)([^ ]*) ([Uu]n)$NOTUN([^ ]*?)()\)/\(\1\2-o\1NEG%:\3\4\5|\1%:un% \4\5\)/g;
 
   ######## V|B|L|G -> B:
 
@@ -328,7 +336,7 @@ while ( <> ) {
 
 
   ## X*e (e|es|ed|ing) -- regular e, that would otherwise qualify as complex vowel or complex consonant
-  s/\(([BVLG])([^ %]*) ([^ ]*?(?:iec|oic|[nrs]c|[st]uad|(?<= )guid|af|ieg|[dlr]g|[bcdfgkptyz]l|ym|sum|[ct]ap|hop|[^s]ip|yp|uar|uir|sur|[aeiou]{2}s(?<!vous|bias)|ens|abus|ccus|mus|[Cc]reat|rmeat|[isu]at|uot|eav|iev|[aeo]lv|[ae]iv|rv|u|(?<= )ow|[es]iz|eez|ooz|yz))(e|es|ed|ing)\)/\(B\2-o\1%\4|B%e \3e\)/g;
+  s/\(([BVLG])([^ %]*) ([^ ]*?(?:gaug|iec|oic|[nrs]c|[st]uad|(?<= )guid|af|ieg|[dlr]g|[bcdfgkptyz]l|ym|sum|[ct]ap|hop|[^s]ip|yp|uar|uir|sur|[aeiou]{2}s(?<!vous|bias)|ens|abus|ccus|mus|[Cc]reat|rmeat|[isu]at|uot|eav|iev|[aeo]lv|[ae]iv|rv|u|(?<= )ow|[es]iz|eez|ooz|yz))(e|es|ed|ing)\)/\(B\2-o\1%\4|B%e \3e\)/g;
 
   ## X* -- regular no e, with complex vowel or complex consonant
   s/\(([BVLG])([^ %]*) ([^ ]*?[aeiou]{2,}[bcdfghjklmnpqrstvwxyz](?<!oed))(|s|ed|ing)\)/\(B\2-o\1%\4|B% \3\)/g;
@@ -346,71 +354,97 @@ while ( <> ) {
   ## X*
   s/\(([BVLG])([^ %]*) ([^ ]*?)(|s|ed|ing)\)/\(B\2-o\1%\4|B% \3\)/g;
 
+  ######## NEGATIVE FOR VERBS
+
+  ## un%
+  s/\((B)([^ ]*) ([Uu]n)$NOTUN([^ ]*?)()\)/\(\1\2-o\1NEG%:\3\4\5|\1%:un% \4\5\)/g;
+
+  ######## REPETITIVE
+
+  $NORE = '(?!ach|act|ad|alize|ap|ason|buff|buke|call|cede|ceive|cite|cogni[sz]e|commend|cord|cruit|ctify|deem|duce|fer|flect|fresh|fund|fuse|gard|gister|ly|gulate|inforce|ject|late|lease|main|mark|member|mind|move|new|novate|pel|plicate|ply|port|present|prove|quest|quire|sign|sist|solve|sonate|spond|store|strict|sult|sume|tain|taliate|tard|tire|tort|turn|veal|view|vise|vive|ward)';
+
+  ## re%
+  s/\((B)([^ ]*) ([Rr]e)$NORE([^ ]*?)()\)/\(B\2-o\1REP%:\3\4\5|B%:re% \4\5\)/g;
 
   ######## CAUSAL, INCHOATIVE, STATIVE
 
   ## unergatives
   @CI = ('abate','accelerate','adapt','adjust','advance','arm','audition',
          'balance','balloon','band','begin','benefit','bleed','blow','blur','boom','bounce','bow','branch','break','brew','buckle','budge','burn','buzz',
-         'capitalize','careen','change','charge','cheer','circulate','clash','cling','close','cohere','coincide','collapse','collect','concentrate','confer','conform','continue','contract','convert','coordinate','count','cover','crack','crash','crawl','creak','crest','crumble',
+         'capitalize','careen','change','cheer','circulate','clash','cling','close','cohere','coincide','collapse','collect','concentrate','confer','conform','continue','contract','convert','coordinate','crack','crash','crawl','creak','crest','crumble',
          'dance','debut','decrease','default','defect','degenerate','deteriorate','develop','differentiate','diminish','dip','disappear','disarm','dissipate','dissociate','dissolve','distribute','diverge','diversify','double','dress','drift','drill','drive',
          'ease','ebb','economize','edge','embark','emerge','end','engage','enroll','erode','erupt','evaporate','evolve','expand','explode','extend',
          'fade','fail','fester','finish','fire','firm','fit','flash','flatten','flinch','flip','float','flow','fly','focus','fold','form','formulate','freeze',
-         'gather','generalize','glaze','glide','group','grow',
+         'gather','glaze','glide','group','grow',
          'hang','head','hold','hum','hurt',
-         'improve','inch','increase','industrialize','inflate','integrate','intensify','invest',
-         'jump',
+         'improve','inch','increase','inflate','integrate','intensify','invest',
          'kowtow',
-         'land','leap','leapfrog','level','liberalize','light','liquify','liquidate','locate','lodge',
+         'land','leap','leapfrog','level','light','liquify','liquidate','lodge',
          'maneuver','materialize','mature','melt','merge','mesh','migrate','militate','mobilize','move',
          'nosedive',
          'operate','order','originate',
-         'panic','parachute','part','pass','peak','pile','plummet','plunge','point','pop','pose','premiere','prepare','press','progress','pull',
+         'panic','parachute','part','peak','pile','plummet','plunge','point','pop','pose','premiere','prepare','press','progress','pull',
          'qualify','quit',
          'rally','range','rank','rebound','register','relax','renew','resolve','rest','restructure','resume','retail','retire','retreat','return','reverberate','reverse','revive','revolve','roll','run','rush',
          'segregate','separate','set','settle','shift','shine','shiver','shrink','side','sink','sit','skid','slide','slip','slog','slow','slump','smahs','smoke','soar','sort','spin','split','spread','stampede','stand','start','steam','steer','stem','step','stick','stop','strain','stray','stretch','subscribe','surface','surge','sway','swell','swing','switch',
          'team','terminate','tilt','tiptoe','touch','transfer','translate','triple','tumble','turn','twitch',
          'undulate','unite','unravel',
          'vacillate','vary','venture','volunteer',
-         'wade','walk','wane','wedge','weigh','widen','wind','withdraw','work','worry','worsen','zoom');
+         'wade','walk','wane','wedge','widen','wind','withdraw','work','worry','worsen','zoom');
   foreach $c (@CI) {
     s/\((B-aN)-bN([^ ]*) ($c)\)/\(\1\2-oBCAU%\3|B%$c $c\)/g;
   }
 
   ##         sign type    causative     inchoative    bstative  astative
-  @CISA = ([ 'B-aN',      'awaken',     'awaken',     '',       'awake'   ],
-           [ 'B-aN-bPup', 'blow',       'blow',       '',       ''        ],
-           [ 'B-aN',      'cheer',      'cheer',      '',       ''        ],
-           [ 'B-aN',      'cool',       'cool',       '',       'cool'    ],
-           [ 'B-aN',      'complete',   'complete',   '',       'complete'],
-           [ 'B-aN',      'drop',       'fall',       '',       ''        ],
-           [ 'B-aN',      'dry',        'dry',        '',       'dry'     ],
-           [ 'B-aN-bN',   'feed',       'eat',        '',       ''        ],
-           [ 'B-aN-bN',   'gain',       'gain',       '',       ''        ],
-           [ 'B-aN-bN',   'give',       'get',        'have',   'with'    ],
-           [ 'B-aN',      'heat',       'heat',       '',       'hot'     ],
-           [ 'B-aN',      'kill',       'die',        '',       'dead'    ],
-           [ 'B-aN',      'narrow',     'narrow',     '',       'narrow'  ],
-           [ 'B-aN',      'open',       'open',       '',       'open'    ],
-           [ 'B-aN-bN',   'show',       'see',        '',       ''        ],
-           [ 'B-aN',      'shut',       'shut',       '',       'shut'    ],
-           [ 'B-aN',      'strengthen', 'strengthen', '',       'strong'  ],
-           [ 'B-aN-bC',   'teach',      'learn',      'know',   ''        ],
-           [ 'B-aN-bPup', 'wake',       'wake',       '',       ''        ],
-           [ 'B-aN',      'warm',       'warm',       '',       'warm'    ],
-           [ 'B-aN',      'wet',        '',           '',       'wet'     ]);
+  @CISA = ([ '-aN',      'awaken',     'awaken',     '',       'awake'   ],
+           [ '-aN-bPup', 'blow',       'blow',       '',       ''        ],
+           [ '-aN',      'cheer',      'cheer',      '',       ''        ],
+           [ '-aN',      'cool',       'cool',       '',       'cool'    ],
+           [ '-aN',      'complete',   'complete',   '',       'complete'],
+           [ '-aN',      'drop',       'fall',       '',       ''        ],
+           [ '-aN',      'dry',        'dry',        '',       'dry'     ],
+           [ '-aN-bN',   'feed',       'eat',        '',       ''        ],
+           [ '-aN-bN',   'gain',       'gain',       '',       ''        ],
+           [ '-aN-bN',   'give',       'get',        'have',   'with'    ],
+           [ '-aN',      'heat',       'heat',       '',       'hot'     ],
+           [ '-aN',      'kill',       'die',        '',       'dead'    ],
+           [ '-aN',      'narrow',     'narrow',     '',       'narrow'  ],
+           [ '-aN',      'open',       'open',       '',       'open'    ],
+           [ '-aN-bN',   'show',       'see',        '',       ''        ],
+           [ '-aN',      'shut',       'shut',       '',       'shut'    ],
+           #[ '-aN',      'strengthen', 'strengthen', '',       'strong'  ],
+           [ '-aN-bC',   'teach',      'learn',      'know',   ''        ],
+           [ '-aN-bPup', 'wake',       'wake',       '',       ''        ],
+           [ '-aN',      'warm',       'warm',       '',       'warm'    ],
+           [ '-aN',      'wet',        '',           '',       'wet'     ]);
   for( $i=0; $i<scalar(@CISA); $i++ ) {
-    if( length($CISA[$i][1])>0 && length($CISA[$i][2])>0 ) { s/\(($CISA[$i][0])-bN([^ ]*) ($CISA[$i][1])\)/\(\1\2-oBCAU%\3|B%$CISA[$i][2] $CISA[$i][2]\)/g; }
-    if( length($CISA[$i][2])>0 && length($CISA[$i][3])>0 ) { s/\(($CISA[$i][0])([^ ]*) ($CISA[$i][2])\)/\(\1\2-oBINC%\3|B%$CISA[$i][3] $CISA[$i][3]\)/g; }
-    if( length($CISA[$i][3])>0 && length($CISA[$i][4])>0 ) { s/\(($CISA[$i][0])([^ ]*) ($CISA[$i][3])\)/\(\1\2-oB%\3|A%$CISA[$i][4] $CISA[$i][4]\)/g; }
-    if( length($CISA[$i][2])>0 && length($CISA[$i][4])>0 ) { s/\(($CISA[$i][0])([^ ]*) ($CISA[$i][2])\)/\(\1\2-oB%\3|A%$CISA[$i][4] $CISA[$i][4]\)/g; }
+    if( length($CISA[$i][1])>0 && length($CISA[$i][2])>0 ) { s/\(B($CISA[$i][0])-bN([^ ]*) ($CISA[$i][1])\)/\(B\1\2-oBCAU%\3|B%$CISA[$i][2] $CISA[$i][2]\)/g; }
+    if( length($CISA[$i][2])>0 && length($CISA[$i][3])>0 ) { s/\(B($CISA[$i][0])([^ ]*) ($CISA[$i][2])\)/\(B\1\2-oBINC%\3|B%$CISA[$i][3] $CISA[$i][3]\)/g; }
+    if( length($CISA[$i][3])>0 && length($CISA[$i][4])>0 ) { s/\(B($CISA[$i][0])([^ ]*) ($CISA[$i][3])\)/\(A\1\2-oB%\3|A%$CISA[$i][4] $CISA[$i][4]\)/g; }
+    if( length($CISA[$i][2])>0 && length($CISA[$i][4])>0 ) { s/\(B($CISA[$i][0])([^ ]*) ($CISA[$i][2])\)/\(A\1\2-oBINC%\3|A%$CISA[$i][4] $CISA[$i][4]\)/g; }
   }
+
+  ## %en trans -> caus
+  s/\((B)-aN-bN([^ ]*) (?!threaten)([^ ]*?en)\)/\(B-aN\2-o\1CAU%|B% \3\)/g;
+
+  ## %ize
+#  s/\((B)([^ ]*) ([^ ]*?)(ize)\)/\(B\2-o\1INC%\4|A% \3\)/g;
+  ## %engthen
+  s/\((B)([^ ]*) ([^ ]*?)()(engthen)\)/\(B\2-o\1INC%\4\5|A%\4ong \3\4ong\)/g;
+  ## %ipen
+  s/\((B)([^ ]*) ([^ ]*?ip)(e)(n)\)/\(B\2-o\1INC%\4\5|A%\4 \3\4\)/g;
+  ## %dden
+  s/\((B)([^ ]*) ([^ ]*?)(d)(den)\)/\(B\2-o\1INC%\4\5|A%\4 \3\4\)/g;
+  ## %tten
+  s/\((B)([^ ]*) ([^ ]*?)(t)(ten)\)/\(B\2-o\1INC%\4\5|A%\4 \3\4\)/g;
+  ## %en
+  s/\((B)([^ ]*) (?![^ ]*open|threaten|happen)([^ ]*?)(en)\)/\(B\2-o\1INC%\4|A% \3\)/g;
 
   ######## CLEANUP
 
   ## convert lemma w tag -o back to observed form w tag -x, working bottom-up
-  while( s/\((.)([^ ]*)-o(.)([^%]*)%([^\|]*)\|(.)%([^- ]*)(-[^ ]*?)? ([^\)]*)\7\)/\(\3\2-x\3\4%\5\|\6%\7\8 \9\5\)/g ) { }
-
+  while( s/\((.)([^ ]*)-o(.)([^% ]*)%:([^% ]*)%([^\| ]*)\|(.)%:([^% ]*)%([^- ]*)(-[^ ]*?)? \8([^\)]*)\9\)/\(\3\2-x\3\4%:\5%\6\|\7%:\8%\9\10 \5\11\6\)/g ||
+         s/\((.)([^ ]*)-o(.)([^% ]*)%([^\| ]*)\|(.)%([^- ]*)(-[^ ]*?)? ([^\)]*)\7\)/\(\3\2-x\3\4%\5\|\6%\7\8 \9\5\)/g ) { }
 
   #### remove -x tag
   s/\(([BVLGAR][^ ]*)-x-([^\(\)]*)\)/\(\1-\2\)/g;
