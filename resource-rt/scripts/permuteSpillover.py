@@ -11,7 +11,7 @@ argparser.add_argument('exclude', type=str, nargs='*', default=['0', '1', 'subje
 args, unknown = argparser.parse_known_args()
 
 exclude = set(args.exclude)
-splitter = re.compile(' *[-+|] *')
+splitter = re.compile(' *[-+|:] *')
 pred_name = re.compile('(.*\.\()?([^ ()]+)\)?')
 
 def cleanParens(l):

@@ -7,9 +7,9 @@
 cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=FALSE, filterscreens=FALSE, filterpunc=FALSE, restrdomain=NULL) {
     smartPrint(paste('Number of data rows (raw):', nrow(data)))
     
-    if (!is.null(data$cumwdelta)) {
+    if (!is.null(data$wdelta)) {
         # Remove outliers
-        data <- data[data$cumwdelta <= 4,]
+        data <- data[data$wdelta <= 4,]
         smartPrint(paste('Number of data rows (no saccade lengths > 4):', nrow(data)))
     }
     # Filter tokens
@@ -102,8 +102,8 @@ addColumns <- function(data) {
     for (x in colnames(data)[grepl('Ad|Bd', colnames(data))]) {
         data[[paste0(x, 'prim')]] <- substr(data[[x]], 1, 1)
     }
-    if ('cumwdelta' %in% colnames(data)) {
-        data$prevwasfix = as.integer(as.logical(data$cumwdelta == 1))
+    if ('wdelta' %in% colnames(data)) {
+        data$prevwasfix = as.integer(as.logical(data$wdelta == 1))
     }
     return(data)
 }
@@ -132,7 +132,7 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
     for (x in colnames(data)[grepl('^sentpos', colnames(data))]) {
         data[[x]] <- as.integer(as.character(data[[x]]))
     }
-    for (x in colnames(data)[grepl('^cumwdelta', colnames(data))]) {
+    for (x in colnames(data)[grepl('^wdelta', colnames(data))]) {
         data[[x]] <- as.integer(as.character(data[[x]]))
     }
     for (x in colnames(data)[grepl('^prevwasfix', colnames(data))]) {

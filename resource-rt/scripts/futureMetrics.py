@@ -34,8 +34,14 @@ def main():
     
     if args.all:
         cols = data.columns.values[:]
-    else:
+    elif args.fut_cols:
         cols = args.fut_cols
+    else:
+        cols = []
+
+    if len(cols) == 0:
+        sys.stderr.write('Nothing to compute future metrics for. Returning input table.\n')
+
     for col in cols:
         data['fut' + col] = grouped[col].shift(-1)
     data.to_csv(sys.stdout, ' ', index=False, na_rep='nan')
