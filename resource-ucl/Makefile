@@ -157,8 +157,12 @@ $(UCLDIR)/eye_movement/stimuli.txt | genmodel
 
 genmodel/ucl.src.evmeasures: $(CONFIGDIR)/user-ucl-directory.txt \
 $(UCL-SCRIPTS)/build_ucl_corpus.py \
-$(UCLDIR)/eye_movement/eyetracking.RT.txt | genmodel
-	cat $(word 3, $^) | python $(word 2,$^) > $@
+$(UCLDIR)/eye_movement/eyetracking.RT.txt \
+$(RT-SCRIPTS)/rename_cols.py \
+$(RT-SCRIPTS)/filter_cols.awk | genmodel
+	cat $(word 3, $^) | python $(word 2,$^) > $@.tmp
+	paste -d' ' $@.tmp <(awk -f $(word 5, $^) -v cols=sentid $@.tmp | python $(word 4, $^) sentid docid) > $@
+	rm $@.tmp
 
 .PRECIOUS: $(THISDIR)/esns
 $(THISDIR)/esns:

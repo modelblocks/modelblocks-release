@@ -32,15 +32,12 @@ else:
 if args.p:
     data = data[~data['word'].isin(punc)]
 
-group_cols = []
+group_cols = ['docid']
 if not args.nosubjects:
     group_cols.append('subject')
 if not args.ignoresents:
     group_cols.append('sentid')
-if len(group_cols) > 0:
-    grouped = data.groupby(group_cols)
-else:
-    grouped = data
+grouped = data.groupby(group_cols)
 
 if len(cols) == 0:
     sys.stderr.write('Nothing to spillover. Returning input table.\n')

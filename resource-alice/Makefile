@@ -136,8 +136,8 @@ genmodel/alice.linetoks: $(ALICE-SCRIPTS)/tokmeasures2linetoks.py genmodel/alice
 	python $^ > $@
 
 genmodel/alice.sbj.evmeasures: | genmodel
-	echo 'subject sampleid' > $@
-	$(foreach s, $(ALICE-SUBJECTS), for i in {1..362}; do echo "$(s) $$i" >> $@; done;)
+	echo 'subject sampleid docid' > $@
+	$(foreach s, $(ALICE-SUBJECTS), for i in {1..362}; do echo "$(s) $$i 1" >> $@; done;)
 
 genmodel/alice.pwr.evmeasures: $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/$(s)-sndpwr.txt) | genmodel
 	echo 'sndpwr' > $@
