@@ -61,10 +61,10 @@ include $(RESOURCE-LMEFIT)/Makefile
 
 LMEDEFAULT := NSCFX
 # Buggy published exploratory/confirmatory split:
-BASENAME := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.5-kenlm-iz.spr.sprS1
-BASENAME-NB := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.5-kenlm-iz.spr
+BASENAME := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.5-kenlm-iz.spr
+BASENAME-NB := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.5-kenlm-iz
 # More sensible non-published exploratory/confurmatory split:
-# BASENAME := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.5-kenlm.spr.spr
+# BASENAME := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.5-kenlm.spr
 
 
 ################################################################################

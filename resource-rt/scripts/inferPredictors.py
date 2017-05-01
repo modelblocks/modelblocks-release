@@ -19,7 +19,7 @@ def cleanParens(l):
     return l
 
 def getPreds(bform, exclude=['0', '1']):
-    preds = ['word', 'subject', 'sentid', 'punc', 'startoffile', 'endoffile', 'startofline', 'endofline', 'startofsentence', 'endofsentence', 'startofscreen', 'endofscreen']
+    preds = ['word', 'subject', 'sentid', 'docid', 'punc', 'startoffile', 'endoffile', 'startofline', 'endofline', 'startofsentence', 'endofsentence', 'startofscreen', 'endofscreen']
     for l in bform:
         if l.startswith('('):
             l = splitter.split(l.strip())
