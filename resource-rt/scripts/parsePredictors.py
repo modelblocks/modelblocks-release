@@ -29,5 +29,14 @@ elif args.spillover:
             cols.append(','.join(spill.match(col).groups()))
     print(' '.join(cols))
 else:
-    print('')
+    for i, col in enumerate(preds):
+        if col.startswith('fut'):
+            col = col[3:]
+        if col.startswith('cum'):
+            col = col[3:]
+        if spill.match(col):
+            col = spill.match(col).group(1)
+        preds[i] = col
+    print(' '.join(preds))
+    
 

@@ -342,7 +342,7 @@ $(RT-SCRIPTS)/rm_unfix_items.py \
 $(RT-SCRIPTS)/futureMetrics.py \
 $(RT-SCRIPTS)/spilloverMetrics.py \
 $(RT-SCRIPTS)/parsePredictors.py
-	$(eval CORECOLS := $(shell cat $(word 2, $^) | python $(word 3, $^) 1 ) $(word 2, $(subst _, ,$(subst +, ,$(subst .,,$(suffix $*))))))
+	$(eval CORECOLS := $(shell cat $(word 2, $^) | python $(word 3, $^) 1 ) $(shell echo $(word 2, $(subst _, ,$(subst +, ,$(subst .,,$(suffix $*))))) | python $(word 9, $^)))
 	$(eval COLS := $(shell cat $(word 2, $^) | python $(word 3, $^)) $(word 2, $(subst _, ,$(subst +, ,$(subst .,,$(suffix $*))))))
 	@echo Extracting columns: $(CORECOLS)
 	@echo Computing columns: $(COLS)

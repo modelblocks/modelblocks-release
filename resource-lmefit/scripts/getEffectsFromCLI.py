@@ -24,14 +24,14 @@ if restrdomain != '':
                 if not col in preds:
                     preds.append(col)
 
-for i, pred in enumerate(preds):
-    if pred.startswith('fut'):
-        pred = pred[3:]
-    if pred.startswith('cum'):
-        pred = pred[3:]
-    if spill.match(pred):
-        pred = spill.match(pred).group(1)
-    preds[i] = pred
+#for i, pred in enumerate(preds):
+#    if pred.startswith('fut'):
+#        pred = pred[3:]
+#    if pred.startswith('cum'):
+#        pred = pred[3:]
+#    if spill.match(pred):
+#        pred = spill.match(pred).group(1)
+#    preds[i] = pred
 
 print('+'.join(preds))
 

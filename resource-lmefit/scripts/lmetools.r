@@ -136,7 +136,7 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
         data[[x]] <- as.integer(as.character(data[[x]]))
     }
     for (x in colnames(data)[grepl('^prevwasfix', colnames(data))]) {
-        data[[x]] <- as.logical(as.character(data[[x]]))
+        data[[x]] <- as.integer(as.character(data[[x]]))
     }
     for (x in colnames(data)[grepl('^word',colnames(data))]) {
         data[[x]] <- as.character(data[[x]])
