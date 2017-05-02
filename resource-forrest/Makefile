@@ -96,6 +96,9 @@ endif
 #
 ################################################################################
 
+genmodel/forrest.merge_tables.params: | genmodel
+	echo 'word sentid sentpos' > $@
+
 genmodel/forrest.futureMetrics.params: | genmodel
 	echo 'cumfwprob5 cumtotsurp' > $@
 
@@ -108,20 +111,39 @@ genmodel/forrest.spilloverMetrics.params: | genmodel
 genmodel/forrest.pred_list.txt: | genmodel
 	echo 'wlen' > $@
 
-genmodel/forrest.time.tokmeasures: $(FORREST-SCRIPTS)/annotations2tokmeasures.py $(FORRESTDIR)/stimulus/task001/annotations/german_audio_description.csv | genmodel
-	python $(word 1, $^) $(word 2, $^) > $@
+genmodel/forrest.time.tokmeasures: $(FORREST-SCRIPTS)/annotations2tokmeasures.py $(FORRESTDIR)/stimulus/task001/annotations/german_audio_description.csv $(TOKENIZERDIR)/ptb_tokenizer.sed | genmodel
+	python $(word 1, $^) <($(word 3,$^) $(word 2, $^)) > $@
 
 genmodel/forrest.linetoks: $(FORREST-SCRIPTS)/tokmeasures2linetoks.py genmodel/forrest.time.tokmeasures $(TOKENIZERDIR)/ptb_tokenizer.sed | genmodel
 	cat $(word 2, $^) | python $(word 1, $^) | $(word 3, $^) > $@
 
 genmodel/forrest.lineitems: genmodel/forrest.linetoks $(TOKENIZERDIR)/ptb_untokenizer.sed | genmodel
-	cat $(word 1, $^) | $(word 2, $^) > $@
+	cat $(word 1, $^) | $(word 2, $^) | sed 's/(/-LRB-/g;s/)/-RRB-/g;s/\[/-LSB-/g;s/\]/-RSB-/g;' > $@
+
+.PRECIOUS: genmodel/forrest.%.kenlm.ngram.itemmeasures
+genmodel/forrest.%.kenlm.ngram.itemmeasures: $(KENLMDIR)/bin/query \
+genmodel/forrest.lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
+$(KENLMMODDIR)/gigaword4.$$*.kenlm.bin \
+$(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
+	$< -\n $(word 4,$^) < $(word 2,$^) | python3 $(word 3,$^) --fwprobs - | \
+	python $(word 5, $^) fwprob fwprob$* | sed 's/??/???/g;s/^ /NAword /g;' > $@
+
+genmodel/forrest.%.kenlm.ngram.itemmeasures: $(KENLMDIR)/bin/query \
+genmodel/forrest.lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
+$(KENLMMODDIR)/gigaword4.$$*.kenlm \
+$(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
+	$< -\n $(word 4,$^) < $(word 2,$^) | python3 $(word 3,$^) --fwprobs - | \
+	python $(word 5, $^) fwprob fwprob$* | sed 's/??/???/g;s/^ /NAword /g;' > $@
 
 #genmodel/forrest.lineitems: $(FORREST-SCRIPTS)/tokmeasures2linetoks.py genmodel/forrest.time.tokmeasures | genmodel
 #	cat $(word 2, $^) | python $(word 1, $^) > $@
 
 #genmodel/forrest.lineitems: $(FORREST-SCRIPTS)/pastePunc.py genmodel/forrest.linetoks | genmodel
 #	cat $(word 2, $^) | python $(word 1, $^) > $@
+
+#genmodel/forrest.wsj02to21-nodashtags-0sm-bd.x-efabp.-c_-b5000.pcfg.tokmeasures
+genmodel/forrest.%.pcfg.tokmeasures: genmodel/forrest.%_parsed.output $(LCPARSE-SCRIPTS)/spargeComplexity.py $(RT-SCRIPTS)/calcFJProb.py
+	cat $< | python3 $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;' | python $(word 3, $^) | sed 's/^nan/NAword/g;' > $@
 
 genmodel/forrest.src.evmeasures: $(CONFIGDIR)/user-forrest-directory.txt $(FORREST-SCRIPTS)/compile_forrest_subjects.py $(foreach s, $(FORREST-SUBJECTS), $(foreach r, $(shell seq 1 8), $(FORRESTDIR)/phase1/sub$(s)/BOLD/task001_run00$(r)/atlas_timeseries_dico7Tad2grpbold7Tad_nl.csv.gz)) | genmodel
 	python $(word 2, $^) 001 $(foreach r, $(shell seq 1 8),$(FORRESTDIR)/phase1/sub001/BOLD/task001_run00$(r)/atlas_timeseries_dico7Tad2grpbold7Tad_nl.csv.gz) > $@

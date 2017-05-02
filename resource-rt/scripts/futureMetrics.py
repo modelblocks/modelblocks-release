@@ -20,15 +20,12 @@ def main():
     data.sort([args.subj, args.sentid, args.sentpos], inplace=True)
     grouped = data.groupby('subject')
     
-    group_cols = []
+    group_cols = ['docid']
     if not args.nosubjects:
         group_cols.append('subject')
     if not args.ignoresents:
         group_cols.append('sentid')
-    if len(group_cols) > 0:
-        grouped = data.groupby(group_cols)
-    else:
-        grouped = data
+    grouped = data.groupby(group_cols)
 
     sys.stderr.write('Computing future metrics.\n')
     

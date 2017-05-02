@@ -130,8 +130,6 @@ $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees $$(b
 	ln -sf $(notdir $<) $@
 
 #### obtain text grammar from javadump
-# Should these really be precious?
-.PRECIOUS: %.splits %.grammar %.lexicon
 %.splits %.grammar %.lexicon:  $(CONFIGDIR)/user-javaflags.txt  $(CONFIGDIR)/user-berkeleyparserjar-directory.txt  $(BERKPARSEDIR)/berkeleyParser.jar  %.gr
 	java  $(shell cat $(word 1,$^))  -cp $(word 3,$^)  edu.berkeley.nlp.PCFGLA.WriteGrammarToTextFile  $(word 4,$^)  $(basename $@)
 
@@ -172,8 +170,6 @@ $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees $$(b
 #	cat $<  |  $(word 2,$^)  $(subst _, ,$(subst .,,$(suffix $(subst -,.,$*))))  $(word 3,$^)  >  $@
 
 #### obtain linetrees by removing extra parens and converting '+'s in categories to '-'s
-# Should this really be precious?
-.PRECIOUS: %berk.parsed.linetrees
 #%berk.parsed.linetrees:  $$(word 1,$$(subst ., ,%))$$(suffix $$(basename $$*))$$(suffix $$*)berk.parsed.output
 %berk.parsed.linetrees:  %berk.parsed.output
 	cat $<  |  perl -pe 's/\+(?=[^\)]* )/\-/g'  |  perl -pe 's/^ *\( *//;s/ *\) *$$//;s/-\d+ / /g'  >  $@

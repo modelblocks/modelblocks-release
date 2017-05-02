@@ -95,7 +95,6 @@ bin/%:  $(RESOURCE-LCPARSE)/src/$$(notdir $$@).cpp  $(RESOURCE-LCPARSE)/src/$$(n
                 |  sed 's/CC \(.*\)\^\(.\),\(.\) : \(.*\)\^.,. \(.*\)\^.,. = \(.*\)/CC \2 \3 \1 : \4 \5 = \6/' |  $(word 2,$^)  >  $@
 
 #### obtain sorted model for A* algo, and rename for parser that incrementally tracks entities
-.PRECIOUS: %.x-efabp.model
 %.x-efabp.model:  %.x-fabp.probmodel  $(LCPARSE-SCRIPTS)/sortbyprob.pl
 	cat $<  |  perl $(word 2,$^)  >  $@
 

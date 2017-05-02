@@ -128,15 +128,17 @@ $(NATSTORDIR)/naturalstories_RTS/all_stories.tok $(CONFIGDIR)/user-naturalstorie
 	cat $(word 3, $^) | sed 's/\t/ /g;s/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' | python $(word 2, $^) $< > $@
   
 genmodel/naturalstories.mfields.itemmeasures: $(NATSTORDIR)/naturalstories_RTS/all_stories.tok genmodel/naturalstories.lineitems \
-$(RT-SCRIPTS)/sents2sentids.py $(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
-	paste -d' ' <(cat $< | sed 's/\t/ /g;') <(cat $(word 2, $^) | python $(word 3, $^) | cut -d' ' -f 2-) > $@
+$(RT-SCRIPTS)/sents2sentids.py $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/filter_cols.awk \
+$(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
+	paste -d' ' <(cat $< | sed 's/\t/ /g;') <(cat $(word 2, $^) | python $(word 3, $^) | cut -d' ' -f 2-) \
+	<(cat $< | sed 's/\t/ /g;' | awk -f $(word 5, $^) -v cols=item - | python $(word 4, $^) item docid) > $@
 
 # Just here to preserve old buggy dev/test split
 genmodel/naturalstories.mfields.o.itemmeasures: genmodel/naturalstories.mfields.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py genmodel/naturalstories.gold.dlt.tokmeasures $(RT-SCRIPTS)/filter_cols.py \
 $(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
 	paste -d' ' <(cat $< | python $(word 4, $^) -x sentid) <(cat $(word 3, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/-LRB-/(/g;s/-RRB-/)/g;' | \
-  python $(word 2, $^) $< -e latin-1 | python $(word 4, $^) -c sentid) > $@
+	python $(word 2, $^) $< -e latin-1 | python $(word 4, $^) -c sentid) > $@
   
 genmodel/naturalstories.src.evmeasures: $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv \
 $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/merge_tables.py genmodel/naturalstories.mfields.itemmeasures \
