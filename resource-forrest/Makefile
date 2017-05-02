@@ -96,6 +96,9 @@ endif
 #
 ################################################################################
 
+genmodel/forrest.merge_tables.params: | genmodel
+	echo 'word sentid sentpos' > $@
+
 genmodel/forrest.futureMetrics.params: | genmodel
 	echo 'cumfwprob5 cumtotsurp' > $@
 
@@ -115,7 +118,7 @@ genmodel/forrest.linetoks: $(FORREST-SCRIPTS)/tokmeasures2linetoks.py genmodel/f
 	cat $(word 2, $^) | python $(word 1, $^) | $(word 3, $^) > $@
 
 genmodel/forrest.lineitems: genmodel/forrest.linetoks $(TOKENIZERDIR)/ptb_untokenizer.sed | genmodel
-	cat $(word 1, $^) | $(word 2, $^) > $@ #| sed 's/(/-LRB-/g;s/)/-RRB-/g;s/[/-LSB-/g;s/]/-RSB-/g;' > $@
+	cat $(word 1, $^) | $(word 2, $^) | sed 's/(/-LRB-/g;s/)/-RRB-/g;s/\[/-LSB-/g;s/\]/-RSB-/g;' > $@
 
 .PRECIOUS: genmodel/forrest.%.kenlm.ngram.itemmeasures
 genmodel/forrest.%.kenlm.ngram.itemmeasures: $(KENLMDIR)/bin/query \
