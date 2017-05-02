@@ -1,0 +1,21 @@
+select[multiple] {
+  height: auto;
+  max-height: 10em;
+}
+
+.paramselect{
+  display: inline-block;
+  vertical-align: text-top;
+  background: rgb(220,250,255);
+  padding: 1rem;
+  margin: 1rem;
+  border-radius: 1rem;
+  -moz-border-radius: 1rem;
+  -webkit-border-radius: 1rem;
+  -ms-border-radius: 1rem;
+
+}
+
+#parameters{
+  overflow:hidden;
+}
