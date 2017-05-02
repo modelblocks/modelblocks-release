@@ -33,13 +33,13 @@ while ( <> ) {
 
   ######## N -> A:
 
-  ## %iness|%y
+  ## %iness|%y (busy,holy)
   s/\((N)([^ ]*) ([^ ]*?)(iness)\)/\(\1\2-oN%\4|A%y \3y\)/g;
-  ## %ness|%
+  ## %ness|% (open)
   s/\((N)([^ ]*) ([^ ]*?)(ness)\)/\(\1\2-oN%\4|A% \3\)/g;
-  ## %lty|%l
+  ## %lty|%l (royal)
   s/\((N)([^ ]*) (?!salty)([^ ]*?)(l)(ty)\)/\(\1\2-oN%\4\5|A%\4 \3\4\)/g;
-  ## %bility|%ble
+  ## %bility|%ble (lovable)
   s/\((N)([^ ]*) ([^ ]*?)(b)(ility)\)/\(\1\2-oN%\4\5|A%\4le \3\4le\)/g;
 #  ## %ity|%e
 #  s/\((N)([^ ]*) ([^ ]*?)(ity)\)/\(\1\2-oN%\4|A%e \3e\)/g;
@@ -50,15 +50,15 @@ while ( <> ) {
   s/\((R)([^ %]*) (early|only)()\)/\(A\2-o\1%\4|A% \3\)/g;
   ## well|good
   s/\((R)([^ %]*) ()(well)\)/\(A\2-o\1%\4|A%good good\)/g;
-  ## easy|ily day|ily
+  ## %ily|%y (easy)
   s/\((R)([^ %]*) ([^ ]*?)(ily)\)/\(A\2-o\1%\4|A%y \3y\)/g;
-  ## probable|y, simple|y, singly|e, not cheap|ly
+  ## %[bgp]ly|%e (probable,simple,single, not cheap)
   s/\((R)([^ %]*) ([^ ]*?[^aeiou][aeiou]|si[mn]|[^ ]*ia)([bgp]l)(y)\)/\(A\2-o\1%\4\5|A%\4e \3\4e\)/g;
-  ## %lly|A%ll (fully)
+  ## %lly|%ll (fully)
   s/\((R)([^ %]*) (fu)(ll)(y)\)/\(A\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## R%ly|A% -- note A% is not unique
   s/\((R)([^ %]*) ([^ ]*?)(ly)\)/\(A\2-o\1%\4|A% \3\)/g;
-  ## simple adverbs -- note A% is not unique
+  ## simpliciter adverbs -- note A% is not unique
   s/\((R)([^ %]*) ([^ ]*?)()\)/\(A\2-o\1%\4|A% \3\)/g;
 
   ######## A COMPARATIVE -> A:
@@ -105,25 +105,169 @@ while ( <> ) {
   ## un%
   s/\((A)([^ ]*) ([Uu]n)$NOTUN([^ ]*?)()\)/\(\1\2-o\1NEG%:\3\4\5|\1%:un% \4\5\)/g;
 
-  ######## NOMINALIZATIONS N -> B:
+  ######## DEVERBAL NOMINALIZATIONS N -> B:
 
-  s/\((N)([^ ]*) ([^ ]*?(?:[vs]o))(l)(ution)\)/\(B\2-o\1%\4\5|B%\4ve \3\4ve\)/g;
+  ## %asis|%ase (base)
+  s/\((N)([^ ]*) ([Bb])(as)(is)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %irth|%ear (bear)
+  s/\((N)([^ ]*) ([Bb])()(irth)\)/\(B\2-o\1%\4\5|B%\4ear \3\4ear\)/g;
+  ## %lief|%lieve (believe,relieve)
+  s/\((N)([^ ]*) ([% ]*)(lie)(ve)\)/\(B\2-o\1%\4\5|B%\4f \3\4f\)/g;
+  ## %eath|%eathe (breathe)
+  s/\((N)([^ ]*) ([Bb]r)(eath)(e)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %oice|%oose (choose)
+  s/\((N)([^ ]*) ([Cc]h)(o)(ice)\)/\(B\2-o\1%\4\5|B%\4ose \3\4ose\)/g;
+  ## %osure|%ose (close,compose)
+  s/\((N)([^ ]*) ([^ ]*)(os)(ure)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %parison|%pare (compare)
+  s/\((N)([^ ]*) ([Cc]om)(par)(ison)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %aint|%ain (complain,constrain,restrain)
+  s/\((N)([^ ]*) ([^ ]*(?:pl|str))(ain)(t)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %ormity|%orm (conform)
+  s/\((N)([^ ]*) ([^ ]*onf)(orm)(ity)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %livery|%liver (deliver)
+  s/\((N)([^ ]*) ([^ ]*)(liver)(y)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %eath|%ie (die)
+  s/\((N)([^ ]*) ([Dd])()(eath)\)/\(B\2-o\1%\4\5|B%\4ie \3\4ie\)/g;
+  ## %overy|%over (discover,recover)
+  s/\((N)([^ ]*) ([^ ]*c)(over)(y)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %sis|%size (emphasize,metamorphasize)
+  s/\((N)([^ ]*) ([^ ]*pha)(si)(s)\)/\(B\2-o\1%\4\5|B%\4ze \3\4ze\)/g;
+  ## %ailure|%ail (fail)
+  s/\((N)([^ ]*) ([^ ]*)(ail)(ure)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %light|%ly (fly)
+  s/\((N)([^ ]*) ([Ff])(l)(ight)\)/\(B\2-o\1%\4\5|B%\4y \3\4y\)/g;
+  ## %light|%lee (flee)
+  s/\((N)([^ ]*) ([Ff])(l)(ight)\)/\(B\2-o\1%\4\5|B%\4ee \3\4ee\)/g;
+  ## %ift|%ive (give)
+  s/\((N)([^ ]*) ([Gg])(i)(ft)\)/\(B\2-o\1%\4\5|B%\4ve \3\4ve\)/g;
+  ## %rowth|%row (grow)
+  s/\((N)([^ ]*) ([Gg])(row)(th)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %owledge|%ow (know)
+  s/\((N)([^ ]*) ([Kk]n)(ow)(ledge)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %eadership|%ead (lead)
+  s/\((N)([^ ]*) ([Ll])(ead)(ership)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %ife|%ive (live)
+  s/\((N)([^ ]*) ([Ll])(i)(fe)\)/\(B\2-o\1%\4\5|B%\4ve \3\4ve\)/g;
+  ## %oss|%ose (lose)
+  s/\((N)([^ ]*) ([Ll])(os)(s)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %rriage|%rry (marry)
+  s/\((N)([^ ]*) ([Mm]a)(rr)(iage)\)/\(B\2-o\1%\4\5|B%\4y \3\4y\)/g;
+  ## %erger|%erge (merge)
+  s/\((N)([^ ]*) ([Mm])(erge)(r)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %lea|%lead (plead)
+  s/\((N)([^ ]*) ([Pp])(lea)(d)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %leasure|%lease (please)
+  s/\((N)([^ ]*) ([Pp])(leas)(ure)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %perity|%per (prosper)
+  s/\((N)([^ ]*) ([Pp]ros)(per)(ity)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %roof|%rove (prove)
+  s/\((N)([^ ]*) ([Pp])(ro)(of)\)/\(B\2-o\1%\4\5|B%\4ve \3\4ve\)/g;
+  ## %uit|%ue (pursue,sue)
+  s/\((N)([^ ]*) (?![Ll]aw)([^ ]*[Ss])(u)(it)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %sponce|%spond (respond)
+  s/\((N)([^ ]*) ([Rr]e)(spon)(ce)\)/\(B\2-o\1%\4\5|B%\4d \3\4d\)/g;
+  ## %iezure|%ieze (sieze)
+  s/\((N)([^ ]*) ([Ss])(iez)(ure)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %ale|%ell (sell,tell)
+  s/\((N)([^ ]*) ([SsTt])()(ale)\)/\(B\2-o\1%\4\5|B%\4ell \3\4ell\)/g;
+  ## %ervice|%erve (serve)
+  s/\((N)([^ ]*) ([Ss])(erv)(ice)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %ot|%oot (shoot)
+  s/\((N)([^ ]*) ([Ss]h)(o)(t)\)/\(B\2-o\1%\4\5|B%\4ot \3\4ot\)/g;
+  ## %ong|%ing (sing)
+  s/\((N)([^ ]*) ([Ss])()(ong)\)/\(B\2-o\1%\4\5|B%\4ing \3\4ing\)/g;
+  ## %peech|%eak (speak)
+  s/\((N)([^ ]*) ([Ss])(pe)(ech)\)/\(B\2-o\1%\4\5|B%\4ak \3\4ak\)/g;
+  ## %timony|%tify (testify)
+  s/\((N)([^ ]*) ([Tt]es)(ti)(mony)\)/\(B\2-o\1%\4\5|B%\4fy \3\4fy\)/g;
+  ## %ought|%ink (think)
+  s/\((N)([^ ]*) ([Tt]h)()(ought)\)/\(B\2-o\1%\4\5|B%\4ink \3\4ink\)/g;
+  ## %nion|%nite (union)
+  s/\((N)([^ ]*) ([Uu])(ni)(on)\)/\(B\2-o\1%\4\5|B%\4te \3\4te\)/g;
+
+  ## %dgment|%dge (judge)
+  s/\((N)([^ ]*) ([^ ]*?[Jj]u)(dg)(ment)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %mament|%m (arm)
+  s/\((N)([^ ]*) ([^ ]*?)(m)(ament)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %ument|%ue (argue)
+  s/\((N)([^ ]*) ([^ ]*?[Aa]rg)(u)(ment)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %ment|% (improve)
+  s/\((N)([^ ]*) ([^ ]*?(?:[Aa]bate|djust|gree|rm|urtail|evelop|iscern|ngage|nroll|overn|mprove|nfringe|nvest|ove|nforce|lace|etire|ettle|tate))()(ment)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+
+  ## %ttal|%t (qcquit)
+  s/\((N)([^ ]*) ([^ ]*?cqui)(t)(tal)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %ial|%y (try,retry)
+  s/\((N)([^ ]*) ((?:[Rr]e)?[Tt]r)()(ial)\)/\(B\2-o\1%\4\5|B%\4y \3\4y\)/g;
+  ## %sal|%se (arouse,reverse)
+  s/\((N)([^ ]*) ([^ ]*?(?:rou|ever))(s)(al)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %val|%ve (approve,arrive,revive,survive)
+  s/\((N)([^ ]*) ([^ ]*?(?:ppro|rri|evi|urvi))(v)(al)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %wal|%w (renew,withdraw)
+  s/\((N)([^ ]*) ([^ ]*?(?:ene|ithdra))(w)(al)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+
+  ## %er|%rance (enter)
+  s/\((N)([^ ]*) ([^ ]*?(?:nt))()(rance)\)/\(B\2-o\1%\4\5|B%\4er \3\4er\)/g;
+  ## %nce|%nd (defend,respond)
+  s/\((N)([^ ]*) ([^ ]*?(?:efe|respo))(n)(ce)\)/\(B\2-o\1%\4\5|B%\4d \3\4d\)/g;
+  ## %iance|%y (comply,rely,vary)
+  s/\((N)([^ ]*) ([^ ]*?(?:ompl|el|ar))()(iance)\)/\(B\2-o\1%\4\5|B%\4y \3\4y\)/g;
+  ## %ence|%e (cohere,diverge,interfere,reside)
+  s/\((N)([^ ]*) ([^ ]*?(?:oher|nterfer|iverg|resid))()(ence)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %enance|%ain (maintain)
+  s/\((N)([^ ]*) ([^ ]*?(?:aint))()(enance)\)/\(B\2-o\1%\4\5|B%\4ain \3\4ain\)/g;
+  ## %ance|% (allow)
+  s/\((N)([^ ]*) ([^ ]*?(?:llow|ppear|ssist|isturb|esist|erform))()(ance)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %ence|% (exist)
+  s/\((N)([^ ]*) ([^ ]*?(?:oincid|orrespond|onfer|(?<!nd)epend|iffer|xist|nsist|ccur|ersist))()(ence)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+
+  ## %lution|%lve (evolve,solve)
+  s/\((N)([^ ]*) ([^ ]*?(?:[Ssv]o))(l)(ution)\)/\(B\2-o\1%\4\5|B%\4ve \3\4ve\)/g;
+  ## %[st]ion|%d (extend,intend)
   s/\((N)([^ ]*) ([^ ]*?(?:inten|exten))()([st]ion)\)/\(B\2-o\1%\4\5|B%\4d \3\4d\)/g;
+  ## %etition|%ete (competition)
   s/\((N)([^ ]*) ([^ ]*?(?:omp))(et)(ition)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
-  s/\((N)([^ ]*) ([^ ]*?(?:d))()(ition)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
-  s/\((N)([^ ]*) (?![Ss]ection)([^ ]*?(?:trac|bor|eac|ec|ep|dic|ven|uc))(t)(ion)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
-  s/\((N)([^ ]*) ([^ ]*?(?:e))(ss)(ion)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
-  s/\((N)([^ ]*) ([^ ]*?(?:[Ee]m))(i)(ssion)\)/\(B\2-o\1%\4\5|B%\4t \3\4t\)/g;
+  ## %ddition|%dd (addition)
+  s/\((N)([^ ]*) ([^ ]*?)(dd)(ition)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %lication|%lish (publish)
+  s/\((N)([^ ]*) ([^ ]*?b)(li)(cation)\)/\(B\2-o\1%\4\5|B%\4sh \3\4sh\)/g;
+  ## %eption|%eive (conceive,perceive)
+  s/\((N)([^ ]*) ([^ ]*?[^x]c)(e)(ption)\)/\(B\2-o\1%\4\5|B%\4ive \3\4ive\)/g;
+  ## %ention|%ene (convene,intervene)
+  s/\((N)([^ ]*) ([^ ]*?erv)(en)(tion)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %tion|%t (contract)
+  s/\((N)([^ ]*) (?![Ss]ection)([^ ]*?(?:trac|bor|eac|ec|ep|dic|ven|ruc))(t)(ion)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %cession|%cede (concede,recede)
+  s/\((N)([^ ]*) ([^ ]*?(?:))(ce)(ssion)\)/\(B\2-o\1%\4\5|B%\4de \3\4de\)/g;
+  ## %ssion|%ss (profess)
+  s/\((N)([^ ]*) ([^ ]*?(?:fe|re))(ss)(ion)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %ration|%er (administer,register)
+  s/\((N)([^ ]*) ([^ ]*?(?:ist))()(ration)\)/\(B\2-o\1%\4\5|B%\4er \3\4er\)/g;
+  ## %ission|%it (emit,omit)
+  s/\((N)([^ ]*) ([^ ]*?(?:[EeOo]m))(i)(ssion)\)/\(B\2-o\1%\4\5|B%\4t \3\4t\)/g;
+  ## %sion|%de (evade)
   s/\((N)([^ ]*) ([^ ]*?(?:ivi|clu|ro|va))()(sion)\)/\(B\2-o\1%\4\5|B%\4de \3\4de\)/g;
-  s/\((N)([^ ]*) ([^ ]*?(?:fu))(s)(ion)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
-  s/\((N)([^ ]*) ([^ ]*?(?:tipl))()(ication)\)/\(B\2-o\1%\4\5|B%\4y \3\4y\)/g;
+  ## %sion|%se (fuse,revise)
+  s/\((N)([^ ]*) ([^ ]*?(?:fu|evi))(s)(ion)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %ication|%y (apply,classify,imply,multiply)
+  s/\((N)([^ ]*) ([^ ]*?(?:if|mpl|tipl|ppl|pl))()(ication)\)/\(B\2-o\1%\4\5|B%\4y \3\4y\)/g;
+  ## %[ou]tion|%[ou]te (emote,pollute)
   s/\((N)([^ ]*) ([^ ]*?(?:oll|[Ee]m))([ou]t)(ion)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %lsion|%lse (convulse)
   s/\((N)([^ ]*) ([^ ]*?(?:u))(ls)(ion)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
-  s/\((N)([^ ]*) ([^ ]*?)(n)(ition)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %inition|%ine (define,refine)
+  s/\((N)([^ ]*) ([^ ]*?)(in)(ition)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %iation|%y (vary)
   s/\((N)([^ ]*) ([^ ]*?(?:var))()(iation)\)/\(B\2-o\1%\4\5|B%\4y \3\4y\)/g;
-  s/\((N)([^ ]*) ([^ ]*?(?:[Ff]orm|port|[Ll]imit))()(ation)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
-  s/\((N)([^ ]*) ([^ ]*?(?:bin|is|iz|ns|plor|rs|rv|ut))()(ation)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
-  s/\((N)([^ ]*) (?![Cc]onstellation|[Nn]ation|[Ss]tation)([^ ]*?)(at)(ion)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %ation|% (limit)
+  s/\((N)([^ ]*) ([^ ]*?(?:[Ff]orm|port|[Ll]imit|lant|empt|ider|pect|ound|ment|mend|[Rr]esign|icit|tard))()(ation)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %ation|%e (combine)
+  s/\((N)([^ ]*) ([^ ]*?(?:bin|clar|is|iz|amin|[^r]eg|sens|repar|xplor|rs|rv|ut))()(ation)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## ation|%ate (satiate)
+  s/\((N)([^ ]*) (?![Cc]onstellation|[Nn]ation|[Ss]tation|[Cc]orporation)([^ ]*?)(at)(ion)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+
+  $NOMINALS = '(account|advance|aid|aim|alarm|answer|appeal|audition|bail|balance|bargain|bend|benefit|bet|bid|bite|blame|blunder|blur|bounce|bow|branch|break|brew|bribe|bumble|burn|buzz|call|care|challenge|change|chat|cheat|check|cheer|chew|clash|climb|cling|close|collapse|combat|comment|compromise|consent|control|count|cover|crack|crash|crawl|creak|crest|crumble|crust|cry|cut|dance|deal|debut|decrease|default|defect|design|dip|drift|drink|drive|drop|dump|ease|ebb|edge|end|escape|exit|fade|fall|favor|fear|fight|find|finish|fit|flash|flinch|flip|float|flow|focus|fold|freeze|fret|frolic|gain|gamble|glaze|glide|gnaw|grimace|guess|hang|help|hint|hit|hold|holler|homer|hum|hurt|increase|influence|joke|jump|knock|kowtow|laugh|leap|leapfrog|loan|look|mail|maneuver|manufacture|mesh|miss|moan|offer|order|overbid|override|panic|pass|pay|peak|pick|pinch|plummet|plunge|pop|pose|practice|premiere|press|profit|pull|pump|punch|push|quarrel|quote|rage|rain|rally|range|rank|reach|rebound|record|refocus|reform|renege|reply|report|resort|rest|result|retreat|return|review|ride|rise|roll|roost|row|rule|run|rush|save|scream|scurry|search|shift|shine|shiver|skid|skim|slide|slip|slog|slump|smoke|sound|spin|split|spread|stampede|start|stay|step|stop|strain|stray|strike|study|stumble|surge|sway|swell|switch|take|talk|tick|touch|trade|transfer|travel|trend|tumble|turn|twitch|use|veto|vote|wade|wail|wait|walk|want|watch|win|wonder|work|worry|yearn|yield|zoom)';
+  s/\((N)([^ ]*) $NOMINALS()()\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
 
   ######## V|B|L|G -> B:
 
@@ -387,7 +531,7 @@ while ( <> ) {
 
   ######## REPETITIVE
 
-  $NORE = '(?!ach|act|ad|alize|ap|ason|buff|buke|call|cede|cess|ceive|cite|cogni[sz]e|commend|cord|cruit|ctify|deem|duce|fer|flect|fresh|fund|fuse|gard|gister|ly|gulate|inforce|ject|late|lease|main|mark|member|mind|move|new|novate|pel|plicate|ply|port|present|prove|pulse|pute|quest|quire|sign|sist|solve|sonate|spond|store|strict|sult|sume|tain|taliate|tard|tire|tort|turn|veal|view|vise|vive|volve|ward)';
+  $NORE = '(?!ach|act|ad|alize|ap|ason|buff|buke|call|cede|cess|ceive|cite|cogni[sz]e|commend|cord|cruit|ctify|deem|duce|fer|flect|fresh|fund|fuse|gard|gist|ly|gulate|inforce|ject|late|lease|main|mark|member|mind|move|new|novate|pel|plicate|ply|port|present|prove|pulse|pute|quest|quire|sign|sist|solve|sonate|spond|st|store|strict|sult|sume|tain|taliate|tard|tire|tort|turn|veal|view|vise|vive|volve|ward)';
 
   ## re%
   s/\((B)([^ ]*) ([Rr]e)$NORE([^ ]*?)()\)/\(B\2-o\1REP%:\3\4\5|B%:re% \4\5\)/g;
