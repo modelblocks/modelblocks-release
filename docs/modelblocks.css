@@ -19,3 +19,7 @@ select[multiple] {
 #parameters{
   overflow:hidden;
 }
+
+#copier{
+  margin: 1rem auto;
+}
