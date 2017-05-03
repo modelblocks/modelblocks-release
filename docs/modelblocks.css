@@ -3,17 +3,83 @@ select[multiple] {
   max-height: 10em;
 }
 
-.paramselect{
+h2 {
+  border-bottom: 2px solid grey;
+}
+
+.targetparams{
   display: inline-block;
   vertical-align: text-top;
-  background: rgb(220,250,255);
+  background: rgb(150,240,255);
   padding: 1rem;
   margin: 1rem;
   border-radius: 1rem;
   -moz-border-radius: 1rem;
   -webkit-border-radius: 1rem;
   -ms-border-radius: 1rem;
+}
 
+.compositeparamsL1{
+  display: inline-block;
+  vertical-align: text-top;
+  background: rgb(180,230,255);
+  padding: 1rem;
+  margin: 1rem;
+  border-radius: 1rem;
+  -moz-border-radius: 1rem;
+  -webkit-border-radius: 1rem;
+  -ms-border-radius: 1rem;
+}
+
+.paramselect{
+  display: inline-block;
+  vertical-align: text-top;
+  background: rgba(255,255,255, 0.3);
+  padding: 1rem;
+  margin: 1rem;
+  border: 1px white;
+  border-radius: 1rem;
+  -moz-border-radius: 1rem;
+  -webkit-border-radius: 1rem;
+  -ms-border-radius: 1rem;
+}
+
+.targetparams, .compositeparamsL1, .paramselect{
+  border: 2px solid white;
+}
+
+.traybutton {
+  margin: 0.5rem;
+  display: inline-block;
+  vertical-align: text-top;
+}
+
+.traybutton.selected {
+  background-color: rgba(255,0,255,0.2);
+}
+
+.trashbutton {
+  display: block;
+  background-color: rgba(255,255,255,0.8);
+}
+
+.code {
+  font-family: monospace;
+  color: blue;
+}
+
+#target{
+  font-size: large;
+  color: rgb(100, 255, 100);
+  font-family: monospace;
+  font-weight: bold;
+  padding: 1rem;
+  margin: 1rem;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 1rem;
+  -moz-border-radius: 1rem;
+  -webkit-border-radius: 1rem;
+  -ms-border-radius: 1rem;
 }
 
 #parameters{
