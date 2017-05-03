@@ -1,9 +1,30 @@
+select {
+  display: none;
+}
+
+select.selected {
+  display: block;
+}
+
+label, input[type="checkbox"], form {
+  display: none;
+}
+
+label.selected, input[type="checkbox"].selected, form.selected {
+  display: inline-block;
+}
+
+label {
+  padding-left: 1rem;
+}
+
 select[multiple] {
   height: auto;
   max-height: 10em;
 }
 
 h2 {
+  margin-top: 1rem;
   border-bottom: 2px solid grey;
 }
 
@@ -55,7 +76,7 @@ h2 {
 }
 
 .traybutton.selected {
-  background-color: rgba(255,0,255,0.2);
+  background-color: rgba(0,200,255,0.2);
 }
 
 .trashbutton {
