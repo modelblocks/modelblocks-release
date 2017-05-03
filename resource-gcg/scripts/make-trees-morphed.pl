@@ -6,6 +6,9 @@ while ( <> ) {
   ## remove old -lI tag
   s/-lI//g;
 
+  ## lowercase all words -- U (uppercase) category in gcg16 lets us reconstruct capitalization for proper names if we want it
+  s/ ((?!-)[^\(\)]*)\)/ \L\1\E\)/g;
+
   ######## N -> N:
 
   #### irregular nouns:
@@ -193,7 +196,7 @@ while ( <> ) {
   ## %ument|%ue (argue)
   s/\((N)([^ ]*) ([^ ]*?[Aa]rg)(u)(ment)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
   ## %ment|% (improve)
-  s/\((N)([^ ]*) ([^ ]*?(?:[Aa]bate|djust|gree|rm|urtail|evelop|iscern|ngage|nroll|overn|mprove|nfringe|nvest|ove|nforce|lace|etire|ettle|tate))()(ment)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  s/\((N)([^ ]*) ([^ ]*?(?:[Aa]bate|ieve|ise|unce|ange|djust|gree|rm|etter|ppoint|urtail|evelop|iscern|mploy|ngage|nroll|arass|mprove|nfringe|ndict|nstall|nvest|agage|ove|pay|ocure|ish|nforce|equire|lace|etire|ettle|tate|ship|reat))()(ment)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
 
   ## %ttal|%t (qcquit)
   s/\((N)([^ ]*) ([^ ]*?cqui)(t)(tal)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
@@ -223,8 +226,8 @@ while ( <> ) {
 
   ## %lution|%lve (evolve,solve)
   s/\((N)([^ ]*) ([^ ]*?(?:[Ssv]o))(l)(ution)\)/\(B\2-o\1%\4\5|B%\4ve \3\4ve\)/g;
-  ## %[st]ion|%d (extend,intend)
-  s/\((N)([^ ]*) ([^ ]*?(?:inten|exten))()([st]ion)\)/\(B\2-o\1%\4\5|B%\4d \3\4d\)/g;
+  ## %[st]ion|%d (attend,expand,extend,intend,suspend)
+  s/\((N)([^ ]*) ([^ ]*?(?:atten|expan|exten|inten|suspen))()([st]ion)\)/\(B\2-o\1%\4\5|B%\4d \3\4d\)/g;
   ## %etition|%ete (competition)
   s/\((N)([^ ]*) ([^ ]*?(?:omp))(et)(ition)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
   ## %ddition|%dd (addition)
@@ -233,26 +236,44 @@ while ( <> ) {
   s/\((N)([^ ]*) ([^ ]*?b)(li)(cation)\)/\(B\2-o\1%\4\5|B%\4sh \3\4sh\)/g;
   ## %eption|%eive (conceive,perceive)
   s/\((N)([^ ]*) ([^ ]*?[^x]c)(e)(ption)\)/\(B\2-o\1%\4\5|B%\4ive \3\4ive\)/g;
+  ## %umption|%ume (assume,consume)
+  s/\((N)([^ ]*) ([^ ]*?s)(um)(ption)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
   ## %ention|%ene (convene,intervene)
   s/\((N)([^ ]*) ([^ ]*?erv)(en)(tion)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %faction|%fy (satisfaction)
+  s/\((N)([^ ]*) ([^ ]*?)(f)(action)\)/\(B\2-o\1%\4\5|B%\4y \3\4y\)/g;
   ## %tion|%t (contract)
-  s/\((N)([^ ]*) (?![Ss]ection)([^ ]*?(?:trac|bor|eac|ec|ep|dic|ven|ruc))(t)(ion)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  s/\((N)([^ ]*) (?![Ss]ection|[Ff]raction)([^ ]*?(?:ac|ibi|bor|eac|ec|ep|ic|ser|ven|ruc|up))(t)(ion)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
   ## %cession|%cede (concede,recede)
   s/\((N)([^ ]*) ([^ ]*?(?:))(ce)(ssion)\)/\(B\2-o\1%\4\5|B%\4de \3\4de\)/g;
-  ## %ssion|%ss (profess)
-  s/\((N)([^ ]*) ([^ ]*?(?:fe|re))(ss)(ion)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %ssion|%ss (discuss,obsess,profess,possess)
+  s/\((N)([^ ]*) ([^ ]*?(?:bse|fe|re|scu|sse))(ss)(ion)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
   ## %ration|%er (administer,register)
   s/\((N)([^ ]*) ([^ ]*?(?:ist))()(ration)\)/\(B\2-o\1%\4\5|B%\4er \3\4er\)/g;
-  ## %ission|%it (emit,omit)
-  s/\((N)([^ ]*) ([^ ]*?(?:[EeOo]m))(i)(ssion)\)/\(B\2-o\1%\4\5|B%\4t \3\4t\)/g;
-  ## %sion|%de (evade)
-  s/\((N)([^ ]*) ([^ ]*?(?:ivi|clu|ro|va))()(sion)\)/\(B\2-o\1%\4\5|B%\4de \3\4de\)/g;
+  ## %ission|%it (emit,omit,permit)
+  s/\((N)([^ ]*) ([^ ]*?(?:[EeOo]m|rm))(i)(ssion)\)/\(B\2-o\1%\4\5|B%\4t \3\4t\)/g;
+  ## %ption|%be (subscribe)
+  s/\((N)([^ ]*) ([^ ]*?(?:scri))()(ption)\)/\(B\2-o\1%\4\5|B%\4be \3\4be\)/g;
+  ## %ction|%ce (introduce,produce,reduce)
+  s/\((N)([^ ]*) ([^ ]*?(?:du))(c)(tion)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %sion|%de (decide,explode,evade,provide,persuade)
+  s/\((N)([^ ]*) ([^ ]*?(?:ci|ivi|clu|lo|ovi|ro|va|ua))()(sion)\)/\(B\2-o\1%\4\5|B%\4de \3\4de\)/g;
+  ## %mption|%em (redeem)
+  s/\((N)([^ ]*) ([^ ]*?(?:rede))()(mption)\)/\(B\2-o\1%\4\5|B%\4em \3\4em\)/g;
+  ## %llion|%l (rebel)
+  s/\((N)([^ ]*) ([^ ]*?(?:rebe))(l)(lion)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
+  ## %sition|%re (acquire)
+  s/\((N)([^ ]*) ([^ ]*?(?:acqui))()(sition)\)/\(B\2-o\1%\4\5|B%\4re \3\4re\)/g;
+  ## %sition|%se (oppose)
+  s/\((N)([^ ]*) ([^ ]*?(?:oppo))(s)(ition)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
   ## %sion|%se (fuse,revise)
   s/\((N)([^ ]*) ([^ ]*?(?:fu|evi))(s)(ion)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %nition|%nize (recognize)
+  s/\((N)([^ ]*) ([^ ]*?(?:ecog))(ni)(tion)\)/\(B\2-o\1%\4\5|B%\4ze \3\4ze\)/g;
   ## %ication|%y (apply,classify,imply,multiply)
   s/\((N)([^ ]*) ([^ ]*?(?:if|mpl|tipl|ppl|pl))()(ication)\)/\(B\2-o\1%\4\5|B%\4y \3\4y\)/g;
-  ## %[ou]tion|%[ou]te (emote,pollute)
-  s/\((N)([^ ]*) ([^ ]*?(?:oll|[Ee]m))([ou]t)(ion)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
+  ## %[ou]tion|%[ou]te (contribute,distribute,emote,pollute,promote,prosecute)
+  s/\((N)([^ ]*) ([^ ]*?(?:c|[Ee]m|ib|om|oll))([ou]t)(ion)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
   ## %lsion|%lse (convulse)
   s/\((N)([^ ]*) ([^ ]*?(?:u))(ls)(ion)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
   ## %inition|%ine (define,refine)
@@ -266,7 +287,7 @@ while ( <> ) {
   ## ation|%ate (satiate)
   s/\((N)([^ ]*) (?![Cc]onstellation|[Nn]ation|[Ss]tation|[Cc]orporation)([^ ]*?)(at)(ion)\)/\(B\2-o\1%\4\5|B%\4e \3\4e\)/g;
 
-  $NOMINALS = '(account|advance|aid|aim|alarm|answer|appeal|audition|bail|balance|bargain|bend|benefit|bet|bid|bite|blame|blunder|blur|bounce|bow|branch|break|brew|bribe|bumble|burn|buzz|call|care|challenge|change|chat|cheat|check|cheer|chew|clash|climb|cling|close|collapse|combat|comment|compromise|consent|control|count|cover|crack|crash|crawl|creak|crest|crumble|crust|cry|cut|dance|deal|debut|decrease|default|defect|design|dip|drift|drink|drive|drop|dump|ease|ebb|edge|end|escape|exit|fade|fall|favor|fear|fight|find|finish|fit|flash|flinch|flip|float|flow|focus|fold|freeze|fret|frolic|gain|gamble|glaze|glide|gnaw|grimace|guess|hang|help|hint|hit|hold|holler|homer|hum|hurt|increase|influence|joke|jump|knock|kowtow|laugh|leap|leapfrog|loan|look|mail|maneuver|manufacture|mesh|miss|moan|offer|order|overbid|override|panic|pass|pay|peak|pick|pinch|plummet|plunge|pop|pose|practice|premiere|press|profit|pull|pump|punch|push|quarrel|quote|rage|rain|rally|range|rank|reach|rebound|record|refocus|reform|renege|reply|report|resort|rest|result|retreat|return|review|ride|rise|roll|roost|row|rule|run|rush|save|scream|scurry|search|shift|shine|shiver|skid|skim|slide|slip|slog|slump|smoke|sound|spin|split|spread|stampede|start|stay|step|stop|strain|stray|strike|study|stumble|surge|sway|swell|switch|take|talk|tick|touch|trade|transfer|travel|trend|tumble|turn|twitch|use|veto|vote|wade|wail|wait|walk|want|watch|win|wonder|work|worry|yearn|yield|zoom)';
+  $NOMINALS = '(account|advance|aid|aim|alarm|answer|appeal|audition|bail|balance|bargain|bend|benefit|bet|bid|bite|blame|blunder|blur|bounce|bow|branch|break|brew|bribe|bumble|burn|buzz|call|care|challenge|change|chat|cheat|check|cheer|chew|clash|climb|cling|close|collapse|combat|comment|compromise|consent|control|count|cover|crack|crash|crawl|creak|crest|crumble|crust|cry|cut|dance|deal|debut|decrease|default|defect|design|dip|drift|drink|drive|drop|dump|ease|ebb|edge|end|escape|exit|fade|fall|favor|fear|fight|find|finish|fit|flash|flinch|flip|float|flow|focus|fold|freeze|fret|frolic|gain|gamble|glaze|glide|gnaw|grimace|guess|hang|help|hint|hit|hold|holler|homer|hum|hurt|increase|influence|joke|jump|knock|kowtow|laugh|leap|leapfrog|loan|look|mail|maneuver|manufacture|mesh|miss|moan|offer|order|overbid|override|panic|pass|pay|peak|pick|pinch|plummet|plunge|pop|pose|practice|premiere|press|profit|pull|pump|punch|push|quarrel|quote|rage|rain|rally|range|rank|reach|rebound|record|refocus|reform|renege|reply|report|resort|rest|result|retreat|return|review|ride|rise|roll|roost|row|rule|run|rush|sanction|save|scream|scurry|search|shift|shine|shiver|skid|skim|slide|slip|slog|slump|smoke|sound|spin|split|spread|stampede|start|stay|step|stop|strain|stray|strike|study|stumble|surge|sway|swell|switch|take|talk|tick|touch|trade|transfer|travel|trend|tumble|turn|twitch|use|veto|vote|wade|wail|wait|walk|want|watch|win|wonder|work|worry|yearn|yield|zoom)';
   s/\((N)([^ ]*) $NOMINALS()()\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/g;
 
   ######## V|B|L|G -> B:
@@ -531,7 +552,7 @@ while ( <> ) {
 
   ######## REPETITIVE
 
-  $NORE = '(?!ach|act|ad|alize|ap|ason|buff|buke|call|cede|cess|ceive|cite|cogni[sz]e|commend|cord|cruit|ctify|deem|duce|fer|flect|fresh|fund|fuse|gard|gist|ly|gulate|inforce|ject|late|lease|main|mark|member|mind|move|new|novate|pel|plicate|ply|port|present|prove|pulse|pute|quest|quire|sign|sist|solve|sonate|spond|st|store|strict|sult|sume|tain|taliate|tard|tire|tort|turn|veal|view|vise|vive|volve|ward)';
+  $NORE = '(?!ach|act|ad|alize|ap|ason|bel|buff|buke|call|cede|cess|ceive|cite|cogni[sz]e|commend|cord|cruit|ctify|deem|duce|fer|flect|fresh|fund|fuse|gard|gist|ly|gulate|inforce|ject|late|lease|main|mark|member|mind|move|new|novate|pel|plicate|ply|port|present|prove|pulse|pute|quest|quire|sign|sist|solve|sonate|spond|st|store|strict|sult|sume|tain|taliate|tard|tire|tort|turn|veal|view|vise|vive|volve|ward)';
 
   ## re%
   s/\((B)([^ ]*) ([Rr]e)$NORE([^ ]*?)()\)/\(B\2-o\1REP%:\3\4\5|B%:re% \4\5\)/g;
