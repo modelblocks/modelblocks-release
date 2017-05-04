@@ -58,3 +58,12 @@ pdf: paper_draft.pdf
 
 clean:
 	+rm -fv *.{dvi,ps,aux,log,bbl,blg,synctex.gz} *~ \#*
+
+########################################
+#
+#  ModelBlocks Assistant
+#
+########################################
+
+yaml2json:
+	python generateJsonData.py

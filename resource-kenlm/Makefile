@@ -137,6 +137,12 @@ $(CONFIGDIR)/user-kenlm-directory.txt | genmodel
 	$< -a 64 -q 8 -b 8 -T kenlmtmp -S 1G trie $(word 2,$^) $@
 	rm -rf kenlmtmp
 
+def ParamVal :=
+KENLM:
+  kernel: NgramModel
+  text: KENLM
+  value: kenlm
+endef
 .PRECIOUS: %.kenlm.ngram.itemmeasures
 %.kenlm.ngram.itemmeasures: $(KENLMDIR)/bin/query \
 $$(basename %).lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \

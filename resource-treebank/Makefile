@@ -89,7 +89,13 @@ $(CONFIGDIR)/user-treebank-directory.txt | genmodel
 
 genmodel/brownTRAIN.linetrees: $(foreach sect,$(BROWNTRAINSECTS),genmodel/brown$(sect).linetrees) | genmodel
 	cat $^ > $@
-  
+
+def ParamVal :=
+WSJ23:
+  kernel: TextCorpus
+  text: Wall Street Journal test set (section 23)
+  value: wsj23
+endef
 genmodel/wsj%.linetrees: $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/wsj/$$* \
 $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
 	cat $(word 2,$^)/*.mrg | perl $(word 3,$^) > $@
@@ -97,6 +103,12 @@ $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
 %/wsj02to21.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,%/wsj$(sect).linetrees)
 	cat $^ > $@
 
+def ParamVal :=
+WSJ02to21:
+  kernel: TextCorpus
+  text: Wall Street Journal training set (sections 2-21)
+  value: wsj02to21
+endef
 genmodel/swbd%.linetrees: $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/swbd/$$* \
 $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
 	cat $(word 2, $^)/*.mrg | perl $(word 3, $^) | awk '/^\s*\(/' > $@

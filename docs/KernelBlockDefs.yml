@@ -1,0 +1,142 @@
+fMRIColumns:
+  blocktitle: fMRI Column File
+  paramtype: text
+  paramval:
+  - text: Basename of file containing columns to convolve for fMRI analysis
+    value: ''
+BaselineFormula:
+  blocktitle: LME Baseline Formula
+  paramtype: Text
+  paramval:
+  - text: Basename of LME formula file
+    value: ''
+BeamSize:
+  blocktitle: BeamSize
+  paramtype: Integer
+  paramval:
+  - descr: ''
+    text: Beam Size
+    value: +b
+C:
+  blocktitle: C
+  paramtype: Boolean
+  paramval:
+  - descr: ''
+    text: Output complexity metrics
+    value: +c
+Corpus:
+  blocktitle: Corpus
+  paramtype: Dropdown
+Decoupled:
+  blocktitle: Decoupled
+  paramtype: Boolean
+  paramval:
+  - text: Decoupled
+    value: decoupled
+RTCorpus:
+  blocktitle: Reading Time Corpus
+  instance_of: Corpus
+  paramtype: Dropdown
+ETCorpus:
+  blocktitle: Eye-Tracking Corpus
+  instance_of: RTCorpus
+  paramtype: Dropdown
+First:
+  blocktitle: First
+  paramtype: Integer
+  paramval:
+  - after: true
+    descr: ''
+    text: First (n)
+    value: first
+GCGSpec:
+  blocktitle: GCG
+  paramtype: Dropdown
+Grammar:
+  blocktitle: Grammar
+  paramtype: Dropdown
+LMEArgs:
+  blocktitle: LME command-line arguments
+  paramtype: Text
+  paramval:
+  - descr: Run bare MB/resource-lmefit/scripts/evmeasures2lmefit.r for documentation
+    text: Underscore-delimited command-line args to the LME regression
+    value: ''
+Last:
+  blocktitle: Last
+  paramtype: Integer
+  paramval:
+  - after: true
+    descr: ''
+    text: Last (n)
+    value: last
+Maxwords:
+  blocktitle: Maxwords
+  paramtype: Integer
+  paramval:
+  - after: true
+    descr: ''
+    text: Maxwords (n)
+    value: maxwords
+ModelOpt:
+  blocktitle: Model Options
+  paramtype: Dropdown
+  nargs: '*'
+NgramIZ:
+  blocktitle: N-gram IZ
+  nargs: '?'
+  paramtype: Boolean
+  paramval:
+  - text: Add item/zone fields (used only for Natural Stories)
+    value: iz
+NgramModel:
+  blocktitle: N-gram model
+  paramtype: Dropdown
+NgramOrder:
+  blocktitle: N-gram order
+  paramtype: Integer
+  paramval:
+  - text: N-gram order
+    value: ''
+Onward:
+  blocktitle: Onward
+  paramtype: Integer
+  paramval:
+  - after: true
+    descr: ''
+    text: Onward (n)
+    value: onward
+Parser:
+  blocktitle: Parser
+  paramtype: Dropdown
+ParserParams:
+  blocktitle: Parser Parameters
+  paramtype: Text
+  paramval:
+  - text: Underscore-delimited command-line arguments to the parser
+    value: ''
+SPRCorpus:
+  blocktitle: SPR Corpus
+  instance_of: RTCorpus
+  paramtype: Dropdown
+SplitMerge:
+  blocktitle: SplitMerge
+  nodelimiter: true
+  paramtype: Integer
+  paramval:
+  - after: true
+    descr: ''
+    text: Split Merge Iterations
+    value: sm
+TextCorpus:
+  blocktitle: Text Corpus
+  instance_of: Corpus
+  paramtype: Dropdown
+TreeOpt:
+  blocktitle: Tree Options
+  nargs: '*'
+  paramtype: Dropdown
+fMRICorpus:
+  blocktitle: fMRIi Corpus
+  instance_of: Corpus
+  paramtype: Dropdown

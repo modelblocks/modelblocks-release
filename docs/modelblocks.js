@@ -285,6 +285,7 @@ function addVal(p, k) {
       KernelBlockDefs[k].paramval[p] = ParamVal[p];
     }
   }
+  console.log(KernelBlockDefs[k]);
 }
 
 for (var p in ParamVal) {
@@ -375,9 +376,11 @@ function buildParamUI(paramtype,
         for (var i in cascade) {
           var c = KernelBlockDefs[cascade[i]];
           if (c.nodelimiter) {
-            var delim = '';
+            var od = innerdelim;
+            var id = '';
           } else {
-            var delim = innerdelim;
+            var od = outerdelim;
+            var id = innerdelim;
           }
           var new_param = buildParamUI(c.paramtype,
                                        c.paramval,
@@ -385,8 +388,8 @@ function buildParamUI(paramtype,
                                        displayspan,
                                        new_val,
                                        nargs,
-                                       delim,
-                                       '');
+                                       od,
+                                       id);
           new_val.data('cascade').push(new_param);
           param.data('cascade').push(new_param);
         }
@@ -422,11 +425,12 @@ function buildParamUI(paramtype,
         var cascade = [].concat(paramval[v].cascade);
         new_val.data('cascade', []);
         for (var i in cascade) {
-          var c = KernelBlockDefs[cascade[i]];
           if (c.nodelimiter) {
-            var delim = '';
+            var od = innerdelim;
+            var id = '';
           } else {
-            var delim = innerdelim;
+            var od = outerdelim;
+            var id = innerdelim;
           }
           var new_param = buildParamUI(c.paramtype,
                                        c.paramval,
@@ -434,8 +438,8 @@ function buildParamUI(paramtype,
                                        newdisplayspan,
                                        new_val,
                                        nargs,
-                                       delim,
-                                       '');
+                                       od,
+                                       id);
           new_val.data('cascade').push(new_param);
           param.data('cascade').push(new_param);
         }
@@ -459,9 +463,14 @@ function buildParamUI(paramtype,
         }
       })
     });
-   } else if (paramtype == 'Boolean') {
-    var param = $('<input type="checkbox" id="' + paramval[0].value + '" value="' + paramval[0].value + '">');
-    var label = $('<label for="' + paramval[0].value + '">' + paramval[0].text + '</label>');
+  } else if (paramtype == 'Boolean') {
+    id = '';
+    if (ancestor != null) {
+      id += ancestor.attr('value');
+    }
+    id += paramval[0].value;
+    var param = $('<input type="checkbox" id="' + id + '" value="' + paramval[0].value + '">');
+    var label = $('<label for="' + id + '">' + paramval[0].text + '</label>');
     if (ancestor == null) {
       param.addClass('selected');
       label.addClass('selected');
@@ -499,11 +508,10 @@ function buildParamUI(paramtype,
       if (!(nargs == '*' || nargs == '?') || val != '') {
         if (val != '') {
           if (paramval[0].after) {
-            new_text = val + outerdelim + paramval[0].value;
+            new_text = outerdelim + val + innerdelim + paramval[0].value;
           } else {
-            new_text = paramval[0].value + outerdelim + val;
+            new_text = outerdelim + paramval[0].value + innerdelim + val;
           }
-          new_text = outerdelim+new_text;
         }
         else {
           new_text = '';
@@ -597,6 +605,7 @@ function clearWorkspace() {
 $('div#target').append('make ');
 
 buildAddButtons(TargetBlockDefs);
+
 
 $('button#copier').click(function() {copyToClipboard(target);})
 $('button#clear').click(clearWorkspace)

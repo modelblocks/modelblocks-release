@@ -45,6 +45,13 @@
 #
 ################################################################################
 
+def ParamVal :=
+NaturalStories:
+  kernel: SPRCorpus
+  text: Natural Stories (self-paced reading corpus)
+  value: naturalstories
+endef
+
 .SUFFIXES:
 .SECONDEXPANSION:
 

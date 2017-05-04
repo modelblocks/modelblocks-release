@@ -44,6 +44,33 @@ all:  wsj23-comparativized-gcg15-nofail.wsj02to21-comparativized-gcg15-1671-5sm.
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.morphed.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  %.linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
+
+def ParamVal :=
+GCG:
+  cascade:
+  - GCGSpec
+  - Decoupled
+  descr: ''
+  kernel: Grammar
+  text: Generalized Categorial Grammar (GCG)
+  value: gcg
+GCG13:
+  kernel: GCGSpec
+  text: 2013 spec
+  value: '13'
+GCG14:
+  kernel: GCGSpec
+  text: 2013 spec
+  value: '13'
+GCG15:
+  kernel: GCGSpec
+  text: 2013 spec
+  value: '13'
+GCG16:
+  kernel: GCGSpec
+  text: 2013 spec
+  value: '13'
+endef
 ### THIS HAPPENS ALL THE TIME; JUST CREATE MAKE ITEM IF YOU NEED IT
 # .PRECIOUS: %.linetrees
 #%.linetrees:  $(GCG-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
@@ -65,6 +92,12 @@ all:  wsj23-comparativized-gcg15-nofail.wsj02to21-comparativized-gcg15-1671-5sm.
 %.bd.linetrees:  %.linetrees  $(GCG-SCRIPTS)/annotateDepth.py
 	cat $<  |  python3 $(word 2,$^)  >  $@
 
+def ParamVal :=
+FG:
+  kernel: ModelOpt
+  text: Filler-gap transform (inserts stack elements for long-distance dependencies)
+  value: fg
+endef
 #### apply filler-gap transform
 %.fg.linetrees:  %.linetrees  $(GCG-SCRIPTS)/annotateFGTrans.pl
 	cat $<  |  perl $(word 2,$^)  >  $@

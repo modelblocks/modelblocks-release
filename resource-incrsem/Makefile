@@ -324,6 +324,15 @@ FmodelLabelIndexUnked.pkl: $(INCRSEM-SCRIPTS)/getFlabelIndex.py genmodel/simplew
 %semproc-py-parsed.output:  $(INCRSEM-SCRIPTS)/semproc.py  $$(basename %).linetoks  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*)))).semprocmodel
 	cat $(word 2,$^)  |  python $(word 1,$^) $(word 3,$^)  >  $@
 
+def ParamVal :=
+Synproc:
+  cascade:
+  - C
+  - BeamSize
+  kernel: Parser
+  text: Incremental syntactic processing parser (synproc)
+  value: synproc
+endef
 .PRECIOUS: %parsed.tokdecs
 %parsed.tokdecs:  bin/$$(subst .,,$$(suffix $$(basename $$(subst +,-,$$(subst -,.,$$*))))) \
                   $$(basename %).linetoks \

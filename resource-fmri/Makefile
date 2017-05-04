@@ -55,6 +55,14 @@ endif
 #
 ################################################################################
 
+def KernelBlockDefs :=
+fMRIColumns:
+  blocktitle: fMRI Column File
+  paramtype: text
+  paramval:
+  - text: Basename of file containing columns to convolve for fMRI analysis
+    value: ''
+endef
 %.hrf.itemmeasures: $$(basename %).t.itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py scripts/$$(subst .,,$$(suffix $$*)).pred_list.txt
 	python $(word 2, $^) $(word 1, $^) --start $(SAMPLE-START) --predictors $(shell cat $(word 3, $^)) > $@
 

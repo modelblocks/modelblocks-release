@@ -1,0 +1,69 @@
+LMEFitfMRI:
+  blockseq:
+  - blocktype: fMRIDataParams
+    kwargs:
+      innerdelim: .
+  - blocktype: String
+    value: .
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: .
+  - blocktype: LMEArgs
+  blocktitle: fMRI LME Fit
+  targetsuffix: .lmefit
+LMEFitRT:
+  blockseq:
+  - blocktype: RTDataParams
+    kwargs:
+      innerdelim: .
+  - blocktype: String
+    value: .
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: .
+  - blocktype: LMEArgs
+  blocktitle: Reading Time LME Fit
+  targetsuffix: .lmefit
+Linetoks:
+  blockseq:
+  - blocktype: Corpus
+  - blocktype: TreeOpt
+    kwargs:
+      innerdelim: .
+  blocktitle: Linetoks
+  targetsuffix: .linetoks
+Linetrees:
+  blockseq:
+  - blocktype: Corpus
+  - blocktype: TreeOpt
+    kwargs:
+      innerdelim: .
+  blocktitle: Linetrees
+  targetsuffix: .linetrees
+ParseLinetrees:
+  blockseq:
+  - blocktype: Corpus
+    kwargs:
+      instancename: Test
+  - blocktype: String
+    value: .
+  - blocktype: ParseParams
+    kwargs:
+      innerdelim: '-'
+  blocktitle: Parse (Linetrees)
+  targetsuffix: _parsed.linetrees
+RTCoreEvmeasures:
+  blockseq:
+  - blocktype: RTDataParams
+    kwargs:
+      innerdelim: .
+  blocktitle: Reading Time Data
+  targetsuffix: .core.evmeasures
+Tokdeps:
+  blockseq:
+  - blocktype: Corpus
+  - blocktype: TreeOpt
+    kwargs:
+      innerdelim: .
+  blocktitle: Tokdeps
+  targetsuffix: .tokdeps

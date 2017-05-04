@@ -115,6 +115,13 @@ $(BERKPARSEDIR)/berkeleyParser.jar  |  bin  #$$(abspath $$(dir $$@))
 # Should these really be precious?
 .PRECIOUS: %sm.gr
 ## no validation -- external jarfile
+def ParamVal :=
+SM:
+  cascade: SplitMerge
+  kernel: ModelOpt
+  text: Split-merge iterations
+  value: ''
+endef
 %sm.gr:  $(CONFIGDIR)/user-javaflags.txt  $(CONFIGDIR)/user-berkeleyparserjar-directory.txt  \
 $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees
 	java  $(shell cat $(word 1,$^))  -cp $(word 3,$^)  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 4,$^)  -treebank SINGLEFILE  -out $@

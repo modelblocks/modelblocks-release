@@ -45,6 +45,15 @@
 #
 ################################################################################
 
+def ParamVal :=
+UCL:
+  kernel:
+  - ETCorpus
+  - SPRCorpus
+  text: UCL (eye-tracking)
+  value: ucl
+endef
+
 .SUFFIXES:
 .SECONDEXPANSION:
 
