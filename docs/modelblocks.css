@@ -57,7 +57,7 @@ h2 {
 }
 
 .paramselect{
-  display: none;
+  display: inline-block;
   vertical-align: text-top;
   background: rgba(255,255,255, 0.3);
   padding: 1rem;
@@ -67,18 +67,6 @@ h2 {
   -moz-border-radius: 1rem;
   -webkit-border-radius: 1rem;
   -ms-border-radius: 1rem;
-}
-
-.paramselect.selected {
-  display: inline-block;
-}
-
-span.targetspan {
-  display: none;
-}
-
-span.targetspan.selected {
-  display: inline-block;
 }
 
 .targetparams, .compositeparamsL1, .paramselect{
