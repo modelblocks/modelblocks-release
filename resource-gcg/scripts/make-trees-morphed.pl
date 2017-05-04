@@ -81,7 +81,7 @@ while ( <> ) {
   ## %r comparatives
   s/\((A)([^ ]*) (?![Gg]reater|[Uu]nderwater|[Ww]einer)([^ ]*?(?:os|in|arg|at|pl))(e)(r)\)/\(\1\2-o\1%\4\5|A%\4 \3\4\)/g;
   ## %er comparatives
-  s/\((A)([^ ]*) (?![Aa]fter|[Aa]nother|[Ee]ager|[Ee]ither|[^ ]*[Ee]ver|[Ff]iller|[Ff]ormer|[Ff]ourier|[Gg]ender|[Ii]nner|[^ ]*[Ll]uster|[^ ]*[Oo]ther|[Oo]uter|[^ ]*[Oo]ver|[Oo]rder|[Pp]er|[^ ]*[Pp]roper|[Rr]ather|[Ss]inister|[Ss]ummer|[^ ]*[Tt]ogether|[Uu]nder|[Uu]nderwater|[Uu]pper|[Ww]hether|[Cc]omputer|[Mm]eter|[Ww]einer|[Ww]inter)([^ ]*?)(er)\)/\(\1\2-o\1%\4|A% \3\)/g;
+  s/\((A)([^ ]*) (?![Aa]fter|[Aa]nother|[Ee]ager|[Nn]?[Ee]ither|[^ ]*[Ee]ver|[Ff]iller|[Ff]ormer|[Ff]ourier|[Gg]ender|[Ii]nner|[^ ]*[Ll]uster|[^ ]*[Oo]ther|[Oo]uter|[^ ]*[Oo]ver|[Oo]rder|[Pp]er|[^ ]*[Pp]roper|[Rr]ather|[Ss]inister|[Ss]ummer|[^ ]*[Tt]ogether|[Uu]nder|[Uu]nderwater|[Uu]pper|[Ww]hether|[Cc]omputer|[Mm]eter|[Ww]einer|[Ww]inter)([^ ]*?)(er)\)/\(\1\2-o\1%\4|A% \3\)/g;
 
   ######## A SUPERLATIVE -> A:
 
@@ -386,7 +386,7 @@ while ( <> ) {
   ## lead/plead/mislead
   s/\(([BVLG])([^ %]*) ((?:mis)?[Pp]?[Ll]e)(ad|ads|d|ading)\)/\(B\2-o\1%le\4|B%lead \3ad\)/g;
   ## leap/outleap
-  s/\(([BVLG])([^ %]*) ([^ s]*?[Ll]e)(ap|aps|pt|aping)\)/\(B\2-o\1%le\4|B%leap \3ap\)/g;
+  s/\(([BVLG])([^ %]*) ([^ s]*?[Ll]ea)(p|ps|pt|ping)\)/\(B\2-o\1%lea\4|B%leap \3p\)/g;
   ## leave
   s/\(([BVLG])([^ %]*) ([Ll])(eave|eaves|eft|eaving)\)/\(B\2-o\1%l\4|B%leave \3eave\)/g;
   ## lend/send/spend
@@ -564,13 +564,13 @@ while ( <> ) {
          'balance','balloon','band','begin','benefit','bleed','blow','blur','boom','bounce','bow','branch','break','brew','buckle','budge','burn','buzz',
          'capitalize','careen','change','cheer','circulate','clash','cling','close','cohere','coincide','collapse','collect','concentrate','confer','conform','continue','contract','convert','coordinate','crack','crash','crawl','creak','crest','crumble',
          'dance','debut','decrease','default','defect','degenerate','deteriorate','develop','differentiate','diminish','dip','disappear','disarm','dissipate','dissociate','dissolve','distribute','diverge','diversify','double','dress','drift','drill','drive',
-         'ease','ebb','economize','edge','embark','emerge','end','engage','enroll','erode','erupt','evaporate','evolve','expand','explode','extend',
+         'ease','ebb','economize','embark','emerge','end','engage','enroll','erode','erupt','evaporate','evolve','expand','explode','extend',
          'fade','fail','fester','finish','fire','firm','fit','flash','flatten','flinch','flip','float','flow','fly','focus','fold','form','formulate','freeze',
          'gather','glaze','glide','group','grow',
-         'hang','head','hold','hum','hurt',
+         'hang','hurt',
          'improve','inch','increase','inflate','integrate','intensify','invest',
          'kowtow',
-         'land','leap','leapfrog','level','light','liquify','liquidate','lodge',
+         'land','leapfrog','level','light','liquify','liquidate','lodge',
          'maneuver','materialize','mature','melt','merge','mesh','migrate','militate','mobilize','move',
          'nosedive',
          'operate','order','originate',
