@@ -5,12 +5,12 @@
 /////////////////////////////////////
 
 (function( func ) {
-    $.fn.addClass = function() { // replace the existing function on $.fn
-        func.apply( this, arguments ); // invoke the original function
-        this.trigger('classChanged'); // trigger the custom event
-        return this; // retain jQuery chainability
+    $.fn.addClass = function() {
+        func.apply( this, arguments );
+        this.trigger('classChanged');
+        return this;
     }
-})($.fn.addClass); // pass the original function as an argument
+})($.fn.addClass);
 
 (function( func ) {
     $.fn.removeClass = function() {
@@ -31,7 +31,14 @@ $.fn.hasAttr = function(name) {
 //
 /////////////////////////////////////
 
-function createBlockKernelClass(blocktitle, paramval) {
+function createBlockKernelClass(blocktype,
+                                blocktitle,
+                                paramtype,
+                                paramval,
+                                nargs,
+                                descr,
+                                instance_of) {
+
   function BlockKernel(kwargs) {
     var self = this;
     if (kwargs === undefined) {
@@ -52,48 +59,62 @@ function createBlockKernelClass(blocktitle, paramval) {
     } else {
       self.descr = kwargs.descr;
     }
-    if (kwargs.required === undefined) {
-      self.required = true;
+    if (kwargs.innerdelim === undefined) {
+      self.innerdelim = '';
     } else {
-      self.required = kwargs.required;
+      self.innerdelim = kwargs.innerdelim;
     }
-    if (kwargs.delim === undefined) {
-      self.delim = '';
+    if (kwargs.outerdelim === undefined) {
+      self.outerdelim = '';
     } else {
-      self.delim = kwargs.delim;
+      self.outerdelim = kwargs.outerdelim;
     }
-    self.placeholder = '<' + blocktitle.replace(' ', '-').toUpperCase() + '>';
-    self.blocktype = blocktitle.replace(' ','');
+
+    self.blocktype = blocktype;
+    self.blocktitle = blocktitle;
+    self.paramtype = paramtype;
+    self.paramval = paramval;
+    self.nargs = nargs;
+    self.descr = descr;
+    
+    self.placeholder = '<' + self.blocktitle.replace(/ /g, '-').toUpperCase() + '>';
     self.displayspan = $('<span>');
     self.defaultdisplay = $('<span class="defaultdisplay"></span>');
-    self.defaultdisplay.text(self.placeholder);
+    self.defaultdisplay.text(self.outerdelim + self.placeholder);
     self.displayspan.append(self.defaultdisplay);
+    if (self.nargs == '*' || self.nargs == '?') {
+      self.hideDefault();
+    }
     self.showingplaceholder = true;
+    
     self.paramcontainer = $('<div class="paramselect"></div>');
     if (self.instancename != '') {
-      self.paramcontainer.append('<h4>' + self.instancename + ' ' + blocktitle + '</h4>');
+      self.paramcontainer.append('<h4>' + self.instancename + ' ' + self.blocktitle + '</h4>');
     } else {
-      self.paramcontainer.append('<h4>' + blocktitle + '</h4>');
+      self.paramcontainer.append('<h4>' + self.blocktitle + '</h4>');
     }
-    if (self.paramval.nargs != '*') {
-      buildParamUI(self.paramval,
+    if (self.nargs != '*') {
+      buildParamUI(self.paramtype,
+                   self.paramval,
                    self.paramcontainer,
                    self.displayspan,
                    null,
-                   self.paramval.nargs,
-                   self.delim);
+                   self.nargs,
+                   self.outerdelim,
+                   self.innerdelim);
     } else {
       self.paramcontainer.append('<button class="adder">');
       self.paramcontainer.find('button').text(' Add ' + self.placeholder);
       self.paramcontainer.find('button').prepend('<i class="fa fa-plus-square" aria-hidden="true"></i>');
       self.paramcontainer.find('button').click(function() {
-        buildParamUI(self.paramval,
+        buildParamUI(self.paramtype,
+                     self.paramval,
                      self.paramcontainer,
                      self.displayspan,
                      null,
-                     self.paramval.nargs,
-                     self.delim,
-                     true);
+                     self.nargs,
+                     self.outerdelim,
+                     self.innerdelim);
         
       });
     }
@@ -117,25 +138,35 @@ function createBlockKernelClass(blocktitle, paramval) {
   return BlockKernel;
 }
 
-function createBlockCompositeClass(blocktitle, blockseq) {
+function createBlockCompositeClass(blocktype,
+                                   blocktitle,
+                                   blockseq,
+                                   descr) {
+
   function BlockComposite(kwargs) {
     var self = this;
     if (kwargs === undefined) {
-      kwargs = {};
+      var kwargs = {};
     }
     if (kwargs.instancename === undefined) {
       self.instancename = '';
     } else {
       self.instancename = kwargs.instancename;
     }
-    if (kwargs.delim === undefined) {
-      self.delim = '';
+    if (kwargs.outerdelim == null) {
+       self.outerdelim = '';
     } else {
-      self.delim = kwargs.delim;
+       self.outerdelim = kwargs.outerdelim;
     }
-    self.placeholder = '<' + blocktitle.replace(' ', '-').toUpperCase() + '>';
-    self.blocktype = blocktitle.replace(' ','');
+    if (kwargs.innerdelim == null) {
+      kwargs.innerdelim = '';
+    } else {
+      self.innerdelim = kwargs.innerdelim;
+    }
+    self.placeholder = '<' + blocktitle.replace(/ /g, '-').toUpperCase() + '>';
+    self.blocktype = blocktype;
     self.displayspan = $('<span>');
+    self.displayspan.text(self.outerdelim);
     self.defaultdisplay = $('<span class="defaultdisplay"></span>');
     self.displayspan.append(self.defaultdisplay);
     self.showingplaceholder = true;
@@ -145,16 +176,21 @@ function createBlockCompositeClass(blocktitle, blockseq) {
     } else {
       self.paramcontainer.append('<h4>' + blocktitle + '</h4>');
     }
-    
+   
     for (var i in blockseq) {
       var b = blockseq[i];
       if (b.blocktype == 'String') {
         self.displayspan.append(b.value);
       } else {
-        new_block = new Blocks[b.blocktype](b.kwargs);
-        if (i > 0) {
-          self.displayspan.append(self.delim);
+        if (b.kwargs == null) {
+          var bkwargs = {}
+        } else {
+          var bkwargs = $.extend({}, b.kwargs);
         }
+        if (i > 0) {
+          bkwargs.outerdelim = self.innerdelim;
+        }
+        new_block = new Blocks[b.blocktype](bkwargs);
         self.displayspan.append(new_block.displayspan);
         self.paramcontainer.append(new_block.paramcontainer);
       }
@@ -164,7 +200,12 @@ function createBlockCompositeClass(blocktitle, blockseq) {
   return BlockComposite;
 }
 
-function createBlockTargetClass(blocktitle, blocksuffix, blockseq) {
+function createBlockTargetClass(blocktype,
+                                blocktitle,
+                                blocksuffix,
+                                blockseq,
+                                descr) {
+
   function BlockTarget(kwargs) {
     var self = this;
     if (kwargs === undefined) {
@@ -175,8 +216,8 @@ function createBlockTargetClass(blocktitle, blocksuffix, blockseq) {
     } else {
       self.instancename = kwargs.instancename;
     }
-    self.placeholder = '<' + blocktitle.replace(' ', '-').toUpperCase() + '>';
-    self.blocktype = blocktitle.replace(' ','');
+    self.placeholder = '<' + blocktitle.replace(/ /g, '-').toUpperCase() + '>';
+    self.blocktype = blocktype;
     self.displayspan = $('<span>');
     self.defaultdisplay = $('<span class="defaultdisplay"></span>');
     self.displayspan.append('genmodel/');
@@ -190,7 +231,7 @@ function createBlockTargetClass(blocktitle, blocksuffix, blockseq) {
     }
     
     self.trayicon = $('<button class="traybutton selected">');
-    self.trayicon.text(blocktitle.replace(' ', '-').toUpperCase());
+    self.trayicon.text(blocktitle.replace(/ /g, '-').toUpperCase());
     self.trayicon.click(function () {
       var worksurface = $('div#worksurface');
       var tray = $('div#tray');
@@ -231,17 +272,57 @@ function createBlockTargetClass(blocktitle, blocksuffix, blockseq) {
 //
 /////////////////////////////////////
 
+
+// Add options to Kernel blocks
+function addVal(p, k) {
+  if (k != null) {
+    if (KernelBlockDefs[k].paramval != null) {
+      if (KernelBlockDefs[k].paramval[p] == null) {
+        KernelBlockDefs[k].paramval[p] = ParamVal[p];
+      }
+    } else {
+      KernelBlockDefs[k].paramval = {};
+      KernelBlockDefs[k].paramval[p] = ParamVal[p];
+    }
+  }
+}
+
+for (var p in ParamVal) {
+  var kernels = [].concat(ParamVal[p].kernel);
+  for (var k in kernels) {
+    addVal(p, kernels[k]);
+    var superblocks = [].concat(KernelBlockDefs[kernels[k]].instance_of);
+    for (var s in superblocks) {
+      addVal(p, superblocks[s]);
+    }
+  }
+}
+
+// Create classes for each block type
 Blocks = {}
-for (k in KernelBlockDefs) {
-  Blocks[k] = createBlockKernelClass(KernelBlockDefs[k].blocktitle, KernelBlockDefs[k].paramval);
+for (var k in KernelBlockDefs) {
+  Blocks[k] = createBlockKernelClass(k,
+                                     KernelBlockDefs[k].blocktitle,
+                                     KernelBlockDefs[k].paramtype,
+                                     KernelBlockDefs[k].paramval,
+                                     KernelBlockDefs[k].nargs,
+                                     KernelBlockDefs[k].descr,
+                                     KernelBlockDefs[k].instance_of);
 }
 
-for (k in CompositeBlockDefs) {
-  Blocks[k] = createBlockCompositeClass(CompositeBlockDefs[k].blocktitle, CompositeBlockDefs[k].blockseq);
+for (var k in CompositeBlockDefs) {
+  Blocks[k] = createBlockCompositeClass(k,
+                                        CompositeBlockDefs[k].blocktitle,
+                                        CompositeBlockDefs[k].blockseq,
+                                        CompositeBlockDefs[k].descr);
 }
 
-for (k in TargetBlockDefs) {
-  Blocks[k] = createBlockTargetClass(TargetBlockDefs[k].blocktitle, TargetBlockDefs[k].targetsuffix, TargetBlockDefs[k].blockseq);
+for (var k in TargetBlockDefs) {
+  Blocks[k] = createBlockTargetClass(k,
+                                     TargetBlockDefs[k].blocktitle,
+                                     TargetBlockDefs[k].targetsuffix,
+                                     TargetBlockDefs[k].blockseq,
+                                     TargetBlockDefs[k].descr);
 }
 
 /////////////////////////////////////
@@ -268,32 +349,44 @@ function copyToClipboard(element) {
   $temp.remove();
 }
 
-function buildParamUI(P, paramcontainer, displayspan, par, nargs, delim, delimfirst) {
-  if (delim == null) {
-    delim = '';
-  }
+function buildParamUI(paramtype,
+                      paramval,
+                      paramcontainer,
+                      displayspan,
+                      ancestor,
+                      nargs,
+                      outerdelim,
+                      innerdelim) {
   var newdisplayspan = $('<span>');
   displayspan.append(newdisplayspan);
-  if (P.paramtype == 'Dropdown') {
+  if (paramtype == 'Dropdown') {
     var param = $('<select><option value=""></option></select>');
     param.data('displayspan', newdisplayspan);
     param.data('cascade', []);
     paramcontainer.append(param);
-    if (par == null) {
+    if (ancestor == null) {
       param.addClass('selected');
     }
-    for (var v in P.V) {
-      var new_val = $('<option value="' + P.V[v].value + '">' + P.V[v].text + '</option>');
-      if (P.V[v].cascade != null) {
+    for (var v in paramval) {
+      var new_val = $('<option value="' + paramval[v].value + '">' + paramval[v].text + '</option>');
+      if (paramval[v].cascade != null) {
+        var cascade = [].concat(paramval[v].cascade);
         new_val.data('cascade', []);
-        for (var c in P.V[v].cascade) {
-          var new_param = buildParamUI(P.V[v].cascade[c],
+        for (var i in cascade) {
+          var c = KernelBlockDefs[cascade[i]];
+          if (c.nodelimiter) {
+            var delim = '';
+          } else {
+            var delim = innerdelim;
+          }
+          var new_param = buildParamUI(c.paramtype,
+                                       c.paramval,
                                        paramcontainer,
                                        displayspan,
                                        new_val,
                                        nargs,
                                        delim,
-                                       true);
+                                       '');
           new_val.data('cascade').push(new_param);
           param.data('cascade').push(new_param);
         }
@@ -305,32 +398,44 @@ function buildParamUI(P, paramcontainer, displayspan, par, nargs, delim, delimfi
       displayspan.find('span.defaultdisplay').text('');
       new_text = param.val();
       if (!(nargs == '*') || param.val() != '') {
-        if (delim != '' && (par != null || delimfirst)) {
-          new_text = delim + new_text;
-        }
+        new_text = outerdelim + new_text;
         updateTarget(newdisplayspan, new_text);
       } else {
         param.remove();
         newdisplayspan.remove();
       }
     });
-  } else if (P.paramtype == 'Multiselect') {
+  } else if (paramtype == 'Multiselect') {
     var param = $('<select multiple><option value=""></option></select>');
     param.data('displayspan', newdisplayspan);
     param.data('cascade', []);
     paramcontainer.append(param);
-    if (par == null) {
+    if (ancestor == null) {
       param.addClass('selected');
     }
-    for (var v in P.V) {
-      var new_val = $('<option value="' + P.V[v].value + '">' + P.V[v].text + '</option>');
+    for (var v in paramval) {
+      var new_val = $('<option value="' + paramval[v].value + '">' + paramval[v].text + '</option>');
       var newnewdisplayspan = $('<span>');
       newdisplayspan.append(newnewdisplayspan);
       new_val.data('displayspan', newnewdisplayspan);
-      if (P.V[v].cascade != null) {
+      if (paramval[v].cascade != null) {
+        var cascade = [].concat(paramval[v].cascade);
         new_val.data('cascade', []);
-        for (var c in P.V[v].cascade) {
-          var new_param = buildParamUI(P.V[v].cascade[c], paramcontainer, newdisplayspan, new_val, delim);
+        for (var i in cascade) {
+          var c = KernelBlockDefs[cascade[i]];
+          if (c.nodelimiter) {
+            var delim = '';
+          } else {
+            var delim = innerdelim;
+          }
+          var new_param = buildParamUI(c.paramtype,
+                                       c.paramval,
+                                       paramcontainer,
+                                       newdisplayspan,
+                                       new_val,
+                                       nargs,
+                                       delim,
+                                       '');
           new_val.data('cascade').push(new_param);
           param.data('cascade').push(new_param);
         }
@@ -348,18 +453,16 @@ function buildParamUI(P, paramcontainer, displayspan, par, nargs, delim, delimfi
       });
       param.find(':selected').each(function() {
         var new_text = $(this).attr('value');
-        if (delim != '') {
-          new_text = delim + new_text;
-        }
+        new_text = outerdelim + new_text;
         if ($(this).data('displayspan') != null) {
           $(this).data('displayspan').text(new_text);
         }
       })
     });
-   } else if (P.paramtype == 'Boolean') {
-    var param = $('<input type="checkbox" id="' + P.V[0].value + '" value="' + P.V[0].value + '">');
-    var label = $('<label for="' + P.V[0].value + '">' + P.V[0].text + '</label>');
-    if (par == null) {
+   } else if (paramtype == 'Boolean') {
+    var param = $('<input type="checkbox" id="' + paramval[0].value + '" value="' + paramval[0].value + '">');
+    var label = $('<label for="' + paramval[0].value + '">' + paramval[0].text + '</label>');
+    if (ancestor == null) {
       param.addClass('selected');
       label.addClass('selected');
     }
@@ -376,18 +479,15 @@ function buildParamUI(P, paramcontainer, displayspan, par, nargs, delim, delimfi
       processCascade(param);
       displayspan.find('span.defaultdisplay').text('');
       if (param.is(':checked')) {
-        new_text = P.V[0].value;
-        if (delim != '' && (par != null || delimfirst)) {
-          new_text = delim + new_text;
-        }
+        var new_text = outerdelim + paramval[0].value;
       } else {
-        new_text = '';
+        var new_text = '';
       }
       updateTarget(newdisplayspan, new_text);
     });
-  } else if (P.paramtype == 'Integer' || P.paramtype == 'Text') {
-    var param = $('<form><b>' + P.V[0].text + ': </b><input type="text" id="' + P.V[0].value + '" value=""><input type="submit"></form>');
-    if (par == null) {
+  } else if (paramtype == 'Integer' || paramtype == 'Text') {
+    var param = $('<form><b>' + paramval[0].text + ': </b><input type="text" id="' + paramval[0].value + '" value=""><input type="submit"></form>');
+    if (ancestor == null) {
       param.addClass('selected');
     }
     paramcontainer.append(param);
@@ -396,16 +496,14 @@ function buildParamUI(P, paramcontainer, displayspan, par, nargs, delim, delimfi
       processCascade(param);
       displayspan.find('span.defaultdisplay').text('');
       var val = param.find('input[type="text"]').val();
-      if (!(nargs == '*') || val != '') {
+      if (!(nargs == '*' || nargs == '?') || val != '') {
         if (val != '') {
-          if (P.V[0].after) {
-            new_text = val + delim + P.V[0].value;
+          if (paramval[0].after) {
+            new_text = val + outerdelim + paramval[0].value;
           } else {
-            new_text = P.V[0].value + delim + val;
+            new_text = paramval[0].value + outerdelim + val;
           }
-          if (delim != null && (par != null || delimfirst)) {
-            new_text = delim+new_text;
-          }
+          new_text = outerdelim+new_text;
         }
         else {
           new_text = '';

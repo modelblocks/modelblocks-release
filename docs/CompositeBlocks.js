@@ -15,32 +15,24 @@ CompositeBlockDefs = {
         }
       },
       {
-        blocktype: 'String',
-        value: '-'
-      },
-      {
-        blocktype: 'Grammar',
+        blocktype: 'Grammar'
       },
       {
         blocktype: 'TreeOpt',
         kwargs: {
-          delim: '-'
+          innerdelim: '-'
         }
       },
       {
         blocktype: 'ModelOpt',
         kwargs: {
-          delim: '-'
+          innerdelim: '-'
         }
-      },
-      {
-        blocktype: 'String',
-        value: '-'
       },
       {
         blocktype: 'Parser',
         kwargs: {
-          delim: '_'
+          innerdelim: '_'
         }
       }
     ]
@@ -69,23 +61,16 @@ CompositeBlockDefs = {
         }
       },
       {
-        blocktype: 'String',
-        value: '.'
-      },
-      {
         blocktype: 'ParseParams',
         kwargs: {
-          instancename: 'Surprisal Metrics'
+          instancename: 'Surprisal Metrics',
+          innerdelim: '-'
         }
-      },
-      {
-        blocktype: 'String',
-        value: '.'
       },
       {
         blocktype: 'NgramParams',
         kwargs: {
-          delim: '-'
+          innerdelim: '-'
         }
       }
     ]

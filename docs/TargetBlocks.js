@@ -15,7 +15,7 @@ TargetBlockDefs = {
       {
         blocktype: 'TreeOpt',
         kwargs: {
-          delim: '.'
+          innerdelim: '.'
         }
       }
     ]
@@ -30,7 +30,7 @@ TargetBlockDefs = {
       {
         blocktype: 'TreeOpt',
         kwargs: {
-          delim: '.'
+          innerdelim: '.'
         }
       }
     ]
@@ -51,6 +51,9 @@ TargetBlockDefs = {
       },
       {
         blocktype: 'ParseParams',
+        kwargs: {
+          innerdelim: '-'
+        }
       }
     ]
   },
@@ -60,6 +63,9 @@ TargetBlockDefs = {
     blockseq: [
       {
         blocktype: 'RTDataParams',
+        kwargs: {
+          innerdelim: '.'
+        }
       }
     ]
   },
@@ -69,6 +75,9 @@ TargetBlockDefs = {
     blockseq: [
       {
         blocktype: 'RTDataParams',
+        kwargs: {
+          innerdelim: '.'
+        }
       },
       {
         blocktype: 'String',
@@ -96,7 +105,7 @@ TargetBlockDefs = {
       {
         blocktype: 'TreeOpt',
         kwargs: {
-          delim: '.'
+          innerdelim: '.'
         }
       }
     ]

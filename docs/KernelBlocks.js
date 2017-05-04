@@ -23,7 +23,7 @@ KernelBlockDefs = {
   },
   TreeOpt: {
     blocktitle: 'Tree Options',
-    paramval: ParamVal.TreeOpt
+    paramval: ParamVal.TreeOpt,
   },
   NgramOrder: {
     blocktitle: 'N-gram Order',
@@ -35,7 +35,7 @@ KernelBlockDefs = {
   },
   NgramIZ: {
     blocktitle: 'N-gram IZ',
-    paramval: ParamVal.NgramIZ
+    paramval: ParamVal.NgramIZ,
   },
   BaselineFormula: {
     blocktitle: 'LME Baseline formula file',
