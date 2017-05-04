@@ -530,12 +530,12 @@ while ( <> ) {
   s/\(([BVLG])([^ %]*) ([^ ]*?(?:gaug|iec|oic|[nrs]c|[st]uad|(?<= )guid|af|ieg|[dlr]g|[bcdfgkptyz]l|ym|sum|[ct]ap|hop|[^s]ip|yp|uar|uir|sur|[aeiou]{2}s(?<!vous|bias)|ens|abus|ccus|mus|[Cc]reat|rmeat|[isu]at|uot|eav|iev|[aeo]lv|[ae]iv|rv|u|(?<= )ow|[es]iz|eez|ooz|yz))(e|es|ed|ing)\)/\(B\2-o\1%\4|B%e \3e\)/g;
 
   ## X* -- regular no e, with complex vowel or complex consonant
-  s/\(([BVLG])([^ %]*) ([^ ]*?[aeiou]{2,}[bcdfghjklmnpqrstvwxyz](?<!oed))(|s|ed|ing)\)/\(B\2-o\1%\4|B% \3\)/g;
-  s/\(([BVLG])([^ %]*) ([^ ]*?[bcdfghjklmnpqrstvwxyz][bcdfghjklmnpqrtvwxyz](?<![aeiu]ng|.bl))(|s|ed|ing)\)/\(B\2-o\1%\4|B% \3\)/g;
+  s/\(([BVLG])([^ %]*) ([^() ]*?[aeiou]{2,}[bcdfghjklmnpqrstvwxyz](?<!oed))(|s|ed|ing)\)/\(B\2-o\1%\4|B% \3\)/g;
+  s/\(([BVLG])([^ %]*) ([^() ]*?[bcdfghjklmnpqrstvwxyz][bcdfghjklmnpqrtvwxyz](?<![aeiu]ng|.bl))(|s|ed|ing)\)/\(B\2-o\1%\4|B% \3\)/g;
 
   ## X* -- regular no e, which would otherwise end in single vowel single consonant
-  s/\(([BVLG])([^ %]*) ([^ ]*?(?:log|[dnt]al|el|devil|eril|.[^r]lop|..sip|....[sd]on|.[dhkpst]en|[^r]ven|...[st]om|[ct]hor|..[bdhkmnptvw]er|ffer|nger|swer|censor|o[ln]or|a[bjv]or|rror|[fgkrv]et|osit|[ai]bit|erit|imit|mbast))(|s|ed|ing)\)/\(B\2-o\1%\4|B% \3\)/g;
-  s/\(([BVLG])([^ %]*) ([^ ]*?(?:hbor|(?<= )ping|mme.|gge.|cke.|icit|i[rv]al|ns..|amid|ofit|-bus|iphon|ilor|umpet|isit))(|s|ed|ing)\)/\(B\2-o\1%\4|B% \3\)/g;
+  s/\(([BVLG])([^ %]*) ([^() ]*?(?:log|[dnt]al|el|devil|eril|.[^r]lop|..sip|....[sd]on|.[dhkpst]en|[^r]ven|...[st]om|[ct]hor|..[bdhkmnptvw]er|ffer|nger|swer|censor|o[ln]or|a[bjv]or|rror|[fgkrv]et|osit|[ai]bit|erit|imit|mbast))(|s|ed|ing)\)/\(B\2-o\1%\4|B% \3\)/g;
+  s/\(([BVLG])([^ %]*) ([^() ]*?(?:hbor|(?<= )ping|mme.|gge.|cke.|icit|i[rv]al|ns..|amid|ofit|-bus|iphon|ilor|umpet|isit))(|s|ed|ing)\)/\(B\2-o\1%\4|B% \3\)/g;
 
   #### long + consonant + e regular
   ## X*e (e|es|ed|ing)
@@ -583,7 +583,7 @@ while ( <> ) {
          'vacillate','vary','venture','volunteer',
          'wade','walk','wane','wedge','widen','wind','withdraw','work','worry','worsen','zoom');
   foreach $c (@CI) {
-    s/\((B-aN)-bN([^ ]*) ($c)\)/\(\1\2-oBCAU%\3|B%$c $c\)/g;
+    s/\((B-aN)-bN([^ ]*) ($c)\)/\(\1\2-oB%\3|BCAU%$c $c\)/g;
   }
 
   ##         sign type    causative     inchoative    bstative  astative
@@ -609,33 +609,33 @@ while ( <> ) {
            [ '-aN',      'warm',       'warm',       '',       'warm'    ],
            [ '-aN',      'wet',        '',           '',       'wet'     ]);
   for( $i=0; $i<scalar(@CISA); $i++ ) {
-    if( length($CISA[$i][1])>0 && length($CISA[$i][2])>0 ) { s/\(B($CISA[$i][0])-bN([^ ]*) ($CISA[$i][1])\)/\(B\1\2-oBCAU%\3|B%$CISA[$i][2] $CISA[$i][2]\)/g; }
-    if( length($CISA[$i][2])>0 && length($CISA[$i][3])>0 ) { s/\(B($CISA[$i][0])([^ ]*) ($CISA[$i][2])\)/\(B\1\2-oBINC%\3|B%$CISA[$i][3] $CISA[$i][3]\)/g; }
+    if( length($CISA[$i][1])>0 && length($CISA[$i][2])>0 ) { s/\(B($CISA[$i][0])-bN([^ ]*) ($CISA[$i][1])\)/\(B\1\2-oB%\3|BCAU%$CISA[$i][2] $CISA[$i][2]\)/g; }
+    if( length($CISA[$i][2])>0 && length($CISA[$i][3])>0 ) { s/\(B($CISA[$i][0])([^ ]*) ($CISA[$i][2])\)/\(B\1\2-oB%\3|BINC%$CISA[$i][3] $CISA[$i][3]\)/g; }
     if( length($CISA[$i][3])>0 && length($CISA[$i][4])>0 ) { s/\(B($CISA[$i][0])([^ ]*) ($CISA[$i][3])\)/\(A\1\2-oB%\3|A%$CISA[$i][4] $CISA[$i][4]\)/g; }
-    if( length($CISA[$i][2])>0 && length($CISA[$i][4])>0 ) { s/\(B($CISA[$i][0])([^ ]*) ($CISA[$i][2])\)/\(A\1\2-oBINC%\3|A%$CISA[$i][4] $CISA[$i][4]\)/g; }
+    if( length($CISA[$i][2])>0 && length($CISA[$i][4])>0 ) { s/\(B($CISA[$i][0])([^ ]*) ($CISA[$i][2])\)/\(A\1\2-oB%\3|AINC%$CISA[$i][4] $CISA[$i][4]\)/g; }
   }
 
   ## %en cau -> inc
-  s/\((B)-aN-bN([^ ]*) (?!threaten)([^ ]*?en)\)/\(B-aN\2-o\1CAU%|B% \3\)/g;
+  s/\((B)-aN-bN([^ ]*) (?!threaten)([^ ]*?en)\)/\(B-aN\2-o\1%|BCAU% \3\)/g;
 
   ## %ize
-#  s/\((B)([^ ]*) ([^ ]*?)(ize)\)/\(A\2-o\1INC%\4|A% \3\)/g;
+#  s/\((B)([^ ]*) ([^ ]*?)(ize)\)/\(A\2-o\1%\4|AINC% \3\)/g;
   ## %engthen
-  s/\((B)([^ ]*) ([^ ]*?)()(engthen)\)/\(A\2-o\1INC%\4\5|A%\4ong \3\4ong\)/g;
+  s/\((B)([^ ]*) ([^ ]*?)()(engthen)\)/\(A\2-o\1%\4\5|AINC%\4ong \3\4ong\)/g;
   ## %ipen
-  s/\((B)([^ ]*) ([^ ]*?ip)(e)(n)\)/\(A\2-o\1INC%\4\5|A%\4 \3\4\)/g;
+  s/\((B)([^ ]*) ([^ ]*?ip)(e)(n)\)/\(A\2-o\1%\4\5|AINC%\4 \3\4\)/g;
   ## %dden
-  s/\((B)([^ ]*) ([^ ]*?)(d)(den)\)/\(A\2-o\1INC%\4\5|A%\4 \3\4\)/g;
+  s/\((B)([^ ]*) ([^ ]*?)(d)(den)\)/\(A\2-o\1%\4\5|AINC%\4 \3\4\)/g;
   ## %tten
-  s/\((B)([^ ]*) ([^ ]*?)(t)(ten)\)/\(A\2-o\1INC%\4\5|A%\4 \3\4\)/g;
+  s/\((B)([^ ]*) ([^ ]*?)(t)(ten)\)/\(A\2-o\1%\4\5|AINC%\4 \3\4\)/g;
   ## %en
-  s/\((B)([^ ]*) (?![^ ]*open|threaten|happen)([^ ]*?)(en)\)/\(A\2-o\1INC%\4|A% \3\)/g;
+  s/\((B)([^ ]*) (?![^ ]*open|threaten|happen)([^ ]*?)(en)\)/\(A\2-o\1%\4|AINC% \3\)/g;
 
   ######## CLEANUP
 
   ## convert lemma w tag -o back to observed form w tag -x, working bottom-up
-  while( s/\((.)([^ ]*)-o(.)([^% ]*)%:([^% ]*)%([^\| ]*)\|(.)%:([^% ]*)%([^- ]*)(-[^ ]*?)? \8([^\)]*)\9\)/\(\3\2-x\3\4%:\5%\6\|\7%:\8%\9\10 \5\11\6\)/g ||
-         s/\((.)([^ ]*)-o(.)([^% ]*)%([^\| ]*)\|(.)%([^- ]*)(-[^ ]*?)? ([^\)]*)\7\)/\(\3\2-x\3\4%\5\|\6%\7\8 \9\5\)/g ) { }
+  while( s/\((.)([^ ]*)-o(.)([^% ]*)%:([^% ]*)%([^\| ]*)\|([^% ]*)%:([^% ]*)%([^- ]*)(-[^ ]*?)? \8([^\)]*)\9\)/\(\3\2-x\3\4%:\5%\6\|\7%:\8%\9\10 \5\11\6\)/g ||
+         s/\((.)([^ ]*)-o(.)([^% ]*)%([^\| ]*)\|([^% ]*)%([^- ]*)(-[^ ]*?)? ([^\)]*)\7\)/\(\3\2-x\3\4%\5\|\6%\7\8 \9\5\)/g ) { }
 
   #### remove -x tag
   s/\(([BVLGAR][^ ]*)-x-([^\(\)]*)\)/\(\1-\2\)/g;
