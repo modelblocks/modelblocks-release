@@ -42,7 +42,7 @@ s/(\S+:)(\S+)/\1\L\2/g;
 ########## MORPH NORMALIZATION (ASSUMES "MORPHED" LINETREES)
 
 # use stem form from morphed.linetrees...
-s/,0,.(\S*)-x.%(\S*)\|(.)%(\S*)(:\S*)\L\2 /,0,\3\1\5\4 /g;
+while( s/,0,.(\S*?)-x.%(\S*)\|([^% ]*)%([^-: ]*)([^: ]*):(\S*)\L\2 /,0,\3\1\5:\6\4 /g ) { }
 #### s/,0,[VBLG](\S+)-xX\S*\*(\S*)\*(\S*)(:\S*)\L\3 /,0,B\1\4\2 /g;
 #### s/,0,N(\S*)-xX\S*\*(\S*)\*(\S*)(:\S*)\L\3 /,0,N\1\4\2 /g;
 

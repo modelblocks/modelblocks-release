@@ -548,14 +548,14 @@ while ( <> ) {
   ######## NEGATIVE FOR VERBS
 
   ## un%
-  s/\((B)([^ ]*) ([Uu]n)$NOTUN([^ ]*?)()\)/\(\1\2-o\1NEG%:\3\4\5|\1%:un% \4\5\)/g;
+  s/\((B)([^ ]*) ([Uu]n)$NOTUN([^ ]*?)()\)/\(\1\2-o\1%:un%|\1NEG%:% \4\5\)/g;
 
   ######## REPETITIVE
 
   $NORE = '(?!ach|act|ad|alize|ap|ason|bel|buff|buke|call|cede|cess|ceive|cite|cogni[sz]e|commend|cord|cruit|ctify|deem|duce|fer|flect|fresh|fund|fuse|gard|gist|ly|gulate|inforce|ject|late|lease|main|mark|member|mind|move|new|novate|pel|plicate|ply|port|present|prove|pulse|pute|quest|quire|sign|sist|solve|sonate|spond|st|store|strict|sult|sume|tain|taliate|tard|tire|tort|turn|veal|view|vise|vive|volve|ward)';
 
   ## re%
-  s/\((B)([^ ]*) ([Rr]e)$NORE([^ ]*?)()\)/\(B\2-o\1REP%:\3\4\5|B%:re% \4\5\)/g;
+  s/\((B)([^ ]*) ([Rr]e-?)$NORE([^ ]*?)()\)/\(B\2-o\1%:re%|BREP%:% \4\5\)/g;
 
   ######## CAUSAL, INCHOATIVE, STATIVE
 
@@ -583,7 +583,7 @@ while ( <> ) {
          'vacillate','vary','venture','volunteer',
          'wade','walk','wane','wedge','widen','wind','withdraw','work','worry','worsen','zoom');
   foreach $c (@CI) {
-    s/\((B-aN)-bN([^ ]*) ($c)\)/\(\1\2-oB%\3|BCAU%$c $c\)/g;
+    s/\((B-aN)-bN([^ ]*) ($c)\)/\(\1\2-oB%|BCAU% $c\)/g;
   }
 
   ##         sign type    causative     inchoative    bstative  astative
@@ -634,7 +634,7 @@ while ( <> ) {
   ######## CLEANUP
 
   ## convert lemma w tag -o back to observed form w tag -x, working bottom-up
-  while( s/\((.)([^ ]*)-o(.)([^% ]*)%:([^% ]*)%([^\| ]*)\|([^% ]*)%:([^% ]*)%([^- ]*)(-[^ ]*?)? \8([^\)]*)\9\)/\(\3\2-x\3\4%:\5%\6\|\7%:\8%\9\10 \5\11\6\)/g ||
+  while( s/\((.)([^ ]*)-o(.)([^% ]*)%:([^% ]*)%([^\| ]*)\|([^% ]*)%:([^% ]*)%([^- ]*)(-[^ ]*?)? \8([^\)]*)\9\)/\($3$2-x$3$4%:$5%$6\|$7%:$8%$9$10 $5$11$6\)/g ||
          s/\((.)([^ ]*)-o(.)([^% ]*)%([^\| ]*)\|([^% ]*)%([^- ]*)(-[^ ]*?)? ([^\)]*)\7\)/\(\3\2-x\3\4%\5\|\6%\7\8 \9\5\)/g ) { }
 
   #### remove -x tag
