@@ -10,12 +10,16 @@ label, input[type="checkbox"], form {
   display: none;
 }
 
-label.selected, input[type="checkbox"].selected, form.selected {
+label.selected, input[type="checkbox"].selected {
   display: inline-block;
 }
 
+form.selected {
+  display: block;
+}
+
 label {
-  padding-left: 1rem;
+  padding: 0 1rem;
 }
 
 select[multiple] {
@@ -69,8 +73,12 @@ h2 {
   border: 2px solid white;
 }
 
-.traybutton {
+button {
   margin: 0.5rem;
+  background-color: rgba(255,255,255,0.8);
+}
+
+.traybutton {
   display: inline-block;
   vertical-align: text-top;
 }
@@ -81,7 +89,6 @@ h2 {
 
 .trashbutton {
   display: block;
-  background-color: rgba(255,255,255,0.8);
 }
 
 .code {

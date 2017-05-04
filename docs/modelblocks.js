@@ -83,7 +83,6 @@ function createBlockKernelClass(blocktitle, paramval) {
                    self.paramval.nargs,
                    self.delim);
     } else {
-      console.log(self.placeholder);
       self.paramcontainer.append('<button class="adder">');
       self.paramcontainer.find('button').text(' Add ' + self.placeholder);
       self.paramcontainer.find('button').prepend('<i class="fa fa-plus-square" aria-hidden="true"></i>');
@@ -118,7 +117,161 @@ function createBlockKernelClass(blocktitle, paramval) {
   return BlockKernel;
 }
 
+function createBlockCompositeClass(blocktitle, blockseq) {
+  function BlockComposite(kwargs) {
+    var self = this;
+    if (kwargs === undefined) {
+      kwargs = {};
+    }
+    if (kwargs.instancename === undefined) {
+      self.instancename = '';
+    } else {
+      self.instancename = kwargs.instancename;
+    }
+    if (kwargs.delim === undefined) {
+      self.delim = '';
+    } else {
+      self.delim = kwargs.delim;
+    }
+    self.placeholder = '<' + blocktitle.replace(' ', '-').toUpperCase() + '>';
+    self.blocktype = blocktitle.replace(' ','');
+    self.displayspan = $('<span>');
+    self.defaultdisplay = $('<span class="defaultdisplay"></span>');
+    self.displayspan.append(self.defaultdisplay);
+    self.showingplaceholder = true;
+    self.paramcontainer = $('<div class="paramselect"></div>');
+    if (self.instancename != '') {
+      self.paramcontainer.append('<h4>' + self.instancename + ' ' + blocktitle + '</h4>');
+    } else {
+      self.paramcontainer.append('<h4>' + blocktitle + '</h4>');
+    }
+    
+    for (var i in blockseq) {
+      var b = blockseq[i];
+      if (b.blocktype == 'String') {
+        self.displayspan.append(b.value);
+      } else {
+        new_block = new Blocks[b.blocktype](b.kwargs);
+        if (i > 0) {
+          self.displayspan.append(self.delim);
+        }
+        self.displayspan.append(new_block.displayspan);
+        self.paramcontainer.append(new_block.paramcontainer);
+      }
+    }
+  }
+
+  return BlockComposite;
+}
+
+function createBlockTargetClass(blocktitle, blocksuffix, blockseq) {
+  function BlockTarget(kwargs) {
+    var self = this;
+    if (kwargs === undefined) {
+      kwargs = {};
+    }
+    if (kwargs.instancename === undefined) {
+      self.instancename = '';
+    } else {
+      self.instancename = kwargs.instancename;
+    }
+    self.placeholder = '<' + blocktitle.replace(' ', '-').toUpperCase() + '>';
+    self.blocktype = blocktitle.replace(' ','');
+    self.displayspan = $('<span>');
+    self.defaultdisplay = $('<span class="defaultdisplay"></span>');
+    self.displayspan.append('genmodel/');
+    self.displayspan.append(self.defaultdisplay);
+    self.showingplaceholder = true;
+    self.paramcontainer = $('<div class="targetparams"></div>');
+    if (self.instancename != '') {
+      self.paramcontainer.append('<h4>' + self.instancename + ' ' + blocktitle + ' (<span class="code">&#37;' + blocksuffix + '</span>)</h4>');
+    } else {
+      self.paramcontainer.append('<h4>' + blocktitle + ' (<span class="code">&#37;' + blocksuffix + '</span>)</h4>');
+    }
+    
+    self.trayicon = $('<button class="traybutton selected">');
+    self.trayicon.text(blocktitle.replace(' ', '-').toUpperCase());
+    self.trayicon.click(function () {
+      var worksurface = $('div#worksurface');
+      var tray = $('div#tray');
+      tray.find('button').removeClass('selected');
+      $(this).addClass('selected');
+      worksurface.find('div.targetparams').detach();
+      worksurface.append(self.paramcontainer);
+    });
+    self.deleter = $('<button class="trashbutton"><i class="fa fa-trash" aria-hidden="true"></i>DELETE</button>');
+    self.paramcontainer.append(self.deleter)
+    self.deleter.click(function() {
+      self.displayspan.remove();
+      self.trayicon.remove();
+      self.paramcontainer.remove();
+      self.deleter.remove();
+      $('div#tray').children().last().click();
+    });
+
+    for (var i in blockseq) {
+      var b = blockseq[i];
+      if (b.blocktype == 'String') {
+        self.displayspan.append(b.value);
+      } else {
+        new_block = new Blocks[b.blocktype](b.kwargs);
+        self.displayspan.append(new_block.displayspan);
+        self.paramcontainer.append(new_block.paramcontainer);
+      }
+    }
+    self.displayspan.append(blocksuffix + ' ');
+  }
+
+  return BlockTarget;
+}
+
+/////////////////////////////////////
+//
+//  POPULATE BLOCKS
+//
+/////////////////////////////////////
+
+Blocks = {}
+for (k in KernelBlockDefs) {
+  Blocks[k] = createBlockKernelClass(KernelBlockDefs[k].blocktitle, KernelBlockDefs[k].paramval);
+}
+
+for (k in CompositeBlockDefs) {
+  Blocks[k] = createBlockCompositeClass(CompositeBlockDefs[k].blocktitle, CompositeBlockDefs[k].blockseq);
+}
+
+for (k in TargetBlockDefs) {
+  Blocks[k] = createBlockTargetClass(TargetBlockDefs[k].blocktitle, TargetBlockDefs[k].targetsuffix, TargetBlockDefs[k].blockseq);
+}
+
+/////////////////////////////////////
+//
+// UTILITY FUNCTIONS 
+//
+/////////////////////////////////////
+
+function updateTarget(div, newtext) {
+  div.text(newtext);
+}
+
+function getValString(select, delim='') {
+  var vals = []
+  select.find(':selected').each(function() {text = $(this).text(); if (text != '') {vals.push(delim + $(this).attr('value'));}})
+  return vals.join('')
+}
+
+function copyToClipboard(element) {
+  var $temp = $("<input>");
+  $("body").append($temp);
+  $temp.val($(element).text()).select();
+  document.execCommand("copy");
+  $temp.remove();
+}
+
 function buildParamUI(P, paramcontainer, displayspan, par, nargs, delim, delimfirst) {
+  if (delim == null) {
+    delim = '';
+  }
   var newdisplayspan = $('<span>');
   displayspan.append(newdisplayspan);
   if (P.paramtype == 'Dropdown') {
@@ -148,11 +301,11 @@ function buildParamUI(P, paramcontainer, displayspan, par, nargs, delim, delimfi
       param.append(new_val);
     }
     param.change(function() {
-      processCascade(param)
+      processCascade(param);
       displayspan.find('span.defaultdisplay').text('');
       new_text = param.val();
       if (!(nargs == '*') || param.val() != '') {
-        if (delim != null && (par != null || delimfirst)) {
+        if (delim != '' && (par != null || delimfirst)) {
           new_text = delim + new_text;
         }
         updateTarget(newdisplayspan, new_text);
@@ -195,7 +348,7 @@ function buildParamUI(P, paramcontainer, displayspan, par, nargs, delim, delimfi
       });
       param.find(':selected').each(function() {
         var new_text = $(this).attr('value');
-        if (delim != null) {
+        if (delim != '') {
           new_text = delim + new_text;
         }
         if ($(this).data('displayspan') != null) {
@@ -206,6 +359,10 @@ function buildParamUI(P, paramcontainer, displayspan, par, nargs, delim, delimfi
    } else if (P.paramtype == 'Boolean') {
     var param = $('<input type="checkbox" id="' + P.V[0].value + '" value="' + P.V[0].value + '">');
     var label = $('<label for="' + P.V[0].value + '">' + P.V[0].text + '</label>');
+    if (par == null) {
+      param.addClass('selected');
+      label.addClass('selected');
+    }
     param.on('classChanged', function() {
       if ($(this).hasClass('selected')) {
         label.addClass('selected');
@@ -220,7 +377,7 @@ function buildParamUI(P, paramcontainer, displayspan, par, nargs, delim, delimfi
       displayspan.find('span.defaultdisplay').text('');
       if (param.is(':checked')) {
         new_text = P.V[0].value;
-        if (delim != null && (par != null || delimfirst)) {
+        if (delim != '' && (par != null || delimfirst)) {
           new_text = delim + new_text;
         }
       } else {
@@ -228,28 +385,36 @@ function buildParamUI(P, paramcontainer, displayspan, par, nargs, delim, delimfi
       }
       updateTarget(newdisplayspan, new_text);
     });
-  } else if (P.paramtype == 'Integer') {
-    var param = $('<br><form><b>' + P.V[0].text + ':</b><br><input type="text" id="' + P.V[0].value + '" value=""><input type="submit"></form>');
+  } else if (P.paramtype == 'Integer' || P.paramtype == 'Text') {
+    var param = $('<form><b>' + P.V[0].text + ': </b><input type="text" id="' + P.V[0].value + '" value=""><input type="submit"></form>');
+    if (par == null) {
+      param.addClass('selected');
+    }
     paramcontainer.append(param);
     param.submit(function(event) {
       event.preventDefault();
       processCascade(param);
       displayspan.find('span.defaultdisplay').text('');
       var val = param.find('input[type="text"]').val();
-      if (val != '') {
-        if (P.V[0].after) {
-          new_text = val + P.V[0].value;
-        } else {
-          new_text = P.V[0].value + val;
+      if (!(nargs == '*') || val != '') {
+        if (val != '') {
+          if (P.V[0].after) {
+            new_text = val + delim + P.V[0].value;
+          } else {
+            new_text = P.V[0].value + delim + val;
+          }
+          if (delim != null && (par != null || delimfirst)) {
+            new_text = delim+new_text;
+          }
         }
-        if (delim != null && (par != null || delimfirst)) {
-          new_text = delim+new_text;
+        else {
+          new_text = '';
         }
+        updateTarget(newdisplayspan, new_text);
+      } else {
+        param.remove();
+        newdisplayspan.remove();
       }
-      else {
-        new_text = '';
-      }
-      updateTarget(newdisplayspan, new_text);
     });
   }
   return param;
@@ -295,485 +460,34 @@ function processCascade(param, multi) {
   }
 }
 
-function createBlockCompositeClass() {
-}
-
-/////////////////////////////////////
-//
-//  PARAMVAL DEFINITIONS
-//
-/////////////////////////////////////
-
-ParamVal = {}
-ParamVal.Corpus = {
-  paramtype: 'Dropdown',
-  nargs: 1,
-  V: {
-    alice: {
-      value: 'alice',
-      text: 'Alice in Wonderland, Chapter 1',
-      descr: '',
-    },
-    dundee: {
-      value: 'dundee',
-      text: 'Dundee (eye-tracking corpus)',
-      descr: '',
-    },
-    naturalstories: {
-      value: 'naturalstories',
-      text: 'Natural Stories (self-paced reading corpus)',
-      descr: '',
-    },
-    ucl: {
-      value: 'ucl',
-      text: 'UCL (eye-tracking)',
-      descr: '',
-    },
-    wsj02to21: {
-      value: 'wsj02to21',
-      text: 'Wall Street Journal training set (sections 2-21)',
-      descr: '',
-    },
-    wsj23: {
-      value: 'wsj23',
-      text: 'Wall Street Journal test set (section 23)',
-      descr: '',
-    }
-  }
-}
-ParamVal.GCG = {
-  paramtype: 'Dropdown',
-  nargs: 1,
-  V: {
-    16: {
-      value: '16',
-      text: '2016 spec',
-      descr: '',
-    },
-    15: {
-      value: '15',
-      text: '2015 spec',
-      descr: '',
-    },
-    14: {
-      value: '14',
-      text: '2014 spec',
-      descr: '',
-    },
-    13: {
-      value: '13',
-      text: '2013 spec',
-      descr: '',
-    }
-  }
-}
-ParamVal.Decoupled = {
-  paramtype: 'Boolean',
-  V: {
-    0: {
-      value: '-decoupled',
-      text: 'Decoupled',
-      descr: '',
-    }
-  }
-}
-ParamVal.Grammar = {
-  paramtype: 'Dropdown',
-  nargs: 1,
-  V: {
-    PTB: {
-      value: 'nodashtags',
-      text: 'Penn Treebank',
-      descr: '',
-    },
-    GCG: {
-      value: 'gcg',
-      text: 'Generalized Categorial Grammar (GCG)',
-      descr: '',
-      cascade: [ParamVal.GCG, ParamVal.Decoupled]
-    }
-  }
-}
-ParamVal.C = {
-  paramtype: 'Boolean',
-  V: {
-    0: {
-      value: '+c',
-      text: 'Output complexity metrics',
-      descr: '',
-    }
-  }
-}
-ParamVal.BeamSize = {
-  paramtype: 'Integer',
-  V: {
-    0: {
-      value: '+b',
-      text: 'Beam Size',
-      descr: '',
-    }
-  }
-}
-ParamVal.SplitMerge = {
-  paramtype: 'Integer',
-  V: {
-    0: {
-      value: 'sm',
-      text: 'Split Merge Iterations',
-      descr: '',
-      after: true
-    }
-  }
-}
-ParamVal.ModelOpt = {
-  paramtype: 'Multiselect',
-  V: {
-    FG: {
-      value: 'fg',
-      text: 'Filler-gap transform (inserts stack elements for long-distance dependencies)',
-      descr: '',
-    },
-    SM: {
-      value: '',
-      text: 'Split-merge iterations',
-      descr: '',
-      cascade: [ParamVal.SplitMerge]
-    },
-    BD: {
-      value: 'bd',
-      text: 'Annotate branching direction and depth',
-      descr: '',
-    }
-  }
-}
-ParamVal.Parser = {
-  paramtype: 'Dropdown',
-  nargs: 1,
-  V: {
-    EFABP: {
-      value: 'x+efabp-',
-      text: 'EFABP parser (van Schijndel et al (2013)',
-      descr: '',
-      cascade: [ParamVal.C, ParamVal.BeamSize]
-    },
-    fullberk: {
-      value: 'fullberk-',
-      text: 'Full Berkeley parser',
-      descr: '',
-    },
-    synproc: {
-      value: 'synproc-',
-      text: 'Incremental syntactic processing parser (synproc)',
-      descr: '',
-      cascade: [ParamVal.C, ParamVal.BeamSize]
-    },
-    vitberk: {
-      value: 'vitberk-',
-      text: 'Viterbi Berkeley parser',
-      descr: '',
-    }
-  }
-}
-ParamVal.TreeOpt = {
-  paramtype: 'Dropdown',
-  nargs: '*',
-  V: {
-    fromdeps: {
-      value: 'fromdeps',
-      text: 'Extract trees from a dependency graph',
-      descr: ''
-    },
-    nolabel: {
-      value: 'nolabel',
-      text: 'Remove non-terminal category labels',
-      descr: ''
-    },
-    nopunc: {
-      value: 'nopunc',
-      text: 'Remove punctuation',
-      descr: '',
-    },
-    nounary: {
-      value: 'nounary',
-      text: 'Remove unary branches',
-      descr: ''
-    }
-  }
-}
-
-/////////////////////////////////////
-//
-//  KERNEL BLOCK CLASS DEFINITIONS
-//
-/////////////////////////////////////
-
-KernelBlockDefs = {
-  Corpus: {
-    blocktitle: 'Corpus',
-    paramval: ParamVal.Corpus
-  },
-  Grammar: {
-    blocktitle: 'Grammar',
-    paramval: ParamVal.Grammar
-  },
-  ModelOpt: {
-    blocktitle: 'Model Options',
-    paramval: ParamVal.ModelOpt
-  },
-  Parser: {
-    blocktitle: 'Parser',
-    paramval: ParamVal.Parser
-  },
-  TreeOpt: {
-    blocktitle: 'Tree Options',
-    paramval: ParamVal.TreeOpt
-  }
-}
-
-/////////////////////////////////////
-//
-//  POPULATE BLOCKS
-//
-/////////////////////////////////////
-
-Blocks = {}
-for (k in KernelBlockDefs) {
-  Blocks[k] = createBlockKernelClass(KernelBlockDefs[k].blocktitle, KernelBlockDefs[k].paramval);
-}
-
-// TreeOpts class
-function TreeOpts(kwargs) {
-  var self = this;
-  if (kwargs === undefined) {
-    kwargs = {};
-  }
-  if (kwargs.value === undefined) {
-    self.value = null;
-  } else {
-    self.value = kwargs.value;
-  }
-  if (kwargs.instancename === undefined) {
-    self.instancename = '';
-  } else {
-    self.instancename = kwargs.instancename;
-  }
-  if (kwargs.descr === undefined) {
-    self.descr = '';
-  } else {
-    self.descr = kwargs.descr;
-  }
-  if (kwargs.required === undefined) {
-    self.required = true;
-  } else {
-    self.required = kwargs.required;
-  }
-  if (kwargs.delim === undefined) {
-    self.delim = '';
-  } else {
-    self.delim = kwargs.delim;
-  }
-  self.placeholder = '<TREE-OPTIONS>';
-  self.blocktype = 'TreeOpts';
-  if (self.value == null) {
-    self.string = self.placeholder;
-  } else {
-    self.string = self.value;
-  }
-  self.displayspan = $('<span>');
-  self.displayspan.text(self.string);
-  self.param = $('<select multiple>');
-  self.paramcontainer = $('<div class="paramselect"></div>');
-  if (self.instancename != '') {
-    self.paramcontainer.append('<h4>' + self.instancename + ' Tree Options</h4>');
-  } else {
-    self.paramcontainer.append('<h4>Tree Options</h4>');
-  }
-  self.paramcontainer.append(self.param);
-  self.param.append('<option value="none"></option>');
-  for (i in self.values) {
-    self.param.append('<option value="' + i + '">' + self.values[i] + '</option>')
-  }
-  self.param.change(
-    function () {
-      updateTarget(self.displayspan, getValString(self.param, self.delim));
-    }
-  )
-}
-
-TreeOpts.prototype.values = {
-                             'fromdeps': 'Extract trees from a dependency graph',
-                             'nolabel': 'Remove non-terminal category labels',
-                             'nopunc': 'Remove punctuation',
-                             'nounary': 'Remove unary branches'
-                            }
-
-/////////////////////////////////////
-//
-//  COMPOSITE BLOCK CLASSES
-//
-/////////////////////////////////////
-
-// ParseParams
-
-function ParseParams(kwargs) {
-  var self = this;
-  if (kwargs === undefined) {
-    kwargs = {};
-  }
-  if (kwargs.instancename === undefined) {
-    self.instancename = '';
-  } else {
-    self.instancename = kwargs.instancename;
-  }
-  self.c = new Blocks.Corpus({instancename:'Training'});
-  self.g = new Blocks.Grammar();
-  self.to = new Blocks.TreeOpt({delim: '-'});
-  self.mo = new Blocks.ModelOpt({delim: '-'});
-  self.p = new Blocks.Parser({delim: '_'});
-  self.blocktype = 'ParseParams';
-  self.displayspan = $('<span>');
-  self.displayspan.append(self.c.displayspan);
-  self.displayspan.append('-');
-  self.displayspan.append(self.g.displayspan);
-  self.displayspan.append(self.to.displayspan);
-  self.displayspan.append(self.mo.displayspan);
-  self.displayspan.append('-');
-  self.displayspan.append(self.p.displayspan);
-  self.paramcontainer = $('<div class="paramselect"></div>');
-  if (self.instancename != '') {
-    self.paramcontainer.append('<h4>' + self.instancename + ' Parser Parameters</h4>');
-  } else {
-    self.paramcontainer.append('<h4>Parser Parameters</h4>');
-  }
-  self.paramcontainer.append(self.c.paramcontainer)
-  self.paramcontainer.append(self.g.paramcontainer)
-  self.paramcontainer.append(self.to.paramcontainer)
-  self.paramcontainer.append(self.mo.paramcontainer)
-  self.paramcontainer.append(self.p.paramcontainer)
-}
-
-/////////////////////////////////////
-//
-// FINAL TARGET CLASSES 
-//
-/////////////////////////////////////
-
-// %.linetrees class
-function Linetrees(kwargs) {
-  var self = this;
-  if (kwargs === undefined) {
-    kwargs = {};
-  }
-  if (kwargs.instancename === undefined) {
-    self.instancename = '';
-  } else {
-    self.instancename = kwargs.instancename;
-  }
-  self.t = new Blocks.Corpus({instancename: 'Test'});
-  self.to = new Blocks.TreeOpt({delim: '.'});
-  self.blocktype = 'Linetrees';
-  self.displayspan = $('<span>');
-  self.displayspan.append('genmodel/');
-  self.displayspan.append(self.t.displayspan);
-  self.displayspan.append(self.to.displayspan);
-  self.displayspan.append('.linetrees ');
-  self.paramcontainer = $('<div class="targetparams"></div>');
-  if (self.instancename != '') {
-    self.paramcontainer.append('<h4>' + self.instancename + ' Linetrees Target (<span class="code">%.linetrees</span>)</h4>');
-  } else {
-    self.paramcontainer.append('<h4>Linetrees Target (<span class="code">%.linetrees</span>)</h4>');
-  }
-  self.paramcontainer.append(self.t.paramcontainer)
-  self.paramcontainer.append(self.to.paramcontainer)
-  self.trayicon = $('<button class="traybutton selected">');
-  self.trayicon.text('LINETREES');
-  self.trayicon.click(function () {
-    var worksurface = $('div#worksurface');
+function buildAddButtons(TargetBlockDefs) {
+  for (var k in TargetBlockDefs) {
+    var buttonContainer = $('div#addButtonContainer');
+    var worksurface = $('div#worksurface'); 
     var tray = $('div#tray');
-    tray.find('button').removeClass('selected');
-    $(this).addClass('selected');
-    worksurface.find('div.targetparams').detach();
-    worksurface.append(self.paramcontainer);
-  });
-  self.deleter = $('<button class="trashbutton"><i class="fa fa-trash" aria-hidden="true"></i>DELETE</button>');
-  self.paramcontainer.append(self.deleter)
-  self.deleter.click(function() {
-    self.displayspan.remove();
-    self.trayicon.remove();
-    self.paramcontainer.remove();
-    self.deleter.remove();
-  });
-}
-// %.parse.linetrees class
-function ParseLinetrees(kwargs) {
-  var self = this;
-  if (kwargs === undefined) {
-    kwargs = {};
+    var target = $('div#target');
+    var new_button = $('<button id="add' + k + '" class="traybutton"><i class="fa fa-plus-square" aria-hidden="true"></i> ' + TargetBlockDefs[k].blocktitle + '</button>');
+    new_button.data('blocktype', k);
+    buttonContainer.append(new_button);
+    new_button.click(function() {
+      var k = $(this).data('blocktype');
+      var new_targ = new Blocks[k];
+      worksurface.find('div.targetparams').detach();
+      target.append(new_targ.displayspan);
+      tray.find('button').removeClass('selected');
+      tray.append(new_targ.trayicon);
+      worksurface.append(new_targ.paramcontainer);
+    });
   }
-  if (kwargs.instancename === undefined) {
-    self.instancename = '';
-  } else {
-    self.instancename = kwargs.instancename;
-  }
-  self.t = new Blocks.Corpus({instancename: 'Test'});
-  self.pp = new ParseParams();
-  self.blocktype = 'ParseLinetrees';
-  self.displayspan = $('<span>');
-  self.displayspan.append('genmodel/');
-  self.displayspan.append(self.t.displayspan);
-  self.displayspan.append('.');
-  self.displayspan.append(self.pp.displayspan);
-  self.displayspan.append('_parsed.linetrees ');
-  self.paramcontainer = $('<div class="targetparams"></div>');
-  if (self.instancename != '') {
-    self.paramcontainer.append('<h4>' + self.instancename + ' Parse Target (<span class="code">%.parsed.linetrees</span>)</h4>');
-  } else {
-    self.paramcontainer.append('<h4>Parse Target (<span class="code">%parsed.linetrees</span>)</h4>');
-  }
-  self.paramcontainer.append(self.t.paramcontainer)
-  self.paramcontainer.append(self.pp.paramcontainer)
-  self.trayicon = $('<button class="traybutton selected">');
-  self.trayicon.text('PARSE');
-  self.trayicon.click(function () {
-    var worksurface = $('div#worksurface');
-    var tray = $('div#tray');
-    tray.find('button').removeClass('selected');
-    $(this).addClass('selected');
-    worksurface.find('div.targetparams').detach();
-    worksurface.append(self.paramcontainer);
+}
+
+function clearWorkspace() {
+  var tray = $('div#tray');
+  var worksurface = $('div#worksurface');
+  tray.find('button').each(function() {
+    $(this).click();
+    worksurface.find('div.targetparams').find('button.trashbutton').click();
   });
-  self.deleter = $('<button class="trashbutton"><i class="fa fa-trash" aria-hidden="true"></i>DELETE</button>');
-  self.paramcontainer.append(self.deleter)
-  self.deleter.click(function() {
-    self.displayspan.remove();
-    self.trayicon.remove();
-    self.paramcontainer.remove();
-    self.deleter.remove();
-  });
-}
-
-/////////////////////////////////////
-//
-// UTILITY FUNCTIONS 
-//
-/////////////////////////////////////
-
-function updateTarget(div, newtext) {
-  div.text(newtext);
-}
-
-function getValString(select, delim='') {
-  var vals = []
-  select.find(':selected').each(function() {text = $(this).text(); if (text != '') {vals.push(delim + $(this).attr('value'));}})
-  return vals.join('')
-}
-
-function copyToClipboard(element) {
-  var $temp = $("<input>");
-  $("body").append($temp);
-  $temp.val($(element).text()).select();
-  document.execCommand("copy");
-  $temp.remove();
 }
 
 /////////////////////////////////////
@@ -782,27 +496,9 @@ function copyToClipboard(element) {
 //
 /////////////////////////////////////
 
-var worksurface = $('div#worksurface'); 
-var tray = $('div#tray');
-var target = $('div#target');
-target.append('make ');
+$('div#target').append('make ');
 
-$('button#addParse').click(function() {
-  worksurface.find('div.targetparams').detach();
-  var parse = new ParseLinetrees();
-  target.append(parse.displayspan);
-  tray.find('button').removeClass('selected');
-  tray.append(parse.trayicon);
-  worksurface.append(parse.paramcontainer);
-});
-
-$('button#addLinetrees').click(function() {
-  worksurface.find('div.targetparams').detach();
-  var linetrees = new Linetrees();
-  target.append(linetrees.displayspan);
-  tray.find('button').removeClass('selected');
-  tray.append(linetrees.trayicon);
-  worksurface.append(linetrees.paramcontainer);
-});
+buildAddButtons(TargetBlockDefs);
 
 $('button#copier').click(function() {copyToClipboard(target);})
+$('button#clear').click(clearWorkspace)
