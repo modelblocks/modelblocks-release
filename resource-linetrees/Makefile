@@ -107,6 +107,7 @@ Linetrees:
   - blocktype: Corpus
   - blocktype: TreeOpt
     kwargs:
+      outerdelim: .
       innerdelim: .
   blocktitle: Linetrees
   targetsuffix: .linetrees
@@ -228,6 +229,7 @@ Linetoks:
   - blocktype: Corpus
   - blocktype: TreeOpt
     kwargs:
+      outerdelim: .
       innerdelim: .
   blocktitle: Linetoks
   targetsuffix: .linetoks
