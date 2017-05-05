@@ -12,4 +12,8 @@ for base in filebases:
     data = yaml.load(f)
   with open(base + '.js', 'wb') as f:
     f.write(base + ' = ')
-    json.dump(data, f)
+    json.dump(data,
+              f,
+              sort_keys=True,
+              indent=2,
+              separators=(',', ': '))
