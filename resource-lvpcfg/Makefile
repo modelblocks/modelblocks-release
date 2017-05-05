@@ -113,14 +113,14 @@ $(BERKPARSEDIR)/berkeleyParser.jar  |  bin  #$$(abspath $$(dir $$@))
 
 #### sm grammar using berkeley trainer
 ## no validation -- external jarfile
-def ParamVal :=
+define ParamVal :=
 SM:
   cascade: SplitMerge
   kernel: ModelOpt
   text: Split-merge iterations
   value: ''
 endef
-def KernelBlock :=
+define KernelBlock :=
 ModelOpt:
   blocktitle: Model Options
   paramtype: Dropdown

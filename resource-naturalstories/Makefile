@@ -45,7 +45,7 @@
 #
 ################################################################################
 
-def ParamVal :=
+define ParamVal :=
 NaturalStories:
   kernel: SPRCorpus
   text: Natural Stories (self-paced reading corpus)
@@ -100,7 +100,7 @@ endif
 ################################################################################
 
 # DELETE once we can move past the buggy natstories dev/test split
-def KernelBlock :=
+define KernelBlock :=
 NgramIZ:
   blocktitle: N-gram IZ
   nargs: '?'

@@ -86,7 +86,7 @@ bin/%:  $(RESOURCE-LCPARSE)/src/$$(notdir $$@).cpp  $(RESOURCE-LCPARSE)/src/$$(n
 	cat $<  |  python3 $(word 2,$^)  >  $@
 
 #### obtain branch- and depth-annotated grammar with preterm nodes generated seperately
-def ParamVal :=
+define ParamVal :=
 BD:
   kernel: ModelOpt
   text: Annotate branching direction and depth
@@ -110,7 +110,7 @@ endef
 #
 ################################################################################
 
-def ParamVal :=
+define ParamVal :=
 EFABP:
   kernel: Parser
   text: EFABP parser (van Schijndel et al (2013)
@@ -124,7 +124,7 @@ Vitberk:
   text: Viterbi Berkeley parser
   value: vitberk
 endef
-def KernelBlock :=
+define KernelBlock :=
 Grammar:
   blocktitle: Grammar
   paramtype: Dropdown
@@ -138,7 +138,7 @@ ParserParams:
   - text: Underscore-delimited command-line arguments to the parser
     value: ''
 endef
-def CompositeBlock :=
+define CompositeBlock :=
 ParseParams:
   blockseq:
   - blocktype: Corpus
@@ -155,7 +155,7 @@ ParseParams:
   - blocktype: ParserParams
   blocktitle: Parser Parameters
 endef
-def TargetBlock :=
+define TargetBlock :=
 ParseLinetrees:
   blockseq:
   - blocktype: Corpus
