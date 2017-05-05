@@ -52,7 +52,7 @@ since it is an available grammar to use (e.g. for parsing).
 To define a ParamVal in a Makefile, you need to wrap it in the following
 Make variable definition:
 
-def ParamVal :=
+def ParamVal
  ...
 endef
 
@@ -78,7 +78,7 @@ NaturalStories to the Corpus KernelBlock as a value that it can take on.
 To define a KernelBlock in a Makefile, you need to wrap it in the following
 Make variable definition:
 
-def KernelBlock :=
+def KernelBlock
  ...
 endef
 
@@ -114,7 +114,7 @@ nor can any of its descendents), otherwise ModelBlocks Assistant won't load.
 To define a CompositeBlock in a Makefile, you need to wrap it in the following
 Make variable definition:
 
-def CompositeBlock :=
+def CompositeBlock
  ...
 endef
 

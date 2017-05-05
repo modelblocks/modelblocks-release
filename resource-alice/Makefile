@@ -44,7 +44,7 @@
 #
 ################################################################################
 
-def ParamVal :=
+define ParamVal
 Alice:
   kernel: fMRICorpus
   text: Alice in Wonderland, Chapter 1

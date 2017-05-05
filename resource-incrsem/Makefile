@@ -164,7 +164,7 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 	cat $(word 1,$^)  |  grep -v '()'  |  python $(word 2,$^)  >  $@
 
 ## convert linetrees to tokdecs
-define TargetBlock :=
+define TargetBlock
 Tokdecs:
   blockseq:
   - blocktype: Corpus
@@ -335,13 +335,13 @@ FmodelLabelIndexUnked.pkl: $(INCRSEM-SCRIPTS)/getFlabelIndex.py genmodel/simplew
 %semproc-py-parsed.output:  $(INCRSEM-SCRIPTS)/semproc.py  $$(basename %).linetoks  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*)))).semprocmodel
 	cat $(word 2,$^)  |  python $(word 1,$^) $(word 3,$^)  >  $@
 
-define ParamVal :=
+define ParamVal
 Synproc:
   kernel: Parser
   text: Incremental syntactic processing parser (synproc)
   value: synproc
 endef
-define TargetBlock :=
+define TargetBlock
 ParseTokdecs:
   blockseq:
   - blocktype: Corpus

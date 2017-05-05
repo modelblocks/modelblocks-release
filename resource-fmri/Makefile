@@ -55,7 +55,7 @@ endif
 #
 ################################################################################
 
-def KernelBlock :=
+define KernelBlock
 fMRIColumns:
   blocktitle: fMRI Column File
   paramtype: Text
@@ -67,7 +67,7 @@ fMRICorpus:
   instance_of: Corpus
   paramtype: Dropdown
 endef
-def CompositeBlock :=
+define CompositeBlock
 fMRIDataParams:
   blockseq:
   - blocktype: fMRICorpus
@@ -83,7 +83,7 @@ fMRIDataParams:
     value: '.hrf'
   blocktitle: fMRI Data Parameters
 endef
-def TargetBlock :=
+define TargetBlock
 fMRICoreEvmeasures:
   blockseq:
   - blocktype: fMRIDataParams

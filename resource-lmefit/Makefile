@@ -77,7 +77,7 @@ BaselineFormula:
   - text: Basename of LME formula file
     value: ''
 endef
-define KernelBlock :=
+define KernelBlock
 LMEArgs:
   blocktitle: LME command-line arguments
   paramtype: Text
@@ -138,7 +138,7 @@ scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform
 #    genmodel/ucl.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.kenlm.fp.mem.fjprob.-NSCFf..lrtsignif
 #
 #
-define KernelBlock :=
+define KernelBlock
 LMEPredictor:
   blocktitle: LME Predictor
   paramtype: Text
@@ -152,7 +152,7 @@ LRTArgs:
   - text: 'LRT command-line arguments (currently ignored, can be blank)'
     value: ''
 endef
-define TargetBlock :=
+define TargetBlock
 RTLRTSignif:
   blocktitle: Reading Time LRT Significance Test
   targetsuffix: .lrtsignif
@@ -222,7 +222,7 @@ LMEPredictors:
   - blocktype: LMEPredictor
   - blocktype: LMEPredictor
 endef
-define TargetBlock :=
+define TargetBlock
 RTLRTDaimSignif:
   blocktitle: Diamond Reading Time LRT Significance Test
   targetsuffix: .diamond.lrtsignif

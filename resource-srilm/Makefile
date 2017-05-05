@@ -36,7 +36,7 @@
 #
 ################################################################################
 
-define ParamVal :=
+define ParamVal
 SRILM:
   kernel: NgramModel
   text: SRILM

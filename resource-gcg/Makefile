@@ -45,7 +45,7 @@ all:  wsj23-comparativized-gcg15-nofail.wsj02to21-comparativized-gcg15-1671-5sm.
 %.morphed.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  %.linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 
-define ParamVal :=
+define ParamVal
 GCG:
   cascade:
   - GCGSpec
@@ -71,7 +71,7 @@ GCG16:
   text: 2016 spec
   value: '16'
 endef
-define KernelBlock :=
+define KernelBlock
 GCGSpec:
   blocktitle: GCG
   paramtype: Dropdown
@@ -83,7 +83,7 @@ endef
 #	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
   
 #### gcg reannotation
-define ParamVal :=
+define ParamVal
 Decoupled:
   kernel:
   -  TreeOpt
@@ -91,7 +91,7 @@ Decoupled:
   text: Non-nommed trees
   value: decoupled
 endef
-define KernelBlock :=
+define KernelBlock
 Decoupled:
   blocktitle: Decoupled
   paramtype: Boolean
@@ -111,7 +111,7 @@ endef
 %.bd.linetrees:  %.linetrees  $(GCG-SCRIPTS)/annotateDepth.py
 	cat $<  |  python3 $(word 2,$^)  >  $@
 
-define ParamVal :=
+define ParamVal
 FG:
   kernel: ModelOpt
   text: Filler-gap transform (inserts stack elements for long-distance dependencies)

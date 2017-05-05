@@ -254,7 +254,7 @@ endef
 #
 ################################################################################
 
-define KernelBlock :=
+define KernelBlock
 RTCorpus:
   blocktitle: Reading Time Corpus
   instance_of: Corpus
@@ -335,7 +335,7 @@ $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r 
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
-define CompositeBlock :=
+define CompositeBlock
 RTDataParams:
   blockseq:
   - blocktype: RTCorpus
@@ -348,7 +348,7 @@ RTDataParams:
       innerdelim: '-'
   blocktitle: Reading Time Data Parameters
 endef
-define TargetBlock :=
+define TargetBlock
 RTCoreEvmeasures:
   blockseq:
   - blocktype: RTDataParams
