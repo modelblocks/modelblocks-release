@@ -254,6 +254,21 @@ endef
 #
 ################################################################################
 
+def KernelBlock :=
+RTCorpus:
+  blocktitle: Reading Time Corpus
+  instance_of: Corpus
+  paramtype: Dropdown
+ETCorpus:
+  blocktitle: Eye-Tracking Corpus
+  instance_of: RTCorpus
+  paramtype: Dropdown
+SPRCorpus:
+  blocktitle: SPR Corpus
+  instance_of: RTCorpus
+  paramtype: Dropdown
+endef
+
 genmodel/rename_cols.params: | genmodel
 	echo '' > $@
 
@@ -320,6 +335,28 @@ $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r 
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
+def CompositeBlock :=
+RTDataParams:
+  blockseq:
+  - blocktype: RTCorpus
+  - blocktype: ParseParams
+    kwargs:
+      innerdelim: '-'
+      instancename: Surprisal Metrics
+  - blocktype: NgramParams
+    kwargs:
+      innerdelim: '-'
+  blocktitle: Reading Time Data Parameters
+endef
+def TargetBlock :=
+RTCoreEvmeasures:
+  blockseq:
+  - blocktype: RTDataParams
+    kwargs:
+      innerdelim: .
+  blocktitle: Reading Time Data
+  targetsuffix: .core.evmeasures
+endef
 .PRECIOUS: %.core.evmeasures
 %.core.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
 $(RT-SCRIPTS)/merge_tables.py \

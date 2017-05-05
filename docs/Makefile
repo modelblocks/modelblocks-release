@@ -65,5 +65,6 @@ clean:
 #
 ########################################
 
-yaml2json:
+mbassist:
+	python mbDoc.py
 	python generateJsonData.py

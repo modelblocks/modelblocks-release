@@ -1,45 +1,51 @@
+NgramModel:
+  blocktitle: N-gram model
+  paramtype: Dropdown
+NgramOrder:
+  blocktitle: N-gram order
+  paramtype: Integer
+  paramval:
+  - text: N-gram order
+    value: ''
 fMRIColumns:
   blocktitle: fMRI Column File
-  paramtype: text
+  paramtype: Text
   paramval:
   - text: Basename of file containing columns to convolve for fMRI analysis
     value: ''
-BaselineFormula:
-  blocktitle: LME Baseline Formula
-  paramtype: Text
-  paramval:
-  - text: Basename of LME formula file
-    value: ''
-BeamSize:
-  blocktitle: BeamSize
-  paramtype: Integer
-  paramval:
-  - descr: ''
-    text: Beam Size
-    value: +b
-C:
-  blocktitle: C
-  paramtype: Boolean
-  paramval:
-  - descr: ''
-    text: Output complexity metrics
-    value: +c
-Corpus:
-  blocktitle: Corpus
+fMRICorpus:
+  blocktitle: fMRI Corpus
+  instance_of: Corpus
   paramtype: Dropdown
+GCGSpec:
+  blocktitle: GCG
+  paramtype: Dropdown
+  nodelimiter: true
 Decoupled:
   blocktitle: Decoupled
   paramtype: Boolean
-  paramval:
-  - text: Decoupled
-    value: decoupled
-RTCorpus:
-  blocktitle: Reading Time Corpus
-  instance_of: Corpus
+Grammar:
+  blocktitle: Grammar
   paramtype: Dropdown
-ETCorpus:
-  blocktitle: Eye-Tracking Corpus
-  instance_of: RTCorpus
+Parser:
+  blocktitle: Parser
+  paramtype: Dropdown
+ParserParams:
+  blocktitle: Parser Parameters
+  paramtype: Text
+  paramval:
+  - text: Underscore-delimited command-line arguments to the parser
+    value: ''
+Corpus:
+  blocktitle: Corpus
+  paramtype: Dropdown
+TreeOpt:
+  blocktitle: Tree Options
+  nargs: '*'
+  paramtype: Dropdown
+TextCorpus:
+  blocktitle: Text Corpus
+  instance_of: Corpus
   paramtype: Dropdown
 First:
   blocktitle: First
@@ -49,19 +55,14 @@ First:
     descr: ''
     text: First (n)
     value: first
-GCGSpec:
-  blocktitle: GCG
-  paramtype: Dropdown
-Grammar:
-  blocktitle: Grammar
-  paramtype: Dropdown
-LMEArgs:
-  blocktitle: LME command-line arguments
-  paramtype: Text
+Onward:
+  blocktitle: Onward
+  paramtype: Integer
   paramval:
-  - descr: Run bare MB/resource-lmefit/scripts/evmeasures2lmefit.r for documentation
-    text: Underscore-delimited command-line args to the LME regression
-    value: ''
+  - after: true
+    descr: ''
+    text: Onward (n)
+    value: onward
 Last:
   blocktitle: Last
   paramtype: Integer
@@ -78,47 +79,34 @@ Maxwords:
     descr: ''
     text: Maxwords (n)
     value: maxwords
+BaselineFormula:
+  blocktitle: LME Baseline Formula
+  paramtype: Text
+  paramval:
+  - text: Basename of LME formula file
+    value: ''
+LMEArgs:
+  blocktitle: LME command-line arguments
+  paramtype: Text
+  paramval:
+  - descr: Run bare MB/resource-lmefit/scripts/evmeasures2lmefit.r for documentation
+    text: Underscore-delimited command-line args to the LME regression
+LMEPredictor:
+  blocktitle: LME Predictor
+  paramtype: Text
+  paramval:
+  - text: 'Name of LME predictor column'
+    value: ''
+LRTArgs:
+  blocktitle: LRT command-line args
+  paramtype: Text
+  paramval:
+  - text: 'LRT command-line arguments (currently ignored, can be blank)'
+    value: ''
 ModelOpt:
   blocktitle: Model Options
   paramtype: Dropdown
   nargs: '*'
-NgramIZ:
-  blocktitle: N-gram IZ
-  nargs: '?'
-  paramtype: Boolean
-  paramval:
-  - text: Add item/zone fields (used only for Natural Stories)
-    value: iz
-NgramModel:
-  blocktitle: N-gram model
-  paramtype: Dropdown
-NgramOrder:
-  blocktitle: N-gram order
-  paramtype: Integer
-  paramval:
-  - text: N-gram order
-    value: ''
-Onward:
-  blocktitle: Onward
-  paramtype: Integer
-  paramval:
-  - after: true
-    descr: ''
-    text: Onward (n)
-    value: onward
-Parser:
-  blocktitle: Parser
-  paramtype: Dropdown
-ParserParams:
-  blocktitle: Parser Parameters
-  paramtype: Text
-  paramval:
-  - text: Underscore-delimited command-line arguments to the parser
-    value: ''
-SPRCorpus:
-  blocktitle: SPR Corpus
-  instance_of: RTCorpus
-  paramtype: Dropdown
 SplitMerge:
   blocktitle: SplitMerge
   nodelimiter: true
@@ -128,15 +116,22 @@ SplitMerge:
     descr: ''
     text: Split Merge Iterations
     value: sm
-TextCorpus:
-  blocktitle: Text Corpus
+NgramIZ:
+  blocktitle: N-gram IZ
+  nargs: '?'
+  paramtype: Boolean
+  paramval:
+  - text: Add item/zone fields (used only for Natural Stories)
+    value: iz
+RTCorpus:
+  blocktitle: Reading Time Corpus
   instance_of: Corpus
   paramtype: Dropdown
-TreeOpt:
-  blocktitle: Tree Options
-  nargs: '*'
+ETCorpus:
+  blocktitle: Eye-Tracking Corpus
+  instance_of: RTCorpus
   paramtype: Dropdown
-fMRICorpus:
-  blocktitle: fMRIi Corpus
-  instance_of: Corpus
+SPRCorpus:
+  blocktitle: SPR Corpus
+  instance_of: RTCorpus
   paramtype: Dropdown

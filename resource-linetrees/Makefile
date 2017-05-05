@@ -68,6 +68,29 @@ bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt 
 #
 ################################################################################
 
+def KernelBlock :=
+Corpus:
+  blocktitle: Corpus
+  paramtype: Dropdown
+TreeOpt:
+  blocktitle: Tree Options
+  nargs: '*'
+  paramtype: Dropdown
+TextCorpus:
+  blocktitle: Text Corpus
+  instance_of: Corpus
+  paramtype: Dropdown
+endef
+def TargetBlock :=
+EditableTrees:
+  blocktitle: Editable Trees
+  targetsuffix: .fromlinetrees.editabletrees
+  blockseq:
+  - blocktype: Corpus
+  - blocktype: TreeOpt
+    kwargs:
+      innerdelim: '.'
+endef
 #### obtain (flat) linetrees from (indented) editabletrees
 #%.linetrees:  %.editabletrees  $(LTREES-SCRIPTS)/editabletrees2linetrees.pl
 #	cat $<  |  perl -pe 's/^[0-9]*://'  |  perl $(word 2,$^)  >  $@
@@ -78,6 +101,16 @@ bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt 
 
 ### HAPPENS TOO MUCH; JUST CREATE MAKE ITEM IF YOU NEED IT
 ##### generalized operations on linetrees
+def TargetBlock :=
+Linetrees:
+  blockseq:
+  - blocktype: Corpus
+  - blocktype: TreeOpt
+    kwargs:
+      innerdelim: .
+  blocktitle: Linetrees
+  targetsuffix: .linetrees
+endef
 %.linetrees:  $(LTREES-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.lower.linetrees:  $(LTREES-SCRIPTS)/make-trees-lower.py  %.linetrees
@@ -94,6 +127,16 @@ First:
   text: Keep only the first n trees
   value: ''
 endef
+def KernelBlock :=
+First:
+  blocktitle: First
+  paramtype: Integer
+  paramval:
+  - after: true
+    descr: ''
+    text: First (n)
+    value: first
+endef
 %first.linetrees:  $$(basename %).linetrees
 	head -$(subst .,,$(suffix $*)) $<  >  $@
 
@@ -103,6 +146,16 @@ Onward:
   kernel: TreeOpt
   text: Discard the first n trees
   value: ''
+endef
+def KernelBlock :=
+Onward:
+  blocktitle: Onward
+  paramtype: Integer
+  paramval:
+  - after: true
+    descr: ''
+    text: Onward (n)
+    value: onward
 endef
 %onward.linetrees: $$(basename %).linetrees
 	tail -n +$(subst .,,$(suffix $*)) $<  >  $@
@@ -114,6 +167,16 @@ Last:
   text: Keep only the last n trees
   value: ''
 endef
+def KernelBlock :=
+Last:
+  blocktitle: Last
+  paramtype: Integer
+  paramval:
+  - after: true
+    descr: ''
+    text: Last (n)
+    value: last
+endef
 %last.linetrees:  $$(basename %).linetrees
 	tail -$(subst .,,$(suffix $*)) $<  >  $@
 
@@ -123,6 +186,16 @@ Maxword:
   kernel: TreeOpt
   text: Keep only trees with fewer than n words
   value: ''
+endef
+def KernelBlock :=
+Maxwords:
+  blocktitle: Maxwords
+  paramtype: Integer
+  paramval:
+  - after: true
+    descr: ''
+    text: Maxwords (n)
+    value: maxwords
 endef
 %maxwords.linetrees: $$(basename %).linetrees
 	cat $< | perl -na -e "if (split(/[\)]+/)<=1+$(subst .,,$(suffix $*))) {print $$_;}"  >  $@ 
@@ -149,6 +222,16 @@ endef
 	cat $<  |  perl -pe 's/([^\(])\-[^ \)]+ /\1 /g'  >  $@
 
 #### obtain tokenized input sentences from linetrees
+def TargetBlock :=
+Linetoks:
+  blockseq:
+  - blocktype: Corpus
+  - blocktype: TreeOpt
+    kwargs:
+      innerdelim: .
+  blocktitle: Linetoks
+  targetsuffix: .linetoks
+endef
 %.linetoks:  $(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.linetrees)))
 	cat $<  |  sed 's/(-NONE-[^)]*)//g'  \
 		|  sed 's/([^ ]* //g;s/)//g'  |  sed 's/  */ /g;s/^ *//;s/ *$$//;'  \

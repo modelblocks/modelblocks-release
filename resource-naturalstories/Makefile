@@ -100,6 +100,15 @@ endif
 ################################################################################
 
 # DELETE once we can move past the buggy natstories dev/test split
+def KernelBlock :=
+NgramIZ:
+  blocktitle: N-gram IZ
+  nargs: '?'
+  paramtype: Boolean
+  paramval:
+  - text: Add item/zone fields (used only for Natural Stories)
+    value: iz
+endef
 %.iz.ngram.itemmeasures: %.ngram.itemmeasures $(NATSTORDIR)/naturalstories_RTS/all_stories.tok \
 ../resource-rt/scripts/filter_cols.py $(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
 	paste -d' ' $< <(cat $(word 2, $^) | sed 's/\t/ /g' | python $(word 3, $^) -d -c item zone) > $@

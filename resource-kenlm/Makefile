@@ -143,6 +143,35 @@ KENLM:
   text: KENLM
   value: kenlm
 endef
+def KernelBlock :=
+NgramModel:
+  blocktitle: N-gram model
+  paramtype: Dropdown
+NgramOrder:
+  blocktitle: N-gram order
+  paramtype: Integer
+  paramval:
+  - text: N-gram order
+    value: ''
+endef
+def CompositeBlock :=
+NgramParams:
+  blockseq:
+  - blocktype: NgramOrder
+  - blocktype: NgramModel
+  - blocktype: NgramIZ
+  blocktitle: N-gram Parameters
+endef
+def TargetBlock :=
+NgramProbs:
+  blocktitle: N-gram Probabilities
+  targetsuffix: .ngram.itemmeasures
+  blockseq:
+  - blocktype: Corpus
+  - blocktype: NgramParams
+    kwargs:
+      innerdelim: '.'
+endef
 .PRECIOUS: %.kenlm.ngram.itemmeasures
 %.kenlm.ngram.itemmeasures: $(KENLMDIR)/bin/query \
 $$(basename %).lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \

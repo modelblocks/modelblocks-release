@@ -4,6 +4,20 @@ NgramParams:
   - blocktype: NgramModel
   - blocktype: NgramIZ
   blocktitle: N-gram Parameters
+fMRIDataParams:
+  blockseq:
+  - blocktype: fMRICorpus
+  - blocktype: ParseParams
+    kwargs:
+      innerdelim: '-'
+      instancename: Surprisal Metrics
+  - blocktype: NgramParams
+    kwargs:
+      innerdelim: '-'
+  - blocktype: fMRIColumns
+  - blocktype: String
+    value: '.hrf'
+  blocktitle: fMRI Data Parameters
 ParseParams:
   blockseq:
   - blocktype: Corpus
@@ -19,6 +33,11 @@ ParseParams:
   - blocktype: Parser
   - blocktype: ParserParams
   blocktitle: Parser Parameters
+LMEPredictors:
+  blocktitle: Two LME predictors (for diamond LRT signif)
+  blockseq:
+  - blocktype: LMEPredictor
+  - blocktype: LMEPredictor
 RTDataParams:
   blockseq:
   - blocktype: RTCorpus
@@ -30,17 +49,3 @@ RTDataParams:
     kwargs:
       innerdelim: '-'
   blocktitle: Reading Time Data Parameters
-fMRIDataParams:
-  blockseq:
-  - blocktype: fMRICorpus
-  - blocktype: ParseParams
-    kwargs:
-      innerdelim: '-'
-      instancename: Surprisal Metrics
-  - blocktype: NgramParams
-    kwargs:
-      innerdelim: '-'
-  - blocktype: fMRIColumns
-  - blocktype: String
-    value: '.hrf'
-  blocktitle: fMRI Data Parameters

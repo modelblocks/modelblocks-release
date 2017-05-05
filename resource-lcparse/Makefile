@@ -124,7 +124,51 @@ Vitberk:
   text: Viterbi Berkeley parser
   value: vitberk
 endef
-
+def KernelBlock :=
+Grammar:
+  blocktitle: Grammar
+  paramtype: Dropdown
+Parser:
+  blocktitle: Parser
+  paramtype: Dropdown
+ParserParams:
+  blocktitle: Parser Parameters
+  paramtype: Text
+  paramval:
+  - text: Underscore-delimited command-line arguments to the parser
+    value: ''
+endef
+def CompositeBlock :=
+ParseParams:
+  blockseq:
+  - blocktype: Corpus
+    kwargs:
+      instancename: Training
+  - blocktype: Grammar
+  - blocktype: TreeOpt
+    kwargs:
+      innerdelim: '-'
+  - blocktype: ModelOpt
+    kwargs:
+      innerdelim: '-'
+  - blocktype: Parser
+  - blocktype: ParserParams
+  blocktitle: Parser Parameters
+endef
+def TargetBlock :=
+ParseLinetrees:
+  blockseq:
+  - blocktype: Corpus
+    kwargs:
+      instancename: Test
+  - blocktype: String
+    value: .
+  - blocktype: ParseParams
+    kwargs:
+      innerdelim: '-'
+  blocktitle: Parse (Linetrees)
+  targetsuffix: _parsed.linetrees
+endef
 
 ##### obtain model-specific parser output by running sentences through parser given flags and model, from including makefile's genmodel dir:
 ##### <testset>.<trainset>.<model>.(<params>_)parsed  ---->  genmodel/<testset>.linetoks  bin/parser-<model>  genmodel/<trainset>.<model>.model

@@ -20,17 +20,17 @@ for path in Makefiles:
         while line and not line.startswith('endef'):
           ParamVal += line
           line = M.readline()
-      elif line.strip().startswith('def KernelBlockDefs'):
+      elif line.strip().startswith('def KernelBlock'):
         line = M.readline()
         while line and not line.startswith('endef'):
           KernelBlockDefs += line
           line = M.readline()
-      elif line.strip().startswith('def CompositeBlockDefs'):
+      elif line.strip().startswith('def CompositeBlock'):
         line = M.readline()
         while line and not line.startswith('endef'):
           CompositeBlockDefs += line
           line = M.readline()
-      elif line.strip().startswith('def TargetBlockDefs'):
+      elif line.strip().startswith('def TargetBlock'):
         line = M.readline()
         while line and not line.startswith('endef'):
           TargetBlockDefs += line
@@ -38,15 +38,12 @@ for path in Makefiles:
       else:
         line = M.readline()
 
-#print('ParamVal')
 with open('ParamVal.yml', 'wb') as f:
   f.write(ParamVal)
-#print('')
-#print('KernelBlockDefs')
-#print(KernelBlockDefs)
-#print('')
-#print('CompositeBlockDefs')
-#print(CompositeBlockDefs)
-#print('')
-#print('TargetBlockDefs')
-#print(TargetBlockDefs)
+with open('KernelBlockDefs.yml', 'wb') as f:
+  f.write(KernelBlockDefs)
+with open('CompositeBlockDefs.yml', 'wb') as f:
+  f.write(CompositeBlockDefs)
+with open('TargetBlockDefs.yml', 'wb') as f:
+  f.write(TargetBlockDefs)
+
