@@ -373,14 +373,36 @@ regressModel <- function(dataset, form) {
     
     smartPrint('Regressing with bobyqa')
     smartPrint(paste(' ', date()))
-    regressionOutput <- lmer(form, dataset, REML=F, control = bobyqa)
+    warnings = ''
+    withCallingHandlers(
+        regressionOutput <- lmer(form, dataset, REML=F, control = bobyqa),
+        warning = function(w) {
+                               smartPrint(w)
+                              }, 
+        error = function(e) {
+                             smartPrint(e)
+                            } 
+    )
+    smartPrint('LME4 warnings:')
+    smartPrint(warnings)
     printSummary(regressionOutput)
     
     if (max(abs(with(regressionOutput@optinfo$derivs,solve(Hessian,gradient)))) >= 0.002) {
         regressionOutputO <- regressionOutput
         smartPrint('Regressing with nlminb')
         smartPrint(paste(' ', date()))
-        regressionOutputN <- lmer(form, dataset, REML=F, control = nlminb)
+        warnings <- ''
+        withCallingHandlers(
+            regressionOutputN <- lmer(form, dataset, REML=F, control = nlminb),
+            warning = function(w) {
+                                   smartPrint(w)
+                                  },
+            error = function(e) {
+                                 smartPrint(e)
+                                } 
+        )
+        smartPrint('LME4 warnings:')
+        smartPrint(warnings)
         printSummary(regressionOutputN)
         regressionOutput <- minRelGrad(regressionOutputO, regressionOutputN)            
     }

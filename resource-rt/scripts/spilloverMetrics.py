@@ -29,18 +29,19 @@ elif args.cols:
 else:
     cols = []
 
-if args.p:
-    data = data[~data['word'].isin(punc)]
-
-group_cols = ['docid']
-if not args.nosubjects:
-    group_cols.append('subject')
-if not args.ignoresents:
-    group_cols.append('sentid')
-grouped = data.groupby(group_cols)
-
 if len(cols) == 0:
     sys.stderr.write('Nothing to spillover. Returning input table.\n')
+else:
+    if args.p:
+        data = data[~data['word'].isin(punc)]
+
+    group_cols = ['docid']
+    if not args.nosubjects:
+        group_cols.append('subject')
+    if not args.ignoresents:
+        group_cols.append('sentid')
+    grouped = data.groupby(group_cols)
+
 
 for col in cols:
     if colspillpairs:

@@ -49,7 +49,7 @@ printSummary <- function(reg) {
     print(paste('LME Fit Summary (',reg@optinfo$optimizer,')',sep=''))
     print(summary(reg))
     relgrad <- with(reg@optinfo$derivs,solve(Hessian,gradient))
-    print('Relative Gradient (<0.002?)') #check for convergence even if warned that convergence failed
+    smartPrint('Relative Gradient (<0.002?)') #check for convergence even if warned that convergence failed
     smartPrint(max(abs(relgrad)))
     smartPrint('AIC:')
     smartPrint(AIC(logLik(reg)))
