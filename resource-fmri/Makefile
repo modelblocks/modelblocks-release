@@ -55,6 +55,43 @@ endif
 #
 ################################################################################
 
+def KernelBlock :=
+fMRIColumns:
+  blocktitle: fMRI Column File
+  paramtype: Text
+  paramval:
+  - text: Basename of file containing columns to convolve for fMRI analysis
+    value: ''
+fMRICorpus:
+  blocktitle: fMRI Corpus
+  instance_of: Corpus
+  paramtype: Dropdown
+endef
+def CompositeBlock :=
+fMRIDataParams:
+  blockseq:
+  - blocktype: fMRICorpus
+  - blocktype: ParseParams
+    kwargs:
+      innerdelim: '-'
+      instancename: Surprisal Metrics
+  - blocktype: NgramParams
+    kwargs:
+      innerdelim: '-'
+  - blocktype: fMRIColumns
+  - blocktype: String
+    value: '.hrf'
+  blocktitle: fMRI Data Parameters
+endef
+def TargetBlock :=
+fMRICoreEvmeasures:
+  blockseq:
+  - blocktype: fMRIDataParams
+    kwargs:
+      innerdelim: .
+  blocktitle: fMRI Data
+  targetsuffix: .core.evmeasures
+endef
 %.hrf.itemmeasures: $$(basename %).t.itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py scripts/$$(subst .,,$$(suffix $$*)).pred_list.txt
 	python $(word 2, $^) $(word 1, $^) --start $(SAMPLE-START) --predictors $(shell cat $(word 3, $^)) > $@
 

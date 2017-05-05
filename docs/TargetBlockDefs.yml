@@ -1,0 +1,177 @@
+NgramProbs:
+  blocktitle: N-gram Probabilities
+  targetsuffix: .ngram.itemmeasures
+  blockseq:
+  - blocktype: Corpus
+  - blocktype: NgramParams
+    kwargs:
+      innerdelim: '.'
+fMRICoreEvmeasures:
+  blockseq:
+  - blocktype: fMRIDataParams
+    kwargs:
+      innerdelim: .
+  blocktitle: fMRI Data
+  targetsuffix: .core.evmeasures
+Tokdecs:
+  blockseq:
+  - blocktype: Corpus
+  - blocktype: TreeOpt
+    kwargs:
+      outerdelim: .
+      innerdelim: .
+  blocktitle: Tokdecs (from linetrees)
+  targetsuffix: .fromlinetrees.tokdeps
+ParseTokdecs:
+  blockseq:
+  - blocktype: Corpus
+    kwargs:
+      instancename: Test
+  - blocktype: String
+    value: .
+  - blocktype: ParseParams
+    kwargs:
+      innerdelim: '-'
+  blocktitle: Parse (Tokdecs)
+  targetsuffix: _parsed.tokdecs
+ParseLinetrees:
+  blockseq:
+  - blocktype: Corpus
+    kwargs:
+      instancename: Test
+  - blocktype: String
+    value: .
+  - blocktype: ParseParams
+    kwargs:
+      innerdelim: '-'
+  blocktitle: Parse (Linetrees)
+  targetsuffix: _parsed.linetrees
+EditableTrees:
+  blocktitle: Editable Trees
+  targetsuffix: .fromlinetrees.editabletrees
+  blockseq:
+  - blocktype: Corpus
+  - blocktype: TreeOpt
+    kwargs:
+      innerdelim: '.'
+Linetrees:
+  blockseq:
+  - blocktype: Corpus
+  - blocktype: TreeOpt
+    kwargs:
+      innerdelim: .
+  blocktitle: Linetrees
+  targetsuffix: .linetrees
+Linetoks:
+  blockseq:
+  - blocktype: Corpus
+  - blocktype: TreeOpt
+    kwargs:
+      innerdelim: .
+  blocktitle: Linetoks
+  targetsuffix: .linetoks
+LMEFitfMRI:
+  blockseq:
+  - blocktype: fMRIDataParams
+    kwargs:
+      innerdelim: .
+  - blocktype: String
+    value: .
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: .
+  - blocktype: LMEArgs
+  blocktitle: fMRI LME Fit
+  targetsuffix: .lmefit
+LMEFitRT:
+  blockseq:
+  - blocktype: RTDataParams
+    kwargs:
+      innerdelim: .
+  - blocktype: String
+    value: .
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: .
+  - blocktype: LMEArgs
+  blocktitle: Reading Time LME Fit
+  targetsuffix: .lmefit
+RTLRTSignif:
+  blocktitle: Reading Time LRT Significance Test
+  targetsuffix: .lrtsignif
+  blockseq:
+  - blocktype: RTDataParams
+  - blocktype: String
+    value: '.'
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEPredictor
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEArgs
+  - blocktype: String
+    value: '.'
+  - blocktype: LRTArgs
+fMRILRTSignif:
+  blocktitle: fMRI LRT Significance Test
+  targetsuffix: .lrtsignif
+  blockseq:
+  - blocktype: fMRIDataParams
+  - blocktype: String
+    value: '.'
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEPredictor
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEArgs
+  - blocktype: String
+    value: '.'
+  - blocktype: LRTArgs
+RTLRTDaimSignif:
+  blocktitle: Diamond Reading Time LRT Significance Test
+  targetsuffix: .diamond.lrtsignif
+  blockseq:
+  - blocktype: RTDataParams
+  - blocktype: String
+    value: '.'
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEPredictors
+    kwargs:
+      innerdelim: '_'
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEArgs
+  - blocktype: String
+    value: '.'
+  - blocktype: LRTArgs
+fMRILRTDaimSignif:
+  blocktitle: Diamond fMRI LRT Significance Test
+  targetsuffix: .diamond.lrtsignif
+  blockseq:
+  - blocktype: fMRIDataParams
+  - blocktype: String
+    value: '.'
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEPredictors
+    kwargs:
+      innerdelim: '_'
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEArgs
+  - blocktype: String
+    value: '.'
+  - blocktype: LRTArgs
+RTCoreEvmeasures:
+  blockseq:
+  - blocktype: RTDataParams
+    kwargs:
+      innerdelim: .
+  blocktitle: Reading Time Data
+  targetsuffix: .core.evmeasures

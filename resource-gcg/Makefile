@@ -44,12 +44,58 @@ all:  wsj23-comparativized-gcg15-nofail.wsj02to21-comparativized-gcg15-1671-5sm.
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.morphed.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  %.linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
+
+def ParamVal :=
+GCG:
+  cascade:
+  - GCGSpec
+  - Decoupled
+  descr: ''
+  kernel: Grammar
+  text: Generalized Categorial Grammar (GCG)
+  value: gcg
+GCG13:
+  kernel: GCGSpec
+  text: 2013 spec
+  value: '13'
+GCG14:
+  kernel: GCGSpec
+  text: 2014 spec
+  value: '14'
+GCG15:
+  kernel: GCGSpec
+  text: 2015 spec
+  value: '15'
+GCG16:
+  kernel: GCGSpec
+  text: 2016 spec
+  value: '16'
+endef
+def KernelBlock :=
+GCGSpec:
+  blocktitle: GCG
+  paramtype: Dropdown
+  nodelimiter: true
+endef
 ### THIS HAPPENS ALL THE TIME; JUST CREATE MAKE ITEM IF YOU NEED IT
 # .PRECIOUS: %.linetrees
 #%.linetrees:  $(GCG-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
 #	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
   
 #### gcg reannotation
+def ParamVal :=
+Decoupled:
+  kernel:
+  -  TreeOpt
+  -  Decoupled
+  text: Non-nommed trees
+  value: decoupled
+endef
+def KernelBlock :=
+Decoupled:
+  blocktitle: Decoupled
+  paramtype: Boolean
+endef
 %.decoupled.linetrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl $$(basename %).fixed.linetrees $(LTREES-SCRIPTS)/killUnaries.pl
 	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  perl -pe 's/.*\([-A-Z]+ .*//'  |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' | perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
         
@@ -65,6 +111,12 @@ all:  wsj23-comparativized-gcg15-nofail.wsj02to21-comparativized-gcg15-1671-5sm.
 %.bd.linetrees:  %.linetrees  $(GCG-SCRIPTS)/annotateDepth.py
 	cat $<  |  python3 $(word 2,$^)  >  $@
 
+def ParamVal :=
+FG:
+  kernel: ModelOpt
+  text: Filler-gap transform (inserts stack elements for long-distance dependencies)
+  value: fg
+endef
 #### apply filler-gap transform
 %.fg.linetrees:  %.linetrees  $(GCG-SCRIPTS)/annotateFGTrans.pl
 	cat $<  |  perl $(word 2,$^)  >  $@

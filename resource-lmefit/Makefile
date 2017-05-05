@@ -69,6 +69,50 @@
 # root.
 #
 #.PRECIOUS: %.rdata ##Disabled for now because it fills the disk quickly. Re-enable for simulations
+def KernelBlockDefs :=
+BaselineFormula:
+  blocktitle: LME Baseline Formula
+  paramtype: Text
+  paramval:
+  - text: Basename of LME formula file
+    value: ''
+endef
+def KernelBlock :=
+LMEArgs:
+  blocktitle: LME command-line arguments
+  paramtype: Text
+  paramval:
+  - descr: Run bare MB/resource-lmefit/scripts/evmeasures2lmefit.r for documentation
+    text: Underscore-delimited command-line args to the LME regression
+endef
+def TargetBlockDefs :=
+LMEFitfMRI:
+  blockseq:
+  - blocktype: fMRIDataParams
+    kwargs:
+      innerdelim: .
+  - blocktype: String
+    value: .
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: .
+  - blocktype: LMEArgs
+  blocktitle: fMRI LME Fit
+  targetsuffix: .lmefit
+LMEFitRT:
+  blockseq:
+  - blocktype: RTDataParams
+    kwargs:
+      innerdelim: .
+  - blocktype: String
+    value: .
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: .
+  - blocktype: LMEArgs
+  blocktitle: Reading Time LME Fit
+  targetsuffix: .lmefit
+endef
 %.rdata %.lmefit:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py $$(subst .,,$$(suffix $$*))).filt.evmeasures \
 scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform 
 	$< $(word 2, $^) $*.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) > $*.lmefit
@@ -94,6 +138,56 @@ scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform
 #    genmodel/ucl.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.kenlm.fp.mem.fjprob.-NSCFf..lrtsignif
 #
 #
+def KernelBlock :=
+LMEPredictor:
+  blocktitle: LME Predictor
+  paramtype: Text
+  paramval:
+  - text: 'Name of LME predictor column'
+    value: ''
+LRTArgs:
+  blocktitle: LRT command-line args
+  paramtype: Text
+  paramval:
+  - text: 'LRT command-line arguments (currently ignored, can be blank)'
+    value: ''
+endef
+def TargetBlock :=
+RTLRTSignif:
+  blocktitle: Reading Time LRT Significance Test
+  targetsuffix: .lrtsignif
+  blockseq:
+  - blocktype: RTDataParams
+  - blocktype: String
+    value: '.'
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEPredictor
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEArgs
+  - blocktype: String
+    value: '.'
+  - blocktype: LRTArgs
+fMRILRTSignif:
+  blocktitle: fMRI LRT Significance Test
+  targetsuffix: .lrtsignif
+  blockseq:
+  - blocktype: fMRIDataParams
+  - blocktype: String
+    value: '.'
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEPredictor
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEArgs
+  - blocktype: String
+    value: '.'
+  - blocktype: LRTArgs
+endef
 .PRECIOUS: %.lrtsignif
 %.lrtsignif:  $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
 $$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
@@ -121,6 +215,53 @@ $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
 #
 #    genmodel/ucl.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.kenlm.fp.mem.fjprob_dlt.-NSCFf..diamond.lrtsignif 
 #    
+def CompositeBlock
+LMEPredictors:
+  blocktitle: Two LME predictors (for diamond LRT signif)
+  blockseq:
+  - blocktype: LMEPredictor
+  - blocktype: LMEPredictor
+endef
+def TargetBlock :=
+RTLRTDaimSignif:
+  blocktitle: Diamond Reading Time LRT Significance Test
+  targetsuffix: .diamond.lrtsignif
+  blockseq:
+  - blocktype: RTDataParams
+  - blocktype: String
+    value: '.'
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEPredictors
+    kwargs:
+      innerdelim: '_'
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEArgs
+  - blocktype: String
+    value: '.'
+  - blocktype: LRTArgs
+fMRILRTDaimSignif:
+  blocktitle: Diamond fMRI LRT Significance Test
+  targetsuffix: .diamond.lrtsignif
+  blockseq:
+  - blocktype: fMRIDataParams
+  - blocktype: String
+    value: '.'
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEPredictors
+    kwargs:
+      innerdelim: '_'
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEArgs
+  - blocktype: String
+    value: '.'
+  - blocktype: LRTArgs
+endef
 .PRECIOUS: %.diamond.lrtsignif
 %.diamond.lrtsignif: $(LMEFIT-SCRIPTS)/lmefit2diamlrtsignif.r \
 $$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).rdata \

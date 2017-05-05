@@ -1,0 +1,134 @@
+KENLM:
+  kernel: NgramModel
+  text: KENLM
+  value: kenlm
+Alice:
+  kernel: fMRICorpus
+  text: Alice in Wonderland, Chapter 1
+  value: alice
+Dundee:
+  kernel: ETCorpus
+  text: Dundee (eye-tracking corpus)
+  value: dundee
+GCG:
+  cascade:
+  - GCGSpec
+  - Decoupled
+  descr: ''
+  kernel: Grammar
+  text: Generalized Categorial Grammar (GCG)
+  value: gcg
+GCG13:
+  kernel: GCGSpec
+  text: 2013 spec
+  value: '13'
+GCG14:
+  kernel: GCGSpec
+  text: 2014 spec
+  value: '14'
+GCG15:
+  kernel: GCGSpec
+  text: 2015 spec
+  value: '15'
+GCG16:
+  kernel: GCGSpec
+  text: 2016 spec
+  value: '16'
+Decoupled:
+  kernel:
+  -  TreeOpt
+  -  Decoupled
+  text: Non-nommed trees
+  value: decoupled
+FG:
+  kernel: ModelOpt
+  text: Filler-gap transform (inserts stack elements for long-distance dependencies)
+  value: fg
+Synproc:
+  kernel: Parser
+  text: Incremental syntactic processing parser (synproc)
+  value: synproc
+BD:
+  kernel: ModelOpt
+  text: Annotate branching direction and depth
+  value: bd
+EFABP:
+  kernel: Parser
+  text: EFABP parser (van Schijndel et al (2013)
+  value: x+efabp
+Fullberk:
+  kernel: Parser
+  text: Full Berkeley parser
+  value: fullberk
+Vitberk:
+  kernel: Parser
+  text: Viterbi Berkeley parser
+  value: vitberk
+First:
+  cascade: First
+  kernel: TreeOpt
+  text: Keep only the first n trees
+  value: ''
+Onward:
+  cascade: Onward
+  kernel: TreeOpt
+  text: Discard the first n trees
+  value: ''
+Last:
+  cascade: Last
+  kernel: TreeOpt
+  text: Keep only the last n trees
+  value: ''
+Maxword:
+  cascade: Maxwords
+  kernel: TreeOpt
+  text: Keep only trees with fewer than n words
+  value: ''
+Nounary:
+  kernel: TreeOpt
+  text: Remove unary branches
+  value: nounary
+PTB:
+  descr: ''
+  kernel: Grammar
+  text: Penn Treebank
+  value: nodashtags
+Nolabel:
+  kernel: TreeOpt
+  text: Remove non-terminal category labels
+  value: nolabel
+Nopunc:
+  kernel: TreeOpt
+  text: Remove punctuation
+  value: nopunc
+Fromdeps:
+  kernel: TreeOpt
+  text: Extract trees from a dependency graph
+  value: fromdeps
+SM:
+  cascade: SplitMerge
+  kernel: ModelOpt
+  text: Split-merge iterations
+  value: ''
+NaturalStories:
+  kernel: SPRCorpus
+  text: Natural Stories (self-paced reading corpus)
+  value: naturalstories
+SRILM:
+  kernel: NgramModel
+  text: SRILM
+  value: srilm
+WSJ23:
+  kernel: TextCorpus
+  text: Wall Street Journal test set (section 23)
+  value: wsj23
+WSJ02to21:
+  kernel: TextCorpus
+  text: Wall Street Journal training set (sections 2-21)
+  value: wsj02to21
+UCL:
+  kernel:
+  - ETCorpus
+  - SPRCorpus
+  text: UCL (eye-tracking)
+  value: ucl

@@ -36,6 +36,13 @@
 #
 ################################################################################
 
+def ParamVal :=
+SRILM:
+  kernel: NgramModel
+  text: SRILM
+  value: srilm
+endef
+
 .SUFFIXES:
 .SECONDEXPANSION:
 

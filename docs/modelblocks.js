@@ -276,6 +276,7 @@ function createBlockTargetClass(blocktype,
 // Add options to Kernel blocks
 function addVal(p, k) {
   if (k != null) {
+    console.log(k);
     if (KernelBlockDefs[k].paramval != null) {
       if (KernelBlockDefs[k].paramval[p] == null) {
         KernelBlockDefs[k].paramval[p] = ParamVal[p];
@@ -284,18 +285,25 @@ function addVal(p, k) {
       KernelBlockDefs[k].paramval = {};
       KernelBlockDefs[k].paramval[p] = ParamVal[p];
     }
+    console.log(KernelBlockDefs[k]);
+  }
+}
+
+function trickleUp(p, kernels) {
+  for (var k in kernels) {
+    console.log(kernels);
+    console.log(kernels[k]);
+    addVal(p, kernels[k]);
+    if (KernelBlockDefs[kernels[k]].instance_of != null) {
+      var superblocks = [].concat(KernelBlockDefs[kernels[k]].instance_of);
+      trickleUp(p, superblocks);
+    }
   }
 }
 
 for (var p in ParamVal) {
   var kernels = [].concat(ParamVal[p].kernel);
-  for (var k in kernels) {
-    addVal(p, kernels[k]);
-    var superblocks = [].concat(KernelBlockDefs[kernels[k]].instance_of);
-    for (var s in superblocks) {
-      addVal(p, superblocks[s]);
-    }
-  }
+  trickleUp(p, kernels);
 }
 
 // Create classes for each block type
@@ -373,11 +381,15 @@ function buildParamUI(paramtype,
         var cascade = [].concat(paramval[v].cascade);
         new_val.data('cascade', []);
         for (var i in cascade) {
+          console.log(cascade);
           var c = KernelBlockDefs[cascade[i]];
+          console.log(c)
           if (c.nodelimiter) {
-            var delim = '';
+            var od = innerdelim;
+            var id = '';
           } else {
-            var delim = innerdelim;
+            var od = outerdelim;
+            var id = innerdelim;
           }
           var new_param = buildParamUI(c.paramtype,
                                        c.paramval,
@@ -385,8 +397,8 @@ function buildParamUI(paramtype,
                                        displayspan,
                                        new_val,
                                        nargs,
-                                       delim,
-                                       '');
+                                       od,
+                                       id);
           new_val.data('cascade').push(new_param);
           param.data('cascade').push(new_param);
         }
@@ -422,11 +434,12 @@ function buildParamUI(paramtype,
         var cascade = [].concat(paramval[v].cascade);
         new_val.data('cascade', []);
         for (var i in cascade) {
-          var c = KernelBlockDefs[cascade[i]];
           if (c.nodelimiter) {
-            var delim = '';
+            var od = innerdelim;
+            var id = '';
           } else {
-            var delim = innerdelim;
+            var od = outerdelim;
+            var id = innerdelim;
           }
           var new_param = buildParamUI(c.paramtype,
                                        c.paramval,
@@ -434,8 +447,8 @@ function buildParamUI(paramtype,
                                        newdisplayspan,
                                        new_val,
                                        nargs,
-                                       delim,
-                                       '');
+                                       od,
+                                       id);
           new_val.data('cascade').push(new_param);
           param.data('cascade').push(new_param);
         }
@@ -459,9 +472,15 @@ function buildParamUI(paramtype,
         }
       })
     });
-   } else if (paramtype == 'Boolean') {
-    var param = $('<input type="checkbox" id="' + paramval[0].value + '" value="' + paramval[0].value + '">');
-    var label = $('<label for="' + paramval[0].value + '">' + paramval[0].text + '</label>');
+  } else if (paramtype == 'Boolean') {
+    var p = paramval[function() {for (var i in paramval) return i}()];
+    id = '';
+    if (ancestor != null) {
+      id += ancestor.attr('value');
+    }
+    id += p.value;
+    var param = $('<input type="checkbox" id="' + id + '" value="' + p.value + '">');
+    var label = $('<label for="' + id + '">' + p.text + '</label>');
     if (ancestor == null) {
       param.addClass('selected');
       label.addClass('selected');
@@ -479,14 +498,15 @@ function buildParamUI(paramtype,
       processCascade(param);
       displayspan.find('span.defaultdisplay').text('');
       if (param.is(':checked')) {
-        var new_text = outerdelim + paramval[0].value;
+        var new_text = outerdelim + p.value;
       } else {
         var new_text = '';
       }
       updateTarget(newdisplayspan, new_text);
     });
   } else if (paramtype == 'Integer' || paramtype == 'Text') {
-    var param = $('<form><b>' + paramval[0].text + ': </b><input type="text" id="' + paramval[0].value + '" value=""><input type="submit"></form>');
+    var p = paramval[function() {for (var i in paramval) return i}()];
+    var param = $('<form><b>' + p.text + ': </b><input type="text" id="' + p.value + '" value=""><input type="submit"></form>');
     if (ancestor == null) {
       param.addClass('selected');
     }
@@ -498,12 +518,11 @@ function buildParamUI(paramtype,
       var val = param.find('input[type="text"]').val();
       if (!(nargs == '*' || nargs == '?') || val != '') {
         if (val != '') {
-          if (paramval[0].after) {
-            new_text = val + outerdelim + paramval[0].value;
+          if (p.after) {
+            new_text = outerdelim + val + innerdelim + p.value;
           } else {
-            new_text = paramval[0].value + outerdelim + val;
+            new_text = outerdelim + p.value + innerdelim + val;
           }
-          new_text = outerdelim+new_text;
         }
         else {
           new_text = '';
@@ -597,6 +616,7 @@ function clearWorkspace() {
 $('div#target').append('make ');
 
 buildAddButtons(TargetBlockDefs);
+
 
 $('button#copier').click(function() {copyToClipboard(target);})
 $('button#clear').click(clearWorkspace)
