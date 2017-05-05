@@ -17,7 +17,6 @@ args, unknown = argparser.parse_known_args()
         
 def main():
     data = pd.read_csv(sys.stdin,sep=' ',skipinitialspace=True)
-    data.sort([args.subj, args.sentid, args.sentpos], inplace=True)
     grouped = data.groupby('subject')
     
     group_cols = ['docid']
@@ -38,6 +37,8 @@ def main():
 
     if len(cols) == 0:
         sys.stderr.write('Nothing to compute future metrics for. Returning input table.\n')
+    else:
+        data.sort([args.subj, args.sentid, args.sentpos], inplace=True)
 
     for col in cols:
         data['fut' + col] = grouped[col].shift(-1)

@@ -44,7 +44,7 @@
 #
 ################################################################################
 
-def ParamVal :=
+define ParamVal
 Alice:
   kernel: fMRICorpus
   text: Alice in Wonderland, Chapter 1
@@ -121,15 +121,6 @@ endef
 
 $(eval $(ALICE-FORMS))
 
-genmodel/alice.futureMetrics.params: | genmodel
-	echo 'cumfwprob5 cumtotsurp' > $@
-
-genmodel/alice.rm_unfix_items.params: | genmodel
-	echo '-f fdur' > $@
-
-genmodel/alice.spilloverMetrics.params: | genmodel
-	echo '-n1 -p fwprob5 totsurp' > $@
-
 genmodel/alice.original.linetoks: srcmodel/alice.original.txt $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | genmodel
 	cat $< | sed "s/‘/\'/g;s/’/\'/g;s/—/ -/g;s/“/\'/g;s/”/\'/g;" | $(word 2, $^) > $@
 
@@ -171,11 +162,11 @@ genmodel/alice.mvmnt.evmeasures: $(CONFIGDIR)/user-alice-directory.txt $(foreach
 	$(foreach f, $(wordlist 2, 1000, $^), tail -n+11 $(f) | sed 's/\t/ /g' | sed -e '$$a\' >> $@;)
 
 genmodel/alice.BOLD6mm.evmeasures: $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/6mm/$(s)-timecourses.txt) | genmodel
-	echo 'LATL6mm RATL6mm LPTL6mm LIPL6mm LPreM6mm LIFG6mm' > $@
+	echo 'boldLATL6mm boldRATL6mm boldLPTL6mm boldLIPL6mm boldLPreM6mm boldLIFG6mm' > $@
 	cat $(wordlist 2, 1000, $^) | sed 's/\t/ /g' >> $@
 
 genmodel/alice.BOLD10mm.evmeasures: $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/10mm/$(s)-timecourses.txt) | genmodel
-	echo 'LATL10mm RATL10mm LPTL10mm LIPL10mm LPreM10mm LIFG10mm' > $@
+	echo 'boldLATL10mm boldRATL10mm boldLPTL10mm boldLIPL10mm boldLPreM10mm boldLIFG10mm' > $@
 	cat $(wordlist 2, 1000, $^) | sed 's/\t/ /g' >> $@
 
 genmodel/alice.src.evmeasures: genmodel/alice.sbj.evmeasures genmodel/alice.pwr.evmeasures genmodel/alice.rate.evmeasures \

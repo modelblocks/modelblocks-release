@@ -15,22 +15,22 @@ for path in Makefiles:
   with open(path, 'rb') as M:
     line = M.readline()
     while line:
-      if line.strip().startswith('def ParamVal'):
+      if line.strip().startswith('define ParamVal'):
         line = M.readline()
         while line and not line.startswith('endef'):
           ParamVal += line
           line = M.readline()
-      elif line.strip().startswith('def KernelBlock'):
+      elif line.strip().startswith('define KernelBlock'):
         line = M.readline()
         while line and not line.startswith('endef'):
           KernelBlockDefs += line
           line = M.readline()
-      elif line.strip().startswith('def CompositeBlock'):
+      elif line.strip().startswith('define CompositeBlock'):
         line = M.readline()
         while line and not line.startswith('endef'):
           CompositeBlockDefs += line
           line = M.readline()
-      elif line.strip().startswith('def TargetBlock'):
+      elif line.strip().startswith('define TargetBlock'):
         line = M.readline()
         while line and not line.startswith('endef'):
           TargetBlockDefs += line

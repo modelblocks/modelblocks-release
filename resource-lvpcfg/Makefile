@@ -112,17 +112,15 @@ $(BERKPARSEDIR)/berkeleyParser.jar  |  bin  #$$(abspath $$(dir $$@))
 	cat $<  |  sed 's/^\((.*\)$$/(\1)/g'  |  perl -pe 's/\-(?=[a-z][^\)]* )/+/g'  >  $@
 
 #### sm grammar using berkeley trainer
-# Should these really be precious?
-.PRECIOUS: %sm.gr
 ## no validation -- external jarfile
-def ParamVal :=
+define ParamVal
 SM:
   cascade: SplitMerge
   kernel: ModelOpt
   text: Split-merge iterations
   value: ''
 endef
-def KernelBlock :=
+define KernelBlock
 ModelOpt:
   blocktitle: Model Options
   paramtype: Dropdown

@@ -68,7 +68,7 @@ bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt 
 #
 ################################################################################
 
-def KernelBlock :=
+define KernelBlock 
 Corpus:
   blocktitle: Corpus
   paramtype: Dropdown
@@ -81,7 +81,7 @@ TextCorpus:
   instance_of: Corpus
   paramtype: Dropdown
 endef
-def TargetBlock :=
+define TargetBlock
 EditableTrees:
   blocktitle: Editable Trees
   targetsuffix: .fromlinetrees.editabletrees
@@ -101,7 +101,7 @@ endef
 
 ### HAPPENS TOO MUCH; JUST CREATE MAKE ITEM IF YOU NEED IT
 ##### generalized operations on linetrees
-def TargetBlock :=
+define TargetBlock
 Linetrees:
   blockseq:
   - blocktype: Corpus
@@ -121,14 +121,14 @@ endef
 	cat $< | python $(word 2, $^) > $@
 
 #### use only the first/last N trees
-def ParamVal :=
+define ParamVal
 First:
   cascade: First
   kernel: TreeOpt
   text: Keep only the first n trees
   value: ''
 endef
-def KernelBlock :=
+define KernelBlock
 First:
   blocktitle: First
   paramtype: Integer
@@ -141,14 +141,14 @@ endef
 %first.linetrees:  $$(basename %).linetrees
 	head -$(subst .,,$(suffix $*)) $<  >  $@
 
-def ParamVal :=
+define ParamVal
 Onward:
   cascade: Onward
   kernel: TreeOpt
   text: Discard the first n trees
   value: ''
 endef
-def KernelBlock :=
+define KernelBlock
 Onward:
   blocktitle: Onward
   paramtype: Integer
@@ -161,14 +161,14 @@ endef
 %onward.linetrees: $$(basename %).linetrees
 	tail -n +$(subst .,,$(suffix $*)) $<  >  $@
 
-def ParamVal :=
+define ParamVal
 Last:
   cascade: Last
   kernel: TreeOpt
   text: Keep only the last n trees
   value: ''
 endef
-def KernelBlock :=
+define KernelBlock
 Last:
   blocktitle: Last
   paramtype: Integer
@@ -181,14 +181,14 @@ endef
 %last.linetrees:  $$(basename %).linetrees
 	tail -$(subst .,,$(suffix $*)) $<  >  $@
 
-def ParamVal :=
+define ParamVal
 Maxword:
   cascade: Maxwords
   kernel: TreeOpt
   text: Keep only trees with fewer than n words
   value: ''
 endef
-def KernelBlock :=
+define KernelBlock
 Maxwords:
   blocktitle: Maxwords
   paramtype: Integer
@@ -202,7 +202,7 @@ endef
 	cat $< | perl -na -e "if (split(/[\)]+/)<=1+$(subst .,,$(suffix $*))) {print $$_;}"  >  $@ 
 
 #### remove unary branches
-def ParamVal :=
+define ParamVal
 Nounary:
   kernel: TreeOpt
   text: Remove unary branches
@@ -212,7 +212,7 @@ endef
 	cat $<  |  perl $(word 2,$^)  >  $@
 
 #### use treebank reannotation
-def ParamVal :=
+define ParamVal
 PTB:
   descr: ''
   kernel: Grammar
@@ -223,7 +223,7 @@ endef
 	cat $<  |  perl -pe 's/([^\(])\-[^ \)]+ /\1 /g'  >  $@
 
 #### obtain tokenized input sentences from linetrees
-def TargetBlock :=
+define TargetBlock
 Linetoks:
   blockseq:
   - blocktype: Corpus
@@ -261,7 +261,7 @@ endef
 		|  sed 's/!unf! *//g' >  $@
 
 #### unlabeled trees (for evaluation)
-def ParamVal :=
+define ParamVal
 Nolabel:
   kernel: TreeOpt
   text: Remove non-terminal category labels
@@ -270,7 +270,7 @@ endef
 %.nolabel.linetrees:  %.linetrees
 	cat $^  |  perl -pe 's/\(\)//'| perl -pe 's/\([^ ]*/\(X/g'  >  $@
 
-def ParamVal :=
+define ParamVal
 Nopunc:
   kernel: TreeOpt
   text: Remove punctuation
@@ -292,7 +292,7 @@ endef
 %.induc.linetrees: %.nt.lower.nounary.nolabel.nopunc.linetrees
 	cat $< > $@
 
-def ParamVal :=
+define ParamVal
 Fromdeps:
   kernel: TreeOpt
   text: Extract trees from a dependency graph

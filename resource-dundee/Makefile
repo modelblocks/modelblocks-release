@@ -44,7 +44,7 @@
 #
 ################################################################################
 
-def ParamVal :=
+define ParamVal
 Dundee:
   kernel: ETCorpus
   text: Dundee (eye-tracking corpus)

@@ -69,7 +69,7 @@
 # root.
 #
 #.PRECIOUS: %.rdata ##Disabled for now because it fills the disk quickly. Re-enable for simulations
-def KernelBlockDefs :=
+define KernelBlockDefs :=
 BaselineFormula:
   blocktitle: LME Baseline Formula
   paramtype: Text
@@ -77,7 +77,7 @@ BaselineFormula:
   - text: Basename of LME formula file
     value: ''
 endef
-def KernelBlock :=
+define KernelBlock
 LMEArgs:
   blocktitle: LME command-line arguments
   paramtype: Text
@@ -85,7 +85,7 @@ LMEArgs:
   - descr: Run bare MB/resource-lmefit/scripts/evmeasures2lmefit.r for documentation
     text: Underscore-delimited command-line args to the LME regression
 endef
-def TargetBlockDefs :=
+define TargetBlockDefs :=
 LMEFitfMRI:
   blockseq:
   - blocktype: fMRIDataParams
@@ -138,7 +138,7 @@ scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform
 #    genmodel/ucl.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.kenlm.fp.mem.fjprob.-NSCFf..lrtsignif
 #
 #
-def KernelBlock :=
+define KernelBlock
 LMEPredictor:
   blocktitle: LME Predictor
   paramtype: Text
@@ -152,7 +152,7 @@ LRTArgs:
   - text: 'LRT command-line arguments (currently ignored, can be blank)'
     value: ''
 endef
-def TargetBlock :=
+define TargetBlock
 RTLRTSignif:
   blocktitle: Reading Time LRT Significance Test
   targetsuffix: .lrtsignif
@@ -215,14 +215,14 @@ $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
 #
 #    genmodel/ucl.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.kenlm.fp.mem.fjprob_dlt.-NSCFf..diamond.lrtsignif 
 #    
-def CompositeBlock
+define CompositeBlock
 LMEPredictors:
   blocktitle: Two LME predictors (for diamond LRT signif)
   blockseq:
   - blocktype: LMEPredictor
   - blocktype: LMEPredictor
 endef
-def TargetBlock :=
+define TargetBlock
 RTLRTDaimSignif:
   blocktitle: Diamond Reading Time LRT Significance Test
   targetsuffix: .diamond.lrtsignif
