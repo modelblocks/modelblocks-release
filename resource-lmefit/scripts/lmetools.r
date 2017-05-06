@@ -209,7 +209,7 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
 }
 
 smartPrint <- function(string,stdout=TRUE,stderr=TRUE) {
-    if (stdout) print(string)
+    if (stdout) cat(paste0(string, '\n'))
     if (stderr) write(string, stderr())
 }
 
@@ -373,40 +373,32 @@ regressModel <- function(dataset, form) {
     
     smartPrint('Regressing with bobyqa')
     smartPrint(paste(' ', date()))
-    warnings = ''
-    withCallingHandlers(
-        regressionOutput <- lmer(form, dataset, REML=F, control = bobyqa),
-        warning = function(w) {
-                               smartPrint(w)
-                              }, 
-        error = function(e) {
-                             smartPrint(e)
-                            } 
-    )
-    smartPrint('LME4 warnings:')
-    smartPrint(warnings)
+    regressionOutput <- lmer(form, dataset, REML=F, control = bobyqa)
     printSummary(regressionOutput)
+    print('Convergence Warnings:')
+    convWarn <- regressionOutput@optinfo$conv$lme4$messages
+    if (is.null(convWarn)) {
+        convWarn <- ''
+    }
+    print(convWarn)
     
-    if (max(abs(with(regressionOutput@optinfo$derivs,solve(Hessian,gradient)))) >= 0.002) {
+    if (convWarn != '') {
         regressionOutputO <- regressionOutput
         smartPrint('Regressing with nlminb')
         smartPrint(paste(' ', date()))
-        warnings <- ''
-        withCallingHandlers(
-            regressionOutputN <- lmer(form, dataset, REML=F, control = nlminb),
-            warning = function(w) {
-                                   smartPrint(w)
-                                  },
-            error = function(e) {
-                                 smartPrint(e)
-                                } 
-        )
-        smartPrint('LME4 warnings:')
-        smartPrint(warnings)
+        regressionOutputN <- lmer(form, dataset, REML=F, control = nlminb)
+        convWarnN <- regressionOutputN@optinfo$conv$lme4$messages
+        if (is.null(convWarnN)) {
+            convWarnN <- ''
+        }
+        print(convWarnN)
         printSummary(regressionOutputN)
         regressionOutput <- minRelGrad(regressionOutputO, regressionOutputN)            
     }
     
+    if (convWarn != '' && convWarnN != '') {
+        smartPrint('Model failed to converge under both bobyqa and nlminb');
+    }
     return(regressionOutput)
 }
 

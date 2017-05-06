@@ -9,6 +9,12 @@
 #
 ########################################################
 
+# Hack print so that it's less ugly
+
+#print <- function(s) {
+#  cat(paste0(s, '\n'))
+#}
+
 ########################################################
 #
 # Load Data and Libraries
