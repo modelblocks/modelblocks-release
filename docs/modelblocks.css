@@ -117,3 +117,25 @@ button {
 #copier{
   margin: 1rem auto;
 }
+
+#optionContainer {
+  overflow: hidden;
+  position: absolute;
+  display: none;
+}
+
+#newProject:hover #optionContainer {
+  display: block;
+  background: rgba(255, 255, 255, .8);
+}
+
+.targetoption {
+  cursor: pointer;
+  padding: .25rem;
+}
+
+.targetoption:hover {
+  background: rgb(240, 240, 255);
+  font-weight: bold;
+}
+

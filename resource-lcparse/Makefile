@@ -166,8 +166,14 @@ ParseLinetrees:
   - blocktype: ParseParams
     kwargs:
       innerdelim: '-'
+  - blocktype: String
+    value: _parsed
+  - blocktype: TreeOpt
+    kwargs:
+      outerdelim: '.'
+      innerdelim: '.'
   blocktitle: Parse (Linetrees)
-  targetsuffix: _parsed.linetrees
+  targetsuffix: .linetrees
 endef
 
 ##### obtain model-specific parser output by running sentences through parser given flags and model, from including makefile's genmodel dir:

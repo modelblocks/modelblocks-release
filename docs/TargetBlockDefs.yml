@@ -44,8 +44,14 @@ ParseLinetrees:
   - blocktype: ParseParams
     kwargs:
       innerdelim: '-'
+  - blocktype: String
+    value: _parsed
+  - blocktype: TreeOpt
+    kwargs:
+      outerdelim: '.'
+      innerdelim: '.'
   blocktitle: Parse (Linetrees)
-  targetsuffix: _parsed.linetrees
+  targetsuffix: .linetrees
 EditableTrees:
   blocktitle: Editable Trees
   targetsuffix: .fromlinetrees.editabletrees

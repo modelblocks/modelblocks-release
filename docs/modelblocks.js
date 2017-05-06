@@ -181,6 +181,10 @@ function createBlockCompositeClass(blocktype,
       var b = blockseq[i];
       if (b.blocktype == 'String') {
         self.displayspan.append(b.value);
+      } else if (b.blocktype == 'Any') {
+        // TODO
+      } else if (b.blocktype == 'Either') {
+        // TODO
       } else {
         if (b.kwargs == null) {
           var bkwargs = {}
@@ -254,6 +258,10 @@ function createBlockTargetClass(blocktype,
       var b = blockseq[i];
       if (b.blocktype == 'String') {
         self.displayspan.append(b.value);
+      } else if (b.blocktype == 'Any') {
+        // TODO
+      } else if (b.blocktype == 'Either') {
+        // TODO
       } else {
         new_block = new Blocks[b.blocktype](b.kwargs);
         self.displayspan.append(new_block.displayspan);
@@ -271,7 +279,6 @@ function createBlockTargetClass(blocktype,
 //  POPULATE BLOCKS
 //
 /////////////////////////////////////
-
 
 // Add options to Kernel blocks
 function addVal(p, k) {
@@ -333,11 +340,21 @@ for (var k in TargetBlockDefs) {
                                      TargetBlockDefs[k].descr);
 }
 
+UtilityBlockDefs = {
+  Either: {
+    blocktitle: 'Either'
+  }
+}
+
 /////////////////////////////////////
 //
 // UTILITY FUNCTIONS 
 //
 /////////////////////////////////////
+
+function blocksorter(a, b) {
+  a.blocktitle.localecompare(b.blocktitle);
+}
 
 function updateTarget(div, newtext) {
   div.text(newtext);
@@ -578,17 +595,32 @@ function processCascade(param, multi) {
 }
 
 function buildAddButtons(TargetBlockDefs) {
+  var optionContainer = $('div#optionContainer');
   for (var k in TargetBlockDefs) {
     var buttonContainer = $('div#addButtonContainer');
     var worksurface = $('div#worksurface'); 
     var tray = $('div#tray');
     var target = $('div#target');
-    var new_button = $('<button id="add' + k + '" class="traybutton"><i class="fa fa-plus-square" aria-hidden="true"></i> ' + TargetBlockDefs[k].blocktitle + '</button>');
-    new_button.data('blocktype', k);
-    buttonContainer.append(new_button);
-    new_button.click(function() {
-      var k = $(this).data('blocktype');
-      var new_targ = new Blocks[k];
+    //var new_button = $('<button id="add' + k + '" class="traybutton"><i class="fa fa-plus-square" aria-hidden="true"></i> ' + TargetBlockDefs[k].blocktitle + '</button>');
+    //new_button.data('blocktype', k);
+    //buttonContainer.append(new_button);
+    //new_button.click(function() {
+    //  var t = $(this).data('blocktype');
+    //  var new_targ = new Blocks[t];
+    //  worksurface.find('div.targetparams').detach();
+    //  target.append(new_targ.displayspan);
+    //  tray.find('button').removeClass('selected');
+    //  tray.append(new_targ.trayicon);
+    //  worksurface.append(new_targ.paramcontainer);
+    //});
+    
+    var new_opt = $('<div class="targetoption"</div>')
+    new_opt.text(TargetBlockDefs[k].blocktitle);
+    new_opt.data('blocktype', k);
+    optionContainer.append(new_opt);
+    new_opt.click(function() {
+      var t = $(this).data('blocktype');
+      var new_targ = new Blocks[t];
       worksurface.find('div.targetparams').detach();
       target.append(new_targ.displayspan);
       tray.find('button').removeClass('selected');
