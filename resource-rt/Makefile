@@ -387,7 +387,7 @@ $(RT-SCRIPTS)/parsePredictors.py
 	python $(word 5, $^) -c $(shell echo $(COLS) | python $(word 9, $^) -a) | \
 	python $(word 6, $^) | \
 	python $(word 7, $^) -I -c $(shell echo $(COLS) | python $(word 9, $^) -f) | \
-	python $(word 8, $^) -n4 -C $(shell echo $(COLS) | python $(word 9, $^) -s) > $@
+	python $(word 8, $^) -I -C $(shell echo $(COLS) | python $(word 9, $^) -s) > $@
 
 # Generate and merge parser data from multiple grammars
 # Template: mydata.training-GRAMMAR-other-args.stuff.parser1_parser2_parser3.merged.full.evmeasures
