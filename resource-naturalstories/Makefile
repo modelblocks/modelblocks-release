@@ -83,8 +83,6 @@ and psycholinguistic measures available for the stories.
 endef
 NATSTORIES-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
 DEP-NATSTORIES = $(error $(NATSTORIES-ERROR))
-else
-DEP-NASTORIES :=
 endif
 endif
 
@@ -130,7 +128,7 @@ genmodel/naturalstories.rm_unfix_items.params: | genmodel
 
 %/naturalstories.linetrees: $$(DEP-NATSTORIES) $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(NATSTORDIR)/parses/penn/all-parses.txt.penn \
 $(CONFIGDIR)/user-naturalstories-directory.txt | %
-	cat $(word 3, $^) | perl $(word 2, $^) > $@
+	cat $(word 2, $^) | perl $(word 1, $^) > $@
 
 %/naturalstories.linetoks: %/naturalstories.linetrees $(NATSTORIES-SCRIPTS)/penn2sents.py | %
 	cat $< | python $(word 2, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' > $@

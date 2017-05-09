@@ -125,19 +125,19 @@ endif
 
 genmodel/dundee.%.textdata: $$(DEP-DUNDEE) $(DUNDEEDIR)/tx%wrdp.dat $(CONFIGDIR)/user-dundee-directory.txt $(GENERAL-SCRIPTS)/convert_latin-1.py | genmodel
 	echo 'WORD ' > $@
-	cat $(word 2, $^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;" | python3 $(word 4, $^) >> $@
+	cat $(word 1, $^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;" | python3 $(word 3, $^) >> $@
 
 genmodel/dundee.textdata:  $(foreach sect,$(DUNDEESECTS),genmodel/dundee.$(sect).textdata) | genmodel
 	cat $^  >  $@
 
 genmodel/dundee.%.eventdata: $$(DEP-DUNDEE) $(DUNDEEDIR)/%ma1p.dat $(CONFIGDIR)/user-dundee-directory.txt | genmodel
-	cat $(word 2, $^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;" > $@
+	cat $(word 1, $^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;" > $@
 
 genmodel/dundee.%.eventdata:  $(foreach sect,$(DUNDEESECTS),genmodel/dundee.%$(sect).eventdata) | genmodel
 	cat $^  >  $@
 
 genmodel/dundee.%.eyedata: $$(DEP-DUNDEE) $(DUNDEEDIR)/%ma2p.dat $(CONFIGDIR)/user-dundee-directory.txt | genmodel
-	cat $(word 2, $^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;" > $@
+	cat $(word 1, $^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;" > $@
 
 genmodel/dundee.%.eyedata: $(foreach sect,$(DUNDEESECTS),genmodel/dundee.%$(sect).eyedata) | genmodel
 	cat $^ > $@
@@ -171,8 +171,8 @@ genmodel/dundee.src.evmeasures: genmodel/dundee.fp.evmeasures genmodel/dundee.gp
 
 dundee%.linetoks: $$(DEP-DUNDEE) $(DUNDEEDIR)/tx$$*wrdp.dat $(DUNDEE-SCRIPTS)/builddundeecorpus.py \
 $(GENERAL-SCRIPTS)/convert_latin-1.py $(CONFIGDIR)/user-dundee-directory.txt
-	cat $(word 2, $^) | python $(word 3,$^) > $@.raw
-	cat $@.raw | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" | python3 $(word 4,$^) | \
+	cat $(word 1, $^) | python $(word 2,$^) > $@.raw
+	cat $@.raw | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" | python3 $(word 3,$^) | \
 	sed 's/garbage\/sentimental/garbage \/ sentimental/g' \
 	| sed 's/Oxford-educated/Oxford- educated/g' \
 	| sed 's/4'\''s/4 '\''s/g' \
