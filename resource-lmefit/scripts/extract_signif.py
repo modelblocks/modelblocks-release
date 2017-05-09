@@ -9,30 +9,35 @@ args, unknown = argparser.parse_known_args()
 val = re.compile('^.+: *([^ ]+)"$')
 effectpair = re.compile('([^ ]+)-vs-([^ ]+)')
 
+def deRify(s):
+    if s.startswith('[1] "):
+        s = s[5:]
+    return s
+
 def compute_row(f, diamName=None, vs=None):
     row = {}
     line = f.readline()
-    while line and not line.startswith('[1] "Main effect'):
+    while line and not deRify(line).startswith('Main effect'):
         line = f.readline()
     assert line, 'Input not properly formatted'
     row['effect'] = val.match(line).group(1)
     line = f.readline()
-    assert line.startswith('[1] "Corpus'), 'Input not properly formatted'
+    assert deRify(line).startswith('Corpus'), 'Input not properly formatted'
     row['corpus'] = val.match(line).group(1)
     line = f.readline()
-    assert line.startswith('[1] "Effect estimate'), 'Input not properly formatted'
+    assert deRify(line).startswith('Effect estimate'), 'Input not properly formatted'
     row['estimate'] = '%.5g'%(float(val.match(line).group(1)))
     line = f.readline()
-    assert line.startswith('[1] "t value'), 'Input not properly formatted'
+    assert deRify(line).startswith('t value'), 'Input not properly formatted'
     row['t value'] = '%.5g'%(float(val.match(line).group(1)))
     line = f.readline()
-    assert line.startswith('[1] "Significance (Pr(>Chisq))'), 'Input not properly formatted'
+    assert deRify(line).startswith('Significance (Pr(>Chisq))'), 'Input not properly formatted'
     row['signif'] = '%.5g'%(float(val.match(line).group(1)))
     line = f.readline()
-    assert line.startswith('[1] "Relative gradient (baseline)'), 'Input not properly formatted'
+    assert deRify(line).startswith('Relative gradient (baseline)'), 'Input not properly formatted'
     row['rel_grad_base'] = '%.5g'%(float(val.match(line).group(1)))
     line = f.readline()
-    assert line.startswith('[1] "Relative gradient (main effect)'), 'Input not properly formatted'
+    assert deRify(line).startswith('Relative gradient (main effect)'), 'Input not properly formatted'
     row['rel_grad_main'] = '%.5g'%(float(val.match(line).group(1)))
     if diamName:
         row['diamondname'] = diamName
@@ -120,29 +125,29 @@ if len(diam_evals) > 0:
         with open(path, 'rb') as f:
             filename = path.split('/')[-1]
             line = f.readline()
-            while line and not line.startswith('[1] "Diamond Anova'):
+            while line and not deRify(line).startswith('Diamond Anova'):
                 line = f.readline()
             assert line, 'Input is not properly formatted'
             diamName = val.match(line).group(1)
-            while line and not line.startswith('[1] "Effect 1 ('):
+            while line and not deRify(line).startswith('Effect 1 ('):
                 line = f.readline()
             assert line, 'Input not properly formatted'
             row = compute_row(f, diamName, 'baseline')
             row['filename'] = filename
             rows.append(row)
-            while line and not line.startswith('[1] "Effect 2 ('):
+            while line and not deRify(line).startswith('Effect 2 ('):
                 line = f.readline()
             assert line, 'Input not properly formatted'
             row = compute_row(f, diamName, 'baseline')
             row['filename'] = filename
             rows.append(row)
-            while line and not line.startswith('[1] "Both vs. Effect 1'):
+            while line and not deRify(line).startswith('Both vs. Effect 1'):
                 line = f.readline()
             assert line, 'Input not properly formatted'
             row = compute_row(f, diamName, 'both')
             row['filename'] = filename
             rows.append(row)
-            while line and not line.startswith('[1] "Both vs. Effect 2'):
+            while line and not deRify(line).startswith('Both vs. Effect 2'):
                 line = f.readline()
             assert line, 'Input not properly formatted'
             row = compute_row(f, diamName, 'both')

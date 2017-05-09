@@ -375,25 +375,30 @@ regressModel <- function(dataset, form) {
     smartPrint(paste(' ', date()))
     regressionOutput <- lmer(form, dataset, REML=F, control = bobyqa)
     printSummary(regressionOutput)
-    print('Convergence Warnings:')
+    cat('Convergence Warnings:\n')
     convWarn <- regressionOutput@optinfo$conv$lme4$messages
     if (is.null(convWarn)) {
         convWarn <- ''
     }
-    print(convWarn)
+    cat(paste0(convWarn,'\n'))
     
     if (convWarn != '') {
         regressionOutputO <- regressionOutput
         smartPrint('Regressing with nlminb')
         smartPrint(paste(' ', date()))
         regressionOutputN <- lmer(form, dataset, REML=F, control = nlminb)
+        cat('Convergence Warnings:\n')
         convWarnN <- regressionOutputN@optinfo$conv$lme4$messages
         if (is.null(convWarnN)) {
             convWarnN <- ''
         }
-        print(convWarnN)
+        cat(paste0(convWarnN,'\n'))
         printSummary(regressionOutputN)
-        regressionOutput <- minRelGrad(regressionOutputO, regressionOutputN)            
+        if (convWarnN == '') {
+            regressionOutput <- regressionOutputN
+        } else {
+            regressionOutput <- minRelGrad(regressionOutputO, regressionOutputN)            
+        }
     }
     
     if (convWarn != '' && convWarnN != '') {
@@ -404,7 +409,7 @@ regressModel <- function(dataset, form) {
 
 # Output a summary of model fit
 printSummary <- function(reg) {
-    print(paste('LME Fit Summary (',reg@optinfo$optimizer,')',sep=''))
+    cat(paste0('LME Fit Summary (',reg@optinfo$optimizer,')\n'))
     print(summary(reg))
     relgrad <- with(reg@optinfo$derivs,solve(Hessian,gradient))
     smartPrint('Relgrad:')

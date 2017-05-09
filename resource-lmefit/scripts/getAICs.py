@@ -1,6 +1,11 @@
 import sys, os
 from numpy import inf
 
+def deRify(s):
+    if s.startswith('[1] "'):
+        s = s[5:]
+    return s
+
 # Thanks to Daniel Sparks on StackOverflow for this one (post available at 
 # http://stackoverflow.com/questions/5084743/how-to-print-pretty-string-output-in-python)
 def getPrintTable(row_collection, key_list, field_sep=' '):
@@ -18,6 +23,7 @@ fit_list = sys.argv[1:]
 rows = []
 
 for path in fit_list:
+    converged = True
     relgrad = inf
     aic = -inf
     bic = -inf
@@ -26,31 +32,34 @@ for path in fit_list:
         text = f.readlines()
         name = path.split('.')[-3]
         for i,l in enumerate(text):
-            if l.strip().startswith('AIC'):
+            if deRify(l.strip()).startswith('AIC'):
+                print(l)
                 aic_cur, bic_cur, loglik_cur = text[i+1].strip().split()[:3]
                 aic_cur = float(aic_cur)
                 bic_cur = float(bic_cur)
                 loglik_cur = float(loglik_cur)
-            elif l.strip() == '[1] "Relgrad:"':
-                relgrad_cur = float(text[i+1].split()[1])
-                aic_cur = float(text[i+3].split()[1])
+            elif deRify(l.strip()).startswith('Relgrad'):
+                relgrad_cur = float(text[i+1].strip())
+                aic_cur = float(text[i+3].strip())
                 if relgrad_cur < relgrad:
                     relgrad = relgrad_cur
                     aic = aic_cur
                     bic = bic_cur
                     loglik = loglik_cur
-    rows.append({'filename': name, 'relgrad': str(relgrad), 'AIC': str(aic), 'BIC': str(bic), 'logLik': str(loglik)})
+            elif deRify(l.strip()).startswith('Model failed to converge under both bobyqa and nlminb'):
+                converged = False
+    rows.append({'filename': name, 'relgrad': str(relgrad), 'AIC': str(aic), 'BIC': str(bic), 'logLik': str(loglik), 'converged': converged})
 
-headers = ['filename', 'relgrad', 'logLik', 'AIC', 'BIC']
+headers = ['filename', 'logLik', 'AIC', 'BIC', 'converged?' 'relgrad']
 header_row = {}
 for h in headers:
     header_row[h] = h
 
-converged = [r for r in rows if float(r['relgrad']) <= 0.002]
+converged = [r for r in rows if r['converged']]
 converged.sort(key = lambda x: x['logLik'])
 converged.insert(0, header_row)
 
-nonconverged = [r for r in rows if float(r['relgrad']) > 0.002]
+nonconverged = [r for r in rows if not r['converged']]
 nonconverged.sort(key = lambda x: x['logLik'])
 nonconverged.insert(0, header_row)
 
