@@ -108,7 +108,8 @@ endif
 ################################################################################
 
 define 10MMFORM = 
-scripts/$(1)%10mm.lmeform: scripts/%10mm.template.lmeform | scripts
+scripts/$(1)%10mm.lmeform: scripts/%10mm.template.lmeform
+	mkdir -p scripts
 	cat $$< | sed 's/ALICEROI/$(1)/g;' > $$@
 endef
 

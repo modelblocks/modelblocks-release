@@ -6,13 +6,13 @@ Extracts recall values from a user-supplied list of lrtsignifs and outputs a spa
 argparser.add_argument('lrtsignifs', type=str, nargs='+', help='One or more *.lrtsignif files from which to extract lme comparison results.')
 args, unknown = argparser.parse_known_args()
 
-val = re.compile('^.+: *([^ ]+)"$')
+val = re.compile('^.+: *([^ "]+)"?$')
 effectpair = re.compile('([^ ]+)-vs-([^ ]+)')
 
+R = re.compile('(\[[0-9]+\] "?)?([^"$]*)"?')
+
 def deRify(s):
-    if s.startswith('[1] "):
-        s = s[5:]
-    return s
+    return R.match(s).group(2)
 
 def compute_row(f, diamName=None, vs=None):
     row = {}
@@ -37,8 +37,16 @@ def compute_row(f, diamName=None, vs=None):
     assert deRify(line).startswith('Relative gradient (baseline)'), 'Input not properly formatted'
     row['rel_grad_base'] = '%.5g'%(float(val.match(line).group(1)))
     line = f.readline()
+    if (deRify(line).startswith('Converged (baseline)')):
+        row['converged_base'] = val.match(line).group(1)
+    else:
+        row['converged_base'] = str(float(row['rel_grad_base']) < 0.002)
     assert deRify(line).startswith('Relative gradient (main effect)'), 'Input not properly formatted'
     row['rel_grad_main'] = '%.5g'%(float(val.match(line).group(1)))
+    if (deRify(line).startswith('Converged (main effect)')):
+        row['converged_main'] = val.match(line).group(1)
+    else:
+        row['converged_main'] = str(float(row['rel_grad_main']) < 0.002)
     if diamName:
         row['diamondname'] = diamName
         left = effectpair.match(diamName).group(1)
@@ -77,7 +85,7 @@ if len(pair_evals) > 0:
     print('Pairwise evaluation of significance')
     print('===================================')
 
-    headers = ['effect', 'corpus', 'estimate', 't value', 'signif', 'rel_grad_base', 'rel_grad_main', 'filename']
+    headers = ['effect', 'corpus', 'estimate', 't value', 'signif', 'converged_base', 'rel_grad_base', 'converged_main', 'rel_grad_main', 'filename']
     
     header_row = {}
     for h in headers:
@@ -92,9 +100,9 @@ if len(pair_evals) > 0:
             row['filename'] = filename
             rows.append(row)
 
-    converged = [header_row] + sorted([x for x in rows if (float(x['rel_grad_base']) < 0.002 and float(x['rel_grad_main']) < 0.002)], \
+    converged = [header_row] + sorted([x for x in rows if (x['converged_base'] == 'True' and x['converged_main'] == 'True')], \
                 key = lambda y: float(y['signif']))
-    nonconverged = [header_row] + sorted([x for x in rows if (float(x['rel_grad_base']) >= 0.002 or float(x['rel_grad_main']) >= 0.002)], \
+    nonconverged = [header_row] + sorted([x for x in rows if not(x['converged_base'] == 'True' and x['converged_main'] == 'True')], \
                    key = lambda y: float(y['signif']))
 
     print(getPrintTable(converged, headers))
@@ -113,7 +121,7 @@ if len(diam_evals) > 0:
     print('Diamond evaluation of significance')
     print('==================================')
 
-    headers = ['effect', 'corpus', 'diamondname', 'pair', 'estimate', 't value', 'signif', 'rel_grad_base', 'rel_grad_main', 'filename']
+    headers = ['effect', 'corpus', 'diamondname', 'pair', 'estimate', 't value', 'signif', 'converged_base', 'rel_grad_base', 'converged_main', 'rel_grad_main', 'filename']
 
     header_row = {}
     for h in headers:
@@ -154,9 +162,9 @@ if len(diam_evals) > 0:
             row['filename'] = filename
             rows.append(row)
 
-    converged = [header_row] + sorted([x for x in rows if (float(x['rel_grad_base']) < 0.002 and float(x['rel_grad_main']) < 0.002)], \
+    converged = [header_row] + sorted([x for x in rows if (x['converged_base'] == 'True' and x['converged_main'] == 'True')], \
                 key = lambda y: float(y['signif']))
-    nonconverged = [header_row] + sorted([x for x in rows if (float(x['rel_grad_base']) >= 0.002 or float(x['rel_grad_main']) >= 0.002)], \
+    nonconverged = [header_row] + sorted([x for x in rows if not(x['converged_base'] == 'True' and x['converged_main'] == 'True')], \
                    key = lambda y: float(y['signif']))
 
     print(getPrintTable(converged, headers))
