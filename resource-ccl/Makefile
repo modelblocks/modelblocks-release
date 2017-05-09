@@ -90,8 +90,8 @@ endif
 #
 %.cclprs: $$(DEP-CCL) genmodel/$$*.linetoks $(CCLDIR) $(CONFIGDIR)/user-ccl-directory.txt
 	mkdir -p $(dir $*)
-	echo $(abspath $(word 1, $^)) line learn -o $(abspath $*) -s ccllog -R 100 > $*.ccl_exec_seq.txt
-	echo $(abspath $(word 1, $^)) line parse -o $(abspath $*) -s cclprs -R 100 >> $*.ccl_exec_seq.txt
+	echo $(abspath $<) line learn -o $(abspath $*) -s ccllog -R 100 > $*.ccl_exec_seq.txt
+	echo $(abspath $<) line parse -o $(abspath $*) -s cclprs -R 100 >> $*.ccl_exec_seq.txt
 	cd $(word 2, $^); ./main/UnknownOS/cclparser $(abspath $*.ccl_exec_seq.txt)
 	rm $*.ccl_exec_seq.txt
   

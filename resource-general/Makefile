@@ -159,6 +159,9 @@ UHHMM-SCRIPTS := $(RESOURCE-UHHMM)/scripts
 RESOURCE-UPPARSE := $(abspath $(MBDIR)/resource-upparse)
 UPPARSE-SCRIPTS := $(RESOURCE-UPPARSE)/scripts
 
+RESOURCE-WORDNET := $(abspath $(MBDIR)/resource-wordnet)
+WORDNET-SCRIPTS := $(RESOURCE-WORDNET)/scripts
+
 BIN      := bin
 GENMODEL := genmodel
 
@@ -185,6 +188,7 @@ include $(RESOURCE-ONTONOTES)/Makefile
 include $(RESOURCE-RHACKS)/Makefile
 include $(RESOURCE-UCL)/Makefile
 include $(RESOURCE-UPPARSE)/Makefile
+include $(RESOURCE-WORDNET)/Makefile
 include $(RESOURCE-RT)/Makefile
 include $(RESOURCE-LMEFIT)/Makefile
 endef

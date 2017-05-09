@@ -119,7 +119,7 @@ endef
 $(eval $(ALICE-FORMS))
 
 %/alice.original.linetoks: $$(DEP-TOKENIZER) srcmodel/alice.original.txt $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | %
-	cat $(word 1, $^) | sed "s/‘/\'/g;s/’/\'/g;s/—/ -/g;s/“/\'/g;s/”/\'/g;" | $(word 2, $^) > $@
+	cat $< | sed "s/‘/\'/g;s/’/\'/g;s/—/ -/g;s/“/\'/g;s/”/\'/g;" | $(word 2, $^) > $@
 
 genmodel/alice.lineitems: srcmodel/alice.original.txt | genmodel
 	cat $< | sed "s/‘/\'/g;s/’/\'/g;s/—/ -/g;s/“/\'/g;s/”/\'/g;s/(/-LRB-/g;s/)/-RRB-/g;" > $@

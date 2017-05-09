@@ -89,7 +89,7 @@ endif
 ################################################################################
     
 bnc%.linetoks: $$(DEP-BNC) $(BNCDIR) $(CONFIGDIR)/user-bnc-directory.txt | genmodel
-	cat $(word 1, $^)/Texts/$*/*/* | sed 's|<teiHeader.*</teiHeader>||g;s|<[^<>]*>||g;s|^\s*\n||g;/^$$$$/d;s|  *| |g;' > $@
+	cat $</Texts/$*/*/* | sed 's|<teiHeader.*</teiHeader>||g;s|<[^<>]*>||g;s|^\s*\n||g;/^$$$$/d;s|  *| |g;' > $@
     
 genmodel/bncTRAIN.linetoks: $(foreach sect,$(BNCTRAINDIRS),bnc$(sect).linetoks) | genmodel
 	cat $^ > $@

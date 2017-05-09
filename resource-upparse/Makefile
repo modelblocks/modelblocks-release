@@ -101,7 +101,7 @@ endif
 %.upparse: $$(DEP-UPPARSE) genmodel/$$*.linetoks $(UPPARSEDIR) $(UPPARSEDIR)/scripts/chunk.py \
 $(CONFIGDIR)/user-upparse-directory.txt | genmodel
 	mkdir -p $(dir $*)
-	cd $(word 3, $^); ./scripts/chunk.py -C -t $(abspath $(word 2, $^)) -s $(abspath $(word 2, $^)) -o $(abspath $*) -m prlg-uni
+	cd $(word 2, $^); ./scripts/chunk.py -C -t $(abspath $<) -s $(abspath $<) -o $(abspath $*) -m prlg-uni
 
 # Finds the parser output from an upparse run and promotes it to the project root
 /%.upparseprs: $$(lastword $$(sort $$(wildcard /%/cascade*/test-eval)))
