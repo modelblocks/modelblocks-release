@@ -9,10 +9,10 @@ args, unknown = argparser.parse_known_args()
 val = re.compile('^.+: *([^ "]+)"?$')
 effectpair = re.compile('([^ ]+)-vs-([^ ]+)')
 
+R = re.compile('(\[[0-9]+\] "?)?([^"$]*)"?')
+
 def deRify(s):
-    if s.startswith('[1] "'):
-        s = s[5:]
-    return s
+    return R.match(s).group(2)
 
 def compute_row(f, diamName=None, vs=None):
     row = {}
