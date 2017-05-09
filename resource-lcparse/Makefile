@@ -157,6 +157,9 @@ ParseParams:
 endef
 define TargetBlock
 ParseLinetrees:
+  blocktitle: Parse (Linetrees)
+  targetsuffix: .linetrees
+  family: Parse
   blockseq:
   - blocktype: Corpus
     kwargs:
@@ -172,8 +175,6 @@ ParseLinetrees:
     kwargs:
       outerdelim: '.'
       innerdelim: '.'
-  blocktitle: Parse (Linetrees)
-  targetsuffix: .linetrees
 endef
 
 ##### obtain model-specific parser output by running sentences through parser given flags and model, from including makefile's genmodel dir:

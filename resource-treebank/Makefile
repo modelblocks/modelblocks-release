@@ -48,27 +48,28 @@ BROWNTRAINSECTS = cf cg ck cl cm cn cp cr
 #
 ################################################################################
 
-MSG1 := The current config file, 
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-treebank-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 TREEBANKDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(TREEBANKDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(TREEBANKDIR)$(MSG3))
+RESOURCE-NAME := The Penn Treebank (PTB)
+define RESOURCE-DESCR =
+
+NAME: The Penn Treebank (PTB)
+AVAILABILITY: Paid
+URL: https://catalog.ldc.upenn.edu/ldc99t42
+DESCRIPTION: One million words of 1989 Wall Street Journal material annotated in Treebank II style.
+A small sample of ATIS-3 material annotated in Treebank II style.
+Switchboard tagged, dysfluency-annotated, and parsed text.
+A fully tagged version of the Brown Corpus.
+Brown parsed text.
+endef
+TREEBANK-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-TREEBANK = $(error $(TREEBANK-ERROR))
 endif
 endif
 
@@ -83,9 +84,9 @@ endif
 #
 ################################################################################
     
-genmodel/brown%.linetrees: $(TREEBANKDIR) $(LTREES-SCRIPTS)/editabletrees2linetrees.pl \
+genmodel/brown%.linetrees: $$(DEP-TREEBANK) $(TREEBANKDIR) $(LTREES-SCRIPTS)/editabletrees2linetrees.pl \
 $(CONFIGDIR)/user-treebank-directory.txt | genmodel
-	cat $</parsed/mrg/brown/%/*.mrg | perl $(word 2,$^) > $@
+	cat $(word 2, $^)/parsed/mrg/brown/%/*.mrg | perl $(word 3,$^) > $@
 
 genmodel/brownTRAIN.linetrees: $(foreach sect,$(BROWNTRAINSECTS),genmodel/brown$(sect).linetrees) | genmodel
 	cat $^ > $@
@@ -96,9 +97,9 @@ WSJ23:
   text: Wall Street Journal test set (section 23)
   value: wsj23
 endef
-genmodel/wsj%.linetrees: $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/wsj/$$* \
+genmodel/wsj%.linetrees: $$(DEP-TREEBANK) $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/wsj/$$* \
 $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
-	cat $(word 2,$^)/*.mrg | perl $(word 3,$^) > $@
+	cat $(word 3,$^)/*.mrg | perl $(word 4,$^) > $@
   
 %/wsj02to21.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,%/wsj$(sect).linetrees)
 	cat $^ > $@
@@ -109,9 +110,9 @@ WSJ02to21:
   text: Wall Street Journal training set (sections 2-21)
   value: wsj02to21
 endef
-genmodel/swbd%.linetrees: $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/swbd/$$* \
+genmodel/swbd%.linetrees: $$(DEP-TREEBANK) $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/swbd/$$* \
 $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
-	cat $(word 2, $^)/*.mrg | perl $(word 3, $^) | awk '/^\s*\(/' > $@
+	cat $(word 3, $^)/*.mrg | perl $(word 4, $^) | awk '/^\s*\(/' > $@
 
 %/swbd2to4.linetrees: $(foreach sect, 2 3 4, %/swbd$(sect).linetrees)
 	cat $^ > $@

@@ -77,27 +77,24 @@ ALICE-ROI := LATL LIFG LIPL LPreM LPreM LPTL RATL
 #
 ################################################################################
 
-MSG1 := The current config file, 
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-alice-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 ALICEDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(ALICEDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(ALICEDIR)$(MSG3))
+RESOURCE-NAME := Alice in Wonderland Corpus (Brennan et al 16)
+define RESOURCE-DESCR =
+
+NAME: The Alice in Wonderland corpus
+AVAILABILITY: Unreleased
+DESCRIPTION: fMRI data from 28 subjects listening to the first chapter of Alice in Wonderland.
+Collected by Brennan et al (2016).
+endef
+ALICE-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-ALICE = $(error $(ALICE-ERROR))
 endif
 endif
 
@@ -121,14 +118,14 @@ endef
 
 $(eval $(ALICE-FORMS))
 
-genmodel/alice.original.linetoks: srcmodel/alice.original.txt $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | genmodel
-	cat $< | sed "s/‘/\'/g;s/’/\'/g;s/—/ -/g;s/“/\'/g;s/”/\'/g;" | $(word 2, $^) > $@
+%/alice.original.linetoks: $$(DEP-TOKENIZER) srcmodel/alice.original.txt $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | %
+	cat $(word 2, $^) | sed "s/‘/\'/g;s/’/\'/g;s/—/ -/g;s/“/\'/g;s/”/\'/g;" | $(word 3, $^) > $@
 
 genmodel/alice.lineitems: srcmodel/alice.original.txt | genmodel
 	cat $< | sed "s/‘/\'/g;s/’/\'/g;s/—/ -/g;s/“/\'/g;s/”/\'/g;s/(/-LRB-/g;s/)/-RRB-/g;" > $@
 
-genmodel/alice.src.time.tokmeasures: $(ALICE-SCRIPTS)/textGrid2tokmeasures.py $(ALICEDIR)/alice_stim_shared/DownTheRabbitHoleFinal_exp120_pad_1.TextGrid | genmodel
-	cat $(word 2, $^) | python $(word 1, $^) 0 > $@
+%/alice.src.time.tokmeasures: $$(DEP-ALICE) $(ALICE-SCRIPTS)/textGrid2tokmeasures.py $(ALICEDIR)/alice_stim_shared/DownTheRabbitHoleFinal_exp120_pad_1.TextGrid | %
+	cat $(word 3, $^) | python $(word 2, $^) 0 > $@
 
 genmodel/alice.time.tokmeasures: $(ALICE-SCRIPTS)/alignSrcToks2OrigToks.py genmodel/alice.src.time.tokmeasures genmodel/alice.original.linetoks | genmodel
 	python $^ >$@
@@ -143,34 +140,34 @@ genmodel/alice.sbj.evmeasures: | genmodel
 	echo 'subject sampleid docid' > $@
 	$(foreach s, $(ALICE-SUBJECTS), for i in {1..362}; do echo "$(s) $$i 1" >> $@; done;)
 
-genmodel/alice.pwr.evmeasures: $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/$(s)-sndpwr.txt) | genmodel
+%/alice.pwr.evmeasures: $$(DEP-ALICE) $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/$(s)-sndpwr.txt) | %
 	echo 'sndpwr' > $@
-	cat $(wordlist 2, 1000, $^) >> $@
+	cat $(wordlist 3, 1000, $^) >> $@
 
-genmodel/alice.rate.evmeasures: $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/$(s)-rate.txt) | genmodel
+%/alice.rate.evmeasures: $$(DEP-ALICE) $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/$(s)-rate.txt) | %
 	echo 'rate' > $@
-	cat $(wordlist 2, 1000, $^) >> $@
+	cat $(wordlist 3, 1000, $^) >> $@
 
-genmodel/alice.generic.evmeasures: $(CONFIGDIR)/user-alice-directory.txt $(ALICEDIR)/alice_data_shared/sept18-generic-predictors-under-hrf-with-logfrqhal.txt | genmodel/
+%/alice.generic.evmeasures: $$(DEP-ALICE) $(CONFIGDIR)/user-alice-directory.txt $(ALICEDIR)/alice_data_shared/sept18-generic-predictors-under-hrf-with-logfrqhal.txt | %
 	echo 'rateConv frqConvOrth breakConvOrth tdpConvOrth tdxConvOrth bupConvOrth buxConvOrth cfgsurpConvOrth bigramlexConvOrth trigramlexConvOrth bigramposConvOrth trigramposConvOrth' > $@.tmp
-	tail -n+11 $(word 2, $^) | sed 's/\r//g;' | sed 's/\t/ /g;' >> $@.tmp
+	tail -n+11 $(word 3, $^) | sed 's/\r//g;' | sed 's/\t/ /g;' >> $@.tmp
 	paste -d' ' $@.tmp <(echo 'sampleid'; for i in {1..362}; do echo "$$i"; done;) > $@
 	rm -f $@.tmp
 
-genmodel/alice.mvmnt.evmeasures: $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(wildcard $(ALICEDIR)/alice_data_shared/$(s)-rp_*.txt)) | genmodel
+%/alice.mvmnt.evmeasures: $$(DEP-ALICE) $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(wildcard $(ALICEDIR)/alice_data_shared/$(s)-rp_*.txt)) | %
 	echo 'LATLmvmnt RATLmvmnt LPTLmvmnt LIPLmvmnt LPreMmvmnt LIFGmvmnt' > $@
-	$(foreach f, $(wordlist 2, 1000, $^), tail -n+11 $(f) | sed 's/\t/ /g' | sed -e '$$a\' >> $@;)
+	$(foreach f, $(wordlist 3, 1000, $^), tail -n+11 $(f) | sed 's/\t/ /g' | sed -e '$$a\' >> $@;)
 
-genmodel/alice.BOLD6mm.evmeasures: $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/6mm/$(s)-timecourses.txt) | genmodel
+%/alice.BOLD6mm.evmeasures: $$(DEP-ALICE) $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/6mm/$(s)-timecourses.txt) | genmodel
 	echo 'boldLATL6mm boldRATL6mm boldLPTL6mm boldLIPL6mm boldLPreM6mm boldLIFG6mm' > $@
-	cat $(wordlist 2, 1000, $^) | sed 's/\t/ /g' >> $@
+	cat $(wordlist 3, 1000, $^) | sed 's/\t/ /g' >> $@
 
-genmodel/alice.BOLD10mm.evmeasures: $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/10mm/$(s)-timecourses.txt) | genmodel
+%/alice.BOLD10mm.evmeasures: $$(DEP-ALICE) $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/10mm/$(s)-timecourses.txt) | genmodel
 	echo 'boldLATL10mm boldRATL10mm boldLPTL10mm boldLIPL10mm boldLPreM10mm boldLIFG10mm' > $@
-	cat $(wordlist 2, 1000, $^) | sed 's/\t/ /g' >> $@
+	cat $(wordlist 3, 1000, $^) | sed 's/\t/ /g' >> $@
 
-genmodel/alice.src.evmeasures: genmodel/alice.sbj.evmeasures genmodel/alice.pwr.evmeasures genmodel/alice.rate.evmeasures \
-genmodel/alice.mvmnt.evmeasures genmodel/alice.BOLD6mm.evmeasures genmodel/alice.BOLD10mm.evmeasures genmodel/alice.generic.evmeasures $(RESOURCE-RT)/scripts/merge_tables.py | genmodel
+%/alice.src.evmeasures: %/alice.sbj.evmeasures %/alice.pwr.evmeasures %/alice.rate.evmeasures \
+%/alice.mvmnt.evmeasures %/alice.BOLD6mm.evmeasures %/alice.BOLD10mm.evmeasures %/alice.generic.evmeasures $(RESOURCE-RT)/scripts/merge_tables.py | %
 	paste -d' ' $(wordlist 1, 6, $^) > $@.tmp
 	python $(word 8, $^) $@.tmp $(word 7, $^) sampleid > $@
 	rm -f $@.tmp

@@ -49,28 +49,27 @@ NAT := 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 2
 #
 ################################################################################
 
-MSG1 := The current config file,
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-dmv-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 DMVDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(DMVDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(DMVDIR)$(MSG3))
 endif
+RESOURCE-NAME := The Dependency Model with Valence (DMV)
+define RESOURCE-DESCR =
+
+NAME: The Dependency Model with Valence (DMV)
+AVAILABILITY: Free
+URL: https://code.google.com/archive/p/pr-toolkit/
+DESCRIPTION: An implementation (Gillenwater et al 2010) of the Dependency
+Model with Valence parser (Klein & Manning 2004) for unsupervised
+dependency parsing.
+endef
+DMV-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-DMV = $(error $(DMV-ERROR))
 endif
 
 
@@ -85,36 +84,36 @@ endif
 ################################################################################
 
 .PRECIOUS: %.1.dmv.conll %.1.u.dmv.conll
-%.1.dmv.conll %.1.u.dmv.conll: %.bmmmbase.conll $(DMVDIR) $(CONFIGDIR)/user-dmv-directory.txt $(CONFIGDIR)/user-javaflags.txt
+%.1.dmv.conll %.1.u.dmv.conll: $$(DEP-DMV) %.bmmmbase.conll $(DMVDIR) $(CONFIGDIR)/user-dmv-directory.txt $(CONFIGDIR)/user-javaflags.txt
 	echo "name=Conll" > $*.1.dmv.params
 	echo "lowercase=false" >> $*.1.dmv.params
 	echo "transitive=false" >> $*.1.dmv.params
 	echo "reader-type=naacl2012-fine" >> $*.1.dmv.params
 	echo "train-name=dmv_train" >> $*.1.dmv.params
-	echo "train-file=$(abspath $<.temp)" >> $*.1.dmv.params
+	echo "train-file=$(abspath $(word 2, $^).temp)" >> $*.1.dmv.params
 	echo "devname=dmv_devel" >> $*.1.dmv.params
-	echo "dev-file=$(abspath $<.temp)" >> $*.1.dmv.params
+	echo "dev-file=$(abspath $(word 2, $^).temp)" >> $*.1.dmv.params
 	echo "test-name1=dmv_test" >> $*.1.dmv.params
-	echo "test-file1=$(abspath $<.temp)" >> $*.1.dmv.params
-	cp $< $<.temp
-	cd $(word 2, $^); java $(shell cat $(word 4, $^)) -cp '$(word 2, $^)/*' depparsing.programs.RunModel -corpus-params $(abspath $*.1.dmv.params) -model-init K_AND_M -dvalency 2 -cvalency 1 -child-backoff 0.66 -num-em-iters 20 -trainingType 0 -stats-file $(word 2, $^)/stats-example.txt -output-prefix $(abspath $(dir $*))/
+	echo "test-file1=$(abspath $(word 2, $^).temp)" >> $*.1.dmv.params
+	cp $(word 2, $^) $(word 2, $^).temp
+	cd $(word 3, $^); java $(shell cat $(word 5, $^)) -cp '$(word 3, $^)/*' depparsing.programs.RunModel -corpus-params $(abspath $*.1.dmv.params) -model-init K_AND_M -dvalency 2 -cvalency 1 -child-backoff 0.66 -num-em-iters 20 -trainingType 0 -stats-file $(word 3, $^)/stats-example.txt -output-prefix $(abspath $(dir $*))/
 	cat $(dir $*)dmv_test | awk ' { t = $$7; $$7 = $$8; $$8 = t; print; } ' OFS=$$'\t' | sed 's/\t\t\+//g' > $@
 	rm $(dir $*)dmv_test
 
 .PRECIOUS: %.dmv.conll
-%.dmv.conll: %.bmmm.conll $(DMVDIR) $(CONFIGDIR)/user-dmv-directory.txt $(CONFIGDIR)/user-javaflags.txt
+%.dmv.conll: $$(DEP-DMV) %.bmmm.conll $(DMVDIR) $(CONFIGDIR)/user-dmv-directory.txt $(CONFIGDIR)/user-javaflags.txt
 	echo "name=Conll" > $*.dmv.params
 	echo "lowercase=false" >> $*.dmv.params
 	echo "transitive=false" >> $*.dmv.params
 	echo "reader-type=naacl2012-fine" >> $*.dmv.params
 	echo "train-name=dmv_train" >> $*.dmv.params
-	echo "train-file=$(abspath $<.temp)" >> $*.dmv.params
+	echo "train-file=$(abspath $(word 2, $^).temp)" >> $*.dmv.params
 	echo "devname=dmv_devel" >> $*.dmv.params
-	echo "dev-file=$(abspath $<.temp)" >> $*.dmv.params
+	echo "dev-file=$(abspath $(word 2, $^).temp)" >> $*.dmv.params
 	echo "test-name1=dmv_test" >> $*.dmv.params
-	echo "test-file1=$(abspath $<.temp)" >> $*.dmv.params
-	cp $< $<.temp
-	cd $(word 2, $^); java $(shell cat $(word 4, $^)) -cp '$(word 2, $^)/*' depparsing.programs.RunModel -corpus-params $(abspath $*.dmv.params) -model-init K_AND_M -dvalency 2 -cvalency 1 -child-backoff 0.66 -num-em-iters 20 -trainingType 0 -stats-file $(word 2, $^)/stats-example.txt -output-prefix $(abspath $(dir $*))/
+	echo "test-file1=$(abspath $(word 2, $^).temp)" >> $*.dmv.params
+	cp $(word 2, $^) $(word 2, $^).temp
+	cd $(word 3, $^); java $(shell cat $(word 5, $^)) -cp '$(word 3, $^)/*' depparsing.programs.RunModel -corpus-params $(abspath $*.dmv.params) -model-init K_AND_M -dvalency 2 -cvalency 1 -child-backoff 0.66 -num-em-iters 20 -trainingType 0 -stats-file $(word 3, $^)/stats-example.txt -output-prefix $(abspath $(dir $*))/
 	cat $(dir $*)dmv_test | awk ' { t = $$7; $$7 = $$8; $$8 = t; print; } ' OFS=$$'\t' | sed 's/\t\t\+//g' > $@
 	rm $(dir $*)dmv_test
 

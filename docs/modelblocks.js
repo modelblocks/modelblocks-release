@@ -283,7 +283,6 @@ function createBlockTargetClass(blocktype,
 // Add options to Kernel blocks
 function addVal(p, k) {
   if (k != null) {
-    console.log(k);
     if (KernelBlockDefs[k].paramval != null) {
       if (KernelBlockDefs[k].paramval[p] == null) {
         KernelBlockDefs[k].paramval[p] = ParamVal[p];
@@ -292,14 +291,11 @@ function addVal(p, k) {
       KernelBlockDefs[k].paramval = {};
       KernelBlockDefs[k].paramval[p] = ParamVal[p];
     }
-    console.log(KernelBlockDefs[k]);
   }
 }
 
 function trickleUp(p, kernels) {
   for (var k in kernels) {
-    console.log(kernels);
-    console.log(kernels[k]);
     addVal(p, kernels[k]);
     if (KernelBlockDefs[kernels[k]].instance_of != null) {
       var superblocks = [].concat(KernelBlockDefs[kernels[k]].instance_of);
@@ -398,9 +394,7 @@ function buildParamUI(paramtype,
         var cascade = [].concat(paramval[v].cascade);
         new_val.data('cascade', []);
         for (var i in cascade) {
-          console.log(cascade);
           var c = KernelBlockDefs[cascade[i]];
-          console.log(c)
           if (c.nodelimiter) {
             var od = innerdelim;
             var id = '';
@@ -420,7 +414,7 @@ function buildParamUI(paramtype,
           param.data('cascade').push(new_param);
         }
       }
-      param.append(new_val);
+      sortedAppend(new_val, param);
     }
     param.change(function() {
       processCascade(param);
@@ -470,7 +464,7 @@ function buildParamUI(paramtype,
           param.data('cascade').push(new_param);
         }
       }
-      param.append(new_val);
+      sortedAppend(new_val, param);
     }
     param.change(function() {
       processCascade(param)
@@ -595,7 +589,10 @@ function processCascade(param, multi) {
 }
 
 function buildAddButtons(TargetBlockDefs) {
-  var optionContainer = $('div#optionContainer');
+  var rootNav = $('li#root');
+  var familiesNav = rootNav.find('ul#families');
+  console.log(familiesNav);
+  var families = {}
   for (var k in TargetBlockDefs) {
     var buttonContainer = $('div#addButtonContainer');
     var worksurface = $('div#worksurface'); 
@@ -614,10 +611,27 @@ function buildAddButtons(TargetBlockDefs) {
     //  worksurface.append(new_targ.paramcontainer);
     //});
     
-    var new_opt = $('<div class="targetoption"</div>')
-    new_opt.text(TargetBlockDefs[k].blocktitle);
+    var family = TargetBlockDefs[k].family
+    if (family == null) {
+      family = 'Other';
+    }
+    if (family in families) {
+      familyNav = familiesNav.find('#' + family.replace(/[ ()]/g, '') + 'Root');
+      familyOptList = familyNav.find('ul');
+    } else {
+      familyNav = $('<li id="' + family.replace(/[ ()]/g, '') + 'Root" class="familyRoot">');
+      familySelector = $('<a id="' + family.replace(/[ ()]/g, '') + 'Selector" class="familySelector">' + family + '</a>');
+      familyOptList = $('<ul>');
+      familyNav.append(familySelector);
+      familyNav.append(familyOptList);
+      sortedAppend(familyNav, familiesNav);
+      families[family] = true
+    }
+    
+    var new_opt = $('<li>')
+    new_opt.append($('<a>' + TargetBlockDefs[k].blocktitle + '</a>'));
     new_opt.data('blocktype', k);
-    optionContainer.append(new_opt);
+    sortedAppend(new_opt, familyOptList);
     new_opt.click(function() {
       var t = $(this).data('blocktype');
       var new_targ = new Blocks[t];
@@ -627,6 +641,22 @@ function buildAddButtons(TargetBlockDefs) {
       tray.append(new_targ.trayicon);
       worksurface.append(new_targ.paramcontainer);
     });
+  }
+}
+
+function sortedAppend(obj, par) {
+  var objStr = obj.text();
+  var toInsert = true;
+  par.children().each(function() {
+    var nextStr = $(this).text();
+    if (!objStr.startsWith('Other') && objStr.localeCompare(nextStr) < 0) {
+      $(this).before(obj);
+      toInsert = false;
+      return false;
+    }
+  });
+  if (toInsert) {
+    par.append(obj);
   }
 }
 
