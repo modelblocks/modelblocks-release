@@ -190,6 +190,7 @@ include $(RESOURCE-UCL)/Makefile
 include $(RESOURCE-UPPARSE)/Makefile
 include $(RESOURCE-WORDNET)/Makefile
 include $(RESOURCE-RT)/Makefile
+include $(RESOURCE-FMRI)/Makefile
 include $(RESOURCE-LMEFIT)/Makefile
 endef
 

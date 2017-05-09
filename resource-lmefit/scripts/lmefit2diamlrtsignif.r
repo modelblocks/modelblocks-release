@@ -54,14 +54,18 @@ both <- get(bothfile)
 #########################
 
 printSignifSummary <- function(mainName, mainEffect, basemodel, testmodel, signif) {
-    print(paste('Main effect:', mainName))
-    print(paste('Corpus:', corpus))
-    print(paste('Effect estimate (',mainEffect,'): ', summary(testmodel)[[10]][mainEffect,'Estimate'], sep=''))
-    print(paste('t value (',mainEffect,'): ', summary(testmodel)[[10]][mainEffect,'t value'], sep=''))
-    print(paste('Significance (Pr(>Chisq)):', signif[['Pr(>Chisq)']][[2]]))
-    print(paste('Relative gradient (baseline):',  max(abs(with(basemodel@optinfo$derivs,solve(Hessian,gradient))))))
-    print(paste('Relative gradient (main effect):',  max(abs(with(testmodel@optinfo$derivs,solve(Hessian,gradient))))))
-    print(signif)
+    cat(paste0('Main effect: ', mainName), '\n')
+    cat(paste0('Corpus: ', corpus), '\n')
+    cat(paste0('Effect estimate (',mainEffect,'): ', summary(testmodel)[[10]][mainEffect,'Estimate'], sep=''), '\n')
+    cat(paste0('t value (',mainEffect,'): ', summary(testmodel)[[10]][mainEffect,'t value'], sep=''), '\n')
+    cat(paste0('Significance (Pr(>Chisq)): ', signif[['Pr(>Chisq)']][[2]]), '\n')
+    cat(paste0('Relative gradient (baseline): ',  max(abs(with(basemodel@optinfo$derivs,solve(Hessian,gradient)))), '\n'))
+    convWarnBase <- is.null(basemodel@optinfo$conv$lme4$messages)
+    cat(paste0('Converged (baseline): ', as.character(convWarnBase), '\n'))
+    cat(paste0('Relative gradient (main effect):',  max(abs(with(testmodel@optinfo$derivs,solve(Hessian,gradient)))), '\n'))
+    convWarnMain <- is.null(testmodel@optinfo$conv$lme4$messages)
+    cat(paste0('Converged (main effect): ', as.character(convWarnMain), '\n'))
+    cat(paste0(signif, '\n'))
 }
 
 smartPrint('Base summary:')

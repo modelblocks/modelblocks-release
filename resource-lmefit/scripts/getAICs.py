@@ -32,8 +32,7 @@ for path in fit_list:
         text = f.readlines()
         name = path.split('.')[-3]
         for i,l in enumerate(text):
-            if deRify(l.strip()).startswith('AIC'):
-                print(l)
+            if deRify(l.strip()).startswith('AIC        BIC'):
                 aic_cur, bic_cur, loglik_cur = text[i+1].strip().split()[:3]
                 aic_cur = float(aic_cur)
                 bic_cur = float(bic_cur)
@@ -48,18 +47,18 @@ for path in fit_list:
                     loglik = loglik_cur
             elif deRify(l.strip()).startswith('Model failed to converge under both bobyqa and nlminb'):
                 converged = False
-    rows.append({'filename': name, 'relgrad': str(relgrad), 'AIC': str(aic), 'BIC': str(bic), 'logLik': str(loglik), 'converged': converged})
+    rows.append({'filename': name, 'relgrad': str(relgrad), 'AIC': str(aic), 'BIC': str(bic), 'logLik': str(loglik), 'converged': str(converged)})
 
-headers = ['filename', 'logLik', 'AIC', 'BIC', 'converged?' 'relgrad']
+headers = ['filename', 'logLik', 'AIC', 'BIC', 'converged', 'relgrad']
 header_row = {}
 for h in headers:
     header_row[h] = h
 
-converged = [r for r in rows if r['converged']]
+converged = [r for r in rows if r['converged'] == 'True']
 converged.sort(key = lambda x: x['logLik'])
 converged.insert(0, header_row)
 
-nonconverged = [r for r in rows if not r['converged']]
+nonconverged = [r for r in rows if r['converged'] == 'False']
 nonconverged.sort(key = lambda x: x['logLik'])
 nonconverged.insert(0, header_row)
 
