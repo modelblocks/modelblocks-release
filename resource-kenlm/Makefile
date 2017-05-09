@@ -46,37 +46,52 @@
 #
 ################################################################################
 
-MSG1 := The current config file, 
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-kenlm-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 KENLMDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(KENLMDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(KENLMDIR)$(MSG3))
+RESOURCE-NAME := KenLM Language Model Toolkit
+define RESOURCE-DESCR =
+
+NAME: KenLM Language Model Toolkit
+AVAILABILITY: Free
+URL: https://kheafield.com/code/kenlm/
+DESCRIPTION: KenLM estimates, filters, and queries language models. Estimation
+is fast and scalable due to streaming algorithms.
+endef
+KENLM-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-KENLM = $(error $(KENLM-ERROR))
+else
+DEP-KENML :=
 endif
 
 CONFIG := $(CONFIGDIR)/user-kenlm-model-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 KENLMMODDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(KENLMMODDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(KENLMMODDIR)$(MSG3))
+RESOURCE-NAME := KenLM Language Model Toolkit (model binaries directory)
+define RESOURCE-DESCR =
+
+NAME: KenLM Language Model Toolkit (model binaries directory)
+AVAILABILITY: Free
+URL: https://kheafield.com/code/kenlm/
+DESCRIPTION: KenLM estimates, filters, and queries language models. Estimation
+is fast and scalable due to streaming algorithms.
+
+This resource is just a directory in which to store compiled binaries.
+You can specify a binaries directory using the pointer file above.
+endef
+KENLMMOD-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-KENLMMOD = $(error $(KENLMMOD-ERROR))
+else
+DEP-KENML :=
 endif
 endif
 
@@ -106,35 +121,35 @@ endif
   
 .PRECIOUS: %.kenlm
 # especially good for unigram models since kenlm doesn't permit those to be made into binaries
-%.kenlm: $(CONFIGDIR)/user-kenlm-directory.txt $(KENLMDIR)/bin/lmplz \
+%.kenlm: $$(DEP-KENLM) $(CONFIGDIR)/user-kenlm-directory.txt $(KENLMDIR)/bin/lmplz \
 $$(basename %).linetoks.bz2
 	mkdir kenlmtmp
-	$(word 2,$^) -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 50% < $(word 3,$^) > $@
+	$(word 3,$^) -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 50% < $(word 4,$^) > $@
 	rm -rf kenlmtmp
     
 .PRECIOUS: %.fw.kenlm
 # especially good for unigram models since kenlm doesn't permit those to be made into binaries
-%.fw.kenlm: $(KENLMDIR)/bin/lmplz $$(basename %).linetoks.bz2 \
+%.fw.kenlm: $$(DEP-KENLM) $(KENLMDIR)/bin/lmplz $$(basename %).linetoks.bz2 \
 $(CONFIGDIR)/user-kenlm-directory.txt | genmodel
 	mkdir kenlmtmp
-	$< -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 50% < $(word 2,$^) > $@
+	$(word 2, $^) -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 50% < $(word 3,$^) > $@
 	rm -rf kenlmtmp
 
 .PRECIOUS: %.kenlm.bin
 # uses array pointer compression
-deadend%.kenlm.bin: $(KENLMDIR)/bin/build_binary %.kenlm \
+deadend%.kenlm.bin: $$(DEP-KENLM) $(KENLMDIR)/bin/build_binary %.kenlm \
 $(CONFIGDIR)/user-kenlm-directory.txt | genmodel
 	mkdir kenlmtmp
-	$< -a 64 -T kenlmtmp -S 1G trie $(word 2,$^) $@
+	$(word 2, $^) -a 64 -T kenlmtmp -S 1G trie $(word 3,$^) $@
 	rm -rf kenlmtmp
 
 .PRECIOUS: genmodel/%.kenlm.tinybin
 # smaller memory footprint, but slower
 # uses array pointer compression and quantization
-%.kenlm.tinybin: $(KENLMDIR)/bin/build_binary %.kenlm \
+%.kenlm.tinybin: $$(DEP-KENLM) $(KENLMDIR)/bin/build_binary %.kenlm \
 $(CONFIGDIR)/user-kenlm-directory.txt | genmodel
 	mkdir kenlmtmp
-	$< -a 64 -q 8 -b 8 -T kenlmtmp -S 1G trie $(word 2,$^) $@
+	$(word 2, $^) -a 64 -q 8 -b 8 -T kenlmtmp -S 1G trie $(word 3,$^) $@
 	rm -rf kenlmtmp
 
 define ParamVal
@@ -173,19 +188,19 @@ NgramProbs:
       innerdelim: '.'
 endef
 .PRECIOUS: %.kenlm.ngram.itemmeasures
-%.kenlm.ngram.itemmeasures: $(KENLMDIR)/bin/query \
+%.kenlm.ngram.itemmeasures: $$(DEP-KENLM) $(KENLMDIR)/bin/query \
 $$(basename %).lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
 $(KENLMMODDIR)/gigaword4$$(suffix $$*).kenlm.bin \
 $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
-	$< -\n $(word 4,$^) < $(word 2,$^) | python3 $(word 3,$^) --fwprobs - | \
-	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
+	$(word 2, $^) -\n $(word 5,$^) < $(word 3,$^) | python3 $(word 4,$^) --fwprobs - | \
+	python $(word 6, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
 
-%.kenlm.ngram.itemmeasures: $(KENLMDIR)/bin/query \
+%.kenlm.ngram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLMDIR)/bin/query \
 $$(basename %).lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
 $(KENLMMODDIR)/gigaword4$$(suffix $$*).kenlm \
 $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
-	$< -\n $(word 4,$^) < $(word 2,$^) | python3 $(word 3,$^) --fwprobs - | \
-	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
+	$(word 3, $^) -\n $(word 6,$^) < $(word 4,$^) | python3 $(word 5,$^) --fwprobs - | \
+	python $(word 7, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
 
 .PRECIOUS: %.multikenlm.ngram.itemmeasures
 %.multikenlm.ngram.itemmeasures: %.2.kenlm.ngram.itemmeasures \

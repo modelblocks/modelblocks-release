@@ -87,10 +87,46 @@ BaselineFormula:
     value: ''
 LMEArgs:
   blocktitle: LME command-line arguments
+  paramtype: Dropdown
+  nargs: '*'
+LMEArgs4LRT:
+  blocktitle: LME command-line arguments
+  paramtype: Dropdown
+  nargs: '*'
+  instance_of: LMEArgs
+Partition:
+  blocktitle: Partition
+  paramtype: Dropdown
+SplitCols:
+  blocktitle: Split columns
   paramtype: Text
   paramval:
-  - descr: Run bare MB/resource-lmefit/scripts/evmeasures2lmefit.r for documentation
-    text: Underscore-delimited command-line args to the LME regression
+  - text: Columns ('+'-delimited) on which to partition data
+    value: ''
+AddEffects:
+  blocktitle: Add Effects 
+  paramtype: Text
+  paramval:
+  - text: Names of effects to add ('+'-delimited)
+    value: ''
+AblateEffects:
+  blocktitle: Ablate Effects 
+  paramtype: Text
+  paramval:
+  - text: Names of effects to ablate ('+'-delimited)
+    value: ''
+ExtraEffects:
+  blocktitle: Extra Effects 
+  paramtype: Text
+  paramval:
+  - text: Names of any extra (non-main) effects to add ('+'-delimited)
+    value: ''
+RestrictDomain:
+  blocktitle: Restrict Domain 
+  paramtype: Text
+  paramval:
+  - text: Basename of file containing data filtering instructions
+    value: ''
 LMEPredictor:
   blocktitle: LME Predictor
   paramtype: Text

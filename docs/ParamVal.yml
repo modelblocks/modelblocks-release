@@ -105,6 +105,84 @@ Fromdeps:
   kernel: TreeOpt
   text: Extract trees from a dependency graph
   value: fromdeps
+Partition:
+  value: ''
+  text: Data Partition
+  kernel: LMEArgs4LRT
+  cascade: Partition
+Dev:
+  value: -d
+  text: Exploratory data
+  kernel: Partition
+Test:
+  value: -t
+  text: Confirmatory data
+  kernel: Partition
+Entire:
+  value: -e
+  text: Entire dataset
+  kernel: Partition
+SplitCols:
+  value: -s
+  text: Columns ('+'-delimited) on which to partition data
+  cascade: SplitCols
+  kernel: LMEArgs4LRT
+FilterLines:
+  value: -N
+  text: Filter line starts/ends
+  kernel: LMEArgs4LRT
+FilterSents:
+  value: -S
+  text: Filter sentence starts/ends
+  kernel: LMEArgs4LRT
+FilterScreens:
+  value: -C
+  text: Filter screen starts/ends
+  kernel: LMEArgs4LRT
+FilterFiles:
+  value: -F
+  text: Filter file starts/ends
+  kernel: LMEArgs4LRT
+FilterPunc:
+  value: -p
+  text: Filter out phrase punctuation
+  kernel: LMEArgs4LRT
+LogDepVar:
+  value: -l
+  text: Log-transform the dependent variable
+  kernel: LMEArgs4LRT
+LogMain:
+  value: -L
+  text: Log-transform the main effect
+  kernel: LMEArgs4LRT
+BoxCox:
+  value: -X
+  text: Find and apply the best Box & Cox (1964) transformation to dependent variable
+  kernel: LMEArgs4LRT
+Interact:
+  value: -I
+  text: Do not include interaction between random slopes and intercepts
+  kernel: LMEArgs4LRT
+AddEffects:
+  value: -A
+  text: Names of effects to add ('+'-delimited)
+  kernel: LMEArgs
+  cascade: AddEffects
+AblateEffects:
+  value: -a
+  text: Names of effects to ablate ('+'-delimited)
+  kernel: LMEArgs
+  cascade: AblateEffects
+ExtraEffects:
+  value: -x
+  text: Names of any extra (non-main) effects to add ('+'-delimited)
+  kernel: LMEArgs4LRT
+  cascade: ExtraEffects
+RestrictDomain:
+  value: -R
+  text: Restrict data to some subset
+  kernel: LMEArgs4LRT
+  cascade: RestrictDomain
 SM:
   cascade: SplitMerge
   kernel: ModelOpt

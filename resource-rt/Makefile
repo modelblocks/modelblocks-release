@@ -350,12 +350,13 @@ RTDataParams:
 endef
 define TargetBlock
 RTCoreEvmeasures:
+  blocktitle: Reading Time Data
+  targetsuffix: .core.evmeasures
+  family: Event Data
   blockseq:
   - blocktype: RTDataParams
     kwargs:
       innerdelim: .
-  blocktitle: Reading Time Data
-  targetsuffix: .core.evmeasures
 endef
 .PRECIOUS: %.core.evmeasures
 %.core.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \

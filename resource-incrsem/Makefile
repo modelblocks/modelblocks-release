@@ -166,14 +166,14 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 ## convert linetrees to tokdecs
 define TargetBlock
 Tokdecs:
+  blocktitle: Tokdecs (from linetrees)
+  targetsuffix: .fromlinetrees.tokdeps
   blockseq:
   - blocktype: Corpus
   - blocktype: TreeOpt
     kwargs:
       outerdelim: .
       innerdelim: .
-  blocktitle: Tokdecs (from linetrees)
-  targetsuffix: .fromlinetrees.tokdeps
 endef
 %.fromlinetrees.tokdecs: %.linetrees  $(INCRSEM-SCRIPTS)/linetrees2tokdecs.py
 	cat $(word 1, $^) | python $(word 2,$^) > $@
@@ -343,6 +343,9 @@ Synproc:
 endef
 define TargetBlock
 ParseTokdecs:
+  blocktitle: Parse (Tokdecs)
+  targetsuffix: _parsed.tokdecs
+  family: Parse
   blockseq:
   - blocktype: Corpus
     kwargs:
@@ -352,8 +355,6 @@ ParseTokdecs:
   - blocktype: ParseParams
     kwargs:
       innerdelim: '-'
-  blocktitle: Parse (Tokdecs)
-  targetsuffix: _parsed.tokdecs
 endef
 .PRECIOUS: %parsed.tokdecs
 %parsed.tokdecs:  bin/$$(subst .,,$$(suffix $$(basename $$(subst +,-,$$(subst -,.,$$*))))) \

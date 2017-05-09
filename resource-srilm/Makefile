@@ -55,27 +55,28 @@ endef
 #
 ################################################################################
 
-MSG1 := The current config file, 
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-srilm-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 SRILMDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(SRILMDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(SRILMDIR)$(MSG3))
+RESOURCE-NAME := SRILM Language Model Toolkit
+define RESOURCE-DESCR =
+
+NAME: SRILM Language Model Toolkit
+AVAILABILITY: Free for non-commercial use
+URL: http://www.speech.sri.com/projects/srilm/download.html
+DESCRIPTION: SRILM is a toolkit for building and applying statistical language models (LMs),
+primarily for use in speech recognition, statistical tagging and segmentation,
+and machine translation.
+endef
+SRILM-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-SRILM = $(error $(SRILM-ERROR))
+else
+DEP-SRILM :=
 endif
 endif
 
@@ -90,13 +91,13 @@ endif
 #
 ################################################################################
 
-broadcoveragetraining.%.linetoks: $(TOKENIZERDIR) \
+broadcoveragetraining.%.linetoks: $$(DEP-TOKENIZER) $(TOKENIZERDIR) \
 genmodel/brownTRAIN.linetoks genmodel/wsj02to21.linetoks genmodel/bncTRAIN.linetoks %.linetoks \
 $(CONFIGDIR)/user-tokenizer-directory.txt | genmodel
-	cat $(word 4,$^) | sed "s/&bquo;/\'/g;s/&equo;/\'/g;s/&hellip;/.../g;s/&percnt;/%/g;s/&ndash;/-/g;s/&amp;/\&/g;s/&mdash;/--/g;" | \
-	$</ptb_tokenizer.sed > genmodel/tmp.bnc
-	$</ptb_tokenizer.sed $(word 5,$^) > genmodel/tmp.$(notdir $*)
-	cat $(word 2,$^) $(word 3,$^) genmodel/tmp.bnc genmodel/tmp.$(notdir $*) | grep -v '\*x\*' | sed 's/  */ /g;' > $@
+	cat $(word 5,$^) | sed "s/&bquo;/\'/g;s/&equo;/\'/g;s/&hellip;/.../g;s/&percnt;/%/g;s/&ndash;/-/g;s/&amp;/\&/g;s/&mdash;/--/g;" | \
+	$(word 2, $^)/ptb_tokenizer.sed > genmodel/tmp.bnc
+	$(word 2, $^))/ptb_tokenizer.sed $(word 6,$^) > genmodel/tmp.$(notdir $*)
+	cat $(word 3,$^) $(word 4,$^) genmodel/tmp.bnc genmodel/tmp.$(notdir $*) | grep -v '\*x\*' | sed 's/  */ /g;' > $@
 	rm -f genmodel/tmp.bnc genmodel/tmp.$(notdir $*)
     
 broadcoveragetraining.%.revsents: broadcoveragetraining.%.linetoks | genmodel
@@ -116,6 +117,6 @@ broadcoveragetraining.%.revsents: broadcoveragetraining.%.linetoks | genmodel
 %.textdata: %.lineitems
 	cat <(echo WORD) <(cat $< | sed 's/ /\n/g;') > $@
   
-%.srilm.ngram.itemmeasures: $(SRILM-SCRIPTS)/calcngramprobtoks.srilm.py \
+%.srilm.ngram.itemmeasures: $$(DEP-SRILM) $(SRILM-SCRIPTS)/calcngramprobtoks.srilm.py \
 broadcoveragetraining.%.srilmngrams %.textdata | genmodel
-	python3 $^ > $@
+	python3 $(word 2, $^) > $@

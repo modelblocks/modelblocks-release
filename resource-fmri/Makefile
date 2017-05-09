@@ -85,12 +85,13 @@ fMRIDataParams:
 endef
 define TargetBlock
 fMRICoreEvmeasures:
+  blocktitle: fMRI Data
+  targetsuffix: .core.evmeasures
+  family: Event Data
   blockseq:
   - blocktype: fMRIDataParams
     kwargs:
       innerdelim: .
-  blocktitle: fMRI Data
-  targetsuffix: .core.evmeasures
 endef
 %.hrf.itemmeasures: $$(basename %).t.itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py scripts/$$(subst .,,$$(suffix $$*)).pred_list.txt
 	python $(word 2, $^) $(word 1, $^) --start $(SAMPLE-START) --predictors $(shell cat $(word 3, $^)) > $@

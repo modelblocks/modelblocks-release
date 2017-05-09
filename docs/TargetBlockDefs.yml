@@ -7,22 +7,26 @@ NgramProbs:
     kwargs:
       innerdelim: '.'
 fMRICoreEvmeasures:
+  blocktitle: fMRI Data
+  targetsuffix: .core.evmeasures
+  family: Event Data
   blockseq:
   - blocktype: fMRIDataParams
     kwargs:
       innerdelim: .
-  blocktitle: fMRI Data
-  targetsuffix: .core.evmeasures
 Tokdecs:
+  blocktitle: Tokdecs (from linetrees)
+  targetsuffix: .fromlinetrees.tokdeps
   blockseq:
   - blocktype: Corpus
   - blocktype: TreeOpt
     kwargs:
       outerdelim: .
       innerdelim: .
-  blocktitle: Tokdecs (from linetrees)
-  targetsuffix: .fromlinetrees.tokdeps
 ParseTokdecs:
+  blocktitle: Parse (Tokdecs)
+  targetsuffix: _parsed.tokdecs
+  family: Parse
   blockseq:
   - blocktype: Corpus
     kwargs:
@@ -32,9 +36,10 @@ ParseTokdecs:
   - blocktype: ParseParams
     kwargs:
       innerdelim: '-'
-  blocktitle: Parse (Tokdecs)
-  targetsuffix: _parsed.tokdecs
 ParseLinetrees:
+  blocktitle: Parse (Linetrees)
+  targetsuffix: .linetrees
+  family: Parse
   blockseq:
   - blocktype: Corpus
     kwargs:
@@ -50,8 +55,6 @@ ParseLinetrees:
     kwargs:
       outerdelim: '.'
       innerdelim: '.'
-  blocktitle: Parse (Linetrees)
-  targetsuffix: .linetrees
 EditableTrees:
   blocktitle: Editable Trees
   targetsuffix: .fromlinetrees.editabletrees
@@ -79,6 +82,9 @@ Linetoks:
   blocktitle: Linetoks
   targetsuffix: .linetoks
 LMEFitfMRI:
+  blocktitle: fMRI LME Fit
+  targetsuffix: .lmefit
+  family: Linear Mixed-Effects Regression (LME)
   blockseq:
   - blocktype: fMRIDataParams
     kwargs:
@@ -89,9 +95,10 @@ LMEFitfMRI:
   - blocktype: String
     value: .
   - blocktype: LMEArgs
-  blocktitle: fMRI LME Fit
-  targetsuffix: .lmefit
 LMEFitRT:
+  blocktitle: Reading Time LME Fit
+  targetsuffix: .lmefit
+  family: Linear Mixed-Effects Regression (LME)
   blockseq:
   - blocktype: RTDataParams
     kwargs:
@@ -102,11 +109,12 @@ LMEFitRT:
   - blocktype: String
     value: .
   - blocktype: LMEArgs
-  blocktitle: Reading Time LME Fit
-  targetsuffix: .lmefit
+    kwargs:
+      outerdelim: _
 RTLRTSignif:
   blocktitle: Reading Time LRT Significance Test
   targetsuffix: .lrtsignif
+  family: Likelihood Ratio Test (LRT)
   blockseq:
   - blocktype: RTDataParams
   - blocktype: String
@@ -117,13 +125,14 @@ RTLRTSignif:
   - blocktype: LMEPredictor
   - blocktype: String
     value: '.'
-  - blocktype: LMEArgs
+  - blocktype: LMEArgs4LRT
   - blocktype: String
     value: '.'
   - blocktype: LRTArgs
 fMRILRTSignif:
   blocktitle: fMRI LRT Significance Test
   targetsuffix: .lrtsignif
+  family: Likelihood Ratio Test (LRT)
   blockseq:
   - blocktype: fMRIDataParams
   - blocktype: String
@@ -134,13 +143,14 @@ fMRILRTSignif:
   - blocktype: LMEPredictor
   - blocktype: String
     value: '.'
-  - blocktype: LMEArgs
+  - blocktype: LMEArgs4LRT
   - blocktype: String
     value: '.'
   - blocktype: LRTArgs
 RTLRTDaimSignif:
   blocktitle: Diamond Reading Time LRT Significance Test
   targetsuffix: .diamond.lrtsignif
+  family: Likelihood Ratio Test (LRT)
   blockseq:
   - blocktype: RTDataParams
   - blocktype: String
@@ -160,6 +170,7 @@ RTLRTDaimSignif:
 fMRILRTDaimSignif:
   blocktitle: Diamond fMRI LRT Significance Test
   targetsuffix: .diamond.lrtsignif
+  family: Likelihood Ratio Test (LRT)
   blockseq:
   - blocktype: fMRIDataParams
   - blocktype: String
@@ -177,9 +188,10 @@ fMRILRTDaimSignif:
     value: '.'
   - blocktype: LRTArgs
 RTCoreEvmeasures:
+  blocktitle: Reading Time Data
+  targetsuffix: .core.evmeasures
+  family: Event Data
   blockseq:
   - blocktype: RTDataParams
     kwargs:
       innerdelim: .
-  blocktitle: Reading Time Data
-  targetsuffix: .core.evmeasures
