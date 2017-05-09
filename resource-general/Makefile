@@ -181,7 +181,9 @@ include $(RESOURCE-CHILDES)/Makefile
 include $(RESOURCE-DUNDEE)/Makefile
 include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
+include $(RESOURCE-ONTONOTES)/Makefile
 include $(RESOURCE-RHACKS)/Makefile
+include $(RESOURCE-UCL)/Makefile
 include $(RESOURCE-UPPARSE)/Makefile
 include $(RESOURCE-RT)/Makefile
 include $(RESOURCE-LMEFIT)/Makefile

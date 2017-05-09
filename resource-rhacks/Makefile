@@ -72,8 +72,6 @@ endif
 %/user-rhacks-directory.txt: | %   
 	echo '/home/compling/R-hacks' > $@
 
-$(info $(RHACKS-SCRIPTS))
-
 ################################################################################
 #
 #  Recipes
@@ -84,5 +82,5 @@ $(RESOURCE-RHACKS)/scripts:
 	mkdir $(RESOURCE-RHACKS)/scripts
 
 $(RHACKS-SCRIPTS)/%.R: $$(DEP-RHACKS) $(RHACKSDIR)/%.R
-	cp $(word 2, $^) $@
+	cp $(word 1, $^) $@
 

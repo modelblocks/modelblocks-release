@@ -86,10 +86,10 @@ endif
 gigaword4%.linetoks: $$(DEP-GIGAWORD) $(GIGADIR)/data/$$*/*.gz $(GIGAWORD-SCRIPTS)/preprocess_gigaword.py \
 $(CONFIGDIR)/user-gigaword4-directory.txt | genmodel
 	mkdir tmp
-	cp $(word 2, $^) tmp/
+	cp $(word 1, $^) tmp/
 	gunzip tmp/*
 	cat tmp/* > $@.tmp
-	python $(word 3, $^) $@.tmp > $@
+	python $(word 2, $^) $@.tmp > $@
 	rm -rf tmp $@.tmp
 
 %gigaword4.linetoks: $(foreach sect,$(GIGASECTS),%gigaword4$(sect).linetoks) | genmodel

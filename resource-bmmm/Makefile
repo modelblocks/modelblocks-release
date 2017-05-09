@@ -86,7 +86,7 @@ endif
 # Converts a raw linetoks file into CoNLL format for parsing
 %.raw.conll: $$(DEP-BMMM) genmodel/$$*.linetoks $(BMMMDIR)/target/bmmm-2.0.??.jar $(CONFIGDIR)/user-bmmm-directory.txt | genmodel
 	mkdir -p $(dir $*)
-	cat $(abspath $(word 2, $^)) | python $(BMMM-SCRIPTS)/raw2conll.py > $(abspath $@)
+	cat $(abspath $(word 1, $^)) | python $(BMMM-SCRIPTS)/raw2conll.py > $(abspath $@)
 
 
 # First generation of the BMMM. Runs the BMMM POS tagger on raw
@@ -94,7 +94,7 @@ endif
 .PRECIOUS: %.bmmmbase.conll %.u.bmmmbase.conll
 %.bmmmbase.conll %.u.bmmmbase.conll: $$(DEP-BMMM) $$(basename %).raw.conll $(BMMMDIR)/target/bmmm-2.0.??.jar $(CONFIGDIR)/user-bmmm-directory.txt | genmodel
 	mkdir -p $(dir $*)
-	cd $(BMMMDIR); java -jar $(abspath $(word 3, $^)) -in $(abspath $(word 2, $^)) -out $(abspath $@) -classes $(subst .,,$(suffix $*))
+	cd $(BMMMDIR); java -jar $(abspath $(word 2, $^)) -in $(abspath $(word 1, $^)) -out $(abspath $@) -classes $(subst .,,$(suffix $*))
 
 # Recipe used to implement iterated POS/dependency parser per
 # Christodoulopoulos et al (2012), using the following template:
@@ -130,18 +130,18 @@ endif
 .PRECIOUS: %.bmmm.conll
 %.bmmm.conll: $$(DEP-BMMM) $(BMMMDIR)/target/bmmm-2.0.??.jar $(CONFIGDIR)/user-bmmm-directory.txt | genmodel
 	mkdir -p $(dir $*)
-	make $(basename $*).$(lastword $(wordlist 2, $(subst .,,$(suffix $*)), $(nums))).dmv.conll
-	cd $(BMMMDIR); java -jar $(abspath $(word 2, $^)) -in $(abspath $(basename $*).$(lastword $(wordlist 2, $(subst .,,$(suffix $*)), $(nums))).dmv.conll) -out $(abspath $@) -deps -classes $(subst .,,$(suffix $(basename $*)))
+	make $(basename $*).$(lastword $(wordlist 1, $(subst .,,$(suffix $*)), $(nums))).dmv.conll
+	cd $(BMMMDIR); java -jar $(abspath $(word 1, $^)) -in $(abspath $(basename $*).$(lastword $(wordlist 2, $(subst .,,$(suffix $*)), $(nums))).dmv.conll) -out $(abspath $@) -deps -classes $(subst .,,$(suffix $(basename $*)))
 
 .PRECIOUS: %.u.bmmm.conll
 %.u.bmmm.conll: $$(DEP-BMMM) $(BMMMDIR)/target/bmmm-2.0.??.jar $(CONFIGDIR)/user-bmmm-directory.txt | genmodel
 	mkdir -p $(dir $*)
-	make $(basename $*).$(lastword $(wordlist 2, $(subst .,,$(suffix $*)), $(nums))).u.dmv.conll
-	cd $(BMMMDIR); java -jar $(abspath $(word 2, $^)) -in $(abspath $(basename $*).$(lastword $(wordlist 2, $(subst .,,$(suffix $*)), $(nums))).u.dmv.conll) -out $(abspath $@) -deps undir -classes $(subst .,,$(suffix $(basename $*)))
+	make $(basename $*).$(lastword $(wordlist 1, $(subst .,,$(suffix $*)), $(nums))).u.dmv.conll
+	cd $(BMMMDIR); java -jar $(abspath $(word 1, $^)) -in $(abspath $(basename $*).$(lastword $(wordlist 2, $(subst .,,$(suffix $*)), $(nums))).u.dmv.conll) -out $(abspath $@) -deps undir -classes $(subst .,,$(suffix $(basename $*)))
 
 # Custom BMMM run. Runs the BMMM on a user-specified CoNLL
 # data table.
 %.bmmm.conll: $$(DEP-BMMM) %.conll $(BMMMDIR)/target/bmmm-2.0.??.jar $(CONFIGDIR)/user-bmmm-directory.txt | genmodel
 	mkdir -p $(dir $*)
-	cd $(BMMMDIR); java -jar $(abspath $(word 3, $^)) -in $(abspath $(word 2, $^)) -out $(abspath $@) -classes $(subst .,,$(suffix $(basename $*)))
+	cd $(BMMMDIR); java -jar $(abspath $(word 2, $^)) -in $(abspath $(word 1, $^)) -out $(abspath $@) -classes $(subst .,,$(suffix $(basename $*)))
 

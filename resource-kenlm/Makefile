@@ -124,7 +124,7 @@ endif
 %.kenlm: $$(DEP-KENLM) $(CONFIGDIR)/user-kenlm-directory.txt $(KENLMDIR)/bin/lmplz \
 $$(basename %).linetoks.bz2
 	mkdir kenlmtmp
-	$(word 3,$^) -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 50% < $(word 4,$^) > $@
+	$(word 2,$^) -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 50% < $(word 3, $^) > $@
 	rm -rf kenlmtmp
     
 .PRECIOUS: %.fw.kenlm
@@ -132,7 +132,7 @@ $$(basename %).linetoks.bz2
 %.fw.kenlm: $$(DEP-KENLM) $(KENLMDIR)/bin/lmplz $$(basename %).linetoks.bz2 \
 $(CONFIGDIR)/user-kenlm-directory.txt | genmodel
 	mkdir kenlmtmp
-	$(word 2, $^) -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 50% < $(word 3,$^) > $@
+	$(word 1, $^) -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 50% < $(word 2, $^) > $@
 	rm -rf kenlmtmp
 
 .PRECIOUS: %.kenlm.bin
@@ -140,7 +140,7 @@ $(CONFIGDIR)/user-kenlm-directory.txt | genmodel
 deadend%.kenlm.bin: $$(DEP-KENLM) $(KENLMDIR)/bin/build_binary %.kenlm \
 $(CONFIGDIR)/user-kenlm-directory.txt | genmodel
 	mkdir kenlmtmp
-	$(word 2, $^) -a 64 -T kenlmtmp -S 1G trie $(word 3,$^) $@
+	$(word 1, $^) -a 64 -T kenlmtmp -S 1G trie $(word 2, $^) $@
 	rm -rf kenlmtmp
 
 .PRECIOUS: genmodel/%.kenlm.tinybin
@@ -149,7 +149,7 @@ $(CONFIGDIR)/user-kenlm-directory.txt | genmodel
 %.kenlm.tinybin: $$(DEP-KENLM) $(KENLMDIR)/bin/build_binary %.kenlm \
 $(CONFIGDIR)/user-kenlm-directory.txt | genmodel
 	mkdir kenlmtmp
-	$(word 2, $^) -a 64 -q 8 -b 8 -T kenlmtmp -S 1G trie $(word 3,$^) $@
+	$(word 1, $^) -a 64 -q 8 -b 8 -T kenlmtmp -S 1G trie $(word 2, $^) $@
 	rm -rf kenlmtmp
 
 define ParamVal
@@ -192,15 +192,15 @@ endef
 $$(basename %).lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
 $(KENLMMODDIR)/gigaword4$$(suffix $$*).kenlm.bin \
 $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
-	$(word 2, $^) -\n $(word 5,$^) < $(word 3,$^) | python3 $(word 4,$^) --fwprobs - | \
-	python $(word 6, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
+	$(word 1, $^) -\n $(word 4,$^) < $(word 2,$^) | python3 $(word 3,$^) --fwprobs - | \
+	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
 
 %.kenlm.ngram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLMDIR)/bin/query \
 $$(basename %).lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
 $(KENLMMODDIR)/gigaword4$$(suffix $$*).kenlm \
 $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
-	$(word 3, $^) -\n $(word 6,$^) < $(word 4,$^) | python3 $(word 5,$^) --fwprobs - | \
-	python $(word 7, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
+	$(word 1, $^) -\n $(word 4,$^) < $(word 2,$^) | python3 $(word 3,$^) --fwprobs - | \
+	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
 
 .PRECIOUS: %.multikenlm.ngram.itemmeasures
 %.multikenlm.ngram.itemmeasures: %.2.kenlm.ngram.itemmeasures \

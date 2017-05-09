@@ -94,10 +94,10 @@ endif
 broadcoveragetraining.%.linetoks: $$(DEP-TOKENIZER) $(TOKENIZERDIR) \
 genmodel/brownTRAIN.linetoks genmodel/wsj02to21.linetoks genmodel/bncTRAIN.linetoks %.linetoks \
 $(CONFIGDIR)/user-tokenizer-directory.txt | genmodel
-	cat $(word 5,$^) | sed "s/&bquo;/\'/g;s/&equo;/\'/g;s/&hellip;/.../g;s/&percnt;/%/g;s/&ndash;/-/g;s/&amp;/\&/g;s/&mdash;/--/g;" | \
-	$(word 2, $^)/ptb_tokenizer.sed > genmodel/tmp.bnc
-	$(word 2, $^))/ptb_tokenizer.sed $(word 6,$^) > genmodel/tmp.$(notdir $*)
-	cat $(word 3,$^) $(word 4,$^) genmodel/tmp.bnc genmodel/tmp.$(notdir $*) | grep -v '\*x\*' | sed 's/  */ /g;' > $@
+	cat $(word 4,$^) | sed "s/&bquo;/\'/g;s/&equo;/\'/g;s/&hellip;/.../g;s/&percnt;/%/g;s/&ndash;/-/g;s/&amp;/\&/g;s/&mdash;/--/g;" | \
+	$(word 1, $^)/ptb_tokenizer.sed > genmodel/tmp.bnc
+	$(word 1, $^))/ptb_tokenizer.sed $(word 5,$^) > genmodel/tmp.$(notdir $*)
+	cat $(word 2,$^) $(word 3,$^) genmodel/tmp.bnc genmodel/tmp.$(notdir $*) | grep -v '\*x\*' | sed 's/  */ /g;' > $@
 	rm -f genmodel/tmp.bnc genmodel/tmp.$(notdir $*)
     
 broadcoveragetraining.%.revsents: broadcoveragetraining.%.linetoks | genmodel
@@ -105,7 +105,7 @@ broadcoveragetraining.%.revsents: broadcoveragetraining.%.linetoks | genmodel
 	tac -s ' ' $@.tmp | sed 's/ <LINEBREAK> /\n/g;s/  */ /g;' > $@
 	rm -f $@.tmp
 
-%.srilmngrams: %.linetoks %.revsents $(SRILM-SCRIPTS)/convert_srilm.py $(SRILMDIR) $(CONFIGDIR)/user-srilm-directory.txt
+%.srilmngrams: $$(DEP-SRILM) %.linetoks %.revsents $(SRILM-SCRIPTS)/convert_srilm.py $(SRILMDIR) $(CONFIGDIR)/user-srilm-directory.txt
 	$(word 4, $^)/ngram-count -order 1 -kndiscount -text $< -lm $@.uprobs
 	$(word 4, $^)/ngram-count -order 2 -kndiscount -interpolate -text $< -lm $@.fwprobs
 	$(word 4, $^)/ngram-count -order 2 -kndiscount -interpolate -text $(word 2, $^) -lm $@.bwprobs
@@ -119,4 +119,4 @@ broadcoveragetraining.%.revsents: broadcoveragetraining.%.linetoks | genmodel
   
 %.srilm.ngram.itemmeasures: $$(DEP-SRILM) $(SRILM-SCRIPTS)/calcngramprobtoks.srilm.py \
 broadcoveragetraining.%.srilmngrams %.textdata | genmodel
-	python3 $(word 2, $^) > $@
+	python3 $(word 1, $^) > $@

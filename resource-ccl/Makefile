@@ -46,22 +46,10 @@
 #
 ################################################################################
 
-MSG1 := The current config file,
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-ccl-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 CCLDIR := $(shell cat $(CONFIG))
@@ -102,9 +90,9 @@ endif
 #
 %.cclprs: $$(DEP-CCL) genmodel/$$*.linetoks $(CCLDIR) $(CONFIGDIR)/user-ccl-directory.txt
 	mkdir -p $(dir $*)
-	echo $(abspath $(word 2, $^)) line learn -o $(abspath $*) -s ccllog -R 100 > $*.ccl_exec_seq.txt
-	echo $(abspath $(word 2, $^)) line parse -o $(abspath $*) -s cclprs -R 100 >> $*.ccl_exec_seq.txt
-	cd $(word 3, $^); ./main/UnknownOS/cclparser $(abspath $*.ccl_exec_seq.txt)
+	echo $(abspath $(word 1, $^)) line learn -o $(abspath $*) -s ccllog -R 100 > $*.ccl_exec_seq.txt
+	echo $(abspath $(word 1, $^)) line parse -o $(abspath $*) -s cclprs -R 100 >> $*.ccl_exec_seq.txt
+	cd $(word 2, $^); ./main/UnknownOS/cclparser $(abspath $*.ccl_exec_seq.txt)
 	rm $*.ccl_exec_seq.txt
   
 # Converts CCL output to linetrees
