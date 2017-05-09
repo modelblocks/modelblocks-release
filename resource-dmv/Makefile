@@ -90,13 +90,13 @@ endif
 	echo "transitive=false" >> $*.1.dmv.params
 	echo "reader-type=naacl2012-fine" >> $*.1.dmv.params
 	echo "train-name=dmv_train" >> $*.1.dmv.params
-	echo "train-file=$(abspath $(word 2, $^).temp)" >> $*.1.dmv.params
+	echo "train-file=$(abspath $(word 1, $^).temp)" >> $*.1.dmv.params
 	echo "devname=dmv_devel" >> $*.1.dmv.params
-	echo "dev-file=$(abspath $(word 2, $^).temp)" >> $*.1.dmv.params
+	echo "dev-file=$(abspath $(word 1, $^).temp)" >> $*.1.dmv.params
 	echo "test-name1=dmv_test" >> $*.1.dmv.params
-	echo "test-file1=$(abspath $(word 2, $^).temp)" >> $*.1.dmv.params
-	cp $(word 2, $^) $(word 2, $^).temp
-	cd $(word 3, $^); java $(shell cat $(word 5, $^)) -cp '$(word 3, $^)/*' depparsing.programs.RunModel -corpus-params $(abspath $*.1.dmv.params) -model-init K_AND_M -dvalency 2 -cvalency 1 -child-backoff 0.66 -num-em-iters 20 -trainingType 0 -stats-file $(word 3, $^)/stats-example.txt -output-prefix $(abspath $(dir $*))/
+	echo "test-file1=$(abspath $(word 1, $^).temp)" >> $*.1.dmv.params
+	cp $(word 1, $^) $(word 1, $^).temp
+	cd $(word 2, $^); java $(shell cat $(word 4, $^)) -cp '$(word 2, $^)/*' depparsing.programs.RunModel -corpus-params $(abspath $*.1.dmv.params) -model-init K_AND_M -dvalency 2 -cvalency 1 -child-backoff 0.66 -num-em-iters 20 -trainingType 0 -stats-file $(word 2, $^)/stats-example.txt -output-prefix $(abspath $(dir $*))/
 	cat $(dir $*)dmv_test | awk ' { t = $$7; $$7 = $$8; $$8 = t; print; } ' OFS=$$'\t' | sed 's/\t\t\+//g' > $@
 	rm $(dir $*)dmv_test
 
@@ -107,13 +107,13 @@ endif
 	echo "transitive=false" >> $*.dmv.params
 	echo "reader-type=naacl2012-fine" >> $*.dmv.params
 	echo "train-name=dmv_train" >> $*.dmv.params
-	echo "train-file=$(abspath $(word 2, $^).temp)" >> $*.dmv.params
+	echo "train-file=$(abspath $(word 1, $^).temp)" >> $*.dmv.params
 	echo "devname=dmv_devel" >> $*.dmv.params
-	echo "dev-file=$(abspath $(word 2, $^).temp)" >> $*.dmv.params
+	echo "dev-file=$(abspath $(word 1, $^).temp)" >> $*.dmv.params
 	echo "test-name1=dmv_test" >> $*.dmv.params
-	echo "test-file1=$(abspath $(word 2, $^).temp)" >> $*.dmv.params
-	cp $(word 2, $^) $(word 2, $^).temp
-	cd $(word 3, $^); java $(shell cat $(word 5, $^)) -cp '$(word 3, $^)/*' depparsing.programs.RunModel -corpus-params $(abspath $*.dmv.params) -model-init K_AND_M -dvalency 2 -cvalency 1 -child-backoff 0.66 -num-em-iters 20 -trainingType 0 -stats-file $(word 3, $^)/stats-example.txt -output-prefix $(abspath $(dir $*))/
+	echo "test-file1=$(abspath $(word 1, $^).temp)" >> $*.dmv.params
+	cp $(word 1, $^) $(word 1, $^).temp
+	cd $(word 2, $^); java $(shell cat $(word 4, $^)) -cp '$(word 2, $^)/*' depparsing.programs.RunModel -corpus-params $(abspath $*.dmv.params) -model-init K_AND_M -dvalency 2 -cvalency 1 -child-backoff 0.66 -num-em-iters 20 -trainingType 0 -stats-file $(word 2, $^)/stats-example.txt -output-prefix $(abspath $(dir $*))/
 	cat $(dir $*)dmv_test | awk ' { t = $$7; $$7 = $$8; $$8 = t; print; } ' OFS=$$'\t' | sed 's/\t\t\+//g' > $@
 	rm $(dir $*)dmv_test
 
