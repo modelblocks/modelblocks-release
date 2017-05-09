@@ -6,11 +6,6 @@
 #
 #########################
 
-smartPrint <- function(string) {
-    print(string)
-    write(string, stderr())
-}
-
 args <- commandArgs(trailingOnly=TRUE)
 cliargs <- args[-(1:2)]
 options('warn'=1) #report non-convergences, etc
@@ -29,6 +24,7 @@ wd = getwd()
 setwd(script.basename)
 source('../../resource-rhacks/scripts/mer-utils.R') #obtained from https://github.com/aufrank
 source('../../resource-rhacks/scripts/regression-utils.R') #obtained from https://github.com/aufrank
+source('../../resource-lmefit/scripts/lmetools.r')
 setwd(wd)
 
 basefile <- load(args[1])
@@ -43,17 +39,6 @@ main <- get(mainfile)
 # Definitions
 #
 #########################
-
-# Output a summary of model fit
-printSummary <- function(reg) {
-    print(paste('LME Fit Summary (',reg@optinfo$optimizer,')',sep=''))
-    print(summary(reg))
-    relgrad <- with(reg@optinfo$derivs,solve(Hessian,gradient))
-    smartPrint('Relative Gradient (<0.002?)') #check for convergence even if warned that convergence failed
-    smartPrint(max(abs(relgrad)))
-    smartPrint('AIC:')
-    smartPrint(AIC(logLik(reg)))
-}
 
 printSignifSummary <- function(mainName, mainEffect, basemodel, testmodel, signif) {
     print(paste('Main effect:', mainName))
