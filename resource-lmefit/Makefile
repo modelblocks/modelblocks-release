@@ -257,6 +257,12 @@ scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform
 #    genmodel/ucl.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.kenlm.fp.mem.fjprob.-NSCFf..lrtsignif
 #
 #
+define ParamVal
+LRTNull:
+  text: NONE CURRENTLY AVAILABLE
+  value: ''
+  kernel: LRTArgs
+endef
 define KernelBlock
 LMEPredictor:
   blocktitle: LME Predictor
@@ -266,10 +272,8 @@ LMEPredictor:
     value: ''
 LRTArgs:
   blocktitle: LRT command-line args
-  paramtype: Text
-  paramval:
-  - text: 'LRT command-line arguments (currently ignored, can be blank)'
-    value: ''
+  paramtype: Dropdown
+  nargs: '*'
 endef
 define TargetBlock
 RTLRTSignif:
