@@ -1,5 +1,6 @@
 body {
   font-family: 'Questrial', sans-serif;
+  padding-bottom: 200px;
 }
 
 li {
@@ -120,6 +121,16 @@ button {
   -moz-border-radius: 1rem;
   -webkit-border-radius: 1rem;
   -ms-border-radius: 1rem;
+}
+
+#targetContainer{
+  position: sticky;
+  -moz-position: sticky;
+  -webkit-position: sticky;
+  -ms-position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.9);
 }
 
 #parameters{

@@ -99,8 +99,6 @@ endif
 
 %/user-kenlm-directory.txt: | %
 	echo '/home/compling/kenlm_git' > $@
-
-
   
 %/user-kenlm-model-directory.txt: | %
 	echo '/home/compling/kenlm_models' > $@
@@ -185,6 +183,7 @@ NgramProbs:
   - blocktype: Corpus
   - blocktype: NgramParams
     kwargs:
+      outerdelim: '.'
       innerdelim: '.'
 endef
 .PRECIOUS: %.kenlm.ngram.itemmeasures
