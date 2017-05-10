@@ -52,7 +52,7 @@ printSignifSummary <- function(mainName, mainEffect, basemodel, testmodel, signi
     cat(paste0('Relative gradient (main effect):',  max(abs(with(testmodel@optinfo$derivs,solve(Hessian,gradient)))), '\n'))
     convWarnMain <- is.null(testmodel@optinfo$conv$lme4$messages)
     cat(paste0('Converged (main effect): ', as.character(convWarnMain), '\n'))
-    cat(paste0(signif, '\n'))
+    print(signif)
 }
 
 smartPrint('Summary of baseline model')

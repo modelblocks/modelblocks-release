@@ -379,8 +379,8 @@ $(RT-SCRIPTS)/rm_unfix_items.py \
 $(RT-SCRIPTS)/futureMetrics.py \
 $(RT-SCRIPTS)/spilloverMetrics.py \
 $(RT-SCRIPTS)/parsePredictors.py
-	$(eval CORECOLS := $(shell cat $(word 2, $^) | python $(word 3, $^) 1 ) $(shell echo $(subst +, ,$(word 2, $(subst _, ,$(subst .,,$(suffix $*))))) | python $(word 9, $^)))
-	$(eval COLS := $(shell cat $(word 2, $^) | python $(word 3, $^)) $(subst +, ,$(word 2, $(subst _, ,$(subst .,,$(suffix $*))))))
+	$(eval CORECOLS := $(sort $(shell cat $(word 2, $^) | python $(word 3, $^) 1 ) $(shell echo $(subst +, ,$(word 2, $(subst _, ,$(subst .,,$(suffix $*))))) | python $(word 9, $^))))
+	$(eval COLS := $(sort $(shell cat $(word 2, $^) | python $(word 3, $^)) $(subst +, ,$(word 2, $(subst _, ,$(subst .,,$(suffix $*)))))))
 	@echo Extracting columns: $(CORECOLS)
 	@echo Computing columns: $(COLS)
 	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(CORECOLS))) $< | \
