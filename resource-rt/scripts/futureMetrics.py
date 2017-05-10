@@ -4,7 +4,7 @@ import pandas as pd
 argparser = argparse.ArgumentParser('''
 Shifts user-specified fields from one saccade to the previous saccade in a space-delimited table of reading time data, and appends them as additional fields to the output. Rows must be in order of presentation to subjects.
 ''')
-argparser.add_argument('-F', '--fut_cols', type=str, nargs='+', help='Names of field(s) to shift')
+argparser.add_argument('-c', '--fut_cols', type=str, nargs='+', help='Names of field(s) to shift')
 argparser.add_argument('-a', '--all', dest='all', action='store_true', help='Compute future versions of all input columns')
 argparser.add_argument('-t', '--tok', dest='tok', action='store', default='word', help='Name of field containing token strings (defaults to "word").')
 argparser.add_argument('-f', '--fdur', dest='fdur', action='store', default='fdur', help='Name of field containing fixation duration information (defaults to "fdur").')

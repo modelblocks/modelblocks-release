@@ -21,7 +21,6 @@ library(languageR)
 library(optimx)
 library(ggplot2)
 library(optparse)
-# The below scripts cannot be distributed with Modelblocks
 # Relative path code from Suppressingfire on StackExchange
 initial.options <- commandArgs(trailingOnly = FALSE)
 file.arg.name <- "--file="
