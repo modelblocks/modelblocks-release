@@ -46,31 +46,28 @@
 #
 ################################################################################
 
-MSG1 := The current config file, 
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-rhacks-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 RHACKSDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(RHACKSDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(RHACKSDIR)$(MSG3))
+RESOURCE-NAME := R-Hacks
+define RESOURCE-DESCR =
+
+NAME: R-Hacks
+AVAILABILITY: Free
+URL: https://github.com/aufrank/R-hacks
+DESCRIPTION: Useful bits of code for programming and analysis in R.
+endef
+RHACKS-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-RHACKS = $(error $(RHACKS-ERROR))
+else
+DEP-RHACKS :=
 endif
 endif
-
-
     
 %/user-rhacks-directory.txt: | %   
 	echo '/home/compling/R-hacks' > $@
@@ -84,9 +81,6 @@ endif
 $(RESOURCE-RHACKS)/scripts:
 	mkdir $(RESOURCE-RHACKS)/scripts
 
-$(RHACKS-SCRIPTS)/mer-utils.R: $(RHACKSDIR)/mer-utils.R | $(RESOURCE-RHACKS)/scripts
-	cp $< $@
-
-$(RHACKS-SCRIPTS)/regression-utils.R: $(RHACKSDIR)/regression-utils.R | $(RESOURCE-RHACKS)/scripts
-	cp $< $@
+$(RHACKS-SCRIPTS)/%.R: $$(DEP-RHACKS) $(RHACKSDIR)/%.R
+	cp $(word 1, $^) $@
 

@@ -46,27 +46,24 @@
 #
 ################################################################################
 
-MSG1 := The current config file,
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-ccl-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 CCLDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(CCLDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(CCLDIR)$(MSG3))
+RESOURCE-NAME := CCL unsupervised parser (Seginer, 2007)
+define RESOURCE-DESCR =
+
+NAME: CCL unsupervised parser (Seginer, 2007)
+AVAILABILITY: Free
+URL: http://www.seggu.net/ccl/
+DESCRIPTION: The CCL unsupervised constituency parser (Seginer, 2007).
+endef
+CCL-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-CCL = $(error $(CCL-ERROR))
 endif
 endif
 
@@ -91,7 +88,7 @@ endif
 # which runs the CCL system on eve.nt.lower.nounary.nolabel.nopunc.linetoks
 # as input and saves the parser output to the target
 #
-%.cclprs: genmodel/$$*.linetoks $(CCLDIR) $(CONFIGDIR)/user-ccl-directory.txt
+%.cclprs: $$(DEP-CCL) genmodel/$$*.linetoks $(CCLDIR) $(CONFIGDIR)/user-ccl-directory.txt
 	mkdir -p $(dir $*)
 	echo $(abspath $<) line learn -o $(abspath $*) -s ccllog -R 100 > $*.ccl_exec_seq.txt
 	echo $(abspath $<) line parse -o $(abspath $*) -s cclprs -R 100 >> $*.ccl_exec_seq.txt

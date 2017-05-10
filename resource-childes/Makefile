@@ -47,27 +47,27 @@
 #
 ################################################################################
 
-MSG1 := The current config file, 
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-childes-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 CHILDESDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(CHILDESDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(CHILDESDIR)$(MSG3))
+RESOURCE-NAME := The CHILDES Corpus
+define RESOURCE-DESCR =
+
+NAME: The CHILDES Corpus
+AVAILABILITY: Free
+URL: http://childes.talkbank.org/ 
+DESCRIPTION: CHILDES is the child language component of the TalkBank system. 
+TalkBank is a system for sharing and studying conversational interactions.
+endef
+CHILDES-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-CHILDES = $(error $(CHILDES-ERROR))
+else
+DEP-CHILDES :=
 endif
 endif
 
@@ -82,15 +82,15 @@ endif
 #
 ################################################################################
 
-%adam.linetrees: $(CHILDES-SCRIPTS)/get_linetrees.py $(CHILDESDIR)/CHILDES-Treebank/brown-adam.parsed \
+%adam.linetrees: $$(DEP-CHILDES) $(CHILDES-SCRIPTS)/get_linetrees.py $(CHILDESDIR)/CHILDES-Treebank/brown-adam.parsed \
 $(CONFIGDIR)/user-childes-directory.txt | genmodel
 	cat $(word 2, $^) | sed 's/\r//g;'| python $< > $@
 
-%eve.linetrees: $(CHILDES-SCRIPTS)/get_linetrees.py $(CHILDESDIR)/CHILDES-Treebank/brown-eve.parsed \
+%eve.linetrees: $$(DEP-CHILDES) $(CHILDES-SCRIPTS)/get_linetrees.py $(CHILDESDIR)/CHILDES-Treebank/brown-eve.parsed \
 $(CONFIGDIR)/user-childes-directory.txt | genmodel
 	cat $(word 2, $^) | sed 's/\r//g;'| python $< > $@
 
-%sarah.linetrees: $(CHILDES-SCRIPTS)/get_linetrees.py $(CHILDESDIR)/CHILDES-Treebank/brown-sarah.parsed \
+%sarah.linetrees: $$(DEP-CHILDES) $(CHILDES-SCRIPTS)/get_linetrees.py $(CHILDESDIR)/CHILDES-Treebank/brown-sarah.parsed \
 $(CONFIGDIR)/user-childes-directory.txt | genmodel
 	cat $(word 2, $^) | sed 's/\r//g;'| python $< > $@
 

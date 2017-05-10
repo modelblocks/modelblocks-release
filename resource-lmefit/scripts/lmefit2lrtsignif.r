@@ -6,11 +6,6 @@
 #
 #########################
 
-smartPrint <- function(string) {
-    print(string)
-    write(string, stderr())
-}
-
 args <- commandArgs(trailingOnly=TRUE)
 cliargs <- args[-(1:2)]
 options('warn'=1) #report non-convergences, etc
@@ -29,6 +24,7 @@ wd = getwd()
 setwd(script.basename)
 source('../../resource-rhacks/scripts/mer-utils.R') #obtained from https://github.com/aufrank
 source('../../resource-rhacks/scripts/regression-utils.R') #obtained from https://github.com/aufrank
+source('../../resource-lmefit/scripts/lmetools.r')
 setwd(wd)
 
 basefile <- load(args[1])
@@ -44,25 +40,18 @@ main <- get(mainfile)
 #
 #########################
 
-# Output a summary of model fit
-printSummary <- function(reg) {
-    print(paste('LME Fit Summary (',reg@optinfo$optimizer,')',sep=''))
-    print(summary(reg))
-    relgrad <- with(reg@optinfo$derivs,solve(Hessian,gradient))
-    print('Relative Gradient (<0.002?)') #check for convergence even if warned that convergence failed
-    smartPrint(max(abs(relgrad)))
-    smartPrint('AIC:')
-    smartPrint(AIC(logLik(reg)))
-}
-
 printSignifSummary <- function(mainName, mainEffect, basemodel, testmodel, signif) {
-    print(paste('Main effect:', mainName))
-    print(paste('Corpus:', corpus))
-    print(paste('Effect estimate (',mainEffect,'): ', summary(testmodel)[[10]][mainEffect,'Estimate'], sep=''))
-    print(paste('t value (',mainEffect,'): ', summary(testmodel)[[10]][mainEffect,'t value'], sep=''))
-    print(paste('Significance (Pr(>Chisq)):', signif[['Pr(>Chisq)']][[2]]))
-    print(paste('Relative gradient (baseline):',  max(abs(with(basemodel@optinfo$derivs,solve(Hessian,gradient))))))
-    print(paste('Relative gradient (main effect):',  max(abs(with(testmodel@optinfo$derivs,solve(Hessian,gradient))))))
+    cat(paste0('Main effect: ', mainName), '\n')
+    cat(paste0('Corpus: ', corpus), '\n')
+    cat(paste0('Effect estimate (',mainEffect,'): ', summary(testmodel)[[10]][mainEffect,'Estimate'], sep=''), '\n')
+    cat(paste0('t value (',mainEffect,'): ', summary(testmodel)[[10]][mainEffect,'t value'], sep=''), '\n')
+    cat(paste0('Significance (Pr(>Chisq)): ', signif[['Pr(>Chisq)']][[2]]), '\n')
+    cat(paste0('Relative gradient (baseline): ',  max(abs(with(basemodel@optinfo$derivs,solve(Hessian,gradient)))), '\n'))
+    convWarnBase <- is.null(basemodel@optinfo$conv$lme4$messages)
+    cat(paste0('Converged (baseline): ', as.character(convWarnBase), '\n'))
+    cat(paste0('Relative gradient (main effect):',  max(abs(with(testmodel@optinfo$derivs,solve(Hessian,gradient)))), '\n'))
+    convWarnMain <- is.null(testmodel@optinfo$conv$lme4$messages)
+    cat(paste0('Converged (main effect): ', as.character(convWarnMain), '\n'))
     print(signif)
 }
 

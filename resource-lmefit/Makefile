@@ -69,8 +69,174 @@
 # root.
 #
 #.PRECIOUS: %.rdata ##Disabled for now because it fills the disk quickly. Re-enable for simulations
-%.rdata %.lmefit:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py $$(subst .,,$$(suffix $$*))).filt.evmeasures \
-scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform 
+
+define ParamVal
+Partition:
+  value: ''
+  text: Data Partition
+  kernel: LMEArgs4LRT
+  cascade: Partition
+Dev:
+  value: -d
+  text: Exploratory data
+  kernel: Partition
+Test:
+  value: -t
+  text: Confirmatory data
+  kernel: Partition
+Entire:
+  value: -e
+  text: Entire dataset
+  kernel: Partition
+SplitCols:
+  value: -s
+  text: Columns ('+'-delimited) on which to partition data
+  cascade: SplitCols
+  kernel: LMEArgs4LRT
+FilterLines:
+  value: -N
+  text: Filter line starts/ends
+  kernel: LMEArgs4LRT
+FilterSents:
+  value: -S
+  text: Filter sentence starts/ends
+  kernel: LMEArgs4LRT
+FilterScreens:
+  value: -C
+  text: Filter screen starts/ends
+  kernel: LMEArgs4LRT
+FilterFiles:
+  value: -F
+  text: Filter file starts/ends
+  kernel: LMEArgs4LRT
+FilterPunc:
+  value: -p
+  text: Filter out phrase punctuation
+  kernel: LMEArgs4LRT
+LogDepVar:
+  value: -l
+  text: Log-transform the dependent variable
+  kernel: LMEArgs4LRT
+LogMain:
+  value: -L
+  text: Log-transform the main effect
+  kernel: LMEArgs4LRT
+BoxCox:
+  value: -X
+  text: Find and apply the best Box & Cox (1964) transformation to dependent variable
+  kernel: LMEArgs4LRT
+Interact:
+  value: -I
+  text: Do not include interaction between random slopes and intercepts
+  kernel: LMEArgs4LRT
+AddEffects:
+  value: -A
+  text: Names of effects to add ('+'-delimited)
+  kernel: LMEArgs
+  cascade: AddEffects
+AblateEffects:
+  value: -a
+  text: Names of effects to ablate ('+'-delimited)
+  kernel: LMEArgs
+  cascade: AblateEffects
+ExtraEffects:
+  value: -x
+  text: Names of any extra (non-main) effects to add ('+'-delimited)
+  kernel: LMEArgs4LRT
+  cascade: ExtraEffects
+RestrictDomain:
+  value: -R
+  text: Restrict data to some subset
+  kernel: LMEArgs4LRT
+  cascade: RestrictDomain
+endef
+define KernelBlockDefs :=
+BaselineFormula:
+  blocktitle: LME Baseline Formula
+  paramtype: Text
+  paramval:
+  - text: Basename of LME formula file
+    value: ''
+LMEArgs:
+  blocktitle: LME command-line arguments
+  paramtype: Dropdown
+  nargs: '*'
+LMEArgs4LRT:
+  blocktitle: LME command-line arguments
+  paramtype: Dropdown
+  nargs: '*'
+  instance_of: LMEArgs
+Partition:
+  blocktitle: Partition
+  paramtype: Dropdown
+SplitCols:
+  blocktitle: Split columns
+  paramtype: Text
+  paramval:
+  - text: Columns ('+'-delimited) on which to partition data
+    value: ''
+AddEffects:
+  blocktitle: Add Effects 
+  paramtype: Text
+  paramval:
+  - text: Names of effects to add ('+'-delimited)
+    value: ''
+AblateEffects:
+  blocktitle: Ablate Effects 
+  paramtype: Text
+  paramval:
+  - text: Names of effects to ablate ('+'-delimited)
+    value: ''
+ExtraEffects:
+  blocktitle: Extra Effects 
+  paramtype: Text
+  paramval:
+  - text: Names of any extra (non-main) effects to add ('+'-delimited)
+    value: ''
+RestrictDomain:
+  blocktitle: Restrict Domain 
+  paramtype: Text
+  paramval:
+  - text: Basename of file containing data filtering instructions
+    value: ''
+endef
+define TargetBlockDefs :=
+LMEFitfMRI:
+  blocktitle: fMRI LME Fit
+  targetsuffix: .lmefit
+  family: Linear Mixed-Effects Regression (LME)
+  blockseq:
+  - blocktype: fMRIDataParams
+    kwargs:
+      innerdelim: .
+  - blocktype: String
+    value: .
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: .
+  - blocktype: LMEArgs
+LMEFitRT:
+  blocktitle: Reading Time LME Fit
+  targetsuffix: .lmefit
+  family: Linear Mixed-Effects Regression (LME)
+  blockseq:
+  - blocktype: RTDataParams
+    kwargs:
+      innerdelim: .
+  - blocktype: String
+    value: .
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: .
+  - blocktype: LMEArgs
+    kwargs:
+      outerdelim: _
+endef
+%.rdata %.lmefit:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
+genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
+$$(subst .,,$$(suffix $$*))).filt.evmeasures \
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
+$(LMEFIT-SCRIPTS)/lmetools.r
 	$< $(word 2, $^) $*.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) > $*.lmefit
 
 # Runs an LRT evaluation based on the following template:
@@ -94,11 +260,64 @@ scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform
 #    genmodel/ucl.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.kenlm.fp.mem.fjprob.-NSCFf..lrtsignif
 #
 #
+define KernelBlock
+LMEPredictor:
+  blocktitle: LME Predictor
+  paramtype: Text
+  paramval:
+  - text: 'Name of LME predictor column'
+    value: ''
+LRTArgs:
+  blocktitle: LRT command-line args
+  paramtype: Text
+  paramval:
+  - text: 'LRT command-line arguments (currently ignored, can be blank)'
+    value: ''
+endef
+define TargetBlock
+RTLRTSignif:
+  blocktitle: Reading Time LRT Significance Test
+  targetsuffix: .lrtsignif
+  family: Likelihood Ratio Test (LRT)
+  blockseq:
+  - blocktype: RTDataParams
+  - blocktype: String
+    value: '.'
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEPredictor
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEArgs4LRT
+  - blocktype: String
+    value: '.'
+  - blocktype: LRTArgs
+fMRILRTSignif:
+  blocktitle: fMRI LRT Significance Test
+  targetsuffix: .lrtsignif
+  family: Likelihood Ratio Test (LRT)
+  blockseq:
+  - blocktype: fMRIDataParams
+  - blocktype: String
+    value: '.'
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEPredictor
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEArgs4LRT
+  - blocktype: String
+    value: '.'
+  - blocktype: LRTArgs
+endef
 .PRECIOUS: %.lrtsignif
 %.lrtsignif:  $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
 $$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
+$(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$(LMEFIT-SCRIPTS)/lmetools.r
 	$(wordlist 1,3,$^) $(subst _, ,$(subst .,,$(suffix $*))) > $@
 
 # Runs a diamond LRT evaluation based on the following template:
@@ -121,13 +340,63 @@ $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
 #
 #    genmodel/ucl.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.kenlm.fp.mem.fjprob_dlt.-NSCFf..diamond.lrtsignif 
 #    
+define CompositeBlock
+LMEPredictors:
+  blocktitle: Two LME predictors (for diamond LRT signif)
+  blockseq:
+  - blocktype: LMEPredictor
+  - blocktype: LMEPredictor
+endef
+define TargetBlock
+RTLRTDaimSignif:
+  blocktitle: Diamond Reading Time LRT Significance Test
+  targetsuffix: .diamond.lrtsignif
+  family: Likelihood Ratio Test (LRT)
+  blockseq:
+  - blocktype: RTDataParams
+  - blocktype: String
+    value: '.'
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEPredictors
+    kwargs:
+      innerdelim: '_'
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEArgs
+  - blocktype: String
+    value: '.'
+  - blocktype: LRTArgs
+fMRILRTDaimSignif:
+  blocktitle: Diamond fMRI LRT Significance Test
+  targetsuffix: .diamond.lrtsignif
+  family: Likelihood Ratio Test (LRT)
+  blockseq:
+  - blocktype: fMRIDataParams
+  - blocktype: String
+    value: '.'
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEPredictors
+    kwargs:
+      innerdelim: '_'
+  - blocktype: String
+    value: '.'
+  - blocktype: LMEArgs
+  - blocktype: String
+    value: '.'
+  - blocktype: LRTArgs
+endef
 .PRECIOUS: %.diamond.lrtsignif
 %.diamond.lrtsignif: $(LMEFIT-SCRIPTS)/lmefit2diamlrtsignif.r \
 $$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $$(basename $$(basename $$(basename $$*))).-a_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $$(basename $$(basename $$(basename $$*))).-a_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
 $$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
+$(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$(LMEFIT-SCRIPTS)/lmetools.r
 	$(wordlist 1,5,$^) -t '$(subst _,-vs-,$(subst .,,$(suffix $(basename $(basename $*)))))' \
   -l $(word 1, $(subst _, ,$(subst .,,$(suffix $(basename $(basename $*)))))) \
   -r $(word 2, $(subst _, ,$(subst .,,$(suffix $(basename $(basename $*)))))) > $@

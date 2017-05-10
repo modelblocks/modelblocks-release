@@ -49,28 +49,27 @@ NAT := 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 2
 #
 ################################################################################
 
-MSG1 := The current config file,
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-dmv-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 DMVDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(DMVDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(DMVDIR)$(MSG3))
 endif
+RESOURCE-NAME := The Dependency Model with Valence (DMV)
+define RESOURCE-DESCR =
+
+NAME: The Dependency Model with Valence (DMV)
+AVAILABILITY: Free
+URL: https://code.google.com/archive/p/pr-toolkit/
+DESCRIPTION: An implementation (Gillenwater et al 2010) of the Dependency
+Model with Valence parser (Klein & Manning 2004) for unsupervised
+dependency parsing.
+endef
+DMV-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-DMV = $(error $(DMV-ERROR))
 endif
 
 
@@ -85,7 +84,7 @@ endif
 ################################################################################
 
 .PRECIOUS: %.1.dmv.conll %.1.u.dmv.conll
-%.1.dmv.conll %.1.u.dmv.conll: %.bmmmbase.conll $(DMVDIR) $(CONFIGDIR)/user-dmv-directory.txt $(CONFIGDIR)/user-javaflags.txt
+%.1.dmv.conll %.1.u.dmv.conll: $$(DEP-DMV) %.bmmmbase.conll $(DMVDIR) $(CONFIGDIR)/user-dmv-directory.txt $(CONFIGDIR)/user-javaflags.txt
 	echo "name=Conll" > $*.1.dmv.params
 	echo "lowercase=false" >> $*.1.dmv.params
 	echo "transitive=false" >> $*.1.dmv.params
@@ -102,7 +101,7 @@ endif
 	rm $(dir $*)dmv_test
 
 .PRECIOUS: %.dmv.conll
-%.dmv.conll: %.bmmm.conll $(DMVDIR) $(CONFIGDIR)/user-dmv-directory.txt $(CONFIGDIR)/user-javaflags.txt
+%.dmv.conll: $$(DEP-DMV) %.bmmm.conll $(DMVDIR) $(CONFIGDIR)/user-dmv-directory.txt $(CONFIGDIR)/user-javaflags.txt
 	echo "name=Conll" > $*.dmv.params
 	echo "lowercase=false" >> $*.dmv.params
 	echo "transitive=false" >> $*.dmv.params

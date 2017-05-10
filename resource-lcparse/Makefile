@@ -95,6 +95,12 @@ bin/%:  $(RESOURCE-LCPARSE)/src/$$(notdir $$@).cpp  $(RESOURCE-LCPARSE)/src/$$(n
 	cat $<  |  python3 $(word 2,$^)  >  $@
 
 #### obtain branch- and depth-annotated grammar with preterm nodes generated seperately
+define ParamVal
+BD:
+  kernel: ModelOpt
+  text: Annotate branching direction and depth
+  value: bd
+endef
 %.bd.x-ccp.model:  %.x-cc.model  $(LCPARSE-SCRIPTS)/pcfg2pxmodel.py
 	cat $<  |  python3 $(word 2,$^)  >  $@
 
@@ -112,6 +118,73 @@ bin/%:  $(RESOURCE-LCPARSE)/src/$$(notdir $$@).cpp  $(RESOURCE-LCPARSE)/src/$$(n
 #  Parsing items
 #
 ################################################################################
+
+define ParamVal
+EFABP:
+  kernel: Parser
+  text: EFABP parser (van Schijndel et al (2013)
+  value: x+efabp
+Fullberk:
+  kernel: Parser
+  text: Full Berkeley parser
+  value: fullberk
+Vitberk:
+  kernel: Parser
+  text: Viterbi Berkeley parser
+  value: vitberk
+endef
+define KernelBlock
+Grammar:
+  blocktitle: Grammar
+  paramtype: Dropdown
+Parser:
+  blocktitle: Parser
+  paramtype: Dropdown
+ParserParams:
+  blocktitle: Parser Parameters
+  paramtype: Text
+  paramval:
+  - text: Underscore-delimited command-line arguments to the parser
+    value: ''
+endef
+define CompositeBlock
+ParseParams:
+  blockseq:
+  - blocktype: Corpus
+    kwargs:
+      instancename: Training
+  - blocktype: Grammar
+  - blocktype: TreeOpt
+    kwargs:
+      innerdelim: '-'
+  - blocktype: ModelOpt
+    kwargs:
+      innerdelim: '-'
+  - blocktype: Parser
+  - blocktype: ParserParams
+  blocktitle: Parser Parameters
+endef
+define TargetBlock
+ParseLinetrees:
+  blocktitle: Parse (Linetrees)
+  targetsuffix: .linetrees
+  family: Parse
+  blockseq:
+  - blocktype: Corpus
+    kwargs:
+      instancename: Test
+  - blocktype: String
+    value: .
+  - blocktype: ParseParams
+    kwargs:
+      innerdelim: '-'
+  - blocktype: String
+    value: _parsed
+  - blocktype: TreeOpt
+    kwargs:
+      outerdelim: '.'
+      innerdelim: '.'
+endef
 
 ##### obtain model-specific parser output by running sentences through parser given flags and model, from including makefile's genmodel dir:
 ##### <testset>.<trainset>.<model>.(<params>_)parsed  ---->  genmodel/<testset>.linetoks  bin/parser-<model>  genmodel/<trainset>.<model>.model

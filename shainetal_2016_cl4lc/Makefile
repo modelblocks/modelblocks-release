@@ -32,22 +32,7 @@ default: DEV-ALL
 ################################################################################
 
 include $(dir $(CURDIR))resource-general/Makefile
-include $(RESOURCE-TOKENIZER)/Makefile
-include $(RESOURCE-LTREES)/Makefile
-include $(RESOURCE-GCG)/Makefile
-include $(RESOURCE-LVPCFG)/Makefile
-include $(RESOURCE-LCPARSE)/Makefile
-include $(RESOURCE-BNC)/Makefile
-include $(RESOURCE-TREEBANK)/Makefile
-include $(RESOURCE-GIGAWORD)/Makefile
-include $(RESOURCE-KENLM)/Makefile
-include $(RESOURCE-SRILM)/Makefile
-include $(RESOURCE-INCRSEM)/Makefile
-include $(RESOURCE-NATSTORIES)/Makefile
-include $(RESOURCE-CHILDES)/Makefile
-include $(RESOURCE-RT)/Makefile
-include $(RESOURCE-RHACKS)/Makefile
-include $(RESOURCE-LMEFIT)/Makefile
+$(eval $(INCLUDE-ALL))
 
 ################################################################################
 #
