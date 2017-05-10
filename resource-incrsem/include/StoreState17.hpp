@@ -78,6 +78,7 @@ N N_NONE("");
 DiscreteDomain<int> domT;
 class T : public DiscreteDomainRV<int,domT> {
  private:
+  static map<N,bool> mnbArg;
   static map<T,int>  mtiArity;
   static map<T,bool> mtbIsCarry;
   static map<T,T>    mttCarrier;
@@ -108,6 +109,7 @@ class T : public DiscreteDomainRV<int,domT> {
     return N( string(l,beg,end-beg).c_str() );  // l+strlen(l);
   }
   void calcDetermModels ( const char* ps ) {
+    if( mnbArg.end()==mnbArg.find(*this) ) { mnbArg[*this]=( strlen(ps)<=4 ); }
     if( mtiArity.end()  ==mtiArity.  find(*this) ) { mtiArity  [*this]=getArity(ps); }
     if( mtbIsCarry.end()==mtbIsCarry.find(*this) ) { mtbIsCarry[*this]=( ps[0]=='-' ); }  //( ps[strlen(ps)-1]=='^' ); }
     if( mttCarrier.end()==mttCarrier.find(*this) ) { T& t=mttCarrier[*this]; t=( (ps[strlen(ps)-1]=='^') ? *this : string(ps).append("^").c_str() ); }
@@ -125,13 +127,15 @@ class T : public DiscreteDomainRV<int,domT> {
   T ( )                : DiscreteDomainRV<int,domT> ( )    { }
 //  T ( int i )          : DiscreteDomainRV<int,domT> ( i )  { }
   T ( const char* ps ) : DiscreteDomainRV<int,domT> ( ps ) { calcDetermModels(ps); }
+  bool isArg           ( )     { return mnbArg[*this]; }
   int  getArity        ( )     { return mtiArity  [*this]; }
-  bool isCarrier  ( )     { return mtbIsCarry[*this]; }
+  bool isCarrier       ( )     { return mtbIsCarry[*this]; }
   T    giveCarrierMark ( )     { return mttCarrier[*this]; }
   T    takeCarrierMark ( )     { return mttNoCarry[*this]; }
   N    getLastNonlocal ( )     { return mtnLastNol[*this]; }
   bool containsCarrier ( N n ) { return mtnbIn.find(pair<T,N>(*this,n))!=mtnbIn.end(); }
 };
+map<N,bool>         T::mnbArg;
 map<T,int>          T::mtiArity;
 map<T,bool>         T::mtbIsCarry;
 map<T,T>            T::mttCarrier;
@@ -620,7 +624,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     return PPredictor( getDepth(), f, e, at(size()-1).getType(), k_p_t.getType() );
   }
 
-  list<JPredictor>& calcJoinPredictors ( list<JPredictor>& ljp, F f, E eF, const Sign& aPretrm, const LeftChildSign& aLchild ) const {
+  list<JPredictor>& calcJoinPredictors ( list<JPredictor>& ljp, F f, E eF, const LeftChildSign& aLchild ) const {
     int d = getDepth()+f;
     const Sign& aAncstr  = at( getAncestorBIndex(f)        );
     const KSet& ksFiller = at( getAncestorBCarrierIndex(f) ).getKSet();
@@ -632,11 +636,11 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     return ljp;
   }
 
-  APredictor calcApexTypeCondition ( F f, J j, E eF, E eJ, O opL, const Sign& aPretrm, const LeftChildSign& aLchild ) const {
+  APredictor calcApexTypeCondition ( F f, J j, E eF, E eJ, O opL, const LeftChildSign& aLchild ) const {
     return APredictor( getDepth()+f-j, f, j, eJ, opL, at(getAncestorBIndex(f)).getType(), (j==0) ? aLchild.getType() : tBot );
   }
 
-  BPredictor calcBrinkTypeCondition ( F f, J j, E eF, E eJ, O opL, O opR, T tParent, const Sign& aPretrm, const LeftChildSign& aLchild ) const {
+  BPredictor calcBrinkTypeCondition ( F f, J j, E eF, E eJ, O opL, O opR, T tParent, const LeftChildSign& aLchild ) const {
     return BPredictor( getDepth()+f-j, f, j, eJ, opL, opR, tParent, aLchild.getType() );
   }
 };
