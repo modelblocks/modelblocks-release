@@ -42,7 +42,15 @@ GENMODEL := genmodel
 INCLUDE := $(abspath $(RESOURCE-INCRSEM)/include)
 SRC := $(abspath $(RESOURCE-INCRSEM)/src)
 
-include $(wildcard $(RESOURCE-INCRSEM)/*/*.d)      ## don't comment out, it breaks make!
+ifndef RECURSED
+$(info Building source code dependencies using recursive sub-make to $(RESOURCE-INCRSEM)/Makefile...)
+## create dependencies for files in python, src, include directories
+DUMMY := $(shell $(MAKE) RECURSED=1 $(subst .py,.d,$(wildcard $(INCRSEM-SCRIPTS)/*.py)) $(subst .cpp,.d,$(wildcard $(SRC)/*.cpp)))
+$(info Source code dependencies built and loaded.)
+endif
+
+## include those dependencies
+include $(wildcard $(RESOURCE-INCRSEM)/*/*.d)
 
 ################################################################################
 #
@@ -61,6 +69,7 @@ include $(wildcard $(RESOURCE-INCRSEM)/*/*.d)      ## don't comment out, it brea
 #
 ################################################################################
 
+ifdef RECURSED
 #### python dependencies
 .PRECIOUS:  $(INCRSEM-SCRIPTS)/%.d
 $(INCRSEM-SCRIPTS)/%.d:  $(INCRSEM-SCRIPTS)/%.py
@@ -75,6 +84,7 @@ $(SRC)/%.d:  $(SRC)/%.cpp  |  $(INCLUDE)
 	echo '$@: \' > $@   #' ##
 	echo `g++ -I$| -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl/) -std=c++11 -MM $<` | sed 's/^.*:.*\.cpp */ $$(wildcard /;s/\\ *//g;s/$$/)/' >> $@
 	cat $@ | sed 's/\.d:/\.cpp:/' >> $@
+endif
 
 #### c++ executables
 .PRECIOUS: $(BIN)/%

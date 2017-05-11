@@ -82,7 +82,7 @@ T T_CONTAINS_COMMA ( "!containscomma!" ); // must be changed to avoid confusion 
 T getType ( const L& l ) {
   if ( l[0]==':' )                 return T_COLON;
   if ( l.find(',')!=string::npos ) return T_CONTAINS_COMMA;
-  return string( string( l, 0, l.find("-l") ), 0, l.find("-xX") ).c_str();
+  return string( string( l, 0, l.find("-l") ), 0, l.find("-o") ).c_str();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -98,10 +98,23 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
   string sBaseType = t.getString();
 
   // If preterm is morphrule-annotated, use baseform in pred...
-  smatch m;  if ( regex_match( lP, m,regex("(.*)-xX(.*)\\*(.*)\\*(.*)") ) ) {
-    sBaseType = (lP[0]=='V' || lP[0]=='B' || lP[0]=='L' || lP[0]=='G') ? "B" + string(m[1],1) + "-xX" + string(m[2]) + '*' + string(m[3]) : (lP[0]=='N') ? "N" + string(m[1],1) + "-xX" + string(m[2]) + '*' + string(m[3]) : "ERROR:UNDEFINED_BASE";
+  smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^-:|]*:|[^-%:|]*)([^-%:|]*?)%([^-%:|]*)[|](.)([^-:|]*:|[^-%:|]*)([^-%:|]*?)%([^-%:|]*)(.*)$")); s=m[9] ) {
+    //cout<<"MATCH "<<string(m[1])<<" "<<string(m[2])<<" "<<string(m[3])<<" "<<string(m[4])<<" "<<string(m[5])<<" "<<string(m[6])<<" "<<string(m[7])<<" "<<string(m[8])<<" "<<string(m[9])<<endl;
+    sPred = regex_replace( sPred, regex("^"+string(m[3])+"(.*)"+string(m[4])+"$"), string(m[7])+"$1"+string(m[8]) );
+    sBaseType[0] = string(m[5])[0];
+  }
+  sBaseType = regex_replace( sBaseType, regex("-x.*"), string("") );
+  lP = sBaseType;
+
+  /*
+  smatch m;  if ( regex_match( lP, m,regex("(.*?)-o.*[|]([^- ]*)") ) ) {
+    sBaseType = (lP[0]=='V' || lP[0]=='B' || lP[0]=='L' || lP[0]=='G') ? "B" + string(m[1],1) + "-o" + string(m[2])
+              : (lP[0]=='N')                                           ? "N" + string(m[1],1) + "-o" + string(m[2])
+              : (lP[0]=='A' || lP[0]=='R')                             ? "A" + string(m[1],1) + "-o" + string(m[2])
+                                                                       : "ERROR:UNDEFINED_BASE";
     sPred     = regex_replace( sPred, regex(string(m[4])+"$"), string(m[3]) );
   }
+  */
 
   if ( mldLemmaCounts.find(sPred)==mldLemmaCounts.end() || mldLemmaCounts[sPred]<MINCOUNTS ) sPred = "!unk!";
   if ( isdigit(lW[0]) )                                                                      sPred = "!num!";

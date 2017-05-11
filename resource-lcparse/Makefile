@@ -44,7 +44,15 @@
 INCLUDE := $(RESOURCE-LCPARSE)/include
 BIN     := bin
 
-include $(wildcard $(RESOURCE-LCPARSE)/*/*.d)      ## don't comment out, it breaks make!
+ifndef RECURSED
+$(info Building source code dependencies using recursive sub-make to $(RESOURCE-LCPARSE)/Makefile...)
+## create dependencies for files in python, src, include directories
+DUMMY := $(shell $(MAKE) RECURSED=1 $(subst .py,.d,$(wildcard $(RESOURCE-LCPARSE)/*.py)) $(subst .cpp,.d,$(wildcard $(RESOURCE-LCPARSE)/src/*.cpp)))
+$(info Source code dependencies built and loaded.)
+endif
+
+## include those dependencies
+include $(wildcard $(RESOURCE-LCPARSE)/*/*.d)
 
 ################################################################################
 #
@@ -57,6 +65,7 @@ SHELL = /bin/bash
 #CFLAGS = $(INCLUDES) -Wall `cat user-cflags.txt` -fpermissive
 #CC = g++
 
+ifdef RECURSED
 #### obtain c++ dependencies by compiling local source and include files
 .PRECIOUS: $(RESOURCE-LCPARSE)/%.d
 $(RESOURCE-LCPARSE)/%.d:  $(RESOURCE-LCPARSE)/%.cpp  |  $(INCLUDE)
@@ -64,6 +73,7 @@ $(RESOURCE-LCPARSE)/%.d:  $(RESOURCE-LCPARSE)/%.cpp  |  $(INCLUDE)
 	echo `g++ -I$| -I$(abspath $(MBDIR)/resource-rvtl) -std=c++11 -MM $<` | sed 's/^.*:.*\.cpp */ $$(wildcard /;s/\\ *//g;s/$$/)/' >> $@
 	cat $@ | sed 's/\.d:/\.cpp:/' >> $@
 #       $(CC) -MM $< | sed 's/^.*://' >> $@
+endif
 
 #### obtain binaries by compiling local source and include files
 .PRECIOUS: bin/%

@@ -11,7 +11,7 @@ def attachB(t,lu):
 
 for s in sys.stdin:
     s = re.sub( '/[^ ;/]*\^;[^ ;/]*', '', s )   ## remove bottom carriers.
-    m = re.search('^([^ ]*) (?!pos|FAIL)(?:\[[^\]]*\]:)?([^ ]*) ([^ ]*) ([^ ]*) (?:.*;)?([^ ;\n]*)[ \n]',s)
+    m = re.search('^([^ ]*) (?!pos)(?:\[[^\]]*\]:)?([^ ]*) ([^ ]*) ([^ ]*) (?:.*;)?([^ ;\n]*)[ \n]',s)
     if m is not None:
         w,p,f,j,q = m.groups()
 
