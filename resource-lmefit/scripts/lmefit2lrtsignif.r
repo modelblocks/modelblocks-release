@@ -68,6 +68,4 @@ printSignifSummary(setdiff(base$abl,main$abl),
                    main$model,
                    anova(base$model, main$model))
 
-print(signif)
-
 warnings()

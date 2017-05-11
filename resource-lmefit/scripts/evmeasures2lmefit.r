@@ -16,11 +16,6 @@
 ########################################################
 
 # Import packages
-library(lme4)
-library(languageR)
-library(optimx)
-library(ggplot2)
-library(optparse)
 # Relative path code from Suppressingfire on StackExchange
 initial.options <- commandArgs(trailingOnly = FALSE)
 file.arg.name <- "--file="
@@ -32,7 +27,7 @@ source('../../resource-rhacks/scripts/mer-utils.R') #obtained from https://githu
 source('../../resource-rhacks/scripts/regression-utils.R') #obtained from https://github.com/aufrank
 source('../../resource-lmefit/scripts/lmetools.r')
 setwd(wd)
-options('warn'=1) #report non-convergences, etc
+#options('warn'=1) #report non-convergences, etc
 
 ########################################################
 #
@@ -102,7 +97,8 @@ if (length(params$groupingfactor) > 0) {
 }
 
 
-lmefit(data, output, params$bformfile, params$logmain, params$logdepvar, params$lambda,
+fitModel(data, output, params$bformfile, params$fitmode,
+                     params$logmain, params$logdepvar, params$lambda,
                      params$addEffects, params$extraEffects, params$ablEffects,
                      params$groupingfactor, params$indicatorlevel, params$crossfactor,
                      params$interact, params$corpus)

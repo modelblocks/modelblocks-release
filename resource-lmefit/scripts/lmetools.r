@@ -6,12 +6,14 @@
 
 # Requires the optparse library
 processLMEArgs <- function() {
+    library(optparse)
     opt_list <- list(
         make_option(c('-b', '--bformfile'), type='character', default='../resource-rt/scripts/mem.lmeform', help='Path to LME formula specification file (<name>.lmeform'),
         make_option(c('-a', '--abl'), type='character', default=NULL, help='Effect(s) to ablate, delimited by "+". Effects that are not already in the baseline specification will be ignored (to add new effects to the baseline formula in order to ablate them, use the -A (--all) option.'),
         make_option(c('-A', '--all'), type='character', default=NULL, help='Effect(s) to add, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
         make_option(c('-x', '--extra'), type='character', default=NULL, help='Additional (non-main) effect(s) to add, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
         make_option(c('-c', '--corpus'), type='character', default=NULL, help='Name of corpus (for output labeling). If not specified, will try to infer from output filename.'),
+        make_option(c('-B', '--bayesian'), type='logical', action='store_true', default=FALSE, help='Use Bayesian mixed-effects model (defaults to linear mixed-effects regression model).'),
         make_option(c('-R', '--restrdomain'), type='character', default=NULL, help='Basename of *.restrdomain.txt file (must be in modelblocks-repository/resource-lmefit/scripts/) containing key-val pairs for restricting domain (see file "noNVposS1.restrdomain.txt" in this directory for formatting).'),
         make_option(c('-d', '--dev'), type='logical', action='store_true', default=FALSE, help='Run evaluation on dev dataset.'),
         make_option(c('-t', '--test'), type='logical', action='store_true', default=FALSE, help='Run evaluation on test dataset.'),
@@ -52,6 +54,12 @@ processLMEArgs <- function() {
     } else opts$options$ablEffects <- c()
 
     opts$options$addEffects = c(opts$options$addEffects, opts$options$ablEffects)
+
+    if (params$bayesian) {
+        opts$options$fitmode = 'bayesian'
+    } else {
+        opts$options$fitmode = 'linear'
+    }
 
     if (!is.null(params$extra)) {
         opts$options$extraEffects <- strsplit(params$extra,'+',fixed=T)[[1]]
@@ -469,34 +477,58 @@ minRelGrad <- function(reg1, reg2) {
 }
 
 # Fit a model formula with bobyqa, try again with nlminb on convergence failure
-regressModel <- function(dataset, form) {
+regressLinearModel <- function(dataset, form) {
+    library(optimx)
+    library(lme4)
     bobyqa <- lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=50000))
     nlminb <- lmerControl(optimizer="optimx",optCtrl=list(method=c("nlminb"),maxit=50000))
     
     smartPrint('Regressing with bobyqa')
     smartPrint(paste(' ', date()))
-    regressionOutput <- lmer(form, dataset, REML=F, control = bobyqa)
-    printSummary(regressionOutput)
-    convWarn <- regressionOutput@optinfo$conv$lme4$messages
+    m <- lmer(form, dataset, REML=F, control = bobyqa)
+    printSummary(m)
+    convWarn <- m@optinfo$conv$lme4$messages
     
     if (!is.null(convWarn)) {
-        regressionOutputO <- regressionOutput
+        m1 <- m
         smartPrint('Regressing with nlminb')
         smartPrint(paste(' ', date()))
-        regressionOutputN <- lmer(form, dataset, REML=F, control = nlminb)
-        convWarnN <- regressionOutputN@optinfo$conv$lme4$messages
-        printSummary(regressionOutputN)
+        m2 <- lmer(form, dataset, REML=F, control = nlminb)
+        convWarnN <- m2@optinfo$conv$lme4$messages
+        printSummary(m2)
         if (is.null(convWarnN)) {
-            regressionOutput <- regressionOutputN
+            m <- m2
         } else {
-            regressionOutput <- minRelGrad(regressionOutputO, regressionOutputN)            
+            m <- minRelGrad(m1, m2)            
         }
     }
     
     if (!is.null(convWarn) && !is.null(convWarnN)) {
         smartPrint('Model failed to converge under both bobyqa and nlminb');
     }
-    return(regressionOutput)
+    return(m)
+}
+
+regressBayesianModel <- function(dataset, form) {
+    library(rstanarm)
+    attach(dataset)
+    depVar <- eval(parse(text=strsplit(deparse(form), ' ')[[1]][1]))
+    detach(dataset)    
+    #bound = as.numeric(quantile(depVar, .95))
+
+    m <- stan_lmer(formula = form,
+                   prior_intercept = normal(mean(depVar), sd(depVar)),
+                   prior = normal(0, sd(depVar)),
+                   prior_covariance = decov(regularization = 2),
+                   data = dataset,
+                   chains = 4,
+                   iter = 2000,
+                   cores = 4,
+                   refresh = 0,
+                   QR=TRUE)
+ 
+    printBayesSummary(m)
+    return(m)
 }
 
 # Output a summary of model fit
@@ -516,6 +548,11 @@ printSummary <- function(reg) {
     smartPrint(AIC(logLik(reg)))
 }
 
+printBayesSummary <- function(m) {
+    print(summary(m))
+}
+
+
 # Generate logarithmically binned categorical effect
 # from discrete/continouous effect
 binEffect <- function(x) {
@@ -528,8 +565,8 @@ binEffect <- function(x) {
     return ("negative")
 }
 
-# Run linear regression
-lmefit <- function(dataset, output, bformfile,
+# Fit mixed-effects regression
+fitModel <- function(dataset, output, bformfile, fitmode='linear',
                    logmain=FALSE, logdepvar=FALSE, lambda=NULL,
                    addEffects=NULL, extraEffects=NULL, ablEffects=NULL, groupingfactor=NULL,
                    indicatorlevel=NULL, crossfactor=NULL, interact=TRUE,
@@ -543,7 +580,11 @@ lmefit <- function(dataset, output, bformfile,
     smartPrint('Regressing model:')
     smartPrint(deparse(bform))
 
-    outputModel <- regressModel(dataset, bform)
+    if (fitmode=='bayesian') {
+        outputModel <- regressBayesianModel(dataset, bform)
+    } else {
+        outputModel <- regressLinearModel(dataset, bform)
+    }
     fitOutput <- list(
         abl = ablEffects,
         ablEffects = processEffects(ablEffects, data, logmain),
@@ -555,7 +596,6 @@ lmefit <- function(dataset, output, bformfile,
     )
     save(fitOutput, file=output)
 }
-
 
 # LME error analysis
 error_anal <- function(data, params) {
