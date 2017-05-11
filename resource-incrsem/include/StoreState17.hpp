@@ -106,23 +106,22 @@ class T : public DiscreteDomainRV<int,domT> {
                                                          || l[i+1]=='r' || l[i+1]=='v') && depth==0 ) beg = i;
       if ( beg<i && end>i && depth==0 && (l[i]=='-' || l[i]=='\\' || l[i]=='^') ) end = i;
     }
-//cout<<"!!"<<string(l,beg,end-beg)<<"!!"<<l<<endl;
     return N( string(l,beg,end-beg).c_str() );  // l+strlen(l);
   }
   void calcDetermModels ( const char* ps ) {
     if( mnbArg.end()==mnbArg.find(*this) ) { mnbArg[*this]=( strlen(ps)<=4 ); }
     if( mtiArity.end()  ==mtiArity.  find(*this) ) { mtiArity  [*this]=getArity(ps); }
-    if( mtbIsCarry.end()==mtbIsCarry.find(*this) ) { mtbIsCarry[*this]=( ps[0]=='-' ); }  //( ps[strlen(ps)-1]=='^' ); }
-    if( mttCarrier.end()==mttCarrier.find(*this) ) { T& t=mttCarrier[*this]; t=( (ps[strlen(ps)-1]=='^') ? *this : string(ps).append("^").c_str() ); }
-    if( mttNoCarry.end()==mttNoCarry.find(*this) ) { T& t=mttNoCarry[*this]; t=( (ps[strlen(ps)-1]!='^') ? *this : string(ps,strlen(ps)-1).c_str() ); }
-    if( strlen(ps)>0 && mtnLastNol.end()==mtnLastNol.find(*this) ) { mtnLastNol[*this]=getLastNolo(ps); }
+    if( mtbIsCarry.end()==mtbIsCarry.find(*this) ) { mtbIsCarry[*this]=( ps[0]=='-' && ps[1]>='a' && ps[1]<='z' ); }  //( ps[strlen(ps)-1]=='^' ); }
+//    if( mttCarrier.end()==mttCarrier.find(*this) ) { T& t=mttCarrier[*this]; t=( (ps[strlen(ps)-1]=='^') ? *this : string(ps).append("^").c_str() ); }
+//    if( mttNoCarry.end()==mttNoCarry.find(*this) ) { T& t=mttNoCarry[*this]; t=( (ps[strlen(ps)-1]!='^') ? *this : string(ps,strlen(ps)-1).c_str() ); }
+    if( strlen(ps)>0 && !(ps[0]=='-'&&ps[1]>='a'&&ps[1]<='z') && mtnLastNol.end()==mtnLastNol.find(*this) ) { N& n=mtnLastNol[*this]; n=getLastNolo(ps); }
     uint depth = 0;  uint beg = strlen(ps);
     for( uint i=0; i<strlen(ps); i++ ) {
       if ( ps[i]=='{' ) depth++;
       if ( ps[i]=='}' ) depth--;
       if ( depth==0 && ps[i]=='-' && (ps[i+1]=='g' || ps[i+1]=='h'    // || ps[i+1]=='i'
                                                                          || ps[i+1]=='r' || ps[i+1]=='v') ) beg = i;
-      if ( depth==0 && beg<i && (ps[i]=='-' || ps[i]=='\\' || ps[i]=='^') ) { mtnbIn[pair<T,N>(*this,ps)]=true;  beg = strlen(ps); }
+      if ( depth==0 && beg<i && (ps[i]=='-' || ps[i]=='\\' || ps[i]=='^') ) { mtnbIn[pair<T,N>(*this,string(ps,beg,i-1).c_str())]=true;  beg = strlen(ps); }
     }
   }
  public:
@@ -619,10 +618,11 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
 
   list<FPredictor>& calcForkPredictors ( list<FPredictor>& lfp ) const {
     int d = getDepth();
+    const KSet& ksB = at(size()-1).getKSet();
     int iCarrier = getAncestorBCarrierIndex( 1 );
     if( STORESTATE_TYPE ) lfp.emplace_back( d, at(size()-1).getType() );
-    for( auto& kA : at(size()-1).getKSet() ) lfp.emplace_back( d, kNil, kA );
-    for( auto& kF : (iCarrier<0) ? KSet() : at(iCarrier).getKSet() ) lfp.emplace_back( d, kF, kNil );
+    for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) lfp.emplace_back( d, kNil, kA );
+    for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) lfp.emplace_back( d, kF, kNil );
     return lfp;
   }
 
@@ -634,12 +634,13 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     int d = getDepth()+f;
     int iCarrier = getAncestorBCarrierIndex( f );
     const Sign& aAncstr  = at( getAncestorBIndex(f) );
+    const KSet& ksAncstr = aAncstr.getKSet();
     const KSet& ksFiller = (iCarrier<0) ? KSet() : at( iCarrier ).getKSet();
     const KSet& ksLchild = ( aLchild.getKSet().size()==0 ) ? KSet(K::kBot) : aLchild.getKSet() ;
     if( STORESTATE_TYPE ) ljp.emplace_back( d, aAncstr.getType(), aLchild.getType() );
-    for( auto& kA : aAncstr.getKSet() ) for( auto& kL : ksLchild          ) ljp.emplace_back( d, kNil, kA, kL );
-    for( auto& kF : ksFiller          ) for( auto& kA : aAncstr.getKSet() ) ljp.emplace_back( d, kF, kA, kNil );
-    for( auto& kF : ksFiller          ) for( auto& kL : ksLchild          ) ljp.emplace_back( d, kF, kNil, kL );
+    for( auto& kA : (ksAncstr.size()==0) ? ksBot : ksAncstr ) for( auto& kL : ksLchild          ) ljp.emplace_back( d, kNil, kA, kL );
+    for( auto& kF :                                ksFiller ) for( auto& kA : aAncstr.getKSet() ) ljp.emplace_back( d, kF, kA, kNil );
+    for( auto& kF :                                ksFiller ) for( auto& kL : ksLchild          ) ljp.emplace_back( d, kF, kNil, kL );
     return ljp;
   }
 
@@ -658,7 +659,6 @@ Sign StoreState::aTop( KSet(K::kTop), tTop, S_B );
 LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, E eF, const Sign& aPretrm ) {
     int iCarrier = qPrev.getAncestorBCarrierIndex(f);
     const Sign& aAncestorA = qPrev.at(qPrev.getAncestorAIndex(1) );
-cout<<aAncestorA<<endl;
     const Sign& aAncestorB = qPrev.at(qPrev.getAncestorBIndex(1) );
     const KSet& ksExtrtn   = (iCarrier<0) ? KSet() : qPrev.at(iCarrier).getKSet();
     *this = (f==1 && eF!='N')                  ? Sign( KSet(ksExtrtn,qPrev.getDir(eF),aPretrm.getKSet()), aPretrm.getType(), S_A )
