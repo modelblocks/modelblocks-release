@@ -44,6 +44,16 @@
 INCLUDE := $(RESOURCE-LCPARSE)/include
 BIN     := bin
 
+ifndef RECURSED
+$(info Building source code dependencies using recursive sub-make to $(RESOURCE-LCPARSE)/Makefile...)
+## create dependencies for files in python, src, include directories
+DUMMY := $(shell $(MAKE) RECURSED=1 $(subst .py,.d,$(wildcard $(RESOURCE-LCPARSE)/*.py)) $(subst .cpp,.d,$(wildcard $(RESOURCE-LCPARSE)/src/*.cpp)))
+$(info Source code dependencies built and loaded.)
+endif
+
+## include those dependencies
+include $(wildcard $(RESOURCE-LCPARSE)/*/*.d)
+
 ################################################################################
 #
 #  Code compilation items
@@ -54,15 +64,6 @@ SHELL = /bin/bash
 #INCLUDES = -I$(INCLUDE) -I$(abspath $(MBDIR)/resource-rvtl)
 #CFLAGS = $(INCLUDES) -Wall `cat user-cflags.txt` -fpermissive
 #CC = g++
-
-ifndef RECURSED
-$(info Building source code dependencies using recursive sub-make to $(RESOURCE-LCPARSE)/Makefile...)
-## create dependencies for files in python, src, include directories
-DUMMY := $(shell $(MAKE) RECURSED=1 $(subst .py,.d,$(wildcard $(RESOURCE-LCPARSE)/*.py)) $(subst .cpp,.d,$(wildcard $(RESOURCE-LCPARSE)/src/*.cpp)))
-## include those dependencies
-include $(wildcard $(RESOURCE-LCPARSE)/*/*.d)
-$(info Source code dependencies built and loaded.)
-endif
 
 ifdef RECURSED
 #### obtain c++ dependencies by compiling local source and include files

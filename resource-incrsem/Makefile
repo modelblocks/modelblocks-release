@@ -42,6 +42,16 @@ GENMODEL := genmodel
 INCLUDE := $(abspath $(RESOURCE-INCRSEM)/include)
 SRC := $(abspath $(RESOURCE-INCRSEM)/src)
 
+ifndef RECURSED
+$(info Building source code dependencies using recursive sub-make to $(RESOURCE-INCRSEM)/Makefile...)
+## create dependencies for files in python, src, include directories
+DUMMY := $(shell $(MAKE) RECURSED=1 $(subst .py,.d,$(wildcard $(INCRSEM-SCRIPTS)/*.py)) $(subst .cpp,.d,$(wildcard $(SRC)/*.cpp)))
+$(info Source code dependencies built and loaded.)
+endif
+
+## include those dependencies
+include $(wildcard $(RESOURCE-INCRSEM)/*/*.d)
+
 ################################################################################
 #
 #  i. rel freq estimation
@@ -58,15 +68,6 @@ SRC := $(abspath $(RESOURCE-INCRSEM)/src)
 #  ii. Code compilation items
 #
 ################################################################################
-
-ifndef RECURSED
-$(info Building source code dependencies using recursive sub-make to $(RESOURCE-INCRSEM)/Makefile...)
-## create dependencies for files in python, src, include directories
-DUMMY := $(shell $(MAKE) RECURSED=1 $(subst .py,.d,$(wildcard $(INCRSEM-SCRIPTS)/*.py)) $(subst .cpp,.d,$(wildcard $(SRC)/*.cpp)))
-## include those dependencies
-include $(wildcard $(RESOURCE-INCRSEM)/*/*.d)
-$(info Source code dependencies built and loaded.)
-endif
 
 ifdef RECURSED
 #### python dependencies

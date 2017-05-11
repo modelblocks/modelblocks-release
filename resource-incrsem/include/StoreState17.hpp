@@ -102,7 +102,8 @@ class T : public DiscreteDomainRV<int,domT> {
     for ( uint i=0; i<strlen(l); i++ ) {
       if ( l[i]=='{' ) depth++;
       if ( l[i]=='}' ) depth--;
-      if ( l[i]=='-' && (l[i+1]=='g' || l[i+1]=='h'    /* || l[i+1]=='i' */   || l[i+1]=='r' || l[i+1]=='v') && depth==0 ) beg = i;
+      if ( l[i]=='-' && (l[i+1]=='g' || l[i+1]=='h'   // || l[i+1]=='i'
+                                                         || l[i+1]=='r' || l[i+1]=='v') && depth==0 ) beg = i;
       if ( beg<i && end>i && depth==0 && (l[i]=='-' || l[i]=='\\' || l[i]=='^') ) end = i;
     }
 //cout<<"!!"<<string(l,beg,end-beg)<<"!!"<<l<<endl;
@@ -119,7 +120,8 @@ class T : public DiscreteDomainRV<int,domT> {
     for( uint i=0; i<strlen(ps); i++ ) {
       if ( ps[i]=='{' ) depth++;
       if ( ps[i]=='}' ) depth--;
-      if ( depth==0 && ps[i]=='-' && (ps[i+1]=='g' || ps[i+1]=='h'    /* || ps[i+1]=='i' */   || ps[i+1]=='r' || ps[i+1]=='v') ) beg = i;
+      if ( depth==0 && ps[i]=='-' && (ps[i+1]=='g' || ps[i+1]=='h'    // || ps[i+1]=='i'
+                                                                         || ps[i+1]=='r' || ps[i+1]=='v') ) beg = i;
       if ( depth==0 && beg<i && (ps[i]=='-' || ps[i]=='\\' || ps[i]=='^') ) { mtnbIn[pair<T,N>(*this,ps)]=true;  beg = strlen(ps); }
     }
   }
@@ -147,7 +149,7 @@ T tBot("-");
 N N_NONE("");
 
 ////////////////////////////////////////////////////////////////////////////////
-
+/*
 DiscreteDomain<int> domK;
 class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of Delimited<...> or string-argument constructor of this class won't get called!
  public:
@@ -679,4 +681,4 @@ W unkWord ( const char* ps ) {
                                                              W("!unk!");
 }
 
-
+*/
