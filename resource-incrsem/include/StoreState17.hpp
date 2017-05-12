@@ -78,12 +78,12 @@ N N_NONE("");
 DiscreteDomain<int> domT;
 class T : public DiscreteDomainRV<int,domT> {
  private:
-  static map<N,bool> mnbArg;
-  static map<T,int>  mtiArity;
-  static map<T,bool> mtbIsCarry;
-  static map<T,T>    mttCarrier;
-  static map<T,T>    mttNoCarry;
-  static map<T,N>    mtnLastNol;
+  static map<N,bool>         mnbArg;
+  static map<T,int>          mtiArity;
+  static map<T,bool>         mtbIsCarry;
+  static map<T,T>            mttCarrier;
+  static map<T,T>            mttNoCarry;
+  static map<T,N>            mtnLastNol;
   static map<pair<T,N>,bool> mtnbIn;
   int getArity ( const char* l ) {
     int depth = 0;
@@ -121,7 +121,7 @@ class T : public DiscreteDomainRV<int,domT> {
       if ( ps[i]=='}' ) depth--;
       if ( depth==0 && ps[i]=='-' && (ps[i+1]=='g' || ps[i+1]=='h'    // || ps[i+1]=='i'
                                                                          || ps[i+1]=='r' || ps[i+1]=='v') ) beg = i;
-      if ( depth==0 && beg<i && (ps[i]=='-' || ps[i]=='\\' || ps[i]=='^') ) { mtnbIn[pair<T,N>(*this,string(ps,beg,i-1).c_str())]=true;  beg = strlen(ps); }
+      if ( depth==0 && beg<i && (ps[i+1]=='-' || ps[i+1]=='\\' || ps[i+1]=='^' || ps[i+1]=='\0') ) { mtnbIn[pair<T,N>(*this,string(ps,beg,i).c_str())]=true;  beg = strlen(ps); }
     }
   }
  public:
@@ -544,19 +544,20 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
 
     int iAncestorA = qPrev.getAncestorAIndex(f);
     int iAncestorB = qPrev.getAncestorBIndex(f);
+    int iLowerA    = (f==1) ? qPrev.size() : qPrev.getAncestorAIndex(1);
 
     // Find existing nonlocal carriers...
-//    N nP = aPretrm.getType().getLastNonlocal();  N nL = ((f==0)?qPrev[iLowestA]:aPretrm).getType().getLastNonlocal();  N nA = tA.getLastNonlocal();  N nB = tB.getLastNonlocal();
-    N nP = aPretrm.getType().getLastNonlocal();  N nL = aLchild.getType().getLastNonlocal();  N nA = tA.getLastNonlocal();  N nB = tB.getLastNonlocal();
-    int iCarrierP = -1;                          int iCarrierL = -1;                          int iCarrierA = -1;           int iCarrierB = -1;
+//    N nP = aPretrm.getType().getLastNonlocal();  N nL = ((f==0)?qPrev[iLowerA]:aPretrm).getType().getLastNonlocal();  N nA = tA.getLastNonlocal();  N nB = tB.getLastNonlocal();
+    N nP = aPretrm.getType().getLastNonlocal();  N nA = tA.getLastNonlocal();  N nB = tB.getLastNonlocal();  N nL = aLchild.getType().getLastNonlocal();
+    int iCarrierP = -1;                          int iCarrierA = -1;           int iCarrierB = -1;           int iCarrierL = -1;
     // Find preterm nonlocal carrier, traversing up from ancestorB through carriers or noncarriers containing preterminal nonlocal, until carrier found...
-    if( nP!=N_NONE ) for( int i=iAncestorB; i>=0 && (qPrev[i].getType().isCarrier() || qPrev[i].getType().containsCarrier(nP)); i-- ) if( qPrev[i].getType()==nP ) iCarrierP=i;
-    // Find lchild nonlocal carrier, traversing up from ancestorB through carriers or noncarriers containing lchild nonlocal, until carrier found...
-    if( nL!=N_NONE ) for( int i=getAncestorAIndex(1); i>=0 && (qPrev[i].getType().isCarrier() || qPrev[i].getType().containsCarrier(nL)); i-- ) if( qPrev[i].getType()==nL ) iCarrierL=i;
+    if( nP!=N_NONE ) for( int i=iAncestorB-1; i>=0 && (qPrev[i].getType().isCarrier() || qPrev[i].getType().containsCarrier(nP)); i-- ) if( qPrev[i].getType()==nP ) iCarrierP=i;
     // Find apex nonlocal carrier, traversing up from ancestorB through carriers or noncarriers containing apex nonlocal, until carrier found...
-    if( nA!=N_NONE ) for( int i=iAncestorB; i>=0 && (qPrev[i].getType().isCarrier() || qPrev[i].getType().containsCarrier(nA)); i-- ) if( qPrev[i].getType()==nA ) iCarrierA=i;
+    if( nA!=N_NONE ) for( int i=iLowerA-1;   i>=0 && (qPrev[i].getType().isCarrier() || qPrev[i].getType().containsCarrier(nA)); i-- ) if( qPrev[i].getType()==nA ) iCarrierA=i;
     // Find brink nonlocal carrier, traversing up from ancestorB through carriers or noncarriers containing brink nonlocal, until carrier found...
-    if( nB!=N_NONE ) for( int i=iAncestorB; i>=0 && (qPrev[i].getType().isCarrier() || qPrev[i].getType().containsCarrier(nB)); i-- ) if( qPrev[i].getType()==nB ) iCarrierB=i;
+    if( nB!=N_NONE ) for( int i=iAncestorB-1; i>=0 && (qPrev[i].getType().isCarrier() || qPrev[i].getType().containsCarrier(nB)); i-- ) if( qPrev[i].getType()==nB ) iCarrierB=i;
+    // Find lchild nonlocal carrier, traversing up from ancestorB through carriers or noncarriers containing lchild nonlocal, until carrier found...
+    if( nL!=N_NONE ) for( int i=iLowerA-1;   i>=0 && (qPrev[i].getType().isCarrier() || qPrev[i].getType().containsCarrier(nL)); i-- ) if( qPrev[i].getType()==nL ) iCarrierL=i;
 
     // Reserve store big enough for ancestorB + new A and B if no join + any needed carriers...
     reserve( iAncestorB + 1 + ((j==0) ? 2 : 0) + ((nP!=N_NONE && iCarrierP!=-1) ? 1 : 0) + ((nA!=N_NONE && iCarrierA==-1) ? 1 : 0) + ((nB!=N_NONE && iCarrierB==-1) ? 1 : 0) ); 
@@ -568,24 +569,31 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
                          :                              KSet( aLchild.getKSet(), -getDir(opL),                                                (j==0) ? KSet() : qPrev.at(iAncestorB).getKSet()   );
     const KSet  ksRchild( ksParent, getDir(opR) );
 
-    for( int i=0; i<((f==0&&j==1)?iAncestorB:(f==0&&j==0)?iAncestorB+1:(f==1&&j==1)?iAncestorB:iAncestorB+1); i++ )
+    for( int i=0; i<((f==0&&j==1)?iAncestorB:(f==0&&j==0)?iLowerA:(f==1&&j==1)?iAncestorB:iAncestorB+1); i++ )
       *emplace( end() ) = ( i==iAncestorA && j==1 && qPrev[i].isDitto() && opR!='I' ) ? Sign( ksParent, qPrev[i].getType(), qPrev[i].getSide() )                                      // End of ditto.
                         : ( i==iCarrierP && eF!='N' )                                 ? Sign( KSet(ksLchild,getDir(eF),qPrev[i].getKSet()), qPrev[i].getType(), qPrev[i].getSide() )  // Update to P carrier.
                         : ( i==iCarrierA && eJ!='N' )                                 ? Sign( KSet(ksParent,getDir(eJ),qPrev[i].getKSet()), qPrev[i].getType(), qPrev[i].getSide() )  // Update to A carrier. 
                         :                                                               qPrev[i];                                                                                     // Copy store element.
 
-    if( j==0 && nP!=N_NONE && iCarrierP==-1 && eF!='N' ) *emplace( end() ) = Sign( KSet(aPretrm.getKSet(),getDir(eF)), nP, S_B );    // If no join and nonloc P with no existing carrier, add P carrier.
-    if( j==0 && nA!=N_NONE && iCarrierA==-1 && eJ!='N' ) *emplace( end() ) = Sign( KSet(ksParent,         getDir(eJ)), nA, S_B );    // If no join and nonloc A with no existing carrier, add A carrier.
-    if( j==0 )                                           *emplace( end() ) = Sign( (opR=='I') ? KSet(K_DITTO) : ksParent, tA, S_A ); // If no join, add A sign.
-    if( nB!=N_NONE && iCarrierB==-1 )                    *emplace( end() ) = Sign( ksLchild, nB, S_A );                              // Add left child kset as B carrier (G rule).
-    if( nL!=N_NONE && iCarrierL>iAncestorB )             *emplace( end() ) = Sign( qPrev[iCarrierL].getKSet(), tB, S_A );            // Add right child kset as L carrier (H rule).
-    if( size()>0 )                                       *emplace( end() ) = Sign( ksRchild, tB, S_B );                              // Add B sign.
+    if( j==0 && nP!=N_NONE && iCarrierP==-1 )          cout<<"(adding carrierP for "<<nP<<" bc none above "<<iAncestorB<<")"<<endl;
+    if( j==0 && nP!=N_NONE && iCarrierP==-1 )          *emplace( end() ) = Sign( KSet(aPretrm.getKSet(),getDir(eF)), nP, S_B );    // If no join and nonloc P with no existing carrier, add P carrier.
+    if( j==0 && nA!=N_NONE && iCarrierA==-1 )          cout<<"(adding carrierA for "<<nA<<" bc none above "<<iLowerA<<")"<<endl;
+    if( j==0 && nA!=N_NONE && iCarrierA==-1 )          *emplace( end() ) = Sign( KSet(ksParent,         getDir(eJ)), nA, S_B );    // If no join and nonloc A with no existing carrier, add A carrier.
+    if( j==0 )                                         *emplace( end() ) = Sign( (opR=='I') ? KSet(K_DITTO) : ksParent, tA, S_A ); // If no join, add A sign.
+    if( nB!=N_NONE && nB!=nA && iCarrierB==-1 )        cout<<"(adding carrierB for "<<nB<<" bc none above "<<iAncestorB<<")"<<endl;
+    if( nB!=N_NONE && nB!=nA && iCarrierB==-1 )        *emplace( end() ) = Sign( ksLchild, nB, S_A );                              // Add left child kset as A carrier (G rule).
+    // WS: SUPPOSED TO BE FOR C-rN EXTRAPOSITION, BUT DOESN'T QUITE WORK...
+    // if( nL!=N_NONE && iCarrierL>iAncestorB )    cout<<"(adding carrierL for "<<nL<<" bc none above "<<iLowerA<<" and below "<<iAncestorB<<")"<<endl;
+    // if( nL!=N_NONE && iCarrierL>iAncestorB )    *emplace( end() ) = Sign( qPrev[iCarrierL].getKSet(), nL, S_A );            // Add right child kset as L carrier (H rule).
+    if( nL!=N_NONE && nL!=nA && iCarrierL>iAncestorB ) cout<<"(attaching carrierL for "<<nL<<" above "<<iLowerA<<" and below "<<iAncestorB<<")"<<endl;
+    if( nL!=N_NONE && nL!=nA && iCarrierL>iAncestorB ) *emplace( end() ) = Sign( qPrev[iCarrierL].getKSet(), ksRchild, tB, S_B );  // Add right child kset as B (H rule).
+    else if( size()>0 )                                *emplace( end() ) = Sign( ksRchild, tB, S_B );                              // Add B sign.
 
     //    cerr << "            " << qPrev << "  " << aLchild << "  ==(f" << f << ",j" << j << "," << opL << "," << opR << ")=>  " << *this << endl;
   }
 
   int getDir ( char cOp ) const {
-    return (cOp>='1' && cOp<='9') ? cOp-'0' :  // (numbered argument)
+    return (cOp>='0' && cOp<='9') ? cOp-'0' :  // (numbered argument)
            (cOp=='M')             ? -1      :  // (modifier)
            (cOp=='I' || cOp=='V') ? 0       :  // (identity)
                                     -10;       // (will not map)
@@ -632,15 +640,15 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
 
   list<JPredictor>& calcJoinPredictors ( list<JPredictor>& ljp, F f, E eF, const LeftChildSign& aLchild ) const {
     int d = getDepth()+f;
-    int iCarrier = getAncestorBCarrierIndex( f );
+    int iCarrierB = getAncestorBCarrierIndex( f );
     const Sign& aAncstr  = at( getAncestorBIndex(f) );
     const KSet& ksAncstr = aAncstr.getKSet();
-    const KSet& ksFiller = (iCarrier<0) ? KSet() : at( iCarrier ).getKSet();
+    const KSet& ksFiller = (iCarrierB<0) ? KSet() : at( iCarrierB ).getKSet();
     const KSet& ksLchild = ( aLchild.getKSet().size()==0 ) ? KSet(K::kBot) : aLchild.getKSet() ;
     if( STORESTATE_TYPE ) ljp.emplace_back( d, aAncstr.getType(), aLchild.getType() );
-    for( auto& kA : (ksAncstr.size()==0) ? ksBot : ksAncstr ) for( auto& kL : ksLchild                                ) ljp.emplace_back( d, kNil, kA, kL );
+    for( auto& kA : (ksAncstr.size()==0) ? ksBot : ksAncstr ) for( auto& kL :                                ksLchild ) ljp.emplace_back( d, kNil, kA, kL );
     for( auto& kF :                                ksFiller ) for( auto& kA : (ksAncstr.size()==0) ? ksBot : ksAncstr ) ljp.emplace_back( d, kF, kA, kNil );
-    for( auto& kF :                                ksFiller ) for( auto& kL : ksLchild                                ) ljp.emplace_back( d, kF, kNil, kL );
+    for( auto& kF :                                ksFiller ) for( auto& kL :                                ksLchild ) ljp.emplace_back( d, kF, kNil, kL );
     return ljp;
   }
 
@@ -657,10 +665,10 @@ Sign StoreState::aTop( KSet(K::kTop), tTop, S_B );
 ////////////////////////////////////////////////////////////////////////////////
 
 LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, E eF, const Sign& aPretrm ) {
-    int iCarrier = qPrev.getAncestorBCarrierIndex(f);
-    const Sign& aAncestorA = qPrev.at(qPrev.getAncestorAIndex(1) );
-    const Sign& aAncestorB = qPrev.at(qPrev.getAncestorBIndex(1) );
-    const KSet& ksExtrtn   = (iCarrier<0) ? KSet() : qPrev.at(iCarrier).getKSet();
+    int         iCarrierB  = qPrev.getAncestorBCarrierIndex( 1 );
+    const Sign& aAncestorA = qPrev.at( qPrev.getAncestorAIndex(1) );
+    const Sign& aAncestorB = qPrev.at( qPrev.getAncestorBIndex(1) );
+    const KSet& ksExtrtn   = (iCarrierB<0) ? KSet() : qPrev.at(iCarrierB).getKSet();
     *this = (f==1 && eF!='N')                  ? Sign( KSet(ksExtrtn,-qPrev.getDir(eF),aPretrm.getKSet()), aPretrm.getType(), S_A )
           : (f==1)                             ? aPretrm                             // if fork, lchild is preterm.
           : (qPrev.size()<=0)                  ? StoreState::aTop                    // if no fork and stack empty, lchild is T (NOTE: should not happen).
