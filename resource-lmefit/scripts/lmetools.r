@@ -345,7 +345,7 @@ baseFormula <- function(bformfile, logdepvar=FALSE, lambda=NULL) {
     depvar <- flines[1]
     if (!is.null(lambda)) {
         smartPrint('Boxcoxing')
-        depvar <- paste0('((', depvar, '^', lambda, ' - 1)/', lambda, ')')
+        depvar <- paste0('((', depvar, '^', lambda, '-1)/', lambda, ')')
     }
     else if (logdepvar) {
         depvar <- paste('log1p(', depvar,')', sep='')
@@ -482,10 +482,13 @@ regressLinearModel <- function(dataset, form) {
     library(lme4)
     bobyqa <- lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=50000))
     nlminb <- lmerControl(optimizer="optimx",optCtrl=list(method=c("nlminb"),maxit=50000))
-    
-    smartPrint('Regressing with bobyqa')
+   
+    smartPrint('-----------------------------')
+    smartPrint('Fitting with bobyqa')
     smartPrint(paste(' ', date()))
     m <- lmer(form, dataset, REML=F, control = bobyqa)
+    smartPrint('-----------------------------')
+    smartPrint('SUMMARY:')
     printSummary(m)
     convWarn <- m@optinfo$conv$lme4$messages
     
@@ -509,24 +512,34 @@ regressLinearModel <- function(dataset, form) {
     return(m)
 }
 
-regressBayesianModel <- function(dataset, form) {
+regressBayesianModel <- function(dataset, form, nchains=4) {
     library(rstanarm)
     attach(dataset)
-    depVar <- eval(parse(text=strsplit(deparse(form), ' ')[[1]][1]))
+    depVar <- eval(parse(text=as.character(form)[[2]]))
     detach(dataset)    
     #bound = as.numeric(quantile(depVar, .95))
 
+    smartPrint('-------------=---------------')
+    smartPrint('Fitting (MCMC) with stan_lmer')
+    smartPrint(paste(' ', date()))
+
     m <- stan_lmer(formula = form,
-                   prior_intercept = normal(mean(depVar), sd(depVar)),
-                   prior = normal(0, sd(depVar)),
+                   prior_intercept = normal(mean(depVar), 1),
+                   prior = normal(0, 1),
                    prior_covariance = decov(regularization = 2),
                    data = dataset,
-                   chains = 4,
+                   chains = nchains,
+                   cores = nchains,
                    iter = 2000,
-                   cores = 4,
-                   refresh = 0,
-                   QR=TRUE)
+                   # QR = TRUE,
+                   refresh = 1
+                   )
  
+    smartPrint('-----------------------------')
+    
+    smartPrint('SUMMARY:')
+    printSummary(m)
+    convWarn <- m@optinfo$conv$lme4$messages
     printBayesSummary(m)
     return(m)
 }
@@ -608,8 +621,8 @@ error_anal <- function(data, params) {
         bc <- MASS:::boxcox(as.formula('fdur ~ 1'), data=data)
         l <- bc$x[which.max(bc$y)]
         smartPrint(paste0('Box & Cox lambda: ', l))
-        errData[[paste0(name,'BaseErr')]] <- c.((errData$fdur^l - 1)/l) - predict(params$base_obj$model, data)
-        errData[[paste0(name,'MainErr')]] <- c.((errData$fdur^l - 1)/l) - predict(params$main_obj$model, data)        
+        errData[[paste0(name,'BaseErr')]] <- c.((errData$fdur^l-1)/l) - predict(params$base_obj$model, data)
+        errData[[paste0(name,'MainErr')]] <- c.((errData$fdur^l-1)/l) - predict(params$main_obj$model, data)        
     } else {
         errData[[paste0(name,'BaseErr')]] <- c.(errData$fdur) - predict(params$base_obj$model, data)
         errData[[paste0(name,'MainErr')]] <- c.(errData$fdur) - predict(params$main_obj$model, data)
