@@ -155,7 +155,7 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 	cat $<  |  python $(word 2,$^)  |  LC_COLLATE=C sort  |  LC_COLLATE=C uniq -c  |  sed 's/^ *//'  >  $@
 
 ## obtain predictors and responses for all semantic processing models...
-%.semprocdecpars:  %.linetrees  $(BIN)/linetrees2semprocdecpars  %.lemmacounts
+%decpars:  $$(basename %).linetrees  $(BIN)/linetrees2$$(subst .,,$$(suffix $$*))decpars  $$(basename %).lemmacounts
 	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) $(word 3,$^)  >  $@
 #%ss.semprocdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename %).lemmacounts
 #	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) $(word 3,$^) $(subst .,,$(suffix $*))  >  $@
@@ -196,22 +196,22 @@ endef
 ################################################################################
 
 ## pull apart predictor/responses for training...
-%.fmlrdecpars:  %.semprocdecpars
+%.f17mlrdecpars:  %.semproc17decpars
 	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
-%.jmlrdecpars:  %.semprocdecpars
+%.j17mlrdecpars:  %.semproc17decpars
 	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
-%.pcptdecpars:  %.semprocdecpars
+%.p17cptdecpars:  %.semproc17decpars
 	cat $<  |  grep '^P'  |  sed 's/^. //'  >  $@
-%.acptdecpars:  %.semprocdecpars
+%.a17cptdecpars:  %.semproc17decpars
 	cat $<  |  grep '^A'  |  sed 's/^. //'  >  $@
-%.bcptdecpars:  %.semprocdecpars
+%.b17cptdecpars:  %.semproc17decpars
 	cat $<  |  grep '^B'  |  sed 's/^. //'  >  $@
-%.wcptdecpars:  %.semprocdecpars
+%.w17cptdecpars:  %.semproc17decpars
 	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
 
 ## push together semantic processing models...
 .PRECIOUS: %.semprocmodel
-%.semprocmodel:  %.1e-1_100_fmlrmodel  %.1e-1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+%.semproc17model:  %.1e-1_100_f17mlrmodel  %.1e-1_100_j17mlrmodel  %.p17cptmodel  %.a17cptmodel  %.b17cptmodel  %.w17cptmodel
 	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
 	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
 	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
