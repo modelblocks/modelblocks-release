@@ -36,6 +36,36 @@
 MBDIR := $(realpath $(dir $(abspath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))/..)
 CONFIGDIR := $(abspath $(MBDIR)/config)
 
+define CONFIGWARN
+------------------------------------------------------------------
+ATTENTION! I had to create config file:
+
+$(1)
+
+which may contain an incorrect default value.
+Targets with dependencies to this file may fail until it is fixed.
+------------------------------------------------------------------
+endef
+
+define DEPWARN
+
+ERROR: You have tried to make a target that depends on the following
+missing external resource:
+
+$(1)
+
+If you do not have this resource, you will first need to obtain it.
+
+If the resource exists on your system and ModelBlocks cannot find
+it, you may need to correct the following pointer file:
+
+$(2)
+
+Details about the resource are below:
+$(3) 
+
+endef
+
 RESOURCE-ALICE := $(abspath $(MBDIR)/resource-alice)
 ALICE-SCRIPTS := $(RESOURCE-ALICE)/scripts
 
@@ -129,8 +159,40 @@ UHHMM-SCRIPTS := $(RESOURCE-UHHMM)/scripts
 RESOURCE-UPPARSE := $(abspath $(MBDIR)/resource-upparse)
 UPPARSE-SCRIPTS := $(RESOURCE-UPPARSE)/scripts
 
+RESOURCE-WORDNET := $(abspath $(MBDIR)/resource-wordnet)
+WORDNET-SCRIPTS := $(RESOURCE-WORDNET)/scripts
+
 BIN      := bin
 GENMODEL := genmodel
+
+define INCLUDE-ALL :=
+include $(RESOURCE-TOKENIZER)/Makefile
+include $(RESOURCE-LTREES)/Makefile
+include $(RESOURCE-GCG)/Makefile
+include $(RESOURCE-LVPCFG)/Makefile
+include $(RESOURCE-LCPARSE)/Makefile
+include $(RESOURCE-BNC)/Makefile
+include $(RESOURCE-TREEBANK)/Makefile
+include $(RESOURCE-GIGAWORD)/Makefile
+include $(RESOURCE-KENLM)/Makefile
+include $(RESOURCE-SRILM)/Makefile
+include $(RESOURCE-INCRSEM)/Makefile
+include $(RESOURCE-ALICE)/Makefile
+include $(RESOURCE-BMMM)/Makefile
+include $(RESOURCE-CCL)/Makefile
+include $(RESOURCE-CHILDES)/Makefile
+include $(RESOURCE-DUNDEE)/Makefile
+include $(RESOURCE-DMV)/Makefile
+include $(RESOURCE-NATSTORIES)/Makefile
+include $(RESOURCE-ONTONOTES)/Makefile
+include $(RESOURCE-RHACKS)/Makefile
+include $(RESOURCE-UCL)/Makefile
+include $(RESOURCE-UPPARSE)/Makefile
+include $(RESOURCE-WORDNET)/Makefile
+include $(RESOURCE-FMRI)/Makefile
+include $(RESOURCE-RT)/Makefile
+include $(RESOURCE-LMEFIT)/Makefile
+endef
 
 ################################################################################
 #
@@ -141,25 +203,17 @@ GENMODEL := genmodel
 #
 ################################################################################
 
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-cflags.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 CFLAGS := $(shell cat $(CONFIG))
 
 CONFIG := $(CONFIGDIR)/user-numthreads.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 NUMTHREADS := $(shell cat $(CONFIG))

@@ -42,7 +42,15 @@ GENMODEL := genmodel
 INCLUDE := $(abspath $(RESOURCE-INCRSEM)/include)
 SRC := $(abspath $(RESOURCE-INCRSEM)/src)
 
-include $(wildcard $(RESOURCE-INCRSEM)/*/*.d)      ## don't comment out, it breaks make!
+ifndef RECURSED
+$(info Building source code dependencies using recursive sub-make to $(RESOURCE-INCRSEM)/Makefile...)
+## create dependencies for files in python, src, include directories
+DUMMY := $(shell $(MAKE) RECURSED=1 $(subst .py,.d,$(wildcard $(INCRSEM-SCRIPTS)/*.py)) $(subst .cpp,.d,$(wildcard $(SRC)/*.cpp)))
+$(info Source code dependencies built and loaded.)
+endif
+
+## include those dependencies
+include $(wildcard $(RESOURCE-INCRSEM)/*/*.d)
 
 ################################################################################
 #
@@ -61,6 +69,7 @@ include $(wildcard $(RESOURCE-INCRSEM)/*/*.d)      ## don't comment out, it brea
 #
 ################################################################################
 
+ifdef RECURSED
 #### python dependencies
 .PRECIOUS:  $(INCRSEM-SCRIPTS)/%.d
 $(INCRSEM-SCRIPTS)/%.d:  $(INCRSEM-SCRIPTS)/%.py
@@ -75,6 +84,7 @@ $(SRC)/%.d:  $(SRC)/%.cpp  |  $(INCLUDE)
 	echo '$@: \' > $@   #' ##
 	echo `g++ -I$| -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl/) -std=c++11 -MM $<` | sed 's/^.*:.*\.cpp */ $$(wildcard /;s/\\ *//g;s/$$/)/' >> $@
 	cat $@ | sed 's/\.d:/\.cpp:/' >> $@
+endif
 
 #### c++ executables
 .PRECIOUS: $(BIN)/%
@@ -145,7 +155,7 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 	cat $<  |  python $(word 2,$^)  |  LC_COLLATE=C sort  |  LC_COLLATE=C uniq -c  |  sed 's/^ *//'  >  $@
 
 ## obtain predictors and responses for all semantic processing models...
-%.semprocdecpars:  %.linetrees  $(BIN)/linetrees2semprocdecpars  %.lemmacounts
+%decpars:  $$(basename %).linetrees  $(BIN)/linetrees2$$(subst .,,$$(suffix $$*))decpars  $$(basename %).lemmacounts
 	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) $(word 3,$^)  >  $@
 #%ss.semprocdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename %).lemmacounts
 #	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) $(word 3,$^) $(subst .,,$(suffix $*))  >  $@
@@ -164,6 +174,17 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 	cat $(word 1,$^)  |  grep -v '()'  |  python $(word 2,$^)  >  $@
 
 ## convert linetrees to tokdecs
+define TargetBlock
+Tokdecs:
+  blocktitle: Tokdecs (from linetrees)
+  targetsuffix: .fromlinetrees.tokdeps
+  blockseq:
+  - blocktype: Corpus
+  - blocktype: TreeOpt
+    kwargs:
+      outerdelim: .
+      innerdelim: .
+endef
 %.fromlinetrees.tokdecs: %.linetrees  $(INCRSEM-SCRIPTS)/linetrees2tokdecs.py
 	cat $(word 1, $^) | python $(word 2,$^) > $@
 
@@ -175,22 +196,22 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 ################################################################################
 
 ## pull apart predictor/responses for training...
-%.fmlrdecpars:  %.semprocdecpars
+%.f17mlrdecpars:  %.semproc17decpars
 	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
-%.jmlrdecpars:  %.semprocdecpars
+%.j17mlrdecpars:  %.semproc17decpars
 	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
-%.pcptdecpars:  %.semprocdecpars
+%.p17cptdecpars:  %.semproc17decpars
 	cat $<  |  grep '^P'  |  sed 's/^. //'  >  $@
-%.acptdecpars:  %.semprocdecpars
+%.a17cptdecpars:  %.semproc17decpars
 	cat $<  |  grep '^A'  |  sed 's/^. //'  >  $@
-%.bcptdecpars:  %.semprocdecpars
+%.b17cptdecpars:  %.semproc17decpars
 	cat $<  |  grep '^B'  |  sed 's/^. //'  >  $@
-%.wcptdecpars:  %.semprocdecpars
+%.w17cptdecpars:  %.semproc17decpars
 	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
 
 ## push together semantic processing models...
 .PRECIOUS: %.semprocmodel
-%.semprocmodel:  %.1e-1_100_fmlrmodel  %.1e-1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+%.semproc17model:  %.1e-1_100_f17mlrmodel  %.1e-1_100_j17mlrmodel  %.p17cptmodel  %.a17cptmodel  %.b17cptmodel  %.w17cptmodel
 	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
 	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
 	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
@@ -324,6 +345,27 @@ FmodelLabelIndexUnked.pkl: $(INCRSEM-SCRIPTS)/getFlabelIndex.py genmodel/simplew
 %semproc-py-parsed.output:  $(INCRSEM-SCRIPTS)/semproc.py  $$(basename %).linetoks  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*)))).semprocmodel
 	cat $(word 2,$^)  |  python $(word 1,$^) $(word 3,$^)  >  $@
 
+define ParamVal
+Synproc:
+  kernel: Parser
+  text: Incremental syntactic processing parser (synproc)
+  value: synproc
+endef
+define TargetBlock
+ParseTokdecs:
+  blocktitle: Parse (Tokdecs)
+  targetsuffix: _parsed.tokdecs
+  family: Parse
+  blockseq:
+  - blocktype: Corpus
+    kwargs:
+      instancename: Test
+  - blocktype: String
+    value: .
+  - blocktype: ParseParams
+    kwargs:
+      innerdelim: '-'
+endef
 .PRECIOUS: %parsed.tokdecs
 %parsed.tokdecs:  bin/$$(subst .,,$$(suffix $$(basename $$(subst +,-,$$(subst -,.,$$*))))) \
                   $$(basename %).linetoks \

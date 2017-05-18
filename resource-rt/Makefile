@@ -254,6 +254,21 @@ endef
 #
 ################################################################################
 
+define KernelBlock
+RTCorpus:
+  blocktitle: Reading Time Corpus
+  instance_of: Corpus
+  paramtype: Dropdown
+ETCorpus:
+  blocktitle: Eye-Tracking Corpus
+  instance_of: RTCorpus
+  paramtype: Dropdown
+SPRCorpus:
+  blocktitle: SPR Corpus
+  instance_of: RTCorpus
+  paramtype: Dropdown
+endef
+
 genmodel/rename_cols.params: | genmodel
 	echo '' > $@
 
@@ -320,19 +335,41 @@ $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r 
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
+define CompositeBlock
+RTDataParams:
+  blockseq:
+  - blocktype: RTCorpus
+  - blocktype: ParseParams
+    kwargs:
+      innerdelim: '-'
+      instancename: Surprisal Metrics
+  - blocktype: NgramParams
+    kwargs:
+      innerdelim: '-'
+  blocktitle: Reading Time Data Parameters
+endef
+define TargetBlock
+RTCoreEvmeasures:
+  blocktitle: Reading Time Data
+  targetsuffix: .core.evmeasures
+  family: Event Data
+  blockseq:
+  - blocktype: RTDataParams
+    kwargs:
+      innerdelim: .
+endef
 .PRECIOUS: %.core.evmeasures
 %.core.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
-$(RT-SCRIPTS)/merge_tables.py \
-$$(word 1, $$(subst ., , %)).merge_tables.params
-	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 4, $^)) > $@
+$(RT-SCRIPTS)/merge_tables.py
+	python $(word 3, $^) $< $(word 2, $^) word sentid sentpos > $@
 
 # Just here to preserve old buggy dev/test split from Shain et al. (2016): CL4LC
 .PRECIOUS: %.o.full.evmeasures
 %.o.full.evmeasures: %.o.itemmeasures $$(word 1, $$(subst ., , %)).src.o.evmeasures \
 $(RT-SCRIPTS)/merge_tables.py $(RT-SCRIPTS)/accumulateMetrics.py $(RT-SCRIPTS)/rm_unfix_items.py \
-$$(word 1, $$(subst ., , %)).merge_tables.params $$(word 1, $$(subst ., , %)).accumulateMetrics.params \
+$$(word 1, $$(subst ., , %)).accumulateMetrics.params \
 $$(word 1, $$(subst ., , %)).rm_unfix_items.params
-	python $(word 3, $^) $< $(word 2, $^) $(shell cat $(word 6, $^)) | python $(word 4, $^) $(shell cat $(word 7, $^)) | python $(word 5, $^) $(shell cat $(word 8, $^)) > $@
+	python $(word 3, $^) $< $(word 2, $^) word sentid sentpos | python $(word 4, $^) $(shell cat $(word 6, $^)) | python $(word 5, $^) $(shell cat $(word 7, $^)) > $@
 
 %.filt.evmeasures: $$(basename %).core.evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
 $(RT-SCRIPTS)/inferPredictors.py \
@@ -342,15 +379,15 @@ $(RT-SCRIPTS)/rm_unfix_items.py \
 $(RT-SCRIPTS)/futureMetrics.py \
 $(RT-SCRIPTS)/spilloverMetrics.py \
 $(RT-SCRIPTS)/parsePredictors.py
-	$(eval CORECOLS := $(shell cat $(word 2, $^) | python $(word 3, $^) 1 ) $(shell echo $(word 2, $(subst _, ,$(subst +, ,$(subst .,,$(suffix $*))))) | python $(word 9, $^)))
-	$(eval COLS := $(shell cat $(word 2, $^) | python $(word 3, $^)) $(word 2, $(subst _, ,$(subst +, ,$(subst .,,$(suffix $*))))))
+	$(eval CORECOLS := $(sort $(shell cat $(word 2, $^) | python $(word 3, $^) 1 ) $(shell echo $(subst +, ,$(word 2, $(subst _, ,$(subst .,,$(suffix $*))))) | python $(word 9, $^))))
+	$(eval COLS := $(sort $(shell cat $(word 2, $^) | python $(word 3, $^)) $(subst +, ,$(word 2, $(subst _, ,$(subst .,,$(suffix $*)))))))
 	@echo Extracting columns: $(CORECOLS)
 	@echo Computing columns: $(COLS)
 	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(CORECOLS))) $< | \
 	python $(word 5, $^) -c $(shell echo $(COLS) | python $(word 9, $^) -a) | \
 	python $(word 6, $^) | \
 	python $(word 7, $^) -I -c $(shell echo $(COLS) | python $(word 9, $^) -f) | \
-	python $(word 8, $^) -n4 -C $(shell echo $(COLS) | python $(word 9, $^) -s) > $@
+	python $(word 8, $^) -I -C $(shell echo $(COLS) | python $(word 9, $^) -s) > $@
 
 # Generate and merge parser data from multiple grammars
 # Template: mydata.training-GRAMMAR-other-args.stuff.parser1_parser2_parser3.merged.full.evmeasures

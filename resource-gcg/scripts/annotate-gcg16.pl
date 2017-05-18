@@ -36,7 +36,7 @@ sub debug {
 
 
 #### CODE REVIEW: get rid of NS!!!!
-$NOMINALS = '(?:NP(?![^ ]*-TMP)|NS|NN|S[^ ]*-NOM|SBAR[^ ]*-NOM|SBAR[^ ]*-PRD(?= [<\[]WH| [<\[]IN that))';
+$NOMINALS = '(?:NP(?![^ ]*-TMP)|NS|NN|QP|S[^ ]*-NOM|SBAR[^ ]*-NOM|SBAR[^ ]*-PRD(?= [<\[]WH| [<\[]IN that))';
 
 
 #### NOTE!
@@ -504,7 +504,7 @@ debug("p-rule ", "$_");
         (s/\^(Q-b[^ ]*?)($CODA) (<.*) <(NP)([^>]*)>\^/\^\1\2 <\1-bN-lI-fNIL \3> <N-lA-f\4\5>\^/ && ($j=84.5)) ||
 #        (s/\^(V-a\{.-aN\})($CODA) (<.*) <(NP)([^>]*)>\^/\^\1\2 <Q-b\{A-aN\}-bN-lI-fNIL \3> <N-lA-f\4\5>\^/ && ($j=84.5)) ||
         # there propagation
-        (s/\^([VIBLG]-a\{.-aN\})($CODA) (<.*) <(NP(?!-(ADV|TMP|LOC|DIR|MNR|PRP|VOC))|[^ ]+-PRD)([^>]*)>\^/\^\1\2 <\1-bN-lI-fNIL \3> <N-lA-f\4\6>\^/ && ($j=84.5)) ||
+        (s/\^([VIBLG]-a\{.-aN\})($CODA) (<.*) <(NP(?!-(ADV|TMP|EXT|LOC|DIR|MNR|PRP|VOC))|[^ ]+-PRD)([^>]*)>\^/\^\1\2 <\1-bN-lI-fNIL \3> <N-lA-f\4\6>\^/ && ($j=84.5)) ||
         # branch off final VP|ADJP as argument AP
         (s/\^(Q|[VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (.*(?: be| being| been| [Ii]s| [Ww]as|VBZ 's| [Aa]re| [Ww]ere| 're)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<(?:VP|VB[DNG]|ADJP|JJ|CD|PP[^ ]*-PRD|IN|UCP|ADVP[^ ]*-PRD|SBAR[^ ]*-PRD (?!\[WH|\[IN that)).*>)\^/\^\1\2\3 <\1-b{A-aN}-lI-fNIL \4> <A-aN\2-lA-fNIL \5\6>\^/ && ($j=85)) ||
         (s/\^(Q|[VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (.*(?: be| being| been| [Ii]s| [Ww]as|VBZ 's| [Aa]re| [Ww]ere| 're)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<(?![^ ]*-SBJ)$NOMINALS[^>]*>)\^/\^\1\2\3 <\1-b{A-aN}-lI-fNIL \4> <A-aN\2-lA-fNIL \5\6>\^/ && ($j=86)) ||
@@ -539,17 +539,17 @@ debug("p-rule ", "$_");
         (s/\^(N(?!-a))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) (<IN of> <[^>]*>)\^/\^\1\2\3\4 <\1\2\3-kO-lI-fNIL \5> <O-lN-fNIL \6>\^/ && ($j=94.9)) ||
         (s/\^([VIBLAGRN]-a[ND](?!-x)|N(?!-a))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) (<IN of> <[^>]*>)\^/\^\1\2\3\4 <\1\2\3-bO-lI-fNIL \5> <O-lA-fNIL \6>\^/ && ($j=95)) ||
         # branch off final argument GP
-        (s/\^([VIBLAGR]-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(S(?:[-=][^ ]*)?-NOM(?![^ ]*-TMP)[^ ]*) \[NP-SBJ[^ ]* \[-NONE- [^\]]*\]\]([^>]*)>\^/\^\1\2\3\4 <\1\2-b{G-aN}-lI-fNIL \5> <G-aN\3-lA-f\6\7>\^/ && ($j=96)) ||
+        (s/\^([VIBLAGR]-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(S(?:[-=][^ ]*)?-NOM(?![^ ]*-TMP|[^ ]*-EXT)[^ ]*) \[NP-SBJ[^ ]* \[-NONE- [^\]]*\]\]([^>]*)>\^/\^\1\2\3\4 <\1\2-b{G-aN}-lI-fNIL \5> <G-aN\3-lA-f\6\7>\^/ && ($j=96)) ||
         # branch off final argument GS
-        (s/\^([VIBLAGR]-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(S(?:[-=][^ ]*)?-NOM)(?![^ ]*-TMP)([^>]*)>\^/\^\1\2\3\4 <\1\2-bG-lI-fNIL \5> <G\3-lA-f\6\7>\^/ && ($j=97)) ||
+        (s/\^([VIBLAGR]-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(S(?:[-=][^ ]*)?-NOM)(?![^ ]*-TMP|[^ ]*-EXT)([^>]*)>\^/\^\1\2\3\4 <\1\2-bG-lI-fNIL \5> <G\3-lA-f\6\7>\^/ && ($j=97)) ||
         # branch off final argument NS
 		# special handling for "no matter"
-        (s/\^(R-aN(?!-x))([^ ]*?)(-i[^- \}]*)($CODA) (<DT [Nn]o>) <(NP|DT|NN|WHNP|S[^ ]*-NOM)(?![^ ]*-ADV|[^ ]*-TMP)([^>]*matter)>\^/\^\1\2\3\4 <\1\2\3-bN-lI-fNIL \5> <N-lA-f\6\7>\^/ && ($j=97.4)) ||
-        (s/\^([RA]-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(NN)(?![^ ]*-ADV|[^ ]*-TMP)([^>]*)>\^/\^\1\2\3\4 <\1\2-bN-lI-fNIL \5> <N\3-lA-f\6\7>\^/ && ($j=97.45)) ||
-        (s/\^([LVGB]-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(NP)(?![^ ]*-ADV|[^ ]*-TMP)([^>]*)>\^/\^\1\2\3\4 <\1\2\3-bN-lI-fNIL \5> <N-lA-f\6\7>\^/ && ($j=97.46)) ||
-        (s/\^([IAR]-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(NP)(?![^ ]*-ADV|[^ ]*-TMP)([^>]*)>\^/\^\1\2\3\4 <\1\2-bN-lI-fNIL \5> <N\3-lA-f\6\7>\^/ && ($j=97.47)) ||
-        (s/\^(R-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(DT|WHNP|S[^ ]*-NOM)(?![^ ]*-ADV|[^ ]*-TMP)([^>]*)>\^/\^\1\2\3\4 <\1\2-bN-lI-fNIL \5> <N\3-lA-f\6\7>\^/ && ($j=97.5)) ||
-        (s/\^([VIBLAGR]-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(NP|DT|NN|WHNP|S[^ ]*-NOM)(?![^ ]*-ADV|[^ ]*-TMP)([^>]*)>\^/\^\1\2\3\4 <\1\2-bN-lI-fNIL \5> <N\3-lA-f\6\7>\^/ && ($j=98)) ||
+        (s/\^(R-aN(?!-x))([^ ]*?)(-i[^- \}]*)($CODA) (<DT [Nn]o>) <(NP|DT|NN|WHNP|S[^ ]*-NOM)(?![^ ]*-ADV|[^ ]*-TMP|[^ ]*-EXT)([^>]*matter)>\^/\^\1\2\3\4 <\1\2\3-bN-lI-fNIL \5> <N-lA-f\6\7>\^/ && ($j=97.4)) ||
+        (s/\^([RA]-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(NN)(?![^ ]*-ADV|[^ ]*-TMP|[^ ]*-EXT)([^>]*)>\^/\^\1\2\3\4 <\1\2-bN-lI-fNIL \5> <N\3-lA-f\6\7>\^/ && ($j=97.45)) ||
+        (s/\^([LVGB]-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(NP)(?![^ ]*-ADV|[^ ]*-TMP|[^ ]*-EXT)([^>]*)>\^/\^\1\2\3\4 <\1\2\3-bN-lI-fNIL \5> <N-lA-f\6\7>\^/ && ($j=97.46)) ||
+        (s/\^([IAR]-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(NP)(?![^ ]*-ADV|[^ ]*-TMP|[^ ]*-EXT)([^>]*)>\^/\^\1\2\3\4 <\1\2-bN-lI-fNIL \5> <N\3-lA-f\6\7>\^/ && ($j=97.47)) ||
+        (s/\^(R-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(DT|WHNP|S[^ ]*-NOM)(?![^ ]*-ADV|[^ ]*-TMP|[^ ]*-EXT)([^>]*)>\^/\^\1\2\3\4 <\1\2-bN-lI-fNIL \5> <N\3-lA-f\6\7>\^/ && ($j=97.5)) ||
+        (s/\^([VIBLAGR]-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(NP|DT|NN|WHNP|S[^ ]*-NOM)(?![^ ]*-ADV|[^ ]*-TMP|[^ ]*-EXT)([^>]*)>\^/\^\1\2\3\4 <\1\2-bN-lI-fNIL \5> <N\3-lA-f\6\7>\^/ && ($j=98)) ||
         # gerund: branch off final argument NS
         (s/\^(N)([^ ]*?)($CODA) (<(?:(?!VB|JJ|MD|TO|NN)[^>])*VBG[^>]*>) <(NP)([^>]*)>\^/\^\1\2\3 <\1\2-bN-lI-fNIL \4> <N-lA-fNS\6>\^/ && ($j=98.5)) ||
         (s/\^(N)([^ ]*?)($CODA) (<(?:(?!VB|JJ|MD|TO|NN)[^>])*VBG[^>]*>) <(S[^ ]*-NOM)([^>]*)>\^/\^\1\2\3 <\1\2-bN-lI-fNIL \4> <N-lA-f\5\6>\^/ && ($j=99)) ||
@@ -659,7 +659,7 @@ debug("p-rule ", "$_");
         # branch off final modifier RP colon
         (s/\^([SQCFVIBLAGR](?![^ ]*-x))([^ ]*?)($CODA) ((?!<[^ ]*-ADV[^>]*> <[^ ]* :>)<.*) (<[^ ]* :> <.*)\^/\^\1\2\3 <\1\2-lI-fNIL \4> <R-aN-lM-fNIL \5>\^/ && ($j=138)) ||
         # branch off final modifier RP
-        (s/\^([SQCFVIBLAGR](?![^ ]*-x))([^ ]*?)($CODA) (<.*) <(?![^ ]*-PRD)(NP-ADV|NP-TMP)([^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <R-aN-lM-fNS-TMP\6>\^/ && ($j=138.5)) ||
+        (s/\^([SQCFVIBLAGR](?![^ ]*-x))([^ ]*?)($CODA) (<.*) <(?![^ ]*-PRD)(NP-ADV|NP-TMP|NP-EXT)([^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <R-aN-lM-fNS-TMP\6>\^/ && ($j=138.5)) ||
         (s/\^([SQCFVIBLAGR](?![^ ]*-x))([^ ]*?)($CODA) (<.*) <(?![^ ]*-PRD)(RB|ADVP|PP|UCP|FRAG|[^ ]*-ADV|[^ ]*-LOC|[^ ]*-TMP)([^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <R-aN-lM-f\5\6>\^/ && ($j=139)) ||
         # branch off final SQ|SINV as argument SS
         (s/\^([VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (<.*) <(SQ|SINV)([^>]*)>\^/\^\1\2\3 <\1\2-bS-lI-fNIL \4> <S-lA-f\5\6>\^/ && ($j=140)) ||
@@ -680,7 +680,7 @@ debug("p-rule ", "$_");
         # branch off final modifier AP infinitive phrase (with TO before any VBs) (passing -o to head)  ****************
         (s/\^(N)([^ ]*?)($CODA) (<.*) <(VP(?:(?!\[VB)[^>])*\[TO[^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <A-aN-lM-fNIL <I-aN-lI-f\5>>\^/ && ($j=145)) ||
         # branch off final modifier AP (passing -o to head)
-        (s/\^(N)([^ ]*?)($CODA) (<.*) <(RRC|PP|ADJP|ADVP|RB|UCP|[^ ]*-LOC|[^ ]*-TMP|SBAR[^ ]* \[IN (?!that))([^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <A-aN-lM-f\5\6>\^/ && ($j=146)) ||
+        (s/\^(N)([^ ]*?)($CODA) (<.*) <(RRC|PP|ADJP|ADVP|RB|UCP|[^ ]*-LOC|[^ ]*-TMP|[^ ]*-EXT|SBAR[^ ]* \[IN (?!that))([^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <A-aN-lM-f\5\6>\^/ && ($j=146)) ||
         # branch off final modifier AP (from VP) (passing -o to head)
         (s/\^(N)([^ ]*?)($CODA) (.*<(?:NP|NN).*) <(VP)([^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <A-aN-lM-f\5\6>\^/ && ($j=147)) ||
         # branch off final argument LP (passing -o to head)

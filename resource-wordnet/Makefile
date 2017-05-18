@@ -48,12 +48,21 @@ SCRIPTS  := $(THISDIR)scripts
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-wordnet-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info ATTENTION! I had to create "$(CONFIG)", which contains an incorrect default value (".").  Targets with dependencies to this file will fail until it is fixed.)
+$(info $(call CONFIGWARN, $(CONFIG))) 
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
-WN_DIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(WN_DIR))))
-$(error The current config file "$(CONFIG)" points to an incorrect location "$(WN_DIR)". Targets with dependencies to this file will fail until it is fixed.)
+WORDNETDIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(WORDNETDIR))))
+RESOURCE-NAME := WordNet
+define RESOURCE-DESCR =
+
+NAME: WordNet
+AVAILABILITY: Free
+URL: https://wordnet.princeton.edu/wordnet/download/
+DESCRIPTION: WordNet is a large lexical database of English.
+endef
+WORDNET-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-WORDNET = $(error $(WORDNET-ERROR))
 endif
 endif
 
@@ -68,7 +77,7 @@ endif
 #
 ################################################################################
 
-%wordnet.hyps:  $(SCRIPTS)/wordnet2hyps.py  $(WN_DIR)  |  %  ##$$(wildcard $(WN_DIR)/dict/data.*)  |  %
+%/wordnet.hyps: $$(DEP-WORDNET) $(SCRIPTS)/wordnet2hyps.py  $(WORDNETDIR)  |  %  ##$$(wildcard $(WN_DIR)/dict/data.*)  |  %
 	cat $(word 2,$^)/dict/data.*  |  grep '^[0-9]'  |  python $<  >  $@
 
 

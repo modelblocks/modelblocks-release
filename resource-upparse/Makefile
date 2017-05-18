@@ -46,27 +46,27 @@
 #
 ################################################################################
 
-MSG1 := The current config file,
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-upparse-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 UPPARSEDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(UPPARSEDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(UPPARSEDIR)$(MSG3))
+RESOURCE-NAME := UPPARSE (Unsupervised parser, Ponvert et al, 2011)
+define RESOURCE-DESCR =
+
+NAME: UPPARSE (Unsupervised parser, Ponvert et al, 2011)
+AVAILABILITY: Free
+URL: https://github.com/eponvert/upparse
+DESCRIPTION:i Efficient implementations of hidden Markov
+models (HMMs) and probabilistic right linear grammars (PRLGs) for
+unsupervised partial parsing (also known as: unsupervised chunking,
+unsupervised NP identification, unsupervised phrasal segmentation).
+endef
+UPPARSE-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-UPPARSE = $(error $(UPPARSE-ERROR))
 endif
 endif
 
@@ -98,7 +98,7 @@ endif
 # If the target's directory does not exist, it will be created.
 # Because the target is never made, this rule will always run.
 #
-%.upparse: genmodel/$$*.linetoks $(UPPARSEDIR) $(UPPARSEDIR)/scripts/chunk.py \
+%.upparse: $$(DEP-UPPARSE) genmodel/$$*.linetoks $(UPPARSEDIR) $(UPPARSEDIR)/scripts/chunk.py \
 $(CONFIGDIR)/user-upparse-directory.txt | genmodel
 	mkdir -p $(dir $*)
 	cd $(word 2, $^); ./scripts/chunk.py -C -t $(abspath $<) -s $(abspath $<) -o $(abspath $*) -m prlg-uni
@@ -109,8 +109,7 @@ $(CONFIGDIR)/user-upparse-directory.txt | genmodel
 
 # Because of oddities in how Make handles wildcard expansion in prereqs,
 # this rule is necessary to allow relative-path targets
-%.upparseprs: $$(abspath $$@)
-	$(info )
+%.upparseprs: $$(abspath $$@);
 
 # Generates linetrees files from upparse output.
 # The stem should be the name of the upparse output directory

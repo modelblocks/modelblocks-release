@@ -42,9 +42,22 @@ s/(\S+:)(\S+)/\1\L\2/g;
 ########## MORPH NORMALIZATION (ASSUMES "MORPHED" LINETREES)
 
 # use stem form from morphed.linetrees...
-s/,0,.(\S*)-x.%(\S*)\|(.)%(\S*)(:\S*)\L\2 /,0,\3\1\5\4 /g;
+while( s/,0,.(\S*?)-x.%:(\S*)%(\S*)\|(\S*)%(\S*):([^% ]*)%([^-: ]*)([^: ]*):\L\2\E(\S*)\L\3\E /,0,$4$1$5$8:$6$9$7 /g ||
+       s/,0,.(\S*?)-x.%(\S*)\|([^% ]*)%([^-: ]*)([^: ]*):(\S*)\L\2 /,0,\3\1\5:\6\4 /g ) { }
 #### s/,0,[VBLG](\S+)-xX\S*\*(\S*)\*(\S*)(:\S*)\L\3 /,0,B\1\4\2 /g;
 #### s/,0,N(\S*)-xX\S*\*(\S*)\*(\S*)(:\S*)\L\3 /,0,N\1\4\2 /g;
+
+# remove extra e reft from nominalization...
+s/(\S*)e,0,(\S*)NOM(.*) \1e,1,(\S*) \1e,2,(\S*) \1e,3,(\S*)/\4,0,\2\3 \4,1,\5 \4,2,\6/g;
+s/(\S*)e,0,(\S*)NOM(.*) \1e,1,(\S*) \1e,2,(\S*)/\4,0,\2\3 \4,1,\5/g;
+s/(\S*)e,0,(\S*)NOM(.*) \1e,1,(\S*)/\4,0,\2\3/g;
+
+# remove INC, NEG, REP sems (for now)...
+s/(\S*),0,(\S*)(?:INC|NEG|REP)(.*)/\1,0,\2\3/g;
+
+# add cause relation...
+s/(\S*)r,0,(\S*)CAU(.*) \1r,1,(\S*) \1r,2,(\S*) \1r,3,(\S*)/\1c,0,B-aN-bI:cause \1c,1,\4 \1c,2,\1r \1r,0,\2\3 \1r,1,\6 \1r,2,\5/g;
+s/(\S*)r,0,(\S*)CAU(.*) \1r,1,(\S*) \1r,2,(\S*)/\1c,0,B-aN-bI:cause \1c,1,\4 \1c,2,\1r \1r,0,\2\3 \1r,1,\5/g;
 
 # remove -x...
 s/-x:/:/g;

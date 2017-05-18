@@ -28,7 +28,6 @@ def accum(row, col, fdur):
 def main():
     global val
     data = pd.read_csv(sys.stdin,sep=' ',skipinitialspace=True)
-    data.sort([args.subj, args.sentid, args.sentpos], inplace=True)
     sys.stderr.write('Accumulating metrics over saccade regions.\n')
 
     fdur = None
@@ -42,6 +41,7 @@ def main():
     else:
         cols = args.cols
     if fdur != None and len(cols) > 0:
+        data.sort([args.subj, args.sentid, args.sentpos], inplace=True)
         for col in cols:
             if data[col].dtype==object:
                 continue

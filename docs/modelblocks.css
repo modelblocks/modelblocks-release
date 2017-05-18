@@ -1,9 +1,47 @@
+body {
+  font-family: 'Questrial', sans-serif;
+  padding-bottom: 200px;
+}
+
+li {
+  margin: 0;
+}
+
+ul ul {
+  font-size: 100%;
+}
+
+select {
+  display: none;
+}
+
+select.selected {
+  display: block;
+}
+
+label, input[type="checkbox"], form {
+  display: none;
+}
+
+label.selected, input[type="checkbox"].selected {
+  display: inline-block;
+}
+
+form.selected {
+  display: block;
+}
+
+label {
+  padding: 0 1rem;
+}
+
 select[multiple] {
   height: auto;
   max-height: 10em;
 }
 
 h2 {
+  margin-top: 1rem;
   border-bottom: 2px solid grey;
 }
 
@@ -48,19 +86,22 @@ h2 {
   border: 2px solid white;
 }
 
-.traybutton {
+button {
   margin: 0.5rem;
+  background-color: rgba(255,255,255,0.8);
+}
+
+.traybutton {
   display: inline-block;
   vertical-align: text-top;
 }
 
 .traybutton.selected {
-  background-color: rgba(255,0,255,0.2);
+  background-color: rgba(0,200,255,0.2);
 }
 
 .trashbutton {
   display: block;
-  background-color: rgba(255,255,255,0.8);
 }
 
 .code {
@@ -82,10 +123,91 @@ h2 {
   -ms-border-radius: 1rem;
 }
 
+#targetContainer{
+  position: sticky;
+  -moz-position: sticky;
+  -webkit-position: sticky;
+  -ms-position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.9);
+}
+
 #parameters{
   overflow:hidden;
 }
 
 #copier{
   margin: 1rem auto;
+}
+
+#projectMenu {
+  list-style:none;
+}
+
+#projectMenu ul {
+  list-style:none;
+  font-size: large;
+  position:relative;
+  margin:0;
+  padding:0;
+}
+
+#projectMenu ul a {
+  display:block;
+  color:#333;
+  text-decoration:none;
+  padding:0 .5rem;
+  cursor: pointer;
+}
+
+
+#projectMenu ul li
+{
+  position:relative;
+  float:left;
+  font-size: 100%;
+}
+
+#projectMenu ul li.current-menu-item
+{
+  background:#ddd
+}
+
+#projectMenu ul li:hover
+{
+  background:rgb(150, 240, 255);
+}
+
+#projectMenu ul ul
+{
+  display:none;
+  position:absolute;
+  top:100%;
+  left:0;
+  background:rgba(200,240,255,0.9);
+  padding:0;
+}
+
+#projectMenu ul ul li
+{
+  float:none;
+  width: 20rem;
+}
+
+#projectMenu ul ul a
+{
+  padding: .5rem;
+  display: block;
+}
+
+#projectMenu ul ul ul
+{
+  top:0;
+  left:100%;
+}
+
+#projectMenu ul li:hover > ul
+{
+  display:block;
 }

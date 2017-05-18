@@ -67,18 +67,10 @@ MSG1 := The current config file,
 MSG2 := , points to a non-existent location (
 MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
 
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-forrest-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 FORRESTDIR := $(shell cat $(CONFIG))

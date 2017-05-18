@@ -45,6 +45,15 @@
 #
 ################################################################################
 
+define ParamVal
+UCL:
+  kernel:
+  - ETCorpus
+  - SPRCorpus
+  text: UCL (eye-tracking)
+  value: ucl
+endef
+
 .SUFFIXES:
 .SECONDEXPANSION:
 
@@ -63,47 +72,62 @@ ALL-MEM-SPILL = $(ALL-MEM) $(foreach var,$(ALL-MEM),$(foreach spill,$(SPILL-DUND
 #
 ################################################################################
 
-MSG1 := The current config file, 
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-ucl-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 UCLDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(UCLDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(UCLDIR)$(MSG3))
+RESOURCE-NAME := The UCL Corpus (Frank et al, 2013)
+define RESOURCE-DESCR =
+
+NAME: The UCL corpus (Frank et al, 2013)
+AVAILABILITY: Free
+URL: http://www.stefanfrank.info/readingdata/Data.zip
+DESCRIPTION: Eye-tracking and self-paced-reading data
+from subjects reading isolated sentences from a corpus
+of novels written by amateur authors.
+endef
+UCL-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-UCL = $(error $(UCL-ERROR))
 endif
 
 CONFIG := $(CONFIGDIR)/user-esn-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 ESNDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(ESNDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(ESNDIR)$(MSG3))
+RESOURCE-NAME := Echo-state netork (ESN) directory
+define RESOURCE-DESCR =
+
+NAME: Echo-state netork (ESN) directory
+DESCRIPTION: A directory in which to store output of ESN
+endef
+ESN-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-ESN = $(error $(ESN-ERROR))
 endif
 
 CONFIG := $(CONFIGDIR)/user-geniatagger-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 GENIATAGDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(GENIATAGDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(GENIATAGDIR)$(MSG3))
+RESOURCE-NAME := GENIA Tagger
+define RESOURCE-DESCR =
+
+NAME: GENIA Tagger
+AVAILABILITY: Free
+URL: http://www.nactem.ac.uk/GENIA/tagger/
+DESCRIPTION: Part-of-speech tagging, shallow parsing, and named entity recognition for biomedical text.
+endef
+GENIATAGGER-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-GENIATAGGER = $(error $(GENIATAGGER-ERROR))
 endif
 endif
 
@@ -112,12 +136,8 @@ endif
 %/user-ucl-directory.txt: | %
 	echo '/home/corpora/original/english/ucl_novels' > $@
 
-
-
 %/user-esn-directory.txt: | %
 	echo '/home/corpora/original/english/dundee/echo_state' > $@
-
-
 
 %/user-geniatagger-directory.txt: | %
 	echo '/home/compling/geniatagger-2.0.2' > $@
@@ -144,22 +164,23 @@ genmodel/ucl.spilloverMetrics.params: | genmodel
 genmodel/ucl.rm_unfix_items.params: | genmodel
 	echo '-f fdurFP' > $@
   
-genmodel/ucl.linetoks: $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
-$(UCLDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | genmodel
+%/ucl.linetoks: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
+$(UCLDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | %
 	cut -f 2 $(word 3,$^) | tail -n+2 | $(word 4,$^) > $@
 
-genmodel/ucl.lineitems: $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
-$(UCLDIR)/eye_movement/stimuli.txt | genmodel
+%/ucl.lineitems: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
+$(UCLDIR)/eye_movement/stimuli.txt | %
 	cut -f 2 $(word 3,$^) | tail -n+2 > $@
 
 %ucl.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-UCL)/srcmodel/ucl.stripped.linetrees %ucl.linetoks
 	python $^ > $@
 
-genmodel/ucl.src.evmeasures: $(CONFIGDIR)/user-ucl-directory.txt \
+%/ucl.src.evmeasures: $$(DEP-UCL) \
+$(CONFIGDIR)/user-ucl-directory.txt \
 $(UCL-SCRIPTS)/build_ucl_corpus.py \
 $(UCLDIR)/eye_movement/eyetracking.RT.txt \
 $(RT-SCRIPTS)/rename_cols.py \
-$(RT-SCRIPTS)/filter_cols.awk | genmodel
+$(RT-SCRIPTS)/filter_cols.awk | %
 	cat $(word 3, $^) | python $(word 2,$^) > $@.tmp
 	paste -d' ' $@.tmp <(awk -f $(word 5, $^) -v cols=sentid $@.tmp | python $(word 4, $^) sentid docid) > $@
 	rm $@.tmp
@@ -175,9 +196,10 @@ esns/ESN.mat: ESN.zip | esns
 	unzip esns/ESN.zip -d esns/
 
 .PRECIOUS: genmodel/ucl_postags.mat
-genmodel/ucl_postags.mat: $(CONFIGDIR)/user-geniatagger-directory.txt \
+%/ucl_postags.mat: $$(DEP-GENIATAGGER) \
+$(CONFIGDIR)/user-geniatagger-directory.txt \
 $(GENIATAGDIR)/geniatagger genmodel/ucl.linetoks \
-$(UCL-SCRIPTS)/build_tagseqs.py esns/ESN.mat
+$(UCL-SCRIPTS)/build_tagseqs.py esns/ESN.mat | %
 	#requires geniatagger
 	ln -s $(shell cat user-geniatagger-directory.txt)/morphdic morphdic
 	ln -s $(shell cat user-geniatagger-directory.txt)/models_medline models_medline

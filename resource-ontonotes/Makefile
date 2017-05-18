@@ -47,27 +47,25 @@
 #
 ################################################################################
 
-MSG1 := The current config file, 
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-ontonotes-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 ONTONOTESDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(CHILDESDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(CHILDESDIR)$(MSG3))
+RESOURCE-NAME := OntoNotes
+define RESOURCE-DESCR =
+
+NAME: OntoNotes
+AVAILABILITY: Paid
+URL: https://catalog.ldc.upenn.edu/ldc2013t19
+DESCRIPTION: Syntactic and semantic annotations of a large corpus comprising
+various genres of text.
+endef
+ONTONOTES-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-ONTONOTES = $(error $(ONTONOTES-ERROR))
 endif
 endif
 
@@ -89,10 +87,14 @@ endif
 #genmodel/ontowsj%.cuecorefs:  scripts/coref2cuecorefs.py  user-ontonotes-directory.txt  $$(wildcard $$(shell cat user-ontonotes-directory.txt)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*/*.coref)
 #	cat $(wordlist 3, $(words $^), $^)  |  python $<  >  $@
 
-genmodel/ontowsj%.coref:  $(ONTONOTES-SCRIPTS)/coref2shortcoref.pl  user-ontonotes-directory.txt  $$(shell cat user-ontonotes-directory.txt)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*  $$(sort $$(wildcard $$(shell cat user-ontonotes-directory.txt)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*/*.coref))  |  genmodel
+genmodel/ontowsj%.coref: $$(DEP-ONTONOTES) $(ONTONOTES-SCRIPTS)/coref2shortcoref.pl $(CONFIGDIR)/user-ontonotes-directory.txt \
+$(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$* \
+$$(sort $$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*/*.coref))  |  genmodel
 	cat $(wordlist 4, $(words $^), $^)  |  perl -p  $<  >  $@
 
-genmodel/ontowsj%.editabletrees:  user-ontonotes-directory.txt  $$(shell cat user-ontonotes-directory.txt)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*  $$(sort $$(subst .coref,.parse,$$(wildcard $$(shell cat user-ontonotes-directory.txt)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*/*.coref)))  |  genmodel
+genmodel/ontowsj%.editabletrees: $$(DEP-ONTONOTES) $(CONFIGDIR)/user-ontonotes-directory.txt \
+$(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$* \
+$$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*/*.coref)))  |  genmodel
 	tail -n +1 $(wordlist 3, $(words $^), $^)  |  perl -pe 's/==>.*<==/(U !ARTICLE)/'  >  $@
 
 %.linked.linetrees:  $(ONTONOTES-SCRIPTS)/coref2linkedlinetrees.py  $$(dir %)$$(word 1,$$(subst ., ,$$*)).coref  %.linetrees
