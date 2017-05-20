@@ -196,22 +196,22 @@ endef
 ################################################################################
 
 ## pull apart predictor/responses for training...
-%.f17mlrdecpars:  %.semproc17decpars
+%.fmlrdecpars:  %.semprocdecpars
 	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
-%.j17mlrdecpars:  %.semproc17decpars
+%.jmlrdecpars:  %.semprocdecpars
 	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
-%.p17cptdecpars:  %.semproc17decpars
+%.pcptdecpars:  %.semprocdecpars
 	cat $<  |  grep '^P'  |  sed 's/^. //'  >  $@
-%.a17cptdecpars:  %.semproc17decpars
+%.acptdecpars:  %.semprocdecpars
 	cat $<  |  grep '^A'  |  sed 's/^. //'  >  $@
-%.b17cptdecpars:  %.semproc17decpars
+%.bcptdecpars:  %.semprocdecpars
 	cat $<  |  grep '^B'  |  sed 's/^. //'  >  $@
-%.w17cptdecpars:  %.semproc17decpars
+%.wcptdecpars:  %.semprocdecpars
 	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
 
 ## push together semantic processing models...
 .PRECIOUS: %.semprocmodel
-%.semproc17model:  %.1e-1_100_f17mlrmodel  %.1e-1_100_j17mlrmodel  %.p17cptmodel  %.a17cptmodel  %.b17cptmodel  %.w17cptmodel
+%.semprocmodel:  %.1e-1_100_fmlrmodel  %.1e-1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
 	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
 	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
