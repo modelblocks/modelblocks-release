@@ -31,7 +31,7 @@ using namespace arma;
 #include <Delimited.hpp>
 bool STORESTATE_TYPE = true;
 bool STORESTATE_CHATTY = true;
-#include <StoreState17.hpp>
+#include <StoreState.hpp>
 #include <Tree.hpp>
 
 map<L,double> mldLemmaCounts;

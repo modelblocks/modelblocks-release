@@ -30,7 +30,7 @@ using namespace arma;
 #include <Delimited.hpp>
 bool STORESTATE_TYPE = true;
 bool STORESTATE_CHATTY = false;
-#include <StoreState17.hpp>
+#include <StoreState.hpp>
 
 uint BEAM_WIDTH = 1000;
 uint VERBOSE    = 0;
