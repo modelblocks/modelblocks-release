@@ -210,9 +210,10 @@ int main ( int nArgs, char* argv[] ) {
               if ( VERBOSE>1 ) cout << "      f: " << f <<"&"<< k_p_t << " " << scoreFork << " / " << fnorm << " * " << modP[q_tdec1.calcPretrmTypeCondition(f,e_p_t,k_p_t)][t_p_t] << " * " << probwgivkl << " = " << probFork << endl;
 
               //NOT USED! const Sign& aAncstr = q_tdec1.getAncstr( f );                                        // aAncstr (brink of previous incomplete cat
-              Sign aPretrm;  aPretrm.first.emplace_back(k_p_t);  aPretrm.second = t_p_t;           // aPretrm (pos tag)
+              Sign aPretrm;  aPretrm.first().emplace_back(k_p_t);  aPretrm.second() = t_p_t;  aPretrm.third() = S_A;          // aPretrm (pos tag)
               //NOT USED! Sign aLchildTmp;  const Sign& aLchild = q_tdec1.getLchild( aLchildTmp, f, e_p_t, aPretrm ); // aLchild (completed most subordinate apex)
-              list<JPredictor> jpredictors; q_tdec1.calcJoinPredictors( jpredictors, f, e_p_t, aPretrm ); // predictors for join
+              const LeftChildSign aLchild( q_tdec1, f, e_p_t, aPretrm );
+              list<JPredictor> jpredictors; q_tdec1.calcJoinPredictors( jpredictors, f, e_p_t, aLchild ); // predictors for join
               jpredictors.emplace_back();                                                               // add bias
               double jnorm = 0.0;                                                                         // join normalization term (denominator)
               int iFirstUnnormed = beams[t].size();                                                       // place in beam where normalization begins
@@ -225,7 +226,7 @@ int main ( int nArgs, char* argv[] ) {
                   for ( auto& opL : {'1','2','3','I','M','N','S'} ) {
 
                     // For each possible apex category label...
-                    APredictor apredictor = q_tdec1.calcApexTypeCondition( f, j, e_p_t, e, opL, aPretrm );  // save apredictor for use in prob calc
+                    APredictor apredictor = q_tdec1.calcApexTypeCondition( f, j, e_p_t, e, opL, aLchild );  // save apredictor for use in prob calc
                     if ( VERBOSE>1 ) cout << "         A " << apredictor << "..." << endl;
                     for ( auto& tpA : modA[apredictor] ) {
 
@@ -240,7 +241,7 @@ int main ( int nArgs, char* argv[] ) {
                         double logscoreJ = 0.0;  for ( auto& jpredr : jpredictors ) if ( modJ.end() != modJ.find(jpredr) )  logscoreJ += modJ[jpredr][JResponse(j,e,opL,opR)];
 
                         // For each possible brink category label...
-                        BPredictor bpredictor = q_tdec1.calcBrinkTypeCondition( f, j, e_p_t, e, opL, opR, tpA.first, aPretrm );  // bpredictor for prob calc
+                        BPredictor bpredictor = q_tdec1.calcBrinkTypeCondition( f, j, e_p_t, e, opL, opR, tpA.first, aLchild );  // bpredictor for prob calc
                         if ( VERBOSE>1 ) cout << "          B " << bpredictor << "..." << endl;
                         for ( auto& tpB : modB[bpredictor] ) {
 
@@ -248,7 +249,7 @@ int main ( int nArgs, char* argv[] ) {
 
                           // Calculate probability and storestate and add to beam...
                           double scoreJoin = exp(logscoreJ) * tpA.second * tpB.second;  // save score for jnorm update
-                          beams[t].emplace_back( scoreJoin, StoreState( q_tdec1, f, j, e_p_t, e, opL, opR, tpA.first, tpB.first, aPretrm ), aPretrm, &be_tdec1-&beams[t-1][0], f, j );
+                          beams[t].emplace_back( scoreJoin, StoreState( q_tdec1, f, j, e_p_t, e, opL, opR, tpA.first, tpB.first, aPretrm, aLchild ), aPretrm, &be_tdec1-&beams[t-1][0], f, j );
                           // Update join normalization term...
                           jnorm += scoreJoin;
 
