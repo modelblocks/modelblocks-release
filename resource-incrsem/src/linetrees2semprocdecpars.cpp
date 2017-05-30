@@ -82,7 +82,7 @@ T T_CONTAINS_COMMA ( "!containscomma!" ); // must be changed to avoid confusion 
 T getType ( const L& l ) {
   if ( l[0]==':' )                 return T_COLON;
   if ( l.find(',')!=string::npos ) return T_CONTAINS_COMMA;
-  return string( string( l, 0, l.find("-l") ), 0, l.find("-o") ).c_str();
+  return string( string( l, 0, l.find("-l") ), 0, l.find("-x") ).c_str();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -104,7 +104,7 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
     sBaseType[0] = string(m[5])[0];
   }
   sBaseType = regex_replace( sBaseType, regex("-x.*"), string("") );
-  lP = sBaseType;
+  //t = getType( sBaseType );
 
   /*
   // If preterm is morphrule-annotated, use baseform in pred...

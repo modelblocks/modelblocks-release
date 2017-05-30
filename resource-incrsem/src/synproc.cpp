@@ -29,7 +29,7 @@ using namespace std;
 #include <nl-string.h>
 #include <Delimited.hpp>
 bool STORESTATE_TYPE = true;
-#include <BerkUnkWord.hpp>
+#include <BerkUnkWord.hpp>  //#include <RandoUnkWord.hpp>
 #include <StoreStateSynProc.hpp>
 #include <Beam.hpp>
 
