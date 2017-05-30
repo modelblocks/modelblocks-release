@@ -22,7 +22,8 @@ w = re.compile('W .* ([^ ]+)$')
 f = re.compile('F .* : f([01])')
 j = re.compile('J .* : j([01])')
 p = re.compile('P .* ([^ ]+)$')
-frag = re.compile(' *[^\]]+\]:([^\/]+)\/*[^\]]+\]:([^\/]+)')
+frag = re.compile(' *\[[^\]]*\]:([^\/;]+)\/ *\[[^\]]*\]:([^\/;]+)')
+#frag = re.compile(' *[^\]]+\]:([^\/]+)\/*[^\]]+\]:([^\/]+)')
 r = re.compile('====(.*)$')
 
 print('word embddepth dc dcv ' \
@@ -93,6 +94,8 @@ def process_tok(buffer, line, i):
       Ad = frag.match(store[-1]).group(1)
       Bd = frag.match(store[-1]).group(2)
       if len(store) > 1:
+        if frag.match(store[-2]) == None:
+            sys.stderr.write(store[-2] + '\n')
         Bdm1 = frag.match(store[-2]).group(2)
       else:
         Bdm1 = 'null'

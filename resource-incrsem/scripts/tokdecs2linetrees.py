@@ -10,8 +10,12 @@ def attachB(t,lu):
   return t
 
 for s in sys.stdin:
-    s = re.sub( '/[^ ;/]*\^;[^ ;/]*', '', s )   ## remove bottom carriers.
-    m = re.search('^([^ ]*) (?!pos|FAIL)(?:\[[^\]]*\]:)?([^ ]*) ([^ ]*) ([^ ]*) (?:.*;)?([^ ;\n]*)[ \n]',s)
+    s = re.sub( '/[^ ;/]*\^;[^ ;/]*', '', s )   ## remove bottom carriers. (OBSOLETE)
+    s = re.sub( ';$', '', s )                   ## remove trailing ;
+    s = re.sub( '/ ', ' ', s )                  ## remove trailing /
+    s = re.sub( '/([^; ]*)/', '/', s )          ## remove A carriers
+    s = re.sub( ';([^/ ]*);', ';', s )          ## remove B carriers
+    m = re.search('^([^ ]*) (?!pos)(?:\[[^\]]*\]:)?([^ ]*) ([^ ]*) ([^ ]*) (?:.*;)?([^ ;\n]*)[ \n]',s)
     if m is not None:
         w,p,f,j,q = m.groups()
 

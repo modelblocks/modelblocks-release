@@ -162,8 +162,15 @@ UPPARSE-SCRIPTS := $(RESOURCE-UPPARSE)/scripts
 RESOURCE-WORDNET := $(abspath $(MBDIR)/resource-wordnet)
 WORDNET-SCRIPTS := $(RESOURCE-WORDNET)/scripts
 
+RESOURCE-XLSX2CSV := $(abspath $(MBDIR)/resource-xlsx2csv)
+XLSX2CSV-SCRIPTS := $(RESOURCE-xlsx2csv)/scripts
+
 BIN      := bin
 GENMODEL := genmodel
+
+define TEST =
+this is a test
+endef
 
 define INCLUDE-ALL :=
 include $(RESOURCE-TOKENIZER)/Makefile
@@ -186,11 +193,12 @@ include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
 include $(RESOURCE-ONTONOTES)/Makefile
 include $(RESOURCE-RHACKS)/Makefile
+include $(RESOURCE-XLSX2CSV)/Makefile
 include $(RESOURCE-UCL)/Makefile
 include $(RESOURCE-UPPARSE)/Makefile
 include $(RESOURCE-WORDNET)/Makefile
-include $(RESOURCE-RT)/Makefile
 include $(RESOURCE-FMRI)/Makefile
+include $(RESOURCE-RT)/Makefile
 include $(RESOURCE-LMEFIT)/Makefile
 endef
 

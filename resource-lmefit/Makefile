@@ -203,8 +203,8 @@ endef
 define TargetBlockDefs :=
 LMEFitfMRI:
   blocktitle: fMRI LME Fit
-  targetsuffix: .lmefit
-  family: Linear Mixed-Effects Regression (LME)
+  targetsuffix: .lme
+  family: Linear Mixed-Effects (LME)
   blockseq:
   - blocktype: fMRIDataParams
     kwargs:
@@ -217,8 +217,38 @@ LMEFitfMRI:
   - blocktype: LMEArgs
 LMEFitRT:
   blocktitle: Reading Time LME Fit
-  targetsuffix: .lmefit
-  family: Linear Mixed-Effects Regression (LME)
+  targetsuffix: .lme
+  family: Linear Mixed-Effects (LME)
+  blockseq:
+  - blocktype: RTDataParams
+    kwargs:
+      innerdelim: .
+  - blocktype: String
+    value: .
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: .
+  - blocktype: LMEArgs
+    kwargs:
+      outerdelim: _
+BMEFitfMRI:
+  blocktitle: fMRI BME Fit
+  targetsuffix: .bme
+  family: Bayesian Mixed-Effects (BME)
+  blockseq:
+  - blocktype: fMRIDataParams
+    kwargs:
+      innerdelim: .
+  - blocktype: String
+    value: .
+  - blocktype: BaselineFormula
+  - blocktype: String
+    value: .
+  - blocktype: LMEArgs
+BMEFitRT:
+  blocktitle: Reading Time BME Fit
+  targetsuffix: .bme
+  family: Bayesian Mixed-Effects (BME)
   blockseq:
   - blocktype: RTDataParams
     kwargs:
@@ -232,16 +262,33 @@ LMEFitRT:
     kwargs:
       outerdelim: _
 endef
-%.rdata %.lmefit:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
+.PRECIOUS: %.lmefit %.lme
+%.lme.rdata %.lmefit %.lme:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
 genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
 $$(subst .,,$$(suffix $$*))).filt.evmeasures \
 scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
 $(LMEFIT-SCRIPTS)/lmetools.r
-	$< $(word 2, $^) $*.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) > $*.lmefit
+	$< $(word 2, $^) $*.lme.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) > $*.lme
+
+.PRECIOUS: %.bmefit %.bme
+%.bme.rdata %.bmefit %.bme:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
+genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
+$$(subst .,,$$(suffix $$*))).filt.evmeasures \
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
+$(LMEFIT-SCRIPTS)/lmetools.r
+	$< $(word 2, $^) $*.bme.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) -m bme > $*.bme
+
+.PRECIOUS: %.lmfit %.lm
+%.lm.rdata %.lmfit %.lm:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
+genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
+$$(subst .,,$$(suffix $$*))).filt.evmeasures \
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
+$(LMEFIT-SCRIPTS)/lmetools.r
+	$< $(word 2, $^) $*.lm.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) -m lm > $*.lm
 
 # Runs an LRT evaluation based on the following template:
 #
-#    <path>/<evmeasures-basename>.<formula-key>.<main-effect>.<eval-params>.<anova-params>.diamond.lrtsignif
+#    <path>/<evmeasures-basename>.<formula-key>.<main-effect>.<eval-params>.<anova-params>.diamond.lrt
 #
 # Formula specifications must be in the local scripts/ directory and named "<key>.lmeform".
 # They should consist of 4 lines: the dependent variable on the 1st line, the fixed effects
@@ -257,7 +304,7 @@ $(LMEFIT-SCRIPTS)/lmetools.r
 #
 # Example:
 #
-#    genmodel/ucl.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.kenlm.fp.mem.fjprob.-NSCFf..lrtsignif
+#    genmodel/ucl.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.kenlm.fp.mem.fjprob.-NSCFf..lrt
 #
 #
 define ParamVal
@@ -281,7 +328,7 @@ endef
 define TargetBlock
 RTLRTSignif:
   blocktitle: Reading Time LRT Significance Test
-  targetsuffix: .lrtsignif
+  targetsuffix: .lrt
   family: Likelihood Ratio Test (LRT)
   blockseq:
   - blocktype: RTDataParams
@@ -299,7 +346,7 @@ RTLRTSignif:
   - blocktype: LRTArgs
 fMRILRTSignif:
   blocktitle: fMRI LRT Significance Test
-  targetsuffix: .lrtsignif
+  targetsuffix: .lrt
   family: Likelihood Ratio Test (LRT)
   blockseq:
   - blocktype: fMRIDataParams
@@ -316,10 +363,10 @@ fMRILRTSignif:
     value: '.'
   - blocktype: LRTArgs
 endef
-.PRECIOUS: %.lrtsignif
-%.lrtsignif:  $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
-$$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
+.PRECIOUS: %.lrtsignif %.lrt
+%.lrtsignif %.lrt:  $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
+$$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
+$$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
 $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
 $(LMEFIT-SCRIPTS)/lmetools.r
 	$(wordlist 1,3,$^) $(subst _, ,$(subst .,,$(suffix $*))) > $@
@@ -354,7 +401,7 @@ endef
 define TargetBlock
 RTLRTDaimSignif:
   blocktitle: Diamond Reading Time LRT Significance Test
-  targetsuffix: .diamond.lrtsignif
+  targetsuffix: .dlrt
   family: Likelihood Ratio Test (LRT)
   blockseq:
   - blocktype: RTDataParams
@@ -374,7 +421,7 @@ RTLRTDaimSignif:
   - blocktype: LRTArgs
 fMRILRTDaimSignif:
   blocktitle: Diamond fMRI LRT Significance Test
-  targetsuffix: .diamond.lrtsignif
+  targetsuffix: .dlrt
   family: Likelihood Ratio Test (LRT)
   blockseq:
   - blocktype: fMRIDataParams
@@ -393,12 +440,12 @@ fMRILRTDaimSignif:
     value: '.'
   - blocktype: LRTArgs
 endef
-.PRECIOUS: %.diamond.lrtsignif
-%.diamond.lrtsignif: $(LMEFIT-SCRIPTS)/lmefit2diamlrtsignif.r \
-$$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$$(basename $$(basename $$(basename $$*))).-a_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$$(basename $$(basename $$(basename $$*))).-a_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
-$$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).rdata \
+.PRECIOUS: %.diamond.lrtsignif %.dlrt
+%.diamond.lrtsignif %.dlrt: $(LMEFIT-SCRIPTS)/lmefit2diamlrtsignif.r \
+$$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
+$$(basename $$(basename $$(basename $$*))).-A_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-a_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
+$$(basename $$(basename $$(basename $$*))).-a_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
+$$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
 $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
 $(LMEFIT-SCRIPTS)/lmetools.r
 	$(wordlist 1,5,$^) -t '$(subst _,-vs-,$(subst .,,$(suffix $(basename $(basename $*)))))' \
@@ -411,7 +458,7 @@ $(LMEFIT-SCRIPTS)/lmetools.r
 
 .PRECIOUS: /%.signiftable.txt
 /%.signiftable.txt: $(LMEFIT-SCRIPTS)/extract_signif.py
-	python $^ $(wildcard /$(dir $*)*.lrtsignif) > $@
+	python $^ $(wildcard /$(dir $*)*lrt) > $@
 
 .PRECIOUS: %.signiftable.txt
 %.signiftable.txt: $$(abspath $$@)
@@ -419,8 +466,8 @@ $(LMEFIT-SCRIPTS)/lmetools.r
 
 %.error.evmeasures: genmodel/$$(basename $$(basename $$(basename $$*))).full.evmeasures \
 $(LMEFIT-SCRIPTS)/lmefit2error.r \
-$$(basename $$(basename $$*)).-a_$$(subst .,,$$(suffix $$(basename $$*)))_-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$*))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix %)).rdata \
-$$(basename $$(basename $$*)).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$*))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix %)).rdata \
+$$(basename $$(basename $$*)).-a_$$(subst .,,$$(suffix $$(basename $$*)))_-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$*))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix %)).lme.rdata \
+$$(basename $$(basename $$*)).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$*))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix %)).lme.rdata \
 $(RHACKS-SCRIPTS)/mtoolbox.R $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
 	cat $< | $(word 2, $^) -b $(word 3, $^) -m $(word 4, $^) -o $@ $(subst .,,$(suffix $*))
 
