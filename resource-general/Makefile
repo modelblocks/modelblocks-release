@@ -162,6 +162,9 @@ UPPARSE-SCRIPTS := $(RESOURCE-UPPARSE)/scripts
 RESOURCE-WORDNET := $(abspath $(MBDIR)/resource-wordnet)
 WORDNET-SCRIPTS := $(RESOURCE-WORDNET)/scripts
 
+RESOURCE-XSLX2CSV := $(abspath $(MBDIR)/resource-xlsx2csv)
+WORDNET-XLSX2CSV := $(RESOURCE-xlsx2csv)/scripts
+
 BIN      := bin
 GENMODEL := genmodel
 
@@ -190,6 +193,7 @@ include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
 include $(RESOURCE-ONTONOTES)/Makefile
 include $(RESOURCE-RHACKS)/Makefile
+include $(RESOURCE-XLSX2CSV)/Makefile
 include $(RESOURCE-UCL)/Makefile
 include $(RESOURCE-UPPARSE)/Makefile
 include $(RESOURCE-WORDNET)/Makefile
