@@ -165,6 +165,10 @@ WORDNET-SCRIPTS := $(RESOURCE-WORDNET)/scripts
 BIN      := bin
 GENMODEL := genmodel
 
+define TEST =
+this is a test
+endef
+
 define INCLUDE-ALL :=
 include $(RESOURCE-TOKENIZER)/Makefile
 include $(RESOURCE-LTREES)/Makefile
