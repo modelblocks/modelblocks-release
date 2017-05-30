@@ -162,8 +162,8 @@ UPPARSE-SCRIPTS := $(RESOURCE-UPPARSE)/scripts
 RESOURCE-WORDNET := $(abspath $(MBDIR)/resource-wordnet)
 WORDNET-SCRIPTS := $(RESOURCE-WORDNET)/scripts
 
-RESOURCE-XSLX2CSV := $(abspath $(MBDIR)/resource-xlsx2csv)
-WORDNET-XLSX2CSV := $(RESOURCE-xlsx2csv)/scripts
+RESOURCE-XLSX2CSV := $(abspath $(MBDIR)/resource-xlsx2csv)
+XLSX2CSV-SCRIPTS := $(RESOURCE-xlsx2csv)/scripts
 
 BIN      := bin
 GENMODEL := genmodel
