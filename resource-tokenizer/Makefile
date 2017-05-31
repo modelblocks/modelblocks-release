@@ -58,7 +58,7 @@ define RESOURCE-DESCR =
 
 NAME: Extended Penn Tokenizer
 AVAILABILITY: Free
-URL: https://github.com/vansky/extended_penn_tokenizer/blob/master/ptb_tokenizer.sed
+URL: https://github.com/vansky/extended_penn_tokenizer
 DESCRIPTION: Extended version of Robert McIntyre's (1995) Penn tokenizer.
 endef
 TOKENIZER-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))

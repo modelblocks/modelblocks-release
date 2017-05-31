@@ -24,7 +24,18 @@
 #  Include statements to this file should be preceded by the following includes
 #
 #  include $(dir $(CURDIR))resource-general/Makefile
-#  include $(RESOURCE-RHACKS)/Makefile
+#  include $(RESOURCE-TOKENIZER)/Makefile
+#  include $(RESOURCE-LTREES)/Makefile
+#  include $(RESOURCE-GCG)/Makefile
+#  include $(RESOURCE-RT)/Makefile
+#  include $(RESOURCE-LVPCFG)/Makefile
+#  include $(RESOURCE-LCPARSE)/Makefile
+#  include $(RESOURCE-BNC)/Makefile
+#  include $(RESOURCE-TREEBANK)/Makefile
+#  include $(RESOURCE-GIGAWORD)/Makefile
+#  include $(RESOURCE-KENLM)/Makefile
+#  include $(RESOURCE-SRILM)/Makefile
+#  include $(RESOURCE-INCRSEM)/Makefile
 #
 ################################################################################
 
@@ -33,6 +44,13 @@
 #  Macros & variables
 #
 ################################################################################
+
+define ParamVal
+NaturalStories:
+  kernel: SPRCorpus
+  text: Natural Stories (self-paced reading corpus)
+  value: naturalstories
+endef
 
 .SUFFIXES:
 .SECONDEXPANSION:
@@ -47,44 +65,50 @@
 ################################################################################
 
 ifndef MAKECONFIG
-CONFIG := $(CONFIGDIR)/user-xlsx2csv-directory.txt
+CONFIG := $(CONFIGDIR)/user-passages-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(call CONFIGWARN, $(CONFIG)))
+$(info $(call CONFIGWARN,$(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
-XLSX2CSVDIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(XLSX2CSVDIR))))
-RESOURCE-NAME := xlsx2csv
+PASSAGESDIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(PASSAGESDIR))))
+RESOURCE-NAME := The MIT Sentence Passages corpus
 define RESOURCE-DESCR =
 
-NAME: xlsx2cxv
-AVAILABILITY: Free
-URL: https://github.com/dilshod/xlsx2csv
-DESCRIPTION: XLS to CSV converter
+NAME: The MIT Sentence Passages corpus
+AVAILABILITY: Unreleased
+DESCRIPTION: A corpus of fMRI bold responses by subjects to audio presentation
+of short passages (3-4 sentences each) in isolation.
 endef
-XLSX2CSV-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
-DEP-XLSX2CSV = $(error $(XLSX2CSV-ERROR))
-else
-DEP-XLSX2CSV :=
+PASSAGES-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-PASSAGES = $(error $(PASSAGES-ERROR))
 endif
 endif
-    
-%/user-xlsx2csv-directory.txt: | %   
-	echo '/home/compling/xlsx2csv' > $@
+
+
+
+%/user-passages-directory.txt: | %   
+	echo '/home/corpora/original/english/MITpassages' > $@
 
 ################################################################################
 #
-#  Recipes
+#  Reading time data formatting items
 #
 ################################################################################
 
-$(RESOURCE-XLSX2CSV)/scripts:
-	mkdir $(RESOURCE-XLSX2CSV)/scripts
-
-$(XLSX2CSV-SCRIPTS)/xlsx2csv.py: $$(DEP-XLSX2CSV) $(XLSX2CSVDIR)/xlsx2csv.py
-	mkdir -p $(XLSX2CSV-SCRIPTS)
+genmodel/%.xlsx: $$(DEP-PASSAGES) $(PASSAGESDIR)/$$*.xlsx | genmodel
 	cp $(word 1, $^) $@
 
-%.fromxlsx.csv: %.xlsx $(XLSX2CSV-SCRIPTS)/xlsx2csv.py
-	python $(word 2, $^) -d ' ' $(word 1, $^) > $@
+%passages72.lineitems: genmodel/passages_eval.fromxlsx.csv | genmodel
+	head -n+73 $(word 1, $^) | tail -n+2 | \
+	awk '{for (i=3; i<7; i++) if ($$i != "") print $$i}' FPAT="([^ ]*)|(\"[^\"]+\")" | sed 's/^\"\|\"$$//g' > $@
+
+%passages72.linetoks: $$(DEP-TOKENIZER) %passages72.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
+	cat $(word 1, $^) | $(word 2, $^) > $@
+
+%passages96.lineitems: genmodel/passages_96concepts.fromxlsx.csv | genmodel
+	tail -n+2 $(word 1, $^) | awk '{print $$3}' FPAT="([^ ]+)|(\"[^\"]+\")" | sed 's/^\"\|\"$$//g' > $@
+
+%passages96.linetoks: $$(DEP-TOKENIZER) %passages96.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
+	cat $(word 1, $^) | $(word 2, $^) > $@
 
