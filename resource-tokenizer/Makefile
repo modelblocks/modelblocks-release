@@ -45,27 +45,26 @@
 #
 ################################################################################
 
-MSG1 := The current config file, 
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-tokenizer-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 TOKENIZERDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(TOKENIZERDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(TOKENIZERDIR)$(MSG3))
+RESOURCE-NAME := Extended Penn Tokenizer
+define RESOURCE-DESCR =
+
+NAME: Extended Penn Tokenizer
+AVAILABILITY: Free
+URL: https://github.com/vansky/extended_penn_tokenizer
+DESCRIPTION: Extended version of Robert McIntyre's (1995) Penn tokenizer.
+endef
+TOKENIZER-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-TOKENIZER = $(error $(TOKENIZER-ERROR))
+else
+DEP-TOKENIZER :=
 endif
 endif
 
@@ -73,4 +72,11 @@ endif
 
 %/user-tokenizer-directory.txt: | %
 	echo '/home/compling/extended_penn_tokenizer' > $@
+
+################################################################################
+#
+#  RECIPES
+#
+################################################################################
+
 

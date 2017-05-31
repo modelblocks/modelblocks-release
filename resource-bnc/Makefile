@@ -52,23 +52,28 @@ MSG1 := The current config file,
 MSG2 := , points to a non-existent location (
 MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
 
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-bnc-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 BNCDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(BNCDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(BNCDIR)$(MSG3))
+RESOURCE-NAME := The British National Corpus (BNC)
+define RESOURCE-DESCR =
+
+NAME: The British National Corpus (BNC)
+AVAILABILITY: FREE
+URL: http://www.natcorp.ox.ac.uk/
+DESCRIPTION: The British National Corpus (BNC) is a 100 million word collection
+of samples of written and spoken language from a wide range of sources, designed
+to represent a wide cross-section of British English, both spoken and written,
+from the late twentieth century.
+endef
+BNC-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-BNC = $(error $(BNC-ERROR))
+else
+DEP-BNC =
 endif
 endif
 
@@ -83,7 +88,7 @@ endif
 #
 ################################################################################
     
-bnc%.linetoks: $(BNCDIR) $(CONFIGDIR)/user-bnc-directory.txt | genmodel
+bnc%.linetoks: $$(DEP-BNC) $(BNCDIR) $(CONFIGDIR)/user-bnc-directory.txt | genmodel
 	cat $</Texts/$*/*/* | sed 's|<teiHeader.*</teiHeader>||g;s|<[^<>]*>||g;s|^\s*\n||g;/^$$$$/d;s|  *| |g;' > $@
     
 genmodel/bncTRAIN.linetoks: $(foreach sect,$(BNCTRAINDIRS),bnc$(sect).linetoks) | genmodel

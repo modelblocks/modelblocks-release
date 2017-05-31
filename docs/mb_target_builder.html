@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- Metadata -->
+  <meta charset="utf-8">
+  <title>ModelBlocks Target Assistant</title>
+  <meta name="description" content="Assistant for building ModelBlocks targets.">
+  <meta name="author" content="Cory Shain">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <!-- Favicon -->
+  
+  <!-- Stylesheets -->
+  <link href='https://fonts.googleapis.com/css?family=Questrial' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="Skeleton-2.0.4/css/normalize.css">
+  <link rel="stylesheet" href="Skeleton-2.0.4/css/skeleton.css">
+  <link rel="stylesheet" href="modelblocks.css">
+  <style id="customCSS"></style>
+
+</head>
+<body>
+  <!-- Main page container -->
+  <div class="container">
+    <div class="row">
+      <h1>ModelBlocks Assistant</h1>
+      <div id='targetContainer'>
+        <h2>Target:</h2>
+        <div id="target"></div>
+        <button id="copier">Copy to clipboard</button>
+        <button id="clear">Clear workspace</button>
+      </div>
+      <div id="traycontainer">
+        <h2>Tray</h2>
+        <div id="tray"></div>
+      </div>
+      <div id="workspace">
+        <h2>Workspace:</h2>
+        <div>
+           <div id="addButtonContainer">
+             <div id="newProject">
+               <nav id="projectMenu">
+                 <ul>
+                   <li id="root">
+                     <a><i class="fa fa-plus-square" aria-hidden="true"></i> Add new project</a>
+                     <ul id="families"></ul>
+                   </li>
+                 </ul>
+               </nav>
+             </div>
+           </div>
+           <div id='worksurface'></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+  <script src="ParamVal.js"></script>
+  <script src="KernelBlockDefs.js"></script>
+  <script src="CompositeBlockDefs.js"></script>
+  <script src="TargetBlockDefs.js"></script>
+  <script src="modelblocks.js"></script>
+
+</body>

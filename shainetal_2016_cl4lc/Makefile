@@ -23,8 +23,6 @@
 #
 ################################################################################
 
-$(info $(VPATH))
-
 default: DEV-ALL
 
 ################################################################################
@@ -34,22 +32,7 @@ default: DEV-ALL
 ################################################################################
 
 include $(dir $(CURDIR))resource-general/Makefile
-include $(RESOURCE-TOKENIZER)/Makefile
-include $(RESOURCE-LTREES)/Makefile
-include $(RESOURCE-GCG)/Makefile
-include $(RESOURCE-LVPCFG)/Makefile
-include $(RESOURCE-LCPARSE)/Makefile
-include $(RESOURCE-BNC)/Makefile
-include $(RESOURCE-TREEBANK)/Makefile
-include $(RESOURCE-GIGAWORD)/Makefile
-include $(RESOURCE-KENLM)/Makefile
-include $(RESOURCE-SRILM)/Makefile
-include $(RESOURCE-INCRSEM)/Makefile
-include $(RESOURCE-NATSTORIES)/Makefile
-include $(RESOURCE-CHILDES)/Makefile
-include $(RESOURCE-RT)/Makefile
-include $(RESOURCE-RHACKS)/Makefile
-include $(RESOURCE-LMEFIT)/Makefile
+$(eval $(INCLUDE-ALL))
 
 ################################################################################
 #
@@ -63,10 +46,10 @@ include $(RESOURCE-LMEFIT)/Makefile
 
 LMEDEFAULT := NSCFX
 # Buggy published exploratory/confirmatory split:
-BASENAME := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.5-kenlm-iz.fp.sprS1
-BASENAME-NB := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.5-kenlm-iz.fp
+BASENAME := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.5-kenlm-iz.spr
+BASENAME-NB := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.5-kenlm-iz
 # More sensible non-published exploratory/confurmatory split:
-# BASENAME := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd.x-efabp.-c_-b5000.5-kenlm.fp.spr
+# BASENAME := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.5-kenlm.spr
 
 
 ################################################################################

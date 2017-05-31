@@ -82,7 +82,7 @@ T T_CONTAINS_COMMA ( "!containscomma!" ); // must be changed to avoid confusion 
 T getType ( const L& l ) {
   if ( l[0]==':' )                 return T_COLON;
   if ( l.find(',')!=string::npos ) return T_CONTAINS_COMMA;
-  return string( string( l, 0, l.find("-l") ), 0, l.find("-xX") ).c_str();
+  return string( string( l, 0, l.find("-l") ), 0, l.find("-x") ).c_str();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -98,10 +98,24 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
   string sBaseType = t.getString();
 
   // If preterm is morphrule-annotated, use baseform in pred...
-  smatch m;  if ( regex_match( lP, m,regex("(.*)-xX(.*)\\*(.*)\\*(.*)") ) ) {
-    sBaseType = (lP[0]=='V' || lP[0]=='B' || lP[0]=='L' || lP[0]=='G') ? "B" + string(m[1],1) + "-xX" + string(m[2]) + '*' + string(m[3]) : (lP[0]=='N') ? "N" + string(m[1],1) + "-xX" + string(m[2]) + '*' + string(m[3]) : "ERROR:UNDEFINED_BASE";
+  smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^-:|]*:|[^-%:|]*)([^-%:|]*?)%([^-%:|]*)[|](.)([^-:|]*:|[^-%:|]*)([^-%:|]*?)%([^-%:|]*)(.*)$")); s=m[9] ) {
+    //cout<<"MATCH "<<string(m[1])<<" "<<string(m[2])<<" "<<string(m[3])<<" "<<string(m[4])<<" "<<string(m[5])<<" "<<string(m[6])<<" "<<string(m[7])<<" "<<string(m[8])<<" "<<string(m[9])<<endl;
+    sPred = regex_replace( sPred, regex("^"+string(m[3])+"(.*)"+string(m[4])+"$"), string(m[7])+"$1"+string(m[8]) );
+    sBaseType[0] = string(m[5])[0];
+  }
+  sBaseType = regex_replace( sBaseType, regex("-x.*"), string("") );
+  //t = getType( sBaseType );
+
+  /*
+  // If preterm is morphrule-annotated, use baseform in pred...
+  smatch m;  if ( regex_match( lP, m,regex("(.*?)-o.*[|]([^- ]*)") ) ) {
+    sBaseType = (lP[0]=='V' || lP[0]=='B' || lP[0]=='L' || lP[0]=='G') ? "B" + string(m[1],1) + "-o" + string(m[2])
+              : (lP[0]=='N')                                           ? "N" + string(m[1],1) + "-o" + string(m[2])
+              : (lP[0]=='A' || lP[0]=='R')                             ? "A" + string(m[1],1) + "-o" + string(m[2])
+                                                                       : "ERROR:UNDEFINED_BASE";
     sPred     = regex_replace( sPred, regex(string(m[4])+"$"), string(m[3]) );
   }
+  */
 
   if ( mldLemmaCounts.find(sPred)==mldLemmaCounts.end() || mldLemmaCounts[sPred]<MINCOUNTS ) sPred = "!unk!";
   if ( isdigit(lW[0]) )                                                                      sPred = "!num!";
@@ -119,12 +133,12 @@ void calcContext ( const Tree& tr, int s=1, int d=0, E e='N' ) {
   // At unary preterminal...
   if ( tr.size()==1 && tr.front().size()==0 ) {
 
-    f            = 1 - s;
+    f               = 1 - s;
     if( e=='N' ) eF = e = getExtr ( tr );
-    pair<K,T> kt = getPred ( L(tr), L(tr.front()) );
-    K k          = kt.first;
-    T t          = kt.second;
-    aPretrm      = Sign( k, t );
+    pair<K,T> kt    = getPred ( L(tr), L(tr.front()) );
+    K k             = kt.first;
+    T t             = kt.second;
+    aPretrm         = Sign( k, t, S_A );
 
     // Print preterminal / fork-phase predictors...
     DelimitedList<psX,FPredictor,psComma,psX> lfp;  q.calcForkPredictors(lfp);
@@ -139,10 +153,10 @@ void calcContext ( const Tree& tr, int s=1, int d=0, E e='N' ) {
 
     f            = 1 - s;
     if( e=='N' ) eF = e = getExtr ( tr );
-    pair<K,T> kt = getPred ( L(tr.front()), L(tr.front().front()) );          // use lower category (with gap filled) for predicate.
+    pair<K,T> kt = getPred ( L(tr.front()), L(tr.front().front()) );             // use lower category (with gap filled) for predicate.
     K k          = kt.first;
     //T t          = kt.second;
-    aPretrm      = Sign( k, getPred(L(tr),L(tr.front().front())).second );    // use upper category (with gap empty) for sign.
+    aPretrm      = Sign( k, getPred(L(tr),L(tr.front().front())).second, S_A );  // use upper category (with gap empty) for sign.
 
     // Print preterminal / fork-phase predictors...
     DelimitedList<psX,FPredictor,psComma,psX> lfp;  q.calcForkPredictors(lfp);
@@ -168,19 +182,20 @@ void calcContext ( const Tree& tr, int s=1, int d=0, E e='N' ) {
     //NOT USED! Sign aAncstr = q.getAncstr ( f );
     //NOT USED! Sign aLchildTmp;
     //NOT USED! Sign aLchild = q.getLchild ( aLchildTmp, f, aPretrm );
+    LeftChildSign aLchild ( q, f, eF, aPretrm );
     e            = getExtr ( tr ) ;
     O oL         = getOp ( L(tr.front()), L(tr.back()),  L(tr) );
     O oR         = getOp ( L(tr.back()),  L(tr.front()), L(tr) );
 
     // Print binary / join-phase predictors...
-    DelimitedList<psX,JPredictor,psComma,psX> ljp;  q.calcJoinPredictors(ljp,f,eF,aPretrm);
-    cout << "==== " << L(tr) << " -> " << L(tr.front()) << " " << L(tr.back()) << endl;
+    DelimitedList<psX,JPredictor,psComma,psX> ljp;  q.calcJoinPredictors(ljp,f,eF,aLchild);
+    cout << "==== " << aLchild << "   " << L(tr) << " -> " << L(tr.front()) << " " << L(tr.back()) << endl;
     cout << "J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e,oL,oR)  << endl;
-    cout << "A " << q.calcApexTypeCondition(f,j,eF,e,oL,aPretrm)                   << " : " << getType(tr)         << endl;
-    cout << "B " << q.calcBrinkTypeCondition(f,j,eF,e,oL,oR,getType(tr),aPretrm)   << " : " << getType(tr.back())  << endl;
+    cout << "A " << q.calcApexTypeCondition(f,j,eF,e,oL,aLchild)                   << " : " << getType(tr)         << endl;
+    cout << "B " << q.calcBrinkTypeCondition(f,j,eF,e,oL,oR,getType(tr),aLchild)   << " : " << getType(tr.back())  << endl;
 
     // Update storestate...
-    q = StoreState ( q, f, j, eF, e, oL, oR, getType(tr), getType(tr.back()), aPretrm );
+    q = StoreState ( q, f, j, eF, e, oL, oR, getType(tr), getType(tr.back()), aPretrm, aLchild );
 
     // Traverse right child...
     calcContext ( tr.back(), 1, d );

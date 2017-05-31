@@ -45,6 +45,13 @@
 #
 ################################################################################
 
+define ParamVal
+NaturalStories:
+  kernel: SPRCorpus
+  text: Natural Stories (self-paced reading corpus)
+  value: naturalstories
+endef
+
 .SUFFIXES:
 .SECONDEXPANSION:
 
@@ -57,27 +64,25 @@
 #
 ################################################################################
 
-MSG1 := The current config file, 
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-naturalstories-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN,$(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 NATSTORDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(NATSTORDIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(NATSTORDIR)$(MSG3))
+RESOURCE-NAME := The Natural Stories Corpus
+define RESOURCE-DESCR =
+
+NAME: The Natural Stories Corpus
+AVAILABILITY: Unreleased
+DESCRIPTION: A corpus of naturalistic stories meant to contain varied,
+low-frequency syntactic constructions. There are a variety of annotations
+and psycholinguistic measures available for the stories.
+endef
+NATSTORIES-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-NATSTORIES = $(error $(NATSTORIES-ERROR))
 endif
 endif
 
@@ -93,9 +98,18 @@ endif
 ################################################################################
 
 # DELETE once we can move past the buggy natstories dev/test split
-%.iz.ngram.itemmeasures: %.ngram.itemmeasures $(NATSTORDIR)/naturalstories_RTS/all_stories.tok \
+define KernelBlock
+NgramIZ:
+  blocktitle: N-gram IZ
+  nargs: '?'
+  paramtype: Boolean
+  paramval:
+  - text: Add item/zone fields (used only for Natural Stories)
+    value: iz
+endef
+%.iz.ngram.itemmeasures: $$(DEP-NATSTORIES) %.ngram.itemmeasures $(NATSTORDIR)/naturalstories_RTS/all_stories.tok \
 ../resource-rt/scripts/filter_cols.py $(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
-	paste -d' ' $< <(cat $(word 2, $^) | sed 's/\t/ /g' | python $(word 3, $^) -d -c item zone) > $@
+	paste -d' ' $(word 1, $^) <(cat $(word 2, $^) | sed 's/\t/ /g' | python $(word 3, $^) -d -c item zone) > $@
 
 genmodel/naturalstories.merge_tables.params: | genmodel
 	echo 'word sentid sentpos' > $@
@@ -112,49 +126,47 @@ genmodel/naturalstories.futureMetrics.params: | genmodel
 genmodel/naturalstories.rm_unfix_items.params: | genmodel
 	echo '-f fdur' > $@
 
-genmodel/naturalstories.linetrees: $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(NATSTORDIR)/parses/penn/all-parses.txt.penn \
-$(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
-	cat $(word 2, $^) | perl $< > $@
+%/naturalstories.linetrees: $$(DEP-NATSTORIES) $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(NATSTORDIR)/parses/penn/all-parses.txt.penn \
+$(CONFIGDIR)/user-naturalstories-directory.txt | %
+	cat $(word 2, $^) | perl $(word 1, $^) > $@
 
-genmodel/naturalstories.linetoks: genmodel/naturalstories.linetrees $(NATSTORIES-SCRIPTS)/penn2sents.py | genmodel
+%/naturalstories.linetoks: %/naturalstories.linetrees $(NATSTORIES-SCRIPTS)/penn2sents.py | %
 	cat $< | python $(word 2, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' > $@
 
-genmodel/naturalstories.items: $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv $(RT-SCRIPTS)/get_rttokenization.py \
+%naturalstories.items: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv $(RT-SCRIPTS)/get_rttokenization.py \
 $(CONFIGDIR)/user-naturalstories-directory.txt
-	cat $< | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word, 2, $^) item zone > $@
+	cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word, 2, $^) item zone > $@
 
-genmodel/naturalstories.lineitems: genmodel/naturalstories.linetoks $(RT-SCRIPTS)/toks2sents.py \
-$(NATSTORDIR)/naturalstories_RTS/all_stories.tok $(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
-	cat $(word 3, $^) | sed 's/\t/ /g;s/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' | python $(word 2, $^) $< > $@
+%/naturalstories.lineitems: $$(DEP-NATSTORIES) %/naturalstories.linetoks $(RT-SCRIPTS)/toks2sents.py \
+$(NATSTORDIR)/naturalstories_RTS/all_stories.tok $(CONFIGDIR)/user-naturalstories-directory.txt | %
+	cat $(word 3, $^) | sed 's/\t/ /g;s/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' | python $(word 2, $^) $(word 1, $^) > $@
   
-genmodel/naturalstories.mfields.itemmeasures: $(NATSTORDIR)/naturalstories_RTS/all_stories.tok genmodel/naturalstories.lineitems \
-$(RT-SCRIPTS)/sents2sentids.py $(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
-	paste -d' ' <(cat $< | sed 's/\t/ /g;') <(cat $(word 2, $^) | python $(word 3, $^) | cut -d' ' -f 2-) > $@
+%naturalstories.mfields.itemmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/all_stories.tok %naturalstories.lineitems \
+$(RT-SCRIPTS)/sents2sentids.py $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/filter_cols.awk \
+$(CONFIGDIR)/user-naturalstories-directory.txt
+	paste -d' ' <(cat $(word 1, $^) | sed 's/\t/ /g;') <(cat $(word 2, $^) | python $(word 3, $^) | cut -d' ' -f 2-) \
+	<(cat $(word 1, $^) | sed 's/\t/ /g;' | awk -f $(word 5, $^) -v cols=item - | python $(word 4, $^) item docid) > $@
 
 # Just here to preserve old buggy dev/test split
-genmodel/naturalstories.mfields.o.itemmeasures: genmodel/naturalstories.mfields.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py genmodel/naturalstories.gold.dlt.tokmeasures $(RT-SCRIPTS)/filter_cols.py \
-$(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
+%naturalstories.mfields.o.itemmeasures: %naturalstories.mfields.itemmeasures \
+$(RT-SCRIPTS)/roll_toks.py %naturalstories.gold.dlt.tokmeasures $(RT-SCRIPTS)/filter_cols.py \
+$(CONFIGDIR)/user-naturalstories-directory.txt
 	paste -d' ' <(cat $< | python $(word 4, $^) -x sentid) <(cat $(word 3, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/-LRB-/(/g;s/-RRB-/)/g;' | \
-  python $(word 2, $^) $< -e latin-1 | python $(word 4, $^) -c sentid) > $@
+	python $(word 2, $^) $< -e latin-1 | python $(word 4, $^) -c sentid) > $@
   
-# The *.fp.* component is vacuous here since these are SPR data. It's just there to make the RT toks generation work.
-genmodel/naturalstories.fp.src.evmeasures: $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv \
-$(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/merge_tables.py genmodel/naturalstories.mfields.itemmeasures \
-$(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
-	python $(word 3, $^) <(cat $< | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word 2, $^) WorkerId subject RT fdur) \
+%naturalstories.src.evmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv \
+$(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/merge_tables.py %naturalstories.mfields.itemmeasures \
+$(CONFIGDIR)/user-naturalstories-directory.txt
+	python $(word 3, $^) <(cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word 2, $^) WorkerId subject RT fdur) \
 	$(word 4, $^) word zone item > $@
   
 # Just here to preserve old buggy dev/test split
-genmodel/naturalstories.fp.src.o.evmeasures: $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv \
-$(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/merge_tables.py genmodel/naturalstories.mfields.o.itemmeasures \
-$(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
-	python $(word 3, $^) <(cat $< | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word 2, $^) WorkerId subject RT fdur) \
+%naturalstories.fp.src.o.evmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv \
+$(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/merge_tables.py %naturalstories.mfields.o.itemmeasures \
+$(CONFIGDIR)/user-naturalstories-directory.txt
+	python $(word 3, $^) <(cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word 2, $^) WorkerId subject RT fdur) \
 	$(word 4, $^) word zone item > $@
 
-# genmodel/naturalstories.gold.linetrees: genmodel/naturalstories.gcg15.decoupled.linetrees | genmodel
-	# cat $< > $@
-  
 %naturalstories.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.linetrees %naturalstories.linetoks
 	python $^ > $@
 

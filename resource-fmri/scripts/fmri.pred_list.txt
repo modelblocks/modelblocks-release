@@ -1,1 +1,1 @@
-totsurp fwprob5surp wlen sentpos dltcm noF
+totsurp fwprob5surp wlen sentpos dlt dltc dltcv dltv dltm dltcm dltcvm dltvm fjprob noFprob endembd embdlen embdlendr embdlendrv noF noFlen noFlendr noFlendrv reinst reinstlen reinstlendr reinstlendrv corefbin coreflenw coreflenr corefsize

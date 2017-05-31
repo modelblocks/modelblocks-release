@@ -4,16 +4,120 @@
 #
 ########################################################
 
-cleanupData <- function(data, params) {
+# Requires the optparse library
+processLMEArgs <- function() {
+    library(optparse)
+    opt_list <- list(
+        make_option(c('-b', '--bformfile'), type='character', default='../resource-rt/scripts/mem.lmeform', help='Path to LME formula specification file (<name>.lmeform'),
+        make_option(c('-a', '--abl'), type='character', default=NULL, help='Effect(s) to ablate, delimited by "+". Effects that are not already in the baseline specification will be ignored (to add new effects to the baseline formula in order to ablate them, use the -A (--all) option.'),
+        make_option(c('-A', '--all'), type='character', default=NULL, help='Effect(s) to add, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
+        make_option(c('-x', '--extra'), type='character', default=NULL, help='Additional (non-main) effect(s) to add, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
+        make_option(c('-c', '--corpus'), type='character', default=NULL, help='Name of corpus (for output labeling). If not specified, will try to infer from output filename.'),
+        make_option(c('-m', '--fitmode'), type='character', default='lme', help='Fit mode. Currently supports "lme" (linear mixed effects), "bme" (Bayesian mixed effects), and "lm" (simple linear regression, which discards all random terms). Defaults to "lme".'),
+        make_option(c('-R', '--restrdomain'), type='character', default=NULL, help='Basename of *.restrdomain.txt file (must be in modelblocks-repository/resource-lmefit/scripts/) containing key-val pairs for restricting domain (see file "noNVposS1.restrdomain.txt" in this directory for formatting).'),
+        make_option(c('-d', '--dev'), type='logical', action='store_true', default=FALSE, help='Run evaluation on dev dataset.'),
+        make_option(c('-t', '--test'), type='logical', action='store_true', default=FALSE, help='Run evaluation on test dataset.'),
+        make_option(c('-e', '--entire'), type='logical', action='store_true', default=FALSE, help='Run evaluation on entire dataset.'),
+        make_option(c('-s', '--splitcols'), type='character', default='subject+sentid', help='"+"-delimited list of columns to intersect in order to create a single ID for splitting dev and test (default="subject+sentid")'),
+        make_option(c('-P', '--partition'), type='numeric', default=3, help='Skip to use in dev/test partition (default = 3).'),
+        make_option(c('-N', '--filterlines'), type='logical', action='store_true', default=FALSE, help='Filter out events at line boundaries.'),
+        make_option(c('-S', '--filtersents'), type='logical', action='store_true', default=FALSE, help='Filter out events at sentence boundaries.'),
+        make_option(c('-C', '--filterscreens'), type='logical', action='store_true', default=FALSE, help='Filter out events at screen boundaries.'),
+        make_option(c('-F', '--filterfiles'), type='logical', action='store_true', default=FALSE, help='Filter out events at file boundaries.'),
+        make_option(c('-p', '--filterpunc'), type='logical', action='store_true', default=FALSE, help='Filter out events containing phrasal punctuation.'),
+        make_option(c('-l', '--logdepvar'), type='logical', action='store_true', default=FALSE, help='Log transform fixation durations.'),
+        make_option(c('-X', '--boxcox'), type='logical', action='store_true', default=FALSE, help='Use Box & Cox (1964) to find and apply the best power transform of the dependent variable.'),
+        make_option(c('-L', '--logmain'), type='logical', action='store_true', default=FALSE, help='Log transform main effect.'),
+        make_option(c('-G', '--groupingfactor'), type='character', default=NULL, help='A grouping factor to run as an interaction with the main effect (if numeric, will be coerced to categorical).'),
+        make_option(c('-n', '--indicatorlevel'), type='character', default=NULL, help='If --groupingfactor has been specified, creates an indicator variable for a particular factor level to test for interaction with the main effect.'),
+        make_option(c('-i', '--crossfactor'), type='character', default=NULL, help='An interaction term to cross with (and add to) the main effect (if numeric, remains numeric, otherwise identical to --groupingfactor).'),
+        make_option(c('-r', '--restrict'), type='character', default=NULL, help='Restrict the data to a subset defined by <column>+<value>. Example usage: -r pos+N.'),
+        make_option(c('-I', '--interact'), type='logical', action='store_false', default=TRUE, help="Do not include interaction term between random slopes and random intercepts.")
+    )
+    opt_parser <- OptionParser(option_list=opt_list)
+    opts <- parse_args(opt_parser, positional_arguments=2)
+    params <- opts$options
+
+    if (is.null(params$corpus)) {
+        filename = strsplit(opts$args[2], '/', fixed=T)[[1]]
+        corpus = strsplit(filename[length(filename)], '.', fixed=T)[[1]][1]
+        opts$options$corpus = corpus
+        smartPrint(paste0('Corpus: ', opts$options$corpus))
+    }
+
+    if (!is.null(params$all)) {
+        opts$options$addEffects <- strsplit(params$all,'+',fixed=T)[[1]]
+    } else opts$options$addEffects <- c()
+
+    if (!is.null(params$abl)) {
+        opts$options$ablEffects <- strsplit(params$abl,'+',fixed=T)[[1]]
+    } else opts$options$ablEffects <- c()
+
+    opts$options$addEffects = c(opts$options$addEffects, opts$options$ablEffects)
+
+    if (!is.null(params$extra)) {
+        opts$options$extraEffects <- strsplit(params$extra,'+',fixed=T)[[1]]
+    } else opts$options$extraEffects <- c()
+
+    if (!is.null(params$restrict)) {
+        smartPrint('Restricting!')
+        smartPrint(params$restrict)
+        restrictor = strsplit(params$restrict, '+', fixed=T)[[1]]
+        opts$options$restrict = list(col = restrictor[1], val = restrictor[2])
+        smartPrint(paste0('Restricting data to ', opts$options$restrict$col,'=', opts$options$restrict$val))
+    }
+
+    if (params$test) {
+        smartPrint('Evaluating on confirmatory (test) data')
+    } else if (params$entire) {
+        smartPrint('Evaluating on complete data')
+    } else {
+       opts$options$dev <- TRUE
+        smartPrint("Evaluating on exploratory (dev) data")
+    }
+
+    if (!params$entire) {
+        opts$options$splitcols <- strsplit(params$splitcols, '+', fixed=T)[[1]]
+        smartPrint(paste0('Splitting dev/test on ', paste(opts$options$splitcols, collapse=' + ')))
+    }
+
+    if (length(params$groupingfactor) > 0) {
+       smartPrint(paste0('Grouping the main effect by factor ', params$groupingfactor))
+    }
+
+    if (params$logdepvar && params$boxcox) {
+        stop('Incompatible options: cannot apply logarithmic and power transformations simultaneously')
+    }
+    if (length(params$groupingfactor) > 0 && length(params$crossfactor) > 0) {
+        stop('Incompatible options: cannot simultaneously apply --groupingfactor and --crossfactor')
+    }
+    if (length(params$indicatorlevel) > 0) {
+        if (length(params$groupingfactor) <= 0) {
+            stop('Incompatible options: --indicatorlevel requires a specification for --groupingfactor')
+        } else smartPrint(paste0('Using indicator variable for ', params$groupingfactor, '=', params$indicatorlevel, '.'))
+    }
+
+    if (params$logdepvar) {
+        smartPrint('Log-transforming fdur')
+    }
+    if (params$boxcox) {
+        smartPrint('Using Box & Cox (1964) to find and apply the best power transform of the dependent variable.')
+    }
+
+    return(opts)
+}
+
+
+cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=FALSE, filterscreens=FALSE, filterpunc=FALSE, restrdomain=NULL) {
     smartPrint(paste('Number of data rows (raw):', nrow(data)))
     
-    if (!is.null(data$cumwdelta)) {
+    if (!is.null(data$wdelta)) {
         # Remove outliers
-        data <- data[data$cumwdelta <= 4,]
+        data <- data[data$wdelta <= 4,]
         smartPrint(paste('Number of data rows (no saccade lengths > 4):', nrow(data)))
     }
     # Filter tokens
-    if (params$filterfiles) {
+    if (filterfiles) {
         if (!is.null(data$startoffile) && !is.null(data$endoffile)) {
             smartPrint('Filtering file boundaries')
             data <- data[data$startoffile != 1,]
@@ -23,7 +127,7 @@ cleanupData <- function(data, params) {
     } else {
         smartPrint('File boundary filtering off')
     }
-    if (params$filterlines) {
+    if (filterlines) {
         if (!is.null(data$startoffile) && !is.null(data$endoffile)) {
             smartPrint('Filtering line boundaries')
             data <- data[data$startofline != 1,]
@@ -33,7 +137,7 @@ cleanupData <- function(data, params) {
     } else {
         smartPrint('Line boundary filtering off')
     }
-    if (params$filtersents) {
+    if (filtersents) {
         if (!is.null(data$startofsentence) && !is.null(data$endofsentence)) {
             smartPrint('Filtering sentence boundaries')
             data <- data[data$startofsentence != 1,]
@@ -43,7 +147,7 @@ cleanupData <- function(data, params) {
     } else {
         smartPrint('Sentence boundary filtering off')
     }
-    if (params$filterscreens) {
+    if (filterscreens) {
         if (!is.null(data$startofscreen) && !is.null(data$endofscreen)) {
             smartPrint('Filtering screen boundaries')
             data <- data[data$startofscreen != 1,]
@@ -53,7 +157,7 @@ cleanupData <- function(data, params) {
     } else {
         smartPrint('Screen boundary filtering off')
     }
-    if (params$filterpunc) {
+    if (filterpunc) {
         if (!is.null(data$punc)) {
             smartPrint('Filtering screen boundaries')
             data <- data[data$punc != 1,]
@@ -67,8 +171,8 @@ cleanupData <- function(data, params) {
     data <- data[complete.cases(data),]
     smartPrint(paste('Number of data rows (complete cases):', nrow(data)))
 
-    if (!is.null(params$restrdomain)) {
-        restr = file(description=paste0('scripts/', params$restrdomain, '.restrdomain.txt'), open='r')
+    if (!is.null(restrdomain)) {
+        restr = file(description=paste0('scripts/', restrdomain, '.restrdomain.txt'), open='r')
         rlines = readLines(restr)
         close(restr)
         for (l in rlines) {
@@ -83,7 +187,7 @@ cleanupData <- function(data, params) {
                     smartPrint(paste0('Filtering out all rows with ', filter[2], ' = ', filter[3]))
                     data = data[data[[filter[2]]] != filter[3],]
                     smartPrint(paste0('Number of data rows after filtering out ', filter[2], ' = ', filter[3], ': ', nrow(data)))
-                } else smartPrint(paste0('Unrecognized filtering instruction in ', params$restrdomain, '.restrdomain.txt'))
+                } else smartPrint(paste0('Unrecognized filtering instruction in ', restrdomain, '.restrdomain.txt'))
             }
         }
     }
@@ -102,42 +206,75 @@ addColumns <- function(data) {
     for (x in colnames(data)[grepl('Ad|Bd', colnames(data))]) {
         data[[paste0(x, 'prim')]] <- substr(data[[x]], 1, 1)
     }
+    if ('wdelta' %in% colnames(data)) {
+        data$prevwasfix = as.integer(as.logical(data$wdelta == 1))
+    }
     return(data)
 }
 
-recastEffects <- function(data, params) {
+recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfactor=NULL) {
+    ## Ensures that data columns are interpreted with the correct dtype, since R doesn't always infer this correctly
     smartPrint("Recasting Effects")
-    if ('sentid' %in% colnames(data)) {
-        data$sentid <- as.numeric(as.character(data$sentid))
-    }
-    if ('subject' %in% colnames(data)) {
-        data$subject <- as.numeric(as.factor(as.character(data$subject)))
-    }
-    if ('fdur' %in% colnames(data)) {
-        if (params$firstpass) {
-            data$fdur <- as.numeric(as.character(data$fdurFP))
-        } else if (params$gopast) {
-            data$fdur <- as.numeric(as.character(data$fdurGP))
-        } else {
-            data$fdur <- as.numeric(as.character(data$fdur))
-        }
-    }
-    if ('sentpos' %in% colnames(data)) {
-        data$sentpos <- as.integer(data$sentpos)
-    }
-    if ('cumwdelta' %in% colnames(data)) {
-        data$cumwdelta <- as.integer(as.character(data$cumwdelta))
-    }
-    if ('prevwasfix' %in% colnames(data)) {
-        data$prevwasfix <- as.logical(data$cumwdelta == 1)
-    }
-    for (x in colnames(data)[grepl('embd', colnames(data))]) {
+
+    ## DEPENDENT VARIABLES
+    ## Reading times
+    for (x in colnames(data)[grepl('^fdur', colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
-    for (x in colnames(data)[grepl('endembd', colnames(data))]) {
-        data[[x]] <- as.logical(data[[x]])
+    ## BOLD levels (fMRI)    
+    for (x in colnames(data)[grepl('^bold', colnames(data))]) {
+        data[[x]] <- as.numeric(as.character(data[[x]]))
     }
-    for (x in colnames(data)[grepl('dlt',colnames(data))]) {
+
+    ## NUISANCE VARIABLES
+    for (x in colnames(data)[grepl('^sentid', colnames(data))]) {
+        data[[x]] <- as.numeric(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('^subject', colnames(data))]) {
+        data[[x]] <- as.numeric(as.factor(as.character(data[[x]])))
+    }
+    for (x in colnames(data)[grepl('^sentpos', colnames(data))]) {
+        data[[x]] <- as.integer(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('^wdelta', colnames(data))]) {
+        data[[x]] <- as.integer(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('^prevwasfix', colnames(data))]) {
+        data[[x]] <- as.integer(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('^word',colnames(data))]) {
+        data[[x]] <- as.character(data[[x]])
+    }
+    for (x in colnames(data)[grepl('^wlen',colnames(data))]) {
+        data[[x]] <- as.integer(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('^rolled',colnames(data))]) {
+        data[[x]] <- as.logical(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('^pos',colnames(data))]) {
+        data[[x]] <- as.character(data[[x]])
+    }
+
+    ## MAIN EFFECTS
+    for (x in colnames(data)[grepl('^embd', colnames(data))]) {
+        data[[x]] <- as.numeric(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('^endembd', colnames(data))]) {
+        data[[x]] <- as.logical(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('^dlt',colnames(data))]) {
+        data[[x]] <- as.numeric(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('^noF',colnames(data))]) {
+        data[[x]] <- as.numeric(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('^yesJ',colnames(data))]) {
+        data[[x]] <- as.numeric(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('^coref',colnames(data))]) {
+        data[[x]] <- as.numeric(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('^reinst',colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
     for (x in colnames(data)[grepl('surp',colnames(data))]) {
@@ -146,47 +283,26 @@ recastEffects <- function(data, params) {
     for (x in colnames(data)[grepl('prob',colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
-    if ('word' %in% colnames(data)) {
-        data$word <- as.character(data$word)
-    }
-    if ('wlen' %in% colnames(data)) {
-        data$wlen <- as.integer(data$wlen)
-    }
-    if ('subject' %in% colnames(data)) {
-        data$subject <- as.character(data$subject)
-    }
-    if ('pos' %in% colnames(data)) {
-        data$pos <- as.character(data$pos)
-    }
-    if ('rolled' %in% colnames(data)) {
-        data$rolled <- as.logical(data$rolled > 0)
-    }
-    if ('pos' %in% colnames(data)) {
-        data$pos <- as.character(data$pos)
-        data$pos[data$rolled == 1] <- 'O'
-    }
 
-    if ('depdir' %in% colnames(data)) {
-        data$depdir <- as.numeric(as.character(data$depdir))
-        data$depdir[data$rolled == 1] <- 0
-    }
-
+    ## Exploratory/confirmatory partition utility column
     data$splitID <- 0
-    for (col in params$splitcols) {
+    for (col in splitcols) {
         data$splitID <- data$splitID + as.numeric(data[[col]])
     }
 
-    if (length(params$indicatorlevel) > 0) {
-        for (level in levels(as.factor(data[[params$groupingfactor]]))) {
-            data[[paste0(params$groupingfactor, 'Yes', level)]] = data[[params$groupingfactor]] == level
-            hits = sum(data[[paste0(params$groupingfactor, 'Yes', level)]])
-            smartPrint(paste0('Indicator variable for level ', level, ' of ', params$groupingfactor, ' has ', hits, ' TRUE events.'))
+    ## Columns if using categorical grouping variables
+    if (length(indicatorlevel) > 0) {
+        for (level in levels(as.factor(data[[groupingfactor]]))) {
+            data[[paste0(groupingfactor, 'Yes', level)]] = data[[groupingfactor]] == level
+            hits = sum(data[[paste0(groupingfactor, 'Yes', level)]])
+            smartPrint(paste0('Indicator variable for level ', level, ' of ', groupingfactor, ' has ', hits, ' TRUE events.'))
         }
     }
 
     smartPrint('The data frame contains the following columns:')
     smartPrint(paste(colnames(data), collapse=' '))
 
+    ## NAN removal
     na_cols <- colnames(data)[colSums(is.na(data)) > 0]
     if (length(na_cols) > 0) {
         smartPrint('The following columns contain NA values:')
@@ -197,7 +313,7 @@ recastEffects <- function(data, params) {
 }
 
 smartPrint <- function(string,stdout=TRUE,stderr=TRUE) {
-    if (stdout) print(string)
+    if (stdout) cat(paste0(string, '\n'))
     if (stderr) write(string, stderr())
 }
 
@@ -217,14 +333,15 @@ create.test <- function(data, i) {
 }
 
 # Generate LMER formulae
-baseFormula <- function(params) {
-    f <- file(description=params$bformfile, open='r')
+baseFormula <- function(bformfile, logdepvar=FALSE, lambda=NULL) {
+    f <- file(description=bformfile, open='r')
     flines <- readLines(f)
     depvar <- flines[1]
-    if (params$boxcox) {
-        depvar <- paste0('((', depvar, '^', params$lambda, ' - 1)/', params$lambda, ')')
+    if (!is.null(lambda)) {
+        smartPrint('Boxcoxing')
+        depvar <- paste0('((', depvar, '^', lambda, '-1)/', lambda, ')')
     }
-    else if (params$logfdur) {
+    else if (logdepvar) {
         depvar <- paste('log1p(', depvar,')', sep='')
     }
     depvar <- paste('c.(', depvar, ')', sep='')
@@ -240,11 +357,13 @@ baseFormula <- function(params) {
     return(bform)
 }
 
-processForm <- function(formList,params) {
-    formList <- addEffects(formList, params$addEffects, params$groupingfactor, params$indicatorlevel, params$crossfactor, params$logmain)
-    formList <- addEffects(formList, params$extraEffects, params$groupingfactor, params$indicatorlevel, params$crossfactor, FALSE)
-    formList <- ablateEffects(formList, params$ablEffects, params$groupingfactor, params$indicatorlevel, params$crossfactor, params$logmain)
-    return(formlist2form(formList,params$interact))
+processForm <- function(formList, addEffects=NULL, extraEffects=NULL, ablEffects=NULL,
+                        groupingfactor=NULL, indicatorlevel=NULL, crossfactor=NULL,
+                        logmain=FALSE, interact=TRUE, include_random=TRUE) {
+    formList <- addEffects(formList, addEffects, groupingfactor, indicatorlevel, crossfactor, logmain)
+    formList <- addEffects(formList, extraEffects, groupingfactor, indicatorlevel, crossfactor, FALSE)
+    formList <- ablateEffects(formList, ablEffects, groupingfactor, indicatorlevel, crossfactor, logmain)
+    return(formlist2form(formList,interact,include_random))
 }
 
 processEffects <- function(effectList, data, logtrans) {
@@ -325,15 +444,21 @@ ablateEffects <- function(formList, ablEffects, groupingfactor=NULL, indicator=N
     return(formList)
 }
 
-formlist2form <- function(formList, interact) {
+formlist2form <- function(formList, interact, include_random=TRUE) {
     if (interact) coef <- 1 else coef <- 0
-    formStr <- paste(formList$dep, ' ~ ', formList$fixed, ' + (', coef, ' + ',
-               formList$by_subject, ' | subject)', sep='')
+    if (include_random) {
+        formStr <- paste0(formList$dep, ' ~ ', formList$fixed, ' + (', coef, ' + ',
+                   formList$by_subject, ' | subject)')
+    } else {
+        formStr <- paste(formList$dep, ' ~ ', formList$fixed)
+    }
     formList[c('dep', 'fixed', 'by_subject')] <- NULL
-    if (!interact) formStr <- paste(formStr, '+ (1 | subject)')
-    if ('other' %in% names(formList)) {
-        other <- paste(formList, collapse=' + ')
-        formStr <- paste(formStr, '+', other)
+    if (include_random) {
+        if (!interact) formStr <- paste(formStr, '+ (1 | subject)')
+        if ('other' %in% names(formList)) {
+            other <- paste(formList, collapse=' + ')
+            formStr <- paste(formStr, '+', other)
+        }
     }
     form <- as.formula(formStr)
     return(form)
@@ -353,37 +478,132 @@ minRelGrad <- function(reg1, reg2) {
 }
 
 # Fit a model formula with bobyqa, try again with nlminb on convergence failure
-regressModel <- function(dataset, form) {
+regressLinearModel <- function(dataset, form) {
+    library(optimx)
+    library(lme4)
     bobyqa <- lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=50000))
     nlminb <- lmerControl(optimizer="optimx",optCtrl=list(method=c("nlminb"),maxit=50000))
-    
-    smartPrint('Regressing with bobyqa')
+   
+    smartPrint('-----------------------------')
+    smartPrint('Fitting linear mixed-effects model with bobyqa')
     smartPrint(paste(' ', date()))
-    regressionOutput <- lmer(form, dataset, REML=F, control = bobyqa)
-    printSummary(regressionOutput)
+    m <- lmer(form, dataset, REML=F, control = bobyqa)
+    smartPrint('-----------------------------')
+    smartPrint('SUMMARY:')
+    printSummary(m)
+    convWarn <- m@optinfo$conv$lme4$messages
     
-    if (max(abs(with(regressionOutput@optinfo$derivs,solve(Hessian,gradient)))) >= 0.002) {
-        regressionOutputO <- regressionOutput
-        smartPrint('Regressing with nlminb')
+    if (!is.null(convWarn)) {
+        m1 <- m
+        smartPrint('Fitting linear mixed-effects model with nlminb')
         smartPrint(paste(' ', date()))
-        regressionOutputN <- lmer(form, dataset, REML=F, control = nlminb)
-        printSummary(regressionOutputN)
-        regressionOutput <- minRelGrad(regressionOutputO, regressionOutputN)            
+        m2 <- lmer(form, dataset, REML=F, control = nlminb)
+        convWarnN <- m2@optinfo$conv$lme4$messages
+        printSummary(m2)
+        if (is.null(convWarnN)) {
+            m <- m2
+        } else {
+            m <- minRelGrad(m1, m2)            
+        }
     }
     
-    return(regressionOutput)
+    if (!is.null(convWarn) && !is.null(convWarnN)) {
+        smartPrint('Model failed to converge under both bobyqa and nlminb');
+    }
+    return(m)
+}
+
+regressSimpleLinearModel <- function(dataset, form) {
+    smartPrint('-----------------------------')
+    smartPrint('Fitting linear model')
+    m <- lm(form, dataset)
+    smartPrint('-----------------------------')
+    smartPrint('SUMMARY:')
+    printLMSummary(m)
+    smartPrint('logLik:')
+    smartPrint(logLik(m))
+}
+
+regressBayesianModel <- function(dataset, form, nchains=4, algorithm='sampling') {
+    library(rstanarm)
+    attach(dataset)
+    depVar <- eval(parse(text=as.character(form)[[2]]))
+    detach(dataset)    
+    #bound = as.numeric(quantile(depVar, .95))
+
+    smartPrint('-------------=---------------')
+    smartPrint('Fitting (MCMC) with stan_lmer')
+    smartPrint(paste(' ', date()))
+
+    if (algorithm == 'sampling') {
+        m <- stan_lmer(formula = form,
+                       prior_intercept = normal(mean(depVar), 0.001),
+                       prior = normal(0, 0.001),
+                       prior_covariance = decov(),
+                       data = dataset,
+                       algorithm = 'meanfield',
+                       QR = TRUE
+                       )
+        cat('PRE-TRAINING SUMMARY:\n')
+        printBayesSummary(m)
+        m <- update(m,
+                    chains = nchains,
+                    cores = nchains,
+                    algorithm = algorithm,
+                    iter = 2000,
+                    QR = TRUE,
+                    refresh = 1
+                    )
+    } else {
+        m <- stan_lmer(formula = form,
+                       prior_intercept = normal(mean(depVar), 1),
+                       prior = normal(0, 1),
+                       prior_covariance = decov(),
+                       data = dataset,
+                       algorithm = algorithm,
+                       QR = TRUE
+                       )
+    }
+
+    smartPrint('-----------------------------')
+    
+    smartPrint('SUMMARY:')
+    printBayesSummary(m)
+    return(m)
 }
 
 # Output a summary of model fit
 printSummary <- function(reg) {
-    print(paste('LME Fit Summary (',reg@optinfo$optimizer,')',sep=''))
+    cat(paste0('LME Summary (',reg@optinfo$optimizer,'):\n'))
     print(summary(reg))
+    cat('Convergence Warnings:\n')
+    convWarn <- reg@optinfo$conv$lme4$messages
+    if (is.null(convWarn)) {
+        convWarn <- 'No convergence warnings.'
+    }
+    cat(paste0(convWarn,'\n'))
     relgrad <- with(reg@optinfo$derivs,solve(Hessian,gradient))
     smartPrint('Relgrad:')
     smartPrint(max(abs(relgrad)))
     smartPrint('AIC:')
     smartPrint(AIC(logLik(reg)))
 }
+
+printLMSummary <- function(m) {
+    cat(paste0('LM Summary:\n'))
+    print(summary(m))
+}
+
+printBayesSummary <- function(m) {
+    # Get fixed effect names
+    cat(paste0('BME Summary:\n'))
+    cols = names(m$coefficients)
+    fixed = cols[substr(cols, 1, 2) != 'b[']
+    print(summary(m, pars=fixed, digits=5))
+    cat('\nError terms:\n')
+    print(VarCorr(m))
+}
+
 
 # Generate logarithmically binned categorical effect
 # from discrete/continouous effect
@@ -397,22 +617,45 @@ binEffect <- function(x) {
     return ("negative")
 }
 
-# Run lineary regression
-lmefit <- function(dataset, output, params) {
-    
-    bform <- processForm(baseFormula(params), params)
+# Fit mixed-effects regression
+fitModel <- function(dataset, output, bformfile, fitmode='lme',
+                   logmain=FALSE, logdepvar=FALSE, lambda=NULL,
+                   addEffects=NULL, extraEffects=NULL, ablEffects=NULL, groupingfactor=NULL,
+                   indicatorlevel=NULL, crossfactor=NULL, interact=TRUE,
+                   corpusname='corpus') {
+   
+    if (fitmode == 'lm') {
+        bform <- processForm(baseFormula(bformfile, logdepvar, lambda),
+                             addEffects, extraEffects, ablEffects,
+                             groupingfactor, indicatorlevel,
+                             crossfactor, logmain, interact,
+                             include_random=FALSE)
+    } else { 
+        bform <- processForm(baseFormula(bformfile, logdepvar, lambda),
+                             addEffects, extraEffects, ablEffects,
+                             groupingfactor, indicatorlevel,
+                             crossfactor, logmain, interact)
+    }
     
     smartPrint('Regressing model:')
     smartPrint(deparse(bform))
 
-    outputModel <- regressModel(dataset, bform)
+    if (fitmode=='bme') {
+        outputModel <- regressBayesianModel(dataset, bform)
+    } else if (fitmode=='lm') {
+        outputModel <- regressSimpleLinearModel(dataset, bform)
+    } else {
+        outputModel <- regressLinearModel(dataset, bform)
+    }
     fitOutput <- list(
-        abl = params$ablEffects,
-        ablEffects = processEffects(params$ablEffects, data, params$logmain),
-        corpus = params$corpus,
-        model = outputModel
+        abl = ablEffects,
+        ablEffects = processEffects(ablEffects, data, logmain),
+        corpus = corpusname,
+        model = outputModel,
+        logmain = logmain,
+        logdepvar = logdepvar,
+        lambda = lambda
     )
-    smartPrint(fitOutput$ablEffects)
     save(fitOutput, file=output)
 }
 
@@ -420,15 +663,15 @@ lmefit <- function(dataset, output, params) {
 error_anal <- function(data, params) {
     name <- setdiff(params$base_obj$abl,params$main_obj$abl)[[1]]
     errData <- data[c('word','sentid','sentpos','subject','fdur', name)]
-    if (params$logfdur) {
+    if (params$logdepvar) {
         errData[[paste0(name,'BaseErr')]] <- c.(log1p(errData$fdur)) - predict(params$base_obj$model, data)
         errData[[paste0(name,'MainErr')]] <- c.(log1p(errData$fdur)) - predict(params$main_obj$model, data)
     } else if (params$boxcox) {
         bc <- MASS:::boxcox(as.formula('fdur ~ 1'), data=data)
         l <- bc$x[which.max(bc$y)]
         smartPrint(paste0('Box & Cox lambda: ', l))
-        errData[[paste0(name,'BaseErr')]] <- c.((errData$fdur^l - 1)/l) - predict(params$base_obj$model, data)
-        errData[[paste0(name,'MainErr')]] <- c.((errData$fdur^l - 1)/l) - predict(params$main_obj$model, data)        
+        errData[[paste0(name,'BaseErr')]] <- c.((errData$fdur^l-1)/l) - predict(params$base_obj$model, data)
+        errData[[paste0(name,'MainErr')]] <- c.((errData$fdur^l-1)/l) - predict(params$main_obj$model, data)        
     } else {
         errData[[paste0(name,'BaseErr')]] <- c.(errData$fdur) - predict(params$base_obj$model, data)
         errData[[paste0(name,'MainErr')]] <- c.(errData$fdur) - predict(params$main_obj$model, data)

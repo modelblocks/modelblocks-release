@@ -72,7 +72,7 @@ with open(sys.argv[tokfixnfileix],'r',encoding='latin-1') as tokfixnFile:
         if 'start' in h or 'end' in h or h == 'unknown':
           if entry[h] == 'True':
             accumulated[h] = True
-        elif (h not in ('words','fdur','word','cumwdelta') and h[-2:] != 'id'):
+        elif (h not in ('words','fdur','word','wdelta') and h[-2:] != 'id'):
           accumulated[h] = entry[h]
 
     ####################

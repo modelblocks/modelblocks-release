@@ -80,16 +80,7 @@ genmodel/eve.eve-nt-lower-nounary-nopunc-rb.induc.constiteval.txt
 ################################################################################
 
 include $(dir $(CURDIR))resource-general/Makefile
-include $(RESOURCE-LTREES)/Makefile
-include $(RESOURCE-LVPCFG)/Makefile
-include $(RESOURCE-LCPARSE)/Makefile
-include $(RESOURCE-GCG)/Makefile
-include $(RESOURCE-CHILDES)/Makefile
-include $(RESOURCE-TREEBANK)/Makefile
-include $(RESOURCE-CCL)/Makefile
-include $(RESOURCE-UPPARSE)/Makefile
-include $(RESOURCE-BMMM)/Makefile
-include $(RESOURCE-DMV)/Makefile
+$(eval $(INCLUDE-ALL))
 
 ################################################################################
 #

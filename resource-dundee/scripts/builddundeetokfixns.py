@@ -212,7 +212,7 @@ for i,w in enumerate(corpus):
         if k < f and fixCorpus[k]['wordid'] != w['wordid']: #self-fixations don't count
           wdelta = w['wordid']-fixCorpus[k]['wordid']
           break
-    fixCorpus[f] = {'fdur':w['fixations'][f],'cumwdelta':wdelta,'prevwasfix':PREVWASFIX,'prevwillfix':PREVWILLFIX,'nextwasfix':NEXTWASFIX,'nextwillfix':NEXTWILLFIX}
+    fixCorpus[f] = {'fdur':w['fixations'][f],'wdelta':wdelta,'prevwasfix':PREVWASFIX,'prevwillfix':PREVWILLFIX,'nextwasfix':NEXTWASFIX,'nextwillfix':NEXTWILLFIX}
     for k in w.keys():
       #for every key that's not fixation info, add it to the entry
       if k != 'fixations':

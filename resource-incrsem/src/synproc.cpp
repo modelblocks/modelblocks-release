@@ -29,12 +29,13 @@ using namespace std;
 #include <nl-string.h>
 #include <Delimited.hpp>
 bool STORESTATE_TYPE = true;
-#include <BerkUnkWord.hpp>
+#include <BerkUnkWord.hpp>  //#include <RandoUnkWord.hpp>
 #include <StoreStateSynProc.hpp>
 #include <Beam.hpp>
 
-uint BEAM_WIDTH = 1000;
-uint VERBOSE    = 0;
+uint BEAM_WIDTH      = 1000;
+uint VERBOSE         = 0;
+uint OUTPUT_MEASURES = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -126,6 +127,7 @@ int main ( int nArgs, char* argv[] ) {
       if      ( 0==strcmp(argv[a],"-v") ) VERBOSE = 1;
       else if ( 0==strcmp(argv[a],"-V") ) VERBOSE = 2;
       else if ( 0==strncmp(argv[a],"-b",2) ) BEAM_WIDTH = atoi(argv[a]+2);
+      else if ( 0==strcmp(argv[a],"-c") ) OUTPUT_MEASURES = 1;
       //else if ( string(argv[a]) == "t" ) STORESTATE_TYPE = true;
       else {
         cerr << "Loading model " << argv[a] << "..." << endl;
@@ -173,6 +175,8 @@ int main ( int nArgs, char* argv[] ) {
     }
   }
 
+  if( OUTPUT_MEASURES ) cout << "word pos f j store totsurp" << endl;
+
   // For each line in stdin...
   for( int linenum=1; cin && EOF!=cin.peek(); linenum++ ) {
 
@@ -186,6 +190,8 @@ int main ( int nArgs, char* argv[] ) {
     // Read sentence...
     cin >> lwSent >> "\n";
     cerr << "#" << linenum;
+
+    vector<double> vdSurp(lwSent.size()+1); // vector for surprisal at each time step
 
     // For each word...
     for( auto& w_t : lwSent ) {
@@ -286,6 +292,15 @@ int main ( int nArgs, char* argv[] ) {
 //      // Sort beam...
 //      std::sort( beams[t].begin(), beams[t].end(), [] (const BeamElement& a, const BeamElement& b) { return b<a; } );
 
+      // Update measures...
+      double probPrevTot = 0.0;
+      double probCurrTot = 0.0;
+      for( auto& be_tdec1 : beams[t-1] )
+        probPrevTot += exp(be_tdec1.first.first - beams[t-1].begin()->first.first);
+      for( auto& be_t : beams[t] )
+        probCurrTot += exp(be_t.first.first     - beams[t-1].begin()->first.first);
+      vdSurp[t] = log2(probPrevTot) - log2(probCurrTot);
+
       // Write output...
       cerr << " (" << beams[t].size() << ")";
       if( VERBOSE ) cout << "BEAM (" << w_t << ")\n" << beams[t] << endl;
@@ -295,10 +310,21 @@ int main ( int nArgs, char* argv[] ) {
 
     auto& mls = beams.getMostLikelySequence();
     if( mls.size()>0 ) {
-      auto ibe=next(mls.begin()); auto iw=lwSent.begin(); for( ; ibe!=mls.end() && iw!=lwSent.end(); ibe++, iw++ )
-        cout << *iw << " " << ibe->first.first() << " " << ibe->first.second() << " " << ibe->first.third() << " " << next(ibe)->first.fourth() << endl;
+      int u=1; auto ibe=next(mls.begin()); auto iw=lwSent.begin(); for( ; ibe!=mls.end() && iw!=lwSent.end(); ibe++, iw++, u++ ) {
+        cout << *iw << " " << ibe->first.first() << " " << ibe->first.second() << " " << ibe->first.third() << " " << next(ibe)->first.fourth();
+        if( OUTPUT_MEASURES ) cout << " " << vdSurp[u];
+        cout << endl;
+      }
     }
-    if( mls.size()==0 ) cout << "FAIL FAIL 1 1 " << endl;
+    if( mls.size()==0 ) {
+      int u=1; auto iw=lwSent.begin(); for( ; iw!=lwSent.end(); iw++, u++ ) {
+        cout << *iw << " FAIL 1 1 ";
+        if( OUTPUT_MEASURES ) cout << " " << vdSurp[u];
+        cout << endl;
+      }
+    }
+        
+    //if( mls.size()==0 ) cout << "FAIL FAIL 1 1 " << endl;
   }
 }
 

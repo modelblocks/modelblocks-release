@@ -6,9 +6,9 @@ uttid = 0
 print('word sentid sentpos timestamp rate')
 with open(sys.argv[1],'r') as f:
   for line in f:
-    times,utterance = line.strip().split('"',1)
-    utterance = utterance.strip('"')
-    start,stop = times.strip(',').split(',')
+    times,utterance = line.strip().split("''",1)
+    utterance = utterance.strip("''")
+    start,stop = times.strip(', ').split(',')
     start = float(start)
     stop = float(stop)
     words = utterance.split()

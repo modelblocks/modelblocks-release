@@ -6,34 +6,51 @@ Extracts recall values from a user-supplied list of lrtsignifs and outputs a spa
 argparser.add_argument('lrtsignifs', type=str, nargs='+', help='One or more *.lrtsignif files from which to extract lme comparison results.')
 args, unknown = argparser.parse_known_args()
 
-val = re.compile('^.+: *([^ ]+)"$')
+val = re.compile('^.+: *([^ "]+) *"?\n')
 effectpair = re.compile('([^ ]+)-vs-([^ ]+)')
+
+R = re.compile('(\[[0-9]+\] "?)?([^"$]*)"?')
+true = ['TRUE', 'true']
+
+def deRify(s):
+    return R.match(s).group(2)
 
 def compute_row(f, diamName=None, vs=None):
     row = {}
-    line = f.readline()
-    while line and not line.startswith('[1] "Main effect'):
-        line = f.readline()
+    line = deRify(f.readline())
+    while line and not line.startswith('Main effect'):
+        line = deRify(f.readline())
     assert line, 'Input not properly formatted'
     row['effect'] = val.match(line).group(1)
-    line = f.readline()
-    assert line.startswith('[1] "Corpus'), 'Input not properly formatted'
+    line = deRify(f.readline())
+    assert line.startswith('Corpus'), 'Input not properly formatted'
     row['corpus'] = val.match(line).group(1)
-    line = f.readline()
-    assert line.startswith('[1] "Effect estimate'), 'Input not properly formatted'
+    line = deRify(f.readline())
+    assert line.startswith('Effect estimate'), 'Input not properly formatted'
     row['estimate'] = '%.5g'%(float(val.match(line).group(1)))
-    line = f.readline()
-    assert line.startswith('[1] "t value'), 'Input not properly formatted'
+    line = deRify(f.readline())
+    assert line.startswith('t value'), 'Input not properly formatted'
     row['t value'] = '%.5g'%(float(val.match(line).group(1)))
-    line = f.readline()
-    assert line.startswith('[1] "Significance (Pr(>Chisq))'), 'Input not properly formatted'
+    line = deRify(f.readline())
+    assert line.startswith('Significance (Pr(>Chisq))'), 'Input not properly formatted'
     row['signif'] = '%.5g'%(float(val.match(line).group(1)))
-    line = f.readline()
-    assert line.startswith('[1] "Relative gradient (baseline)'), 'Input not properly formatted'
+    line = deRify(f.readline())
+    assert line.startswith('Relative gradient (baseline)'), 'Input not properly formatted'
     row['rel_grad_base'] = '%.5g'%(float(val.match(line).group(1)))
-    line = f.readline()
-    assert line.startswith('[1] "Relative gradient (main effect)'), 'Input not properly formatted'
+    line = deRify(f.readline())
+    if (line.startswith('Converged (baseline)')):
+        row['converged_base'] = val.match(line).group(1)
+        line = deRify(f.readline())
+    else:
+        row['converged_base'] = str(float(row['rel_grad_base']) < 0.002)
+    assert line.startswith('Relative gradient (main effect)'), 'Input not properly formatted'
     row['rel_grad_main'] = '%.5g'%(float(val.match(line).group(1)))
+    line = deRify(f.readline())
+    if (line.startswith('Converged (main effect)')):
+        row['converged_main'] = val.match(line).group(1)
+        line = deRify(f.readline())
+    else:
+        row['converged_main'] = str(float(row['rel_grad_main']) < 0.002)
     if diamName:
         row['diamondname'] = diamName
         left = effectpair.match(diamName).group(1)
@@ -64,15 +81,15 @@ def getPrintTable(row_collection, key_list, field_sep=' '):
           for k in key_list ]])])
             for row in row_collection])
 
-pair_evals = [x for x in args.lrtsignifs if 'diamond' not in x]
-diam_evals = [x for x in args.lrtsignifs if 'diamond' in x]
+pair_evals = [x for x in args.lrtsignifs if not (x.endswith('.diamond.lrtsignif') or x.endswith('.dlrt'))]
+diam_evals = [x for x in args.lrtsignifs if (x.endswith('.diamond.lrtsignif') or x.endswith('.dlrt'))]
 
 if len(pair_evals) > 0:
     print('===================================')
     print('Pairwise evaluation of significance')
     print('===================================')
 
-    headers = ['effect', 'corpus', 'estimate', 't value', 'signif', 'rel_grad_base', 'rel_grad_main', 'filename']
+    headers = ['effect', 'corpus', 'estimate', 't value', 'signif', 'converged_base', 'rel_grad_base', 'converged_main', 'rel_grad_main', 'filename']
     
     header_row = {}
     for h in headers:
@@ -87,9 +104,9 @@ if len(pair_evals) > 0:
             row['filename'] = filename
             rows.append(row)
 
-    converged = [header_row] + sorted([x for x in rows if (float(x['rel_grad_base']) < 0.002 and float(x['rel_grad_main']) < 0.002)], \
+    converged = [header_row] + sorted([x for x in rows if (x['converged_base'] in true and x['converged_main'] in true)], \
                 key = lambda y: float(y['signif']))
-    nonconverged = [header_row] + sorted([x for x in rows if (float(x['rel_grad_base']) >= 0.002 or float(x['rel_grad_main']) >= 0.002)], \
+    nonconverged = [header_row] + sorted([x for x in rows if not(x['converged_base'] in true and x['converged_main'] in true)], \
                    key = lambda y: float(y['signif']))
 
     print(getPrintTable(converged, headers))
@@ -108,7 +125,7 @@ if len(diam_evals) > 0:
     print('Diamond evaluation of significance')
     print('==================================')
 
-    headers = ['effect', 'corpus', 'diamondname', 'pair', 'estimate', 't value', 'signif', 'rel_grad_base', 'rel_grad_main', 'filename']
+    headers = ['effect', 'corpus', 'diamondname', 'pair', 'estimate', 't value', 'signif', 'converged_base', 'rel_grad_base', 'converged_main', 'rel_grad_main', 'filename']
 
     header_row = {}
     for h in headers:
@@ -120,39 +137,37 @@ if len(diam_evals) > 0:
         with open(path, 'rb') as f:
             filename = path.split('/')[-1]
             line = f.readline()
-            while line and not line.startswith('[1] "Diamond Anova'):
+            while line and not deRify(line).startswith('Diamond Anova'):
                 line = f.readline()
             assert line, 'Input is not properly formatted'
             diamName = val.match(line).group(1)
-            while line and not line.startswith('[1] "Effect 1 ('):
+            while line and not deRify(line).startswith('Effect 1 ('):
                 line = f.readline()
             assert line, 'Input not properly formatted'
             row = compute_row(f, diamName, 'baseline')
             row['filename'] = filename
             rows.append(row)
-            while line and not line.startswith('[1] "Effect 2 ('):
+            while line and not deRify(line).startswith('Effect 2 ('):
                 line = f.readline()
             assert line, 'Input not properly formatted'
             row = compute_row(f, diamName, 'baseline')
             row['filename'] = filename
             rows.append(row)
-            while line and not line.startswith('[1] "Both vs. Effect 1'):
+            while line and not deRify(line).startswith('Both vs. Effect 1'):
                 line = f.readline()
             assert line, 'Input not properly formatted'
             row = compute_row(f, diamName, 'both')
             row['filename'] = filename
             rows.append(row)
-            while line and not line.startswith('[1] "Both vs. Effect 2'):
+            while line and not deRify(line).startswith('Both vs. Effect 2'):
                 line = f.readline()
             assert line, 'Input not properly formatted'
             row = compute_row(f, diamName, 'both')
             row['filename'] = filename
             rows.append(row)
 
-    converged = [header_row] + sorted([x for x in rows if (float(x['rel_grad_base']) < 0.002 and float(x['rel_grad_main']) < 0.002)], \
-                key = lambda y: float(y['signif']))
-    nonconverged = [header_row] + sorted([x for x in rows if (float(x['rel_grad_base']) >= 0.002 or float(x['rel_grad_main']) >= 0.002)], \
-                   key = lambda y: float(y['signif']))
+    converged = [header_row] + [x for x in rows if (x['converged_base'] in true and x['converged_main'] in true)]
+    nonconverged = [header_row] + [x for x in rows if not(x['converged_base'] in true and x['converged_main'] in true)]
 
     print(getPrintTable(converged, headers))
 

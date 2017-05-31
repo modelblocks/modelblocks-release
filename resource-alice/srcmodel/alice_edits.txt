@@ -1,0 +1,40 @@
+src	targ	sentid
+had		0
+is	's	0
+conversations	conversation	0
+daisy-chain	daisy chain	1
+waistcoat-pocket	waistcoat pocket	2
+she had	she'd	2
+rabbit-hole	rabbit hole	2
+rabbit-hole	rabbit hole	4
+book-shelves	book shelves	6
+labelled	labled	7
+	she	7
+I		15
+Ma'am	Maam	26
+Zealand	Zeland	26
+to-night	to night	33
+tea-time	tea time	35
+to		42
+round	around	45
+three-legged	three legged	46
+that		48
+rat-hole	rat hole	48
+through	though	49
+knew	know	51
+out-of-the-way	out of the way	52
+who had	who'd	55
+got	gotten	55
+red-hot	red hot	55
+it is	it's	55
+flavour	flavor	56
+cherry-tart	cherry tart	56
+pine-apple	pine apple	56
+ever having	having ever	62
+she had	she'd	63
+in		64
+and once she	she once	65
+very		65
+left		67
+happens	happpens	69
+

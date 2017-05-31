@@ -48,27 +48,27 @@ GIGASECTS = afp_eng apw_eng cna_eng ltw_eng nyt_eng xin_eng
 #
 ################################################################################
 
-MSG1 := The current config file, 
-MSG2 := , points to a non-existent location (
-MSG3 := ). Fix before re-running make, or (if not needed) set to ".".
-
-define CONFIGWARN =
-
-ATTENTION! I had to create $(CONFIG),
-which contains an incorrect default value (".").
-Targets with dependencies to this file will fail until it is fixed.
-
-endef
-
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-gigaword4-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(CONFIGWARN))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 GIGADIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(GIGADIR))))
-$(error $(MSG1)$(CONFIG)$(MSG2)$(GIGADIR)$(MSG3))
+RESOURCE-NAME := English Gigaword
+define RESOURCE-DESCR =
+
+NAME: English Gigaword
+AVAILABILITY: Paid
+URL: https://catalog.ldc.upenn.edu/ldc2003t05
+DESCRIPTION: A comprehensive archive of newswire text data in English that
+has been acquired over several years by the Linguistic Data Consortium.
+endef
+GIGAWORD-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-GIGAWORD = $(error $(GIGAWORD-ERROR))
+else
+DEP-GIGAWORD :=
 endif
 endif
 
@@ -83,10 +83,10 @@ endif
 #
 ################################################################################
     
-gigaword4%.linetoks: $(GIGADIR)/data/$$*/*.gz $(GIGAWORD-SCRIPTS)/preprocess_gigaword.py \
+gigaword4%.linetoks: $$(DEP-GIGAWORD) $(GIGADIR)/data/$$*/*.gz $(GIGAWORD-SCRIPTS)/preprocess_gigaword.py \
 $(CONFIGDIR)/user-gigaword4-directory.txt | genmodel
 	mkdir tmp
-	cp $< tmp/
+	cp $(word 1, $^) tmp/
 	gunzip tmp/*
 	cat tmp/* > $@.tmp
 	python $(word 2, $^) $@.tmp > $@
