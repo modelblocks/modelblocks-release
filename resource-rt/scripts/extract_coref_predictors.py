@@ -8,7 +8,7 @@ Generate by-word tsv of predictors for coreference-based features. Uses annotate
 To run:
     python extract_coref_predictors.py <input_filename>
 
-'uid', 'corefbin', 'coreflenw', 'coreflenr', 'corefsize'
+"uid", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog"
 
 Output format:
 Column 1: word_id, in sentenceid_wordid format
@@ -18,9 +18,15 @@ Column 4: distance in nouns,verbs to antecedent
 Column 5: size of chain in mention count up to current mention
 '''
 from __future__ import division, print_function
+from math import log
 import sys
 import re
 import pdb
+
+DELIM = " "
+
+def log1p(val):
+    return log(1+val)
 
 class CorefPredictors:
 
@@ -58,7 +64,7 @@ class CorefPredictors:
             cat = match.group(1)[0] #first character of cat
         except AttributeError:
             pdb.set_trace()
-            cat = 'punc'
+            cat = "punc"
             print(line)
         return cat
 
@@ -73,9 +79,9 @@ class CorefPredictors:
                     on = True
                     continue 
                 if on == True:
-                    if mtype == 'word':
+                    if mtype == "word":
                         dist += 1
-                    elif mtype == 'ref':
+                    elif mtype == "ref":
                         if cat in self.ref_cats:
                             dist += 1
                 if curr_id == line_id:
@@ -118,8 +124,8 @@ class CorefPredictors:
             if match is not None:
                 ante_id = match.group(1) # antecedent id group
                 binary_coref_indic = 1
-                word_dist = self.get_dist('word', curr_id, ante_id)
-                ref_dist = self.get_dist('ref', curr_id, ante_id)
+                word_dist = self.get_dist("word", curr_id, ante_id)
+                ref_dist = self.get_dist("ref", curr_id, ante_id)
                 chain_size = self.get_chain_size(curr_id, ante_id)
 
                 #self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), str(ispro)]) #list of lists
@@ -138,14 +144,21 @@ class CorefPredictors:
 
                 #self.predictors.append([curr_id, str(binary_coref_indic),"0","0","0","0"])
                     
-            self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro]) #list of lists
+            try:
+                word_dist_log = log1p(word_dist)
+                ref_dist_log = log1p(ref_dist)
+                chain_size_log = log1p(chain_size)
+            except:
+                pdb.set_trace()
+            #self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro]) #list of lists
+            self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro, str(word_dist_log), str(ref_dist_log), str(chain_size_log)]) #list of lists
                 
 
     def print_predictors(self):
         #pdb.set_trace()
-        print("\t".join(['uid', 'corefbin', 'coreflenw', 'coreflenr', 'corefsize', 'isanaphpro']))
+        print(DELIM.join(["uid", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog"]))
         for p in self.predictors:
-            print("\t".join(p))
+            print(DELIM.join(p))
 
 def main():
     #print("Beginning feature extraction...")
