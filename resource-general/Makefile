@@ -126,6 +126,9 @@ LVPCFG-SCRIPTS := $(RESOURCE-LVPCFG)/scripts
 RESOURCE-NATSTORIES := $(abspath $(MBDIR)/resource-naturalstories)
 NATSTORIES-SCRIPTS := $(RESOURCE-NATSTORIES)/scripts
 
+RESOURCE-PASSAGES := $(abspath $(MBDIR)/resource-passages)
+PASSAGES-SCRIPTS := $(RESOURCE-PASSAGES)/scripts
+
 RESOURCE-ONTONOTES := $(abspath $(MBDIR)/resource-ontonotes)
 ONTONOTES-SCRIPTS := $(RESOURCE-ONTONOTES)/scripts
 
@@ -162,6 +165,9 @@ UPPARSE-SCRIPTS := $(RESOURCE-UPPARSE)/scripts
 RESOURCE-WORDNET := $(abspath $(MBDIR)/resource-wordnet)
 WORDNET-SCRIPTS := $(RESOURCE-WORDNET)/scripts
 
+RESOURCE-XLSX2CSV := $(abspath $(MBDIR)/resource-xlsx2csv)
+XLSX2CSV-SCRIPTS := $(RESOURCE-XLSX2CSV)/scripts
+
 BIN      := bin
 GENMODEL := genmodel
 
@@ -188,8 +194,10 @@ include $(RESOURCE-CHILDES)/Makefile
 include $(RESOURCE-DUNDEE)/Makefile
 include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
+include $(RESOURCE-PASSAGES)/Makefile
 include $(RESOURCE-ONTONOTES)/Makefile
 include $(RESOURCE-RHACKS)/Makefile
+include $(RESOURCE-XLSX2CSV)/Makefile
 include $(RESOURCE-UCL)/Makefile
 include $(RESOURCE-UPPARSE)/Makefile
 include $(RESOURCE-WORDNET)/Makefile

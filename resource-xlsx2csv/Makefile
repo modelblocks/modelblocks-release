@@ -24,6 +24,7 @@
 #  Include statements to this file should be preceded by the following includes
 #
 #  include $(dir $(CURDIR))resource-general/Makefile
+#  include $(RESOURCE-RHACKS)/Makefile
 #
 ################################################################################
 
@@ -46,37 +47,44 @@
 ################################################################################
 
 ifndef MAKECONFIG
-CONFIG := $(CONFIGDIR)/user-tokenizer-directory.txt
+CONFIG := $(CONFIGDIR)/user-xlsx2csv-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
 $(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
-TOKENIZERDIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(TOKENIZERDIR))))
-RESOURCE-NAME := Extended Penn Tokenizer
+XLSX2CSVDIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(XLSX2CSVDIR))))
+RESOURCE-NAME := xlsx2csv
 define RESOURCE-DESCR =
 
-NAME: Extended Penn Tokenizer
+NAME: xlsx2cxv
 AVAILABILITY: Free
-URL: https://github.com/vansky/extended_penn_tokenizer
-DESCRIPTION: Extended version of Robert McIntyre's (1995) Penn tokenizer.
+URL: https://github.com/dilshod/xlsx2csv
+DESCRIPTION: XLS to CSV converter
 endef
-TOKENIZER-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
-DEP-TOKENIZER = $(error $(TOKENIZER-ERROR))
+XLSX2CSV-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-XLSX2CSV = $(error $(XLSX2CSV-ERROR))
 else
-DEP-TOKENIZER :=
+DEP-XLSX2CSV :=
 endif
 endif
-
-
-
-%/user-tokenizer-directory.txt: | %
-	echo '/home/compling/extended_penn_tokenizer' > $@
+    
+%/user-xlsx2csv-directory.txt: | %   
+	echo '/home/compling/xlsx2csv' > $@
 
 ################################################################################
 #
-#  RECIPES
+#  Recipes
 #
 ################################################################################
 
+$(RESOURCE-XLSX2CSV)/scripts:
+	mkdir $(RESOURCE-XLSX2CSV)/scripts
+
+$(XLSX2CSV-SCRIPTS)/xlsx2csv.py: $$(DEP-XLSX2CSV) $(XLSX2CSVDIR)/xlsx2csv.py
+	mkdir -p $(XLSX2CSV-SCRIPTS)
+	cp $(word 1, $^) $@
+
+%.fromxlsx.csv: %.xlsx $(XLSX2CSV-SCRIPTS)/xlsx2csv.py
+	python $(word 2, $^) -d ' ' $(word 1, $^) > $@
 
