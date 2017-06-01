@@ -234,7 +234,7 @@ int main ( int nArgs, char* argv[] ) {
             StoreState ss( q_tdec1, f_tdec1, j_tdec1, tpA.first, tpB.first, p_tdec1 );
             // For each possible lemma (context + label + prob) for preterminal of current word...
             for( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[unkWord(w_t.getString().c_str())] ) if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(tpA.second) + log(tpB.second) + log(ktpr_p_t.second) > beams[t].rbegin()->first.first ) {
-              T t_p_t           = ktpr_p_t.first;  // label of cunnent preterminal
+              T t_p_t           = ktpr_p_t.first;  // label of current preterminal
               double probwgivkl = ktpr_p_t.second; // probability of current word given current preterminal
 
               if( VERBOSE>1 ) cout << "        W " << t_p_t << " : " << w_t << " = " << probwgivkl << endl;
