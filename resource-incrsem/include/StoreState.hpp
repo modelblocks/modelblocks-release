@@ -33,8 +33,8 @@ typedef Delimited<int>  J;  // join decision
 typedef Delimited<char> O;  // composition operation
 typedef Delimited<char> E;  // extraction operation
 typedef Delimited<char> S;  // side (A,B)
-S S_A("/");
-S S_B(";");
+const S S_A("/");
+const S S_B(";");
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -70,7 +70,7 @@ class N : public Delimited<DiscreteDomainRV<int,domN>> {
 };
 map<N,bool> N::mnbArg;
 map<N,bool> N::mnbLft;
-N N_NONE("");
+const N N_NONE("");
 */
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -81,8 +81,6 @@ class T : public DiscreteDomainRV<int,domT> {
   static map<N,bool>         mnbArg;
   static map<T,int>          mtiArity;
   static map<T,bool>         mtbIsCarry;
-  static map<T,T>            mttCarrier;
-  static map<T,T>            mttNoCarry;
   static map<T,N>            mtnLastNol;
   static map<pair<T,N>,bool> mtnbIn;
   int getArity ( const char* l ) {
@@ -112,8 +110,6 @@ class T : public DiscreteDomainRV<int,domT> {
     if( mnbArg.end()==mnbArg.find(*this) ) { mnbArg[*this]=( strlen(ps)<=4 ); }
     if( mtiArity.end()  ==mtiArity.  find(*this) ) { mtiArity  [*this]=getArity(ps); }
     if( mtbIsCarry.end()==mtbIsCarry.find(*this) ) { mtbIsCarry[*this]=( ps[0]=='-' && ps[1]>='a' && ps[1]<='z' ); }  //( ps[strlen(ps)-1]=='^' ); }
-//    if( mttCarrier.end()==mttCarrier.find(*this) ) { T& t=mttCarrier[*this]; t=( (ps[strlen(ps)-1]=='^') ? *this : string(ps).append("^").c_str() ); }
-//    if( mttNoCarry.end()==mttNoCarry.find(*this) ) { T& t=mttNoCarry[*this]; t=( (ps[strlen(ps)-1]!='^') ? *this : string(ps,strlen(ps)-1).c_str() ); }
     if( strlen(ps)>0 && !(ps[0]=='-'&&ps[1]>='a'&&ps[1]<='z') && mtnLastNol.end()==mtnLastNol.find(*this) ) { N& n=mtnLastNol[*this]; n=getLastNolo(ps); }
     uint depth = 0;  uint beg = strlen(ps);
     for( uint i=0; i<strlen(ps); i++ ) {
@@ -126,34 +122,30 @@ class T : public DiscreteDomainRV<int,domT> {
   }
  public:
   T ( )                : DiscreteDomainRV<int,domT> ( )    { }
-//  T ( int i )          : DiscreteDomainRV<int,domT> ( i )  { }
   T ( const char* ps ) : DiscreteDomainRV<int,domT> ( ps ) { calcDetermModels(ps); }
   bool isArg           ( )     { return mnbArg[*this]; }
   int  getArity        ( )     { return mtiArity  [*this]; }
   bool isCarrier       ( )     { return mtbIsCarry[*this]; }
-  T    giveCarrierMark ( )     { return mttCarrier[*this]; }
-  T    takeCarrierMark ( )     { return mttNoCarry[*this]; }
   N    getLastNonlocal ( )     { return mtnLastNol[*this]; }
   bool containsCarrier ( N n ) { return mtnbIn.find(pair<T,N>(*this,n))!=mtnbIn.end(); }
 };
 map<N,bool>         T::mnbArg;
 map<T,int>          T::mtiArity;
 map<T,bool>         T::mtbIsCarry;
-map<T,T>            T::mttCarrier;
-map<T,T>            T::mttNoCarry;
 map<T,N>            T::mtnLastNol;
 map<pair<T,N>,bool> T::mtnbIn;
-T tTop("T");
-T tBot("-");
-N N_NONE("");
+const T tTop("T");
+const T tBot("-");
+const T tBOT("bot");  // not sure if this really needs to be distinct from tBot
+const N N_NONE("");
 
 ////////////////////////////////////////////////////////////////////////////////
 
 DiscreteDomain<int> domK;
 class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of Delimited<...> or string-argument constructor of this class won't get called!
  public:
-  static K kTop;
-  static K kBot;
+  static const K kTop;
+  static const K kBot;
   private:
   static map<K,T> mkt;
   static map<pair<K,int>,K> mkik;
@@ -171,22 +163,20 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
       if( mkik.end()==mkik.find(pair<K,int>(*this,3)) && ps[strlen(ps)-2]!='-' && ps[strlen(ps)-1]==cSelf ) { K& k=mkik[pair<K,int>(*this,3)]; k=string(ps,strlen(ps)-1).append("3").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,1)) && ps[strlen(ps)-2]=='-' && ps[strlen(ps)-1]=='1' ) { K& k=mkik[pair<K,int>(*this,1)]; k=string(ps,strlen(ps)-2).c_str(); }
     }
-//    // Special case for top...
-//    else if ( *this==kTop && mkt.end()==mkt.find(*this) ) mkt[*this]=T("T");
-//    else if ( *this==kBot && mkt.end()==mkt.find(*this) ) mkt[*this]=T("bot");
+    else mkt[*this] = (*this==kBot) ? tBOT : (*this==kTop) ? tTop : tBot;
   }
  public:
   K ( )                : DiscreteDomainRV<int,domK> ( )    { }
   K ( const char* ps ) : DiscreteDomainRV<int,domK> ( ps ) { calcDetermModels(ps); }
-  T getType ( )       const { return ( *this==kBot ) ? T("bot") : mkt[*this]; }
+  T getType ( )       const { auto it = mkt.find(*this); return (it==mkt.end()) ? tBot : it->second; }
   K project ( int n ) const { auto it = mkik.find(pair<K,int>(*this,n)); return (it==mkik.end()) ? kBot : it->second; }
 };
 map<K,T> K::mkt;
 map<pair<K,int>,K> K::mkik;
 const K K_DITTO("\"");
-K kNil("");
-K K::kTop("Top");
-K K::kBot("Bot");
+const K kNil("");
+const K K::kTop("Top");
+const K K::kBot("Bot");
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -254,14 +244,8 @@ class FPredictor {
     else if ( mikA.end() != mikA.find(t.id) ) return os << "d" << mid[t.id] << "&" << mikF[t.id] << "&" << mikA[t.id];
     else                                      return os << "NON_STRING_ID_" << t.id;
   }
-  // output no-sem fpredictors---duan
-  public:
-  string getFPStringNoSem(){
-  stringstream ss;
-  if ( mikA.end() == mikA.find(id) && mit.end() != mit.find(id) ) ss << "d" << mid[id] << "&" << "t" <<  mit[id]; 
-  else if (mikA.end() == mikA.find(id))                                  ss << "NON_STRING_ID_" << id;
-  return ss.str();
-}
+  static bool exists ( D d, T t )        { return( mdti.end()!=mdti.find(pair<D,T>(d,t)) ); }
+  static bool exists ( D d, K kF, K kA ) { return( mdkki.end()!=mdkki.find(trip<D,K,K>(d,kF,kA)) ); }
 };
 uint                  FPredictor::nextid = 1;   // space for bias "" predictor
 map<uint,D>           FPredictor::mid;
@@ -296,7 +280,7 @@ class FResponse : public DiscreteDomainRV<int,domFResponse> {
     *this = ( mfekfr.end()==mfekfr.find(trip<F,E,K>(f,e,k)) ) ? ("f" + to_string(f) + "&" + string(1,e) + "&" + k.getString()).c_str()
                                                               : mfekfr[trip<F,E,K>(f,e,k)];
   }
-//if ( mfkfr.end()!=mfkfr.find(pair<F,K>(f,k)) ) *this = mfkfr[pair<F,K>(f,k)]; else *this=mfkfr[pair<F,K>(f,K::kBot)]; }
+  static bool exists ( F f, E e, K k ) { return( mfekfr.end()!=mfekfr.find(trip<F,E,K>(f,e,k)) ); }
 
   F getFork ( ) const { return mfrf[*this]; }
   E getE    ( ) const { return mfre[*this]; }
@@ -306,8 +290,6 @@ map<FResponse,F>           FResponse::mfrf;
 map<FResponse,E>           FResponse::mfre;
 map<FResponse,K>           FResponse::mfrk;
 map<trip<F,E,K>,FResponse> FResponse::mfekfr;
-//const FResponse FRESP_F0BOT("f0&bot");
-//const FResponse FRESP_F1BOT("f1&bot");
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -377,15 +359,8 @@ class JPredictor {
     else if ( mikA.end() != mikA.find(t.id) ) return os << "d" << mid[t.id] << "&" << mikF[t.id] << "&" << mikA[t.id] << "&"        << mikL[t.id];
     else                                      return os << "NON_STRING_ID_" << t.id;
   }
-    // output no-sem jpredictors---duan
-  public:
-  string getJPStringNoSem(){
-  stringstream ss;
-    if ( mikA.end() == mikA.find(id) && mitA.end() != mitA.find(id) ) ss << "d" << mid[id] << "&" << "t" <<  mitA[id]<< "&" << "t" << mitL[id]; 
-    else if (mikA.end() == mikA.find(id))                                  ss << "NON_STRING_ID_" << id;
-    return ss.str();
-}
-
+  static bool exists ( D d, T tA, T tL )       { return( mdtti.end()!=mdtti.find(trip<D,T,T>(d,tA,tL)) ); }
+  static bool exists ( D d, K kF, K kA, K kL ) { return( mdkkki.end()!=mdkkki.find(quad<D,K,K,K>(d,kF,kA,kL)) ); }
 };
 uint                    JPredictor::nextid = 1;  // space for bias "" predictor
 map<uint,D>             JPredictor::mid;
@@ -421,7 +396,6 @@ class JResponse : public DiscreteDomainRV<int,domJResponse> {
     *this = ( mjeoojr.end()==mjeoojr.find(quad<J,E,O,O>(j,e,oL,oR)) ) ? ("j" + to_string(j) + "&" + string(1,e) + "&" + string(1,oL) + "&" + string(1,oR)).c_str()
                                                                       : mjeoojr[quad<J,E,O,O>(j,e,oL,oR)];
   }
-// if ( mjoojr.end()!=mjoojr.find(trip<J,O,O>(j,oL,oR)) ) *this = mjoojr[trip<J,O,O>(j,oL,oR)]; else *this=mjoojr[trip<J,O,O>(j,'I','I')]; }
   J getJoin ( ) const { return mjrj[*this]; }
   E getE    ( ) const { return mjre[*this]; }
   O getLOp  ( ) const { return mjroL[*this]; }
@@ -462,7 +436,7 @@ class BPredictor : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,E,psSpa
 
 class KSet : public DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> {
  public:
-  static KSet ksDummy;
+  static const KSet ksDummy;
   KSet ( )                                                      : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> ( ) { }
   KSet ( const K& k )                                           : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> ( ) { emplace_back(k); }
   KSet ( const KSet& ks1, const KSet& ks2 )                     : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> ( ) {
@@ -477,9 +451,9 @@ class KSet : public DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> {
   }
   bool isDitto ( ) const { return ( size()>0 && front()==K_DITTO ); }
 };
-KSet KSet::ksDummy;
-KSet ksTop = KSet( K::kTop );
-KSet ksBot = KSet( K::kBot );
+const KSet KSet::ksDummy;
+const KSet ksTop = KSet( K::kTop );
+const KSet ksBot = KSet( K::kBot );
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -520,8 +494,8 @@ class LeftChildSign : public Sign {
 class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format can't be read in bc of internal psX delimiter, but we don't need to.
  public:
 
-  static Sign aTop;
-  static Sign aBot;
+  static const Sign aTop;
+  static const Sign aBot;
 
   StoreState ( ) : DelimitedVector<psX,Sign,psX,psX> ( ) { }
   StoreState ( const StoreState& qPrev, F f, J j, E eF, E eJ, O opL, O opR, T tA, T tB, const Sign& aPretrm, const LeftChildSign& aLchild ) {
@@ -624,13 +598,13 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     return -1;
   } 
 
-  list<FPredictor>& calcForkPredictors ( list<FPredictor>& lfp ) const {
+  list<FPredictor>& calcForkPredictors ( list<FPredictor>& lfp, bool bAdd=true ) const {
     int d = getDepth();
     const KSet& ksB = at(size()-1).getKSet();
     int iCarrier = getAncestorBCarrierIndex( 1 );
     if( STORESTATE_TYPE ) lfp.emplace_back( d, at(size()-1).getType() );
-    for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) lfp.emplace_back( d, kNil, kA );
-    for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) lfp.emplace_back( d, kF, kNil );
+    for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(d,kNil,kA) ) lfp.emplace_back( d, kNil, kA );
+    for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(d,kF,kNil) ) lfp.emplace_back( d, kF, kNil );
     return lfp;
   }
 
@@ -638,7 +612,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     return PPredictor( getDepth(), f, e, at(size()-1).getType(), k_p_t.getType() );
   }
 
-  list<JPredictor>& calcJoinPredictors ( list<JPredictor>& ljp, F f, E eF, const LeftChildSign& aLchild ) const {
+  list<JPredictor>& calcJoinPredictors ( list<JPredictor>& ljp, F f, E eF, const LeftChildSign& aLchild, bool bAdd=true ) const {
     int d = getDepth()+f;
     int iCarrierB = getAncestorBCarrierIndex( f );
     const Sign& aAncstr  = at( getAncestorBIndex(f) );
@@ -646,9 +620,9 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     const KSet& ksFiller = (iCarrierB<0) ? KSet() : at( iCarrierB ).getKSet();
     const KSet& ksLchild = ( aLchild.getKSet().size()==0 ) ? KSet(K::kBot) : aLchild.getKSet() ;
     if( STORESTATE_TYPE ) ljp.emplace_back( d, aAncstr.getType(), aLchild.getType() );
-    for( auto& kA : (ksAncstr.size()==0) ? ksBot : ksAncstr ) for( auto& kL :                                ksLchild ) ljp.emplace_back( d, kNil, kA, kL );
-    for( auto& kF :                                ksFiller ) for( auto& kA : (ksAncstr.size()==0) ? ksBot : ksAncstr ) ljp.emplace_back( d, kF, kA, kNil );
-    for( auto& kF :                                ksFiller ) for( auto& kL :                                ksLchild ) ljp.emplace_back( d, kF, kNil, kL );
+    for( auto& kA : (ksAncstr.size()==0) ? ksBot : ksAncstr ) for( auto& kL :                                ksLchild ) if( bAdd || JPredictor::exists(d,kNil,kA,kL) ) ljp.emplace_back( d, kNil, kA, kL );
+    for( auto& kF :                                ksFiller ) for( auto& kA : (ksAncstr.size()==0) ? ksBot : ksAncstr ) if( bAdd || JPredictor::exists(d,kF,kA,kNil) ) ljp.emplace_back( d, kF, kA, kNil );
+    for( auto& kF :                                ksFiller ) for( auto& kL :                                ksLchild ) if( bAdd || JPredictor::exists(d,kF,kNil,kL) ) ljp.emplace_back( d, kF, kNil, kL );
     return ljp;
   }
 
@@ -660,7 +634,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     return BPredictor( getDepth()+f-j, f, j, eJ, opL, opR, tParent, aLchild.getType() );
   }
 };
-Sign StoreState::aTop( KSet(K::kTop), tTop, S_B );
+const Sign StoreState::aTop( KSet(K::kTop), tTop, S_B );
 
 ////////////////////////////////////////////////////////////////////////////////
 
