@@ -723,6 +723,132 @@ Convenience target. Generates plots of a variety of learning curves from a {\blu
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{RESOURCE-GCG}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+{\tt RESOURCE-GCG} contains methods for generating and manipulating semantic annotations.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{\blue\tt \%.gcg\#\#.linetrees}
+
+Categorial predicate-argument markup for trees.
+
+\begin{itemize}
+\item\textbf{File format:}
+\begin{itemize}
+\item\textit{Specification:}
+\begin{itemize}
+\item $\dtype{row}  \rightarrow \dtype{tree}$
+\item $\dtype{tree} \rightarrow \dtype{token}$
+\item $\dtype{tree} \rightarrow \dcode{(} \ \dtype{sign-type} \ \ \smash{\Big( \ \dcode{\ } \ \dtype{tree} \ \Big)^+} \ \dcode{)}$
+%\item $\dtype{node-label}  \rightarrow \dexpr{[a-z]*}$
+\item $\dtype{sign-type}  \rightarrow \dtype{clause-type} \ \smash{\Big( \ \dtype{dependency} \ \Big)^*}$
+\item $\dtype{dependency} \rightarrow \dcode{-} \ \dexpr{[abcdghirv]} \ \dtype{sign-type}$                    \qquad\quad\ (simple dependent signs)
+\item $\dtype{dependency} \rightarrow \dcode{-} \ \dexpr{[abcdghirv]} \ \dcode{\{} \ \dtype{sign-type} \ \dcode{\}}$   \ \ (complex dependent signs)\!\!\!\!\!\!\!\!
+\item $\dtype{dependency} \rightarrow \dcode{-l} \ \dexpr{[AMCN]}$   \quad  (operation labels)
+\item $\dtype{dependency} \rightarrow \dcode{-x}$                    \quad  (indicates terminal sign)
+\end{itemize}
+
+\item\textit{Example:}
+{\magenta\begin{verbatim}
+(S (S (N (N-b{N-aD} The) (N-aD cat)) (V-aN slept)) (. .))
+\end{verbatim}
+}
+\end{itemize}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Recipe: {\blue\tt \%.gcg\#\#.linetrees}}
+
+Extracts word sequences from input trees.
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.gcg} \ \dtype{version-year} \ \dcode{.linetrees}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.linetrees}$
+      \end{itemize}
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{\blue\tt \%.morphed.linetrees}
+
+`Morphed' trees are trees with morphological markup.
+%
+This markup extends the dependency type of GCG trees as rewrite rules from inflected forms to lemmas:
+
+$\dtype{dependency} \rightarrow \dcode{-x} \ \underbrace{\dtype{clause-type} \ \dcode{\%:} \ \dtype{prefix} \ \Big( \ \dcode{\%} \ \dtype{affix} \ \Big)^n}_\text{inflected form}
+                             \ \dcode{$|$} \ \underbrace{\dtype{clause-type} \ \dcode{\%:} \ \dtype{prefix} \ \Big( \ \dcode{\%} \ \dtype{affix} \ \Big)^n}_\text{lemma}$
+
+$\dtype{dependency} \rightarrow \dcode{-x} \ \underbrace{\dtype{clause-type} \ \dcode{\%} \ \dtype{suffix}}_\text{inflected form}
+                             \ \dcode{$|$} \ \underbrace{\dtype{clause-type} \ \dcode{\%} \ \dtype{suffix}}_\text{lemma}$
+
+
+\textit{Example:}
+{\magenta\begin{verbatim}
+(S (S (N (N-b{N-aD} The) (N-aD-xN%s|N% cats)) (V-aN-xV%ept|B%eep slept)) (. .))
+\end{verbatim}
+}
+%\end{itemize}
+%\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Recipe: {\blue\tt \%.morphed.linetrees}}
+
+Annotate morphological operations.
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.morphed.linetrees}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.linetrees}$
+      \end{itemize}
+\end{itemize}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{{\blue\tt \%.refconts} (formerly {\red\tt \%.varconts})}
+
+`Refconts' files list contexts for each referent.
+
+$\dtype{row} \rightarrow \dtype{ref-id} \ \Big( \ \dcode{\ } \ \dtype{context} \ \Big)^*$
+
+$\dtype{context} \rightarrow \dtype{predicate} \ \dcode{\_} \ \Big( \ \dtype{argument-number} \ \Big( \ \dcode{-} \ \dtype{argument-number} \ \Big)^? \ \Big)^?$
+
+\noindent
+Contexts list the forward (positive) and backward (negative) dependencies traversed from each nearby predicate to each referent in a cued-association graph.
+%
+For example:
+%
+{\magenta\begin{verbatim}
+165-0201 BeingACar_1-1 Driving_
+\end{verbatim}
+}
+%
+indicates document 165, line 2, token 1 is a `Driving' predicate that has a first argument which is the first argument of a `BeingACar' predicate.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Recipe: {\blue\tt \%.refconts}}
+
+\begin{itemize}
+      \item \textbf{Stem template:}\\
+      $\dtype{corpus-specification} \ \dcode{.refconts}$
+      \item \textbf{Input(s):}
+      \begin{itemize}
+            \item $\dtype{corpus-specification} \ \dcode{.cg.linegraphs}$
+      \end{itemize}
+\end{itemize}
+
+
+
 
 
 
