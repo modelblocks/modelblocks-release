@@ -160,8 +160,8 @@ endef
 	cat $<  |  perl -p $(word 2,$^)  >  $@
 
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
-.PRECIOUS: %.varconts
-%.varconts:  %.cuegraphs  $(GCG-SCRIPTS)/cuegraphs2varconts.py
+.PRECIOUS: %.refconts
+%.refconts:  %.cuegraphs  $(GCG-SCRIPTS)/cuegraphs2refconts.py
 	cat $<  |  python3 $(word 2,$^) | sort -g >  $@
 
 #### obtain sentence-aligned space-delimited deep syntactic (tree-like) dependencies

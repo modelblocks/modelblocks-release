@@ -143,6 +143,22 @@ int main ( int nArgs, char* argv[] ) {
     for ( auto& prw : lB ) modB[prw.first()][prw.second()] = prw.third();
   }
 
+  // Add unk...
+  for( auto& entry : lexW ){
+    // for each word:{<category:prob>}
+    for( auto& unklistelem : lexW[unkWord(entry.first.getString().c_str())] ){
+      // for each possible unked(word) category:prob pair
+      bool BAIL = false;
+      for( auto& listelem : entry.second ) {
+        if (listelem.first == unklistelem.first) {
+          BAIL = true;
+          listelem.second = listelem.second + ( 0.000001 * unklistelem.second ); // merge actual likelihood and unk likelihood
+        }
+      }
+      if (not BAIL) entry.second.push_back( DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>(unklistelem.first,0.000001*unklistelem.second) );
+    }
+  }
+
   cerr<<"Models ready."<<endl;
 
   // For each line in stdin...
