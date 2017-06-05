@@ -39,6 +39,12 @@ const int MINCOUNTS = 100;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+inline string regex_escape(const string& string_to_escape) {
+    return regex_replace( string_to_escape, regex("[.^$|()\\[\\]{}*+?\\\\]"), string("\\\\$1") );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 int getArityGivenLabel ( const L& l ) {
   int depth = 0;
   int arity = 0;
@@ -100,7 +106,7 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
   // If preterm is morphrule-annotated, use baseform in pred...
   smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^-:|]*:|[^-%:|]*)([^-%:|]*?)%([^-%:|]*)[|](.)([^-:|]*:|[^-%:|]*)([^-%:|]*?)%([^-%:|]*)(.*)$")); s=m[9] ) {
     //cout<<"MATCH "<<string(m[1])<<" "<<string(m[2])<<" "<<string(m[3])<<" "<<string(m[4])<<" "<<string(m[5])<<" "<<string(m[6])<<" "<<string(m[7])<<" "<<string(m[8])<<" "<<string(m[9])<<endl;
-    sPred = regex_replace( sPred, regex("^"+string(m[3])+"(.*)"+string(m[4])+"$"), string(m[7])+"$1"+string(m[8]) );
+    sPred = regex_replace( sPred, regex("^"+regex_escape(m[3])+"(.*)"+regex_escape(m[4])+"$"), string(m[7])+"$1"+string(m[8]) );
     sBaseType[0] = string(m[5])[0];
   }
   sBaseType = regex_replace( sBaseType, regex("-x.*"), string("") );
