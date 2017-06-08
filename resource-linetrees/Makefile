@@ -131,6 +131,7 @@ endef
 define KernelBlock
 First:
   blocktitle: First
+  nodelimiter: True
   paramtype: Integer
   paramval:
   - after: true
@@ -151,6 +152,7 @@ endef
 define KernelBlock
 Onward:
   blocktitle: Onward
+  nodelimiter: True
   paramtype: Integer
   paramval:
   - after: true
@@ -171,6 +173,7 @@ endef
 define KernelBlock
 Last:
   blocktitle: Last
+  nodelimiter: True
   paramtype: Integer
   paramval:
   - after: true
@@ -191,6 +194,7 @@ endef
 define KernelBlock
 Maxwords:
   blocktitle: Maxwords
+  nodelimiter: True
   paramtype: Integer
   paramval:
   - after: true
