@@ -48,12 +48,23 @@
 define ParamVal
 NaturalStories:
   kernel: SPRCorpus
-  text: Natural Stories (self-paced reading corpus)
-  value: naturalstories
+  text: MIT Passages n72 (fMRI corpus)
+  value: passages72
+endef
+
+define ParamVal
+NaturalStories:
+  kernel: SPRCorpus
+  text: MIT Passages n96 (fMRI corpus)
+  value: passages96
 endef
 
 .SUFFIXES:
 .SECONDEXPANSION:
+
+VPATH += $(RESOURCE-PASSAGES)
+
+PASSAGES-ROI := LPostTemp LAntTemp LAngG LIFG LMFG LIFGorb
 
 ################################################################################
 #
@@ -92,11 +103,23 @@ endif
 
 ################################################################################
 #
-#  Reading time data formatting items
+#  Data formatting items
 #
 ################################################################################
 
-genmodel/%.xlsx: $$(DEP-PASSAGES) $(PASSAGESDIR)/$$*.xlsx | genmodel
+define PASSAGES-FORM = 
+scripts/$(1)%.lmeform: scripts/%.template.lmeform
+	mkdir -p scripts
+	cat $$< | sed 's/PASSAGESROI/$(1)/g;' > $$@
+endef
+
+define PASSAGES-FORMS 
+$(foreach ROI, $(PASSAGES-ROI), $(eval $(call PASSAGES-FORM,$(ROI))))
+endef
+
+$(eval $(PASSAGES-FORMS))
+
+genmodel/%.xlsx: $$(DEP-PASSAGES) $(PASSAGESDIR)/$$*.xlsx $(CONFIGDIR)/user-passages-directory.txt | genmodel
 	cp $(word 1, $^) $@
 
 %passages72.lineitems: genmodel/passages_eval.fromxlsx.csv | genmodel
@@ -111,4 +134,13 @@ genmodel/%.xlsx: $$(DEP-PASSAGES) $(PASSAGESDIR)/$$*.xlsx | genmodel
 
 %passages96.linetoks: $$(DEP-TOKENIZER) %passages96.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
 	cat $(word 1, $^) | $(word 2, $^) > $@
+
+passages%.src.evmeasures: $$(DEP-PASSAGES) $(PASSAGESDIR)/passages_data_n$$*.csv \
+$(RT-SCRIPTS)/rename_cols.py \
+$(PASSAGES-SCRIPTS)/get_sampleids.py \
+$(CONFIGDIR)/user-passages-directory.txt | genmodel
+	cat $(word 1, $^) | sed 's/,/ /g;s/_sent/ /g;s/passage//g;s/con_name/docid sentid/g' | \
+	python $(word 2, $^) subj_name subject con_name docid psc_LPostTemp boldLPostTemp psc_LAntTemp boldLAntTemp psc_LAngG boldLAngG psc_LIFG boldLIFG psc_LMFG boldLMFG psc_LIFGorb boldLIFGorb | \
+	awk 'NR == 1 {print;}; NR > 1 {$$3 = $$3 - 1; print;};' | \
+	python $(word 3, $^) > $@
 
