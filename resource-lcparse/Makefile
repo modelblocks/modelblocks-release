@@ -47,7 +47,7 @@ BIN     := bin
 ifndef RECURSED
 $(info Building source code dependencies using recursive sub-make to $(RESOURCE-LCPARSE)/Makefile...)
 ## create dependencies for files in python, src, include directories
-DUMMY := $(shell $(MAKE) RECURSED=1 $(subst .py,.d,$(wildcard $(RESOURCE-LCPARSE)/*.py)) $(subst .cpp,.d,$(wildcard $(RESOURCE-LCPARSE)/src/*.cpp)))
+DUMMY := $(shell $(MAKE) RECURSED=1 $(subst .py,.d,$(wildcard $(RESOURCE-LCPARSE)/scripts/*.py)) $(subst .cpp,.d,$(wildcard $(RESOURCE-LCPARSE)/src/*.cpp)))
 $(info Source code dependencies built and loaded.)
 endif
 

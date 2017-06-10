@@ -144,9 +144,9 @@ int main ( int nArgs, char* argv[] ) {
   }
 
   // Add unk...
-  for( auto& entry : lexW ){
+  for( auto& entry : lexW ) {
     // for each word:{<category:prob>}
-    for( auto& unklistelem : lexW[unkWord(entry.first.getString().c_str())] ){
+    for( auto& unklistelem : lexW[unkWord(entry.first.getString().c_str())] ) {
       // for each possible unked(word) category:prob pair
       bool BAIL = false;
       for( auto& listelem : entry.second ) {
