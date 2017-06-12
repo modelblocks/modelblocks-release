@@ -489,10 +489,10 @@ debug("p-rule ", "$_");
         # there propagation through BP
         (s/\^(Q|[VIBLGR])(-a\{A-aN\})([^ ]*?)($CODA) (<.*(?:TO |MD | [Dd]o[\]>]| [Dd]oes[\]>]| [Dd]id[\]>]).*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<VP.*>)\^/\^\1\2\3\4 <\1-aX-b\{B-aX\}-lI-fNIL \5> <B-a\{A-aN\}\3-lA-fNIL \6\7>\^/ && ($j=80.5)) ||
         # branch off final VP as argument LP (w. special cases b/c 's ambiguous between 'has' and 'is')
-        (s/\^(Q|[VIBLAG]-aN(?!-x))([^ ]*?)($CODA) (.*(?: [Hh]ave| having| [Hh]as| [Hh]ad| 've|VBD 'd)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<VP.*>)\^/\^\1\2\3 <\1-b{L-aN}-lI-fNIL \4> <L-aN\2-lA-fNIL \5\6>\^/ && ($j=81)) ||
+        (s/\^(Q|[VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (.*(?: [Hh]ave| [Hh]aving| [Hh]as| [Hh]ad| 've|VBD 'd)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<VP.*>)\^/\^\1\2\3 <\1-b{L-aN}-lI-fNIL \4> <L-aN\2-lA-fNIL \5\6>\^/ && ($j=81)) ||
         (s/\^(Q|[VIBLAG]-aN(?!-x))([^ ]*?)($CODA) (.*<VBZ *'s>.*?) (<RB.*)?(<VP[^\]]* (?:$LP_FIRST).*>)\^/\^\1\2\3 <\1-b{L-aN}-lI-fNIL \4> <L-aN\2-lA-fNIL \5\6>\^/ && ($j=82)) ||
         # there propagation through LP
-        (s/\^(Q|[VIBLGR])(-a\{A-aN\})([^ ]*?)($CODA) (.*(?: [Hh]ave| having| [Hh]as| [Hh]ad| 've|VBD 'd)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<VP.*>)\^/\^\1\2\3\4 <\1-aX-b\{L-aX\}-lI-fNIL \5> <L-a\{A-aN\}\3-lA-fNIL \6\7>\^/ && ($j=82.3)) ||
+        (s/\^(Q|[VIBLGR])(-a\{A-aN\})([^ ]*?)($CODA) (.*(?: [Hh]ave| [Hh]aving| [Hh]as| [Hh]ad| 've|VBD 'd)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<VP.*>)\^/\^\1\2\3\4 <\1-aX-b\{L-aX\}-lI-fNIL \5> <L-a\{A-aN\}\3-lA-fNIL \6\7>\^/ && ($j=82.3)) ||
         (s/\^(Q|[VIBLGR])(-a\{A-aN\})([^ ]*?)($CODA) (.*<VBZ *'s>.*?) (<RB.*)?(<VP[^\]]* (?:$LP_FIRST).*>)\^/\^\1\2\3\4 <\1-aX-b\{L-aX\}-lI-fNIL \5> <L-a\{A-aN\}\3-lA-fNIL \6\7>\^/ && ($j=82.6)) ||
         # branch off final PRT as argument P particle
         (s/\^(N(?!-a))([^ ]*?)($CODA) (<.*) <(PRT)([^ ]*) \[RP ([^ ]*)\]>\^/\^\1\2\3 <\1\2-kP\7-lI-fNIL \4> <P\7-lN-f\5\6 \7>\^/ && ($j=82.9)) ||
@@ -506,10 +506,10 @@ debug("p-rule ", "$_");
         # there propagation
         (s/\^([VIBLG]-a\{.-aN\})($CODA) (<.*) <(NP(?!-(ADV|TMP|EXT|LOC|DIR|MNR|PRP|VOC))|[^ ]+-PRD)([^>]*)>\^/\^\1\2 <\1-bN-lI-fNIL \3> <N-lA-f\4\6>\^/ && ($j=84.5)) ||
         # branch off final VP|ADJP as argument AP
-        (s/\^(Q|[VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (.*(?: be| being| been| [Ii]s| [Ww]as|VBZ 's| [Aa]re| [Ww]ere| 're)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<(?:VP|VB[DNG]|ADJP|JJ|CD|PP[^ ]*-PRD|IN|UCP|ADVP[^ ]*-PRD|SBAR[^ ]*-PRD (?!\[WH|\[IN that)).*>)\^/\^\1\2\3 <\1-b{A-aN}-lI-fNIL \4> <A-aN\2-lA-fNIL \5\6>\^/ && ($j=85)) ||
-        (s/\^(Q|[VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (.*(?: be| being| been| [Ii]s| [Ww]as|VBZ 's| [Aa]re| [Ww]ere| 're)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<(?![^ ]*-SBJ)$NOMINALS[^>]*>)\^/\^\1\2\3 <\1-b{A-aN}-lI-fNIL \4> <A-aN\2-lA-fNIL \5\6>\^/ && ($j=86)) ||
-        (s/\^(N)([^ ]*?)($CODA) (.*(?: be| being| been| is| was|VBZ 's| are| were| 're)>.*?) (<RB.*)?(<(?:VP|VB[DNG]|ADJP|JJ|CD|PP[^ ]*-PRD|IN|UCP|ADVP[^ ]*-PRD|SBAR[^ ]*-PRD (?!\[WH|\[IN that)).*>)\^/\^\1\2\3 <\1\2-b{A-aN}-lI-fNIL \4> <A-aN-lA-fNIL \5\6>\^/ && ($j=85.5)) ||
-        (s/\^(N)([^ ]*?)($CODA) (.*(?: be| being| been| is| was|VBZ 's| are| were| 're)>.*?) (<RB.*)?(<(?:NP|NN|S[^ ]*-NOM|SBAR[^ ]*-NOM|SBAR[^ ]*-PRD).*>)\^/\^\1\2\3 <\1\2-b{A-aN}-lI-fNIL \4> <A-aN-lA-fNIL <N-lI-fNIL \5\6>>\^/ && ($j=86.5)) ||
+        (s/\^(Q|[VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (.*(?: [Bb]e| [Bb]eing| [Bb]een| [Ii]s| [Ww]as|VBZ 's| [Aa]re| [Ww]ere| 're)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<(?:VP|VB[DNG]|ADJP|JJ|CD|PP[^ ]*-PRD|IN|UCP|ADVP[^ ]*-PRD|SBAR[^ ]*-PRD (?!\[WH|\[IN that)).*>)\^/\^\1\2\3 <\1-b{A-aN}-lI-fNIL \4> <A-aN\2-lA-fNIL \5\6>\^/ && ($j=85)) ||
+        (s/\^(Q|[VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (.*(?: [Bb]e| [Bb]eing| [Bb]een| [Ii]s| [Ww]as|VBZ 's| [Aa]re| [Ww]ere| 're)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<(?![^ ]*-SBJ)$NOMINALS[^>]*>)\^/\^\1\2\3 <\1-b{A-aN}-lI-fNIL \4> <A-aN\2-lA-fNIL \5\6>\^/ && ($j=86)) ||
+        (s/\^(N)([^ ]*?)($CODA) (.*(?: [Bb]e| [Bb]eing| [Bb]een| [Ii]s| [Ww]as|VBZ 's| [Aa]re| [Ww]ere| 're)>.*?) (<RB.*)?(<(?:VP|VB[DNG]|ADJP|JJ|CD|PP[^ ]*-PRD|IN|UCP|ADVP[^ ]*-PRD|SBAR[^ ]*-PRD (?!\[WH|\[IN that)).*>)\^/\^\1\2\3 <\1\2-b{A-aN}-lI-fNIL \4> <A-aN-lA-fNIL \5\6>\^/ && ($j=85.5)) ||
+        (s/\^(N)([^ ]*?)($CODA) (.*(?: [Bb]e| [Bb]eing| [Bb]een| [Ii]s| [Ww]as|VBZ 's| [Aa]re| [Ww]ere| 're)>.*?) (<RB.*)?(<(?:NP|NN|S[^ ]*-NOM|SBAR[^ ]*-NOM|SBAR[^ ]*-PRD).*>)\^/\^\1\2\3 <\1\2-b{A-aN}-lI-fNIL \4> <A-aN-lA-fNIL <N-lI-fNIL \5\6>>\^/ && ($j=86.5)) ||
         (s/\^(Q|[VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (<.*) <(ADJP|PRT|ADVP[^ ]*-PRD|PP[^ ]*-PRD|VP$NO_VP_HEAD \[VB[NG])([^>]*)>\^/\^\1\2\3 <\1-b{A-aN}-lI-fNIL \4> <A-aN\2-lA-f\5\6>\^/ && ($j=87)) ||
         (s/\^([AR]-aN(?!-x))([^ ]*?)($CODA) (<IN[^>]*>) <(JJ)([^>]*)>\^/\^\1\2\3 <\1\2-b{A-aN}-lI-fNIL \4> <A-aN-lA-f\5\6>\^/ && ($j=88)) ||
         # branch off final argument embedded question SS w. quotations
@@ -518,6 +518,7 @@ debug("p-rule ", "$_");
         #### final NS
         # initiate passive - must have A/R-aN starting with VBN and first -NONE- in last <...> 
         ##(s/\^([AR]-aN[^-]*(?!-x))([^ ]*?)($CODA) (<VBN (?:[^<](?!-NONE-))* <[^>]* \[-NONE- \*(?:-[0-9]*)?[\*\]][^<]*)\^/\^\1\2\3 <L-aN\2-vN\3 \4>\^/ && ($j=90)) ||
+        (s/\^([AR]-aN[^-]*(?!-x))([^ ]*?)($CODA) (<VBN [^>]*> <PP[^>]*> <S(?![^ ]*-PRP)[^ ]* \[NP[^ ]* \[-NONE- \*(?:-[0-9]*)?[\*\]][^<]*)\^/\^\1\2\3 <L-aN\2-vN\3 \4>\^/ && ($j=89.5)) ||
         (s/\^([AR]-aN[^-]*(?!-x))([^ ]*?)($CODA) (<VBN [^>]*>( <[^\]]*>)* <[^>]* \[-NONE- \*(?:-[0-9]*)?[\*\]][^<]*)\^/\^\1\2\3 <L-aN\2-vN\3 \4>\^/ && ($j=90)) ||
         (s/\^([AR]-aN-x)(?=[^ ]*-fVBN)([^ ]*?)($CODA) ([^>]*)\^/\^\1\2\3 <L-aN-bN-x\2-lI \4>\^/ && ($j=90.1)) ||
         #(s/\^([AR]-aN-x)(?=[^ ]*-fVBN)([^ ]*?)($CODA) ([^>]*)\^/\^\1\2\3 <L-aN-bN\2-lI \4>\^/ && ($j=90.1)) ||
@@ -874,6 +875,7 @@ debug("p-rule ", "$_");
 
   # correct VBNs
   s/\(L-aN([^ ]*)-fVB[A-Z]*/\(L-aN\1-fVBN/g;
+  s/\(([AR]-aN$CODA-fVBN) ([^ \(\)]*)\)/\(\1 \(L-aN-bN-fVBN \2\)\)/g;   ## mark passive
 #  s/\((A-aN|A-aN-x|R-aN|R-aN-x)([^ ]*)-fVB[ND]/\(\1\2-v-fVBN-v/g;     ## mark passive
   s/\((A-aN|A-aN-x|R-aN|R-aN-x|N-aD|N)([^ ]*)-fVB[G]/\(G-aN\2-fVBG-o/g;   ## mark progressive/gerund
 

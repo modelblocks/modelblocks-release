@@ -30,24 +30,9 @@ for line in sys.stdin:
 numK = len(countsK)
 sys.stderr.write( 'numK = ' + str(numK) + '\n' )
 
-'''
-## remove rare words...
-for r in RC:
-  for k in RC[r]:
-    if countsK[k]<100000:
-      RC[r].remove(k)
-'''
-
 for k in RC.values()[0:10]:
   sys.stderr.write( str(k) + '\n' )
 
-'''
-RC = { str(k)+'s' : v for k,v in enumerate( [['N-aD:a_1','b']]*600 + [['N-aD:c_1','d']]*400 ) }
-for k in RC:
-  for v in RC[k]:
-    countsK[v]+=1
-#sys.stderr.write( str(RC) )
-'''
 totcountsYforR = { r : ([0.0] * numY) for r in RC }
 totcountsKgivY = [ { k : 0.0 for k in countsK } for y in range(0,numY) ]
 
@@ -92,15 +77,6 @@ for i in range(0,NUMITERS):
 
   sys.stderr.write( 'iteration=' + str(i) + ' : logprob=' + str(lgpr) + ' ' + str(countsY) + '\n' )
   sys.stderr.flush()
-
-  '''
-  ## bail after 10 iters without improvement...
-  if lgpr > lgprBest or i<=1:
-    lgprBest,iterBest = lgpr,i
-#    totcountsYforR = { r : ([0.0] * numY) for r in RC }
-#    totcountsKgivY = [ { k : 0.0 for k in countsK } for y in range(0,numY) ]
-  if i > iterBest+10: break
-  '''
 
   ## use first half of iters for burn-in...
   if i < NUMITERS/2:

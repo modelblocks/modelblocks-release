@@ -63,6 +63,11 @@ include $(wildcard $(RESOURCE-INCRSEM)/*/*.d)
 %cptmodel:  %cptdecpars  $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep -a ' : '  |  python3 $(word 2,$^)  >  $@
 
+.PRECIOUS: %counts
+%counts:  %decpars  $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep -a ' : '  |  python3 $(word 2,$^) -n  >  $@
+
+
 ################################################################################
 #
 #  ii. Code compilation items
