@@ -46,15 +46,15 @@
 ################################################################################
 
 define ParamVal
-NaturalStories:
-  kernel: SPRCorpus
+Passages72:
+  kernel: fMRICorpus
   text: MIT Passages n72 (fMRI corpus)
   value: passages72
 endef
 
 define ParamVal
-NaturalStories:
-  kernel: SPRCorpus
+Passages96:
+  kernel: fMRICorpus
   text: MIT Passages n96 (fMRI corpus)
   value: passages96
 endef

@@ -332,6 +332,8 @@ RTLRTSignif:
   family: Likelihood Ratio Test (LRT)
   blockseq:
   - blocktype: RTDataParams
+    kwargs:
+      innerdelim: '.'
   - blocktype: String
     value: '.'
   - blocktype: BaselineFormula
@@ -350,6 +352,8 @@ fMRILRTSignif:
   family: Likelihood Ratio Test (LRT)
   blockseq:
   - blocktype: fMRIDataParams
+    kwargs:
+      innerdelim: '.'
   - blocktype: String
     value: '.'
   - blocktype: BaselineFormula
@@ -405,6 +409,8 @@ RTLRTDaimSignif:
   family: Likelihood Ratio Test (LRT)
   blockseq:
   - blocktype: RTDataParams
+    kwargs:
+      innerdelim: '.'
   - blocktype: String
     value: '.'
   - blocktype: BaselineFormula
@@ -425,6 +431,8 @@ fMRILRTDaimSignif:
   family: Likelihood Ratio Test (LRT)
   blockseq:
   - blocktype: fMRIDataParams
+    kwargs:
+      innerdelim: '.'
   - blocktype: String
     value: '.'
   - blocktype: BaselineFormula
