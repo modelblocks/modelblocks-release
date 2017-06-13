@@ -63,6 +63,7 @@ RESOURCE-NAME := The British National Corpus (BNC)
 define RESOURCE-DESCR =
 
 NAME: The British National Corpus (BNC)
+MB POINTER FILE: config/user-bnc-directory.txt
 AVAILABILITY: FREE
 URL: http://www.natcorp.ox.ac.uk/
 DESCRIPTION: The British National Corpus (BNC) is a 100 million word collection

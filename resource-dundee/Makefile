@@ -99,6 +99,7 @@ RESOURCE-NAME := The Dundee eye-tracking corpus
 define RESOURCE-DESCR =
 
 NAME: The Dundee eye-tracking corpus
+MB POINTER FILE: config/user-dundee-directory.txt
 AVAILABILITY: Unreleased
 DESCRIPTION: A corpus of eye-tracking measures from 10 subjects who read
 newspaper articles (Kennedy et al, 2003).

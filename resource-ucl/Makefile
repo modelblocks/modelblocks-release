@@ -84,6 +84,7 @@ RESOURCE-NAME := The UCL Corpus (Frank et al, 2013)
 define RESOURCE-DESCR =
 
 NAME: The UCL corpus (Frank et al, 2013)
+MB POINTER FILE: config/user-ucl-directory.txt
 AVAILABILITY: Free
 URL: http://www.stefanfrank.info/readingdata/Data.zip
 DESCRIPTION: Eye-tracking and self-paced-reading data
@@ -105,6 +106,7 @@ RESOURCE-NAME := Echo-state netork (ESN) directory
 define RESOURCE-DESCR =
 
 NAME: Echo-state netork (ESN) directory
+MB POINTER FILE: config/user-esn-directory.txt
 DESCRIPTION: A directory in which to store output of ESN
 endef
 ESN-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
@@ -122,6 +124,7 @@ RESOURCE-NAME := GENIA Tagger
 define RESOURCE-DESCR =
 
 NAME: GENIA Tagger
+MB POINTER FILE: config/user-geniatagger-directory.txt
 AVAILABILITY: Free
 URL: http://www.nactem.ac.uk/GENIA/tagger/
 DESCRIPTION: Part-of-speech tagging, shallow parsing, and named entity recognition for biomedical text.
