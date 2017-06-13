@@ -85,9 +85,9 @@ python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).full.evm
 sed '1s/.*/cum$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
 mv $@{.tmp,};
 
-SPILLOVER := S1 S2 S3
+SPILLOVER := S1 S2
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
-FJ := noF yesJ embddepthAny embddepthMin endembdMin startembdMin noFlen noFdr noFdrv embdlen embddr embddrv
+FJ := noF yesJ embddepthAny embddepthMin endembdMin startembdMin noFlen embdlen 
 COREF := corefbin coreflenw coreflenr corefsize
 GCG-CATS := A B C D F G
 EMBDDEPTHS := 1 2 3 4 5

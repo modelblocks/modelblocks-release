@@ -135,6 +135,9 @@ genmodel/%.xlsx: $$(DEP-PASSAGES) $(PASSAGESDIR)/$$*.xlsx $(CONFIGDIR)/user-pass
 %passages96.linetoks: $$(DEP-TOKENIZER) %passages96.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
 	cat $(word 1, $^) | $(word 2, $^) > $@
 
+passages%.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-PASSAGES)/srcmodel/passages$$*.stripped.linetrees passages%.linetoks
+	python $^ > $@
+
 passages%.src.evmeasures: $$(DEP-PASSAGES) $(PASSAGESDIR)/passages_data_n$$*.csv \
 $(RT-SCRIPTS)/rename_cols.py \
 $(PASSAGES-SCRIPTS)/get_sampleids.py \
