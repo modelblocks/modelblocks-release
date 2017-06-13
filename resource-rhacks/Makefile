@@ -81,6 +81,6 @@ endif
 $(RESOURCE-RHACKS)/scripts:
 	mkdir $(RESOURCE-RHACKS)/scripts
 
-$(RHACKS-SCRIPTS)/%.R: $$(DEP-RHACKS) $(RHACKSDIR)/%.R
+$(RHACKS-SCRIPTS)/%.R: $$(DEP-RHACKS) $(RHACKSDIR)/%.R | $(RHACKS-SCRIPTS)
 	cp $(word 1, $^) $@
 
