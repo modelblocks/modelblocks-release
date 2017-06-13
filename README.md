@@ -57,9 +57,6 @@ required by other software.  All resources included in this package
 are distributed under the Gnu General Public License (see LICENSE file
 in this directory).
 
-Included resources are described in `RESOURCES.md`
-and denoted by a lack of [+] next to their name.
-
 External Resources and `USER-*.TXT` Files
 -----------------------------------------
 When licenses of resources used in Modelblocks projects do not permit
