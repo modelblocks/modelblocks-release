@@ -14,7 +14,7 @@ for path in sys.argv[1:]:
                 line = f.readline()
                 while line and not line.strip().startswith('endef'):
                     if line.strip() != '':
-                        descr += line
+                        descr += line.strip() + '  \n'
                         if line.startswith('NAME: '):
                             name = line.strip()[6:]
                     line = f.readline()
