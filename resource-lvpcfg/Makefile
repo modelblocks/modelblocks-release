@@ -89,13 +89,13 @@ endif
 bin/parser-fullberk: $$(DEP-BERKPARSE-NOWILDCARD) $(CONFIGDIR)/user-javaflags.txt $(CONFIGDIR)/user-berkeleyparserjar-directory.txt \
 $(BERKPARSEDIR)/berkeleyParser.jar  |  bin  #$$(abspath $$(dir $$@))
 	echo "#!/bin/sh" > $@
-	echo "java $(shell cat $(word 2,$^)) -cp $(word 4,$^) edu.berkeley.nlp.PCFGLA.BerkeleyParser -substates -gr \$$1" >> $@
+	echo "java $(shell cat $(word 1,$^)) -cp $(word 3,$^) edu.berkeley.nlp.PCFGLA.BerkeleyParser -substates -gr \$$1" >> $@
 	chmod u+x $@
 
 bin/parser-vitberk: $$(DEP-BERKPARSE-NOWILDCARD) $(CONFIGDIR)/user-javaflags.txt $(CONFIGDIR)/user-berkeleyparserjar-directory.txt \
 $(BERKPARSEDIR)/berkeleyParser.jar  |  bin  #$$(abspath $$(dir $$@))
 	echo "#!/bin/sh" > $@
-	echo "java $(shell cat $(word 2,$^)) -cp $(word 4,$^) edu.berkeley.nlp.PCFGLA.BerkeleyParser -viterbi -substates -gr \$$1" >> $@
+	echo "java $(shell cat $(word 1,$^)) -cp $(word 3,$^) edu.berkeley.nlp.PCFGLA.BerkeleyParser -viterbi -substates -gr \$$1" >> $@
 	chmod u+x $@
 
 ################################################################################
