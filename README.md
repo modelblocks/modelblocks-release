@@ -33,7 +33,7 @@ ModelBlocks recipes can be created from a single workspace. To initialize
 your workspace, simply type `make` at the repository root, then
 navigate to the `workspace` directory. To reproduce a published experiment,
 navigate to the relevant experiment directory (named by author/year)
-and type make. NOTE: We do not guarantee indefinite future support of all
+and type `make`. NOTE: We do not guarantee indefinite future support of all
 published results recipes. In some cases it may be necessary to revert
 the repository to some previous state in order to reproduce a result. If
 you are encountering errors as you try to reproduce a result, please contact
@@ -65,18 +65,17 @@ External Resources and `USER-*.TXT` Files
 When licenses of resources used in Modelblocks projects do not permit
 redistribution, or when (usually data) resources are too large to be
 included, the Makefile will generate an appropriately-named
-`user-*.txt` configuration file in `modelblocks-repository/config/`,
+`user-*.txt` configuration file in `modelblocks-release/config/`,
 in which a user may specify a path to an external copy of the resource.
-When make is first invoked, Modelblocks will create an incorrect
+When Make is first invoked, ModelBlocks will create an incorrect
 pointer for each configuration file in the dependency chain, along with
 console output indicating which configuration files are needed to create 
-the recipe. Before re-running make, the needed third-party resources 
+the recipe. Before re-running Make, the needed third-party resources 
 will need to be downloaded and the pointers updated in 
-modelblocks-repository/config. This use of `user-*.txt` files is 
+`modelblocks-release/config`. This use of `user-*.txt` files is 
 intended to allow users to specify external resources or other user-
 specific data without having to modify the Makefile, which may be 
-overwritten in subsequent updates to Modelblocks. 
+overwritten in subsequent updates to ModelBlocks. 
 
-External resources are described in `RESOURCES.md`
-and denoted by a [+] next to their name. `RESOURCES.md` also specifies which
-`user-*.txt` files are associated with each external resource.
+External resources are described in `RESOURCES.md`. `RESOURCES.md` also
+specifies which `user-*.txt` files are associated with each external resource.

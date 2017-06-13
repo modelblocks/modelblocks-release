@@ -92,6 +92,7 @@ RESOURCE-NAME := The MIT Sentence Passages corpus
 define RESOURCE-DESCR =
 
 NAME: The MIT Sentence Passages corpus
+MB POINTER FILE: config/user-passages-directory.txt
 AVAILABILITY: Unreleased
 DESCRIPTION: A corpus of fMRI bold responses by subjects to audio presentation
 of short passages (3-4 sentences each) in isolation.

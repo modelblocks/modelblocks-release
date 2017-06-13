@@ -62,6 +62,7 @@ RESOURCE-NAME := The Dependency Model with Valence (DMV)
 define RESOURCE-DESCR =
 
 NAME: The Dependency Model with Valence (DMV)
+MB POINTER FILE: config/user-dmv-directory.txt
 AVAILABILITY: Free
 URL: https://code.google.com/archive/p/pr-toolkit/
 DESCRIPTION: An implementation (Gillenwater et al 2010) of the Dependency

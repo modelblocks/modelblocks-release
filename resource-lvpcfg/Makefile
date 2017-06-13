@@ -53,6 +53,7 @@ RESOURCE-NAME := The Berkeley Parser (jarfile)
 define RESOURCE-DESCR =
 
 NAME: The Berkeley Parser (jarfile)
+MB POINTER FILE: config/user-berkeleyparserjar-directory.txt
 AVAILABILITY: Free
 URL: http://nlp.cs.berkeley.edu/software.shtml
 DESCRIPTION: The directory containing the jarfile for the berkeley parser.

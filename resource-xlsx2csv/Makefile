@@ -58,6 +58,7 @@ RESOURCE-NAME := xlsx2csv
 define RESOURCE-DESCR =
 
 NAME: xlsx2cxv
+MB POINTER FILE: config/user-xlsx2csv-directory.txt
 AVAILABILITY: Free
 URL: https://github.com/dilshod/xlsx2csv
 DESCRIPTION: XLS to CSV converter

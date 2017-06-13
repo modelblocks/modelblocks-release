@@ -80,6 +80,7 @@ RESOURCE-NAME := The Natural Stories Corpus
 define RESOURCE-DESCR =
 
 NAME: The Natural Stories Corpus
+MB POINTER FILE: config/user-naturalstories-directory.txt
 AVAILABILITY: Unreleased
 DESCRIPTION: A corpus of naturalistic stories meant to contain varied,
 low-frequency syntactic constructions. There are a variety of annotations

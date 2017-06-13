@@ -89,6 +89,7 @@ RESOURCE-NAME := Alice in Wonderland Corpus (Brennan et al 16)
 define RESOURCE-DESCR =
 
 NAME: The Alice in Wonderland corpus
+MB POINTER FILE: config/user-alice-directory.txt
 AVAILABILITY: Unreleased
 DESCRIPTION: fMRI data from 28 subjects listening to the first chapter of Alice in Wonderland.
 Collected by Brennan et al (2016).
