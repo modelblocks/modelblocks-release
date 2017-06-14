@@ -59,6 +59,7 @@ RESOURCE-NAME := The CHILDES Corpus
 define RESOURCE-DESCR =
 
 NAME: The CHILDES Corpus
+MB POINTER FILE: config/user-childes-directory.txt
 AVAILABILITY: Free
 URL: http://childes.talkbank.org/ 
 DESCRIPTION: CHILDES is the child language component of the TalkBank system. 

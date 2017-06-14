@@ -263,27 +263,33 @@ BMEFitRT:
       outerdelim: _
 endef
 .PRECIOUS: %.lmefit %.lme
-%.lme.rdata %.lmefit %.lme:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
+%.lme.rdata %.lmefit %.lme: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
 genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
 $$(subst .,,$$(suffix $$*))).filt.evmeasures \
 scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
-$(LMEFIT-SCRIPTS)/lmetools.r
+$(LMEFIT-SCRIPTS)/lmetools.r \
+$(RHACKS-SCRIPTS)/mer-utils.R \
+$(RHACKS-SCRIPTS)/regression-utils.R
 	$< $(word 2, $^) $*.lme.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) > $*.lme
 
 .PRECIOUS: %.bmefit %.bme
-%.bme.rdata %.bmefit %.bme:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
+%.bme.rdata %.bmefit %.bme: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
 genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
 $$(subst .,,$$(suffix $$*))).filt.evmeasures \
 scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
-$(LMEFIT-SCRIPTS)/lmetools.r
+$(LMEFIT-SCRIPTS)/lmetools.r \
+$(RHACKS-SCRIPTS)/mer-utils.R \
+$(RHACKS-SCRIPTS)/regression-utils.R
 	$< $(word 2, $^) $*.bme.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) -m bme > $*.bme
 
 .PRECIOUS: %.lmfit %.lm
-%.lm.rdata %.lmfit %.lm:  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
+%.lm.rdata %.lmfit %.lm: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
 genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
 $$(subst .,,$$(suffix $$*))).filt.evmeasures \
 scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
-$(LMEFIT-SCRIPTS)/lmetools.r
+$(LMEFIT-SCRIPTS)/lmetools.r \
+$(RHACKS-SCRIPTS)/mer-utils.R \
+$(RHACKS-SCRIPTS)/regression-utils.R
 	$< $(word 2, $^) $*.lm.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) -m lm > $*.lm
 
 # Runs an LRT evaluation based on the following template:
@@ -368,11 +374,13 @@ fMRILRTSignif:
   - blocktype: LRTArgs
 endef
 .PRECIOUS: %.lrtsignif %.lrt
-%.lrtsignif %.lrt:  $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
+%.lrtsignif %.lrt: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
 $$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
 $$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
 $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
-$(LMEFIT-SCRIPTS)/lmetools.r
+$(LMEFIT-SCRIPTS)/lmetools.r \
+$(RHACKS-SCRIPTS)/mer-utils.R \
+$(RHACKS-SCRIPTS)/regression-utils.R
 	$(wordlist 1,3,$^) $(subst _, ,$(subst .,,$(suffix $*))) > $@
 
 # Runs a diamond LRT evaluation based on the following template:
@@ -449,7 +457,7 @@ fMRILRTDaimSignif:
   - blocktype: LRTArgs
 endef
 .PRECIOUS: %.diamond.lrtsignif %.dlrt
-%.diamond.lrtsignif %.dlrt: $(LMEFIT-SCRIPTS)/lmefit2diamlrtsignif.r \
+%.diamond.lrtsignif %.dlrt: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/lmefit2diamlrtsignif.r \
 $$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
 $$(basename $$(basename $$(basename $$*))).-A_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-a_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
 $$(basename $$(basename $$(basename $$*))).-a_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \

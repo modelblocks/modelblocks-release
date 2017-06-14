@@ -65,6 +65,11 @@ endef
 VPATH += $(RESOURCE-PASSAGES)
 
 PASSAGES-ROI := LPostTemp LAntTemp LAngG LIFG LMFG LIFGorb
+PASSAGES-PREDS := nwrds fjprob noFprob totsurp lexsurp synsurp fwprob5surp wlen
+PASSAGES72-BASENAME := genmodel/passages72.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.pcfg.5-kenlm.bysent
+PASSAGES72-LMEDEFAULT := 
+PASSAGES96-BASENAME := genmodel/passages96.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.pcfg.5-kenlm.bysent
+PASSAGES96-LMEDEFAULT := 
 
 ################################################################################
 #
@@ -87,6 +92,7 @@ RESOURCE-NAME := The MIT Sentence Passages corpus
 define RESOURCE-DESCR =
 
 NAME: The MIT Sentence Passages corpus
+MB POINTER FILE: config/user-passages-directory.txt
 AVAILABILITY: Unreleased
 DESCRIPTION: A corpus of fMRI bold responses by subjects to audio presentation
 of short passages (3-4 sentences each) in isolation.
@@ -135,6 +141,9 @@ genmodel/%.xlsx: $$(DEP-PASSAGES) $(PASSAGESDIR)/$$*.xlsx $(CONFIGDIR)/user-pass
 %passages96.linetoks: $$(DEP-TOKENIZER) %passages96.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
 	cat $(word 1, $^) | $(word 2, $^) > $@
 
+passages%.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-PASSAGES)/srcmodel/passages$$*.stripped.linetrees passages%.linetoks
+	python $^ > $@
+
 passages%.src.evmeasures: $$(DEP-PASSAGES) $(PASSAGESDIR)/passages_data_n$$*.csv \
 $(RT-SCRIPTS)/rename_cols.py \
 $(PASSAGES-SCRIPTS)/get_sampleids.py \
@@ -143,4 +152,6 @@ $(CONFIGDIR)/user-passages-directory.txt | genmodel
 	python $(word 2, $^) subj_name subject con_name docid psc_LPostTemp boldLPostTemp psc_LAntTemp boldLAntTemp psc_LAngG boldLAngG psc_LIFG boldLIFG psc_LMFG boldLMFG psc_LIFGorb boldLIFGorb | \
 	awk 'NR == 1 {print;}; NR > 1 {$$3 = $$3 - 1; print;};' | \
 	python $(word 3, $^) > $@
+
+passages%-batch: $(foreach roi, $(PASSAGES-ROI), $(foreach pred, $(PASSAGES-PREDS), $$(PASSAGES$$*-BASENAME).$(roi)passagesBasic.$(pred).$$(PASSAGES$$*-LMEDEFAULT)..lrt));
 

@@ -390,7 +390,11 @@ processEffects <- function(effectList, data, logtrans) {
 }
 
 update.formStr <- function(x, new) {
-    return(gsub('~','',paste(update.formula(as.formula(paste('~',x)), paste('~.',new,sep='')),collapse='')))
+    if (x != '') {   
+        return(gsub('~','',paste(update.formula(as.formula(paste('~',x)), paste('~.',new,sep='')),collapse='')))
+    } else {
+        return(new)
+    }
 }
 
 addEffect <- function(formList, newEffect, groupingfactor=NULL, indicator=NULL, crossfactor=NULL) {

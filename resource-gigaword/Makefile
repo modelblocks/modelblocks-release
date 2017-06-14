@@ -60,6 +60,7 @@ RESOURCE-NAME := English Gigaword
 define RESOURCE-DESCR =
 
 NAME: English Gigaword
+MB POINTER FILE: config/user-gigaword4-directory.txt
 AVAILABILITY: Paid
 URL: https://catalog.ldc.upenn.edu/ldc2003t05
 DESCRIPTION: A comprehensive archive of newswire text data in English that

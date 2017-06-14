@@ -67,6 +67,7 @@ RESOURCE-NAME := SRILM Language Model Toolkit
 define RESOURCE-DESCR =
 
 NAME: SRILM Language Model Toolkit
+MB POINTER FILE: config/user-srilm-directory.txt
 AVAILABILITY: Free for non-commercial use
 URL: http://www.speech.sri.com/projects/srilm/download.html
 DESCRIPTION: SRILM is a toolkit for building and applying statistical language models (LMs),
