@@ -42,10 +42,10 @@ GENMODEL := genmodel
 INCLUDE := $(abspath $(RESOURCE-INCRSEM)/include)
 SRC := $(abspath $(RESOURCE-INCRSEM)/src)
 
-ifndef RECURSED
+ifndef MAKED
 $(info Building source code dependencies using recursive sub-make to $(RESOURCE-INCRSEM)/Makefile...)
 ## create dependencies for files in python, src, include directories
-DUMMY := $(shell $(MAKE) RECURSED=1 $(subst .py,.d,$(wildcard $(INCRSEM-SCRIPTS)/*.py)) $(subst .cpp,.d,$(wildcard $(SRC)/*.cpp)))
+DUMMY := $(shell $(MAKE) MAKED=1 MAKECONFIG=1 $(subst .py,.d,$(wildcard $(INCRSEM-SCRIPTS)/*.py)) $(subst .cpp,.d,$(wildcard $(SRC)/*.cpp)))
 $(info Source code dependencies built and loaded.)
 endif
 
@@ -74,7 +74,7 @@ include $(wildcard $(RESOURCE-INCRSEM)/*/*.d)
 #
 ################################################################################
 
-ifdef RECURSED
+ifdef MAKED
 #### python dependencies
 .PRECIOUS:  $(INCRSEM-SCRIPTS)/%.d
 $(INCRSEM-SCRIPTS)/%.d:  $(INCRSEM-SCRIPTS)/%.py
