@@ -148,18 +148,18 @@ genmodel/dundee.%.eyedata genmodel/dundee.%.eventdata \
 $(DUNDEE-SCRIPTS)/filterLexicon.py genmodel/wsj02to21.wordcounts | genmodel
 	python3 $< $(word 2,$^) $(word 3,$^) $(word 4,$^) | python3 $(word 5,$^) $(word 6,$^) > $@
 
-genmodel/dundee.%_gp.src.evmeasures: $(DUNDEE-SCRIPTS)/calcGPtimetoks.py genmodel/dundee.%.tokfixns \
+genmodel/dundee.%_gp.evmeasures: $(DUNDEE-SCRIPTS)/calcGPtimetoks.py genmodel/dundee.%.tokfixns \
 genmodel/dundee.textdata $(RT-SCRIPTS)/sents2sentids.py genmodel/dundee.lineitems | genmodel
 	paste -d' ' <(python3 $< $(word 2, $^) $(word 3, $^)) <(cat $(word 5, $^) | python $(word 4, $^) | cut -d' ' -f 2-) > $@
 
-genmodel/dundee.%_fp.src.evmeasures: $(DUNDEE-SCRIPTS)/calcFPtimetoks.py genmodel/dundee.%.tokfixns \
+genmodel/dundee.%_fp.evmeasures: $(DUNDEE-SCRIPTS)/calcFPtimetoks.py genmodel/dundee.%.tokfixns \
 genmodel/dundee.textdata $(RT-SCRIPTS)/sents2sentids.py genmodel/dundee.lineitems | genmodel
 	paste -d' ' <(python3 $< $(word 2, $^) $(word 3, $^)) <(cat $(word 5, $^) | python $(word 4, $^) | cut -d' ' -f 2-) > $@
 
 genmodel/dundee.%.evmeasures: $(RT-SCRIPTS)/concat_tables.py $(foreach subj, $(DUNDEESUBJS), genmodel/dundee.$(subj)_%.src.evmeasures) | genmodel
 	python $^ > $@
 
-genmodel/dundee.src.evmeasures: genmodel/dundee.fp.evmeasures genmodel/dundee.gp.evmeasures $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/filter_cols.awk
+genmodel/dundee.evmeasures: genmodel/dundee.fp.evmeasures genmodel/dundee.gp.evmeasures $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/filter_cols.awk
 	cat $< | python $(word 3, $^) fdur fdurFP | paste -d' ' - <(awk -f $(word 4, $^) -v cols=fdur:fileid $(word 2, $^) | \
 	python $(word 3, $^) fdur fdurGP fileid docid) > $@
 
@@ -221,10 +221,10 @@ genmodel/dundee.rm_unfix_items.params: | genmodel
 #
 ################################################################################
 
-%dundee.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees %dundee.linetoks
+%dundee.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees %dundee.linetoks
 	python $^ > $@
 
-%dundee.gold.edit.editabletrees: $$(dir %)dundee.gold.linetrees bin/indent
+%dundee.edit.editabletrees: $$(dir %)dundee.gold.linetrees bin/indent
 	cat $(word 1, $^) | bin/indent > $@
 
 %.goldrules: %.linetrees $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(GENERAL-SCRIPTS)/trees2rules.pl

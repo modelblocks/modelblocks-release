@@ -29,7 +29,7 @@
 #  3. %.itemmeasures: All syntactic predictors with ngram probabilities 
 #     (experiment tokenization, in which parser tokenization should be nested)
 #  4. %.full.evmeasures: itemmeasures data merged with reading event data 
-#     (*.src.evmeasures), i.e. the complete data set
+#     (*.evmeasures), i.e. the complete data set
 #
 #  To generate these files, the experiment must have (or have recipes to 
 #  generate) the following intermediate files:
@@ -38,7 +38,7 @@
 #     line
 #  2. %.lineitems: Experiment-tokenized file of space separated sentences,
 #     one on each line
-#  3. %.src.evmeasures: Space-delimited table of reading event data from source
+#  3. %.evmeasures: Space-delimited table of reading event data from source
 #     experiment (IMPORTANT: this must include sentid and sentpos columns)
 #  4. Params files:
 #     a. <corpus_basename>.merge_tables.params: merge key fields (and other
@@ -270,25 +270,38 @@ endef
 genmodel/rename_cols.params: | genmodel
 	echo '' > $@
 
+# Pastes left-corner predictors to existing identically tokenized tokmeasures file
+%.embd.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).embd.tokmeasures
+	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
+
+# Computes left-corner predictors
 %.embd.tokmeasures: %.linetoks $(RT-SCRIPTS)/calcEmbd.py %.nopunc.semprocdecpars
 	cat $< | python $(word 2, $^) $(word 3, $^) > $@
     
-%+embd.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).gold.embd.tokmeasures
+# Pastes DLT predictors to existing identically tokenized tokmeasures file
+%.dlt.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).dlt.tokmeasures
 	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
  
+# Computes DLT predictors
 %.dlt.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
 	cat $< | python $(word 2, $^) > $@
 
-%+dlt.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).gold.dlt.tokmeasures
+# Pastes coreference predictors to existing identically tokenized tokmeasures file
+%.coref.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).coref.tokmeasures
 	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
- 
+
+# Computes coreference predictors 
 %.coref.tokmeasures: $(RT-SCRIPTS)/extract_coref_predictors.py %.coref.fromlinetrees.numbered.editabletrees
 	python $^ > $@
 
-%+coref.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).gold.coref.tokmeasures
-	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
- 
-%.pcfg.tokmeasures: %_parsed.output $(LCPARSE-SCRIPTS)/spargeComplexity.py $(RT-SCRIPTS)/calcFJProb.py
+# Pastes parser complexity predictors to existing identically tokenized tokmeasures file
+%_parsed.tokmeasures: $$(basename %).tokmeasures \
+$$(word 1, $$(subst ., ,%))$$(suffix $$*)_parsed.tokmeasures \
+$(RT-SCRIPTS)/filter_cols.py
+	cat $< | paste -d' ' - <(cat $(word 2, $^) | python $(word 3, $^) -x word sentid) > $@
+
+# Computes parser complexity predictors 
+%_parsed.tokmeasures: %_parsed.output $(LCPARSE-SCRIPTS)/spargeComplexity.py $(RT-SCRIPTS)/calcFJProb.py
 	cat $< | python3 $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;' | python $(word 3, $^) | \
 	sed 's/  */ /g;1s/F-/fm/g;1s/F+/fp/g;1s/L-/lm/g;1s/L+/lp/g;1s/B-/bm/g;1s/B+/bp/g;1s/Badd/ba/g;1s/Bcdr/bc/g;1s/BNil/bo/g;1s/Bsto/bsto/g;' > $@
 
@@ -296,19 +309,17 @@ genmodel/rename_cols.params: | genmodel
 %.merged.pcfg.tokmeasures: scripts/$$(subst .,,$$(suffix $$*)).PCFGmerge.txt 
 	@echo 'Merging PCFGs'
 
-# pcfg.tokmeasures with a time column, requires %.time.tokmeasures with timestamps for tokens in stimulus
-%.t.pcfg.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).time.tokmeasures
+# %.tokmeasures with a time column, requires %.time.tokmeasures with timestamps for tokens in stimulus
+%.t.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., , %)).time.tokmeasures
 	cat $(word 1, $^) | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) > $@
 
-# With co-ref features
-%.syn.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).gold.dlt.tokmeasures \
-$$(word 1, $$(subst ., , %)).gold.embd.tokmeasures $$(word 1, $$(subst ., , %)).gold.coref.tokmeasures
-	cat $< | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) <(cut -f 2- -d' ' $(word 3, $^)) <(cut -f 2- $(word 4, $^) | sed 's/\t/ /g') > $@
+# Shortcut: With co-ref features
+%.syn.tokmeasures: %_parsed.dlt.embd.coref.tokmeasures
+	mv $^ $@
 
-# Without co-ref features
-%.syn.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).gold.dlt.tokmeasures \
-$$(word 1, $$(subst ., , %)).gold.embd.tokmeasures
-	cat $< | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) <(cut -f 2- -d' ' $(word 3, $^)) > $@
+# Shortcut: Without co-ref features
+%.syn.tokmeasures: %_parsed.dlt.embd.tokmeasures
+	mv $^ $@
 
 %.itemmeasures: $$(DEP-RHACKS) $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
@@ -319,13 +330,6 @@ $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r 
 %.t.itemmeasures: $$(basename %).t.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
 	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
-	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
-	$(word 5, $^) > $@
-
-# Keep old buggy roll operation which messes up sentid
-%.o.itemmeasures: $$(basename %).syn.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py
-	cat <(cat $< | python $(word 6, $^) -n3 -p -a -s | sed 's/\[/!/g;s/\]/!/g;') | python $(word 3, $^) $(word 2, $^) embddepth -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
@@ -353,17 +357,9 @@ RTCoreEvmeasures:
       innerdelim: .
 endef
 .PRECIOUS: %.core.evmeasures
-%.core.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
+%.core.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
 	python $(word 3, $^) $< $(word 2, $^) word sentid sentpos > $@
-
-# Just here to preserve old buggy dev/test split from Shain et al. (2016): CL4LC
-.PRECIOUS: %.o.full.evmeasures
-%.o.full.evmeasures: %.o.itemmeasures $$(word 1, $$(subst ., , %)).src.o.evmeasures \
-$(RT-SCRIPTS)/merge_tables.py $(RT-SCRIPTS)/accumulateMetrics.py $(RT-SCRIPTS)/rm_unfix_items.py \
-$$(word 1, $$(subst ., , %)).accumulateMetrics.params \
-$$(word 1, $$(subst ., , %)).rm_unfix_items.params
-	python $(word 3, $^) $< $(word 2, $^) word sentid sentpos | python $(word 4, $^) $(shell cat $(word 6, $^)) | python $(word 5, $^) $(shell cat $(word 7, $^)) > $@
 
 %.filt.evmeasures: $$(basename %).core.evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
 $(RT-SCRIPTS)/inferPredictors.py \

@@ -135,7 +135,7 @@ genmodel/alice.time.tokmeasures: $(ALICE-SCRIPTS)/alignSrcToks2OrigToks.py genmo
 genmodel/alice.linetoks: $(ALICE-SCRIPTS)/tokmeasures2linetoks.py genmodel/alice.time.tokmeasures | genmodel
 	cat $(word 2, $^) | python $(word 1, $^) > $@
 
-%alice.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-ALICE)/srcmodel/alice.stripped.linetrees %alice.linetoks
+%alice.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-ALICE)/srcmodel/alice.stripped.linetrees %alice.linetoks
 	python $^ > $@
 
 genmodel/alice.sbj.evmeasures: | genmodel
@@ -168,7 +168,7 @@ genmodel/alice.sbj.evmeasures: | genmodel
 	echo 'boldLATL10mm boldRATL10mm boldLPTL10mm boldLIPL10mm boldLPreM10mm boldLIFG10mm' > $@
 	cat $(wordlist 2, 1000, $^) | sed 's/\t/ /g' >> $@
 
-%/alice.src.evmeasures: %/alice.sbj.evmeasures %/alice.pwr.evmeasures %/alice.rate.evmeasures \
+%/alice.evmeasures: %/alice.sbj.evmeasures %/alice.pwr.evmeasures %/alice.rate.evmeasures \
 %/alice.mvmnt.evmeasures %/alice.BOLD6mm.evmeasures %/alice.BOLD10mm.evmeasures %/alice.generic.evmeasures $(RESOURCE-RT)/scripts/merge_tables.py | %
 	paste -d' ' $(wordlist 1, 6, $^) > $@.tmp
 	python $(word 8, $^) $@.tmp $(word 7, $^) sampleid > $@

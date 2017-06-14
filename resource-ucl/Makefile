@@ -175,10 +175,10 @@ $(UCLDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | %
 $(UCLDIR)/eye_movement/stimuli.txt | %
 	cut -f 2 $(word 3,$^) | tail -n+2 > $@
 
-%ucl.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-UCL)/srcmodel/ucl.stripped.linetrees %ucl.linetoks
+%ucl.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-UCL)/srcmodel/ucl.stripped.linetrees %ucl.linetoks
 	python $^ > $@
 
-%/ucl.src.evmeasures: $$(DEP-UCL) \
+%/ucl.evmeasures: $$(DEP-UCL) \
 $(CONFIGDIR)/user-ucl-directory.txt \
 $(UCL-SCRIPTS)/build_ucl_corpus.py \
 $(UCLDIR)/eye_movement/eyetracking.RT.txt \
