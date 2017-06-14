@@ -8,7 +8,7 @@ def type ( tree, Types, artnum, linenum, toknum=1 ):
     ####if tree.c.startswith('N-aD'):
     if (artnum,linenum,toknum) in Types:
       ## obtain stem
-      s = '(' + tree.c + ' ' + tree.ch[0].c + ')'
+      s = '(' + tree.c + ' ' + tree.ch[0].c.lower() + ')'
       while re.search('-x[A-Z]',s) is not None:
         s = re.sub( '\((.)([^ ]*?)-x(.)([^% ]*)%([^:|%() ]*):([^:|%() ]*)%([^:|%() ]*)\|(.)([^:|%() ]*)%([^:|%() ]*):([^:|%() ]*)%([^- ]*)([^ ]*) \\6([^() ]*)\\7\)', '(\\8\\2-o\\3\\4%\\5:\\6%\\7|\\8\\9%\\10:\\11%\\12\\13 \\11\\14\\12)', s )
         s = re.sub( '\((.)([^ ]*?)-x(.)([^% ]*)%([^| ]*)\|(.)([^% ]*)%([^- ]*)([^ ]*) ([^() ]*)\\5\)', '(\\6\\2-o\\3\\4%\\5|\\6\\7%\\8\\9 \\10\\8)', s )
@@ -24,6 +24,7 @@ def type ( tree, Types, artnum, linenum, toknum=1 ):
   return toknum
 
 ## read in Y model and store most probable type for each referent...
+sys.stderr.write( 'Reading ' + sys.argv[1] + '...\n' )
 Types = collections.defaultdict(lambda: ('ERR',0.0))
 for line in open(sys.argv[1]):
   m = re.match("^Y (.*)-(.*)(..)s : (.*) = (.*)$", line)
@@ -31,6 +32,7 @@ for line in open(sys.argv[1]):
     artnum,linenum,toknum,y,prob = m.groups()
     ####print( 'storing', int(artnum), int(linenum), int(toknum) )
     if float(prob) > Types[int(artnum),int(linenum),int(toknum)][1]: Types[int(artnum),int(linenum),int(toknum)] = y,float(prob)
+sys.stderr.write( sys.argv[1] + ' read.\n' )
 
 ## for each article until eof...
 artnum = 0

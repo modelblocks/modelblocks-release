@@ -135,6 +135,8 @@ SplitMerge:
     text: Split Merge Iterations
     value: sm
 endef
+
+.PRECIOUS: %sm.gr
 %sm.gr: $$(DEP-BERKPARSE) $(CONFIGDIR)/user-javaflags.txt  $(CONFIGDIR)/user-berkeleyparserjar-directory.txt  \
 $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees
 	java  $(shell cat $(word 1,$^))  -cp $(word 3,$^)  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 4,$^)  -treebank SINGLEFILE  -out $@
@@ -144,8 +146,10 @@ $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees $$(b
 	java  $(shell cat $(word 1,$^))  -cp $(word 3,$^)  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 4,$^)  -validation $(word 5,$^)  -treebank SINGLEFILE  -out $@
 
 #### silly shortcut for berkeley parser
+.PRECIOUS: %.fullberk.model
 %.fullberk.model:  %.gr
 	ln -sf $(notdir $<) $@
+.PRECIOUS: %.vitberk.model
 %.vitberk.model:  %.gr
 	ln -sf $(notdir $<) $@
 
