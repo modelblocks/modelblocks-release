@@ -167,8 +167,8 @@ genmodel/ucl.spilloverMetrics.params: | genmodel
 genmodel/ucl.rm_unfix_items.params: | genmodel
 	echo '-f fdurFP' > $@
   
-%/ucl.linetoks: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
-$(UCLDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | %
+genmodel/ucl.linetoks: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
+$(UCLDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | genmodel
 	cut -f 2 $(word 3,$^) | tail -n+2 | $(word 4,$^) > $@
 
 %/ucl.lineitems: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
