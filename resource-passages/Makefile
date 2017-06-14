@@ -155,5 +155,3 @@ $(CONFIGDIR)/user-passages-directory.txt | genmodel
 
 passages%-batch: $(foreach roi, $(PASSAGES-ROI), $(foreach pred, $(PASSAGES-PREDS), $$(PASSAGES$$*-BASENAME).$(roi)passagesBasic.$(pred).$$(PASSAGES$$*-LMEDEFAULT)..lrt));
 
-passages%.corr.txt: passages%.src.evmeasures $(PASSAGES-SCRIPTS)/getCorrBySubj.r
-	cat $(word 1, $^) | $(word 2, $^) > $@
