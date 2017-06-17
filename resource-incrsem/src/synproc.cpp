@@ -29,13 +29,15 @@ using namespace std;
 #include <nl-string.h>
 #include <Delimited.hpp>
 bool STORESTATE_TYPE = true;
-#include <BerkUnkWord.hpp>  //#include <RandoUnkWord.hpp>
+#include <RandoUnkWord.hpp>
+#include <BerkUnkWord.hpp>
 #include <StoreStateSynProc.hpp>
 #include <Beam.hpp>
 
 uint BEAM_WIDTH      = 1000;
 uint VERBOSE         = 0;
 uint OUTPUT_MEASURES = 0;
+bool BERKUNK         = false;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -126,6 +128,7 @@ int main ( int nArgs, char* argv[] ) {
     for( int a=1; a<nArgs; a++ ) {
       if      ( 0==strcmp(argv[a],"-v") ) VERBOSE = 1;
       else if ( 0==strcmp(argv[a],"-V") ) VERBOSE = 2;
+      else if ( 0==strcmp(argv[a],"-u") ) BERKUNK = true;
       else if ( 0==strncmp(argv[a],"-b",2) ) BEAM_WIDTH = atoi(argv[a]+2);
       else if ( 0==strcmp(argv[a],"-c") ) OUTPUT_MEASURES = 1;
       //else if ( string(argv[a]) == "t" ) STORESTATE_TYPE = true;
@@ -162,7 +165,7 @@ int main ( int nArgs, char* argv[] ) {
   // Add unk...
   for( auto& entry : lexW ){
     // for each word:{<category:prob>}
-    for( auto& unklistelem : lexW[unkWord(entry.first.getString().c_str())] ){
+    for( auto& unklistelem : lexW[ (BERKUNK) ? unkWordBerk(entry.first.getString().c_str()) : unkWord(entry.first.getString().c_str()) ] ){
       // for each possible unked(word) category:prob pair
       bool BAIL = false;
       for( auto& listelem : entry.second ) {
@@ -233,7 +236,8 @@ int main ( int nArgs, char* argv[] ) {
 
             StoreState ss( q_tdec1, f_tdec1, j_tdec1, tpA.first, tpB.first, p_tdec1 );
             // For each possible lemma (context + label + prob) for preterminal of current word...
-            for( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[unkWord(w_t.getString().c_str())] ) if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(tpA.second) + log(tpB.second) + log(ktpr_p_t.second) > beams[t].rbegin()->first.first ) {
+            for( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[ (BERKUNK) ? unkWordBerk(w_t.getString().c_str()) : unkWord(w_t.getString().c_str()) ] )
+             if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(tpA.second) + log(tpB.second) + log(ktpr_p_t.second) > beams[t].rbegin()->first.first ) {
               T t_p_t           = ktpr_p_t.first;  // label of current preterminal
               double probwgivkl = ktpr_p_t.second; // probability of current word given current preterminal
 

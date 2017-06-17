@@ -17,6 +17,8 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef W__
+#define W__
 DiscreteDomain<int> domW;
 class W : public Delimited<DiscreteDomainRV<int,domW>> {
  public:
@@ -25,6 +27,7 @@ class W : public Delimited<DiscreteDomainRV<int,domW>> {
   W ( const char* ps ) : Delimited<DiscreteDomainRV<int,domW>> ( ps ) { }
 };
 typedef W ObsWord;
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
