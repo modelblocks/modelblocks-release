@@ -135,7 +135,7 @@ genmodel/naturalstories.rm_unfix_items.params: | genmodel
 $(CONFIGDIR)/user-naturalstories-directory.txt | %
 	cat $(word 2, $^) | perl $(word 1, $^) > $@
 
-%/naturalstories.linetoks: %/naturalstories.penn.linetrees $(NATSTORIES-SCRIPTS)/penn2sents.py | %
+genmodel/naturalstories.linetoks: genmodel/naturalstories.penn.linetrees $(NATSTORIES-SCRIPTS)/penn2sents.py | genmodel
 	cat $< | python $(word 2, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' > $@
 
 %naturalstories.items: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv $(RT-SCRIPTS)/get_rttokenization.py \

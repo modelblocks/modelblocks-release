@@ -108,3 +108,7 @@ $(RT-SCRIPTS)/merge_tables.py
 %.bysent.core.evmeasures : %.bysent.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
 	cat $< | python $(word 3, $^) $< $(word 2, $^) sampleid > $@
+
+%.corr.txt: %.evmeasures $(FMRI-SCRIPTS)/corrAnalysis.r
+	cat $(word 1, $^) | $(word 2, $^) > $@
+

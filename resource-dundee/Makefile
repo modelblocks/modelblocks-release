@@ -188,7 +188,7 @@ $(GENERAL-SCRIPTS)/convert_latin-1.py $(CONFIGDIR)/user-dundee-directory.txt
 	> $@
 	rm -f $@.raw
 
-%dundee.linetoks: $$(foreach sect,$$(DUNDEESECTS),%dundee$$(sect).linetoks)
+genmodel/dundee.linetoks: $$(foreach sect,$$(DUNDEESECTS),genmodel/dundee$$(sect).linetoks) | genmodel
 	cat $^ > $@
 
 %dundee.lineitems: %dundee.linetoks $(RT-SCRIPTS)/toks2sents.py %dundee.textdata
