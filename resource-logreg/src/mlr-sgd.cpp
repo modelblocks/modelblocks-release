@@ -221,7 +221,7 @@ int main ( int nArgs, char* argv[] ) {
 //    for ( size_t xf=0; xf<gradient.n_rows; xf++ )
 //      for ( size_t y=0; y<gradient.n_cols; y++ )
 //        if ( gradient(xf,y) < -10000.0 || gradient(xf,y) > 10000.0 ) cerr << "gradient(" << xf << "," << y << ") = " << gradient(xf,y) <<endl;;
-    W -= /*0.01 * */   gradient * 0.00005 ;    /*0.000005*/
+    W -= /*0.01 * */   gradient * 0.0005 ;    /*0.000005*/
 //    for ( size_t xf=0; xf<W.n_rows; xf++ )
 //      for ( size_t y=0; y<W.n_cols; y++ )
 //        if ( W(xf,y) < -10000.0 || W(xf,y) > 10000.0 ) cerr << "W(" << xf << "," << y << ") = " << W(xf,y) <<endl;;
