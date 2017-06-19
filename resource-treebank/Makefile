@@ -60,6 +60,7 @@ RESOURCE-NAME := The Penn Treebank (PTB)
 define RESOURCE-DESCR =
 
 NAME: The Penn Treebank (PTB)
+MB POINTER FILE: config/user-treebank-directory.txt
 AVAILABILITY: Paid
 URL: https://catalog.ldc.upenn.edu/ldc99t42
 DESCRIPTION: One million words of 1989 Wall Street Journal material annotated in Treebank II style.

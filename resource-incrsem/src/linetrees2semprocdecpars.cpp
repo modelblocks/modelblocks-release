@@ -35,7 +35,13 @@ bool STORESTATE_CHATTY = true;
 #include <Tree.hpp>
 
 map<L,double> mldLemmaCounts;
-const int MINCOUNTS = 100;
+int MINCOUNTS = 100;
+
+////////////////////////////////////////////////////////////////////////////////
+
+inline string regex_escape(const string& string_to_escape) {
+    return regex_replace( string_to_escape, regex("[.^$|()\\[\\]{}*+?\\\\]"), string("\\\\$1") );
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -100,7 +106,7 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
   // If preterm is morphrule-annotated, use baseform in pred...
   smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^-:|]*:|[^-%:|]*)([^-%:|]*?)%([^-%:|]*)[|](.)([^-:|]*:|[^-%:|]*)([^-%:|]*?)%([^-%:|]*)(.*)$")); s=m[9] ) {
     //cout<<"MATCH "<<string(m[1])<<" "<<string(m[2])<<" "<<string(m[3])<<" "<<string(m[4])<<" "<<string(m[5])<<" "<<string(m[6])<<" "<<string(m[7])<<" "<<string(m[8])<<" "<<string(m[9])<<endl;
-    sPred = regex_replace( sPred, regex("^"+string(m[3])+"(.*)"+string(m[4])+"$"), string(m[7])+"$1"+string(m[8]) );
+    sPred = regex_replace( sPred, regex("^"+regex_escape(m[3])+"(.*)"+regex_escape(m[4])+"$"), string(m[7])+"$1"+string(m[8]) );
     sBaseType[0] = string(m[5])[0];
   }
   sBaseType = regex_replace( sBaseType, regex("-x.*"), string("") );
@@ -216,7 +222,8 @@ int main ( int nArgs, char* argv[] ) {
   // For each command-line flag or model file...
   for ( int a=1; a<nArgs; a++ ) {
     //if ( 0==strcmp(argv[a],"t") ) STORESTATE_TYPE = true;
-    //else {
+    if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS = atoi( argv[a]+2 );
+    else {
       cerr << "Loading model " << argv[a] << "..." << endl;
       // Open file...
       ifstream fin (argv[a], ios::in );
@@ -228,7 +235,7 @@ int main ( int nArgs, char* argv[] ) {
       }
       cerr << "Model " << argv[a] << " loaded." << endl;
       for ( auto& l : lLC ) mldLemmaCounts[l.second] = l.first;
-    //}
+    }
   }
 
   int linenum = 0;

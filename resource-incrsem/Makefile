@@ -42,10 +42,10 @@ GENMODEL := genmodel
 INCLUDE := $(abspath $(RESOURCE-INCRSEM)/include)
 SRC := $(abspath $(RESOURCE-INCRSEM)/src)
 
-ifndef RECURSED
+ifndef MAKED
 $(info Building source code dependencies using recursive sub-make to $(RESOURCE-INCRSEM)/Makefile...)
 ## create dependencies for files in python, src, include directories
-DUMMY := $(shell $(MAKE) RECURSED=1 $(subst .py,.d,$(wildcard $(INCRSEM-SCRIPTS)/*.py)) $(subst .cpp,.d,$(wildcard $(SRC)/*.cpp)))
+DUMMY := $(shell $(MAKE) MAKED=1 MAKECONFIG=1 $(subst .py,.d,$(wildcard $(INCRSEM-SCRIPTS)/*.py)) $(subst .cpp,.d,$(wildcard $(SRC)/*.cpp)))
 $(info Source code dependencies built and loaded.)
 endif
 
@@ -63,13 +63,18 @@ include $(wildcard $(RESOURCE-INCRSEM)/*/*.d)
 %cptmodel:  %cptdecpars  $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep -a ' : '  |  python3 $(word 2,$^)  >  $@
 
+.PRECIOUS: %counts
+%counts:  %decpars  $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep -a ' : '  |  python3 $(word 2,$^) -n  >  $@
+
+
 ################################################################################
 #
 #  ii. Code compilation items
 #
 ################################################################################
 
-ifdef RECURSED
+ifdef MAKED
 #### python dependencies
 .PRECIOUS:  $(INCRSEM-SCRIPTS)/%.d
 $(INCRSEM-SCRIPTS)/%.d:  $(INCRSEM-SCRIPTS)/%.py
@@ -155,6 +160,8 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 	cat $<  |  python $(word 2,$^)  |  LC_COLLATE=C sort  |  LC_COLLATE=C uniq -c  |  sed 's/^ *//'  >  $@
 
 ## obtain predictors and responses for all semantic processing models...
+%uc.semprocdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename %).lemmacounts
+	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) -u$(subst .,,$(suffix $*)) $(word 3,$^)  >  $@
 %decpars:  $$(basename %).linetrees  $(BIN)/linetrees2$$(subst .,,$$(suffix $$*))decpars  $$(basename %).lemmacounts
 	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) $(word 3,$^)  >  $@
 #%ss.semprocdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename %).lemmacounts
@@ -249,6 +256,21 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 .PRECIOUS: %.synprocmodel
 %.synprocmodel:  %.synproccptmodel
 	cp $^ $@
+
+########################################
+#
+#  semantic clustering model
+#
+########################################
+
+.PRECIOUS: %_ymodel
+%_ymodel:  $$(basename %).refconts  $(INCRSEM-SCRIPTS)/refconts2reftypes.py
+	@echo "WARNING: long build for '$@'!  Press CTRL-C to abort!"
+	@sleep 5
+	cat $<  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+
+%typed.linetrees:  $(INCRSEM-SCRIPTS)/make-trees-typed.py  $$(basename %).linetrees  %_2000_5e-2_1e-2_N-aD\:_1_ymodel
+	cat $(word 2,$^)  |  python $(word 1,$^) $(word 3,$^)  >  $@
 
 ########################################
 #

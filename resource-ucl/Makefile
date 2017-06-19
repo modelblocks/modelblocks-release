@@ -84,6 +84,7 @@ RESOURCE-NAME := The UCL Corpus (Frank et al, 2013)
 define RESOURCE-DESCR =
 
 NAME: The UCL corpus (Frank et al, 2013)
+MB POINTER FILE: config/user-ucl-directory.txt
 AVAILABILITY: Free
 URL: http://www.stefanfrank.info/readingdata/Data.zip
 DESCRIPTION: Eye-tracking and self-paced-reading data
@@ -105,6 +106,7 @@ RESOURCE-NAME := Echo-state netork (ESN) directory
 define RESOURCE-DESCR =
 
 NAME: Echo-state netork (ESN) directory
+MB POINTER FILE: config/user-esn-directory.txt
 DESCRIPTION: A directory in which to store output of ESN
 endef
 ESN-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
@@ -122,6 +124,7 @@ RESOURCE-NAME := GENIA Tagger
 define RESOURCE-DESCR =
 
 NAME: GENIA Tagger
+MB POINTER FILE: config/user-geniatagger-directory.txt
 AVAILABILITY: Free
 URL: http://www.nactem.ac.uk/GENIA/tagger/
 DESCRIPTION: Part-of-speech tagging, shallow parsing, and named entity recognition for biomedical text.
@@ -164,18 +167,18 @@ genmodel/ucl.spilloverMetrics.params: | genmodel
 genmodel/ucl.rm_unfix_items.params: | genmodel
 	echo '-f fdurFP' > $@
   
-%/ucl.linetoks: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
-$(UCLDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | %
+genmodel/ucl.linetoks: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
+$(UCLDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | genmodel
 	cut -f 2 $(word 3,$^) | tail -n+2 | $(word 4,$^) > $@
 
 %/ucl.lineitems: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
 $(UCLDIR)/eye_movement/stimuli.txt | %
 	cut -f 2 $(word 3,$^) | tail -n+2 > $@
 
-%ucl.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-UCL)/srcmodel/ucl.stripped.linetrees %ucl.linetoks
+%ucl.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-UCL)/srcmodel/ucl.stripped.linetrees %ucl.linetoks
 	python $^ > $@
 
-%/ucl.src.evmeasures: $$(DEP-UCL) \
+%/ucl.evmeasures: $$(DEP-UCL) \
 $(CONFIGDIR)/user-ucl-directory.txt \
 $(UCL-SCRIPTS)/build_ucl_corpus.py \
 $(UCLDIR)/eye_movement/eyetracking.RT.txt \

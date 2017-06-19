@@ -137,7 +137,7 @@ $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmo
 genmodel/forrest.%.pcfg.tokmeasures: genmodel/forrest.%_parsed.output $(LCPARSE-SCRIPTS)/spargeComplexity.py $(RT-SCRIPTS)/calcFJProb.py
 	cat $< | python3 $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;' | python $(word 3, $^) | sed 's/^nan/NAword/g;' > $@
 
-genmodel/forrest.src.evmeasures: $(CONFIGDIR)/user-forrest-directory.txt $(FORREST-SCRIPTS)/compile_forrest_subjects.py $(foreach s, $(FORREST-SUBJECTS), $(foreach r, $(shell seq 1 8), $(FORRESTDIR)/phase1/sub$(s)/BOLD/task001_run00$(r)/atlas_timeseries_dico7Tad2grpbold7Tad_nl.csv.gz)) | genmodel
+genmodel/forrest.evmeasures: $(CONFIGDIR)/user-forrest-directory.txt $(FORREST-SCRIPTS)/compile_forrest_subjects.py $(foreach s, $(FORREST-SUBJECTS), $(foreach r, $(shell seq 1 8), $(FORRESTDIR)/phase1/sub$(s)/BOLD/task001_run00$(r)/atlas_timeseries_dico7Tad2grpbold7Tad_nl.csv.gz)) | genmodel
 	python $(word 2, $^) 001 $(foreach r, $(shell seq 1 8),$(FORRESTDIR)/phase1/sub001/BOLD/task001_run00$(r)/atlas_timeseries_dico7Tad2grpbold7Tad_nl.csv.gz) > $@
 	$(foreach s, $(FORREST-SUBJECTS), python $(word 2, $^) $(s) $(foreach r, $(shell seq 1 8),$(FORRESTDIR)/phase1/sub$(s)/BOLD/task001_run00$(r)/atlas_timeseries_dico7Tad2grpbold7Tad_nl.csv.gz) | tail -n+2 >> $@; )
 
