@@ -218,7 +218,7 @@ endef
 
 ## push together semantic processing models...
 .PRECIOUS: %.semprocmodel
-%.semprocmodel:  %.1e-1_100_fmlrmodel  %.1e-1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+%.semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1000_1e-2_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
 	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
 	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
@@ -301,6 +301,20 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 %.fjabpmodel:  %.x-cc.model  $(BIN)/ccmodel2fjabpcptmodel
 	cat $<  |  sed 's/^Cr/R/'  |  $(word 2,$^)  >  $@
 
+########################################
+#
+#  trace of decisions and model probs
+#
+########################################
+
+%parsed.semprocdecprobs:  %parsed.linetrees  $(BIN)/linetrees2semprocdecpars  genmodel/$$(basename $$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*))))).lemmacounts  $(BIN)/semprocdecpars2semprocdecprobs  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*))))model
+	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  |  $(word 4,$^) $(word 5,$^)  >  $@
+%.semprocdecprobs:  genmodel/$$(basename $$*).semprocdecpars  $(BIN)/semprocdecpars2semprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))model
+	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  >  $@
+
+
+
+
 #################################################
 #
 #  training F model with mallet package
@@ -308,7 +322,7 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 ##############################################
 
 %.malletInput:  %.fmlrdecpars $(INCRSEM-SCRIPTS)/getMalletInput.py
-	cat $(word 1,$^)  |  python $(word 2,$^) >  $@
+	cat $(word 1,$^)  |  python $(word 2,$^)  >  $@
 
 %.mallet: %.malletInput
 	mallet-2.0.8RC2/bin/mallet import-file --input $< --output $@

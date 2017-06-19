@@ -1053,7 +1053,7 @@ Conditional probability parweights.
       \end{itemize}
 \end{itemize}
 
-\subsection{Recipe: \blue\tt \%.mlr.parweights}
+\subsection{Recipe: \blue\tt \%\_mlr.parweights}
 
 Multinomial logistic regression parweights.
 
@@ -1071,7 +1071,7 @@ Multinomial logistic regression parweights.
             \item \textit{Note:} This ordering has the advantage that, when sorted, parameters are grouped by condition
       \end{itemize}
       \item \textbf{Stem template:}\\
-      $\dtype{training-set-specifications}  \ \dcode{.mlr.parweights}$
+      $\dtype{training-set-specifications} \ \dcode{.} \ \dtype{L2-regularization-factor} \ \dcode{\_} \ \dtype{underflow-scaling-factor} \ \dcode{\_} \ \dtype{num-iterations} \ \dcode{\_mlr.parweights}$
       \item \textbf{Input(s):}
       \begin{itemize}
             \item $\dtype{training-set-specification} \ \dcode{.decpars}$

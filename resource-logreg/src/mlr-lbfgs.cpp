@@ -71,10 +71,11 @@ class SpMatLogisticRegressionFunction {
   arma::mat     cooccurrences; // cache cooccurrences from beginning
   arma::mat     expectations;  // cache expectationa during Evaluate for use in Gradient
   vector<mutex> vmExpectationRows;
+  double        dUnderflowScaler;
 
  public:
 
-  SpMatLogisticRegressionFunction ( uint nX, uint nY, double l = 0.0, uint nT = 1 ) : lambda(l), numThreads(nT), vmExpectationRows(nX) {
+  SpMatLogisticRegressionFunction ( uint nX, uint nY, uint nT = 1, double l = 0.0, double dS = 1.0 ) : lambda(l), numThreads(nT), dUnderflowScaler(dS), vmExpectationRows(nX) {
     initialpoint.randn ( nX, nY );
     initialpoint *= 0.01;
     expectations.zeros ( nX, nY );
@@ -89,7 +90,7 @@ class SpMatLogisticRegressionFunction {
 
     cerr<<"inEval\n";
 
-    const double regularization = 0.5 * lambda * arma::accu( parameters % parameters );
+    const double regularization = 0.5 * lambda * dUnderflowScaler * arma::accu( parameters % parameters );
 
 ////    const arma::mat logscoredistrs = parameters * predictors;
 ////    const arma::mat logscores      = arma::ones<rowvec>(parameters.n_rows) * (responses % logscoredistrs);
@@ -98,6 +99,7 @@ class SpMatLogisticRegressionFunction {
 ////    cerr<<parameters(0,0)<<"\n";
 ////    return -arma::accu(logprobs) + regularization;
 
+    if ( cooccurrences.n_cols == 0 ) predictors *= dUnderflowScaler;
     if ( cooccurrences.n_cols == 0 ) cooccurrences = predictors * responses.t();
     double totlogprob = 0;
     mutex mTotlogprob;
@@ -131,7 +133,7 @@ class SpMatLogisticRegressionFunction {
   void Gradient(const arma::mat& parameters, arma::mat& gradient)  {
 
     // Regularization term.
-    arma::mat regularization = lambda * parameters;
+    arma::mat regularization = lambda * dUnderflowScaler * parameters;
 
     cerr<<"inGrad\n";
 
@@ -151,7 +153,7 @@ class SpMatLogisticRegressionFunction {
 
 int main ( int nArgs, char* argv[] ) {
 
-  uint maxiters = nArgs>3 ? atoi(argv[3]) : 0;
+  uint maxiters = nArgs>4 ? atoi(argv[4]) : 0;
   cerr << "Max iters (0 = no bound): " << maxiters << "\n";
 
   list<pair<DelimitedList<psX,DelimitedPair<psX,Delimited<XFeat>,psEquals,Delimited<double>,psX>,psComma,psX>,Delimited<YVal>>> lplpfdy;
@@ -167,7 +169,7 @@ int main ( int nArgs, char* argv[] ) {
   cerr << "Data read: x=" << domXFeat.getSize() << " y=" << domYVal.getSize() << ".\n";
 
   // Populate predictor matrix and result vector...
-  SpMatLogisticRegressionFunction f ( domXFeat.getSize(), domYVal.getSize(), nArgs>2 ? atof(argv[2]) : 0.0, nArgs>1 ? atoi(argv[1]) : 1 );
+  SpMatLogisticRegressionFunction f ( domXFeat.getSize(), domYVal.getSize(), nArgs>1 ? atof(argv[1]) : 0.0, nArgs>2 ? atoi(argv[2]) : 1, nArgs>3 ? atof(argv[3]) : 1.0 );
   sp_mat& DbyFX = f.Predictors();
   sp_mat& DbyY  = f.Responses();
   umat xlocs ( 2, numfeattokens );
