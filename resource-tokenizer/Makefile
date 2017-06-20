@@ -57,6 +57,7 @@ RESOURCE-NAME := Extended Penn Tokenizer
 define RESOURCE-DESCR =
 
 NAME: Extended Penn Tokenizer
+MB-POINTER-FILE: config/user-tokenizer-directory.txt
 AVAILABILITY: Free
 URL: https://github.com/vansky/extended_penn_tokenizer
 DESCRIPTION: Extended version of Robert McIntyre's (1995) Penn tokenizer.

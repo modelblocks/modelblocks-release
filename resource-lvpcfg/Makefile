@@ -53,16 +53,16 @@ RESOURCE-NAME := The Berkeley Parser (jarfile)
 define RESOURCE-DESCR =
 
 NAME: The Berkeley Parser (jarfile)
+MB POINTER FILE: config/user-berkeleyparserjar-directory.txt
 AVAILABILITY: Free
 URL: http://nlp.cs.berkeley.edu/software.shtml
 DESCRIPTION: The directory containing the jarfile for the berkeley parser.
 endef
 BERKPARSE-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
-DEP-BERKPARSE-NOWILDCARD:
+BERKPARSE-ERROR:
 	$(error $(BERKPARSE-ERROR))
 DEP-BERKPARSE = $(error $(BERKPARSE-ERROR))
-else
-DEP-BERKPARSE-NOWILDCARD: ;
+DEP-BERKPARSE-NOWILDCARD = BERKPARSE-ERROR
 endif
 
 CONFIG := $(CONFIGDIR)/user-javaflags.txt
@@ -87,16 +87,16 @@ endif
 
 #### berkeley parser shortcut "executable" -- external jarfile
 .PRECIOUS: bin/parser-fullberk
-bin/parser-fullberk: DEP-BERKPARSE-NOWILDCARD $(CONFIGDIR)/user-javaflags.txt $(CONFIGDIR)/user-berkeleyparserjar-directory.txt \
+bin/parser-fullberk: $$(DEP-BERKPARSE-NOWILDCARD) $(CONFIGDIR)/user-javaflags.txt $(CONFIGDIR)/user-berkeleyparserjar-directory.txt \
 $(BERKPARSEDIR)/berkeleyParser.jar  |  bin  #$$(abspath $$(dir $$@))
 	echo "#!/bin/sh" > $@
-	echo "java $(shell cat $(word 2,$^)) -cp $(word 4,$^) edu.berkeley.nlp.PCFGLA.BerkeleyParser -substates -gr \$$1" >> $@
+	echo "java $(shell cat $(word 1,$^)) -cp $(word 3,$^) edu.berkeley.nlp.PCFGLA.BerkeleyParser -substates -gr \$$1" >> $@
 	chmod u+x $@
 
-bin/parser-vitberk: DEP-BERKPARSE-NOWILDCARD $(CONFIGDIR)/user-javaflags.txt $(CONFIGDIR)/user-berkeleyparserjar-directory.txt \
+bin/parser-vitberk: $$(DEP-BERKPARSE-NOWILDCARD) $(CONFIGDIR)/user-javaflags.txt $(CONFIGDIR)/user-berkeleyparserjar-directory.txt \
 $(BERKPARSEDIR)/berkeleyParser.jar  |  bin  #$$(abspath $$(dir $$@))
 	echo "#!/bin/sh" > $@
-	echo "java $(shell cat $(word 2,$^)) -cp $(word 4,$^) edu.berkeley.nlp.PCFGLA.BerkeleyParser -viterbi -substates -gr \$$1" >> $@
+	echo "java $(shell cat $(word 1,$^)) -cp $(word 3,$^) edu.berkeley.nlp.PCFGLA.BerkeleyParser -viterbi -substates -gr \$$1" >> $@
 	chmod u+x $@
 
 ################################################################################
@@ -136,6 +136,8 @@ SplitMerge:
     text: Split Merge Iterations
     value: sm
 endef
+
+.PRECIOUS: %sm.gr
 %sm.gr: $$(DEP-BERKPARSE) $(CONFIGDIR)/user-javaflags.txt  $(CONFIGDIR)/user-berkeleyparserjar-directory.txt  \
 $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees
 	java  $(shell cat $(word 1,$^))  -cp $(word 3,$^)  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 4,$^)  -treebank SINGLEFILE  -out $@
@@ -145,8 +147,10 @@ $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees $$(b
 	java  $(shell cat $(word 1,$^))  -cp $(word 3,$^)  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 4,$^)  -validation $(word 5,$^)  -treebank SINGLEFILE  -out $@
 
 #### silly shortcut for berkeley parser
+.PRECIOUS: %.fullberk.model
 %.fullberk.model:  %.gr
 	ln -sf $(notdir $<) $@
+.PRECIOUS: %.vitberk.model
 %.vitberk.model:  %.gr
 	ln -sf $(notdir $<) $@
 

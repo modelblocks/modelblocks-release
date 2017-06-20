@@ -96,7 +96,7 @@ endef
 %.hrf.itemmeasures: $$(basename %).t.itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py scripts/$$(subst .,,$$(suffix $$*)).pred_list.txt
 	python $(word 2, $^) $(word 1, $^) --start $(SAMPLE-START) --predictors $(shell cat $(word 3, $^)) > $@
 
-%.bysent.itemmeasures: $$(basename %).itemmeasures $(FMRI-SCRIPTS)/reducesents.py
+%.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py
 	cat $(word 1, $^) | python $(word 2, $^) | python $(RT-SCRIPTS)/rename_cols.py sentid sampleid > $@
 
 .PRECIOUS: %.hrf.core.evmeasures
@@ -108,3 +108,7 @@ $(RT-SCRIPTS)/merge_tables.py
 %.bysent.core.evmeasures : %.bysent.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
 	cat $< | python $(word 3, $^) $< $(word 2, $^) sampleid > $@
+
+%.corr.txt: %.evmeasures $(FMRI-SCRIPTS)/corrAnalysis.r
+	cat $(word 1, $^) | $(word 2, $^) > $@
+

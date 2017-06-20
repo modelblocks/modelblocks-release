@@ -58,14 +58,15 @@ RESOURCE-NAME := xlsx2csv
 define RESOURCE-DESCR =
 
 NAME: xlsx2cxv
+MB POINTER FILE: config/user-xlsx2csv-directory.txt
 AVAILABILITY: Free
 URL: https://github.com/dilshod/xlsx2csv
 DESCRIPTION: XLS to CSV converter
 endef
 XLSX2CSV-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
-DEP-XLSX2CSV = $(error $(XLSX2CSV-ERROR))
-else
-DEP-XLSX2CSV :=
+XLSX2CSV-ERROR:
+	$(error $(XLSX2CSV-ERROR))
+DEP-XLSX2CSV-NOWILDCARD = XLSX2CSV-ERROR
 endif
 endif
     
@@ -81,7 +82,7 @@ endif
 $(RESOURCE-XLSX2CSV)/scripts:
 	mkdir $(RESOURCE-XLSX2CSV)/scripts
 
-$(XLSX2CSV-SCRIPTS)/xlsx2csv.py: $$(DEP-XLSX2CSV) $(XLSX2CSVDIR)/xlsx2csv.py
+$(XLSX2CSV-SCRIPTS)/xlsx2csv.py: $$(DEP-XLSX2CSV-NOWILDCARD) $(XLSX2CSVDIR)/xlsx2csv.py
 	mkdir -p $(XLSX2CSV-SCRIPTS)
 	cp $(word 1, $^) $@
 

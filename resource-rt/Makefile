@@ -29,7 +29,7 @@
 #  3. %.itemmeasures: All syntactic predictors with ngram probabilities 
 #     (experiment tokenization, in which parser tokenization should be nested)
 #  4. %.full.evmeasures: itemmeasures data merged with reading event data 
-#     (*.src.evmeasures), i.e. the complete data set
+#     (*.evmeasures), i.e. the complete data set
 #
 #  To generate these files, the experiment must have (or have recipes to 
 #  generate) the following intermediate files:
@@ -38,7 +38,7 @@
 #     line
 #  2. %.lineitems: Experiment-tokenized file of space separated sentences,
 #     one on each line
-#  3. %.src.evmeasures: Space-delimited table of reading event data from source
+#  3. %.evmeasures: Space-delimited table of reading event data from source
 #     experiment (IMPORTANT: this must include sentid and sentpos columns)
 #  4. Params files:
 #     a. <corpus_basename>.merge_tables.params: merge key fields (and other
@@ -85,11 +85,10 @@ python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).full.evm
 sed '1s/.*/cum$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
 mv $@{.tmp,};
 
-SPILLOVER := S1 S2 S3
+SPILLOVER := S1 S2
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
-FJ := fjprob noFprob endembd embdlen embdlendr embdlendrv noF noFlen noFlendr noFlendrv yesJ reinst reinstlen reinstlendr reinstlendrv
+FJ := noF yesJ embddepthAny embddepthMin endembdMin startembdMin noFlen embdlen 
 COREF := corefbin coreflenw coreflenr corefsize
-EXTRA-SPILL := dc dcv pos depdirSyn depdirSynM depdirSem depdirSemM Ad AdPrim Bd BdPrim Bdm1 Bdm1Prim noFprob embddepth embdif totsurp fwprob5surp sentpos sentid wlen word isanaphpro
 GCG-CATS := A B C D F G
 EMBDDEPTHS := 1 2 3 4 5
 
@@ -148,79 +147,102 @@ define PRINTL
 $(1)
 endef
 
+# ARGS:
+#   1 = spillover position (S1, S2, etc.)
+#   2 = corpus name
+#   3 = basename string
+#   4 = LME args
 define SPILL
-$(foreach var, $(DLT) $(FJ) $(COREF), $(eval $(call PRINTL,$(var)-$(1):$(BASENAME).$(var)$(1).-$(LMEDEFAULT)..lrtsignif)))
-$(foreach var, $(DLT) $(FJ) $(COREF), $(eval $(call PRINTL,$(var)-$(1)_%:$(BASENAME).$(var)$(1).-%..lrtsignif;)))
-DLT-$(1): $(foreach var, $(DLT), $(var)-$(1))
-DLT-$(1)_%: $(foreach var, $(DLT), $(var)-$(1)_%);
-FJ-$(1): $(foreach var, $(FJ), $(var)-$(1))
-FJ-$(1)_%: $(foreach var, $(FJ), $(var)-$(1)_%);
-COREF-$(1): $(foreach var, $(COREF), $(var)-$(1))
-COREF-$(1)_%: $(foreach var, $(COREF), $(var)-$(1)_%);
-MEM-$(1): DLT-$(1) FJ-$(1)
-MEM-$(1)_%: DLT-$(1)_% FJ-$(1)_%;
+$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-$(1):$(3).$(var)$(1).-$(4)..lrt
+)
+$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-$(1)_%:$(3).$(var)$(1).-%..lrt;
+)
+$(2)-DLT-$(1): $(foreach var, $(DLT), $(2)-$(var)-$(1))
+$(2)-DLT-$(1)_%: $(foreach var, $(DLT), $(2)-$(var)-$(1)_%);
+$(2)-FJ-$(1): $(foreach var, $(FJ), $(2)-$(var)-$(1))
+$(2)-FJ-$(1)_%: $(foreach var, $(FJ), $(2)-$(var)-$(1)_%);
+$(2)-COREF-$(1): $(foreach var, $(COREF), $(2)-$(var)-$(1))
+$(2)-COREF-$(1)_%: $(foreach var, $(COREF), $(2)-$(var)-$(1)_%);
+$(2)-MEM-$(1): $(2)-DLT-$(1) $(2)-FJ-$(1)
+$(2)-MEM-$(1)_%: $(2)-DLT-$(1)_% $(2)-FJ-$(1)_%;
 
-$(foreach var, $(DLT) $(FJ) $(COREF), $(eval $(call PRINTL,$(var)-cum-$(1):$(BASENAME).cum$(var)$(1).-$(LMEDEFAULT)..lrtsignif)))
-$(foreach var, $(DLT) $(FJ) $(COREF), $(eval $(call PRINTL,$(var)-cum-$(1)_%:$(BASENAME).cum$(var)$(1).-%..lrtsignif;)))
-DLT-cum-$(1): $(foreach var, $(DLT), $(var)-cum-$(1))
-DLT-cum-$(1)_%: $(foreach var, $(DLT), $(var)-cum-$(1)_%);
-FJ-cum-$(1): $(foreach var, $(FJ), $(var)-cum-$(1))
-FJ-cum-$(1)_%: $(foreach var, $(FJ), $(var)-cum-$(1)_%);
-COREF-cum-$(1): $(foreach var, $(COREF), $(var)-cum-$(1))
-COREF-cum-$(1)_%: $(foreach var, $(COREF), $(var)-cum-$(1)_%);
-MEM-cum-$(1): DLT-cum-$(1) FJ-cum-$(1)
-MEM-cum-$(1)_%: DLT-cum-$(1)_% FJ-cum-$(1)_%;
+$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-cum-$(1):$(3).cum$(var)$(1).-$(4)..lrt
+)
+$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-cum-$(1)_%:$(3).cum$(var)$(1).-%..lrt
+)
+$(2)-DLT-cum-$(1): $(foreach var, $(DLT), $(var)-cum-$(1))
+$(2)-DLT-cum-$(1)_%: $(foreach var, $(DLT), $(2)-$(var)-cum-$(1)_%);
+$(2)-FJ-cum-$(1): $(foreach var, $(FJ), $(2)-$(var)-cum-$(1))
+$(2)-FJ-cum-$(1)_%: $(foreach var, $(FJ), $(2)-$(var)-cum-$(1)_%);
+$(2)-COREF-cum-$(1): $(foreach var, $(COREF), $(2)-$(var)-cum-$(1))
+$(2)-COREF-cum-$(1)_%: $(foreach var, $(COREF), $(2)-$(var)-cum-$(1)_%);
+$(2)-MEM-cum-$(1): $(2)-DLT-cum-$(1) $(2)-FJ-cum-$(1)
+$(2)-MEM-cum-$(1)_%: $(2)-DLT-cum-$(1)_% $(2)-FJ-cum-$(1)_%;
 endef
 
+
+# ARGS:
+#   1 = corpus name
+#   2 = basename string
+#   3 = LME args
 define RT-EXPERIMENTS
-$(foreach var, $(DLT) $(FJ) $(COREF), $(eval $(call PRINTL,$(var):$(BASENAME).$(var).-$(LMEDEFAULT)..lrtsignif)))
-$(foreach var, $(DLT) $(FJ) $(COREF), $(eval $(call PRINTL,$(var)_%:$(BASENAME).$(var).-%..lrtsignif;)))
-DLT: $(DLT)
-DLT_%: $(foreach var, $(DLT), $(var)_%);
-FJ: $(FJ)
-FJ_%: $(foreach var, $(FJ), $(var)_%);
-COREF: $(COREF)
-COREF_%: $(foreach var, $(COREF), $(var)_%);
-MEM: DLT FJ
-MEM_%: DLT_% FJ_%;
+$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var):$(2).$(var).-$(3)..lrt
+)
+$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)_%:$(2).$(var).-%..lrt;
+)
+$(1)-DLT: $(foreach var, $(DLT), $(1)-$(var))
+$(1)-DLT_%: $(foreach var, $(DLT), $(1)-$(var)_%);
+$(1)-FJ: $(foreach var, $(FJ), $(1)-$(var))
+$(1)-FJ_%: $(foreach var, $(FJ), $(1)-$(var)_%);
+$(1)-COREF: $(foreach var, $(COREF), $(1)-$(var))
+$(1)-COREF_%: $(foreach var, $(COREF), $(1)-$(var)_%);
+$(1)-MEM: $(1)-DLT $(1)-FJ
+$(1)-MEM_%: $(1)-DLT_% $(1)-FJ_%;
 
-$(foreach var, $(DLT) $(FJ) $(COREF), $(eval $(call PRINTL,$(var)-cum:$(BASENAME).cum$(var).-$(LMEDEFAULT)..lrtsignif)))
-$(foreach var, $(DLT) $(FJ) $(COREF), $(eval $(call PRINTL,$(var)-cum_%:$(BASENAME).cum$(var).-%..lrtsignif;)))
-DLT-cum: $(foreach var, $(DLT), $(var)-cum)
-DLT-cum_%: $(foreach var, $(DLT), $(var)-cum_%);
-FJ-cum: $(foreach var, $(FJ), $(var)-cum)
-FJ-cum_%: $(foreach var, $(FJ), $(var)-cum_%);
-COREF-cum: $(foreach var, $(COREF), $(var)-cum)
-COREF-cum_%: $(foreach var, $(COREF), $(var)-cum_%);
-MEM-cum: DLT-cum FJ-cum
-MEM-cum_%: DLT-cum_% FJ-cum_%;
+$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-cum:$(2).cum$(var).-$(3)..lrt
+)
+$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-cum_%:$(2).cum$(var).-%..lrt;
+)
+$(1)-DLT-cum: $(foreach var, $(DLT), $(1)-$(var)-cum)
+$(1)-DLT-cum_%: $(foreach var, $(DLT), $(1)-$(var)-cum_%);
+$(1)-FJ-cum: $(foreach var, $(FJ), $(1)-$(var)-cum)
+$(1)-FJ-cum_%: $(foreach var, $(FJ), $(1)-$(var)-cum_%);
+$(1)-COREF-cum: $(foreach var, $(COREF), $(1)-$(var)-cum)
+$(1)-COREF-cum_%: $(foreach var, $(COREF), $(1)-$(var)-cum_%);
+$(1)-MEM-cum: $(1)-DLT-cum $(1)-FJ-cum
+$(1)-MEM-cum_%: $(1)-DLT-cum_% $(1)-FJ-cum_%;
 
-$(foreach spill, $(SPILLOVER), $(eval $(call SPILL,$(spill))))
+$(foreach spill, $(SPILLOVER),$(call SPILL,$(spill),$(1),$(2),$(3))
+)
 
-$(foreach var, $(DLT) $(FJ) $(COREF), $(eval $(call PRINTL,$(var)-ALLSPILL: $(var) $(foreach s,$(SPILLOVER),$(var)-$(s)))))
-$(foreach var, $(DLT) $(FJ) $(COREF), $(eval $(call PRINTL,$(var)-ALLSPILL_%: $(var)_% $(foreach s,$(SPILLOVER),$(var)-$(s)_%);)))
-DLT-ALLSPILL: $(foreach var, $(DLT), $(var)-ALLSPILL)
-DLT-ALLSPILL_%: $(foreach var, $(DLT), $(var)-ALLSPILL_%);
-FJ-ALLSPILL: $(foreach var, $(FJ), $(var)-ALLSPILL)
-FJ-ALLSPILL_%: $(foreach var, $(FJ), $(var)-ALLSPILL_%);
-COREF-ALLSPILL: $(foreach var, $(COREF), $(var)-ALLSPILL)
-COREF-ALLSPILL_%: $(foreach var, $(COREF), $(var)-ALLSPILL_%);
-MEM-ALLSPILL: DLT-ALLSPILL FJ-ALLSPILL
-MEM-ALLSPILL_%: DLT-ALLSPILL_% FJ-ALLSPILL_%;
+$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-ALLSPILL: $(1)-$(var) $(foreach s,$(SPILLOVER),$(1)-$(var)-$(s))
+)
+$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-ALLSPILL_%: $(1)-$(var)_% $(foreach s,$(SPILLOVER),$(1)-$(var)-$(s)_%);
+)
+$(1)-DLT-ALLSPILL: $(foreach var, $(DLT), $(1)-$(var)-ALLSPILL)
+$(1)-DLT-ALLSPILL_%: $(foreach var, $(DLT), $(1)-$(var)-ALLSPILL_%);
+$(1)-FJ-ALLSPILL: $(foreach var, $(FJ), $(1)-$(var)-ALLSPILL)
+$(1)-FJ-ALLSPILL_%: $(foreach var, $(FJ), $(1)-$(var)-ALLSPILL_%);
+$(1)-COREF-ALLSPILL: $(foreach var, $(COREF), $(1)-$(var)-ALLSPILL)
+$(1)-COREF-ALLSPILL_%: $(foreach var, $(COREF), $(1)-$(var)-ALLSPILL_%);
+$(1)-MEM-ALLSPILL: $(1)-DLT-ALLSPILL $(1)-FJ-ALLSPILL
+$(1)-MEM-ALLSPILL_%: $(1)-DLT-ALLSPILL_% $(1)-FJ-ALLSPILL_%;
 
-$(foreach var, $(DLT) $(FJ) $(COREF), $(eval $(call PRINTL,$(var)-cum-ALLSPILL: $(var)-cum $(foreach s,$(SPILLOVER),$(var)-cum-$(s)))))
-$(foreach var, $(DLT) $(FJ) $(COREF), $(eval $(call PRINTL,$(var)-cum-ALLSPILL_%: $(var)-cum_% $(foreach s,$(SPILLOVER),$(var)-cum-$(s)_%);)))
-DLT-cum-ALLSPILL: $(foreach var, $(DLT), $(var)-cum-ALLSPILL)
-DLT-cum-ALLSPILL_%: $(foreach var, $(DLT), $(var)-cum-ALLSPILL_%);
-FJ-cum-ALLSPILL: $(foreach var, $(FJ), $(var)-cum-ALLSPILL)
-FJ-cum-ALLSPILL_%: $(foreach var, $(FJ), $(var)-cum-ALLSPILL_%);
-COREF-cum-ALLSPILL: $(foreach var, $(COREF), $(var)-cum-ALLSPILL)
-COREF-cum-ALLSPILL_%: $(foreach var, $(COREF), $(var)-cum-ALLSPILL_%);
-MEM-cum-ALLSPILL: DLT-cum-ALLSPILL FJ-cum-ALLSPILL
-MEM-cum-ALLSPILL_%: DLT-cum-ALLSPILL_% FJ-cum-ALLSPILL_%;
+$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-cum-ALLSPILL: $(1)-$(var)-cum $(foreach s,$(SPILLOVER),$(1)-$(var)-cum-$(s))
+)
+$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-cum-ALLSPILL_%: $(1)-$(var)-cum_% $(foreach s,$(SPILLOVER),$(1)-$(var)-cum-$(s)_%);
+)
+$(1)-DLT-cum-ALLSPILL: $(foreach var, $(DLT), $(1)-$(var)-cum-ALLSPILL)
+$(1)-DLT-cum-ALLSPILL_%: $(foreach var, $(DLT), $(1)-$(var)-cum-ALLSPILL_%);
+$(1)-FJ-cum-ALLSPILL: $(foreach var, $(FJ), $(1)-$(var)-cum-ALLSPILL)
+$(1)-FJ-cum-ALLSPILL_%: $(foreach var, $(FJ), $(1)-$(var)-cum-ALLSPILL_%);
+$(1)-COREF-cum-ALLSPILL: $(foreach var, $(COREF), $(1)-$(var)-cum-ALLSPILL)
+$(1)-COREF-cum-ALLSPILL_%: $(foreach var, $(COREF), $(1)-$(var)-cum-ALLSPILL_%);
+$(1)-MEM-cum-ALLSPILL: $(1)-DLT-cum-ALLSPILL $(1)-FJ-cum-ALLSPILL
+$(1)-EM-cum-ALLSPILL_%: $(1)-DLT-cum-ALLSPILL_% $(1)-FJ-cum-ALLSPILL_%;
 
-KITCHENSINK: MEM-ALLSPILL MEM-cum-ALLSPILL
-KITCHENSINK_%: MEM-ALLSPILL_% MEM-cum-ALLSPILL_%;
+$(1)-KITCHENSINK: $(1)-MEM-ALLSPILL $(1)-MEM-cum-ALLSPILL
+$(1)-KITCHENSINK_%: $(1)-MEM-ALLSPILL_% $(1)-MEM-cum-ALLSPILL_%;
 endef
 
 
@@ -248,66 +270,66 @@ endef
 genmodel/rename_cols.params: | genmodel
 	echo '' > $@
 
+# Pastes left-corner predictors to existing identically tokenized tokmeasures file
+%.embd.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).embd.tokmeasures
+	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
+
+# Computes left-corner predictors
 %.embd.tokmeasures: %.linetoks $(RT-SCRIPTS)/calcEmbd.py %.nopunc.semprocdecpars
 	cat $< | python $(word 2, $^) $(word 3, $^) > $@
     
+# Pastes DLT predictors to existing identically tokenized tokmeasures file
+%.dlt.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).dlt.tokmeasures
+	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
+ 
+# Computes DLT predictors
 %.dlt.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
 	cat $< | python $(word 2, $^) > $@
-  
-%.dlt.d.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
-	cat $< | python $(word 2, $^) -d > $@
 
+# Pastes coreference predictors to existing identically tokenized tokmeasures file
+%.coref.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).coref.tokmeasures
+	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
+
+# Computes coreference predictors 
 %.coref.tokmeasures: $(RT-SCRIPTS)/extract_coref_predictors.py %.coref.fromlinetrees.numbered.editabletrees
 	python $^ > $@
 
-%.pcfg.tokmeasures: %_parsed.output $(LCPARSE-SCRIPTS)/spargeComplexity.py $(RT-SCRIPTS)/calcFJProb.py
-	cat $< | python3 $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;' | python $(word 3, $^) > $@
+# Pastes parser complexity predictors to existing identically tokenized tokmeasures file
+%_parsed.tokmeasures: $$(basename %).tokmeasures \
+$$(word 1, $$(subst ., ,%))$$(suffix $$*)_parsed.tokmeasures \
+$(RT-SCRIPTS)/filter_cols.py
+	cat $< | paste -d' ' - <(cat $(word 2, $^) | python $(word 3, $^) -x word sentid) > $@
+
+# Computes parser complexity predictors 
+%_parsed.tokmeasures: %_parsed.output $(LCPARSE-SCRIPTS)/spargeComplexity.py $(RT-SCRIPTS)/calcFJProb.py
+	cat $< | python3 $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;' | python $(word 3, $^) | \
+	sed 's/  */ /g;1s/F-/fm/g;1s/F+/fp/g;1s/L-/lm/g;1s/L+/lp/g;1s/B-/bm/g;1s/B+/bp/g;1s/Badd/ba/g;1s/Bcdr/bc/g;1s/BNil/bo/g;1s/Bsto/bsto/g;' > $@
 
 # TODO: merges surprisal columns from multiple parses together
 %.merged.pcfg.tokmeasures: scripts/$$(subst .,,$$(suffix $$*)).PCFGmerge.txt 
 	@echo 'Merging PCFGs'
 
-# pcfg.tokmeasures with a time column, requires %.time.tokmeasures with timestamps for tokens in stimulus
-%.t.pcfg.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).time.tokmeasures
+# %.tokmeasures with a time column, requires %.time.tokmeasures with timestamps for tokens in stimulus
+%.t.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., , %)).time.tokmeasures
 	cat $(word 1, $^) | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) > $@
 
-# With co-ref features
-%.syn.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).gold.dlt.tokmeasures \
-$$(word 1, $$(subst ., , %)).gold.embd.tokmeasures $$(word 1, $$(subst ., , %)).gold.coref.tokmeasures
-	cat $< | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) <(cut -f 2- -d' ' $(word 3, $^)) <(cut -f 2- $(word 4, $^) | sed 's/\t/ /g') | \
-	sed 's/  */ /g;1s/F-/fm/g;1s/F+/fp/g;1s/L-/lm/g;1s/L+/lp/g;1s/B-/bm/g;1s/B+/bp/g;1s/Badd/ba/g;1s/Bcdr/bc/g;1s/BNil/bo/g;1s/Bsto/bsto/g;' > $@
+# Shortcut: With co-ref features
+%.syn.tokmeasures: %_parsed.dlt.embd.coref.tokmeasures
+	mv $^ $@
 
-# Without co-ref features
-%.syn.tokmeasures: %.pcfg.tokmeasures $$(word 1, $$(subst ., , %)).gold.dlt.tokmeasures \
-$$(word 1, $$(subst ., , %)).gold.embd.tokmeasures
-	cat $< | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) <(cut -f 2- -d' ' $(word 3, $^)) | \
-	sed 's/  */ /g;1s/F-/fm/g;1s/F+/fp/g;1s/L-/lm/g;1s/L+/lp/g;1s/B-/bm/g;1s/B+/bp/g;1s/Badd/ba/g;1s/Bcdr/bc/g;1s/BNil/bo/g;1s/Bsto/bsto/g;' > $@
+# Shortcut: Without co-ref features
+%.syn.tokmeasures: %_parsed.dlt.embd.tokmeasures
+	mv $^ $@
 
-%.relabeledpcfg.tokmeasures: %.pcfg.tokmeasures
-	sed 's/  */ /g;1s/F-/fm/g;1s/F+/fp/g;1s/L-/lm/g;1s/L+/lp/g;1s/B-/bm/g;1s/B+/bp/g;1s/Badd/ba/g;1s/Bcdr/bc/g;1s/BNil/bo/g;1s/Bsto/bsto/g;' $< > $@
-
-%.preitem.tokmeasures: %.syn.tokmeasures
-	mv $< $@
-
-%.preitem.tokmeasures: %.relabeledpcfg.tokmeasures
-	mv $< $@
-
-%.itemmeasures: $$(basename %).preitem.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
-	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepth timestamp -e latin-1 | \
+%.itemmeasures: $$(DEP-RHACKS) $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
+	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
-%.t.itemmeasures: $$(basename %).t.preitem.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
+%.t.itemmeasures: $$(basename %).t.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
-	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepth timestamp -e latin-1 | \
-	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
-	$(word 5, $^) > $@
-
-# Keep old buggy roll operation which messes up sentid
-%.o.itemmeasures: $$(basename %).syn.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RT-SCRIPTS)/spilloverMetrics.py
-	cat <(cat $< | python $(word 6, $^) -n3 -p -a -s | sed 's/\[/!/g;s/\]/!/g;') | python $(word 3, $^) $(word 2, $^) embddepth -e latin-1 | \
+	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
@@ -335,17 +357,9 @@ RTCoreEvmeasures:
       innerdelim: .
 endef
 .PRECIOUS: %.core.evmeasures
-%.core.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
+%.core.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
 	python $(word 3, $^) $< $(word 2, $^) word sentid sentpos > $@
-
-# Just here to preserve old buggy dev/test split from Shain et al. (2016): CL4LC
-.PRECIOUS: %.o.full.evmeasures
-%.o.full.evmeasures: %.o.itemmeasures $$(word 1, $$(subst ., , %)).src.o.evmeasures \
-$(RT-SCRIPTS)/merge_tables.py $(RT-SCRIPTS)/accumulateMetrics.py $(RT-SCRIPTS)/rm_unfix_items.py \
-$$(word 1, $$(subst ., , %)).accumulateMetrics.params \
-$$(word 1, $$(subst ., , %)).rm_unfix_items.params
-	python $(word 3, $^) $< $(word 2, $^) word sentid sentpos | python $(word 4, $^) $(shell cat $(word 6, $^)) | python $(word 5, $^) $(shell cat $(word 7, $^)) > $@
 
 %.filt.evmeasures: $$(basename %).core.evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
 $(RT-SCRIPTS)/inferPredictors.py \

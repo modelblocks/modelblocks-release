@@ -58,6 +58,7 @@ RESOURCE-NAME := UPPARSE (Unsupervised parser, Ponvert et al, 2011)
 define RESOURCE-DESCR =
 
 NAME: UPPARSE (Unsupervised parser, Ponvert et al, 2011)
+MB POINTER FILE: config/user-upparse-directory.txt
 AVAILABILITY: Free
 URL: https://github.com/eponvert/upparse
 DESCRIPTION:i Efficient implementations of hidden Markov

@@ -55,6 +55,10 @@ endef
 .SUFFIXES:
 .SECONDEXPANSION:
 
+NATSTORIES-BASENAME := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.sprbest
+NATSTORIES-LMEDEFAULT := NSCFX
+$(eval $(call RT-EXPERIMENTS,naturalstories,$(NATSTORIES-BASENAME),$(NATSTORIES-LMEDEFAULT)))
+
 ################################################################################
 #
 #  User-specific parameter files (not shared; created by default with default values)
@@ -76,6 +80,7 @@ RESOURCE-NAME := The Natural Stories Corpus
 define RESOURCE-DESCR =
 
 NAME: The Natural Stories Corpus
+MB POINTER FILE: config/user-naturalstories-directory.txt
 AVAILABILITY: Unreleased
 DESCRIPTION: A corpus of naturalistic stories meant to contain varied,
 low-frequency syntactic constructions. There are a variety of annotations
@@ -126,11 +131,11 @@ genmodel/naturalstories.futureMetrics.params: | genmodel
 genmodel/naturalstories.rm_unfix_items.params: | genmodel
 	echo '-f fdur' > $@
 
-%/naturalstories.linetrees: $$(DEP-NATSTORIES) $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(NATSTORDIR)/parses/penn/all-parses.txt.penn \
+%/naturalstories.penn.linetrees: $$(DEP-NATSTORIES) $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(NATSTORDIR)/parses/penn/all-parses.txt.penn \
 $(CONFIGDIR)/user-naturalstories-directory.txt | %
 	cat $(word 2, $^) | perl $(word 1, $^) > $@
 
-%/naturalstories.linetoks: %/naturalstories.linetrees $(NATSTORIES-SCRIPTS)/penn2sents.py | %
+genmodel/naturalstories.linetoks: genmodel/naturalstories.penn.linetrees $(NATSTORIES-SCRIPTS)/penn2sents.py | genmodel
 	cat $< | python $(word 2, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' > $@
 
 %naturalstories.items: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv $(RT-SCRIPTS)/get_rttokenization.py \
@@ -154,7 +159,7 @@ $(CONFIGDIR)/user-naturalstories-directory.txt
 	paste -d' ' <(cat $< | python $(word 4, $^) -x sentid) <(cat $(word 3, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/-LRB-/(/g;s/-RRB-/)/g;' | \
 	python $(word 2, $^) $< -e latin-1 | python $(word 4, $^) -c sentid) > $@
   
-%naturalstories.src.evmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv \
+%naturalstories.evmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv \
 $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/merge_tables.py %naturalstories.mfields.itemmeasures \
 $(CONFIGDIR)/user-naturalstories-directory.txt
 	python $(word 3, $^) <(cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word 2, $^) WorkerId subject RT fdur) \
@@ -167,9 +172,9 @@ $(CONFIGDIR)/user-naturalstories-directory.txt
 	python $(word 3, $^) <(cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word 2, $^) WorkerId subject RT fdur) \
 	$(word 4, $^) word zone item > $@
 
-%naturalstories.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.linetrees %naturalstories.linetoks
+%naturalstories.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.linetrees %naturalstories.linetoks
 	python $^ > $@
 
-%naturalstories.gold.coref.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.coref.linetrees %naturalstories.linetoks
+%naturalstories.coref.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.coref.linetrees %naturalstories.linetoks
 	python $^ > $@
 
