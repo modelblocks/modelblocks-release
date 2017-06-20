@@ -55,6 +55,13 @@ while ( <> ) {
   s/ \)/\)/g;
   s/\)\(/\) \(/g;
 
+  ## conjoin disjoint trees with root node
+  s/^(\(*[^S\( ].*)$/\(S \1\)/;
+  s/^(.*[^\)]\))$/\(S \1\)/;
+
+  ## conjoin erroneously split punctuation
+  s/\(\. \?\) \(\. \?\)/\(\? \?\)/g;
+  
   #### post-coling12 fixes
   if (!$opts{c}) {
     # correct wrong type of empty category

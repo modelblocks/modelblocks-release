@@ -84,9 +84,9 @@ endif
 #
 ################################################################################
     
-genmodel/brown%.linetrees: $$(DEP-TREEBANK) $(TREEBANKDIR) $(LTREES-SCRIPTS)/editabletrees2linetrees.pl \
-$(CONFIGDIR)/user-treebank-directory.txt | genmodel
-	cat $(word 1, $^)/parsed/mrg/brown/%/*.mrg | perl $(word 2,$^) > $@
+genmodel/brown%.linetrees: $$(DEP-TREEBANK) $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/brown/$$* $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
+#	echo $^
+	cat $(word 2,$^)/*.mrg | sed 's/\[/-LSB-/g;s/\]/-RSB-/g;' | perl $(word 3,$^) > $@
 
 genmodel/brownTRAIN.linetrees: $(foreach sect,$(BROWNTRAINSECTS),genmodel/brown$(sect).linetrees) | genmodel
 	cat $^ > $@
@@ -100,7 +100,7 @@ endef
 genmodel/wsj%.linetrees: $$(DEP-TREEBANK) $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/wsj/$$* \
 $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
 	cat $(word 2,$^)/*.mrg | perl $(word 3,$^) > $@
-  
+
 %/wsj02to21.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,%/wsj$(sect).linetrees)
 	cat $^ > $@
 

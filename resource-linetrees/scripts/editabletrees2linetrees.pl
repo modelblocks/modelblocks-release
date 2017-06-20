@@ -31,6 +31,10 @@ while(<STDIN>){
   if($_ eq ""){
     next;
   }
+  if(m/^\*/){
+    ## get rid of brown headers
+    next;
+  }
 
   # Accumulate tree lines until parens match
   $tree .= "$_ ";
