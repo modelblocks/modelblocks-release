@@ -529,6 +529,7 @@ regressSimpleLinearModel <- function(dataset, form) {
     printLMSummary(m)
     smartPrint('logLik:')
     smartPrint(logLik(m))
+    return(m)
 }
 
 regressBayesianModel <- function(dataset, form, nchains=4, algorithm='sampling') {
