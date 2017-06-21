@@ -17,6 +17,8 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef W__
+#define W__
 DiscreteDomain<int> domW;
 class W : public Delimited<DiscreteDomainRV<int,domW>> {
 public:
@@ -25,10 +27,11 @@ public:
     W ( const char* ps ) : Delimited<DiscreteDomainRV<int,domW>> ( ps ) { }
 };
 typedef W ObsWord;
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
-W unkWord (const char* ps ) {
+W unkWordBerk (const char* ps ) {
     // the following code ripped from berkeley sophisticated lexicon
     string s = string("UNK");
     string word = std::string(ps); //.getString();

@@ -35,7 +35,7 @@ bool STORESTATE_CHATTY = true;
 #include <Tree.hpp>
 
 map<L,double> mldLemmaCounts;
-const int MINCOUNTS = 100;
+int MINCOUNTS = 100;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -222,7 +222,8 @@ int main ( int nArgs, char* argv[] ) {
   // For each command-line flag or model file...
   for ( int a=1; a<nArgs; a++ ) {
     //if ( 0==strcmp(argv[a],"t") ) STORESTATE_TYPE = true;
-    //else {
+    if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS = atoi( argv[a]+2 );
+    else {
       cerr << "Loading model " << argv[a] << "..." << endl;
       // Open file...
       ifstream fin (argv[a], ios::in );
@@ -234,7 +235,7 @@ int main ( int nArgs, char* argv[] ) {
       }
       cerr << "Model " << argv[a] << " loaded." << endl;
       for ( auto& l : lLC ) mldLemmaCounts[l.second] = l.first;
-    //}
+    }
   }
 
   int linenum = 0;
