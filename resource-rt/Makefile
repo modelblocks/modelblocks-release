@@ -288,7 +288,7 @@ genmodel/rename_cols.params: | genmodel
 
 # Pastes coreference predictors to existing identically tokenized tokmeasures file
 %.coref.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).coref.tokmeasures
-	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
+	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g') > $@
 
 # Computes coreference predictors 
 %.coref.tokmeasures: $(RT-SCRIPTS)/extract_coref_predictors.py %.coref.fromlinetrees.numbered.editabletrees
@@ -399,20 +399,21 @@ $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst G
 #
 # NOTE: this assumes you have not created any *.lmeform files of your own that end in *SP.lmeform.
 # If you have, it would be best to rename them before running this target.
+BASENAME-NB := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm
 BASELINE-SPILL-EVAL-%: $(RT-SCRIPTS)/permuteSpillover.py $(RT-SCRIPTS)/$$(word 1, $$(subst _, ,%)).lmeform \
 $$(foreach b, \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 scripts) \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 scripts) \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 scripts) \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 scripts), \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts), \
 $$(BASENAME-NB).$$(basename $$(notdir $$(b))).-$$(word 2, $$(subst _, ,$$*)).lm);
 
 BASELINE-SPILL-EVAL-%: $(RT-SCRIPTS)/permuteSpillover.py $(CURDIR)/scripts/$$(word 1, $$(subst _, ,%)).lmeform \
 $$(foreach b, \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 scripts) \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 scripts) \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 scripts) \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 scripts), \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts), \
 $$(BASENAME-NB).$$(basename $$(notdir $$(b))).-$$(word 2, $$(subst _, ,$$*)).lm);
 
 ################################################################################

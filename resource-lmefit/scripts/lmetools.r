@@ -259,8 +259,11 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
     for (x in colnames(data)[grepl('^embd', colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
+    for (x in colnames(data)[grepl('^startembd', colnames(data))]) {
+        data[[x]] <- as.logical(as.numeric(as.character(data[[x]])))
+    }
     for (x in colnames(data)[grepl('^endembd', colnames(data))]) {
-        data[[x]] <- as.logical(as.character(data[[x]]))
+        data[[x]] <- as.logical(as.numeric(as.character(data[[x]])))
     }
     for (x in colnames(data)[grepl('^dlt',colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
@@ -526,6 +529,7 @@ regressSimpleLinearModel <- function(dataset, form) {
     printLMSummary(m)
     smartPrint('logLik:')
     smartPrint(logLik(m))
+    return(m)
 }
 
 regressBayesianModel <- function(dataset, form, nchains=4, algorithm='sampling') {

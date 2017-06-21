@@ -27,12 +27,13 @@ for path in fit_list:
     with open(path, 'rb') as f:
         text = f.readlines()
         name = path.split('.')[-3]
+        cliargs = path.split('.')[-2]
         for i,l in enumerate(text):
             if deRify(l.strip()).startswith('logLik'):
                 loglik = float(deRify(text[i+1].strip()))
-    rows.append({'filename': name, 'logLik': str(loglik)})
+    rows.append({'modelname': name, 'logLik': str(loglik), 'cliargs': str(cliargs)})
 
-headers = ['filename', 'logLik']
+headers = ['modelname', 'logLik', 'cliargs']
 header_row = {}
 for h in headers:
     header_row[h] = h
