@@ -174,7 +174,6 @@ NgramParams:
   blockseq:
   - blocktype: NgramOrder
   - blocktype: NgramModel
-  - blocktype: NgramIZ
   blocktitle: N-gram Parameters
 endef
 define TargetBlock
