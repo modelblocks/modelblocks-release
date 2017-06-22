@@ -18,6 +18,8 @@ def main():
 
     merged = pd.merge(data1, data2.filter(items=data2_cols), how='inner', on=args.key_cols)
     merged = merged * 1 # convert boolean to [1,0]
+    if 'subject' in merged.columns:
+        merged.sort_values(['subject'] + args.key_cols, inplace=True)
     merged.to_csv(sys.stdout, ' ', index=False, na_rep='nan')
       
 main()   

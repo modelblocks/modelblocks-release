@@ -43,7 +43,7 @@
 #  4. Params files:
 #     a. <corpus_basename>.merge_tables.params: merge key fields (and other
 #        params if needed) to pass to merge_tables.py. Typically
-#        'word sentid sentpos'
+#        'sentid sentpos'
 #     b. <corpus_basename>.accumulateMetrics.params: fields to accumulate
 #        (and other params) to pass to accumulateMetrics.py
 #     c. <corpus_basename>.rm_bad_toks.py: params to pass to rm_bad_toks.py
@@ -359,7 +359,7 @@ endef
 .PRECIOUS: %.core.evmeasures
 %.core.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
-	python $(word 3, $^) $< $(word 2, $^) word sentid sentpos > $@
+	python $(word 3, $^) $< $(word 2, $^) sentid sentpos > $@
 
 %.filt.evmeasures: $$(basename %).core.evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
 $(RT-SCRIPTS)/inferPredictors.py \
