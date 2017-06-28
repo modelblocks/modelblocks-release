@@ -86,6 +86,7 @@ sed '1s/.*/cum$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
 mv $@{.tmp,};
 
 SPILLOVER := S1 S2
+SURP := fwprob5surp synsurp lexsurp totsurp 
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
 FJ := noF yesJ embddepthAny embddepthMin endembdMin startembdMin noFlen embdlen 
 COREF := corefbin coreflenw coreflenr corefsize
@@ -155,7 +156,7 @@ endef
 define SPILL
 $(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-$(1):$(3).$(var)$(1).-$(4)..lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-$(1)_%:$(3).$(var)$(1).-%..lrt;
+$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-$(1)_%:$(3).$(var)$(1).%..lrt;
 )
 $(2)-DLT-$(1): $(foreach var, $(DLT), $(2)-$(var)-$(1))
 $(2)-DLT-$(1)_%: $(foreach var, $(DLT), $(2)-$(var)-$(1)_%);
@@ -168,9 +169,9 @@ $(2)-MEM-$(1)_%: $(2)-DLT-$(1)_% $(2)-FJ-$(1)_%;
 
 $(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-cum-$(1):$(3).cum$(var)$(1).-$(4)..lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-cum-$(1)_%:$(3).cum$(var)$(1).-%..lrt
+$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-cum-$(1)_%:$(3).cum$(var)$(1).%..lrt
 )
-$(2)-DLT-cum-$(1): $(foreach var, $(DLT), $(var)-cum-$(1))
+$(2)-DLT-cum-$(1): $(foreach var, $(DLT), $(2)-$(var)-cum-$(1))
 $(2)-DLT-cum-$(1)_%: $(foreach var, $(DLT), $(2)-$(var)-cum-$(1)_%);
 $(2)-FJ-cum-$(1): $(foreach var, $(FJ), $(2)-$(var)-cum-$(1))
 $(2)-FJ-cum-$(1)_%: $(foreach var, $(FJ), $(2)-$(var)-cum-$(1)_%);
@@ -188,7 +189,7 @@ endef
 define RT-EXPERIMENTS
 $(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var):$(2).$(var).-$(3)..lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)_%:$(2).$(var).-%..lrt;
+$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)_%:$(2).$(var).%..lrt;
 )
 $(1)-DLT: $(foreach var, $(DLT), $(1)-$(var))
 $(1)-DLT_%: $(foreach var, $(DLT), $(1)-$(var)_%);
@@ -201,7 +202,7 @@ $(1)-MEM_%: $(1)-DLT_% $(1)-FJ_%;
 
 $(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-cum:$(2).cum$(var).-$(3)..lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-cum_%:$(2).cum$(var).-%..lrt;
+$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-cum_%:$(2).cum$(var).%..lrt;
 )
 $(1)-DLT-cum: $(foreach var, $(DLT), $(1)-$(var)-cum)
 $(1)-DLT-cum_%: $(foreach var, $(DLT), $(1)-$(var)-cum_%);

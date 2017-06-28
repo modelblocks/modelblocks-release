@@ -46,9 +46,9 @@ data <- cleanupData(data, params$filterfiles, params$filterlines, params$filters
 data <- recastEffects(data, params$splitcols, params$indicatorlevel, params$groupingfactor)
 
 if (params$dev) {
-    data <- create.dev(data, params$partition)
+    data <- create.dev(data, params$partitionmod, params$partitiondevindices)
 } else if (params$test) {
-    data <- create.test(data, params$partition)
+    data <- create.test(data, params$partitionmod, params$partitiondevindices)
 }
 
 if (!is.null(params$restrict)) {

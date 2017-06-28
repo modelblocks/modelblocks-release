@@ -188,6 +188,7 @@ include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
 include $(RESOURCE-RT)/Makefile
+include $(RESOURCE-FMRI)/Makefile
 include $(RESOURCE-LMEFIT)/Makefile
 include $(RESOURCE-ALICE)/Makefile
 include $(RESOURCE-BMMM)/Makefile
@@ -203,7 +204,6 @@ include $(RESOURCE-XLSX2CSV)/Makefile
 include $(RESOURCE-UCL)/Makefile
 include $(RESOURCE-UPPARSE)/Makefile
 include $(RESOURCE-WORDNET)/Makefile
-include $(RESOURCE-FMRI)/Makefile
 endef
 
 ################################################################################

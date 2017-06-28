@@ -4,6 +4,8 @@ argparser = argparse.ArgumentParser('''
 Extracts recall values from a user-supplied list of lrtsignifs and outputs a space-delimited table of results.
 ''')
 argparser.add_argument('lrtsignifs', type=str, nargs='+', help='One or more *.lrtsignif files from which to extract lme comparison results.')
+argparser.add_argument('-D', '--diamond', dest='D', action='store_true', help='Inputs are diamond LRT files (if not specified, defaults to pairwise LRT).')
+argparser.add_argument('-H', '--humanreadable', dest='H', action='store_true', help='Output column-aligned table (if not specified, defaults to CSV output).')
 args, unknown = argparser.parse_known_args()
 
 val = re.compile('^.+: *([^ "]+) *"?\n')
@@ -81,102 +83,141 @@ def getPrintTable(row_collection, key_list, field_sep=' '):
           for k in key_list ]])])
             for row in row_collection])
 
-pair_evals = [x for x in args.lrtsignifs if not (x.endswith('.diamond.lrtsignif') or x.endswith('.dlrt'))]
-diam_evals = [x for x in args.lrtsignifs if (x.endswith('.diamond.lrtsignif') or x.endswith('.dlrt'))]
 
-if len(pair_evals) > 0:
-    print('===================================')
-    print('Pairwise evaluation of significance')
-    print('===================================')
+if args.D:
+    diam_evals = [x for x in args.lrtsignifs if (x.endswith('.diamond.lrtsignif') or x.endswith('.dlrt'))]
+    if len(diam_evals) > 0:
+        if args.H:
+            print('==================================')
+            print('Diamond evaluation of significance')
+            print('==================================')
+            print('')
 
-    headers = ['effect', 'corpus', 'estimate', 't value', 'signif', 'converged_base', 'rel_grad_base', 'converged_main', 'rel_grad_main', 'filename']
-    
-    header_row = {}
-    for h in headers:
-        header_row[h] = h
+        headers = ['effect', 'corpus', 'diamondname', 'pair', 'estimate', 't value', 'signif', 'converged_base', 'rel_grad_base', 'converged_main', 'rel_grad_main', 'formname', 'lmeargs', 'filename']
 
-    rows = []
+        header_row = {}
+        for h in headers:
+            header_row[h] = h
 
-    for path in pair_evals:
-        with open(path, 'rb') as f:
-            filename = path.split('/')[-1]
-            row = compute_row(f)
-            row['filename'] = filename
-            rows.append(row)
+        rows = []
 
-    converged = [header_row] + sorted([x for x in rows if (x['converged_base'] in true and x['converged_main'] in true)], \
-                key = lambda y: float(y['signif']))
-    nonconverged = [header_row] + sorted([x for x in rows if not(x['converged_base'] in true and x['converged_main'] in true)], \
-                   key = lambda y: float(y['signif']))
+        for path in diam_evals:
+            with open(path, 'rb') as f:
+                filename = path.split('/')[-1]
+                filechunks = filename.split('.')
+                formname = filechunks[-5]
+                lmeargs = filechunks[-3]
+                line = f.readline()
+                while line and not deRify(line).startswith('Diamond Anova'):
+                    line = f.readline()
+                assert line, 'Input is not properly formatted'
+                diamName = val.match(line).group(1)
+                while line and not deRify(line).startswith('Effect 1 ('):
+                    line = f.readline()
+                assert line, 'Input not properly formatted'
+                row = compute_row(f, diamName, 'baseline')
+                row['filename'] = filename
+                row['formname'] = formname
+                row['lmeargs'] = lmeargs
+                rows.append(row)
+                while line and not deRify(line).startswith('Effect 2 ('):
+                    line = f.readline()
+                assert line, 'Input not properly formatted'
+                row = compute_row(f, diamName, 'baseline')
+                row['filename'] = filename
+                row['formname'] = formname
+                row['lmeargs'] = lmeargs
+                rows.append(row)
+                while line and not deRify(line).startswith('Both vs. Effect 1'):
+                    line = f.readline()
+                assert line, 'Input not properly formatted'
+                row = compute_row(f, diamName, 'both')
+                row['filename'] = filename
+                row['formname'] = formname
+                row['lmeargs'] = lmeargs
+                rows.append(row)
+                while line and not deRify(line).startswith('Both vs. Effect 2'):
+                    line = f.readline()
+                assert line, 'Input not properly formatted'
+                row = compute_row(f, diamName, 'both')
+                row['filename'] = filename
+                row['formname'] = formname
+                row['lmeargs'] = lmeargs
+                rows.append(row)
 
-    print(getPrintTable(converged, headers))
+        converged = [header_row] + [x for x in rows if (x['converged_base'] in true and x['converged_main'] in true)]
+        nonconverged = [header_row] + [x for x in rows if not(x['converged_base'] in true and x['converged_main'] in true)]
 
-    if len(nonconverged) > 1: #First element is the header row
-        print('-----------------------------------')
-        print('Convergence failures')
-        print('-----------------------------------')
-        print(getPrintTable(nonconverged, headers))
+        if args.H:
+            print(getPrintTable(converged, headers))
+        else:
+            for r in converged:
+                print(', '.join([r[h] for h in headers]))
 
-    print ''
-    print ''
+        if len(nonconverged) > 0:
+            if args.H:
+                print('')
+                print('')
+                print('-----------------------------------')
+                print('Convergence failures')
+                print('-----------------------------------')
+                print(getPrintTable(nonconverged, headers))
+                print('')
+            else:
+                for r in nonconverged[int(len(converged)>0):]:
+                    print(', '.join([r[h] for h in headers]))
+
+
+else:
+    pair_evals = [x for x in args.lrtsignifs if not (x.endswith('.diamond.lrtsignif') or x.endswith('.dlrt'))]
+    if len(pair_evals) > 0:
+        if args.H:
+            print('===================================')
+            print('Pairwise evaluation of significance')
+            print('===================================')
+            print('')
+
+        headers = ['effect', 'corpus', 'estimate', 't value', 'signif', 'converged_base', 'rel_grad_base', 'converged_main', 'rel_grad_main', 'formname', 'lmeargs', 'filename']
         
-if len(diam_evals) > 0:
-    print('==================================')
-    print('Diamond evaluation of significance')
-    print('==================================')
+        header_row = {}
+        for h in headers:
+            header_row[h] = h
 
-    headers = ['effect', 'corpus', 'diamondname', 'pair', 'estimate', 't value', 'signif', 'converged_base', 'rel_grad_base', 'converged_main', 'rel_grad_main', 'filename']
+        rows = []
 
-    header_row = {}
-    for h in headers:
-        header_row[h] = h
+        for path in pair_evals:
+            with open(path, 'rb') as f:
+                filename = path.split('/')[-1]
+                filechunks = filename.split('.')
+                formname = filechunks[-5]
+                lmeargs = filechunks[-3]
+                row = compute_row(f)
+                row['filename'] = filename
+                row['formname'] = formname
+                row['lmeargs'] = lmeargs
+                rows.append(row)
 
-    rows = []
+        converged = [header_row] + sorted([x for x in rows if (x['converged_base'] in true and x['converged_main'] in true)], \
+                    key = lambda y: float(y['signif']))
+        nonconverged = [header_row] + sorted([x for x in rows if not(x['converged_base'] in true and x['converged_main'] in true)], \
+                       key = lambda y: float(y['signif']))
 
-    for path in diam_evals:
-        with open(path, 'rb') as f:
-            filename = path.split('/')[-1]
-            line = f.readline()
-            while line and not deRify(line).startswith('Diamond Anova'):
-                line = f.readline()
-            assert line, 'Input is not properly formatted'
-            diamName = val.match(line).group(1)
-            while line and not deRify(line).startswith('Effect 1 ('):
-                line = f.readline()
-            assert line, 'Input not properly formatted'
-            row = compute_row(f, diamName, 'baseline')
-            row['filename'] = filename
-            rows.append(row)
-            while line and not deRify(line).startswith('Effect 2 ('):
-                line = f.readline()
-            assert line, 'Input not properly formatted'
-            row = compute_row(f, diamName, 'baseline')
-            row['filename'] = filename
-            rows.append(row)
-            while line and not deRify(line).startswith('Both vs. Effect 1'):
-                line = f.readline()
-            assert line, 'Input not properly formatted'
-            row = compute_row(f, diamName, 'both')
-            row['filename'] = filename
-            rows.append(row)
-            while line and not deRify(line).startswith('Both vs. Effect 2'):
-                line = f.readline()
-            assert line, 'Input not properly formatted'
-            row = compute_row(f, diamName, 'both')
-            row['filename'] = filename
-            rows.append(row)
+        if args.H:
+            print(getPrintTable(converged, headers))
+        else:
+            for r in converged:
+                print(', '.join([r[h] for h in headers]))
 
-    converged = [header_row] + [x for x in rows if (x['converged_base'] in true and x['converged_main'] in true)]
-    nonconverged = [header_row] + [x for x in rows if not(x['converged_base'] in true and x['converged_main'] in true)]
+        if len(nonconverged) > 1: #First element is the header row
+            if args.H:
+                print('')
+                print('')
+                print('-----------------------------------')
+                print('Convergence failures')
+                print('-----------------------------------')
+                print('')
+                print(getPrintTable(nonconverged, headers))
+            else:
+                for r in nonconverged[int(len(converged)>0):]:
+                    print(', '.join([r[h] for h in headers]))
 
-    print(getPrintTable(converged, headers))
-
-    if len(nonconverged) > 0:
-        print('-----------------------------------')
-        print('Convergence failures')
-        print('-----------------------------------')
-        print(getPrintTable(nonconverged, headers))
-
-    print ''
-    print ''   
- 
