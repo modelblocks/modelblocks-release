@@ -64,12 +64,18 @@ endef
 
 VPATH += $(RESOURCE-PASSAGES)
 
-PASSAGES-ROI := LPostTemp LAntTemp LAngG LIFG LMFG LIFGorb
-PASSAGES-PREDS := nwrds fjprob noFprob totsurp lexsurp synsurp fwprob5surp wlen
+PASSAGES-ROI := LPostTemp LAntTemp LAngG LIFG LMFG LIFGorb AllROI
 PASSAGES72-BASENAME := genmodel/passages72.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.bysent
 PASSAGES72-LMEDEFAULT := 
+$(eval $(call FMRI-BYSENT-EXPERIMENTS,passages72,$(PASSAGES72-BASENAME),$(PASSAGES-ROI),passagesBasic,$(PASSAGES72-LMEDEFAULT)))
 PASSAGES96-BASENAME := genmodel/passages96.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.bysent
 PASSAGES96-LMEDEFAULT := 
+$(eval $(call FMRI-BYSENT-EXPERIMENTS,passages96,$(PASSAGES96-BASENAME),$(PASSAGES-ROI),passagesBasic,$(PASSAGES96-LMEDEFAULT)))
+PASSAGES-BASENAME := genmodel/passages.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.bysent
+PASSAGES-LMEDEFAULT := 
+$(eval $(call FMRI-BYSENT-EXPERIMENTS,passages,$(PASSAGES-BASENAME),$(PASSAGES-ROI),passagesBasic,$(PASSAGES-LMEDEFAULT)))
+$(eval $(call FMRI-BYSENT-EXPERIMENTS,passages,$(PASSAGES-BASENAME),$(PASSAGES-ROI),passagesNwrds,$(PASSAGES-LMEDEFAULT)))
+$(eval $(call FMRI-BYSENT-EXPERIMENTS,passages,$(PASSAGES-BASENAME),$(PASSAGES-ROI),passagesNwrdsWlen,$(PASSAGES-LMEDEFAULT)))
 
 ################################################################################
 #
@@ -144,14 +150,30 @@ genmodel/passages96.linetoks: $$(DEP-TOKENIZER) genmodel/passages96.lineitems $(
 passages%.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-PASSAGES)/srcmodel/passages$$*.stripped.linetrees passages%.linetoks
 	python $^ > $@
 
+genmodel/passages.linetoks: genmodel/passages72.linetoks genmodel/passages96.linetoks
+	cat $(word 1, $^) $(word 2, $^) > $@
+
+genmodel/passages.lineitems: genmodel/passages72.lineitems genmodel/passages96.lineitems	
+	cat $(word 1, $^) $(word 2, $^) > $@
+
+genmodel/passages.linetrees: genmodel/passages72.linetrees genmodel/passages96.linetrees
+	cat $(word 1, $^) $(word 2, $^) > $@
+
+genmodel/passages.evmeasures: genmodel/passages72.evmeasures genmodel/passages96.evmeasures $(PASSAGES-SCRIPTS)/cumSentID.py
+	cat $(word 1, $^) $(word 2, $^) | python $(word 3, $^) > $@
+
 passages%.evmeasures: $$(DEP-PASSAGES) $(PASSAGESDIR)/passages_data_n$$*.csv \
 $(RT-SCRIPTS)/rename_cols.py \
-$(PASSAGES-SCRIPTS)/get_sampleids.py \
+$(PASSAGES-SCRIPTS)/cumSentID.py \
+$(FMRI-SCRIPTS)/averageROI.py \
 $(CONFIGDIR)/user-passages-directory.txt | genmodel
 	cat $(word 1, $^) | sed 's/,/ /g;s/_sent/ /g;s/passage//g;s/con_name/docid sentid/g' | \
 	python $(word 2, $^) subj_name subject con_name docid psc_LPostTemp boldLPostTemp psc_LAntTemp boldLAntTemp psc_LAngG boldLAngG psc_LIFG boldLIFG psc_LMFG boldLMFG psc_LIFGorb boldLIFGorb | \
 	awk 'NR == 1 {print;}; NR > 1 {$$3 = $$3 - 1; print;};' | \
-	python $(word 3, $^) > $@
+	python $(word 3, $^) | \
+	python $(word 4, $^) $(PASSAGES-ROI) > $@
 
-passages%-batch: $(foreach roi, $(PASSAGES-ROI), $(foreach pred, $(PASSAGES-PREDS), $$(PASSAGES$$*-BASENAME).$(roi)passagesBasic.$(pred).$$(PASSAGES$$*-LMEDEFAULT)..lrt));
+passages%-devbatch: $(foreach roi, $(PASSAGES-ROI), $(foreach pred, $(BYSENT-PREDS), $$(PASSAGES$$*-BASENAME).$(roi)passagesBasic.$(pred).$$(PASSAGES$$*-LMEDEFAULT)..lrt));
+
+passages-devbatch: $(foreach roi, $(PASSAGES-ROI), $(foreach pred, $(BYSENT-PREDS), $$(PASSAGES-BASENAME).$(roi)passagesBasic.$(pred).$$(PASSAGES-LMEDEFAULT)..lrt));
 

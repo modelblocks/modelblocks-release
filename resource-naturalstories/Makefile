@@ -102,20 +102,6 @@ endif
 #
 ################################################################################
 
-# DELETE once we can move past the buggy natstories dev/test split
-define KernelBlock
-NgramIZ:
-  blocktitle: N-gram IZ
-  nargs: '?'
-  paramtype: Boolean
-  paramval:
-  - text: Add item/zone fields (used only for Natural Stories)
-    value: iz
-endef
-%.iz.ngram.itemmeasures: $$(DEP-NATSTORIES) %.ngram.itemmeasures $(NATSTORDIR)/naturalstories_RTS/all_stories.tok \
-../resource-rt/scripts/filter_cols.py $(CONFIGDIR)/user-naturalstories-directory.txt | genmodel
-	paste -d' ' $(word 1, $^) <(cat $(word 2, $^) | sed 's/\t/ /g' | python $(word 3, $^) -d -c item zone) > $@
-
 genmodel/naturalstories.merge_tables.params: | genmodel
 	echo 'word sentid sentpos' > $@
 
@@ -152,26 +138,12 @@ $(CONFIGDIR)/user-naturalstories-directory.txt
 	paste -d' ' <(cat $(word 1, $^) | sed 's/\t/ /g;') <(cat $(word 2, $^) | python $(word 3, $^) | cut -d' ' -f 2-) \
 	<(cat $(word 1, $^) | sed 's/\t/ /g;' | awk -f $(word 5, $^) -v cols=item - | python $(word 4, $^) item docid) > $@
 
-# Just here to preserve old buggy dev/test split
-%naturalstories.mfields.o.itemmeasures: %naturalstories.mfields.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py %naturalstories.gold.dlt.tokmeasures $(RT-SCRIPTS)/filter_cols.py \
-$(CONFIGDIR)/user-naturalstories-directory.txt
-	paste -d' ' <(cat $< | python $(word 4, $^) -x sentid) <(cat $(word 3, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/-LRB-/(/g;s/-RRB-/)/g;' | \
-	python $(word 2, $^) $< -e latin-1 | python $(word 4, $^) -c sentid) > $@
-  
 %naturalstories.evmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv \
 $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/merge_tables.py %naturalstories.mfields.itemmeasures \
 $(CONFIGDIR)/user-naturalstories-directory.txt
 	python $(word 3, $^) <(cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word 2, $^) WorkerId subject RT fdur) \
-	$(word 4, $^) word zone item > $@
+	$(word 4, $^) item zone | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' > $@
   
-# Just here to preserve old buggy dev/test split
-%naturalstories.fp.src.o.evmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv \
-$(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/merge_tables.py %naturalstories.mfields.o.itemmeasures \
-$(CONFIGDIR)/user-naturalstories-directory.txt
-	python $(word 3, $^) <(cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word 2, $^) WorkerId subject RT fdur) \
-	$(word 4, $^) word zone item > $@
-
 %naturalstories.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.linetrees %naturalstories.linetoks
 	python $^ > $@
 

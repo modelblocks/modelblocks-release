@@ -43,7 +43,7 @@
 #  4. Params files:
 #     a. <corpus_basename>.merge_tables.params: merge key fields (and other
 #        params if needed) to pass to merge_tables.py. Typically
-#        'word sentid sentpos'
+#        'sentid sentpos'
 #     b. <corpus_basename>.accumulateMetrics.params: fields to accumulate
 #        (and other params) to pass to accumulateMetrics.py
 #     c. <corpus_basename>.rm_bad_toks.py: params to pass to rm_bad_toks.py
@@ -86,6 +86,7 @@ sed '1s/.*/cum$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
 mv $@{.tmp,};
 
 SPILLOVER := S1 S2
+SURP := fwprob5surp synsurp lexsurp totsurp 
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
 FJ := noF yesJ embddepthAny embddepthMin endembdMin startembdMin noFlen embdlen 
 COREF := corefbin coreflenw coreflenr corefsize
@@ -155,7 +156,7 @@ endef
 define SPILL
 $(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-$(1):$(3).$(var)$(1).-$(4)..lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-$(1)_%:$(3).$(var)$(1).-%..lrt;
+$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-$(1)_%:$(3).$(var)$(1).%..lrt;
 )
 $(2)-DLT-$(1): $(foreach var, $(DLT), $(2)-$(var)-$(1))
 $(2)-DLT-$(1)_%: $(foreach var, $(DLT), $(2)-$(var)-$(1)_%);
@@ -168,9 +169,9 @@ $(2)-MEM-$(1)_%: $(2)-DLT-$(1)_% $(2)-FJ-$(1)_%;
 
 $(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-cum-$(1):$(3).cum$(var)$(1).-$(4)..lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-cum-$(1)_%:$(3).cum$(var)$(1).-%..lrt
+$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-cum-$(1)_%:$(3).cum$(var)$(1).%..lrt
 )
-$(2)-DLT-cum-$(1): $(foreach var, $(DLT), $(var)-cum-$(1))
+$(2)-DLT-cum-$(1): $(foreach var, $(DLT), $(2)-$(var)-cum-$(1))
 $(2)-DLT-cum-$(1)_%: $(foreach var, $(DLT), $(2)-$(var)-cum-$(1)_%);
 $(2)-FJ-cum-$(1): $(foreach var, $(FJ), $(2)-$(var)-cum-$(1))
 $(2)-FJ-cum-$(1)_%: $(foreach var, $(FJ), $(2)-$(var)-cum-$(1)_%);
@@ -188,7 +189,7 @@ endef
 define RT-EXPERIMENTS
 $(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var):$(2).$(var).-$(3)..lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)_%:$(2).$(var).-%..lrt;
+$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)_%:$(2).$(var).%..lrt;
 )
 $(1)-DLT: $(foreach var, $(DLT), $(1)-$(var))
 $(1)-DLT_%: $(foreach var, $(DLT), $(1)-$(var)_%);
@@ -201,7 +202,7 @@ $(1)-MEM_%: $(1)-DLT_% $(1)-FJ_%;
 
 $(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-cum:$(2).cum$(var).-$(3)..lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-cum_%:$(2).cum$(var).-%..lrt;
+$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-cum_%:$(2).cum$(var).%..lrt;
 )
 $(1)-DLT-cum: $(foreach var, $(DLT), $(1)-$(var)-cum)
 $(1)-DLT-cum_%: $(foreach var, $(DLT), $(1)-$(var)-cum_%);
@@ -288,7 +289,7 @@ genmodel/rename_cols.params: | genmodel
 
 # Pastes coreference predictors to existing identically tokenized tokmeasures file
 %.coref.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).coref.tokmeasures
-	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
+	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g') > $@
 
 # Computes coreference predictors 
 %.coref.tokmeasures: $(RT-SCRIPTS)/extract_coref_predictors.py %.coref.fromlinetrees.numbered.editabletrees
@@ -359,7 +360,7 @@ endef
 .PRECIOUS: %.core.evmeasures
 %.core.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
-	python $(word 3, $^) $< $(word 2, $^) word sentid sentpos > $@
+	python $(word 3, $^) $< $(word 2, $^) sentid sentpos > $@
 
 %.filt.evmeasures: $$(basename %).core.evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
 $(RT-SCRIPTS)/inferPredictors.py \
@@ -399,20 +400,21 @@ $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst G
 #
 # NOTE: this assumes you have not created any *.lmeform files of your own that end in *SP.lmeform.
 # If you have, it would be best to rename them before running this target.
+BASENAME-NB := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm
 BASELINE-SPILL-EVAL-%: $(RT-SCRIPTS)/permuteSpillover.py $(RT-SCRIPTS)/$$(word 1, $$(subst _, ,%)).lmeform \
 $$(foreach b, \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 scripts) \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 scripts) \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 scripts) \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 scripts), \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts), \
 $$(BASENAME-NB).$$(basename $$(notdir $$(b))).-$$(word 2, $$(subst _, ,$$*)).lm);
 
 BASELINE-SPILL-EVAL-%: $(RT-SCRIPTS)/permuteSpillover.py $(CURDIR)/scripts/$$(word 1, $$(subst _, ,%)).lmeform \
 $$(foreach b, \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 scripts) \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 scripts) \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 scripts) \
-$$(shell cat $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform | python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 scripts), \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts), \
 $$(BASENAME-NB).$$(basename $$(notdir $$(b))).-$$(word 2, $$(subst _, ,$$*)).lm);
 
 ################################################################################
