@@ -32,6 +32,7 @@ using namespace arma;
 #include <Delimited.hpp>
 bool STORESTATE_TYPE = true;
 bool STORESTATE_CHATTY = false;
+uint FEATCONFIG = 0;
 #include <StoreState.hpp>
 #include <Beam.hpp>
 
@@ -42,6 +43,8 @@ uint VERBOSE    = 0;
 
 char psSpcColonSpc[]  = " : ";
 char psSpcEqualsSpc[] = " = ";
+char psSpaceF[]       = " f";
+char psAmpersand[]    = "&";
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -51,10 +54,10 @@ typedef Delimited<T> B;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class BeamElement : public DelimitedQuad<psX,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psX> {
+class BeamElement : public DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX> {
  public:
-  BeamElement ( )                                              : DelimitedQuad<psX,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psX>()        { }
-  BeamElement ( const Sign& a, F f, J j, const StoreState& q ) : DelimitedQuad<psX,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psX>(a,f,j,q) { }
+  BeamElement ( )                                                                 : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>()             { }
+  BeamElement ( const Sign& a, F f, E e, K k, JResponse jr, const StoreState& q ) : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>(a,f,e,k,jr,q) { }
 };
 
 typedef pair<double,const BeamElement&> ProbBack;
@@ -112,6 +115,7 @@ int main ( int nArgs, char* argv[] ) {
       if      ( 0==strcmp(argv[a],"-v") ) VERBOSE = 1;
       else if ( 0==strcmp(argv[a],"-V") ) VERBOSE = 2;
       else if ( 0==strncmp(argv[a],"-b",2) ) BEAM_WIDTH = atoi(argv[a]+2);
+      else if ( 0==strncmp(argv[a],"-f",2) ) FEATCONFIG = atoi(argv[a]+2);
       //else if ( string(argv[a]) == "t" ) STORESTATE_TYPE = true;
       else {
         cerr << "Loading model " << argv[a] << "..." << endl;
@@ -191,7 +195,7 @@ int main ( int nArgs, char* argv[] ) {
         // For each hypothesized storestate at previous time step...
         uint i=0; for( auto& be_tdec1 : beams[t-1] ) if( i++%numThreads==numt ){
           double            lgpr_tdec1 = be_tdec1.first.first;      // prob of prev storestate
-          const StoreState& q_tdec1    = be_tdec1.second.fourth();  // prev storestate
+          const StoreState& q_tdec1    = be_tdec1.second.sixth();  // prev storestate
 
           if( VERBOSE>1 ) cout << "  from (" << be_tdec1.second << ")" << endl;
 
@@ -270,7 +274,7 @@ int main ( int nArgs, char* argv[] ) {
                               // Calculate probability and storestate and add to beam...
                               StoreState ss( q_tdec1, f, j, e_p_t, e, opL, opR, tpA.first, tpB.first, aPretrm, aLchild );
                               if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
-                                beams[t].tryAdd( BeamElement( aPretrm, f, j, ss ), ProbBack( lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second), be_tdec1.second ) );
+                                beams[t].tryAdd( BeamElement( aPretrm, f,e_p_t,k_p_t, jresponse, ss ), ProbBack( lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second), be_tdec1.second ) );
                                 if( VERBOSE>1 ) cout << "                send (" << be_tdec1.second << ") to (" << ss << ") with "
                                                      << (lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second)) << endl;
                               }
@@ -299,7 +303,8 @@ int main ( int nArgs, char* argv[] ) {
     auto& mls = beams.getMostLikelySequence();
     if( mls.size()>0 ) {
       int u=1; auto ibe=next(mls.begin()); auto iw=lwSent.begin(); for( ; ibe!=mls.end() && iw!=lwSent.end(); ibe++, iw++, u++ ) {
-        cout << *iw << " " << ibe->first.first() << " " << ibe->first.second() << " " << ibe->first.third() << " " << ibe->first.fourth();
+        cout << *iw << " " << ibe->first;
+//ibe->first.first() << " " << ibe->first.second() << " " << ibe->first.third() << " " << ibe->first.fourth();
 //        if( OUTPUT_MEASURES ) cout << " " << vdSurp[u];
         cout << endl;
       }

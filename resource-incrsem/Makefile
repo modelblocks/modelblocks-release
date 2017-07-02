@@ -160,10 +160,12 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 	cat $<  |  python $(word 2,$^)  |  LC_COLLATE=C sort  |  LC_COLLATE=C uniq -c  |  sed 's/^ *//'  >  $@
 
 ## obtain predictors and responses for all semantic processing models...
+%f.semprocdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename %).lemmacounts
+	cat $(word 1,$^)  |  grep -v '()'  |  grep -v '='  |  $(word 2,$^) -f$(subst .,,$(suffix $*)) $(word 3,$^)  >  $@
 %uc.semprocdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename %).lemmacounts
-	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) -u$(subst .,,$(suffix $*)) $(word 3,$^)  >  $@
+	cat $(word 1,$^)  |  grep -v '()'  |  grep -v '='  |  $(word 2,$^) -u$(subst .,,$(suffix $*)) $(word 3,$^)  >  $@
 %decpars:  $$(basename %).linetrees  $(BIN)/linetrees2$$(subst .,,$$(suffix $$*))decpars  $$(basename %).lemmacounts
-	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) $(word 3,$^)  >  $@
+	cat $(word 1,$^)  |  grep -v '()'  |  grep -v '='  |  $(word 2,$^) $(word 3,$^)  >  $@
 #%ss.semprocdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename %).lemmacounts
 #	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) $(word 3,$^) $(subst .,,$(suffix $*))  >  $@
 
@@ -307,12 +309,20 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 #
 ########################################
 
-%parsed.semprocdecprobs:  %parsed.linetrees  $(BIN)/linetrees2semprocdecpars  genmodel/$$(basename $$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*))))).lemmacounts  $(BIN)/semprocdecpars2semprocdecprobs  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*))))model
-	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  |  $(word 4,$^) $(word 5,$^)  >  $@
+##%parsed.semprocdecprobs:  %parsed.linetrees  $(BIN)/linetrees2semprocdecpars  genmodel/$$(basename $$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*))))).lemmacounts  $(BIN)/semprocdecpars2semprocdecprobs  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*))))model
+##	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  |  $(word 4,$^) $(word 5,$^)  >  $@
+%parsed.semprocdecprobs:  %parsed.tokdecs  $(BIN)/tokdecs2semprocdecprobs  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*))))model
+	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  >  $@
+##%.semprocdecprobs:  genmodel/$$(basename $$*).semprocdecpars  $(BIN)/semprocdecpars2semprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))model
+#%.semprocdecprobs:  genmodel/$$(basename $$(basename $$*)).linetrees  \
+#		    $(INCRSEM-SCRIPTS)/unkword.py  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*)))).wordcounts  \
+#		    $(BIN)/linetrees2semprocdecpars  genmodel/$$(basename $$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*))))).lemmacounts  \
+#		    $(BIN)/semprocdecpars2semprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))model
+#	cat $(word 5,$^)  >  eraseme2
+#	cat $(word 1,$^)  |  python $(word 2,$^) $(subst unked,,$(subst .,,$(suffix $(basename $*)))) $(word 3,$^)  >  eraseme
+#	cat $(word 1,$^)  |  python $(word 2,$^) $(subst unked,,$(subst .,,$(suffix $(basename $*)))) $(word 3,$^)  |  $(word 4,$^) $(word 5,$^)  |  $(word 6,$^) $(word 7,$^)  >  $@
 %.semprocdecprobs:  genmodel/$$(basename $$*).semprocdecpars  $(BIN)/semprocdecpars2semprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))model
 	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  >  $@
-
-
 
 
 #################################################
@@ -402,6 +412,7 @@ ParseTokdecs:
     kwargs:
       innerdelim: '-'
 endef
+
 .PRECIOUS: %parsed.tokdecs
 %parsed.tokdecs:  bin/$$(subst .,,$$(suffix $$(basename $$(subst +,-,$$(subst -,.,$$*))))) \
                   $$(basename %).linetoks \
