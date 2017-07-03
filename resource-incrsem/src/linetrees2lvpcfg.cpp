@@ -74,7 +74,7 @@ class ForestTree : public DelimitedList<psX,ForestTree,psSpace,psX> {
   operator const L ( ) const { return l; }
 
   void init ( map<L,arma::vec>& cPi, map<trip<L,L,L>,arma::mat>& cTheta, map<L,arma::mat>& cXi, uint numT, bool bRoot = true ) {
-    if( bRoot )                               { arma::vec& cv = cPi[l];                                    if( cv.size()==0 ) cv = arma::zeros(numT); }
+    if( bRoot )                               { arma::vec& cv = cPi[l];                                    if( cv.size()==0 ) cv = arma::zeros(numT);                }
     if     ( size()==1 && front().size()==0 ) { arma::mat& cm = cXi[l];                                    if( cm.size()==0 ) cm = arma::zeros(numT,domW.getSize()); }
     else if( size()==2                      ) { arma::mat& cm = cTheta[trip<L,L,L>(l,front().l,back().l)]; if( cm.size()==0 ) cm = arma::zeros(numT,numT*numT);
                                                 for( auto& subtree : *this ) subtree.init( cPi, cTheta, cXi, numT, false ); }
@@ -82,9 +82,9 @@ class ForestTree : public DelimitedList<psX,ForestTree,psSpace,psX> {
   }
 
   void addCounts ( map<L,arma::vec>& cPi, map<trip<L,L,L>,arma::mat>& cTheta, map<L,arma::mat>& cXi, uint numT, bool bRoot = true ) {
-    if( bRoot )                               { arma::vec& cv = cPi[l];                                    cv( z )++;                               }
-    if     ( size()==1 && front().size()==0 ) { arma::mat& cm = cXi[l];                                    cm( z, W(front().l.c_str()).toInt() )++; }
-    else if( size()==2                      ) { arma::mat& cm = cTheta[trip<L,L,L>(l,front().l,back().l)]; cm( z, front().z*numT + back().z )++;
+    if( bRoot )                               { arma::vec& cv = cPi[l];                                    if( v.size()>0 ) cv( z )++;                               }
+    if     ( size()==1 && front().size()==0 ) { arma::mat& cm = cXi[l];                                    if( v.size()>0 ) cm( z, W(front().l.c_str()).toInt() )++; }
+    else if( size()==2                      ) { arma::mat& cm = cTheta[trip<L,L,L>(l,front().l,back().l)]; if( v.size()>0 ) cm( z, front().z*numT + back().z )++;
                                                 for( auto& subtree : *this ) subtree.addCounts( cPi, cTheta, cXi, numT, false );                    }
     else cerr << "ERROR -- tree not CNF: " << *this << endl;
   }
@@ -105,11 +105,11 @@ class ForestTree : public DelimitedList<psX,ForestTree,psSpace,psX> {
   }
 
   double getProb ( const map<L,arma::vec>& mPi, const map<trip<L,L,L>,arma::mat>& mTheta, map<L,arma::mat>& mXi, bool bRoot = true ) {
-    double pr = 1.0;
-    if( bRoot )                               pr = mPi.find( l )->second(z);
-    if(      size()==1 && front().size()==0 ) return pr * mXi.find( l )->second( z, W(front().l.c_str()).toInt() );
-    else if( size()==2 )                      { pr *= mTheta.find( trip<L,L,L>(l,front().l,back().l) )->second( z, v.size()*front().z + back().z );
-                                                for( auto& subtree : *this ) pr *= subtree.getProb( mPi, mTheta, mXi, false ); return pr; }
+    double pr = 0.0;
+    if( bRoot )                               pr = log( mPi.find( l )->second(z) );
+    if(      size()==1 && front().size()==0 ) return pr + log( mXi.find( l )->second( z, W(front().l.c_str()).toInt() ) );
+    else if( size()==2 )                      { pr += log( mTheta.find( trip<L,L,L>(l,front().l,back().l) )->second( z, v.size()*front().z + back().z ) );
+                                                for( auto& subtree : *this ) pr += subtree.getProb( mPi, mTheta, mXi, false ); return pr; }
     cerr << "ERROR -- tree not CNF: " << *this << endl;
     return 0.0;
   }
@@ -120,9 +120,11 @@ class ForestTree : public DelimitedList<psX,ForestTree,psSpace,psX> {
 
 int main ( int nArgs, char* argv[] ) {
 
-  uint numTypes   = 10;
-  uint numIters   = 100;
-  uint numThreads = (nArgs>1) ? atoi(argv[1]) : 10;
+  uint numTypes   = (nArgs>1) ? atoi(argv[1]) : 10;
+  uint numIters   = (nArgs>2) ? atoi(argv[2]) : 100;
+  uint numThreads = (nArgs>3) ? atoi(argv[3]) : 10;
+
+  cerr << numTypes << " types, " << numIters << " iterations, " << numThreads << " threads." << endl;
 
   // Read trees...
   list<ForestTree> ltCorpus;
@@ -139,10 +141,12 @@ int main ( int nArgs, char* argv[] ) {
   map<L,          arma::vec> cPi;
   map<trip<L,L,L>,arma::mat> cTheta;
   map<L,          arma::mat> cXi;
+  for( auto& t : ltCorpus ) t.init( cPi, cTheta, cXi, numTypes );
   // Init root, nonterm, term models...
   map<L,          arma::vec> mPi;
   map<trip<L,L,L>,arma::mat> mTheta;
   map<L,          arma::mat> mXi;
+  for( auto& t : ltCorpus ) t.init( mPi, mTheta, mXi, numTypes );
 
   mt19937 e( random_device{}() );
 
@@ -151,11 +155,18 @@ int main ( int nArgs, char* argv[] ) {
 
     ////// I. Sample models given counts from trees...
 
-  for( auto& t : ltCorpus ) t.init( cPi, cTheta, cXi, numTypes );
-  for( auto& t : ltCorpus ) t.init( mPi, mTheta, mXi, numTypes );
+    // Zero out counts...
+    for( auto& lv   : cPi    ) cPi   [lv.first  ].zeros();
+    for( auto& lllm : cTheta ) cTheta[lllm.first].zeros();
+    for( auto& lm   : cXi    ) cXi   [lm.first  ].zeros();
 
     // Obtain counts...
     for( auto& t : ltCorpus ) t.addCounts( cPi, cTheta, cXi, numTypes );
+
+    int totcounts = 0.0;
+    for( auto& lv   : cPi    ) totcounts += arma::accu( cPi   [lv.first  ] );
+    for( auto& lllm : cTheta ) totcounts += arma::accu( cTheta[lllm.first] );
+    for( auto& lm   : cXi    ) totcounts += arma::accu( cXi   [lm.first  ] );
 
     // Update pi models...
     for( auto& lv : cPi ) {
@@ -190,6 +201,10 @@ int main ( int nArgs, char* argv[] ) {
     }, numtglobal ));
     for( auto& w : vtWorkers2 ) w.join();
 
+    double totmods = 0.0;
+    for( auto& lv   : mPi    ) totmods += arma::accu( mPi   [lv.first  ] );
+    for( auto& lllm : mTheta ) totmods += arma::accu( mTheta[lllm.first] );
+    for( auto& lm   : mXi    ) totmods += arma::accu( mXi   [lm.first  ] );
 
     ////// II. Sample trees given models...
 
@@ -208,9 +223,9 @@ int main ( int nArgs, char* argv[] ) {
     for( auto& w : vtWorkers3 ) w.join();
 
     double lgpr = 0.0;
-    for( auto& t : ltCorpus ) { lgpr += log( t.getProb(mPi,mTheta,mXi) ); }
+    for( auto& t : ltCorpus ) { lgpr += t.getProb(mPi,mTheta,mXi); }
 
-    cerr<<"Iteration "<<i<<": logprob="<<lgpr<<endl;
+    cerr << "Iteration " << i << ": totcounts=" << totcounts << " totmods=" << totmods << " logprob=" << lgpr << endl;
   }
 
   for( auto& t : ltCorpus ) cout << t << endl;
