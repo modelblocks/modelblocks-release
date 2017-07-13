@@ -72,7 +72,7 @@ class CondModel(dict):
                 for v in self[c]: self[c][v] /= tot
     # read model
     def read(self,s):
-        m = re.search('^ *'+self.id+' +(.*) +: +(.*) += +(.*) *$',s)
+        m = re.search('^ *'+self.id+' +(.*?) +: +(.*) += +(.*) *$',s)
         if m is not None:
             c = tuple(re.split(' +',m.group(1)))
             if len(c)==1: c = c[0]

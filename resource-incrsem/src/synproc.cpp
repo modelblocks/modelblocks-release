@@ -104,6 +104,7 @@ class StreamTrellis : public vector<Beam> {
 int main ( int nArgs, char* argv[] ) {
 
   uint numThreads = 10;
+  bool bUnkShrink = false;
 
   // Define model structures...
   map<FPredictor,map<F,double>> modF;
@@ -131,7 +132,9 @@ int main ( int nArgs, char* argv[] ) {
       else if ( 0==strcmp(argv[a],"-u") ) BERKUNK = true;
       else if ( 0==strncmp(argv[a],"-b",2) ) BEAM_WIDTH = atoi(argv[a]+2);
       else if ( 0==strcmp(argv[a],"-c") ) OUTPUT_MEASURES = 1;
-      //else if ( string(argv[a]) == "t" ) STORESTATE_TYPE = true;
+      else if ( 0==strcmp(argv[a],"-d") ) NODEP = true;
+      else if ( 0==strcmp(argv[a],"-m") ) bUnkShrink = true;
+       //else if ( string(argv[a]) == "t" ) STORESTATE_TYPE = true;
       else {
         cerr << "Loading model " << argv[a] << "..." << endl;
         // Open file...
@@ -171,7 +174,7 @@ int main ( int nArgs, char* argv[] ) {
       for( auto& listelem : entry.second ) {
         if (listelem.first == unklistelem.first) {
           BAIL = true;
-          listelem.second = listelem.second + unklistelem.second; // merge actual likelihood and unk likelihood
+          listelem.second = listelem.second + ( ((bUnkShrink)?0.000001:1.0) * unklistelem.second ); // merge actual likelihood and unk likelihood
         }
       }
       if (not BAIL) entry.second.push_back(unklistelem);

@@ -42,10 +42,20 @@ class W : public Delimited<DiscreteDomainRV<int,domW>> {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+DiscreteDomain<int> domL;
+class L : public Delimited<DiscreteDomainRV<int,domL>> {
+ public:
+  L ( )                : Delimited<DiscreteDomainRV<int,domL>> ( )    { }
+  L ( int i )          : Delimited<DiscreteDomainRV<int,domL>> ( i )  { }
+  L ( const char* ps ) : Delimited<DiscreteDomainRV<int,domL>> ( ps ) { }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 char psOpenParen[]  = "(";
 char psCloseParen[] = ")";
 
-typedef Delimited<string> L;
+//typedef Delimited<string> L;
 typedef Delimited<int> Z;
 
 class ForestTree : public DelimitedList<psX,ForestTree,psSpace,psX> {
@@ -61,11 +71,11 @@ class ForestTree : public DelimitedList<psX,ForestTree,psSpace,psX> {
   }
   friend istream& operator>> ( pair<istream&,ForestTree&> ist, const char* psDelim ) {
     if ( ist.first.peek()=='(' ) return ist.first >> "(" >> ist.second.l >> " " >> (DelimitedList<psX,ForestTree,psSpace,psX>&)ist.second >> ")" >> psDelim;
-    else                         { istream& os = ist.first >> ist.second.l >> psDelim; W w(ist.second.l.c_str()); return os; }
+    else                         { istream& os = ist.first >> ist.second.l >> psDelim; W w(ist.second.l.getString().c_str()); return os; }
   }
   friend bool operator>> ( pair<istream&,ForestTree&> ist, const vector<const char*>& vpsDelim ) {
     if ( ist.first.peek()=='(' ) return ist.first >> "(" >> ist.second.l >> " " >> (DelimitedList<psX,ForestTree,psSpace,psX>&)ist.second >> ")" >> vpsDelim;
-    else                         { bool b = ist.first >> ist.second.l >> vpsDelim; W w(ist.second.l.c_str()); return b; }
+    else                         { bool b = ist.first >> ist.second.l >> vpsDelim; W w(ist.second.l.getString().c_str()); return b; }
   }
   friend ostream& operator<< ( ostream& os, const ForestTree& t ) {
     if ( t.size()>0 ) return os << psOpenParen << t.l << "_" << t.z << psSpace << (DelimitedList<psX,ForestTree,psSpace,psX>&)t << psCloseParen;
@@ -74,43 +84,46 @@ class ForestTree : public DelimitedList<psX,ForestTree,psSpace,psX> {
   operator const L ( ) const { return l; }
 
   void init ( map<L,arma::vec>& cPi, map<trip<L,L,L>,arma::mat>& cTheta, map<L,arma::mat>& cXi, uint numT, bool bRoot = true ) {
-    if( bRoot )                               { arma::vec& cv = cPi[l];                                    if( cv.size()==0 ) cv = arma::zeros(numT);                }
-    if     ( size()==1 && front().size()==0 ) { arma::mat& cm = cXi[l];                                    if( cm.size()==0 ) cm = arma::zeros(numT,domW.getSize()); }
-    else if( size()==2                      ) { arma::mat& cm = cTheta[trip<L,L,L>(l,front().l,back().l)]; if( cm.size()==0 ) cm = arma::zeros(numT,numT*numT);
+    if( bRoot )                               { arma::vec& cv = cPi[l];                                                    if( cv.size()==0 ) cv = arma::zeros(numT);                }
+    if     ( size()==1 && front().size()==0 ) { arma::mat& cm = cXi[l];                                                    if( cm.size()==0 ) cm = arma::zeros(numT,domW.getSize()); }
+    else if( size()==1 || size()==2         ) { arma::mat& cm = cTheta[trip<L,L,L>(l,front().l,(size()==1)?"-":back().l)]; if( cm.size()==0 ) cm = arma::zeros(numT,numT*numT);
                                                 for( auto& subtree : *this ) subtree.init( cPi, cTheta, cXi, numT, false ); }
-    else cerr << "ERROR -- tree not CNF: " << *this << endl;
+    else cerr << "ERROR -- n-nary tree: " << *this << endl;
   }
 
   void addCounts ( map<L,arma::vec>& cPi, map<trip<L,L,L>,arma::mat>& cTheta, map<L,arma::mat>& cXi, uint numT, bool bRoot = true ) {
-    if( bRoot )                               { arma::vec& cv = cPi[l];                                    if( v.size()>0 ) cv( z )++;                               }
-    if     ( size()==1 && front().size()==0 ) { arma::mat& cm = cXi[l];                                    if( v.size()>0 ) cm( z, W(front().l.c_str()).toInt() )++; }
-    else if( size()==2                      ) { arma::mat& cm = cTheta[trip<L,L,L>(l,front().l,back().l)]; if( v.size()>0 ) cm( z, front().z*numT + back().z )++;
+    if( bRoot )                               { arma::vec& cv = cPi[l];                                                    if( v.size()>0 ) cv( z )++;                               }
+    if     ( size()==1 && front().size()==0 ) { arma::mat& cm = cXi[l];                                                    if( v.size()>0 ) cm( z, W(front().l.getString().c_str()).toInt() )++; }
+    else if( size()==1 || size()==2         ) { arma::mat& cm = cTheta[trip<L,L,L>(l,front().l,(size()==1)?"-":back().l)]; if( v.size()>0 ) cm( z, front().z*numT + back().z )++;
                                                 for( auto& subtree : *this ) subtree.addCounts( cPi, cTheta, cXi, numT, false );                    }
-    else cerr << "ERROR -- tree not CNF: " << *this << endl;
+    else cerr << "ERROR -- n-ary tree: " << *this << endl;
   }
 
   void calcForest ( const map<trip<L,L,L>,arma::mat>& mTheta, const map<L,arma::mat>& mXi ) {
-    if     ( size()==1 && front().size()==0 ) { v = mXi.find( l )->second.col( W(front().l.c_str()).toInt() ); }
-    else if( size()==2                      ) { for( auto& subtree : *this ) subtree.calcForest( mTheta, mXi );
-                                                v = mTheta.find( trip<L,L,L>(l,front().l,back().l) )->second * arma::vectorise( back().v * front().v.t() ); }
-    else cerr << "ERROR -- tree not CNF: " << *this << endl;
+    if     ( size()==1 && front().size()==0 ) { v = mXi.find( l )->second.col( W(front().l.getString().c_str()).toInt() ); }
+    else if( size()==1 || size()==2         ) { for( auto& subtree : *this ) subtree.calcForest( mTheta, mXi );
+                                                if( size()==1 ) v = mTheta.find( trip<L,L,L>(l,front().l,"-") )->second * arma::vectorise( arma::diagmat( back().v ) );
+                                                else v = mTheta.find( trip<L,L,L>(l,front().l,back().l) )->second * arma::vectorise( back().v * front().v.t() ); }
+    else cerr << "ERROR -- n-nary tree: " << *this << endl;
   }
 
   void sampleZ ( const map<L,arma::vec>& mPi, const map<trip<L,L,L>,arma::mat>& mTheta, mt19937& e, bool bRoot = true ) {
-    if( bRoot )     { arma::vec post = mPi.find( l )->second % v; discrete_distribution<uint> d( post.begin(), post.end() ); z = d(e); }
-    if( size()==2 ) { arma::vec post = mTheta.find( trip<L,L,L>(l,front().l,back().l) )->second.row(z).t() % arma::vectorise( back().v * front().v.t() );
-                      discrete_distribution<uint> d( post.begin(), post.end() );
-                      uint zz = d(e); front().z = zz/v.size(); back().z = zz%v.size();
-                      for( auto& subtree : *this ) subtree.sampleZ( mPi, mTheta, e, false ); }
+    if( bRoot )                                        { arma::vec post = mPi.find( l )->second % v; discrete_distribution<uint> d( post.begin(), post.end() ); z = d(e); }
+    if( (size()==1 && front().size()>0) || size()==2 ) { arma::vec post = mTheta.find( trip<L,L,L>(l,front().l,(size()==1)?"-":back().l) )->second.row(z).t();
+                                                         if (size()==1) post = post % arma::vectorise( arma::diagmat( back().v ) );
+                                                         else post = post % arma::vectorise( back().v * front().v.t() );
+                                                         discrete_distribution<uint> d( post.begin(), post.end() );
+                                                         uint zz = d(e); front().z = zz/v.size(); back().z = zz%v.size();
+                                                         for( auto& subtree : *this ) subtree.sampleZ( mPi, mTheta, e, false ); }
   }
 
   double getProb ( const map<L,arma::vec>& mPi, const map<trip<L,L,L>,arma::mat>& mTheta, map<L,arma::mat>& mXi, bool bRoot = true ) {
     double pr = 0.0;
     if( bRoot )                               pr = log( mPi.find( l )->second(z) );
-    if(      size()==1 && front().size()==0 ) return pr + log( mXi.find( l )->second( z, W(front().l.c_str()).toInt() ) );
-    else if( size()==2 )                      { pr += log( mTheta.find( trip<L,L,L>(l,front().l,back().l) )->second( z, v.size()*front().z + back().z ) );
+    if(      size()==1 && front().size()==0 ) return pr + log( mXi.find( l )->second( z, W(front().l.getString().c_str()).toInt() ) );
+    else if( size()==1 || size()==2 )         { pr += log( mTheta.find( trip<L,L,L>(l,front().l,(size()==1)?"-":back().l) )->second( z, v.size()*front().z + back().z ) );
                                                 for( auto& subtree : *this ) pr += subtree.getProb( mPi, mTheta, mXi, false ); return pr; }
-    cerr << "ERROR -- tree not CNF: " << *this << endl;
+    cerr << "ERROR -- n-nary tree: " << *this << endl;
     return 0.0;
   }
 };
@@ -170,21 +183,17 @@ int main ( int nArgs, char* argv[] ) {
 
     // Update pi models...
     for( auto& lv : cPi ) {
-//      if( mPi[lv.first].size()==0 ) mPi[lv.first] = arma::vec( numTypes );
       for( uint j=0; j<numTypes; j++ ) { gamma_distribution<double> d( pseudocount+lv.second(j), 1.0 ); mPi[lv.first](j) = d(e); }
       mPi[lv.first] = arma::normalise( mPi[lv.first], 1 );
-//      lv.second.zeros();
     }
 
     // Update theta models...
-//    if( i==0 ) for( auto& lllm : cTheta ) mTheta[lllm.first] = arma::mat( numTypes, numTypes*numTypes );
     vector<thread> vtWorkers;
     for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&] (uint numt) {
       uint iCtr=0; for( auto& lllm : cTheta ) if( iCtr++%numThreads == numt ) {
-//        if( mTheta[lllm.first].size()==0 ) mTheta[lllm.first] = arma::mat( numTypes, numTypes*numTypes );
-        for( uint j=0; j<numTypes; j++ ) for( uint k=0; k<numTypes*numTypes; k++ ) { gamma_distribution<double> d( pseudocount+lllm.second(j,k), 1.0 ); mTheta[lllm.first](j,k) = d(e); }
+        for( uint j=0; j<numTypes; j++ ) for( uint k=0; k<numTypes*numTypes; k++ )
+          { gamma_distribution<double> d( pseudocount+lllm.second(j,k), 1.0 ); mTheta[lllm.first](j,k) = (lllm.first.third()==L("-") && k/numTypes!=k%numTypes) ? 0.0 : d(e); }
         mTheta[lllm.first] = arma::normalise( mTheta[lllm.first], 1, 1 );
-//        lllm.second.zeros();
       }
     }, numtglobal ));
     for( auto& w : vtWorkers ) w.join();
@@ -193,10 +202,8 @@ int main ( int nArgs, char* argv[] ) {
     vector<thread> vtWorkers2;
     for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers2.push_back( thread( [&] (uint numt) {
       uint iCtr=0; for( auto& lm : cXi ) if( iCtr++%numThreads == numt ) {
-//        if( mXi[lm.first].size()==0 ) mXi[lm.first] = arma::mat( numTypes, domW.getSize() );
         for( uint j=0; j<numTypes; j++ ) for( uint k=0; k<uint(domW.getSize()); k++ ) { gamma_distribution<double> d( pseudocount+lm.second(j,k), 1.0 ); mXi[lm.first](j,k) = d(e); }
         mXi[lm.first] = arma::normalise( mXi[lm.first], 1, 1 );
-//        lm.second.zeros();
       }
     }, numtglobal ));
     for( auto& w : vtWorkers2 ) w.join();

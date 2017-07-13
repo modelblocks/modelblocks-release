@@ -172,6 +172,8 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 ## obtain no-sem predictors and responses ---duan
 %.synproccptdecpars:  %.linetrees  $(BIN)/linetrees2synprocdecpars  %.lemmacounts
 	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) $(word 3,$^)  >  $@
+%.nod.synproccptdecpars:  %.linetrees  $(BIN)/linetrees2synprocdecpars  %.lemmacounts
+	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) -d $(word 3,$^)  >  $@
 #%ss.synproccptdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2synprocdecpars  $$(basename %).lemmacounts
 #	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) $(word 3,$^) $(subst .,,$(suffix $*))  >  $@
 
@@ -261,6 +263,16 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 
 ########################################
 #
+#  syntactic clustering
+#
+########################################
+
+.PRECIOUS: %lv.linetrees
+%lv.linetrees:  $$(basename %).linetrees  $(BIN)/linetrees2lvpcfg  |  $(CONFIGDIR)/user-numthreads.txt
+	cat $<  |  grep '('  |  $(word 2,$^) $(subst .,,$(suffix $*)) 1000 $(shell cat $|)  >  $@
+
+########################################
+#
 #  semantic clustering model
 #
 ########################################
@@ -276,22 +288,22 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 
 ########################################
 #
-#  build model from simple (binary) PCFG
+#  build PCFG model from rules
 #
 ########################################
-
-.PRECIOUS: %.pcfg.x-ccu.model
-%.pcfg.x-ccu.model:  %.rules  $(BIN)/pcfgcptdecpars-unker
-	cat $<  |  $(word 2,$^)  |  perl -pe 's/CC ([^ ]*) :  =/CC \1 : - - =/;s/CC ([^ ]*) : ([^ ]*) =/Cu \1 : \2 =/'  >  $@
-#%.pcfg.x-ccu.model:  %.rules  $(BIN)/pcfgcptdecpars-unker  $(INCRSEM-SCRIPTS)/relfreq.py
-#	cat $<  |  $(word 2,$^)  |  python3 $(word 3,$^)  |  perl -pe 's/CC ([^ ]*) :  =/CC \1 : - - =/;s/CC ([^ ]*) : ([^ ]*) =/Cu \1 : \2 =/'  >  $@
 
 %.prtrm.linetrees: %.linetrees
 	cat $<  |  perl -pe 's/\(([^\(\) ]*) ([^\(\) ]*)\)/\(\1-PRTRM \2\)/g'  >  $@
 
+.PRECIOUS: %pcfg.x-ccu.model
+%pcfg.x-ccu.model:  $$(basename %).rules  $(BIN)/pcfgcptdecpars-unker
+	cat $<  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  |  perl -pe 's/CC ([^ ]*) :  =/CC \1 : - - =/;s/CC ([^ ]*) : ([^ ]*) =/Cu \1 : \2 =/'  >  $@
+#%.pcfg.x-ccu.model:  %.rules  $(BIN)/pcfgcptdecpars-unker  $(INCRSEM-SCRIPTS)/relfreq.py
+#	cat $<  |  $(word 2,$^)  |  python3 $(word 3,$^)  |  perl -pe 's/CC ([^ ]*) :  =/CC \1 : - - =/;s/CC ([^ ]*) : ([^ ]*) =/Cu \1 : \2 =/'  >  $@
+
 ########################################
 #
-#  build model from latent-variable PCFG
+#  build model from (e.g. latent-variable) PCFG
 #
 ########################################
 
@@ -321,6 +333,16 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 #	cat $(word 5,$^)  >  eraseme2
 #	cat $(word 1,$^)  |  python $(word 2,$^) $(subst unked,,$(subst .,,$(suffix $(basename $*)))) $(word 3,$^)  >  eraseme
 #	cat $(word 1,$^)  |  python $(word 2,$^) $(subst unked,,$(subst .,,$(suffix $(basename $*)))) $(word 3,$^)  |  $(word 4,$^) $(word 5,$^)  |  $(word 6,$^) $(word 7,$^)  >  $@
+
+## failed generalization
+#%decprobs:  genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$*))decpars  $(BIN)/$$(subst .,,$$(suffix $$*))decpars2$$(subst .,,$$(suffix $$*))decprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$(basename $$*))))model
+#	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  >  $@
+
+%.synprocdecprobs:  genmodel/$$(basename $$*).synproccptdecpars  $(BIN)/synprocdecpars2synprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))model
+	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  >  $@
+%.nod.synprocdecprobs:  genmodel/$$(basename $$*).nod.synproccptdecpars  $(BIN)/synprocdecpars2synprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))model
+	cat $(word 1,$^)  |  $(word 2,$^) -d $(word 3,$^)  >  $@
+
 %.semprocdecprobs:  genmodel/$$(basename $$*).semprocdecpars  $(BIN)/semprocdecpars2semprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))model
 	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  >  $@
 

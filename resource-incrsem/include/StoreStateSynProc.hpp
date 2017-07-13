@@ -20,6 +20,8 @@
 #include<Delimited.hpp>
 #include<sstream>
 
+bool NODEP = false;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 char psLBrack[] = "[";
@@ -127,26 +129,26 @@ class StoreState : public DelimitedVector<psX,IncompleteSign,psSemi,psX> {
   }
 
   FPredictor calcForkTypeCondition ( ) const {
-    return FPredictor( size(), getAncstr(1) );
+    return FPredictor( (NODEP) ? 0 : size(), getAncstr(1) );
   }
 
   PPredictor calcPretrmTypeCondition ( F f ) const {
-    return PPredictor( size(), f, (size()>0) ? back().getB() : tTop );
+    return PPredictor( (NODEP) ? 0 : size(), f, (size()>0) ? back().getB() : tTop );
   }
 
   JPredictor calcJoinTypeCondition ( F f, const Sign& aPretrm ) const {
     Sign aLchildTmp;
-    return JPredictor( size()+f, getAncstr(f), getLchild(aLchildTmp,f,aPretrm) );
+    return JPredictor( (NODEP) ? 0 : size()+f, getAncstr(f), getLchild(aLchildTmp,f,aPretrm) );
   }
 
   APredictor calcApexTypeCondition ( F f, J j, const Sign& aPretrm ) const {
     Sign aLchildTmp;
-    return APredictor( size()+f-j, j, getAncstr(f), (j==0) ? getLchild(aLchildTmp,f,aPretrm) : tBot );
+    return APredictor( (NODEP) ? 0 : size()+f-j, j, getAncstr(f), (j==0) ? getLchild(aLchildTmp,f,aPretrm) : tBot );
   }
 
   BPredictor calcBrinkTypeCondition ( F f, J j, T tParent, const Sign& aPretrm ) const {
     Sign aLchildTmp;
-    return BPredictor( size()+f-j, j, tParent, getLchild(aLchildTmp,f,aPretrm) );
+    return BPredictor( (NODEP) ? 0 : size()+f-j, j, tParent, getLchild(aLchildTmp,f,aPretrm) );
   }
 };
 Sign StoreState::qTop;

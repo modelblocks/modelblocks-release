@@ -345,19 +345,19 @@ endef
 #### <dashed-alpha-testset><dotted-beta-edits-to-gold><dashed-gamma-model>.syneval -> calls <alpha><beta>.linetrees gold, <alpha><gamma>.linetrees hypoth
 %.syneval:  bin/evalb \
             $(RESOURCE-GENERAL)/srcmodel/new.prm \
-            genmodel/$$(subst -,.,$$(word 1,$$(subst ., ,$$*)))$$(suffix $$(basename $$*)).linetrees \
+            genmodel/$$(subst -,.,$$(basename $$*)).linetrees \
             $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).linetrees
 	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
 .PRECIOUS: %.nounary_syneval
 %.nounary_syneval:  bin/evalb \
             $(RESOURCE-GENERAL)/srcmodel/new.prm \
-            genmodel/$$(subst -,.,$$(word 1,$$(subst ., ,$$*)))$$(suffix $$(basename $$*)).nounary.linetrees \
+            genmodel/$$(subst -,.,$$(basename $$*)).nounary.linetrees \
             $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).nounary.linetrees
 	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
 .PRECIOUS: %.noberkstuff_nounary_syneval
 %.noberkstuff_nounary_syneval:  bin/evalb \
             $(RESOURCE-GENERAL)/srcmodel/new.prm \
-            genmodel/$$(subst -,.,$$(word 1,$$(subst ., ,$$*)))$$(suffix $$(basename $$*)).nounary.linetrees \
+            genmodel/$$(subst -,.,$$(basename $$*)).nounary.linetrees \
             $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).noberkstuff.nounary.linetrees
 	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
 #%.syneval:  bin/evalb \
