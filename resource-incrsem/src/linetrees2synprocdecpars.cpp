@@ -122,7 +122,8 @@ int main ( int nArgs, char* argv[] ) {
 
   // For each command-line flag or model file...
   for ( int a=1; a<nArgs; a++ ) {
-    if ( 0==strcmp(argv[a],"t") ) STORESTATE_TYPE = true;
+    if      ( 0==strcmp(argv[a],"-d") ) NODEP = true;
+    else if ( 0==strcmp(argv[a],"t") ) STORESTATE_TYPE = true;
     else {
       cerr << "Loading model " << argv[a] << "..." << endl;
       // Open file...

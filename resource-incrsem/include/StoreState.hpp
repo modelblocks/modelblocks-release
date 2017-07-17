@@ -194,6 +194,7 @@ class FPredictor {
   static map<uint,K>           mikA;
   static map<pair<D,T>,uint>   mdti;
   static map<trip<D,K,K>,uint> mdkki;
+  static map<pair<K,K>,uint>   mkki;
 
  public:
 
@@ -209,6 +210,12 @@ class FPredictor {
     const auto& it = mdkki.find(trip<D,K,K>(d,kF,kA));
     if ( it != mdkki.end() ) id = it->second;
     else { id = nextid++;  mid[id] = d;  mikF[id] = kF;  mikA[id] = kA;  mdkki[trip<D,K,K>(d,kF,kA)] = id; }
+    //cout<<"did id "<<id<<"/"<<nextid<<" as "<<*this<<endl;
+  }
+  FPredictor ( K kF, K kA ) {
+    const auto& it = mkki.find(pair<K,K>(kF,kA));
+    if ( it != mkki.end() ) id = it->second;
+    else { id = nextid++;  mikF[id] = kF;  mikA[id] = kA;  mkki[pair<K,K>(kF,kA)] = id; }
     //cout<<"did id "<<id<<"/"<<nextid<<" as "<<*this<<endl;
   }
 
@@ -230,22 +237,32 @@ class FPredictor {
   }
   friend istream& operator>> ( pair<istream&,FPredictor&> ist, const char* psDelim ) {
     if ( ist.first.peek()==psDelim[0] ) { auto& o = ist.first >> psDelim;  ist.second = FPredictor();  return o; }
-    D d;  ist.first >> "d" >> d >> "&";
-    if ( ist.first.peek()=='t' ) { Delimited<T> t;       auto& o = ist.first >> "t" >> t        >> psDelim;  ist.second = FPredictor(d,t);      return o; }
-    else                         { Delimited<K> kF, kA;  auto& o = ist.first >> kF >> "&" >> kA >> psDelim;  ist.second = FPredictor(d,kF,kA);  return o; }
+    if ( ist.first.peek()=='d' ) {
+      D d;  ist.first >> "d" >> d >> "&";
+      if ( ist.first.peek()=='t' ) { Delimited<T> t;       auto& o = ist.first >> "t" >> t        >> psDelim;  ist.second = FPredictor(d,t);      return o; }
+      else                         { Delimited<K> kF, kA;  auto& o = ist.first >> kF >> "&" >> kA >> psDelim;  ist.second = FPredictor(d,kF,kA);  return o; }
+    } else { 
+                                     Delimited<K> kF, kA;  auto& o = ist.first >> kF >> "&" >> kA >> psDelim;  ist.second = FPredictor(kF,kA);    return o;
+    }
   }
   friend bool operator>> ( pair<istream&,FPredictor&> ist, const vector<const char*>& vpsDelim ) {
     D d;  ist.first >> "d" >> d >> "&"; 
-    if ( ist.first.peek()=='t' ) { Delimited<T> t;       auto o = ist.first >> "t" >> t        >> vpsDelim;  ist.second = FPredictor(d,t);      return o; }
-    else                         { Delimited<K> kF, kA;  auto o = ist.first >> kF >> "&" >> kA >> vpsDelim;  ist.second = FPredictor(d,kF,kA);  return o; }
+    if ( ist.first.peek()=='d' ) { 
+      if ( ist.first.peek()=='t' ) { Delimited<T> t;       auto o = ist.first >> "t" >> t        >> vpsDelim;  ist.second = FPredictor(d,t);      return o; }
+      else                         { Delimited<K> kF, kA;  auto o = ist.first >> kF >> "&" >> kA >> vpsDelim;  ist.second = FPredictor(d,kF,kA);  return o; }
+    } else { 
+                                     Delimited<K> kF, kA;  auto o = ist.first >> kF >> "&" >> kA >> vpsDelim;  ist.second = FPredictor(kF,kA);    return o; 
+    }
   }
   friend ostream& operator<< ( ostream& os, const FPredictor& t ) {
     if      ( mit.end()  != mit.find(t.id)  ) return os << "d" << mid[t.id] << "&" << "t" << mit[t.id];
-    else if ( mikA.end() != mikA.find(t.id) ) return os << "d" << mid[t.id] << "&" << mikF[t.id] << "&" << mikA[t.id];
+    else if ( mid.end()  != mid.find(t.id)  ) return os << "d" << mid[t.id] << "&" << mikF[t.id] << "&" << mikA[t.id];
+    else if ( mikA.end() != mikA.find(t.id) ) return os << mikF[t.id] << "&" << mikA[t.id];
     else                                      return os << "NON_STRING_ID_" << t.id;
   }
   static bool exists ( D d, T t )        { return( mdti.end()!=mdti.find(pair<D,T>(d,t)) ); }
   static bool exists ( D d, K kF, K kA ) { return( mdkki.end()!=mdkki.find(trip<D,K,K>(d,kF,kA)) ); }
+  static bool exists ( K kF, K kA )      { return( mkki.end()!=mkki.find(pair<K,K>(kF,kA)) ); }
 };
 uint                  FPredictor::nextid = 1;   // space for bias "" predictor
 map<uint,D>           FPredictor::mid;
@@ -254,6 +271,7 @@ map<uint,K>           FPredictor::mikF;
 map<uint,K>           FPredictor::mikA;
 map<pair<D,T>,uint>   FPredictor::mdti;
 map<trip<D,K,K>,uint> FPredictor::mdkki;
+map<pair<K,K>,uint>   FPredictor::mkki;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -400,6 +418,7 @@ class JResponse : public DiscreteDomainRV<int,domJResponse> {
   E getE    ( ) const { return mjre[*this]; }
   O getLOp  ( ) const { return mjroL[*this]; }
   O getROp  ( ) const { return mjroR[*this]; }
+  static bool exists ( J j, E e, O oL, O oR ) { return( mjeoojr.end()!=mjeoojr.find(quad<J,E,O,O>(j,e,oL,oR)) ); }
 };
 map<JResponse,J>             JResponse::mjrj;
 map<JResponse,E>             JResponse::mjre;
@@ -603,8 +622,13 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     const KSet& ksB = at(size()-1).getKSet();
     int iCarrier = getAncestorBCarrierIndex( 1 );
     if( STORESTATE_TYPE ) lfp.emplace_back( d, at(size()-1).getType() );
-    for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(d,kNil,kA) ) lfp.emplace_back( d, kNil, kA );
-    for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(d,kF,kNil) ) lfp.emplace_back( d, kF, kNil );
+    if( FEATCONFIG == 0 ) {
+      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(d,kNil,kA) ) lfp.emplace_back( d, kNil, kA );
+      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(d,kF,kNil) ) lfp.emplace_back( d, kF, kNil );
+    } else {
+      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(kNil,kA) ) lfp.emplace_back( kNil, kA );
+      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(kF,kNil) ) lfp.emplace_back( kF, kNil );
+    }
     return lfp;
   }
 

@@ -4,6 +4,7 @@
 #include <nl-randvar.h>
 #include <Delimited.hpp>
 #include <BerkUnkWord.hpp>
+#include <RandoUnkWord.hpp>
 
 DiscreteDomain<int> domC;
 class C : public Delimited<DiscreteDomainRV<int,domC>> {
@@ -16,6 +17,8 @@ class C : public Delimited<DiscreteDomainRV<int,domC>> {
 ////////////////////////////////////////////////////////////////////////////////
 
 int main ( int nArgs, char* argv[] ) {
+
+  bool bBerkUnker = ( nArgs>1 && argv[1][0]=='-' && argv[1][1]=='u' );
 
   map<string,map<string,double>> gram;
   map<string,double> normL;
@@ -46,7 +49,7 @@ int main ( int nArgs, char* argv[] ) {
   for( const auto& cwp : lex ) {
     for( const auto& wp : cwp.second ) {
       if( 1 == wordcount[wp.first] && 1 == d(e) ) {
-        unks[cwp.first][unkWord(wp.first.getString().c_str())] += 0.000001 * wp.second;
+        unks[cwp.first][(bBerkUnker) ? unkWordBerk(wp.first.getString().c_str()) : unkWord(wp.first.getString().c_str())] += 0.000001 * wp.second;
         norm[cwp.first] += 1.000001 * wp.second;
       }
       else {

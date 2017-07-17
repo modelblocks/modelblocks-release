@@ -31,6 +31,7 @@ using namespace arma;
 #include <Delimited.hpp>
 bool STORESTATE_TYPE = true;
 bool STORESTATE_CHATTY = true;
+int FEATCONFIG = 0;
 #include <StoreState.hpp>
 #include <Tree.hpp>
 
@@ -222,6 +223,7 @@ int main ( int nArgs, char* argv[] ) {
   // For each command-line flag or model file...
   for ( int a=1; a<nArgs; a++ ) {
     //if ( 0==strcmp(argv[a],"t") ) STORESTATE_TYPE = true;
+    if( '-'==argv[a][0] && 'f'==argv[a][1] ) FEATCONFIG = atoi( argv[a]+2 );
     if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS = atoi( argv[a]+2 );
     else {
       cerr << "Loading model " << argv[a] << "..." << endl;
