@@ -68,6 +68,12 @@ printSignifSummary <- function(mainName, mainEffect, basemodel, testmodel, signi
     print(signif)
 }
 
+cat('Diamond Likelihood Ratio Test (LRT) Summary\n')
+cat('===========================================\n\n')
+cat('Correlation of numeric variables in model:\n')
+print(both$correlations)
+cat('\n')
+
 smartPrint('Base summary:')
 printSummary(base$model)
 smartPrint('Left summary:')

@@ -154,7 +154,7 @@ endef
 #   3 = basename string
 #   4 = LME args
 define SPILL
-$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-$(1):$(3).$(var)$(1).-$(4)..lrt
+$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-$(1):$(3).$(var)$(1).$(4)..lrt
 )
 $(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-$(1)_%:$(3).$(var)$(1).%..lrt;
 )
@@ -167,7 +167,7 @@ $(2)-COREF-$(1)_%: $(foreach var, $(COREF), $(2)-$(var)-$(1)_%);
 $(2)-MEM-$(1): $(2)-DLT-$(1) $(2)-FJ-$(1)
 $(2)-MEM-$(1)_%: $(2)-DLT-$(1)_% $(2)-FJ-$(1)_%;
 
-$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-cum-$(1):$(3).cum$(var)$(1).-$(4)..lrt
+$(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-cum-$(1):$(3).cum$(var)$(1).$(4)..lrt
 )
 $(foreach var, $(DLT) $(FJ) $(COREF),$(2)-$(var)-cum-$(1)_%:$(3).cum$(var)$(1).%..lrt
 )
@@ -187,7 +187,7 @@ endef
 #   2 = basename string
 #   3 = LME args
 define RT-EXPERIMENTS
-$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var):$(2).$(var).-$(3)..lrt
+$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var):$(2).$(var).$(3)..lrt
 )
 $(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)_%:$(2).$(var).%..lrt;
 )
@@ -200,7 +200,7 @@ $(1)-COREF_%: $(foreach var, $(COREF), $(1)-$(var)_%);
 $(1)-MEM: $(1)-DLT $(1)-FJ
 $(1)-MEM_%: $(1)-DLT_% $(1)-FJ_%;
 
-$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-cum:$(2).cum$(var).-$(3)..lrt
+$(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-cum:$(2).cum$(var).$(3)..lrt
 )
 $(foreach var, $(DLT) $(FJ) $(COREF),$(1)-$(var)-cum_%:$(2).cum$(var).%..lrt;
 )
@@ -369,7 +369,8 @@ $(RT-SCRIPTS)/accumulateMetrics.py \
 $(RT-SCRIPTS)/rm_unfix_items.py \
 $(RT-SCRIPTS)/futureMetrics.py \
 $(RT-SCRIPTS)/spilloverMetrics.py \
-$(RT-SCRIPTS)/parsePredictors.py
+$(RT-SCRIPTS)/parsePredictors.py \
+$(RT-SCRIPTS)/rm_na_items.py
 	$(eval CORECOLS := $(sort $(shell cat $(word 2, $^) | python $(word 3, $^) 1 ) $(shell echo $(subst +, ,$(word 2, $(subst _, ,$(subst .,,$(suffix $*))))) | python $(word 9, $^))))
 	$(eval COLS := $(sort $(shell cat $(word 2, $^) | python $(word 3, $^)) $(subst +, ,$(word 2, $(subst _, ,$(subst .,,$(suffix $*)))))))
 	@echo Extracting columns: $(CORECOLS)
@@ -378,7 +379,8 @@ $(RT-SCRIPTS)/parsePredictors.py
 	python $(word 5, $^) -c $(shell echo $(COLS) | python $(word 9, $^) -a) | \
 	python $(word 6, $^) | \
 	python $(word 7, $^) -I -c $(shell echo $(COLS) | python $(word 9, $^) -f) | \
-	python $(word 8, $^) -I -C $(shell echo $(COLS) | python $(word 9, $^) -s) > $@
+	python $(word 8, $^) -I -C $(shell echo $(COLS) | python $(word 9, $^) -s) | \
+	python $(word 10, $^) > $@
 
 # Generate and merge parser data from multiple grammars
 # Template: mydata.training-GRAMMAR-other-args.stuff.parser1_parser2_parser3.merged.full.evmeasures

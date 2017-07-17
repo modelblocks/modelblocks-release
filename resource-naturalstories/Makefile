@@ -56,7 +56,7 @@ endef
 .SECONDEXPANSION:
 
 NATSTORIES-BASENAME := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.sprbest
-NATSTORIES-LMEDEFAULT := NSCFX
+NATSTORIES-LMEDEFAULT := -NSCFX
 $(eval $(call RT-EXPERIMENTS,naturalstories,$(NATSTORIES-BASENAME),$(NATSTORIES-LMEDEFAULT)))
 
 ################################################################################
@@ -139,10 +139,10 @@ $(CONFIGDIR)/user-naturalstories-directory.txt
 	<(cat $(word 1, $^) | sed 's/\t/ /g;' | awk -f $(word 5, $^) -v cols=item - | python $(word 4, $^) item docid) > $@
 
 %naturalstories.evmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv \
-$(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/merge_tables.py %naturalstories.mfields.itemmeasures \
+$(RT-SCRIPTS)/rename_cols.py $(NATSTORIES-SCRIPTS)/merge_natstor.py %naturalstories.mfields.itemmeasures \
 $(CONFIGDIR)/user-naturalstories-directory.txt
-	python $(word 3, $^) <(cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word 2, $^) WorkerId subject RT fdur) \
-	$(word 4, $^) item zone | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' > $@
+	python $(word 3, $^) <(cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;s/peaked/peeked/g;print;' | python $(word 2, $^) WorkerId subject RT fdur) \
+	$(word 4, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' > $@
   
 %naturalstories.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.linetrees %naturalstories.linetoks
 	python $^ > $@

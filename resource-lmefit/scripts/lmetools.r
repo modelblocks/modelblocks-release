@@ -630,6 +630,20 @@ binEffect <- function(x) {
     return ("negative")
 }
 
+getModelVars <- function(bform) {
+    if (bform == '') {
+        return('')
+    } else {
+        
+    }
+}
+
+getCorrelations <- function(data, bform) {
+    vars = all.vars(bform)
+    vars = vars[vars %ni% c('subject', 'word')]
+    return(cor(data[,vars]))
+}
+
 # Fit mixed-effects regression
 fitModel <- function(dataset, output, bformfile, fitmode='lme',
                    logmain=FALSE, logdepvar=FALSE, lambda=NULL,
@@ -650,6 +664,12 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
                              crossfactor, logmain, interact)
     }
     
+    correlations = getCorrelations(dataset, bform)
+    cat('\n')
+    cat('Correlation of numeric variables in model:\n')
+    print(correlations) 
+    cat('\n')
+
     smartPrint('Regressing model:')
     smartPrint(deparse(bform))
 
@@ -667,7 +687,8 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         model = outputModel,
         logmain = logmain,
         logdepvar = logdepvar,
-        lambda = lambda
+        lambda = lambda,
+        correlations = correlations
     )
     save(fitOutput, file=output)
 }
