@@ -90,6 +90,9 @@ printSignifSummary(setdiff(base$abl,left$abl),
                    base$model,
                    left$model,
                    anova(base$model, left$model))
+if (!is.null(left$lambda)) {
+    printBoxCoxInvBetas(left$beta_ms, left$lambda, left$y_mu)
+}
 
 smartPrint(paste('Effect 2 (', params$right, ') vs. Baseline', sep=''))
 printSignifSummary(setdiff(base$abl,right$abl), 
@@ -97,6 +100,9 @@ printSignifSummary(setdiff(base$abl,right$abl),
                    base$model,
                    right$model,
                    anova(base$model, right$model))
+if (!is.null(right$lambda)) {
+    printBoxCoxInvBetas(right$beta_ms, right$lambda, right$y_mu)
+}
 
 smartPrint(paste('Both vs. Effect 1 (', params$left, '):', sep=''))
 printSignifSummary(setdiff(left$abl,both$abl), 
@@ -104,6 +110,9 @@ printSignifSummary(setdiff(left$abl,both$abl),
                    left$model,
                    both$model,
                    anova(left$model, both$model))
+if (!is.null(both$lambda)) {
+    printBoxCoxInvBetas(both$beta_ms, both$lambda, both$y_mu)
+}
 
 smartPrint(paste('Both vs. Effect 2 (', params$right, '):', sep=''))
 printSignifSummary(setdiff(right$abl,both$abl), 
@@ -111,5 +120,7 @@ printSignifSummary(setdiff(right$abl,both$abl),
                    right$model,
                    both$model,
                    anova(right$model, both$model))
+f (!is.null(both$lambda)) {
+    printBoxCoxInvBetas(both$beta_ms, both$lambda, both$y_mu)
+}
 
-warnings() 

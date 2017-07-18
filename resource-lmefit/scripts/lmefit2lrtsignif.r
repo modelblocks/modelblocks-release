@@ -74,4 +74,7 @@ printSignifSummary(setdiff(base$abl,main$abl),
                    main$model,
                    anova(base$model, main$model))
 
-warnings()
+if (!is.null(main$lambda)) {
+    printBoxCoxInvBetas(main$beta_ms, main$lambda, main$y_mu)
+}
+

@@ -88,7 +88,7 @@ mv $@{.tmp,};
 SPILLOVER := S1 S2
 SURP := fwprob5surp synsurp lexsurp totsurp 
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
-FJ := noF yesJ embddepthAny embddepthMin endembdMin startembdMin noFlen embdlen 
+FJ := noF yesJ embddepthAny embddepthMin endembdMin startembdMin noFlen noFdr noFdrv embdlen embddr embddrv 
 COREF := corefbin coreflenw coreflenr corefsize
 GCG-CATS := A B C D F G
 EMBDDEPTHS := 1 2 3 4 5
