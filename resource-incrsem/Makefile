@@ -160,16 +160,20 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 	cat $<  |  python $(word 2,$^)  |  LC_COLLATE=C sort  |  LC_COLLATE=C uniq -c  |  sed 's/^ *//'  >  $@
 
 ## obtain predictors and responses for all semantic processing models...
+%f.semprocdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename %).lemmacounts
+	cat $(word 1,$^)  |  grep -v '()'  |  grep -v '='  |  $(word 2,$^) -f$(subst .,,$(suffix $*)) $(word 3,$^)  >  $@
 %uc.semprocdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename %).lemmacounts
-	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) -u$(subst .,,$(suffix $*)) $(word 3,$^)  >  $@
+	cat $(word 1,$^)  |  grep -v '()'  |  grep -v '='  |  $(word 2,$^) -u$(subst .,,$(suffix $*)) $(word 3,$^)  >  $@
 %decpars:  $$(basename %).linetrees  $(BIN)/linetrees2$$(subst .,,$$(suffix $$*))decpars  $$(basename %).lemmacounts
-	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) $(word 3,$^)  >  $@
+	cat $(word 1,$^)  |  grep -v '()'  |  grep -v '='  |  $(word 2,$^) $(word 3,$^)  >  $@
 #%ss.semprocdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename %).lemmacounts
 #	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) $(word 3,$^) $(subst .,,$(suffix $*))  >  $@
 
 ## obtain no-sem predictors and responses ---duan
 %.synproccptdecpars:  %.linetrees  $(BIN)/linetrees2synprocdecpars  %.lemmacounts
 	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) $(word 3,$^)  >  $@
+%.nod.synproccptdecpars:  %.linetrees  $(BIN)/linetrees2synprocdecpars  %.lemmacounts
+	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) -d $(word 3,$^)  >  $@
 #%ss.synproccptdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2synprocdecpars  $$(basename %).lemmacounts
 #	cat $(word 1,$^)  |  grep -v '()'  |  $(word 2,$^) $(word 3,$^) $(subst .,,$(suffix $*))  >  $@
 
@@ -218,7 +222,7 @@ endef
 
 ## push together semantic processing models...
 .PRECIOUS: %.semprocmodel
-%.semprocmodel:  %.1e-1_100_fmlrmodel  %.1e-1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+%.semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1000_1e-2_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
 	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
 	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
@@ -259,6 +263,16 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 
 ########################################
 #
+#  syntactic clustering
+#
+########################################
+
+.PRECIOUS: %lv.linetrees
+%lv.linetrees:  $$(basename %).linetrees  $(BIN)/linetrees2lvpcfg  |  $(CONFIGDIR)/user-numthreads.txt
+	cat $<  |  grep '('  |  $(word 2,$^) $(subst .,,$(suffix $*)) 1000 $(shell cat $|)  >  $@
+
+########################################
+#
 #  semantic clustering model
 #
 ########################################
@@ -274,22 +288,22 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 
 ########################################
 #
-#  build model from simple (binary) PCFG
+#  build PCFG model from rules
 #
 ########################################
-
-.PRECIOUS: %.pcfg.x-ccu.model
-%.pcfg.x-ccu.model:  %.rules  $(BIN)/pcfgcptdecpars-unker
-	cat $<  |  $(word 2,$^)  |  perl -pe 's/CC ([^ ]*) :  =/CC \1 : - - =/;s/CC ([^ ]*) : ([^ ]*) =/Cu \1 : \2 =/'  >  $@
-#%.pcfg.x-ccu.model:  %.rules  $(BIN)/pcfgcptdecpars-unker  $(INCRSEM-SCRIPTS)/relfreq.py
-#	cat $<  |  $(word 2,$^)  |  python3 $(word 3,$^)  |  perl -pe 's/CC ([^ ]*) :  =/CC \1 : - - =/;s/CC ([^ ]*) : ([^ ]*) =/Cu \1 : \2 =/'  >  $@
 
 %.prtrm.linetrees: %.linetrees
 	cat $<  |  perl -pe 's/\(([^\(\) ]*) ([^\(\) ]*)\)/\(\1-PRTRM \2\)/g'  >  $@
 
+.PRECIOUS: %pcfg.x-ccu.model
+%pcfg.x-ccu.model:  $$(basename %).rules  $(BIN)/pcfgcptdecpars-unker
+	cat $<  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  |  perl -pe 's/CC ([^ ]*) :  =/CC \1 : - - =/;s/CC ([^ ]*) : ([^ ]*) =/Cu \1 : \2 =/'  >  $@
+#%.pcfg.x-ccu.model:  %.rules  $(BIN)/pcfgcptdecpars-unker  $(INCRSEM-SCRIPTS)/relfreq.py
+#	cat $<  |  $(word 2,$^)  |  python3 $(word 3,$^)  |  perl -pe 's/CC ([^ ]*) :  =/CC \1 : - - =/;s/CC ([^ ]*) : ([^ ]*) =/Cu \1 : \2 =/'  >  $@
+
 ########################################
 #
-#  build model from latent-variable PCFG
+#  build model from (e.g. latent-variable) PCFG
 #
 ########################################
 
@@ -301,6 +315,38 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 %.fjabpmodel:  %.x-cc.model  $(BIN)/ccmodel2fjabpcptmodel
 	cat $<  |  sed 's/^Cr/R/'  |  $(word 2,$^)  >  $@
 
+########################################
+#
+#  trace of decisions and model probs
+#
+########################################
+
+##%parsed.semprocdecprobs:  %parsed.linetrees  $(BIN)/linetrees2semprocdecpars  genmodel/$$(basename $$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*))))).lemmacounts  $(BIN)/semprocdecpars2semprocdecprobs  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*))))model
+##	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  |  $(word 4,$^) $(word 5,$^)  >  $@
+%parsed.semprocdecprobs:  %parsed.tokdecs  $(BIN)/tokdecs2semprocdecprobs  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*))))model
+	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  >  $@
+##%.semprocdecprobs:  genmodel/$$(basename $$*).semprocdecpars  $(BIN)/semprocdecpars2semprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))model
+#%.semprocdecprobs:  genmodel/$$(basename $$(basename $$*)).linetrees  \
+#		    $(INCRSEM-SCRIPTS)/unkword.py  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*)))).wordcounts  \
+#		    $(BIN)/linetrees2semprocdecpars  genmodel/$$(basename $$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*))))).lemmacounts  \
+#		    $(BIN)/semprocdecpars2semprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))model
+#	cat $(word 5,$^)  >  eraseme2
+#	cat $(word 1,$^)  |  python $(word 2,$^) $(subst unked,,$(subst .,,$(suffix $(basename $*)))) $(word 3,$^)  >  eraseme
+#	cat $(word 1,$^)  |  python $(word 2,$^) $(subst unked,,$(subst .,,$(suffix $(basename $*)))) $(word 3,$^)  |  $(word 4,$^) $(word 5,$^)  |  $(word 6,$^) $(word 7,$^)  >  $@
+
+## failed generalization
+#%decprobs:  genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$*))decpars  $(BIN)/$$(subst .,,$$(suffix $$*))decpars2$$(subst .,,$$(suffix $$*))decprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$(basename $$*))))model
+#	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  >  $@
+
+%.synprocdecprobs:  genmodel/$$(basename $$*).synproccptdecpars  $(BIN)/synprocdecpars2synprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))model
+	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  >  $@
+%.nod.synprocdecprobs:  genmodel/$$(basename $$*).nod.synproccptdecpars  $(BIN)/synprocdecpars2synprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))model
+	cat $(word 1,$^)  |  $(word 2,$^) -d $(word 3,$^)  >  $@
+
+%.semprocdecprobs:  genmodel/$$(basename $$*).semprocdecpars  $(BIN)/semprocdecpars2semprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))model
+	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  >  $@
+
+
 #################################################
 #
 #  training F model with mallet package
@@ -308,7 +354,7 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 ##############################################
 
 %.malletInput:  %.fmlrdecpars $(INCRSEM-SCRIPTS)/getMalletInput.py
-	cat $(word 1,$^)  |  python $(word 2,$^) >  $@
+	cat $(word 1,$^)  |  python $(word 2,$^)  >  $@
 
 %.mallet: %.malletInput
 	mallet-2.0.8RC2/bin/mallet import-file --input $< --output $@
@@ -388,6 +434,7 @@ ParseTokdecs:
     kwargs:
       innerdelim: '-'
 endef
+
 .PRECIOUS: %parsed.tokdecs
 %parsed.tokdecs:  bin/$$(subst .,,$$(suffix $$(basename $$(subst +,-,$$(subst -,.,$$*))))) \
                   $$(basename %).linetoks \

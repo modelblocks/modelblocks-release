@@ -296,9 +296,9 @@ int main ( int nArgs, char* argv[] ) {
         if( ccp.first.second != C("-") && zero[dbmad.first][a]>0.0 ) {
           const C& c0 = ccp.first.first;
           const C& c1 = ccp.first.second;
-          mJ[DelimitedTrip<psX,D,psSpace,B,psSpace,C,psX>(d+1,b,c0)][1]            += zero[dbmad.first][a] * ccp.second;
-          mA[DelimitedQuad<psX,D,psSpace,J,psSpace,B,psSpace,C,psX>(d,1,b,C("-"))][a]  += zero[dbmad.first][a] * ccp.second;
-          mB[DelimitedQuad<psX,D,psSpace,J,psSpace,A,psSpace,C,psX>(d,1,a,c0)][c1] += zero[dbmad.first][a] * ccp.second;
+          mJ[DelimitedTrip<psX,D,psSpace,B,psSpace,C,psX>(d+1,b,c0)][1]               += zero[dbmad.first][a] * ccp.second;
+          mA[DelimitedQuad<psX,D,psSpace,J,psSpace,B,psSpace,C,psX>(d,1,b,C("-"))][a] += zero[dbmad.first][a] * ccp.second;
+          mB[DelimitedQuad<psX,D,psSpace,J,psSpace,A,psSpace,C,psX>(d,1,a,c0)][c1]    += zero[dbmad.first][a] * ccp.second;
         }
     }
   }

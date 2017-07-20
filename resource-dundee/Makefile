@@ -156,7 +156,7 @@ genmodel/dundee.%_fp.evmeasures: $(DUNDEE-SCRIPTS)/calcFPtimetoks.py genmodel/du
 genmodel/dundee.textdata $(RT-SCRIPTS)/sents2sentids.py genmodel/dundee.lineitems | genmodel
 	paste -d' ' <(python3 $< $(word 2, $^) $(word 3, $^)) <(cat $(word 5, $^) | python $(word 4, $^) | cut -d' ' -f 2-) > $@
 
-genmodel/dundee.%.evmeasures: $(RT-SCRIPTS)/concat_tables.py $(foreach subj, $(DUNDEESUBJS), genmodel/dundee.$(subj)_%.src.evmeasures) | genmodel
+genmodel/dundee.%.evmeasures: $(RT-SCRIPTS)/concat_tables.py $(foreach subj, $(DUNDEESUBJS), genmodel/dundee.$(subj)_%.evmeasures) | genmodel
 	python $^ > $@
 
 genmodel/dundee.evmeasures: genmodel/dundee.fp.evmeasures genmodel/dundee.gp.evmeasures $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/filter_cols.awk

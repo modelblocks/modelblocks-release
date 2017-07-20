@@ -4,6 +4,8 @@
 #
 ########################################################
 
+'%ni%' <- Negate('%in%')
+
 # Requires the optparse library
 processLMEArgs <- function() {
     library(optparse)
@@ -19,7 +21,8 @@ processLMEArgs <- function() {
         make_option(c('-t', '--test'), type='logical', action='store_true', default=FALSE, help='Run evaluation on test dataset.'),
         make_option(c('-e', '--entire'), type='logical', action='store_true', default=FALSE, help='Run evaluation on entire dataset.'),
         make_option(c('-s', '--splitcols'), type='character', default='subject+sentid', help='"+"-delimited list of columns to intersect in order to create a single ID for splitting dev and test (default="subject+sentid")'),
-        make_option(c('-P', '--partition'), type='numeric', default=3, help='Skip to use in dev/test partition (default = 3).'),
+        make_option(c('-M', '--partitionmod'), type='numeric', default=3, help='Modulus to use in dev/test partition (default = 3).'),
+        make_option(c('-K', '--partitiondevindices'), type='character', default='0', help='Comma-delimited list of indices to retain in dev set (default = "0").'),
         make_option(c('-N', '--filterlines'), type='logical', action='store_true', default=FALSE, help='Filter out events at line boundaries.'),
         make_option(c('-S', '--filtersents'), type='logical', action='store_true', default=FALSE, help='Filter out events at sentence boundaries.'),
         make_option(c('-C', '--filterscreens'), type='logical', action='store_true', default=FALSE, help='Filter out events at screen boundaries.'),
@@ -80,6 +83,8 @@ processLMEArgs <- function() {
         opts$options$splitcols <- strsplit(params$splitcols, '+', fixed=T)[[1]]
         smartPrint(paste0('Splitting dev/test on ', paste(opts$options$splitcols, collapse=' + ')))
     }
+
+    opts$options$partitiondevindices <- as.numeric(strsplit(params$partitiondevindices, ',', fixed=T)[[1]])
 
     if (length(params$groupingfactor) > 0) {
        smartPrint(paste0('Grouping the main effect by factor ', params$groupingfactor))
@@ -260,10 +265,10 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
     for (x in colnames(data)[grepl('^startembd', colnames(data))]) {
-        data[[x]] <- as.logical(as.numeric(as.character(data[[x]])))
+        data[[x]] <- as.numeric(as.character(data[[x]]))
     }
     for (x in colnames(data)[grepl('^endembd', colnames(data))]) {
-        data[[x]] <- as.logical(as.numeric(as.character(data[[x]])))
+        data[[x]] <- as.numeric(as.character(data[[x]]))
     }
     for (x in colnames(data)[grepl('^dlt',colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
@@ -321,15 +326,15 @@ smartPrint <- function(string,stdout=TRUE,stderr=TRUE) {
 }
 
 # Partition data
-create.dev <- function(data, i) {
-    dev <- data[(data$splitID %% i) == 0,]
+create.dev <- function(data, i, devindices) {
+    dev <- data[(data$splitID %% i) %in% devindices,]
     smartPrint('Dev dimensions')
     smartPrint(dim(dev))
     return(dev)
 }
 
-create.test <- function(data, i) {
-    test <- data[(data$splitID %% i) != 0,]
+create.test <- function(data, i, devindices) {
+    test <- data[(data$splitID %% i) %ni% devindices,]
     smartPrint('Test dimensions')
     smartPrint(dim(test))
     return(test)
@@ -371,14 +376,6 @@ processForm <- function(formList, addEffects=NULL, extraEffects=NULL, ablEffects
 
 processEffects <- function(effectList, data, logtrans) {
     srcList <- effectList
-    for (i in 1:length(effectList)) {
-        tryCatch({
-            z.(data[[srcList[i]]])
-            effectList[i] <- paste('z.(',effectList[i],')',sep='')
-        }, error = function (e) {
-            return
-        })
-    }
     if (logtrans) {
         for (i in 1:length(effectList)) {
             tryCatch({
@@ -388,6 +385,14 @@ processEffects <- function(effectList, data, logtrans) {
                 return
             })
         }
+    }
+    for (i in 1:length(effectList)) {
+        tryCatch({
+            z.(data[[srcList[i]]])
+            effectList[i] <- paste('z.(',effectList[i],')',sep='')
+        }, error = function (e) {
+            return
+        })
     }
     return(effectList)
 }
@@ -625,6 +630,20 @@ binEffect <- function(x) {
     return ("negative")
 }
 
+getModelVars <- function(bform) {
+    if (bform == '') {
+        return('')
+    } else {
+        
+    }
+}
+
+getCorrelations <- function(data, bform) {
+    vars = all.vars(bform)
+    vars = vars[vars %ni% c('subject', 'word')]
+    return(cor(data[,vars]))
+}
+
 # Fit mixed-effects regression
 fitModel <- function(dataset, output, bformfile, fitmode='lme',
                    logmain=FALSE, logdepvar=FALSE, lambda=NULL,
@@ -645,6 +664,12 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
                              crossfactor, logmain, interact)
     }
     
+    correlations = getCorrelations(dataset, bform)
+    cat('\n')
+    cat('Correlation of numeric variables in model:\n')
+    print(correlations) 
+    cat('\n')
+
     smartPrint('Regressing model:')
     smartPrint(deparse(bform))
 
@@ -655,6 +680,15 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
     } else {
         outputModel <- regressLinearModel(dataset, bform)
     }
+    if (params$boxcox) { 
+        bc_inv_out = getBoxCoxInvBetas(dataset, bform, lambda, outputModel) 
+        beta_ms = bc_inv_out$beta_ms 
+        y_mu = bc_inv_out$y_mu 
+        printBoxCoxInvBetas(beta_ms, lambda, y_mu) 
+    } else { 
+        beta_ms = fixef(outputModel) 
+        y_mu = NULL 
+    } 
     fitOutput <- list(
         abl = ablEffects,
         ablEffects = processEffects(ablEffects, data, logmain),
@@ -662,9 +696,38 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         model = outputModel,
         logmain = logmain,
         logdepvar = logdepvar,
-        lambda = lambda
+        lambda = lambda,
+        beta_ms = beta_ms,
+        y_mu = y_mu,
+        correlations = correlations
     )
     save(fitOutput, file=output)
+}
+
+getBoxCoxInvBetas <- function(dataset, bform, lambda, outputModel) {
+    attach(dataset)
+    response = as.character(bform)[[2]]
+    if (substr(response, 1, 3) %in% c('c.(', 'z.(')) {
+        response = substr(response, 4, nchar(response)-1)
+        print(response)
+    }
+    y_mu = mean(eval(parse(text=response)))
+    detach(dataset)
+    fixed = names(fixef(outputModel))
+    fixed = fixed[! fixed %in% c('(Intercept)')]
+    beta_ms = list()
+    for (f in fixed) {
+        beta = fixef(outputModel)[[f]]
+        beta_ms[[f]] = boxcox_inv(lambda, beta, y_mu)
+    }
+    return(list(beta_ms=beta_ms, y_mu=y_mu))
+}
+
+printBoxCoxInvBetas <- function(beta_ms, lambda, y_mu) {
+    cat(paste0('\nInverse Box-Cox estimates (ms) using lambda = ', lambda, ' and mean y = ', y_mu, '\n'))
+    for (f in names(beta_ms)) {
+        cat(paste0('Beta (ms) of effect ', f, ': ', beta_ms[[f]], '\n'))
+    }
 }
 
 # LME error analysis
@@ -692,10 +755,7 @@ error_anal <- function(data, params) {
     return(errData)
 }
 
-boxcox_rev_estimate <- function(l, beta, intercept, x_0 = 0) {
-    y_0 = (l * (x_0 * beta + intercept) + 1) ^ (1/l)
-    y_1 = (l * ((x_0 + 1) * beta + intercept) + 1) ^ (1/l)
-    print(y_0)
-    print(y_1)
-    return(y_1 - y_0)
+boxcox_inv <- function(lambda, beta, y_mu) {
+    return((lambda*(y_mu + beta) + 1)^(1/lambda) - (lambda*y_mu + 1)^(1/lambda))
 }
+

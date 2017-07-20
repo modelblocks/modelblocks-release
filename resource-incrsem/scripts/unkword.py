@@ -12,9 +12,9 @@ for line in open(sys.argv[2]):
 for line in sys.stdin:
   wordlist = re.findall('(?<= )[^\(\) ]+',line)
   for word in wordlist:
-    if word not in WordCount:
-      sys.stderr.write(line)
-    if WordCount[word] <= UNKCOUNT:
+    ## if word not in WordCount:
+    ##   sys.stderr.write(line)
+    if word not in WordCount or WordCount[word] <= UNKCOUNT:
       line = re.sub('(?<= )'+re.escape(word)+'(?=[\(\) \n])',storestate.getUnkWord(word),line)
   sys.stdout.write( line )
 

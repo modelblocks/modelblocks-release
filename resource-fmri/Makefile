@@ -49,6 +49,24 @@ ifndef SAMPLE-START
 SAMPLE-START := 0
 endif
 
+BYSENT-PRED-BASES := wlen $(SURP) $(DLT) $(FJ)
+BYSENT-PREDS := nwrds $(foreach pred,$(BYSENT-PRED-BASES),$(foreach agg,Mean Sum Max,$(pred)$(agg)))
+
+# ARGS:
+#   1 = corpus name
+#   2 = basename string
+#   3 = ROI list
+#   4 = LME formula name
+#   5 = default LME args
+define FMRI-BYSENT-EXPERIMENTS
+$(foreach var, $(BYSENT-PREDS),$(1)-$(var)-$(4): $(foreach roi,$(3),$(2).$(roi)$(4).$(var).$(5)..lrt)
+)
+$(foreach var, $(BYSENT-PREDS),$(1)-$(var)-$(4)_%: $(foreach roi,$(3),$(2).$(roi)$(4).$(var).%..lrt);
+)
+$(1)-BYSENT-$(4): $(foreach var, $(BYSENT-PREDS), $(1)-$(var)-$(4))
+$(1)-BYSENT-$(4)_%: $(foreach var, $(BYSENT-PREDS), $(1)-$(var)-$(4)_%);
+endef
+
 ################################################################################
 #
 #  Combined toks file creation
@@ -97,17 +115,17 @@ endef
 	python $(word 2, $^) $(word 1, $^) --start $(SAMPLE-START) --predictors $(shell cat $(word 3, $^)) > $@
 
 %.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py
-	cat $(word 1, $^) | python $(word 2, $^) | python $(RT-SCRIPTS)/rename_cols.py sentid sampleid > $@
+	cat $(word 1, $^) | python $(word 2, $^) > $@
 
 .PRECIOUS: %.hrf.core.evmeasures
-%.hrf.core.evmeasures : %.hrf.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
+%.hrf.core.evmeasures : %.hrf.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
 	cat $< | python $(word 3, $^) $< $(word 2, $^) sampleid > $@
 
 .PRECIOUS: %.bysent.core.evmeasures
-%.bysent.core.evmeasures : %.bysent.itemmeasures $$(word 1, $$(subst ., , %)).src.evmeasures \
+%.bysent.core.evmeasures : %.bysent.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
-	cat $< | python $(word 3, $^) $< $(word 2, $^) sampleid > $@
+	cat $< | python $(word 3, $^) $< $(word 2, $^) sentid > $@
 
 %.corr.txt: %.evmeasures $(FMRI-SCRIPTS)/corrAnalysis.r
 	cat $(word 1, $^) | $(word 2, $^) > $@
