@@ -28,9 +28,71 @@ class cuegraph( dict ):
 ################################################################################
 
 def dump( G ):
-  for x,l in sorted(G):
-    sys.stdout.write(' '+x+','+l+','+G[x,l])
+  sys.stdout.write( 'G.a=' + G.a + ' G.b=' + G.b )
+  for x,l in sorted( G ):
+    sys.stdout.write( ' ' + x + ',' + l + ',' + G[x,l] )
   print( '' )
+
+
+################################################################################
+
+def deps( s ):
+  lst = [ ]
+  d,h = 0,0
+  for i in range( len(s) ):
+    if s[i]=='{': d+=1
+    if s[i]=='}': d-=1
+    if d==0 and s[i]=='-' and h+1<len(s) and s[h+1] in 'abcdghirv': lst += [ s[h:i] ]
+    if d==0 and s[i]=='-': h = i
+  if h+1<len(s) and s[h+1] in 'abcdghirv': lst += [ s[h:] ]
+  return lst
+
+
+################################################################################
+
+def lastdep( s ):
+  d = 0
+  j = len(s)
+  for i in range(len(s)-1,-1,-1):
+    if s[i]=='{': d+=1
+    if s[i]=='}': d-=1
+    if d==0 and s[i]=='-' and i+1<len(s) and s[i+1] in 'abcdghirv': return( str(s[i:j]) )
+    if d==0 and s[i]=='-': j=i
+  return ''
+
+
+################################################################################
+
+def firstnolo( s ):
+  d = 0
+  h = 0
+  for i in range(len(s)):
+    if s[i]=='{': d+=1
+    if s[i]=='}': d-=1
+    if d==0 and s[i]=='-' and h!=0 and i>h: return( s[h:i] )
+    if d==0 and s[i]=='-' and i+1<len(s) and s[i+1] in 'ghv': h = i
+  return '' if h==0 else s[h:]
+
+
+################################################################################
+
+def relabel( t ):
+#  print( t.c, lastdep(t.c) )
+  if len(t.ch)==2:
+    if lastdep(t.ch[1].c).startswith('-g') and '-lN' in t.ch[0].c: t.ch[0].c = re.sub( '-lN', '-lG', t.ch[0].c )
+    if lastdep(t.ch[0].c).startswith('-h') and '-lN' in t.ch[1].c: t.ch[1].c = re.sub( '-lN', '-lH', t.ch[1].c )
+    if lastdep(t.ch[1].c).startswith('-i') and '-lN' in t.ch[1].c: t.ch[1].c = re.sub( '-lN', '-lI', t.ch[1].c )
+    if lastdep(t.ch[1].c).startswith('-r') and '-lN' in t.ch[1].c: t.ch[1].c = re.sub( '-lN', '-lR', t.ch[1].c )
+  ## choose one tree expansion in the following order...
+  fn = firstnolo(t.c)
+  if   t.c.startswith('A-aN') and len(t.ch)>0 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]
+  elif t.c.startswith('A-aN') and len(t.ch)>0 and t.ch[0].c.startswith('N') and '-l' not in t.ch[0].c: t.ch = [ tree.Tree( 'N-lZ', t.ch ) ]
+  elif t.c.startswith('A-aN') and len(t.ch)>1 and t.ch[1].c.startswith('N') and '-l' not in t.ch[1].c: t.ch = [ tree.Tree( 'N-lZ', t.ch ) ]
+  elif t.c.startswith('R-aN') and len(t.ch)>0 and t.ch[0].c.startswith('N') and '-l' not in t.ch[0].c: t.ch = [ tree.Tree( 'N-lZ', t.ch ) ]
+  elif t.c.startswith('R-aN') and len(t.ch)>1 and t.ch[1].c.startswith('N') and '-l' not in t.ch[1].c: t.ch = [ tree.Tree( 'N-lZ', t.ch ) ]
+  elif fn!='' and (len(t.ch)<1 or fn not in t.ch[0].c) and (len(t.ch)<2 or fn not in t.ch[1].c): t.ch = [ tree.Tree( re.sub(fn[0:2],'-b',re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
+  for st in t.ch:
+    relabel( st )
 
 
 ################################################################################
@@ -38,14 +100,12 @@ def dump( G ):
 class storestate( cuegraph ):
 
   def getArity( G, cat ):
-#    cat = G.result('0',a)
     while '{' in cat:
       cat = re.sub('\{[^\{\}]*\}','X',cat)
     return len(re.findall('-[ab]',cat))
 
 
-  def findNolo( G, sN ):
-    n = G.a
+  def findNolo( G, sN, n ):
     while True:
       if (n,'0') in G and G[n,'0']==sN: return n
       if   (n,'A') in G: n = G[n,'A']
@@ -54,7 +114,10 @@ class storestate( cuegraph ):
 
 
   def updateLex( G, f, sD, w, id ):
+
+#    dump( G )
 #    print( 'f', f, 'at', id )
+
     if f==0:
       G.rename( id+'sr', G.result('r',G.result('s',G.b)) )
       G.rename( id+'s', G.result('s',G.b) )
@@ -62,33 +125,26 @@ class storestate( cuegraph ):
       G.b = id
       G.equate( w, 'w', G.b )
       G.a = G.result( 'A', G.b )
-      while (G.a,'A') in G: G.a = G[G.a,'A']    ## if there are non-local dependencies on A
+      while (G.a,'A') in G: G.a = G[G.a,'A']      ## if there are non-local dependencies on A
     if f==1:
       G.a = id
       G.equate( sD,  '0', G.a )
       G.equate( w,   'w', G.a )
       G.equate( G.b, 'B', G.a )
       G.result( 'r', G.result('s',G.a) )
-#    dump( G )
 
 
   def updateUna( G, s, sC, sD, id ):
 
-    dump( G )
-    print( 's', s, 'at', id, sC, sD )
+#    dump( G )
+#    print( 's', s, 'at', id, sC, sD )
 
     l,d = ('B',G.a) if s==0 else ('A',G.b)
     dUpper,dLower = (G.a+'u',G.a) if s==0 else (G.b,G.b+'u')  ## bottom-up on left child, top-down on right child
 
-    if '-lV' in sD:               ## V
+    if '-lV' in sD:                               ## V
       sN = re.findall('-v(?:[^-{}]|{[^{}]*})',sD)[-1]
-#      n = G[d,l]
-#      del G[d,l]
-#      G.equate( n,  l,   G.result(l,d) )  ## insert nonlocal above complete sign
-#      G.equate( sN, '0', G.result(l,d) )  ## set label of nonlocal
-#      G.rename( d+'old', d )
-      n = G.findNolo( sN )
-      print( n )
+      n = G.findNolo( sN, d )
       if n=='':
         n = G.result( l, d+'u' )
         G.equate( sN, '0', n )
@@ -96,41 +152,32 @@ class storestate( cuegraph ):
       else: G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',n), '1\'', G.result('s',dUpper) )
       G.equate( G.result('s',dLower), 'e', G.result('s',dUpper) )
-#      G.equate( G.result('s',n),      '1\'', G.result('s',dUpper) )
-    elif '-lQ' in sD:               ## Q
-#      G.rename( d+'old', d )      ## switch 1' & 2' arguments (same process top-down as bottom-up)
+    elif '-lQ' in sD:                             ## Q
       G.equate( G.result(l,d), l, d+'u' )
-      G.equate( G.result('1\'',G.result('s',d)), '2\'', G.result('s',d+'u') )
+      G.equate( G.result('1\'',G.result('s',d)), '2\'', G.result('s',d+'u') )  ## switch 1' & 2' arguments (same process top-down as bottom-up)
       G.equate( G.result('2\'',G.result('s',d)), '1\'', G.result('s',d+'u') )
       G.equate( G.result('s',dLower), 'e', G.result('s',dUpper) )
     elif '-lZ' in sD and sC.startswith('A-aN'):   ## Za
-#      G.rename( d+'old', d )
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('r',G.result('s',dLower)), '1\'', G.result('s',dUpper) )
     elif '-lZ' in sD and sC.startswith('R-aN'):   ## Zb
-#      G.rename( d+'old', d )
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',dLower),                 '2', G.result('r',G.result('s',dUpper)) )
       G.equate( G.result('1\'',G.result('s',dUpper)), '1', G.result('r',G.result('s',dUpper)) )
     elif '-lE' in sD:
       sN = re.findall('-[ghirv](?:[^-]*|{[^{}]*})',sC)[0]
-      print( sN )
-      n = G.findNolo( sN )
+      n = G.findNolo( sN, d )
       if n=='':
         n = G.result( l, d+'u' )
         G.equate( sN, '0', n )
         G.equate( G.result(l,d), l, n )
-#        ab = G[d,l]
-#        del G[d,l]
-#        n = G.result( l, d )
-#        G.equate( ab, l,   n )    ## insert nonlocal above complete sign
-#        G.equate( sN, '0', n )    ## set label of nonlocal
       else: G.equate( G.result(l,d), l, d+'u' )
-      if sN.endswith('-aN}'):      ## Eb,Ed
+      if sN.endswith('-aN}'):                     ## Eb,Ed
         G.equate( G.result('r',G.result('s',dLower)), '1\'', id+'y' )
         G.equate( G.result('s',n), 'e', id+'y' )
-      else:                       ## Ea,Ec
+      else:                                       ## Ea,Ec
         G.equate( G.result('s',n), 'e', G.result( str(G.getArity(sD))+'\'', G.result('s',dLower) ) )
+      G.equate( G.result('s',d), 's', d+'u' )
     else: return
 
     if s==0:
@@ -139,13 +186,12 @@ class storestate( cuegraph ):
     if s==1:
       G.b = d+'u'
       G.equate( sD, '0', d+'u' )
-#    dump( G )
 
 
   def updateBin( G, j, sC, sD, sE, id ):
 
-    dump( G )
-    print( 'j', j, 'at', id, sC, sD, sE )
+#    dump( G )
+#    print( 'j', j, 'at', id, sC, sD, sE )
 
     G.b = id + 'b'
     G.equate( sE, '0', G.b )
@@ -153,50 +199,55 @@ class storestate( cuegraph ):
       c = id + 'a'
       G.equate( c, 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE else G.b )
       G.equate( sC, '0', c )
-      G.equate( G.result('B',G.a), 'B', c )
+      b = c
+      for sN in deps( sC ):
+        if sN[1] in 'ghirv' and not G.findNolo( sN, G.a ):
+          b = G.result( 'B', b )
+          G.equate( sN, '0', b )
+      G.equate( G.result('B',G.a), 'B', b )
     if j==1:
       c = G.result( 'B', G.a )
-      while (c,'B') in G: c = G[c,'B']          ## if there are non-local dependencies on B
+      while (c,'B') in G: c = G[c,'B']            ## if there are non-local dependencies on B
       G.equate( G.result('A',c), 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE else G.b )
 
     d,e = G.a,G.b
-    if '-lA' in sD:   ## Aa
+    if '-lA' in sD:                               ## Aa
       G.equate( G.result('s',c), 's', e )
       G.equate( G.result('s',d), str(G.getArity(sE))+'\'', G.result('s',e) )
-    if '-lA' in sE:   ## Ab
+    if '-lA' in sE:                               ## Ab
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('r',G.result('s',d)), 'r', G.result('s',c) )   ## rename 'r' node as well as 's'
       G.equate( G.result('s',e), str(G.getArity(sD))+'\'', G.result('s',d) )
-    if '-lM' in sD:   ## Ma
+    if '-lM' in sD:                               ## Ma
       G.equate( G.result('s',c), 's', e )
       G.equate( G.result('r',G.result('s',e)), '1\'', G.result('s',d) )
-    if '-lM' in sE:   ## Mb
+    if '-lM' in sE:                               ## Mb
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('r',G.result('s',d)), '1\'', G.result('s',e) )
-    if '-lC' in sD:   ## Ca,Cb
+    if '-lC' in sD:                               ## Ca,Cb
       G.equate( G.result('s',c), 's', e )
       G.equate( G.result('r',G.result('s',e)), 'c', G.result('r',G.result('s',d)) )
       G.equate( G.result('s',e), 'c', G.result('s',d) )
       for i in range( 1, G.getArity(sC)+1 ):
-        G.equate( G.result(str(i)+'\'',G.result('s',d)), str(i)+'\'', G.result('s',e) )
-    if '-lC' in sE:   ## Cc
+        G.equate( G.result(str(i)+'\'',G.result('s',c)), str(i)+'\'', G.result('s',d) )
+    if '-lC' in sE:                               ## Cc
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('r',G.result('s',d)), 'c', G.result('r',G.result('s',e)) )
       G.equate( G.result('s',d), 'c', G.result('s',e) )
       for i in range( 1, G.getArity(sC)+1 ):
-        G.equate( G.result(str(i)+'\'',G.result('s',d)), str(i)+'\'', G.result('s',e) )
-    if '-lG' in sD:    ## G
+        G.equate( G.result(str(i)+'\'',G.result('s',c)), str(i)+'\'', G.result('s',e) )
+    if '-lG' in sD:                               ## G
       G.equate( G.result('s',c), 's', e )
       G.equate( G.result('s',d), 's', G.result('A',e) )
       G.equate( lastdep(sE), '0', G.result('A',e) )
-    if '-lH' in sE:    ## H
+    if '-lH' in sE:                               ## H
       G.equate( G.result('s',d), 's', c )
-      n = G.findNolo( lastdep(sD) )
+      n = G.findNolo( lastdep(sD), d )
       if n!='': G.equate( G.result('s',e), 's', n )
-    if '-lI' in sE:    ## I
+    if '-lI' in sE:                               ## I
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('s',G.result('A',e)), str(G.getArity(sD))+'\'', G.result('s',d) )
-    if '-lR' in sE:    ## R
+    if '-lR' in sE:                               ## R
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('s',d), 's', G.result('A',e) )
       G.equate( lastdep(sE), '0', G.result('A',e) )
@@ -226,56 +277,6 @@ class storestate( cuegraph ):
       i = G.convert( t.ch[1], 1, i )
 
     return i
-
-
-################################################################################
-
-def lastdep( s ):
-  d = 0
-  j = len(s)
-  for i in range(len(s)-1,-1,-1):
-    if s[i]=='{': d+=1
-    if s[i]=='}': d-=1 
-    if d==0 and s[i]=='-' and i+1<len(s) and s[i+1] in 'abcdghirv': return( str(s[i:j]) )
-    if d==0 and s[i]=='-': j=i
-  return ''
-#  l = re.findall( '-[abcdghirv](?:[^-]*|{[^{}]*(?:{[^{}]*})*})', s )
-#  print( s, l )
-#  return l[-1] if len(l)>0 else ''
-
-
-################################################################################
-
-def firstnolo( s ):
-  d = 0
-  h = 0
-  for i in range(len(s)):
-    if s[i]=='{': d+=1
-    if s[i]=='}': d-=1
-    if d==0 and s[i]=='-' and h!=0 and i>h: return( s[h:i] )
-    if d==0 and s[i]=='-' and i+1<len(s) and s[i+1] in 'ghv': h = i
-  return '' if h==0 else s[h:]
-
-
-################################################################################
-
-def relabel( t ):
-#  print( t.c, lastdep(t.c) )
-  if len(t.ch)==2:
-    if lastdep(t.ch[1].c).startswith('-g') and '-lN' in t.ch[0].c: t.ch[0].c = re.sub( '-lN', '-lG', t.ch[0].c )
-    if lastdep(t.ch[0].c).startswith('-h') and '-lN' in t.ch[1].c: t.ch[1].c = re.sub( '-lN', '-lH', t.ch[1].c )
-    if lastdep(t.ch[1].c).startswith('-i') and '-lN' in t.ch[1].c: t.ch[1].c = re.sub( '-lN', '-lI', t.ch[1].c )
-    if lastdep(t.ch[1].c).startswith('-r') and '-lN' in t.ch[1].c: t.ch[1].c = re.sub( '-lN', '-lR', t.ch[1].c )  
-  ## choose one tree expansion in the following order...
-  fn = firstnolo(t.c)
-  if   t.c.startswith('A-aN') and len(t.ch)>0 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]
-  elif t.c.startswith('A-aN') and len(t.ch)>0 and t.ch[0].c.startswith('N') and '-l' not in t.ch[0].c: t.ch = [ tree.Tree( 'N-lZ', t.ch ) ]
-  elif t.c.startswith('A-aN') and len(t.ch)>1 and t.ch[1].c.startswith('N') and '-l' not in t.ch[1].c: t.ch = [ tree.Tree( 'N-lZ', t.ch ) ]
-  elif t.c.startswith('R-aN') and len(t.ch)>0 and t.ch[0].c.startswith('N') and '-l' not in t.ch[0].c: t.ch = [ tree.Tree( 'N-lZ', t.ch ) ]
-  elif t.c.startswith('R-aN') and len(t.ch)>1 and t.ch[1].c.startswith('N') and '-l' not in t.ch[1].c: t.ch = [ tree.Tree( 'N-lZ', t.ch ) ]
-  elif fn!='' and (len(t.ch)<1 or fn not in t.ch[0].c) and (len(t.ch)<2 or fn not in t.ch[1].c): t.ch = [ tree.Tree( re.sub(fn[0:2],'-b',re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
-  for st in t.ch:
-    relabel( st )
 
 
 ################################################################################
