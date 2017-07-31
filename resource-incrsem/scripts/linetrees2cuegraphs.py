@@ -2,6 +2,8 @@ import sys, os, re, collections
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import tree
 
+VERBOSE = False
+
 ################################################################################
 
 class cuegraph( dict ):
@@ -113,7 +115,7 @@ def relabel( t ):
     if '-lI' in t.ch[1].c:                        p = re.findall('^[^-]*',t.ch[0].c)[0] + ''.join(deps(t.ch[0].c,'abcd')[:-1]) + lcpsi + rcpsi  ## I
     if '-lR' in t.ch[1].c:                        p = t.ch[0].c                                                                                 ## R
     ## add calculated parent of children as unary branch if different from t.c...
-    if re.sub('-l.','',p) != re.sub('-l.','',t.c):
+    if re.sub('-[lx][^-]*','',p) != re.sub('-[lx][^-]*','',t.c):
       print( 'T rule: ' + t.c + ' -> ' + p )
       t.ch = [ tree.Tree( p, t.ch ) ]
 
@@ -153,11 +155,12 @@ class storestate( cuegraph ):
 
   def updateLex( G, f, sD, w, id ):
 
-#    dump( G )
-#    print( 'f', f, 'at', id )
+    if VERBOSE:
+      dump( G )
+      print( 'f', f, sD, w, id )
 
     if f==0:
-      G.rename( id+'sr', G.result('r',G.result('s',G.b)) )
+      G.rename( id+'r', G.result('r',G.result('s',G.b)) )
       G.rename( id+'s', G.result('s',G.b) )
       G.rename( id, G.b )
       G.b = id
@@ -169,13 +172,14 @@ class storestate( cuegraph ):
       G.equate( sD,  '0', G.a )
       G.equate( w,   'w', G.a )
       G.equate( G.b, 'B', G.a )
-      G.result( 'r', G.result('s',G.a) )
+      G.equate( id+'r', 'r', G.result('s',G.a) )
 
 
   def updateUna( G, s, sC, sD, id ):
 
-#    dump( G )
-#    print( 's', s, 'at', id, sC, sD )
+    if VERBOSE:
+      dump( G )
+      print( 's', s, sC, sD, id )
 
     l,d = ('B',G.a) if s==0 else ('A',G.b)
     dUpper,dLower = (G.a+'u',G.a) if s==0 else (G.b,G.b+'u')  ## bottom-up on left child, top-down on right child
@@ -237,8 +241,9 @@ class storestate( cuegraph ):
 
   def updateBin( G, j, sC, sD, sE, id ):
 
-#    dump( G )
-#    print( 'j', j, 'at', id, sC, sD, sE )
+    if VERBOSE:
+      dump( G )
+      print( 'j', j, sC, sD, sE, id )
 
     G.b = id + 'b'
     G.equate( sE, '0', G.b )
@@ -270,7 +275,6 @@ class storestate( cuegraph ):
       G.equate( G.result('s',d), str(G.getArity(sE))+'\'', G.result('s',e) )
     if '-lU' in sE:                               ## Ub
       G.equate( G.result('s',c), 's', e )
-      G.equate( G.result('r',G.result('s',d)), 'r', G.result('s',c) )   ## rename 'r' node as well as 's'
       G.equate( G.result('s',e), str(G.getArity(sD))+'\'', G.result('s',d) )
     if '-lM' in sD:                               ## Ma
       G.equate( G.result('s',c), 's', e )
@@ -334,19 +338,44 @@ class storestate( cuegraph ):
 
 ################################################################################
 
+for a in sys.argv:
+  if a=='-d': VERBOSE + True
+
 for line in sys.stdin:
 
   tr = tree.Tree( )
   tr.read( line )
   relabel( tr )
   print( tr )
+
   G = storestate( )
   G.a = 'top'
   G.b = 'bot'
   G.convert( tr )
-  #dump( G )
+
+  ## for each word...
   for x,l in sorted(G):
-    if l!='A' and l!='B' and l!='s':  #### and l[-1]!='\'':
+    ## add predicates by applying morph rules...
+    if l=='w':
+      s = re.sub('-l.','',G[x,'0']) + ':' + G[x,'w'].lower()
+      while( '-x' in s ):
+        s1 = re.sub( '^.(\\S*?)-x.%:(\\S*)%(\\S*)\|(\\S*)%(\\S*):([^% ]*)%([^-: ]*)([^: ]*):\\2(\\S*)\\3', '\\4\\1\\5\\8:\\6\\9\\7', s )
+        if s1==s: s1 = re.sub( '^.(\\S*?)-x.%(\\S*)\|([^% ]*)%([^-: ]*)([^: ]*):(\\S*)\\2', '\\3\\1\\5:\\6\\4', s )
+        if s1==s: s1 = re.sub( '-x', '', s )
+        s = s1
+#      G.equate( s, '0', x+'e' if s[0]=='N' and s!='N-b{N-aD}' else G.result('r',G.result('s',x)) )
+      if s[0]=='N' and not s.startswith('N-b{N-aD}'):
+        G.equate( s, '0', x+'e' )
+        G.equate( G.result('r',G.result('s',x)), '1', x+'e' )
+      else: G.equate( s, '0', G.result('r',G.result('s',x)) )
+    ## add semantic dependencies...
+    if l[-1]=='\'':
+      if (G.result('r',x),'0') in G:  G.equate( G[x,l], l[:-1], G.result('r',x) )
+      else:                           G.equate( G[x,l], str(int(l[:-1])+1), x[:-1]+'e' )
+
+  #dump( G )
+  for x,l in sorted(G.keys()):
+    if l!='A' and l!='B' and l!='s' and l!='w' and (l!='0' or ':' in G[x,l]) and l[-1]!='\'':
       sys.stdout.write( ' ' + x + ',' + l + ',' + G[x,l] )
   sys.stdout.write( '\n' )
 
