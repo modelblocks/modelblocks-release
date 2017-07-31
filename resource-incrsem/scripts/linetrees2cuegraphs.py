@@ -84,42 +84,49 @@ def relabel( t ):
 #  print( t.c, lastdep(t.c) )
   p = ''
 
+  ## for binary branches...
   if len(t.ch)==2:
     ## adjust tags...
-    if lastdep(t.ch[1].c).startswith('-g') and '-lN' in t.ch[0].c:                       t.ch[0].c = re.sub( '-lN', '-lG', t.ch[0].c )       ## G
-    if lastdep(t.ch[0].c).startswith('-h') and '-lN' in t.ch[1].c:                       t.ch[1].c = re.sub( '-lN', '-lH', t.ch[1].c )       ## H
-    if lastdep(t.ch[1].c).startswith('-i') and '-lN' in t.ch[1].c:                       t.ch[1].c = re.sub( '-lN', '-lI', t.ch[1].c )       ## I
-    if lastdep(t.ch[1].c).startswith('-r') and '-lN' in t.ch[1].c:                       t.ch[1].c = re.sub( '-lN', '-lR', t.ch[1].c )       ## R
-    if '-lA' in t.ch[1].c and t.ch[0].c in ['C-bV','E-bB','F-bI','I-aN-b{B-aN}','O-bN']: t.ch[1].c = re.sub( '-lA', '-lU', t.ch[1].c )       ## U
-    if '-lA' in t.ch[0].c and t.ch[1].c=='D-aN':                                         t.ch[0].c = re.sub( '-lA', '-lU', t.ch[0].c )
+    if lastdep(t.ch[1].c).startswith('-g') and '-lN' in t.ch[0].c:                                   t.ch[0].c = re.sub( '-lN', '-lG', t.ch[0].c )       ## G
+    if lastdep(t.ch[0].c).startswith('-h') and '-lN' in t.ch[1].c:                                   t.ch[1].c = re.sub( '-lN', '-lH', t.ch[1].c )       ## H
+    if lastdep(t.ch[1].c).startswith('-i') and '-lN' in t.ch[1].c:                                   t.ch[1].c = re.sub( '-lN', '-lI', t.ch[1].c )       ## I
+    if lastdep(t.ch[1].c).startswith('-r') and '-lN' in t.ch[1].c:                                   t.ch[1].c = re.sub( '-lN', '-lR', t.ch[1].c )       ## R
+    if '-lA' in t.ch[1].c and t.ch[0].c in ['C-bV','E-bB','F-bI','I-aN-b{B-aN}','O-bN','N-b{N-aD}']: t.ch[1].c = re.sub( '-lA', '-lU', t.ch[1].c )       ## U
+    if '-lA' in t.ch[0].c and t.ch[1].c=='D-aN':                                                     t.ch[0].c = re.sub( '-lA', '-lU', t.ch[0].c )
+    ## fix hacky composition ('said Kim' inversion, : as X-cX-dX)...
+    if '-lA' in t.ch[1].c and len( deps(t.ch[0].c,'b') )==0: t.ch[0] = tree.Tree( re.sub('(V)-a('+deps(t.ch[0].c,'a')[-1][2:]+')','\\1-b\\2',t.ch[0].c), [ t.ch[0] ] )
+    if '-lC' in t.ch[1].c and len( deps(t.ch[0].c,'d') )==0: t.ch[0] = tree.Tree( 'X-cX-dX', [ t.ch[0] ] )
     ## calc parent given child types and ops...
     lcpsi = ''.join( deps(t.ch[0].c,'ghirv') )
     rcpsi = ''.join( deps(t.ch[1].c,'ghirv') )
     p = t.c
-    if '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  p = re.sub( '(.*)'+deps(t.ch[1].c,'a')[-1], '\\1', t.ch[1].c ) + lcpsi + rcpsi     ## Aa,Ua
-    if '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  p = re.sub( '(.*)'+deps(t.ch[0].c,'b')[-1], '\\1', t.ch[0].c ) + lcpsi + rcpsi     ## Ab,Ub
-    if '-lC' in t.ch[0].c:                        p = re.sub( '(.*)'+deps(t.ch[1].c,'c')[-1], '\\1', t.ch[1].c ) + lcpsi + rcpsi     ## Ca,Cb
-    if '-lC' in t.ch[1].c:                        p = re.sub( '(.*)'+deps(t.ch[0].c,'d')[-1], '\\1', t.ch[0].c ) + lcpsi + rcpsi     ## Cc
-    if '-lM' in t.ch[0].c:                        p = t.ch[1].c + lcpsi                                                              ## Ma
-    if '-lM' in t.ch[1].c or '-lR' in t.ch[1].c:  p = t.ch[0].c + rcpsi                                                              ## Mb,R
-    if '-lG' in t.ch[0].c:                        p = re.sub( '(.*)'+deps(t.ch[1].c,'g')[-1], '\\1', t.ch[1].c, 1 ) + lcpsi          ## G
-    if '-lH' in t.ch[1].c:                        p = re.sub( '(.*)'+deps(t.ch[0].c,'h')[-1], '\\1', t.ch[0].c, 1 ) + rcpsi          ## H
-    if '-lI' in t.ch[1].c:                        p = re.sub( '(.*)'+deps(t.ch[0].c,'b')[-1], '\\1', t.ch[0].c, 1 ) + lcpsi + rcpsi  ## I
-
+    if '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  p = re.findall('^[^-]*',t.ch[1].c)[0] + ''.join(deps(t.ch[1].c,'abcd')[:-1]) + lcpsi + rcpsi  ## Aa,Ua
+    if '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  p = re.findall('^[^-]*',t.ch[0].c)[0] + ''.join(deps(t.ch[0].c,'abcd')[:-1]) + lcpsi + rcpsi  ## Ab,Ub
+    if '-lC' in t.ch[0].c:                        p = re.findall('^[^-]*',t.ch[1].c)[0] + ''.join(deps(t.ch[1].c,'abcd')[:-1]) + lcpsi + rcpsi  ## Ca,Cb
+#re.sub( '(.*)'+deps(t.ch[1].c,'c')[-1], '\\1', t.ch[1].c ) + lcpsi + rcpsi                ## Ca,Cb
+    if '-lC' in t.ch[1].c:                        p = re.findall('^[^-]*',t.ch[0].c)[0] + ''.join(deps(t.ch[0].c,'abcd')[:-1]) + lcpsi + rcpsi  ## Cc
+#re.sub( '(.*)'+deps(t.ch[0].c,'d')[-1], '\\1', t.ch[0].c ) + lcpsi + rcpsi                ## Cc
+    if '-lM' in t.ch[0].c:                        p = t.ch[1].c + lcpsi                                                                         ## Ma
+    if '-lM' in t.ch[1].c:                        p = t.ch[0].c + rcpsi                                                                         ## Mb
+    if '-lG' in t.ch[0].c:                        p = re.sub( '(.*)'+deps(t.ch[1].c,'g')[-1], '\\1', t.ch[1].c, 1 ) + lcpsi                     ## G
+    if '-lH' in t.ch[1].c:                        p = re.sub( '(.*)'+deps(t.ch[0].c,'h')[-1], '\\1', t.ch[0].c, 1 ) + rcpsi                     ## H
+    if '-lI' in t.ch[1].c:                        p = re.findall('^[^-]*',t.ch[0].c)[0] + ''.join(deps(t.ch[0].c,'abcd')[:-1]) + lcpsi + rcpsi  ## I
+    if '-lR' in t.ch[1].c:                        p = t.ch[0].c                                                                                 ## R
+    ## add calculated parent of children as unary branch if different from t.c...
     if re.sub('-l.','',p) != re.sub('-l.','',t.c):
       print( 'T rule: ' + t.c + ' -> ' + p )
       t.ch = [ tree.Tree( p, t.ch ) ]
 
+  ## for (new or old) unary branches...
   if len(t.ch)==1:
     locs  = deps(t.c,'abcd')
     nolos = deps(t.c,'ghirv')
-    chdeps = deps(t.ch[0].c)
-#    print( locs, nolos, chdeps )
+    chlocs = deps(t.ch[0].c,'abcd')
     if   t.c.startswith('A-aN') and len(t.ch)==1 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]          ## V
     elif t.c.startswith('A-aN') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                     ## Za
     elif t.c.startswith('R-aN') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                     ## Zb
-    elif len(nolos)>0 and nolos[0][2]!='{' and len(chdeps)>len(locs) and nolos[0]!=chdeps[len(locs)]:                                  ## Ea
-      t.ch = [ tree.Tree( re.sub(nolos[0],chdeps[len(locs)],re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
+    elif len(nolos)>0 and nolos[0][2]!='{' and len(chlocs)>len(locs) and nolos[0]!=chlocs[len(locs)]:                                  ## Ea
+      t.ch = [ tree.Tree( re.sub(nolos[0],chlocs[len(locs)],re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
     elif len(nolos)>0 and nolos[0][2]=='{': t.ch = [ tree.Tree( re.sub(nolos[0],'',re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]             ## Eb
 
   for st in t.ch:
@@ -197,7 +204,6 @@ class storestate( cuegraph ):
       G.equate( G.result('1\'',G.result('s',dUpper)), '1', G.result('r',G.result('s',dUpper)) )
     elif '-lE' in sD:
       sN = firstnolo( sC )
-#      sN = re.findall('-[ghirv](?:[^-]*|{[^{}]*})',sC)[0]
       n = G.findNolo( sN, d )
       if n=='':
         n = G.result( l, d+'u' )
@@ -210,7 +216,16 @@ class storestate( cuegraph ):
       else:                                       ## Ea,Ec
         G.equate( G.result('s',n), 'e', G.result( str(G.getArity(sD))+'\'', G.result('s',dLower) ) )
       G.equate( G.result('s',d), 's', d+'u' )
-    else: return
+    elif '-l' not in sD:                          ## T
+      hideps = deps( sC )
+      lodeps = deps( sD )
+      for i in range( len(hideps) ):
+        if i<len(lodeps) and hideps[i][1]!=lodeps[i][1] and hideps[i][1] in 'ghirv' and lodeps[i][1] in 'ghirv':
+          print( 'swapping', lodeps[i], hideps[i] )
+          if s==0: G[ G.findNolo(lodeps[i],c), '0' ] = hideps[i]    ## bottom up on left child
+          else:    G[ G.findNolo(hideps[i],d), '0' ] = lodeps[i]    ## top down on right child
+      return      ## don't add 'u' node
+    else: return  ## don't add 'u' node
 
     if s==0:
       G.a = d+'u'
@@ -250,6 +265,13 @@ class storestate( cuegraph ):
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('r',G.result('s',d)), 'r', G.result('s',c) )   ## rename 'r' node as well as 's'
       G.equate( G.result('s',e), str(G.getArity(sD))+'\'', G.result('s',d) )
+    if '-lU' in sD:                               ## Ua
+      G.equate( G.result('s',d), 's', c )
+      G.equate( G.result('s',d), str(G.getArity(sE))+'\'', G.result('s',e) )
+    if '-lU' in sE:                               ## Ub
+      G.equate( G.result('s',c), 's', e )
+      G.equate( G.result('r',G.result('s',d)), 'r', G.result('s',c) )   ## rename 'r' node as well as 's'
+      G.equate( G.result('s',e), str(G.getArity(sD))+'\'', G.result('s',d) )
     if '-lM' in sD:                               ## Ma
       G.equate( G.result('s',c), 's', e )
       G.equate( G.result('r',G.result('s',e)), '1\'', G.result('s',d) )
@@ -283,7 +305,6 @@ class storestate( cuegraph ):
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('s',d), 's', G.result('A',e) )
       G.equate( lastdep(sE), '0', G.result('A',e) )
-#    dump( G )
 
 
   def convert( G, t, s=0, i=0 ):
@@ -323,6 +344,7 @@ for line in sys.stdin:
   G.a = 'top'
   G.b = 'bot'
   G.convert( tr )
+  #dump( G )
   for x,l in sorted(G):
     if l!='A' and l!='B' and l!='s':  #### and l[-1]!='\'':
       sys.stdout.write( ' ' + x + ',' + l + ',' + G[x,l] )
