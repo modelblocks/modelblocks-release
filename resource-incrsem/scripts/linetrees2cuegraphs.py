@@ -36,61 +36,92 @@ def dump( G ):
 
 ################################################################################
 
-def deps( s ):
+def deps( s, ops='abcdghirv' ):
   lst = [ ]
   d,h = 0,0
   for i in range( len(s) ):
     if s[i]=='{': d+=1
     if s[i]=='}': d-=1
-    if d==0 and s[i]=='-' and h+1<len(s) and s[h+1] in 'abcdghirv': lst += [ s[h:i] ]
+    if d==0 and s[i]=='-' and h+1<len(s) and s[h+1] in ops: lst += [ s[h:i] ]
     if d==0 and s[i]=='-': h = i
-  if h+1<len(s) and s[h+1] in 'abcdghirv': lst += [ s[h:] ]
+  if h+1<len(s) and s[h+1] in ops: lst += [ s[h:] ]
   return lst
 
 
 ################################################################################
 
 def lastdep( s ):
-  d = 0
-  j = len(s)
-  for i in range(len(s)-1,-1,-1):
-    if s[i]=='{': d+=1
-    if s[i]=='}': d-=1
-    if d==0 and s[i]=='-' and i+1<len(s) and s[i+1] in 'abcdghirv': return( str(s[i:j]) )
-    if d==0 and s[i]=='-': j=i
-  return ''
+  d = deps( s )
+  return d[-1] if len(d)>0 else ''
+#  d = 0
+#  j = len(s)
+#  for i in range(len(s)-1,-1,-1):
+#    if s[i]=='{': d+=1
+#    if s[i]=='}': d-=1
+#    if d==0 and s[i]=='-' and i+1<len(s) and s[i+1] in 'abcdghirv': return( str(s[i:j]) )
+#    if d==0 and s[i]=='-': j=i
+#  return ''
 
 
 ################################################################################
 
 def firstnolo( s ):
-  d = 0
-  h = 0
-  for i in range(len(s)):
-    if s[i]=='{': d+=1
-    if s[i]=='}': d-=1
-    if d==0 and s[i]=='-' and h!=0 and i>h: return( s[h:i] )
-    if d==0 and s[i]=='-' and i+1<len(s) and s[i+1] in 'ghv': h = i
-  return '' if h==0 else s[h:]
+  d = deps( s, 'ghirv' )
+  return d[0] if len(d)>0 else ''
+#  d = 0
+#  h = 0
+#  for i in range(len(s)):
+#    if s[i]=='{': d+=1
+#    if s[i]=='}': d-=1
+#    if d==0 and s[i]=='-' and h!=0 and i>h: return( s[h:i] )
+#    if d==0 and s[i]=='-' and i+1<len(s) and s[i+1] in 'ghv': h = i
+#  return '' if h==0 else s[h:]
 
 
 ################################################################################
 
 def relabel( t ):
 #  print( t.c, lastdep(t.c) )
+  p = ''
+
   if len(t.ch)==2:
-    if lastdep(t.ch[1].c).startswith('-g') and '-lN' in t.ch[0].c: t.ch[0].c = re.sub( '-lN', '-lG', t.ch[0].c )
-    if lastdep(t.ch[0].c).startswith('-h') and '-lN' in t.ch[1].c: t.ch[1].c = re.sub( '-lN', '-lH', t.ch[1].c )
-    if lastdep(t.ch[1].c).startswith('-i') and '-lN' in t.ch[1].c: t.ch[1].c = re.sub( '-lN', '-lI', t.ch[1].c )
-    if lastdep(t.ch[1].c).startswith('-r') and '-lN' in t.ch[1].c: t.ch[1].c = re.sub( '-lN', '-lR', t.ch[1].c )
-  ## choose one tree expansion in the following order...
-  fn = firstnolo(t.c)
-  if   t.c.startswith('A-aN') and len(t.ch)>0 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]
-  elif t.c.startswith('A-aN') and len(t.ch)>0 and t.ch[0].c.startswith('N') and '-l' not in t.ch[0].c: t.ch = [ tree.Tree( 'N-lZ', t.ch ) ]
-  elif t.c.startswith('A-aN') and len(t.ch)>1 and t.ch[1].c.startswith('N') and '-l' not in t.ch[1].c: t.ch = [ tree.Tree( 'N-lZ', t.ch ) ]
-  elif t.c.startswith('R-aN') and len(t.ch)>0 and t.ch[0].c.startswith('N') and '-l' not in t.ch[0].c: t.ch = [ tree.Tree( 'N-lZ', t.ch ) ]
-  elif t.c.startswith('R-aN') and len(t.ch)>1 and t.ch[1].c.startswith('N') and '-l' not in t.ch[1].c: t.ch = [ tree.Tree( 'N-lZ', t.ch ) ]
-  elif fn!='' and (len(t.ch)<1 or fn not in t.ch[0].c) and (len(t.ch)<2 or fn not in t.ch[1].c): t.ch = [ tree.Tree( re.sub(fn[0:2],'-b',re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
+    ## adjust tags...
+    if lastdep(t.ch[1].c).startswith('-g') and '-lN' in t.ch[0].c:                       t.ch[0].c = re.sub( '-lN', '-lG', t.ch[0].c )       ## G
+    if lastdep(t.ch[0].c).startswith('-h') and '-lN' in t.ch[1].c:                       t.ch[1].c = re.sub( '-lN', '-lH', t.ch[1].c )       ## H
+    if lastdep(t.ch[1].c).startswith('-i') and '-lN' in t.ch[1].c:                       t.ch[1].c = re.sub( '-lN', '-lI', t.ch[1].c )       ## I
+    if lastdep(t.ch[1].c).startswith('-r') and '-lN' in t.ch[1].c:                       t.ch[1].c = re.sub( '-lN', '-lR', t.ch[1].c )       ## R
+    if '-lA' in t.ch[1].c and t.ch[0].c in ['C-bV','E-bB','F-bI','I-aN-b{B-aN}','O-bN']: t.ch[1].c = re.sub( '-lA', '-lU', t.ch[1].c )       ## U
+    if '-lA' in t.ch[0].c and t.ch[1].c=='D-aN':                                         t.ch[0].c = re.sub( '-lA', '-lU', t.ch[0].c )
+    ## calc parent given child types and ops...
+    lcpsi = ''.join( deps(t.ch[0].c,'ghirv') )
+    rcpsi = ''.join( deps(t.ch[1].c,'ghirv') )
+    p = t.c
+    if '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  p = re.sub( '(.*)'+deps(t.ch[1].c,'a')[-1], '\\1', t.ch[1].c ) + lcpsi + rcpsi     ## Aa,Ua
+    if '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  p = re.sub( '(.*)'+deps(t.ch[0].c,'b')[-1], '\\1', t.ch[0].c ) + lcpsi + rcpsi     ## Ab,Ub
+    if '-lC' in t.ch[0].c:                        p = re.sub( '(.*)'+deps(t.ch[1].c,'c')[-1], '\\1', t.ch[1].c ) + lcpsi + rcpsi     ## Ca,Cb
+    if '-lC' in t.ch[1].c:                        p = re.sub( '(.*)'+deps(t.ch[0].c,'d')[-1], '\\1', t.ch[0].c ) + lcpsi + rcpsi     ## Cc
+    if '-lM' in t.ch[0].c:                        p = t.ch[1].c + lcpsi                                                              ## Ma
+    if '-lM' in t.ch[1].c or '-lR' in t.ch[1].c:  p = t.ch[0].c + rcpsi                                                              ## Mb,R
+    if '-lG' in t.ch[0].c:                        p = re.sub( '(.*)'+deps(t.ch[1].c,'g')[-1], '\\1', t.ch[1].c, 1 ) + lcpsi          ## G
+    if '-lH' in t.ch[1].c:                        p = re.sub( '(.*)'+deps(t.ch[0].c,'h')[-1], '\\1', t.ch[0].c, 1 ) + rcpsi          ## H
+    if '-lI' in t.ch[1].c:                        p = re.sub( '(.*)'+deps(t.ch[0].c,'b')[-1], '\\1', t.ch[0].c, 1 ) + lcpsi + rcpsi  ## I
+
+    if re.sub('-l.','',p) != re.sub('-l.','',t.c):
+      print( 'T rule: ' + t.c + ' -> ' + p )
+      t.ch = [ tree.Tree( p, t.ch ) ]
+
+  if len(t.ch)==1:
+    locs  = deps(t.c,'abcd')
+    nolos = deps(t.c,'ghirv')
+    chdeps = deps(t.ch[0].c)
+#    print( locs, nolos, chdeps )
+    if   t.c.startswith('A-aN') and len(t.ch)==1 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]          ## V
+    elif t.c.startswith('A-aN') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                     ## Za
+    elif t.c.startswith('R-aN') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                     ## Zb
+    elif len(nolos)>0 and nolos[0][2]!='{' and len(chdeps)>len(locs) and nolos[0]!=chdeps[len(locs)]:                                  ## Ea
+      t.ch = [ tree.Tree( re.sub(nolos[0],chdeps[len(locs)],re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
+    elif len(nolos)>0 and nolos[0][2]=='{': t.ch = [ tree.Tree( re.sub(nolos[0],'',re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]             ## Eb
+
   for st in t.ch:
     relabel( st )
 
@@ -165,7 +196,8 @@ class storestate( cuegraph ):
       G.equate( G.result('s',dLower),                 '2', G.result('r',G.result('s',dUpper)) )
       G.equate( G.result('1\'',G.result('s',dUpper)), '1', G.result('r',G.result('s',dUpper)) )
     elif '-lE' in sD:
-      sN = re.findall('-[ghirv](?:[^-]*|{[^{}]*})',sC)[0]
+      sN = firstnolo( sC )
+#      sN = re.findall('-[ghirv](?:[^-]*|{[^{}]*})',sC)[0]
       n = G.findNolo( sN, d )
       if n=='':
         n = G.result( l, d+'u' )
