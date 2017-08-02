@@ -630,6 +630,20 @@ binEffect <- function(x) {
     return ("negative")
 }
 
+getModelVars <- function(bform) {
+    if (bform == '') {
+        return('')
+    } else {
+        
+    }
+}
+
+getCorrelations <- function(data, bform) {
+    vars = all.vars(bform)
+    vars = vars[vars %ni% c('subject', 'word')]
+    return(cor(data[,vars]))
+}
+
 # Fit mixed-effects regression
 fitModel <- function(dataset, output, bformfile, fitmode='lme',
                    logmain=FALSE, logdepvar=FALSE, lambda=NULL,
@@ -650,6 +664,12 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
                              crossfactor, logmain, interact)
     }
     
+    correlations = getCorrelations(dataset, bform)
+    cat('\n')
+    cat('Correlation of numeric variables in model:\n')
+    print(correlations) 
+    cat('\n')
+
     smartPrint('Regressing model:')
     smartPrint(deparse(bform))
 
@@ -660,6 +680,15 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
     } else {
         outputModel <- regressLinearModel(dataset, bform)
     }
+    if (params$boxcox) { 
+        bc_inv_out = getBoxCoxInvBetas(dataset, bform, lambda, outputModel) 
+        beta_ms = bc_inv_out$beta_ms 
+        y_mu = bc_inv_out$y_mu 
+        printBoxCoxInvBetas(beta_ms, lambda, y_mu) 
+    } else { 
+        beta_ms = fixef(outputModel) 
+        y_mu = NULL 
+    } 
     fitOutput <- list(
         abl = ablEffects,
         ablEffects = processEffects(ablEffects, data, logmain),
@@ -667,9 +696,38 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         model = outputModel,
         logmain = logmain,
         logdepvar = logdepvar,
-        lambda = lambda
+        lambda = lambda,
+        beta_ms = beta_ms,
+        y_mu = y_mu,
+        correlations = correlations
     )
     save(fitOutput, file=output)
+}
+
+getBoxCoxInvBetas <- function(dataset, bform, lambda, outputModel) {
+    attach(dataset)
+    response = as.character(bform)[[2]]
+    if (substr(response, 1, 3) %in% c('c.(', 'z.(')) {
+        response = substr(response, 4, nchar(response)-1)
+        print(response)
+    }
+    y_mu = mean(eval(parse(text=response)))
+    detach(dataset)
+    fixed = names(fixef(outputModel))
+    fixed = fixed[! fixed %in% c('(Intercept)')]
+    beta_ms = list()
+    for (f in fixed) {
+        beta = fixef(outputModel)[[f]]
+        beta_ms[[f]] = boxcox_inv(lambda, beta, y_mu)
+    }
+    return(list(beta_ms=beta_ms, y_mu=y_mu))
+}
+
+printBoxCoxInvBetas <- function(beta_ms, lambda, y_mu) {
+    cat(paste0('\nInverse Box-Cox estimates (ms) using lambda = ', lambda, ' and mean y = ', y_mu, '\n'))
+    for (f in names(beta_ms)) {
+        cat(paste0('Beta (ms) of effect ', f, ': ', beta_ms[[f]], '\n'))
+    }
 }
 
 # LME error analysis
@@ -697,10 +755,7 @@ error_anal <- function(data, params) {
     return(errData)
 }
 
-boxcox_rev_estimate <- function(l, beta, intercept, x_0 = 0) {
-    y_0 = (l * (x_0 * beta + intercept) + 1) ^ (1/l)
-    y_1 = (l * ((x_0 + 1) * beta + intercept) + 1) ^ (1/l)
-    print(y_0)
-    print(y_1)
-    return(y_1 - y_0)
+boxcox_inv <- function(lambda, beta, y_mu) {
+    return((lambda*(y_mu + beta) + 1)^(1/lambda) - (lambda*y_mu + 1)^(1/lambda))
 }
+
