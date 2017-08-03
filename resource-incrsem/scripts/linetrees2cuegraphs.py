@@ -74,7 +74,7 @@ def relabel( t ):
     ## adjust tags...
     if lastdep(t.ch[1].c).startswith('-g') and '-lN' in t.ch[0].c:                                         t.ch[0].c = re.sub( '-lN', '-lG', t.ch[0].c )   ## G
     if lastdep(t.ch[0].c).startswith('-h') and '-lN' in t.ch[1].c:                                         t.ch[1].c = re.sub( '-lN', '-lH', t.ch[1].c )   ## H
-    if lastdep(t.ch[1].c).startswith('-i') and '-lN' in t.ch[1].c:                                         t.ch[1].c = re.sub( '-lN', '-lI', t.ch[1].c )   ## I
+    if lastdep(t.ch[0].c).startswith('-b') and '-lA' in t.ch[1].c and '-g' in lastdep(t.ch[0].c):          t.ch[1].c = re.sub( '-lA', '-lI', t.ch[1].c )   ## I
     if lastdep(t.ch[1].c).startswith('-r') and '-lN' in t.ch[1].c:                                         t.ch[1].c = re.sub( '-lN', '-lR', t.ch[1].c )   ## R
     if '-lA' in t.ch[1].c and re.match( 'C-bV|E-bB|F-bI|O-bN|.-aN-b{.-aN}|N-b{N-aD}', t.ch[0].c ) != None: t.ch[1].c = re.sub( '-lA', '-lU', t.ch[1].c )   ## U
     if '-lA' in t.ch[0].c and t.ch[1].c=='D-aN':                                                           t.ch[0].c = re.sub( '-lA', '-lU', t.ch[0].c )
@@ -106,9 +106,9 @@ def relabel( t ):
     locs  = deps(t.c,'abcd')
     nolos = deps(t.c,'ghirv')
     chlocs = deps(t.ch[0].c,'abcd')
-    if   t.c.startswith('A-aN') and len(t.ch)==1 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]          ## V
-    elif t.c.startswith('A-aN') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                     ## Za
-    elif t.c.startswith('R-aN') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                     ## Zb
+    if   t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]           ## V
+    elif t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                      ## Za
+    elif t.c.startswith('R-a') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                      ## Zb
     elif len(nolos)>0 and nolos[0][2]!='{' and len(chlocs)>len(locs) and nolos[0]!=chlocs[len(locs)]:                                  ## Ea
       t.ch = [ tree.Tree( re.sub(nolos[0],chlocs[len(locs)],re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
     elif len(nolos)>0 and nolos[0][2]=='{': t.ch = [ tree.Tree( re.sub(nolos[0],'',re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]             ## Eb
@@ -199,10 +199,11 @@ class storestate( cuegraph ):
       G.equate( G.result('s',dLower),                 '2', G.result('r',G.result('s',dUpper)) )
       G.equate( G.result('1\'',G.result('s',dUpper)), '1', G.result('r',G.result('s',dUpper)) )
       G.equate( 'A-aN-bN:~',                          '0', G.result('r',G.result('s',dUpper)) )
-    elif '-lZ' in sD and sC.startswith('A-aN'):   ## Za
+    elif '-lZ' in sD and sC.startswith('A-a'):    ## Za
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('r',G.result('r',G.result('s',dLower))), '1\'', G.result('s',dUpper) )
-    elif '-lZ' in sD and sC.startswith('R-aN'):   ## Zb
+      G.equate( G.result('s',dUpper), 'h', G.result('s',dLower) )              ## hypothetical world inheritance -- should be implemented throughout
+    elif '-lZ' in sD and sC.startswith('R-a'):    ## Zb
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',dLower),                 '2', G.result('r',G.result('s',dUpper)) )
       G.equate( G.result('1\'',G.result('s',dUpper)), '1', G.result('r',G.result('s',dUpper)) )
@@ -309,6 +310,7 @@ class storestate( cuegraph ):
     if '-lI' in sE:                               ## I
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('s',G.result('A',e)), str(G.getArity(sD))+'\'', G.result('s',d) )
+      G.equate( lastdep(sE), '0', G.result('A',e) )
     if '-lR' in sE:                               ## R
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('s',d), 's', G.result('A',e) )
@@ -376,11 +378,12 @@ for line in sys.stdin:
   for x,l in sorted(G):
     if l[-1]=='\'':
       ## add semantic dependencies...
-      if (G.result('r',x),'0') in G:  G.equate( G[x,l], l[:-1], G.result('r',x) )
-      else:                           G.equate( G[x,l], str(int(l[:-1])+1), x[:-1]+'e' )
+      if (x,'r') in G and (G[x,'r'],  '0') in G:  G.equate( G[x,l], l[:-1], G.result('r',x) )
+      elif                (x[:-1]+'e','0') in G:  G.equate( G[x,l], str(int(l[:-1])+1), x[:-1]+'e' )
 
   for x,l in sorted(G.keys()):
-    if l!='A' and l!='B' and l!='s' and l!='w' and (l!='0' or ':' in G[x,l]) and l[-1]!='\'':
+    if l!='A' and l!='B' and l!='s' and l!='w' and (l!='0' or x[-1] in 'er') and l[-1]!='\'':
+#':' in G[x,l]) and l[-1]!='\'':
       sys.stdout.write( ' ' + x + ',' + l + ',' + G[x,l] )
   sys.stdout.write( '\n' )
 
