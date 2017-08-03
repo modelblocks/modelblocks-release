@@ -106,12 +106,12 @@ def relabel( t ):
     locs  = deps(t.c,'abcd')
     nolos = deps(t.c,'ghirv')
     chlocs = deps(t.ch[0].c,'abcd')
-    if   t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]           ## V
-    elif t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                      ## Za
-    elif t.c.startswith('R-a') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                      ## Zb
-    elif len(nolos)>0 and nolos[0][2]!='{' and len(chlocs)>len(locs) and nolos[0]!=chlocs[len(locs)]:                                  ## Ea
+    if   t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]                    ## V
+    elif t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                               ## Za
+    elif t.c.startswith('R-a') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                               ## Zb
+    elif len(nolos)>0 and nolos[0][2]!='{' and len(deps(t.c))==len(deps(t.ch[0].c)) and len(chlocs)>len(locs) and nolos[0]!=chlocs[len(locs)]:  ## Ea
       t.ch = [ tree.Tree( re.sub(nolos[0],chlocs[len(locs)],re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
-    elif len(nolos)>0 and nolos[0][2]=='{': t.ch = [ tree.Tree( re.sub(nolos[0],'',re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]             ## Eb
+    elif len(nolos)>0 and nolos[0][2]=='{': t.ch = [ tree.Tree( re.sub(nolos[0],'',re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]                      ## Eb
 
   for st in t.ch:
     relabel( st )
