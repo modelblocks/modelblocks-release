@@ -13,15 +13,21 @@ while ( <> ) {
 
   #### irregular nouns:
   ## this
-  s/\((N(?!-b{N-aD}))([^ %]*) ([Tt]his|[Ss]pecies)\)/\(\1\2-o\1%\3|N%\3 \3\)/gi;
-  ## %an|%en
+  s/\((N(?!-b{N-aD}))([^ %]*) ([Tt]his|[^ ]*[Ss]pecies|[^ ]*[Ss]eries)\)/\(\1\2-o\1%\3|N%\3 \3\)/gi;
+  ## analysis (%is|%es)
+  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:aeg|bas|chass|bet|cris|gnos|cler|lys|mes|phas|ps|thes))()(is|es)\)/\(\1\2-o\1%\4\5|N%\4is \3\4\)/gi;
+  ## beastie (%|%s)
+  s/\((N(?!-b{N-aD}))([^ %]*) (lie|pie|tie|[^ ]*?(?:beastie|calorie|cookie|goodie|movie|prarie|talkie|yippie|yuppie|zombie))()(|s)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
+  ## bus (%s|%ses)
+  s/\((N(?!-b{N-aD}))([^ %]*) (bu|[^ ]*?(?:s|canva|[^x]cu|iri|nu|pu|plu|tu))(s)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
+  ## echo (%o|%oes)
+  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:ech|embarg|grott|her|potat|tomat|vet))(o)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
+  ## leaf (%f|%ves)
+  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:ar|el|ol|[Ll]ea|thei))()(f|ves)\)/\(\1\2-o\1%\4\5|N%\4f \3\4f\)/gi;
+  ## life,wife (%fe|%ves)
+  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:[Ll]i|[Ww]i))()(fe|ves)\)/\(\1\2-o\1%\4\5|N%\4fe \3\4fe\)/gi;
+  ## man (%an|%en)
   s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:[Ww]o|))([Mm])(an|en)\)/\(\1\2-o\1%\4\5|N%\4an \3\4an\)/gi;
-  ## %f|%ves
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:ar|el|ol|[Ll]ea))()(f|ves)\)/\(\1\2-o\1%\4\5|N%\4f \3\4f\)/gi;
-  ## %fe|%ves
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:[Ll]i))()(fe|ves)\)/\(\1\2-o\1%\4\5|N%\4fe \3\4fe\)/gi;
-  ## %s|%ses
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:s|focu))(s)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
   ## %z|%zes
   s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?z)(z)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
   ## %h|%hes
