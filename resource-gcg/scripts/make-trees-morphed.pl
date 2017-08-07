@@ -40,7 +40,7 @@ while ( <> ) {
   #### regular nouns:
   s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?[^u])(|s)\)/\(\1\2-o\1%\4|N% \3\)/gi;
 
-  ######## N -> A:
+  ######## ADJECTIVAL NOMINALIZATION  A -> N:
 
   ## %iness|%y (busy,holy)
   s/\((N)([^ ]*) ([^ ]*?)(iness)\)/\(\1\2-oN%\4|A%y \3y\)/gi;
@@ -53,7 +53,7 @@ while ( <> ) {
 #  ## %ity|%e
 #  s/\((N)([^ ]*) ([^ ]*?)(ity)\)/\(\1\2-oN%\4|A%e \3e\)/gi;
 
-  ######## R -> A:
+  ######## ADVERBALIZATION  A -> R:
 
   ## false cognates: early, only (not to become ear, on)
   s/\((R)([^ %]*) (early|only)()\)/\(A\2-o\1%\4|A% \3\)/gi;
@@ -70,7 +70,7 @@ while ( <> ) {
   ## simpliciter adverbs -- note A% is not unique
   s/\((R)([^ %]*) ([^ ]*?)()\)/\(A\2-o\1%\4|A% \3\)/gi;
 
-  ######## A COMPARATIVE -> A:
+  ######## A -> A COMPARATIVE:
 
   ## better, worse
   s/\((A)([^ ]*) ()([Bb]etter)\)/\(\1\2-oA%\4|A%good \3good\)/gi;
@@ -89,7 +89,7 @@ while ( <> ) {
   ## %er comparatives
   s/\((A)([^ ]*) (?![Aa]fter|[Aa]nother|[Ee]ager|[Nn]?[Ee]ither|[^ ]*[Ee]ver|[Ff]iller|[Ff]ormer|[Ff]ourier|[Gg]ender|[Ii]nner|[^ ]*[Ll]uster|[^ ]*[Oo]ther|[Oo]uter|[^ ]*[Oo]ver|[Oo]rder|[Pp]er|[^ ]*[Pp]roper|[Rr]ather|[Ss]inister|[Ss]ummer|[^ ]*[Tt]ogether|[Uu]nder|[Uu]nderwater|[Uu]pper|[Ww]hether|[Cc]omputer|[Mm]eter|[Ww]einer|[Ww]inter)([^ ]*?)(er)\)/\(\1\2-o\1%\4|A% \3\)/gi;
 
-  ######## A SUPERLATIVE -> A:
+  ######## A -> A SUPERLATIVE:
 
   ## best, worst
   s/\((A)([^ ]*) ()(best)\)/\(\1\2-oA%\4|A%good \3good\)/gi;
@@ -107,14 +107,14 @@ while ( <> ) {
   ## %est superlatives
   s/\((A)([^ ]*) (?![Ww]est|[Mm]odest)([^ ]*?)(est)\)/\(\1\2-o\1%\4|A% \3\)/gi;
 
-  ######## A NEGATIVE -> A
+  ######## A -> A NEGATIVE
 
   $NOTUN = '(?!canny|der\)|dercut|derlie|derline|derly|derpin|derscore|derstand|dertake|ited?\)|iversal|til\)|less\)|iqu)';
 
   ## un%
   s/\((A)([^ ]*) ([Uu]n)$NOTUN([^ ]*?)()\)/\(\1\2-o\1%:\3%|\1NEG%:% \4\)/gi;
 
-  ######## DEVERBAL NOMINALIZATIONS N -> B:
+  ######## DEVERBAL NOMINALIZATIONS B -> N:
 
   ## %asis|%ase (base)
   s/\((N)([^ ]*) ([Bb])(as)(is)\)/\(B\2-o\1%\4\5|BNOM%\4e \3\4e\)/gi;
@@ -287,16 +287,16 @@ while ( <> ) {
   ## %iation|%y (vary)
   s/\((N)([^ ]*) ([^ ]*?(?:var))()(iation)\)/\(B\2-o\1%\4\5|BNOM%\4y \3\4y\)/gi;
   ## %ation|% (limit)
-  s/\((N)([^ ]*) ([^ ]*?(?:[Ff]orm|port|[Ll]imit|lant|empt|ider|pect|ound|ment|mend|[Rr]esign|icit|tard))()(ation)\)/\(B\2-o\1%\4\5|BNOM%\4 \3\4\)/gi;
+  s/\((N)([^ ]*) ([^ ]*?(?:demn|est|firm|[Ff]orm|front|port|[Ll]imit|lant|empt|ider|pect|pret|ound|ment|mend|[Rr]esign|sent|stall|sult|icit|tard|surp|x))()(ation)\)/\(B\2-o\1%\4\5|BNOM%\4 \3\4\)/gi;
   ## %ation|%e (combine)
-  s/\((N)([^ ]*) ([^ ]*?(?:bin|clar|is|iz|amin|[^r]eg|sens|repar|xplor|rs|rv|ut))()(ation)\)/\(B\2-o\1%\4\5|BNOM%\4e \3\4e\)/gi;
+  s/\((N)([^ ]*) ([^ ]*?(?:amin|bin|clar|clin|cit|[^r]eg|[dr]evalu|determin|dispens|fam|figur|grad|inton|is|iz|not|nsol|pil|pir|plor|quot|repar|riv|rs|rv|sens|stor|tinu|[^e]valu|vit|ut))()(ation)\)/\(B\2-o\1%\4\5|BNOM%\4e \3\4e\)/gi;
   ## ation|%ate (satiate)
   s/\((N)([^ ]*) (?![Cc]onstellation|[Nn]ation|[Ss]tation|[Cc]orporation)([^ ]*?)(at)(ion)\)/\(B\2-o\1%\4\5|BNOM%\4e \3\4e\)/gi;
 
   $NOMINALS = '(account|advance|aid|aim|alarm|answer|appeal|audition|bail|balance|bargain|bend|benefit|bet|bid|bite|blame|blunder|blur|bounce|bow|branch|break|brew|bribe|bumble|burn|buzz|call|care|challenge|change|chat|cheat|check|cheer|chew|clash|climb|cling|close|collapse|combat|comment|compromise|consent|control|count|cover|crack|crash|crawl|creak|crest|crumble|crust|cry|cut|dance|deal|debut|decrease|default|defect|design|dip|drift|drink|drive|drop|dump|ease|ebb|edge|end|escape|exit|fade|fall|favor|fear|fight|find|finish|fit|flash|flinch|flip|float|flow|focus|fold|freeze|fret|frolic|gain|gamble|glaze|glide|gnaw|grimace|guess|hang|help|hint|hit|hold|holler|homer|hum|hurt|increase|influence|joke|jump|knock|kowtow|laugh|leap|leapfrog|loan|look|mail|maneuver|manufacture|mesh|miss|moan|offer|order|overbid|override|panic|pass|pay|peak|pick|pinch|plummet|plunge|pop|pose|practice|premiere|press|profit|pull|pump|punch|push|quarrel|quote|rage|rain|rally|range|rank|reach|rebound|record|refocus|reform|renege|reply|report|resort|rest|result|retreat|return|review|ride|rise|roll|roost|row|rule|run|rush|sanction|save|scream|scurry|search|shift|shine|shiver|skid|skim|slide|slip|slog|slump|smoke|sound|spin|split|spread|stampede|start|stay|step|stop|strain|stray|strike|study|stumble|surge|sway|swell|switch|take|talk|tick|touch|trade|transfer|travel|trend|tumble|turn|twitch|use|veto|vote|wade|wail|wait|walk|want|watch|win|wonder|work|worry|yearn|yield|zoom)';
   s/\((N)([^ ]*) $NOMINALS()()\)/\(B\2-o\1%\4\5|BNOM%\4 \3\4\)/gi;
 
-  ######## V|B|L|G -> B:
+  ######## B -> V|B|L|G:
 
   #### irregular verbs:
   ## arise/rise
@@ -312,7 +312,7 @@ while ( <> ) {
   ## begin/spin
   s/\(([BVLG])([^ %]*) ([Bb]eg|[Ss]p)(in|ins|an|un|inning)\)/\(B\2-o\1%\4|B%in \3in\)/gi;
   ## bleed/breed/feed/speed
-  s/\(([BVLG])([^ %]*) ([Bb]le|[Bb]re|[Ff]e|[Ss]p)(e)(ed|eds|d|eding)\)/\(B\2-o\1%\4\5|B%\4ed \3\4ed\)/gi;
+  s/\(([BVLG])([^ %]*) ([Bb]l|[Bb]r|[Ff]|[Ss]p)(e)(ed|eds|d|eding)\)/\(B\2-o\1%\4\5|B%\4ed \3\4ed\)/gi;
   ## blow/grow/know/throw
   s/\(([BVLG])([^ %]*) ([^ ]*?(?:[Bb]l|[Gg]r|[Tt]hr|[Kk]n))(ow|ows|ew|own|owing)\)/\(B\2-o\1%\4|B%ow \3ow\)/gi;
   ## bid/rid
