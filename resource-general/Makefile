@@ -135,6 +135,9 @@ ONTONOTES-SCRIPTS := $(RESOURCE-ONTONOTES)/scripts
 RESOURCE-RHACKS := $(abspath $(MBDIR)/resource-rhacks)
 RHACKS-SCRIPTS := $(RESOURCE-RHACKS)/scripts
 
+RESOURCE-ROARK := $(abspath $(MBDIR)/resource-roark)
+ROARK-SCRIPTS := $(RESOURCE-ROARK)/scripts
+
 RESOURCE-RT := $(abspath $(MBDIR)/resource-rt)
 RT-SCRIPTS := $(RESOURCE-RT)/scripts
 

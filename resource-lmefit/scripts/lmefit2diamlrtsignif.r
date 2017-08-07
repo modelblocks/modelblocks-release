@@ -120,7 +120,7 @@ printSignifSummary(setdiff(right$abl,both$abl),
                    right$model,
                    both$model,
                    anova(right$model, both$model))
-f (!is.null(both$lambda)) {
+if (!is.null(both$lambda)) {
     printBoxCoxInvBetas(both$beta_ms, both$lambda, both$y_mu)
 }
 
