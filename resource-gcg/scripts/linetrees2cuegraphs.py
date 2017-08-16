@@ -234,6 +234,7 @@ class storestate( cuegraph ):
       return      ## don't add 'u' node
     else: return  ## don't add 'u' node
 
+    ## add 'u' node
     if s==0:
       G.a = d+'u'
       G.equate( sC, '0', d+'u' )
@@ -309,7 +310,12 @@ class storestate( cuegraph ):
       if n!='': G[n,'0']+='-closed'  ## close off nolo
     if '-lI' in sE:                               ## I
       G.equate( G.result('s',d), 's', c )
-      G.equate( G.result('s',G.result('A',e)), str(G.getArity(sD))+'\'', G.result('s',d) )
+      if sD.startswith('N-b{V-g') or sD.startswith('N-b{I-aN-g'):                                 ## nominal clause
+        G.equate( G.result('s',d), 's', G.result('A',e) )
+      elif '-b{I-aN-gN}' in sD:                                                                   ## tough construction
+        G.equate( G.result('1\'',G.result('s',d)), 's', G.result('A',e) )
+        G.equate( G.result('s',e), str(G.getArity(sD))+'\'', G.result('s',d) )
+      else: G.equate( G.result('s',G.result('A',e)), str(G.getArity(sD))+'\'', G.result('s',d) )  ## embedded question
       G.equate( lastdep(sE), '0', G.result('A',e) )
     if '-lR' in sE:                               ## R
       G.equate( G.result('s',d), 's', c )
@@ -370,7 +376,7 @@ for line in sys.stdin:
         if s1==s: s1 = re.sub( '-x', '', s )
         s = s1
       ## place pred in ##e or ##r node, depending on category...
-      if s[0]=='N' and not s.startswith('N-b{N-aD}'):
+      if s[0]=='N' and not s.startswith('N-b{N-aD}') and not s.startswith('N-b{V-g{R') and not s.startswith('N-b{I-aN-g{R'):
         G.equate( s, '0', x+'e' )
         G.equate( G.result('r',G.result('s',x)), '1', x+'e' )
       else: G.equate( s, '0', G.result('r',G.result('s',x)) )
@@ -381,8 +387,9 @@ for line in sys.stdin:
   for x,l in sorted(G):
     if l[-1]=='\'':
       ## add semantic dependencies...
-      if (x,'r') in G and (G[x,'r'],  '0') in G:  G.equate( G[x,l], l[:-1], G.result('r',x) )
-      elif                (x[:-1]+'e','0') in G:  G.equate( G[x,l], str(int(l[:-1])+1), x[:-1]+'e' )
+      if   (x,'r') in G and (G[x,'r'],'0') in G:                                   G.equate( G[x,l], l[:-1], G.result('r',x) )         ## predicate
+      elif (x,'e') in G and (G[x,'e'],  'r') in G and (G[G[x,'e'],'r'],'0') in G:  G.equate( G[x,l], l[:-1], x )                       ## extraction of predicate
+      elif (x[:-1]+'e','0') in G:                                                  G.equate( G[x,l], str(int(l[:-1])+1), x[:-1]+'e' )  ## nominal
 
   for x,l in sorted(G.keys()):
     if l!='A' and l!='B' and l!='s' and l!='w' and (l!='0' or x[-1] in 'er') and l[-1]!='\'':
