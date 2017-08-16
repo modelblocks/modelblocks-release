@@ -204,6 +204,6 @@ $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees $$(b
 
 #### Remove Berkeley split-merge annotation information
 %.noberkstuff.linetrees: %.linetrees
-	cat $^ | perl -pe 's/\^[^ ]*//g;s/_[0-9]+ / /g' | python $(RESOURCE-LVPCFG)/scripts/removeAt.py > $@ 
+	cat $^ | perl -pe 's/\^[^ ]*//g;s/_[0-9]+ / /g' | perl -pe 's/ *\( *\) *//' | python $(RESOURCE-LVPCFG)/scripts/removeAt.py > $@ 
 
 

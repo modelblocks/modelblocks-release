@@ -64,7 +64,7 @@ endif
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.morphed.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  %.linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
-%.linetrees.validated:  %.linetrees  $(GCG-SCRIPTS)/validate-linetrees.py  $(GCG-SCRIPTS)/validate-linetrees.d
+%.linetrees.validation:  %.linetrees  $(GCG-SCRIPTS)/validate-linetrees.py  $(GCG-SCRIPTS)/validate-linetrees.d
 	cat $<  |  python $(word 2,$^)  >  $@
 
 define ParamVal
@@ -178,8 +178,10 @@ endef
 
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
 .PRECIOUS: %.cuegraphs
-%.cuegraphs:  %.protographs  $(GCG-SCRIPTS)/protographs2cuegraphs.pl
-	cat $<  |  perl -p $(word 2,$^)  >  $@
+%.cuegraphs:  %.linetrees  $(GCG-SCRIPTS)/linetrees2cuegraphs.py
+	cat $<  |  python $(word 2,$^)  >  $@
+#%.cuegraphs:  %.protographs  $(GCG-SCRIPTS)/protographs2cuegraphs.pl
+#	cat $<  |  perl -p $(word 2,$^)  >  $@
 
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
 .PRECIOUS: %.refconts
