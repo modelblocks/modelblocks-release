@@ -73,6 +73,7 @@ def relabel( t ):
   if len(t.ch)==2:
     ## adjust tags...
     if lastdep(t.ch[1].c).startswith('-g') and '-lN' in t.ch[0].c:                                         t.ch[0].c = re.sub( '-lN', '-lG', t.ch[0].c )   ## G
+    if lastdep(t.ch[0].c).startswith('-r') and '-lN' in t.ch[0].c:                                         t.ch[0].c = re.sub( '-lN', '-lR', t.ch[0].c )   ## Ra (off-spec)
     if lastdep(t.ch[1].c).startswith('-r') and '-lN' in t.ch[1].c:                                         t.ch[1].c = re.sub( '-lN', '-lR', t.ch[1].c )   ## R
     if lastdep(t.ch[0].c).startswith('-h') and '-lN' in t.ch[1].c:                                         t.ch[1].c = re.sub( '-lN', '-lH', t.ch[1].c )   ## H
     if re.match('-b{.*-[ghirv].*}',lastdep(t.ch[0].c))!=None and '-lA' in t.ch[1].c:                       t.ch[1].c = re.sub( '-lA', '-lI', t.ch[1].c )   ## I
@@ -95,6 +96,7 @@ def relabel( t ):
     if '-lG' in t.ch[0].c:                        p = re.sub( '(.*)'+deps(t.ch[1].c,'g')[-1], '\\1', t.ch[1].c, 1 ) + lcpsi                     ## G
     if '-lH' in t.ch[1].c:                        p = re.sub( '(.*)'+deps(t.ch[0].c,'h')[-1], '\\1', t.ch[0].c, 1 ) + rcpsi                     ## H
     if '-lI' in t.ch[1].c:                        p = re.findall('^[^-]*',t.ch[0].c)[0] + ''.join(deps(t.ch[0].c,'abcd')[:-1]) + lcpsi + ''.join( deps(t.ch[1].c,'ghirv')[:-1] )  ## I
+    if '-lR' in t.ch[0].c:                        p = t.ch[1].c                                                                                 ## Ra (off-spec)
     if '-lR' in t.ch[1].c:                        p = t.ch[0].c                                                                                 ## R
     ## add calculated parent of children as unary branch if different from t.c...
     if re.sub('-[lx][^-]*','',p) != re.sub('-[lx][^-]*','',t.c):
@@ -142,6 +144,13 @@ class storestate( cuegraph ):
       elif (n,'B') in G: n = G[n,'B']
       else: return ''
 
+  def isNoloNeeded( G, n, d ):
+    if n==d or (d,'0') not in G: return False
+    if G[n,'0'] in G[d,'0']: return True
+    if   (d,'A') in G: return G.isNoloNeeded( n, G[d,'A'] )
+    elif (d,'B') in G: return G.isNoloNeeded( n, G[d,'B'] )
+    return False
+
 
   def updateLex( G, f, sD, w, id ):
 
@@ -161,7 +170,13 @@ class storestate( cuegraph ):
       G.a = id
       G.equate( sD,  '0', G.a )
       G.equate( w,   'w', G.a )
-      G.equate( G.b, 'B', G.a )
+      ## add all nonlocal dependencies with no nolo on store...
+      b = G.a
+      for sN in reversed( deps(sD) ):
+        if sN[1] in 'ghirv' and not G.findNolo( sN, G.b ):
+          b = G.result( 'B', b )
+          G.equate( sN, '0', b )
+      G.equate( G.b, 'B', b )
       G.equate( id+'r', 'r', G.result('s',G.a) )
 
     ## attach rel pro antecedent...
@@ -176,6 +191,7 @@ class storestate( cuegraph ):
       dump( G )
       print( 's', s, sC, sD, id )
 
+    n = ''
     l,d = ('B',G.a) if s==0 else ('A',G.b)
     dUpper,dLower = (G.a+'u',G.a) if s==0 else (G.b,G.b+'u')  ## bottom-up on left child, top-down on right child
 
@@ -188,7 +204,7 @@ class storestate( cuegraph ):
         G.equate( G.result(l,d), l, n )
       else: G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',n), '1\'', G.result('s',dUpper) )
-      G.equate( G.result('s',dLower), 'e', G.result('s',dUpper) )
+      G.equate( G.result('s',dLower), 'e', G.result('r',G.result('s',dUpper)) )
     elif '-lQ' in sD:                             ## Q
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('1\'',G.result('s',d)), '2\'', G.result('s',d+'u') )  ## switch 1' & 2' arguments (same process top-down as bottom-up)
@@ -242,6 +258,8 @@ class storestate( cuegraph ):
       G.b = d+'u'
       G.equate( sD, '0', d+'u' )
 
+    if n!='' and not G.isNoloNeeded(n,d+'u'): G[n,'0']+='-closed'
+
 
   def updateBin( G, j, sC, sD, sE, id ):
 
@@ -268,47 +286,47 @@ class storestate( cuegraph ):
       G.equate( G.result('A',c), 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE else G.b )
 
     d,e = G.a,G.b
-    if '-lA' in sD:                               ## Aa
+    if   '-lA' in sD:                               ## Aa
       G.equate( G.result('s',c), 's', e )
       G.equate( G.result('s',d), str(G.getArity(sE))+'\'', G.result('s',e) )
-    if '-lA' in sE:                               ## Ab
+    elif '-lA' in sE:                               ## Ab
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('r',G.result('s',d)), 'r', G.result('s',c) )   ## rename 'r' node as well as 's'
       G.equate( G.result('s',e), str(G.getArity(sD))+'\'', G.result('s',d) )
-    if '-lU' in sD:                               ## Ua
+    elif '-lU' in sD:                               ## Ua
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('s',d), str(G.getArity(sE))+'\'', G.result('s',e) )
-    if '-lU' in sE:                               ## Ub
+    elif '-lU' in sE:                               ## Ub
       G.equate( G.result('s',c), 's', e )
       G.equate( G.result('s',e), str(G.getArity(sD))+'\'', G.result('s',d) )
-    if '-lM' in sD:                               ## Ma
+    elif '-lM' in sD:                               ## Ma
       G.equate( G.result('s',c), 's', e )
       G.equate( G.result('r',G.result('s',e)), '1\'', G.result('s',d) )
-    if '-lM' in sE:                               ## Mb
+    elif '-lM' in sE:                               ## Mb
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('r',G.result('s',d)), '1\'', G.result('s',e) )
-    if '-lC' in sD:                               ## Ca,Cb
+    elif '-lC' in sD:                               ## Ca,Cb
       G.equate( G.result('s',c), 's', e )
       G.equate( G.result('r',G.result('s',e)), 'c', G.result('r',G.result('s',d)) )
       G.equate( G.result('s',e), 'c', G.result('s',d) )
       for i in range( 1, len(deps(sC,'ab'))+1 ): #G.getArity(sC)+1 ):
         G.equate( G.result(str(i)+'\'',G.result('s',c)), str(i)+'\'', G.result('s',d) )
-    if '-lC' in sE:                               ## Cc
+    elif '-lC' in sE:                               ## Cc
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('r',G.result('s',d)), 'c', G.result('r',G.result('s',e)) )
       G.equate( G.result('s',d), 'c', G.result('s',e) )
       for i in range( 1, len(deps(sC,'ab'))+1 ):  #G.getArity(sC)+1 ):
         G.equate( G.result(str(i)+'\'',G.result('s',c)), str(i)+'\'', G.result('s',e) )
-    if '-lG' in sD:                               ## G
+    elif '-lG' in sD:                               ## G
       G.equate( G.result('s',c), 's', e )
       G.equate( G.result('s',d), 's', G.result('A',e) )
       G.equate( lastdep(sE), '0', G.result('A',e) )
-    if '-lH' in sE:                               ## H
+    elif '-lH' in sE:                               ## H
       G.equate( G.result('s',d), 's', c )
       n = G.findNolo( lastdep(sD), d )
       if n!='': G.equate( G.result('s',e), 's', n )
       if n!='': G[n,'0']+='-closed'  ## close off nolo
-    if '-lI' in sE:                               ## I
+    elif '-lI' in sE:                               ## I
       G.equate( G.result('s',d), 's', c )
       if sD.startswith('N-b{V-g') or sD.startswith('N-b{I-aN-g'):                                 ## nominal clause
         G.equate( G.result('s',d), 's', G.result('A',e) )
@@ -317,10 +335,16 @@ class storestate( cuegraph ):
         G.equate( G.result('s',e), str(G.getArity(sD))+'\'', G.result('s',d) )
       else: G.equate( G.result('s',G.result('A',e)), str(G.getArity(sD))+'\'', G.result('s',d) )  ## embedded question
       G.equate( lastdep(sE), '0', G.result('A',e) )
-    if '-lR' in sE:                               ## R
+    elif '-lR' in sD:                               ## Ra (off-spec)
+      G.equate( G.result('s',c), 's', e )
+      G.equate( G.result('s',e), 's', G.result('B',d) )
+      G.equate( lastdep(sD), '0', G.result('B',d) )
+    elif '-lR' in sE:                               ## R
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('s',d), 's', G.result('A',e) )
       G.equate( lastdep(sE), '0', G.result('A',e) )
+    else:
+      sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + '.\n' )
 
 
   def convert( G, t, s=0, i=0 ):
