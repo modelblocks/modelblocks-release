@@ -108,7 +108,8 @@ def relabel( t ):
     locs  = deps(t.c,'abcd')
     nolos = deps(t.c,'ghirv')
     chlocs = deps(t.ch[0].c,'abcd')
-    if   t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]                    ## V
+    if   len(locs)>1 and len(chlocs)>1 and locs!=chlocs and locs[0][2:]==chlocs[1][2:] and locs[1][2:]==chlocs[0][2:]: t.ch[0].c += '-lQ'       ## Q
+    elif t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]                    ## V
     elif t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                               ## Za
     elif t.c.startswith('R-a') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                               ## Zb
     elif len(nolos)>0 and nolos[0][2]!='{' and len(deps(t.c))==len(deps(t.ch[0].c)) and len(chlocs)>len(locs) and nolos[0]!=chlocs[len(locs)]:  ## Ea
