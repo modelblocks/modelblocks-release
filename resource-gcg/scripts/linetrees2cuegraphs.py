@@ -12,14 +12,15 @@ for a in sys.argv:
 class cuegraph( dict ):
 
   def rename( G, xNew, xOld ):
-    for z,l in G.keys():
-      if G[z,l] == xOld: G[z,l] = xNew       ## replace old destination with new
-      if z == xOld:                          ## replace old source with new
-        if (xNew,l) not in G:
-          G[xNew,l] = G[xOld,l]
-          del G[xOld,l]
-    for z,l in G.keys():
-      if z == xOld and (xNew,l) in G and G[xNew,l]!=G[xOld,l]: G.rename( G[xNew,l], G[xOld,l] )
+    if xOld != xNew:
+      for z,l in G.keys():
+        if G[z,l] == xOld: G[z,l] = xNew     ## replace old destination with new
+        if z == xOld:                        ## replace old source with new
+          if (xNew,l) not in G:
+            G[xNew,l] = G[xOld,l]
+            del G[xOld,l]
+      for z,l in G.keys():
+        if z == xOld and (xNew,l) in G: G.rename( G[xNew,l], G[xOld,l] )
 
   def result( G, l, x ):                     ## (f_l x)
     if (x,l) not in G:  G[x,l] = x+l         ## if dest is new, name it after source and label
@@ -47,9 +48,9 @@ def deps( s, ops='abcdghirv' ):
   for i in range( len(s) ):
     if s[i]=='{': d+=1
     if s[i]=='}': d-=1
-    if d==0 and s[i]=='-' and h+1<len(s) and s[h+1] in ops: lst += [ s[h:i] ]
+    if d==0 and s[i]=='-' and h+1<len(s) and s[h]=='-' and s[h+1] in ops: lst += [ s[h:i] ]
     if d==0 and s[i]=='-': h = i
-  if h+1<len(s) and s[h+1] in ops: lst += [ s[h:] ]
+  if h+1<len(s) and s[h]=='-' and s[h+1] in ops: lst += [ s[h:] ]
   return lst
 
 
@@ -73,8 +74,8 @@ def relabel( t ):
   if len(t.ch)==2:
     ## adjust tags...
     if lastdep(t.ch[1].c).startswith('-g') and '-lN' in t.ch[0].c:                                         t.ch[0].c = re.sub( '-lN', '-lG', t.ch[0].c )   ## G
-    if lastdep(t.ch[0].c).startswith('-r') and '-lN' in t.ch[0].c:                                         t.ch[0].c = re.sub( '-lN', '-lR', t.ch[0].c )   ## Ra (off-spec)
-    if lastdep(t.ch[1].c).startswith('-r') and '-lN' in t.ch[1].c:                                         t.ch[1].c = re.sub( '-lN', '-lR', t.ch[1].c )   ## R
+    if re.match('^-[rg]',lastdep(t.ch[0].c))!=None and '-lN' in t.ch[0].c:                                 t.ch[0].c = re.sub( '-lN', '-lR', t.ch[0].c )   ## Ra (off-spec)
+    if re.match('^-[rg]',lastdep(t.ch[1].c))!=None and '-lN' in t.ch[1].c:                                 t.ch[1].c = re.sub( '-lN', '-lR', t.ch[1].c )   ## R
     if lastdep(t.ch[0].c).startswith('-h') and '-lN' in t.ch[1].c:                                         t.ch[1].c = re.sub( '-lN', '-lH', t.ch[1].c )   ## H
     if re.match('-b{.*-[ghirv].*}',lastdep(t.ch[0].c))!=None and '-lA' in t.ch[1].c:                       t.ch[1].c = re.sub( '-lA', '-lI', t.ch[1].c )   ## I
     if '-lA' in t.ch[1].c and re.match( 'C-bV|E-bB|F-bI|O-bN|.-aN-b{.-aN}|N-b{N-aD}', t.ch[0].c ) != None: t.ch[1].c = re.sub( '-lA', '-lU', t.ch[1].c )   ## U
@@ -162,15 +163,15 @@ class storestate( cuegraph ):
     if f==0:
       G.rename( id+'r', G.result('r',G.result('s',G.b)) )
       G.rename( id+'s', G.result('s',G.b) )
-      G.rename( id, G.b )
+      G.rename( id,     G.b )
       G.b = id
       G.equate( w, 'w', G.b )
       G.a = G.result( 'A', G.b )
       while (G.a,'A') in G: G.a = G[G.a,'A']      ## traverse all non-local dependencies on A
     if f==1:
       G.a = id
-      G.equate( sD,  '0', G.a )
-      G.equate( w,   'w', G.a )
+      G.equate( sD, '0', G.a )
+      G.equate( w,  'w', G.a )
       ## add all nonlocal dependencies with no nolo on store...
       b = G.a
       for sN in reversed( deps(sD) ):
@@ -180,9 +181,9 @@ class storestate( cuegraph ):
       G.equate( G.b, 'B', b )
       G.equate( id+'r', 'r', G.result('s',G.a) )
 
-    ## attach rel pro antecedent...
+    ## attach rel pro / interrog pro antecedent...
     for i,psi in enumerate( deps(sD) ):
-      if psi[1] == 'r':
+      if psi[1] in 'ir':
         G.equate( G.result('s',G.findNolo(psi,id)), 'e', G.result('r',G.result('s',id)) )    ## restrictive relpro
 
 
@@ -391,9 +392,13 @@ for line in sys.stdin:
   for x,l in sorted(G):
     ## add predicates by applying morph rules...
     if l=='w':
+      ## rename 's' and 'r' nodes...
+      if G[x,'s']:     G.rename( x+'s', G[x,'s']     )
+      if G[x+'s','r']: G.rename( x+'r', G[x+'s','r'] )
       if VERBOSE:
         dump( G )
         print( x, l, G[x,l] )
+      ## obtain pred by applying morph rules to word token...
       s = re.sub('-l.','',G[x,'0']) + ':' + G[x,'w'].lower()
       while( '-x' in s ):
         s1 = re.sub( '^.(\\S*?)-x.%:(\\S*)%(\\S*)\|(\\S*)%(\\S*):([^% ]*)%([^-: ]*)([^: ]*):\\2(\\S*)\\3', '\\4\\1\\5\\8:\\6\\9\\7', s )
@@ -412,9 +417,10 @@ for line in sys.stdin:
   for x,l in sorted(G):
     if l[-1]=='\'':
       ## add semantic dependencies...
-      if   (x,'r') in G and (G[x,'r'],'0') in G:                                   G.equate( G[x,l], l[:-1], G.result('r',x) )         ## predicate
-      elif (x,'e') in G and (G[x,'e'],  'r') in G and (G[G[x,'e'],'r'],'0') in G:  G.equate( G[x,l], l[:-1], x )                       ## extraction of predicate
-      elif (x[:-1]+'e','0') in G:                                                  G.equate( G[x,l], str(int(l[:-1])+1), x[:-1]+'e' )  ## nominal
+      if   (x,'r') in G and (G[x,'r'],'0') in G:                                 G.equate( G[x,l], l[:-1], G.result('r',x) )         ## predicate
+      elif (x,'e') in G and (G[x,'e'],'r') in G and (G[G[x,'e'],'r'],'0') in G:  G.equate( G[x,l], l[:-1], x )                       ## extraction of predicate
+      elif (x[:-1]+'e','0') in G:                                                G.equate( G[x,l], str(int(l[:-1])+1), x[:-1]+'e' )  ## nominal
+#BAD;NON-PRED      elif (x,'e') in G and (G[x,'e'],'r') in G and (G[G[x,'e'],'r'][:-1]+'e','0') in G: G.equate( G[x,l], str(int(l[:-1])+1), x )           ## extraction of nominal
 
   for x,l in sorted(G.keys()):
     if l!='A' and l!='B' and l!='s' and l!='w' and (l!='0' or x[-1] in 'er') and l[-1]!='\'':

@@ -333,7 +333,7 @@ debug("p-rule ", "$_");
         # branch off initial relative adverbial phrase
         (s/\^([CV](?=-rN)|R-aN(?!-x))(?:-rN)?([^ ]*?)($CODA) <(WH[A-Z]*)([^ ]*)(-[0-9]+)((?![0-9])[^>]*)> (.*\[-NONE- *\*T\*\6\].*)\^/\^\1-rN\2\3 <R-aN-rN-lN-f\4\5\6\7> <V\2-g{R-aN}\6-lI-fNIL \8>\^/ && ($j=60)) ||
         # embedded question: branch off initial interrogative RP whether/if
-        (s/\^([CV]-rN)([^ ]*?)(?:-rN)?($CODA) <(IN[^>]*)> (<.*)\^/\^\1\2\3 <R-aN-iN-lI-f\4> <V\2-g{R-aN}-lN-fNIL \5>\^/ && ($j=61)) ||
+        (s/\^([CV]-rN)([^ ]*?)(?:-rN)?($CODA) <(IN[^>]*)> (<.*)\^/\^\1\2\3 <R-aN-iN-lN-f\4> <V\2-g{R-aN}-lI-fNIL \5>\^/ && ($j=61)) ||
 
         #### AP|RP
         # branch off initial specifier NS measure
@@ -374,7 +374,7 @@ debug("p-rule ", "$_");
 #        s/\^(N)E([^ ]*?)(-[ir][A-Z])?($CODA) <(IN[^>]*)> (<.*)\^/\^\1E\2\3\4 <\1E\2-b\1P-lM-f\5> <\1P\3-lI-fNIL \6>\^/ ||
         (s/\^O((?!-[cp])[^ ]*?)(-[ir][A-Z]+)?($CODA) <(IN[^>]*)> (<.*)\^/\^O\1\2\3 <O\1-bN-lI-f\4> <N\2-lA-fNIL \5>\^/ && ($j=26)) ||
         # embedded question: branch off initial interrogative RP whether/if
-        (s/\^(V\-iN)([^ ]*?)($CODA) <(IN[^>]*)> (<.*)\^/\^\1\2\3 <R-aN-iN-lI-f\4> <V\2-g{R-aN}-lN-fNIL \5>\^/ && ($j=27)) ||
+        (s/\^(V\-iN)([^ ]*?)($CODA) <(IN[^>]*)> (<.*)\^/\^\1\2\3 <R-aN-iN-lN-f\4> <V\2-g{R-aN}-lI-fNIL \5>\^/ && ($j=27)) ||
 
         #### initial RP/RC modifier
         # branch off initial modifier RP with colon
@@ -421,13 +421,13 @@ debug("p-rule ", "$_");
         # imperative sentence: unary expand to BP   ***PROBABLY NULL CAT HERE***
         (s/\^(S)((?!-[cp])[^ ]*?)($CODA) (<VP$NO_VP_HEAD \[VB.*)\^/\^\1\2\3 <B-aN\2-lI-fNIL \4>\^/ && ($j=45)) ||
         # embedded question: branch off initial interrogative NS and final modifier IP with NS gap (what_i to find a picture of t_i)
-        (s/\^(V\-iN)([^ ]*?)($CODA) <(WHNP[^ ]*)(-[0-9]+)([^>]*)> <S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] ([^>]*\[-NONE- \*T\*\5\][^>]*)>\^/\^\1\2\3 <N-iN-lI-f\4\5\6> <I-aN-gN\5-lN-fNIL \7>\^/ && ($j=46)) ||
+        (s/\^(V\-iN)([^ ]*?)($CODA) <(WHNP[^ ]*)(-[0-9]+)([^>]*)> <S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] ([^>]*\[-NONE- \*T\*\5\][^>]*)>\^/\^\1\2\3 <N-iN-lN-f\4\5\6> <I-aN-gN\5-lI-fNIL \7>\^/ && ($j=46)) ||
         # embedded question: branch off initial interrogative RP and final modifier IP with RP gap (how_i to find a picture t_i)
-        (s/\^(V\-iN)([^ ]*?)($CODA) <(WH[^ ]*)(-[0-9]+)([^>]*)> <S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] ([^>]*\[-NONE- \*T\*\5\][^>]*)>\^/\^\1\2\3 <R-aN-iN-lI-f\4\5\6> <I-aN-g{R-aN}\5-lN-fNIL \7>\^/ && ($j=47)) ||
+        (s/\^(V\-iN)([^ ]*?)($CODA) <(WH[^ ]*)(-[0-9]+)([^>]*)> <S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] ([^>]*\[-NONE- \*T\*\5\][^>]*)>\^/\^\1\2\3 <R-aN-iN-lN-f\4\5\6> <I-aN-g{R-aN}\5-lI-fNIL \7>\^/ && ($j=47)) ||
         # embedded question: branch off initial interrogative NS
-        (s/\^(V\-iN)([^ ]*?)($CODA) <(WHNP)([^ ]*)(-[0-9]+)((?![0-9])[^>]*)> (.*\[-NONE- *\*T\*\6\].*)\^/\^\1\2\3 <N-iN-lI-f\4\5\6\7> <V\2-gN\6-lN-fNIL \8>\^/ && ($j=48)) ||
+        (s/\^(V\-iN)([^ ]*?)($CODA) <(WHNP)([^ ]*)(-[0-9]+)((?![0-9])[^>]*)> (.*\[-NONE- *\*T\*\6\].*)\^/\^\1\2\3 <N-iN-lN-f\4\5\6\7> <V\2-gN\6-lI-fNIL \8>\^/ && ($j=48)) ||
         # embedded question: branch off initial interrogative RP
-        (s/\^(V\-iN)([^ ]*?)($CODA) <(WH[A-Z]*)([^ ]*)(-[0-9]+)((?![0-9])[^>]*)> (.*\[-NONE- *\*T\*\6\].*)\^/\^\1\2\3 <R-aN-iN-lI-f\4\5\6\7> <V\2-g{R-aN}\6-lN-fNIL \8>\^/ && ($j=49)) ||
+        (s/\^(V\-iN)([^ ]*?)($CODA) <(WH[A-Z]*)([^ ]*)(-[0-9]+)((?![0-9])[^>]*)> (.*\[-NONE- *\*T\*\6\].*)\^/\^\1\2\3 <R-aN-iN-lN-f\4\5\6\7> <V\2-g{R-aN}\6-lI-fNIL \8>\^/ && ($j=49)) ||
         # nom clause: branch off initial interrogative NS and final modifier IP with NS gap (what_i to find a picture of t_i)
         (s/\^(N(?!-aD))([^ ]*?)($CODA) <(WHNP[^ ]*)(-[0-9]+)([^>]*)> <S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] ([^>]*\[-NONE- \*T\*\5\][^>]*)>\^/\^\1\2\3 <N\2-b{I-aN-gN}-lI-f\4\5\6> <I-aN-gN\5-lA-fNIL \7>\^/ && ($j=46)) ||
         # nom clause: branch off initial interrogative RP and final modifier IP with RP gap (how_i to find a picture t_i)
@@ -620,7 +620,7 @@ debug("p-rule ", "$_");
 #        # branch off final SBAR as modifier RP (from SBAR trace coindexed to final modifier, which must have gap discharged)
 #        s/\^([VIBLAGR]P)([^ ]*?)($CODA) (<.*) <(SBAR[^ ]* \[WHADVP(-[0-9]+) [^>]*) \[ADVP[^ ]* \[-NONE- \*T\*\6\]\]([\]]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <RP-lI-f\5\7>\^/ ||
         # branch off final SBAR as argument ES-gNS ('tough for X to Y' construction):  {AP ... <SBAR [WH# nil] ... for ... #t ...>} => {AP <AP-bESg ...> <ES-gNS ... for ... #t ...>}  ****SHOULD BE ES..-lN****
-        (s/\^(A-aN(?!-x))([^ ]*?)($CODA) (<.*) <SBAR[^ ]* \[WHNP(-[0-9]+) \[-NONE- 0\]\] (\[IN for\] [^>]* \[NP[^ ]* \[-NONE- \*T\*\5\]\][^>]*)>\^/\^\1\2\3 <\1\2-b{F-gN}-lI-fNIL \4> <F-gN\5-lN-fNIL \6>\^/ && ($j=120)) ||
+        (s/\^(A-aN(?!-x))([^ ]*?)($CODA) (<.*) <SBAR[^ ]* \[WHNP(-[0-9]+) \[-NONE- 0\]\] (\[IN for\] [^>]* \[NP[^ ]* \[-NONE- \*T\*\5\]\][^>]*)>\^/\^\1\2\3 <\1\2-b{F-gN}-lI-fNIL \4> <F-gN\5-lA-fNIL \6>\^/ && ($j=120)) ||
         # branch off final SBAR as argument IP-gNS ('tough to Y' construction):        {AP ... <SBAR [WH# nil] ... to ... #t ...>} => {AP <AP-bIPg ...> <IP-gNS ... for ... #t ...>}
         (s/\^(A-aN(?!-x))([^ ]*?)($CODA) (<.*) <SBAR[^ ]* \[WHNP(-[0-9]+) \[-NONE- 0\]\] \[S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] (\[VP[^ ]* \[TO to\][^>]* \[NP[^ ]* \[-NONE- \*T\*\5\]\][^>]*)\]>\^/\^\1\2\3 <\1\2-b{I-aN-gN}-lI-fNIL \4> <I-aN-gN\5-lA-fNIL \6>\^/ && ($j=121)) ||
         # branch off final SBAR as argument AP-gNS ('worth Y-ing' construction):       {AP ... <SBAR [WH# nil] ... #t ...>} => {AP <AP-bAPg ...> <AP-gNS ... #t ...>}
