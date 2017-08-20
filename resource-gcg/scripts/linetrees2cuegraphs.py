@@ -73,13 +73,13 @@ def relabel( t ):
   ## for binary branches...
   if len(t.ch)==2:
     ## adjust tags...
-    if lastdep(t.ch[1].c).startswith('-g') and '-lN' in t.ch[0].c:                                         t.ch[0].c = re.sub( '-lN', '-lG', t.ch[0].c )   ## G
-    if re.match('^-[rg]',lastdep(t.ch[0].c))!=None and '-lN' in t.ch[0].c:                                 t.ch[0].c = re.sub( '-lN', '-lR', t.ch[0].c )   ## Ra (off-spec)
-    if re.match('^-[rg]',lastdep(t.ch[1].c))!=None and '-lN' in t.ch[1].c:                                 t.ch[1].c = re.sub( '-lN', '-lR', t.ch[1].c )   ## R
-    if lastdep(t.ch[0].c).startswith('-h') and '-lN' in t.ch[1].c:                                         t.ch[1].c = re.sub( '-lN', '-lH', t.ch[1].c )   ## H
-    if re.match('-b{.*-[ghirv].*}',lastdep(t.ch[0].c))!=None and '-lA' in t.ch[1].c:                       t.ch[1].c = re.sub( '-lA', '-lI', t.ch[1].c )   ## I
-    if '-lA' in t.ch[1].c and re.match( 'C-bV|E-bB|F-bI|O-bN|.-aN-b{.-aN}|N-b{N-aD}', t.ch[0].c ) != None: t.ch[1].c = re.sub( '-lA', '-lU', t.ch[1].c )   ## U
-    if '-lA' in t.ch[0].c and t.ch[1].c=='D-aN':                                                           t.ch[0].c = re.sub( '-lA', '-lU', t.ch[0].c )
+    if lastdep(t.ch[1].c).startswith('-g') and '-lN' in t.ch[0].c:                                             t.ch[0].c = re.sub( '-lN', '-lG', t.ch[0].c )   ## G
+    if re.match('^-[rg]',lastdep(t.ch[0].c))!=None and '-lN' in t.ch[0].c:                                     t.ch[0].c = re.sub( '-lN', '-lR', t.ch[0].c )   ## Ra (off-spec)
+    if re.match('^-[rg]',lastdep(t.ch[1].c))!=None and '-lN' in t.ch[1].c:                                     t.ch[1].c = re.sub( '-lN', '-lR', t.ch[1].c )   ## R
+    if lastdep(t.ch[0].c).startswith('-h') and '-lN' in t.ch[1].c:                                             t.ch[1].c = re.sub( '-lN', '-lH', t.ch[1].c )   ## H
+    if re.match('-b{.*-[ghirv].*}',lastdep(t.ch[0].c))!=None and '-lA' in t.ch[1].c:                           t.ch[1].c = re.sub( '-lA', '-lI', t.ch[1].c )   ## I
+    if '-lA' in t.ch[1].c and re.match( '^(C-bV|E-bB|F-bI|O-bN|.-aN-b{.-aN}|N-b{N-aD})$', t.ch[0].c ) != None: t.ch[1].c = re.sub( '-lA', '-lU', t.ch[1].c )   ## U
+    if '-lA' in t.ch[0].c and t.ch[1].c=='D-aN':                                                               t.ch[0].c = re.sub( '-lA', '-lU', t.ch[0].c )
     ## fix gcg reannotation hacks ('said Kim' inversion, ':' as X-cX-dX, ':' as A-aN-bN)...
     if   '-lA' in t.ch[1].c and len( deps(t.ch[0].c,'b') )==0 and t.ch[0].c==':': t.ch[0] = tree.Tree( 'A-aN-bN', [ t.ch[0] ] ) 
     elif '-lA' in t.ch[1].c and len( deps(t.ch[0].c,'b') )==0: t.ch[0] = tree.Tree( re.sub('(V)-a('+deps(t.ch[0].c,'a')[-1][2:]+')','\\1-b\\2',t.ch[0].c), [ t.ch[0] ] )
@@ -111,8 +111,8 @@ def relabel( t ):
     chlocs = deps(t.ch[0].c,'abcd')
     if   len(locs)>1 and len(chlocs)>1 and locs!=chlocs and locs[0][2:]==chlocs[1][2:] and locs[1][2:]==chlocs[0][2:]: t.ch[0].c += '-lQ'       ## Q
     elif t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]                    ## V
-    elif t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                               ## Za
-    elif t.c.startswith('R-a') and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch[0].c += '-lZ'                                               ## Zb
+    elif t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('N') and len(t.ch[0].ch)>0: t.ch[0].c += '-lZ'                         ## Za
+    elif t.c.startswith('R-a') and len(t.ch)==1 and t.ch[0].c.startswith('N') and len(t.ch[0].ch)>0: t.ch[0].c += '-lZ'                         ## Zb
     elif len(nolos)>0 and nolos[0][2]!='{' and len(deps(t.c))==len(deps(t.ch[0].c)) and len(chlocs)>len(locs) and nolos[0]!=chlocs[len(locs)]:  ## Ea
       t.ch = [ tree.Tree( re.sub(nolos[0],chlocs[len(locs)],re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
     elif len(nolos)>0 and nolos[0][2]=='{': t.ch = [ tree.Tree( re.sub(nolos[0],'',re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]                      ## Eb
@@ -161,6 +161,7 @@ class storestate( cuegraph ):
       print( 'f', f, sD, w, id )
 
     if f==0:
+      ## rename 's' and 'r' nodes...
       G.rename( id+'r', G.result('r',G.result('s',G.b)) )
       G.rename( id+'s', G.result('s',G.b) )
       G.rename( id,     G.b )
@@ -179,6 +180,7 @@ class storestate( cuegraph ):
           b = G.result( 'B', b )
           G.equate( sN, '0', b )
       G.equate( G.b, 'B', b )
+      ## rename 'r' nodes...
       G.equate( id+'r', 'r', G.result('s',G.a) )
 
     ## attach rel pro / interrog pro antecedent...
@@ -211,7 +213,7 @@ class storestate( cuegraph ):
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('1\'',G.result('s',d)), '2\'', G.result('s',d+'u') )  ## switch 1' & 2' arguments (same process top-down as bottom-up)
       G.equate( G.result('2\'',G.result('s',d)), '1\'', G.result('s',d+'u') )
-      G.equate( G.result('s',dLower), 'e', G.result('s',dUpper) )
+      G.equate( G.result('s',dLower), 'e', G.result('r',G.result('s',dUpper)) )
     elif '-lZ' in sD and sC.startswith('A-aN-x'): ## Zc
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',dLower),                 '2', G.result('r',G.result('s',dUpper)) )
@@ -293,7 +295,7 @@ class storestate( cuegraph ):
       G.equate( G.result('s',d), str(G.getArity(sE))+'\'', G.result('s',e) )
     elif '-lA' in sE:                               ## Ab
       G.equate( G.result('s',d), 's', c )
-      G.equate( G.result('r',G.result('s',d)), 'r', G.result('s',c) )   ## rename 'r' node as well as 's'
+#      G.equate( G.result('r',G.result('s',d)), 'r', G.result('s',c) )   ## rename 'r' node as well as 's'
       G.equate( G.result('s',e), str(G.getArity(sD))+'\'', G.result('s',d) )
     elif '-lU' in sD:                               ## Ua
       G.equate( G.result('s',d), 's', c )
@@ -393,8 +395,8 @@ for line in sys.stdin:
     ## add predicates by applying morph rules...
     if l=='w':
       ## rename 's' and 'r' nodes...
-      if G[x,'s']:     G.rename( x+'s', G[x,'s']     )
-      if G[x+'s','r']: G.rename( x+'r', G[x+'s','r'] )
+      if (x,    's') in G: G.rename( x+'s', G[x,    's'] )
+      if (x+'s','r') in G: G.rename( x+'r', G[x+'s','r'] )
       if VERBOSE:
         dump( G )
         print( x, l, G[x,l] )

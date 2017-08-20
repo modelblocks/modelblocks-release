@@ -273,6 +273,9 @@ debug("p-rule ", "$_");
         # inverted sentence: branch off final raised complement SS (possibly quoted)
         (s/\^(S)([^ ]*?)($CODA) (<.*\[-NONE- \*ICH\*(-[0-9]+)\].*) <(S)([^ ]*)\5([^>]*)>\^/\^\1\2\3-modeverused? <V-hS\5\2-lI-fNIL \4> <S-lN-f\6\7\5\8>\^/ && ($j=8)) ||
 
+        # branch off final parenthetical sentence wihtout extraction
+        (s/\^(S|V\-iN|Q|[VIBLAG](?!-aN(?!e)))([^ ]*?)($CODA) (<.*) (<-L.B- -L.B->) <(S-TOBE([VIBA])S[^ ]*) ([^>]*)> (<-R.B- -R.B->)\^/\^\1\2\3 <\1\2-lI-fNIL \4> <\7-lN-f\6 \5 \8 \9>\^/ && ($j=113)) ||
+
         # branch off final punctuation (passing -o to head). No fire on this gcg13. Lots of hit on Gcg1 version. Why? Because of the 144 and 154.5 rules?
 #        (s/\^(N(?!-a))([^ ]*?)($CODA?)N-aD (<.*) <(?!POS)([^ ]*) ($FINAL_PUNCT)>\^/\^\1\2\3N <\1\2-lI-fNIL \4> <\5-lM-f\5 \6>\^/ && ($j=8.5)) ||
 #        (s/\^(SS|VS\-iNS|QS|CS|ES|Cr|RC|[VIBLAGR]|A-aN-x|R-aN-x|NS|NP)([^ ]*?)($CODA) (<.*) <(?!POS)([^ ]*) ($FINAL_PUNCT)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <\5-lM-f\5 \6>\^/ && ($j=9)) ||
@@ -589,10 +592,12 @@ debug("p-rule ", "$_");
         (s/\^([SQCFVIBLAGR])([^ x]*?)($CODA) (<.*) <(S-TOBE([IA])S[^ ]*(?:-ADV|-PRP)[^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <R-aN-lM-fNIL <\6-lI-fS\5>>\^/ && ($j=110)) ||
         # branch off final S as argument VS
         (s/\^(C)([^ ]*?)($CODA) (<.*) <(S-TOBE([V])S[^>]*)>\^/\^\1\2\3 <\1\2-b\6-lI-fNIL \4> <\6-lA-f\5>\^/ && ($j=111)) ||
-        # branch off final ADVP + S as modifier VS|IS|BS|AS
-        (s/\^(S|V\-iN|Q|[VIBLAG](?!-a))([^ ]*?)($CODA) (<.*) (<ADVP[^>]*>) <(S-TOBE([VIBA])S[^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <\7-lM-fNIL \5 <\7-lI-f\6>>\^/ && ($j=112)) ||
-        # branch off final S as modifier VS|IS|BS|AS
-        (s/\^(S|V\-iN|Q|[VIBLAG](?!-aN(?!e)))([^ ]*?)($CODA) (<.*) <(S-TOBE([VIBA])S[^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <\6-lM-f\5>\^/ && ($j=113)) ||
+        # branch off ; S as conjunction (semantically viable analysis to replace bogus V-lM rules below)
+        (s/\^(S|V\-iN|Q|[VIBLAG](?!-aN(?!e)))([^ ]*?)($CODA) (<.*) <[^ ]* (--|,|:|;)> (<`` ``> |<ADVP [^ ]*> )?<(S-TOBE([VIBA])S[^ ]*) ([^>]*)>\^/\^\1\2\3 <\1\2-lC-fNIL \4> <\8-c\8-fNIL <X-cX-dX \5> <\8-lC-f\7 \6\9>>\^/ && ($j=113)) ||
+# SHOULD NEVER FIRE       # branch off final ADVP + S as modifier VS|IS|BS|AS
+#        (s/\^(S|V\-iN|Q|[VIBLAG](?!-a))([^ ]*?)($CODA) (<.*) (<ADVP[^>]*>) <(S-TOBE([VIBA])S[^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <\7-lM-fNIL \5 <\7-lI-f\6>>\^/ && ($j=112)) ||
+# SHOULD NEVER FIRE       # branch off final S as modifier VS|IS|BS|AS
+#        (s/\^(S|V\-iN|Q|[VIBLAG](?!-aN(?!e)))([^ ]*?)($CODA) (<.*) <(S-TOBE([VIBA])S[^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <\6-lM-f\5>\^/ && ($j=113)) ||
         # branch off final S as argument VS|IS|BS|AS
 #        (s/\^([VIBLAGR]P|NS|NP)([^ ]*?)($CODA) (<.*) <(S-TOBE([VIBA])S[^>]*)>\^/\^\1\2\3 <\1\2-b\6S-lI-fNIL \4> <\6S-lA-f\5>\^/ && ($j=114)) ||
         (s/\^(N(?!-a))([^ ]*?)(-[fghjlpi][^ \}]*) (<.*) <(S-TOBE([VIBA])[SP][^>]*)>\^/\^\1\2\3 <\1\2-k\6-lI-fNIL \4> <\6-lN-f\5>\^/ && ($j=114)) ||
