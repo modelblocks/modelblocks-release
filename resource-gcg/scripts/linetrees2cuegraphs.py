@@ -110,12 +110,14 @@ def relabel( t ):
     nolos = deps(t.c,'ghirv')
     chlocs = deps(t.ch[0].c,'abcd')
     if   len(locs)>1 and len(chlocs)>1 and locs!=chlocs and locs[0][2:]==chlocs[1][2:] and locs[1][2:]==chlocs[0][2:]: t.ch[0].c += '-lQ'       ## Q
-    elif t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]                    ## V
+    elif re.match('^[AR]-a',t.c) and len(t.ch)==1 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]                  ## V
     elif t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('N') and len(t.ch[0].ch)>0: t.ch[0].c += '-lZ'                         ## Za
     elif t.c.startswith('R-a') and len(t.ch)==1 and t.ch[0].c.startswith('N') and len(t.ch[0].ch)>0: t.ch[0].c += '-lZ'                         ## Zb
     elif len(nolos)>0 and nolos[0][2]!='{' and len(deps(t.c))==len(deps(t.ch[0].c)) and len(chlocs)>len(locs) and nolos[0]!=chlocs[len(locs)]:  ## Ea
       t.ch = [ tree.Tree( re.sub(nolos[0],chlocs[len(locs)],re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
-    elif len(nolos)>0 and nolos[0][2]=='{': t.ch = [ tree.Tree( re.sub(nolos[0],'',re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]                      ## Eb
+    elif t.c.startswith('A-vN') and t.ch[0].c=='N': t.ch = [ tree.Tree( 'A-aN-lE', t.ch ) ]
+    elif len(locs)==len(chlocs) and len(deps(t.c))>len(deps(t.ch[0].c)) and len(nolos)>0 and nolos[0][2]=='{':                                  ## Eb
+      t.ch = [ tree.Tree( re.sub(nolos[0],'',re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
 
   for st in t.ch:
     relabel( st )
@@ -134,6 +136,7 @@ class storestate( cuegraph ):
   def findNolos( G, nolos, n ):
     while True:
       if (n,'0') in G and G[n,'0']==nolos[-1]: nolos.pop()
+      if (n,'0') in G and not G[n,'0'].startswith('-') and len(nolos)>0 and nolos[-1] not in G[n,'0']: return ''
       if nolos == []: return n
       if   (n,'A') in G: n = G[n,'A']  ## advance n if A is next on store
       elif (n,'B') in G: n = G[n,'B']  ## advance n if B is next on store
@@ -142,6 +145,7 @@ class storestate( cuegraph ):
   def findNolo( G, sN, n ):
     while True:
       if (n,'0') in G and G[n,'0']==sN: return n
+      if (n,'0') in G and not G[n,'0'].startswith('-') and sN not in G[n,'0']: return ''
       if   (n,'A') in G: n = G[n,'A']
       elif (n,'B') in G: n = G[n,'B']
       else: return ''
@@ -208,12 +212,12 @@ class storestate( cuegraph ):
         G.equate( G.result(l,d), l, n )
       else: G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',n), '1\'', G.result('s',dUpper) )
-      G.equate( G.result('s',dLower), 'e', G.result('r',G.result('s',dUpper)) )
+      G.equate( G.result('s',dUpper), 'e', G.result('r',G.result('s',dLower)) )
     elif '-lQ' in sD:                             ## Q
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('1\'',G.result('s',d)), '2\'', G.result('s',d+'u') )  ## switch 1' & 2' arguments (same process top-down as bottom-up)
       G.equate( G.result('2\'',G.result('s',d)), '1\'', G.result('s',d+'u') )
-      G.equate( G.result('s',dLower), 'e', G.result('r',G.result('s',dUpper)) )
+      G.equate( G.result('s',dUpper), 'e', G.result('r',G.result('s',dLower)) )
     elif '-lZ' in sD and sC.startswith('A-aN-x'): ## Zc
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',dLower),                 '2', G.result('r',G.result('s',dUpper)) )
@@ -231,7 +235,7 @@ class storestate( cuegraph ):
     elif '-lE' in sD:
       nolos = deps( sC, 'ghirv' )
       sN = nolos[0]
-      n = G.findNolos( nolos, d )
+      n = G.findNolos( nolos, G[d,l] )
       if n=='':
         n = G.result( l, d+'u' )
         G.equate( sN, '0', n )
@@ -247,11 +251,16 @@ class storestate( cuegraph ):
       ## update category of every nonlocal sign on store that changes with type change...
       hideps = deps( sC )
       lodeps = deps( sD )
+      a = d+'u'
       for i in range( len(hideps) ):
         if i<len(lodeps) and hideps[i][1]!=lodeps[i][1] and hideps[i][1] in 'ghirv' and lodeps[i][1] in 'ghirv':
-          if s==0: G[ G.findNolo(lodeps[i],d), '0' ] = hideps[i]    ## bottom up on left child
-          else:    G[ G.findNolo(hideps[i],d), '0' ] = lodeps[i]    ## top down on right child
-      return      ## don't add 'u' node
+          a = G.result( l, a )
+          G.equate( lodeps[i], '0', a )   ## note below only for s==1
+          G.equate( G.result('s',G.findNolo(hideps[i],d)), 's', a )
+#          if s==0: G[ G.findNolo(lodeps[i],d), '0' ] = hideps[i]    ## bottom up on left child
+#          else:    G[ G.findNolo(hideps[i],d), '0' ] = lodeps[i]    ## top down on right child
+      if a == d+'u': return  ## don't add 'u' node
+      G.equate( G[d,l], l, a )
     else: return  ## don't add 'u' node
 
     ## add 'u' node
@@ -280,7 +289,7 @@ class storestate( cuegraph ):
       ## add all nonlocal dependencies with no nolo on store...
       b = c
       for sN in reversed( deps(sC) ):
-        if sN[1] in 'ghirv' and not G.findNolo( sN, G.a ):
+        if sN[1] in 'ghirv' and G.findNolo( sN, G[G.a,'B'] )=='':
           b = G.result( 'B', b )
           G.equate( sN, '0', b )
       G.equate( G.result('B',G.a), 'B', b )

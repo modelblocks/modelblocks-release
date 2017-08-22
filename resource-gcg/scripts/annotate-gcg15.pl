@@ -490,7 +490,7 @@ debug("p-rule ", "$_");
         (s/\^([SQCFVIBLAGRN])([^ ]*?)($CODA) (<.*) <(PRN|S(?![A-Z]))([^>]* \[S[^>]*\[-NONE- \*INTERNAL\*(-[0-9]+)[^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <V-gS\7-lN-f\5\6>\^/ && ($j=78)) ||
 
         # branch NS -> DS A-aN-x: 'the best' construction
-        (s/\^(N(?!-a))([^ ]*?)($CODA) <(?:DT)([^>]*)> <(?:RB|ADJP)([^>]*)>\^/\^\1\2\3 <D-lA-f\4> <A-aN-x-lI-f\5>\^/ && ($j=79)) ||
+        (s/\^(N(?!-a))([^ ]*?)($CODA) <(?:DT)([^>]*)> <(?:RB|ADJP)([^>]*)>\^/\^\1\2\3 <D-lA-f\4> <N-aD-lI-f\5>\^/ && ($j=79)) ||
 
         #### final VP|IP|BP|LP|AP (following auxiliary) -- raising verbs, pass subject to complement
         # branch off final VP as argument BP
