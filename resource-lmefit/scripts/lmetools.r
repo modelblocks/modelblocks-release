@@ -680,8 +680,9 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
     } else {
         outputModel <- regressLinearModel(dataset, bform)
     }
-    if (params$boxcox) { 
-        bc_inv_out = getBoxCoxInvBetas(dataset, bform, lambda, outputModel) 
+    if (params$boxcox) {
+        mixed = fitmode %in% c('lme', 'bme')
+        bc_inv_out = getBoxCoxInvBetas(dataset, bform, lambda, outputModel, mixed=mixed) 
         beta_ms = bc_inv_out$beta_ms 
         y_mu = bc_inv_out$y_mu 
         printBoxCoxInvBetas(beta_ms, lambda, y_mu) 
@@ -704,7 +705,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
     save(fitOutput, file=output)
 }
 
-getBoxCoxInvBetas <- function(dataset, bform, lambda, outputModel) {
+getBoxCoxInvBetas <- function(dataset, bform, lambda, outputModel, mixed=True) {
     attach(dataset)
     response = as.character(bform)[[2]]
     if (substr(response, 1, 3) %in% c('c.(', 'z.(')) {
@@ -713,11 +714,16 @@ getBoxCoxInvBetas <- function(dataset, bform, lambda, outputModel) {
     }
     y_mu = mean(eval(parse(text=response)))
     detach(dataset)
-    fixed = names(fixef(outputModel))
-    fixed = fixed[! fixed %in% c('(Intercept)')]
+    if (mixed) {
+        fixednames = names(fixef(outputModel))
+        fixedbetas = fixef(outputModel)
+    } else {
+        fixednames = names(outputModel$coefficients)
+        fixedbetas = outputModel$coefficients
+    }
     beta_ms = list()
-    for (f in fixed) {
-        beta = fixef(outputModel)[[f]]
+    for (f in fixednames) {
+        beta = fixedbetas[[f]]
         beta_ms[[f]] = boxcox_inv(lambda, beta, y_mu)
     }
     return(list(beta_ms=beta_ms, y_mu=y_mu))

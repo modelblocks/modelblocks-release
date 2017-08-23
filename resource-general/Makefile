@@ -102,6 +102,9 @@ GENERAL-SCRIPTS := $(RESOURCE-GENERAL)/scripts
 RESOURCE-GIGAWORD := $(abspath $(MBDIR)/resource-gigaword)
 GIGAWORD-SCRIPTS := $(RESOURCE-GIGAWORD)/scripts
 
+RESOURCE-GLOVE := $(abspath $(MBDIR)/resource-glove)
+GLOVE-SCRIPTS := $(RESOURCE-GLOVE)/scripts
+
 RESOURCE-INCRSEM := $(abspath $(MBDIR)/resource-incrsem)
 INCRSEM-SCRIPTS := $(RESOURCE-INCRSEM)/scripts
 
@@ -184,6 +187,7 @@ include $(RESOURCE-LCPARSE)/Makefile
 include $(RESOURCE-BNC)/Makefile
 include $(RESOURCE-TREEBANK)/Makefile
 include $(RESOURCE-GIGAWORD)/Makefile
+include $(RESOURCE-GLOVE)/Makefile
 include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
