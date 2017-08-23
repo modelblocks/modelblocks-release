@@ -70,6 +70,9 @@ while ( <> ) {
   $NO_AP_HEAD = '(?:(?!\[VB|\[JJ|\[IN|\[MD|\[TO)[^>])*';
   $SUITABLE_REL_CLAUSE = '[^\]]*\[WH[^ ]*-[0-9]+ \[(?!-NONE-)[^ ]* (?!what)[^>]*';
   $CODA = '(?:-[fghvl0-9][^ \{\}]*|-[fghvl0-9]\{[^ \{\}]*\})+';     ### '-[fghl](?:[^ {}\^]|{[^ {}\^]*})*'; # stuff that arguments get to cut in front of
+  $CONJCODA = '(?:-[fghjlp0-9][^ \{\}]*|-[fghjlp0-9]\{[^ \{\}]*\})+';
+  $RCONJCODA = '(?:-[fghjlr0-9][^ \{\}]*|-[fghjlr0-9]\{[^ \{\}]*\})+';
+  $VARCONJCODA = '(?:-[ghjk0-9][^ \{\}]*|-[ghjk0-9]\{[^ \{\}]*\})+';
 
   ## for each constituent...
   while ( $_ =~ /\([^\(\)]*\)/ ) {
@@ -275,6 +278,9 @@ debug("p-rule ", "$_");
         # inverted sentence: branch off final raised complement SS (possibly quoted)
         (s/\^(S)([^ ]*?)($CODA) (<.*\[-NONE- \*ICH\*(-[0-9]+)\].*) <(S)([^ ]*)\5([^>]*)>\^/\^\1\2\3-modeverused? <V-hS\5\2-lI-fNIL \4> <S-lN-f\6\7\5\8>\^/ && ($j=8)) ||
 
+        # branch off final parenthetical sentence wihtout extraction
+        (s/\^(S|V\-iN|Q|[VIBLAG](?!-aN(?!e)))([^ ]*?)($CODA) (<.*) (<-L.B- -L.B->) <(S-TOBE([VIBA])S[^ ]*) ([^>]*)> (<-R.B- -R.B->)\^/\^\1\2\3 <\1\2-lI-fNIL \4> <\7-lN-f\6 \5 \8 \9>\^/ && ($j=113)) ||
+
         # branch off final punctuation (passing -o to head). No fire on this gcg13. Lots of hit on Gcg1 version. Why? Because of the 144 and 154.5 rules?
 #        (s/\^(N(?!-a))([^ ]*?)($CODA?)N-aD (<.*) <(?!POS)([^ ]*) ($FINAL_PUNCT)>\^/\^\1\2\3N <\1\2-lI-fNIL \4> <\5-lM-f\5 \6>\^/ && ($j=8.5)) ||
 #        (s/\^(SS|VS\-iNS|QS|CS|ES|Cr|RC|[VIBLAGR]|A-aN-x|R-aN-x|NS|NP)([^ ]*?)($CODA) (<.*) <(?!POS)([^ ]*) ($FINAL_PUNCT)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <\5-lM-f\5 \6>\^/ && ($j=9)) ||
@@ -292,25 +298,25 @@ debug("p-rule ", "$_");
 
         #### within conjunction
         # branch off initial semicolon delimiter
-        (s/\^([^ ]*)-pPs-c({?\1}?)([^ ]*?)(-[fghjlp][^ ]*) <([^ ]*) (;)> (.*<(?:CC|ADVP \[RB then|ADVP \[RB not|. ;).*)\^/\^\1-pPs-c\2\3\4 <\5-lM-f\5 \6> <\1-c\2-pPs\3-lI-fNIL \7>\^/ && ($j=70)) ||
+        (s/\^([^ ]*)-pPs-c({?\1}?)([^ ]*?)($CONJCODA) <([^ ]*) (;)> (.*<(?:CC|ADVP \[RB then|ADVP \[RB not|. ;).*)\^/\^\1-pPs-c\2\3\4 <\5-lM-f\5 \6> <\1-c\2-pPs\3-lI-fNIL \7>\^/ && ($j=70)) ||
         # branch off initial comma delimiter
-        (s/\^([^ ]*)-pPc-c({.*}|[^- ]*)([^ ]*?)(-[fghjlp][^ ]*) <([^ ]*) (,)> (.*<(?:CC|ADVP \[RB then|ADVP \[RB not).*)\^/\^\1-pPc-c\2\3\4 <\5-lM-f\5 \6> <\1-c\2-pPc\3-lI-fNIL \7>\^/ && ($j=71)) ||
+        (s/\^([^ ]*)-pPc-c({.*}|[^- ]*)([^ ]*?)($CONJCODA) <([^ ]*) (,)> (.*<(?:CC|ADVP \[RB then|ADVP \[RB not).*)\^/\^\1-pPc-c\2\3\4 <\5-lM-f\5 \6> <\1-c\2-pPc\3-lI-fNIL \7>\^/ && ($j=71)) ||
         # branch off initial conj delimiter and final conjunct (and don't pass -p down)
-        (s/\^([^ ]*)(-c[^ ]*-pP[cs])(-[ghjk][^ ]*?)(-[fl][^ ]*) <((?:CC|ADVP \[RB then|ADVP \[RB not)[^>]*)> (<.*)\^/\^\1\2\3\4 <X-cX-dX-lI-f\5> <\1\3-lC-fNIL \6>\^/ && ($j=72)) ||
+        (s/\^([^ ]*)(-c[^ ]*-pP[cs])($VARCONJCODA)(-[fl][^ ]*) <((?:CC|ADVP \[RB then|ADVP \[RB not)[^>]*)> (<.*)\^/\^\1\2\3\4 <X-cX-dX-lI-f\5> <\1\3-lC-fNIL \6>\^/ && ($j=72)) ||
         # branch off initial conj delimiter and final conjunct (no -p to remove)
-        (s/\^([^X][^ ]*)((-pP[cs])?-c{?\1}?)([^ ]*?)(-[fghjlp][^ ]*) <((?:CC|ADVP \[RB then|ADVP \[RB not|. ;)[^>]*)> (<.*)\^/\^\1\2\4\5 <X-cX-dX-lI-f\6> <\1\4-lC-fNIL \7>\^/ && ($j=73)) ||
+        (s/\^([^X][^ ]*)((-pP[cs])?-c{?\1}?)([^ ]*?)($CONJCODA) <((?:CC|ADVP \[RB then|ADVP \[RB not|. ;)[^>]*)> (<.*)\^/\^\1\2\4\5 <X-cX-dX-lI-f\6> <\1\4-lC-fNIL \7>\^/ && ($j=73)) ||
 #        (s/\^([^X][^ ]*?)(-c{?\1}?)([^ ]*?)(-[fghjlp][^ ]*) <((?:CC|ADVP \[RB then|ADVP \[RB not|. ;)[^>]*)> (<.*)\^/\^\1\2\3\4 <X-cX-dX-lI-f\5> <\1\3-lC-fNIL \6>\^/ && ($j=73)) ||
 #        # branch off initial comma/semi/colon/dash between matching constituents
 #        s/\^(C)([^sc][^- ]*)([^ ]*?)()(-[fghjlp][^ ]*) (<[^ ]* (?:,|;|:|--|-)>) (<.*)\^/\^\1mod\2\3\4\5 \6 <\2\4-lI-fNIL \7>\^/ ||
         # branch off initial conjunct prior to semicolon delimiter
 #        (s/\^([^ ]*?)(-c({?\1}?)-pPs)(-[fghjlp][^ ]*) (<.*?) (<[^ ]* ;> <.*)\^/\^\1\2\4 <\1-lC-fNIL \5> <\1-pPs-c\3-lI-fNIL \6>\^/ && ($j=74)) ||
-        (s/\^([^ ]*?)(-c{?\1}?)(-pPs)(-[fghjlp][^ ]*) (<.*?) (<[^ ]* ;> <.*)\^/\^\1\2\3\4 <\1-lC-fNIL \5> <\1\3\2-lI-fNIL \6>\^/ && ($j=74)) ||
+        (s/\^([^ ]*?)(-c{?\1}?)(-pPs)($CONJCODA) (<.*?) (<[^ ]* ;> <.*)\^/\^\1\2\3\4 <\1-lC-fNIL \5> <\1\3\2-lI-fNIL \6>\^/ && ($j=74)) ||
         # branch off initial conjunct prior to comma delimiter
 #        (s/\^([^ ]*?)(-c({?\1}?)-pPc)(-[fghjlp][^ ]*) (<.*?) (<[^ ]* ,> <.*)\^/\^\1\2\4 <\1-lC-fNIL \5> <\1-pPc-c\3-lI-fNIL \6>\^/ && ($j=75)) ||
-        (s/\^([^ ]*?)(-c{?\1}?)(-pPc)(-[fghjlp][^ ]*) (<.*?) (<[^ ]* ,> <.*)\^/\^\1\2\3\4 <\1-lC-fNIL \5> <\1\3\2-lI-fNIL \6>\^/ && ($j=75)) ||
+        (s/\^([^ ]*?)(-c{?\1}?)(-pPc)($CONJCODA) (<.*?) (<[^ ]* ,> <.*)\^/\^\1\2\3\4 <\1-lC-fNIL \5> <\1\3\2-lI-fNIL \6>\^/ && ($j=75)) ||
         # branch off initial conjunct prior to conj delimiter (and don't pass -p down)
 #        (s/\^([^ ]*?)-c(({?\1}?)(-pP[sc]))(-[ghj][^ ]*?)(-[fl][^ ]*) (<.*?) (<(?:CC|ADVP \[RB then|ADVP \[RB not|. ;)[^>]*> <.*)\^/\^\1-c\2\5\6 <\1\5-lC-fNIL \7> <\1\4-c\3\5-lI-fNIL \8>\^/ && ($j=76)) ||
-        (s/\^([^ ]*?)(-c{?\1}?)(-pP[sc])(-[ghjk][^ ]*?)(-[fl][^ ]*) (<.*?) (<(?:CC|ADVP \[RB then|ADVP \[RB not|. ;)[^>]*> <.*)\^/\^\1\2\3\4\5 <\1\4-lC-fNIL \6> <\1\3\2\4-lI-fNIL \7>\^/ && ($j=76)) ||
+        (s/\^([^ ]*?)(-c{?\1}?)(-pP[sc])($VARCONJCODA)(-[fl][^ ]*) (<.*?) (<(?:CC|ADVP \[RB then|ADVP \[RB not|. ;)[^>]*> <.*)\^/\^\1\2\3\4\5 <\1\4-lC-fNIL \6> <\1\3\2\4-lI-fNIL \7>\^/ && ($j=76)) ||
         # branch off initial conjunct prior to conj delimiter (no -p to remove). Split rule 77 into 3 rules
         # CcVP-pC -> VP-cVP-pPc and CsVP-pS -> VP-cVP-pPs
         (s/\^([^ ]*?)(-c{?\1}?)(-pP[sc])([^ ]*?)($CODA) (<.*?) (<(?:CC|ADVP \[RB then|ADVP \[RB not)[^>]*> <.*)\^/\^\1\2\3\4\5 <\1-lC-fNIL \6> <\1\3\2-lI-fNIL \7>\^/ && ($j=77.7)) ||
@@ -335,7 +341,7 @@ debug("p-rule ", "$_");
         # branch off initial relative adverbial phrase
         (s/\^([CV](?=-rN)|R-aN(?!-x))(?:-rN)?([^ ]*?)($CODA) <(WH[A-Z]*)([^ ]*)(-[0-9]+)((?![0-9])[^>]*)> (.*\[-NONE- *\*T\*\6\].*)\^/\^\1-rN\2\3 <R-aN-rN-lN-f\4\5\6\7> <V\2-g{R-aN}\6-lI-fNIL \8>\^/ && ($j=60)) ||
         # embedded question: branch off initial interrogative RP whether/if
-        (s/\^([CV]-rN)([^ ]*?)(?:-rN)?($CODA) <(IN[^>]*)> (<.*)\^/\^\1\2\3 <R-aN-iN-lI-f\4> <V\2-g{R-aN}-lN-fNIL \5>\^/ && ($j=61)) ||
+        (s/\^([CV]-rN)([^ ]*?)(?:-rN)?($CODA) <(IN[^>]*)> (<.*)\^/\^\1\2\3 <R-aN-iN-lN-f\4> <V\2-g{R-aN}-lI-fNIL \5>\^/ && ($j=61)) ||
 
         #### AP|RP
         # branch off initial specifier NS measure
@@ -376,7 +382,7 @@ debug("p-rule ", "$_");
 #        s/\^(N)E([^ ]*?)(-[ir][A-Z])?($CODA) <(IN[^>]*)> (<.*)\^/\^\1E\2\3\4 <\1E\2-b\1P-lM-f\5> <\1P\3-lI-fNIL \6>\^/ ||
         (s/\^O((?!-[cp])[^ ]*?)(-[ir][A-Z]+)?($CODA) <(IN[^>]*)> (<.*)\^/\^O\1\2\3 <O\1-bN-lI-f\4> <N\2-lA-fNIL \5>\^/ && ($j=26)) ||
         # embedded question: branch off initial interrogative RP whether/if
-        (s/\^(V\-iN)([^ ]*?)($CODA) <(IN[^>]*)> (<.*)\^/\^\1\2\3 <R-aN-iN-lI-f\4> <V\2-g{R-aN}-lN-fNIL \5>\^/ && ($j=27)) ||
+        (s/\^(V\-iN)([^ ]*?)($CODA) <(IN[^>]*)> (<.*)\^/\^\1\2\3 <R-aN-iN-lN-f\4> <V\2-g{R-aN}-lI-fNIL \5>\^/ && ($j=27)) ||
 
         #### initial RP/RC modifier
         # branch off initial modifier RP with colon
@@ -422,14 +428,22 @@ debug("p-rule ", "$_");
         (s/\^(S|V\-iN)((?!-[cp])[^ ]*?)($CODA) (<[^\]]*(?:MD|VB[A-Z]? (?:[Dd]oes|[Dd]o|[Dd]id|[Ii]s|[Aa]re|[Ww]as|[Ww]ere|[Hh]as|[Hh]ave|[Hh]ad)).*<NP.*)\^/\^\1\2\3 <Q\2-lI-fNIL \4>\^/ && ($j=44)) ||
         # imperative sentence: unary expand to BP   ***PROBABLY NULL CAT HERE***
         (s/\^(S)((?!-[cp])[^ ]*?)($CODA) (<VP$NO_VP_HEAD \[VB.*)\^/\^\1\2\3 <B-aN\2-lI-fNIL \4>\^/ && ($j=45)) ||
-        # embedded question / nom clause: branch off initial interrogative NS and final modifier IP with NS gap (what_i to find a picture of t_i)
-        (s/\^(V\-iN|N(?!-aD))([^ ]*?)($CODA) <(WHNP[^ ]*)(-[0-9]+)([^>]*)> <S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] ([^>]*\[-NONE- \*T\*\5\][^>]*)>\^/\^\1\2\3 <N-iN-lI-f\4\5\6> <I-aN-gN\5-lN-fNIL \7>\^/ && ($j=46)) ||
-        # embedded question / nom clause: branch off initial interrogative RP and final modifier IP with RP gap (how_i to find a picture t_i)
-        (s/\^(V\-iN|N(?!-aD))([^ ]*?)($CODA) <(WH[^ ]*)(-[0-9]+)([^>]*)> <S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] ([^>]*\[-NONE- \*T\*\5\][^>]*)>\^/\^\1\2\3 <R-aN-iN-lI-f\4\5\6> <I-aN-g{R-aN}\5-lN-fNIL \7>\^/ && ($j=47)) ||
-        # embedded question / nom clause: branch off initial interrogative NS
-        (s/\^(V\-iN|N(?!-aD))([^ ]*?)($CODA) <(WHNP)([^ ]*)(-[0-9]+)((?![0-9])[^>]*)> (.*\[-NONE- *\*T\*\6\].*)\^/\^\1\2\3 <N-iN-lI-f\4\5\6\7> <V\2-gN\6-lN-fNIL \8>\^/ && ($j=48)) ||
-        # embedded question / nom clause / nom clause modifier: branch off initial interrogative RP
-        (s/\^(V\-iN|N(?!-aD))([^ ]*?)($CODA) <(WH[A-Z]*)([^ ]*)(-[0-9]+)((?![0-9])[^>]*)> (.*\[-NONE- *\*T\*\6\].*)\^/\^\1\2\3 <R-aN-iN-lI-f\4\5\6\7> <V\2-g{R-aN}\6-lN-fNIL \8>\^/ && ($j=49)) ||
+        # embedded question: branch off initial interrogative NS and final modifier IP with NS gap (what_i to find a picture of t_i)
+        (s/\^(V\-iN)([^ ]*?)($CODA) <(WHNP[^ ]*)(-[0-9]+)([^>]*)> <S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] ([^>]*\[-NONE- \*T\*\5\][^>]*)>\^/\^\1\2\3 <N-iN-lN-f\4\5\6> <I-aN-gN\5-lI-fNIL \7>\^/ && ($j=46)) ||
+        # embedded question: branch off initial interrogative RP and final modifier IP with RP gap (how_i to find a picture t_i)
+        (s/\^(V\-iN)([^ ]*?)($CODA) <(WH[^ ]*)(-[0-9]+)([^>]*)> <S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] ([^>]*\[-NONE- \*T\*\5\][^>]*)>\^/\^\1\2\3 <R-aN-iN-lN-f\4\5\6> <I-aN-g{R-aN}\5-lI-fNIL \7>\^/ && ($j=47)) ||
+        # embedded question: branch off initial interrogative NS
+        (s/\^(V\-iN)([^ ]*?)($CODA) <(WHNP)([^ ]*)(-[0-9]+)((?![0-9])[^>]*)> (.*\[-NONE- *\*T\*\6\].*)\^/\^\1\2\3 <N-iN-lN-f\4\5\6\7> <V\2-gN\6-lI-fNIL \8>\^/ && ($j=48)) ||
+        # embedded question: branch off initial interrogative RP
+        (s/\^(V\-iN)([^ ]*?)($CODA) <(WH[A-Z]*)([^ ]*)(-[0-9]+)((?![0-9])[^>]*)> (.*\[-NONE- *\*T\*\6\].*)\^/\^\1\2\3 <R-aN-iN-lN-f\4\5\6\7> <V\2-g{R-aN}\6-lI-fNIL \8>\^/ && ($j=49)) ||
+        # nom clause: branch off initial interrogative NS and final modifier IP with NS gap (what_i to find a picture of t_i)
+        (s/\^(N(?!-aD))([^ ]*?)($CODA) <(WHNP[^ ]*)(-[0-9]+)([^>]*)> <S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] ([^>]*\[-NONE- \*T\*\5\][^>]*)>\^/\^\1\2\3 <N\2-b{I-aN-gN}-lI-f\4\5\6> <I-aN-gN\5-lA-fNIL \7>\^/ && ($j=46)) ||
+        # nom clause: branch off initial interrogative RP and final modifier IP with RP gap (how_i to find a picture t_i)
+        (s/\^(N(?!-aD))([^ ]*?)($CODA) <(WH[^ ]*)(-[0-9]+)([^>]*)> <S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] ([^>]*\[-NONE- \*T\*\5\][^>]*)>\^/\^\1\2\3 <N\2-b{I-aN-g{R-aN}}-lI-f\4\5\6> <I-aN-g{R-aN}\5-lA-fNIL \7>\^/ && ($j=47)) ||
+        # nom clause: branch off initial interrogative NS
+        (s/\^(N(?!-aD))([^ ]*?)($CODA) <(WHNP)([^ ]*)(-[0-9]+)((?![0-9])[^>]*)> (.*\[-NONE- *\*T\*\6\].*)\^/\^\1\2\3 <N\2-b{V-gN}-lI-f\4\5\6\7> <V-gN\6-lA-fNIL \8>\^/ && ($j=48)) ||
+        # nom clause / nom clause modifier: branch off initial interrogative RP
+        (s/\^(N(?!-aD))([^ ]*?)($CODA) <(WH[A-Z]*)([^ ]*)(-[0-9]+)((?![0-9])[^>]*)> (.*\[-NONE- *\*T\*\6\].*)\^/\^\1\2\3 <N\2-b{V-g{R-aN}}-lI-f\4\5\6\7> <V-g{R-aN}\6-lA-fNIL \8>\^/ && ($j=49)) ||
 #        # polar question: branch off initial BP-taking auxiliary
 #        (s/\^(Q)([^ ]*?)($CODA) <([^\]]*(?:MD|VB[A-Z]? (?:[Dd]oes|[Dd]o|[Dd]id|'d))[^>]*)> (<.*)\^/\^\1\2\3 <\1\2-bB-lM-f\4> <B-lI-fNIL \5>\^/ && ($j=50)) ||
 #        # polar question: branch off initial NS-taking auxiliary
@@ -451,23 +465,23 @@ debug("p-rule ", "$_");
 
         #### conjunction
         # branch final right-node-raising complement NS
-        (s/\^([^ ]*?)(-[fghjlp][^ ]*) (<.*\[-NONE- \*RNR\*(-[0-9]*)\].*) <NP([^ ]*\4[^>]*)>\^/\^\1\2 <\1-hN\4-lI-fNIL \3> <N-lN-fNS\5>\^/ && ($j=63)) ||
+        (s/\^([^ ]*?)($CONJCODA) (<.*\[-NONE- \*RNR\*(-[0-9]*)\].*) <NP([^ ]*\4[^>]*)>\^/\^\1\2 <\1-hN\4-lI-fNIL \3> <N-lN-fNS\5>\^/ && ($j=63)) ||
         # branch final right-node-raising modifier AP
-        (s/\^([^ ]*?)(-[fghjlp][^ ]*) (<.*\[-NONE- \*RNR\*(-[0-9]*)\].*) <((?:PP)[^ ]*\4[^>]*)>\^/\^\1\2 <\1-lI-fNIL \3> <A-aN-lM-f\5>\^/ && ($j=64)) ||
+        (s/\^([^ ]*?)($CONJCODA) (<.*\[-NONE- \*RNR\*(-[0-9]*)\].*) <((?:PP)[^ ]*\4[^>]*)>\^/\^\1\2 <\1-lI-fNIL \3> <A-aN-lM-f\5>\^/ && ($j=64)) ||
         # pinch ... CC ... -NONE- and re-run
-        (s/\^([^C][^ ]*?)(-[fghjlp][^ ]*)(?!.*\|) (<.*) (<CC[^>]*>) (<.*) (<[^ ]* \[-NONE- [^\]]*\]>)\^/<\1\2 <\1 \3 \4 \5> \6>/ && ($j=65)) ||
+        (s/\^([^C][^ ]*?)($CONJCODA)(?!.*\|) (<.*) (<CC[^>]*>) (<.*) (<[^ ]* \[-NONE- [^\]]*\]>)\^/<\1\2 <\1 \3 \4 \5> \6>/ && ($j=65)) ||
         # branch off initial colon in colon...semicolon...semicolon construction
-        (s/\^([^ ]*)(-[fghjlp][^ ]*)(?!.*\|) (<. :>) <NP([^ ]*)([^>]*)> (<. ;.*<. ;.*)\^/\^\1\2 \3 <N\4-lA-fNIL <N\4\5> \6>\^/ && ($j=65.5)) ||
-        (s/\^([^ ]*)(-[fghjlp][^ ]*)(?!.*\|) (<. :>) <([^ ]*)([^>]*)> (<. ;.*<. ;.*)\^/\^\1\2 \3 <\4-lA-fNIL <\4\5> \6>\^/ && ($j=66)) ||
+        (s/\^([^ ]*)($CONJCODA)(?!.*\|) (<. :>) <NP([^ ]*)([^>]*)> (<. ;.*<. ;.*)\^/\^\1\2 \3 <N\4-lA-fNIL <N\4\5> \6>\^/ && ($j=65.5)) ||
+        (s/\^([^ ]*)($CONJCODA)(?!.*\|) (<. :>) <([^ ]*)([^>]*)> (<. ;.*<. ;.*)\^/\^\1\2 \3 <\4-lA-fNIL <\4\5> \6>\^/ && ($j=66)) ||
         # branch off initial conjunct prior to semicolon delimiter
         (s/\^([A-Z]-[abrik].(?:-x)?)([^ cp]*?)($CODA)(?!.*\|) (<.*?) (<[^ ]* ;> .*<(?:CC|ADVP \[RB then|ADVP \[RB not|. ;)[^>]*> <.*)\^/\^\1\2\3 <\1\2-lC-fNIL \4> <\1\2-pPs-c{\1\2}-lI-fNIL \5>\^/ && ($j=66.6)) ||
         (s/\^([^ \-cp]*)($CODA)(?!.*\|) (<.*?) (<[^ ]* ;> .*<(?:CC|ADVP \[RB then|ADVP \[RB not|. ;)[^>]*> <.*)\^/\^\1\2 <\1-lC-fNIL \3> <\1-pPs-c\1-lI-fNIL \4>\^/ && ($j=67)) ||
         # branch off initial conjunct prior to comma delimiter
-        (s/\^([A-Z]-[abrik].(?:-x)?)([^ cp]*?)(-[fghjlr][^ ]*)(?!.*\|) (<.*?) (<[^ ]* ,> .*<(?:CC|ADVP \[RB then|ADVP \[RB not)[^>]*> <.*)\^/\^\1\2\3 <\1\2-lC-fNIL \4> <\1\2-pPc-c{\1\2}-lI-fNIL \5>\^/ && ($j=67.6)) ||
-        (s/\^([^ \-cp]*)(-[fghjlr][^ ]*)(?!.*\|) (<.*?) (<[^ ]* ,> .*<(?:CC|ADVP \[RB then|ADVP \[RB not)[^>]*> <.*)\^/\^\1\2 <\1-lC-fNIL \3> <\1-pPc-c\1-lI-fNIL \4>\^/ && ($j=68)) ||
+        (s/\^([A-Z]-[abrik].(?:-x)?)([^ cp]*?)($RCONJCODA)(?!.*\|) (<.*?) (<[^ ]* ,> .*<(?:CC|ADVP \[RB then|ADVP \[RB not)[^>]*> <.*)\^/\^\1\2\3 <\1\2-lC-fNIL \4> <\1\2-pPc-c{\1\2}-lI-fNIL \5>\^/ && ($j=67.6)) ||
+        (s/\^([^ \-cp]*)($RCONJCODA)(?!.*\|) (<.*?) (<[^ ]* ,> .*<(?:CC|ADVP \[RB then|ADVP \[RB not)[^>]*> <.*)\^/\^\1\2 <\1-lC-fNIL \3> <\1-pPc-c\1-lI-fNIL \4>\^/ && ($j=68)) ||
         # branch off initial conjunct prior to conj delimiter
-        (s/\^([A-Z]-[abrik].(?:-x)?)([^ cp]*?)(-[fghjlr][^ ]*)(?!.*\|) (<.*?) (<CC[^>]*> <.*)\^/\^\1\2\3 <\1\2-lC-fNIL \4> <\1\2-c{\1\2}-lI-fNIL \5>\^/ && ($j=68.8)) ||
-        (s/\^([^ \-cp]*)(-[fghjlr][^ cp]*)(?!.*\|) (<.*?) (<CC[^>]*> <.*)\^/\^\1\2 <\1-lC-fNIL \3> <\1-c\1-lI-fNIL \4>\^/ && ($j=69)) ||
+        (s/\^([A-Z]-[abrik].(?:-x)?)([^ cp]*?)($RCONJCODA)(?!.*\|) (<.*?) (<CC[^>]*> <.*)\^/\^\1\2\3 <\1\2-lC-fNIL \4> <\1\2-c{\1\2}-lI-fNIL \5>\^/ && ($j=68.8)) ||
+        (s/\^([^ \-cp]*)(-[fghjlr](?![^ ]*}})[^ cp]*)(?!.*\|) (<.*?) (<CC[^>]*> <.*)\^/\^\1\2 <\1-lC-fNIL \3> <\1-c\1-lI-fNIL \4>\^/ && ($j=69)) ||
 #        # branch off initial conjunct prior to comma/semi/colon/dash between matching constituents
 #        s/\^([^C][A-Z]S[^ ]*?)(-[fghjlp][^ ]*) <([^- ]*)([^>]*)> (<[^ ]* ,> <\3[^>]*>)\^/\^\1mod\2 <\1-lC-f\3\4> <C\1-lI-fNIL \5>\^/ ||
 
@@ -481,7 +495,7 @@ debug("p-rule ", "$_");
         (s/\^([SQCFVIBLAGRN])([^ ]*?)($CODA) (<.*) <(PRN|S(?![A-Z]))([^>]* \[S[^>]*\[-NONE- \*INTERNAL\*(-[0-9]+)[^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <V-gS\7-lN-f\5\6>\^/ && ($j=78)) ||
 
         # branch NS -> DS A-aN-x: 'the best' construction
-        (s/\^(N(?!-a))([^ ]*?)($CODA) <(?:DT)([^>]*)> <(?:RB|ADJP)([^>]*)>\^/\^\1\2\3 <D-lA-f\4> <A-aN-x-lI-f\5>\^/ && ($j=79)) ||
+        (s/\^(N(?!-a))([^ ]*?)($CODA) <(?:DT)([^>]*)> <(?:RB|ADJP)([^>]*)>\^/\^\1\2\3 <D-lA-f\4> <N-aD-lI-f\5>\^/ && ($j=79)) ||
 
         #### final VP|IP|BP|LP|AP (following auxiliary) -- raising verbs, pass subject to complement
         # branch off final VP as argument BP
@@ -583,10 +597,12 @@ debug("p-rule ", "$_");
         (s/\^([SQCFVIBLAGR])([^ x]*?)($CODA) (<.*) <(S-TOBE([IA])S[^ ]*(?:-ADV|-PRP)[^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <R-aN-lM-fNIL <\6-lI-fS\5>>\^/ && ($j=110)) ||
         # branch off final S as argument VS
         (s/\^(C)([^ ]*?)($CODA) (<.*) <(S-TOBE([V])S[^>]*)>\^/\^\1\2\3 <\1\2-b\6-lI-fNIL \4> <\6-lA-f\5>\^/ && ($j=111)) ||
-        # branch off final ADVP + S as modifier VS|IS|BS|AS
-        (s/\^(S|V\-iN|Q|[VIBLAG](?!-a))([^ ]*?)($CODA) (<.*) (<ADVP[^>]*>) <(S-TOBE([VIBA])S[^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <\7-lM-fNIL \5 <\7-lI-f\6>>\^/ && ($j=112)) ||
-        # branch off final S as modifier VS|IS|BS|AS
-        (s/\^(S|V\-iN|Q|[VIBLAG](?!-aN(?!e)))([^ ]*?)($CODA) (<.*) <(S-TOBE([VIBA])S[^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <\6-lM-f\5>\^/ && ($j=113)) ||
+        # branch off ; S as conjunction (semantically viable analysis to replace bogus V-lM rules below)
+        (s/\^(S|V\-iN|Q|[VIBLAG](?!-aN(?!e)))([^ ]*?)($CODA) (<.*) <[^ ]* (--|,|:|;)> (<`` ``> |<ADVP [^ ]*> )?<(S-TOBE([VIBA])S[^ ]*) ([^>]*)>\^/\^\1\2\3 <\1\2-lC-fNIL \4> <\8-c\8-fNIL <X-cX-dX \5> <\8-lC-f\7 \6\9>>\^/ && ($j=113)) ||
+# SHOULD NEVER FIRE       # branch off final ADVP + S as modifier VS|IS|BS|AS
+#        (s/\^(S|V\-iN|Q|[VIBLAG](?!-a))([^ ]*?)($CODA) (<.*) (<ADVP[^>]*>) <(S-TOBE([VIBA])S[^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <\7-lM-fNIL \5 <\7-lI-f\6>>\^/ && ($j=112)) ||
+# SHOULD NEVER FIRE       # branch off final S as modifier VS|IS|BS|AS
+#        (s/\^(S|V\-iN|Q|[VIBLAG](?!-aN(?!e)))([^ ]*?)($CODA) (<.*) <(S-TOBE([VIBA])S[^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <\6-lM-f\5>\^/ && ($j=113)) ||
         # branch off final S as argument VS|IS|BS|AS
 #        (s/\^([VIBLAGR]P|NS|NP)([^ ]*?)($CODA) (<.*) <(S-TOBE([VIBA])S[^>]*)>\^/\^\1\2\3 <\1\2-b\6S-lI-fNIL \4> <\6S-lA-f\5>\^/ && ($j=114)) ||
         (s/\^(N(?!-a))([^ ]*?)(-[fghjlpi][^ \}]*) (<.*) <(S-TOBE([VIBA])[SP][^>]*)>\^/\^\1\2\3 <\1\2-k\6-lI-fNIL \4> <\6-lN-f\5>\^/ && ($j=114)) ||
@@ -614,7 +630,7 @@ debug("p-rule ", "$_");
 #        # branch off final SBAR as modifier RP (from SBAR trace coindexed to final modifier, which must have gap discharged)
 #        s/\^([VIBLAGR]P)([^ ]*?)($CODA) (<.*) <(SBAR[^ ]* \[WHADVP(-[0-9]+) [^>]*) \[ADVP[^ ]* \[-NONE- \*T\*\6\]\]([\]]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <RP-lI-f\5\7>\^/ ||
         # branch off final SBAR as argument ES-gNS ('tough for X to Y' construction):  {AP ... <SBAR [WH# nil] ... for ... #t ...>} => {AP <AP-bESg ...> <ES-gNS ... for ... #t ...>}  ****SHOULD BE ES..-lN****
-        (s/\^(A-aN(?!-x))([^ ]*?)($CODA) (<.*) <SBAR[^ ]* \[WHNP(-[0-9]+) \[-NONE- 0\]\] (\[IN for\] [^>]* \[NP[^ ]* \[-NONE- \*T\*\5\]\][^>]*)>\^/\^\1\2\3 <\1\2-b{F-gN}-lI-fNIL \4> <F-gN\5-lN-fNIL \6>\^/ && ($j=120)) ||
+        (s/\^(A-aN(?!-x))([^ ]*?)($CODA) (<.*) <SBAR[^ ]* \[WHNP(-[0-9]+) \[-NONE- 0\]\] (\[IN for\] [^>]* \[NP[^ ]* \[-NONE- \*T\*\5\]\][^>]*)>\^/\^\1\2\3 <\1\2-b{F-gN}-lI-fNIL \4> <F-gN\5-lA-fNIL \6>\^/ && ($j=120)) ||
         # branch off final SBAR as argument IP-gNS ('tough to Y' construction):        {AP ... <SBAR [WH# nil] ... to ... #t ...>} => {AP <AP-bIPg ...> <IP-gNS ... for ... #t ...>}
         (s/\^(A-aN(?!-x))([^ ]*?)($CODA) (<.*) <SBAR[^ ]* \[WHNP(-[0-9]+) \[-NONE- 0\]\] \[S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] (\[VP[^ ]* \[TO to\][^>]* \[NP[^ ]* \[-NONE- \*T\*\5\]\][^>]*)\]>\^/\^\1\2\3 <\1\2-b{I-aN-gN}-lI-fNIL \4> <I-aN-gN\5-lA-fNIL \6>\^/ && ($j=121)) ||
         # branch off final SBAR as argument AP-gNS ('worth Y-ing' construction):       {AP ... <SBAR [WH# nil] ... #t ...>} => {AP <AP-bAPg ...> <AP-gNS ... #t ...>}
@@ -903,7 +919,7 @@ debug("p-rule ", "$_");
   # add unary branch to generalize gap categories
   s/\(([^ ]*)(-l[^I])([^ ]*) ([^\(\)]*)\)/\(\1\2\3 \(\1-lI\3 \4\)\)/g;
 #  s/\(([^ ]*)-g(N|S)([^ ]*) ([^\(\)]*)\)/\(\1-g\2\3 \(\1-u\2\3 \4\)\)/g;
-  s/\(([^ ]*)-g({R-aN}|{C-rN})([^ ]*) ([^\(\)]*)\)/\(\1-g\2\3 \(\1\3 \4\)\)/g;
+  s/\(([^ ]*)-g({R-aN}|{C-rN})(?!})([^ ]*) ([^\(\)]*)\)/\(\1-g\2\3 \(\1\3 \4\)\)/g;
 
   # elim -lI (default)...
   s/-lI//g;

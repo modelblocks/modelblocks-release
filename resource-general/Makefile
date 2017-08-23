@@ -151,6 +151,7 @@ RESOURCE-TOKENIZER := $(abspath $(MBDIR)/resource-tokenizer)
 TOKENIZER-SCRIPTS := $(RESOURCE-TOKENIZER)/scripts
 
 RESOURCE-TREEBANK := $(abspath $(MBDIR)/resource-treebank)
+RESOURCE-TREEBANK-VADAS := $(abspath $(MBDIR)/resource-treebank-vadas)
 TREEBANK-SCRIPTS := $(RESOURCE-TREEBANK)/scripts
 
 RESOURCE-TIGER := $(abspath $(MBDIR)/resource-tiger)

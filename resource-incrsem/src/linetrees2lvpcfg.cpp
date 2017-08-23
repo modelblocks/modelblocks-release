@@ -52,6 +52,8 @@ class L : public Delimited<DiscreteDomainRV<int,domL>> {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+uint index_max( arma::vec v ) { uint imax=0; for( uint i=1; i<v.size(); i++ ) if( v(i) > v(imax) ) imax = i; return imax; }
+
 char psOpenParen[]  = "(";
 char psCloseParen[] = ")";
 
@@ -107,6 +109,16 @@ class ForestTree : public DelimitedList<psX,ForestTree,psSpace,psX> {
     else cerr << "ERROR -- n-nary tree: " << *this << endl;
   }
 
+  void calcVitForest ( const map<trip<L,L,L>,arma::mat>& mTheta, const map<L,arma::mat>& mXi ) {
+    if     ( size()==1 && front().size()==0 ) { v = mXi.find( l )->second.col( W(front().l.getString().c_str()).toInt() ); }
+    else if( size()==1 || size()==2         ) { for( auto& subtree : *this ) subtree.calcVitForest( mTheta, mXi );
+                                                if( size()==1 ) for( uint i=0; i<v.size(); i++)
+                                                  v(i) = ( mTheta.find( trip<L,L,L>(l,front().l,"-") )->second.row(i).t() % arma::vectorise( arma::diagmat( back().v ) ) ).max();
+                                                else for( uint i=0; i<v.size(); i++) 
+                                                  v(i) = ( mTheta.find( trip<L,L,L>(l,front().l,back().l) )->second.row(i).t() % arma::vectorise( back().v * front().v.t() ) ).max(); }
+    else cerr << "ERROR -- n-nary tree: " << *this << endl;
+  }
+
   void sampleZ ( const map<L,arma::vec>& mPi, const map<trip<L,L,L>,arma::mat>& mTheta, mt19937& e, bool bRoot = true ) {
     if( bRoot )                                        { arma::vec post = mPi.find( l )->second % v; discrete_distribution<uint> d( post.begin(), post.end() ); z = d(e); }
     if( (size()==1 && front().size()>0) || size()==2 ) { arma::vec post = mTheta.find( trip<L,L,L>(l,front().l,(size()==1)?"-":back().l) )->second.row(z).t();
@@ -115,6 +127,15 @@ class ForestTree : public DelimitedList<psX,ForestTree,psSpace,psX> {
                                                          discrete_distribution<uint> d( post.begin(), post.end() );
                                                          uint zz = d(e); front().z = zz/v.size(); back().z = zz%v.size();
                                                          for( auto& subtree : *this ) subtree.sampleZ( mPi, mTheta, e, false ); }
+  }
+
+  void filterZ ( const map<L,arma::vec>& mPi, const map<trip<L,L,L>,arma::mat>& mTheta, mt19937& e, bool bRoot = true ) {
+    if( bRoot )                                        { arma::vec post = mPi.find( l )->second % v; z = index_max( post ); }
+    if( (size()==1 && front().size()>0) || size()==2 ) { arma::vec post = mTheta.find( trip<L,L,L>(l,front().l,(size()==1)?"-":back().l) )->second.row(z).t();
+                                                         if (size()==1) post = post % arma::vectorise( arma::diagmat( back().v ) );
+                                                         else post = post % arma::vectorise( back().v * front().v.t() );
+                                                         uint zz = index_max( post ); front().z = zz/v.size(); back().z = zz%v.size();
+                                                         for( auto& subtree : *this ) subtree.filterZ( mPi, mTheta, e, false ); }
   }
 
   double getProb ( const map<L,arma::vec>& mPi, const map<trip<L,L,L>,arma::mat>& mTheta, map<L,arma::mat>& mXi, bool bRoot = true ) {
@@ -233,6 +254,38 @@ int main ( int nArgs, char* argv[] ) {
     for( auto& t : ltCorpus ) { lgpr += t.getProb(mPi,mTheta,mXi); }
 
     cerr << "Iteration " << i << ": totcounts=" << totcounts << " totmods=" << totmods << " logprob=" << lgpr << endl;
+  }
+
+  //// III. Expectation maximization step...
+
+  // For each iteration...
+  for( uint i=0; i<100; i++ ) {
+
+    // Zero out counts...
+    for( auto& lv   : cPi    ) cPi   [lv.first  ].zeros();
+    for( auto& lllm : cTheta ) cTheta[lllm.first].zeros();
+    for( auto& lm   : cXi    ) cXi   [lm.first  ].zeros();
+
+    // Obtain counts...
+    for( auto& t : ltCorpus ) t.addCounts( cPi, cTheta, cXi, numTypes );
+
+    // Update pi models...
+    for( auto& lv : cPi )       mPi[lv.first]      = arma::normalise( cPi[lv.first], 1 );
+    // Update theta models...
+    for( auto& lllm : cTheta )  mTheta[lllm.first] = arma::normalise( cTheta[lllm.first], 1, 1 );
+    // Update xi m(dels...
+    for( auto& lm : cXi )       mXi[lm.first]      = arma::normalise( cXi[lm.first], 1, 1 );
+
+    double lgpr = 0.0;
+    for( auto& t : ltCorpus ) {
+      // A. Calc forest from model, bottom-up...
+      t.calcVitForest( mTheta, mXi );
+      // B. Sample tree from forest, top-down...
+      t.filterZ( mPi, mTheta, e );
+      // C. Update prob...
+      lgpr += t.getProb(mPi,mTheta,mXi);
+    }
+    cerr << "EM iteration " << i << ": logprob=" << lgpr << endl;
   }
 
   for( auto& t : ltCorpus ) cout << t << endl;
