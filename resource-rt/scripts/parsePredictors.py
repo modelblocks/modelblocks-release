@@ -14,13 +14,19 @@ if args.accumulate:
     cols = []
     for col in preds:
         if col.startswith('cum'):
-            cols.append(col[3:])
+            colname = col[3:]
+            if spill.match(colname):
+                colname = spill.match(colname).group(1)
+            cols.append(colname)
     print(' '.join(cols))
 elif args.future:
     cols = []
     for col in preds:
         if col.startswith('fut'):
-            cols.append(col[3:])
+            colname = col[3:]
+            if spill.match(colname):
+                colname = spill.match(colname).group(1)
+            cols.append(colname)
     print(' '.join(cols))
 elif args.spillover:
     cols = []
