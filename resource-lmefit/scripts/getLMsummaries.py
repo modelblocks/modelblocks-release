@@ -39,7 +39,7 @@ for h in headers:
     header_row[h] = h
 
 converged = rows[:] 
-converged.sort(key = lambda x: x['logLik'])
+converged.sort(key = lambda x: x['logLik'], reverse=True)
 converged.insert(0, header_row)
 
 if len(converged) > 1:

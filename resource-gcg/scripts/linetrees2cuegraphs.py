@@ -170,6 +170,7 @@ class storestate( cuegraph ):
       G.rename( id+'s', G.result('s',G.b) )
       G.rename( id,     G.b )
       G.b = id
+      G[G.b,'0'] = sD
       G.equate( w, 'w', G.b )
       G.a = G.result( 'A', G.b )
       while (G.a,'A') in G: G.a = G[G.a,'A']      ## traverse all non-local dependencies on A
@@ -412,10 +413,13 @@ for line in sys.stdin:
       ## obtain pred by applying morph rules to word token...
       s = re.sub('-l.','',G[x,'0']) + ':' + G[x,'w'].lower()
       while( '-x' in s ):
-        s1 = re.sub( '^.(\\S*?)-x.%:(\\S*)%(\\S*)\|(\\S*)%(\\S*):([^% ]*)%([^-: ]*)([^: ]*):\\2(\\S*)\\3', '\\4\\1\\5\\8:\\6\\9\\7', s )
-        if s1==s: s1 = re.sub( '^.(\\S*?)-x.%(\\S*)\|([^% ]*)%([^-: ]*)([^: ]*):(\\S*)\\2', '\\3\\1\\5:\\6\\4', s )
+        s1           = re.sub( '^.((?:(?!-x).)*)-x.%:(\\S*)%(\\S*)\|(\\S*)%(\\S*):([^% ]*)%([^-: ]*)([^: ]*):\\2(\\S*)\\3', '\\4\\1\\5\\8:\\6\\9\\7', s )
+        if s1==s: s1 = re.sub( '^.((?:(?!-x).)*)-x.%(\\S*)\|([^% ]*)%([^-: ]*)([^: ]*):(\\S*)\\2', '\\3\\1\\5:\\6\\4', s )
         if s1==s: s1 = re.sub( '-x', '', s )
         s = s1
+      s = re.sub( 'BNOM-aD-bO', 'B-aN-bN', s )
+      s = re.sub( 'BNOM-aD', 'B-aN', s )
+      s = re.sub( 'BNOM', 'B-aN', s )
       ## place pred in ##e or ##r node, depending on category...
       if s[0]=='N' and not s.startswith('N-b{N-aD}') and not s.startswith('N-b{V-g{R') and not s.startswith('N-b{I-aN-g{R'):
         G.equate( s, '0', x+'e' )
@@ -423,7 +427,8 @@ for line in sys.stdin:
       else: G.equate( s, '0', G.result('r',G.result('s',x)) )
       ## coindex subject of raising construction with subject of direct object...
       if re.match( '^.-aN-b{.-aN}:', s ) != None:
-        G.equate( G.result('1\'',G.result('2\'',G.result('s',x))), '1\'', G.result('s',x) )
+        G.equate( G.result('1\'',G.result('s',x)), '1\'', G.result('2\'',G.result('s',x)) )
+#        G.equate( G.result('1\'',G.result('2\'',G.result('s',x))), '1\'', G.result('s',x) )
   ## for each syntactic dependency...
   for x,l in sorted(G):
     if l[-1]=='\'':
