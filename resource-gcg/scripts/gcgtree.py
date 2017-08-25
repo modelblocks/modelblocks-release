@@ -87,5 +87,14 @@ def relabel( t ):
     relabel( st )
 
 
+################################################################################
 
+class GCGTree( tree.Tree ):
+
+  def __init__( t, s ):
+    s = re.sub( '-iN-gN', '-gN-iN', s )  ## script puts nonlocal deps in wrong order; higher bound nolos should be buried deeper
+    s = re.sub( '-rN-vN', '-vN-rN', s )
+    tree.Tree.__init__( t )
+    t.read( s )
+    relabel( t )
 

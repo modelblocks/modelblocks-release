@@ -272,7 +272,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 
   def __init__( G, t ):
     
-    gcgtree.relabel( t )
+#    gcgtree.relabel( t )
     if VERBOSE: print( t )
 
     G.a = 'top'
@@ -316,6 +316,35 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         elif (x,'e') in G and (G[x,'e'],'r') in G and (G[G[x,'e'],'r'],'0') in G:  G.equate( G[x,l], l[:-1], x )                       ## extraction of predicate
         elif (x[:-1]+'e','0') in G:                                                G.equate( G[x,l], str(int(l[:-1])+1), x[:-1]+'e' )  ## nominal
 #BAD;NON-PRED      elif (x,'e') in G and (G[x,'e'],'r') in G and (G[G[x,'e'],'r'][:-1]+'e','0') in G: G.equate( G[x,l], str(int(l[:-1])+1), x )           ## extraction of nominal
+
+
+################################################################################
+
+class SemCueGraph( cuegraph.CueGraph ):
+
+  def __init__( H, t ):
+    G = StoreStateCueGraph( t )
+    for x,l in sorted(G.keys()):
+      if l!='A' and l!='B' and l!='s' and l!='w' and (l!='0' or x[-1] in 'er') and l[-1]!='\'':
+        H[x,l] = G[x,l]
+
+
+################################################################################
+
+def last_inh( z, G ):
+  if (z,'r') in G and (z,'e') in G: print( 'ERROR MULTIPLE INHERITANCES', z, str(G) )
+#' '.join( [ x+','+l+','+G[x,l] for x,l in sorted(G) ] ) )
+  if (z,'r') in G: return last_inh( G[z,'r'], G )
+  if (z,'e') in G: return last_inh( G[z,'e'], G )
+  return z
+
+
+class SimpleCueGraph( cuegraph.CueGraph ):
+
+  def __init__( H, G ):
+    for x,l in G:
+      if '0'<=l and l<='9':
+        H[ last_inh(x,G), l ] = last_inh( G[x,l], G )
 
 
 
