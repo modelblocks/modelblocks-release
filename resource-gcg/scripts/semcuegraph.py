@@ -308,6 +308,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         if re.match( '^.-aN-b{.-aN}:', s ) != None:
           G.equate( G.result('1\'',G.result('s',x)), '1\'', G.result('2\'',G.result('s',x)) )
 #          G.equate( G.result('1\'',G.result('2\'',G.result('s',x))), '1\'', G.result('s',x) )
+    ## for each word...
+    for x,l in sorted(G):
+      ## rename 's' node again, in case it changed in above raising attachments...
+      if l=='w' and (x,'s') in G: G.rename( x+'s', G[x,'s'] )
     ## for each syntactic dependency...
     for x,l in sorted(G):
       if l[-1]=='\'':
