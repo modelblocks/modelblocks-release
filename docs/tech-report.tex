@@ -1,4 +1,5 @@
 \documentclass[12pt]{report}
+\usepackage{hyperref}
 \setcounter{secnumdepth}{4}
 %\setcounter{tocdepth}{1}
 \usepackage{amsmath}
@@ -723,6 +724,180 @@ Convenience target. Generates plots of a variety of learning curves from a {\blu
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{RESOURCE-GCG}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+{\tt RESOURCE-GCG} contains methods for generating and manipulating semantic annotations.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{\blue\tt \%.gcg\#\#.linetrees}
+
+GCG linetrees specify categorial predicate-argument markup for trees.
+%
+GCG linetrees conform to the following convention:
+
+\begin{tabular}{l}
+$\dtype{row}  \rightarrow \dtype{tree}$
+\\
+$\dtype{tree} \rightarrow \dtype{token}$
+\\
+$\dtype{tree} \rightarrow \dcode{(} \ \dtype{sign-type} \ \ {\Big( \ \dcode{\ } \ \dtype{tree} \ \Big)^+} \ \dcode{)}$
+\end{tabular}
+
+where sign types consist of a clause type and one or more dependencies:
+
+\begin{tabular}{l}
+%\item $\dtype{node-label}  \rightarrow \dexpr{[a-z]*}$
+%\\
+$\dtype{sign-type}  \rightarrow \dtype{clause-type} \ {\Big( \ \dtype{dependency} \ \Big)^*}$
+\end{tabular}
+
+and dependencies conform to one of the following formats:
+
+\begin{tabular}{ll}
+$\dtype{dependency} \rightarrow \dcode{-} \ \dexpr{[abcdghirv]} \ \dtype{sign-type}$                             & (simple dependent signs)
+\\
+$\dtype{dependency} \rightarrow \dcode{-} \ \dexpr{[abcdghirv]} \ \dcode{\{} \ \dtype{sign-type} \ \dcode{\}}$   & (complex dependent signs)
+\\
+$\dtype{dependency} \rightarrow \dcode{-l} \ \dexpr{[AMCN]}$                                                     & (operation labels)
+\\
+$\dtype{dependency} \rightarrow \dcode{-x}$                                                                      &  (indicates terminal sign)
+\end{tabular}
+
+For example:
+
+{\magenta\begin{verbatim}
+(S (S (N (N-b{N-aD} The) (N-aD cat)) (V-aN slept)) (. .))
+\end{verbatim}
+}
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Recipe: {\blue\tt \%.gcg\#\#.linetrees}}
+
+Making any GCG linetrees file that conforms to the naming convention:
+
+$\dtype{corpus-specification} \ \dcode{.gcg} \ \dtype{version-year} \ \dcode{.linetrees}$
+
+will generate and then use the following files:
+
+$\dtype{corpus-specification} \ \dcode{.linetrees}$
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{\blue\tt \%.morphed.linetrees}
+
+`Morphed' trees are trees with morphological markup.
+%
+This markup extends the dependency type of GCG trees as rewrite rules from inflected forms to base forms:
+
+$\dtype{dependency} \rightarrow \dcode{-x} \ \underbrace{\dtype{clause-type} \ \dcode{\%:} \ \dtype{prefix} \ \Big( \ \dcode{\%} \ \dtype{affix} \ \Big)^n}_\text{inflected form}
+                             \ \dcode{$|$} \ \underbrace{\dtype{clause-type} \ \dcode{\%:} \ \dtype{prefix} \ \Big( \ \dcode{\%} \ \dtype{affix} \ \Big)^n}_\text{base form}$
+
+$\dtype{dependency} \rightarrow \dcode{-x} \ \underbrace{\dtype{clause-type} \ \dcode{\%} \ \dtype{suffix}}_\text{inflected form}
+                             \ \dcode{$|$} \ \underbrace{\dtype{clause-type} \ \dcode{\%} \ \dtype{suffix}}_\text{base form}$
+
+
+\textit{Example:}
+{\magenta\begin{verbatim}
+(S (S (N (N-b{N-aD} The) (N-aD-xN%s|N% cats)) (V-aN-xV%ept|B%eep slept)) (. .))
+\end{verbatim}
+}
+%\end{itemize}
+%\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Recipe: {\blue\tt \%.morphed.linetrees}}
+
+%Annotate morphological operations.
+
+Making any refconts that conforms to the naming convention:
+
+$\dtype{corpus-specification} \ \dcode{.morphed.linetrees}$
+
+will generate and then use the following files:
+
+$\dtype{corpus-specification} \ \dcode{.linetrees}$
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{{\blue\tt \%.refconts} (formerly {\red\tt \%.varconts})}
+\label{sect:refconts}
+
+`Refconts' files list contexts for each referential state in a cued-association graph.
+%
+Refconts files conform to the following specification:
+
+$\dtype{row} \rightarrow \dtype{referent-identifier} \ \Big( \ \dcode{\ } \ \dtype{context} \ \Big)^*$
+
+$\dtype{context} \rightarrow \dtype{predicate} \ \dcode{\_} \ \Big( \ \dtype{argument-number} \ \Big( \ \dcode{-} \ \dtype{argument-number} \ \Big)^? \ \Big)^?$
+
+Contexts list the forward (positive) and backward (negative) dependencies traversed from each nearby predicate to each referent in a cued-association graph.
+%
+For example:
+%
+{\magenta\begin{verbatim}
+165-0201 BeingACar_1-1 Driving_
+\end{verbatim}
+}
+%
+indicates document 165, line 2, token 1 is a `Driving' predicate that has a first argument which is the first argument of a `BeingACar' predicate.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Recipe: {\blue\tt \%.refconts}}
+
+Making any refconts that conforms to the naming convention:
+
+$\dtype{corpus-specification} \ \dcode{.refconts}$
+
+will generate and then use the following files:
+
+$\dtype{corpus-specification} \ \dcode{.cg.linedeps}$
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{RESOURCE-INCRSEM}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+{\tt RESOURCE-INCRSEM} contains methods for incrementally processing semantic annotations.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{{\blue\tt \%\_ymodel}}
+
+Ymodels define clusters for contexts of referential states in cued-association graphs.
+%
+Ymodel files conform to the following specification:
+
+$\dtype{row} \rightarrow \dcode{Y\ } \ \dtype{referent-identifier} \ \dcode{\ :\ } \ \dtype{cluster-number} \ \dcode{\ =\ } \ \dtype{probability}$
+
+for priors over clusters at each referent, and
+
+$\dtype{row} \rightarrow \dcode{K\ } \ \dtype{cluster-number} \ \dcode{\ :\ } \ \dtype{context} \ \dcode{\ =\ } \ \dtype{probability}$
+
+%\noindent
+for likelihoods of contexts given clusters, where contexts are defined as in Section~\ref{sect:refconts} above.
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Recipe: {\blue\tt \%\_ymodel}}
+
+Making any ymodel that conforms to the naming convention:
+
+$\dtype{corpus} \ \dcode{.} \ \dtype{\#-clusters} \ \dcode{\_} \ \dtype{\#-iterations} \ \dcode{\_} \ \dtype{alpha} \ \dcode{\_} \ \dtype{beta} \ \dcode{\_} \ \dtype{ref-start} \ \dcode{\_} \ \dtype{ref-end} \ \dcode{\_ymodel}$
+
+will generate and then use the following files:
+
+$\dtype{corpus} \ \dcode{.refconts}$
+
+applying a Latent Dirichlet Allocation with $\dtype{\#-clusters}$ clusters, $\dtype{\#-iterations}$ iterations, priors $\dtype{alpha}$ and $\dtype{beta}$ over clusters and contexts respectively, to referential states with contexts of the form `$\dtype{ref-start}$ \dots $\dtype{ref-end}$' in the file $\dtype{corpus}\text{\blue\tt .refconts}$.
+
 
 
 
@@ -736,7 +911,7 @@ Convenience target. Generates plots of a variety of learning curves from a {\blu
 
 {\tt RESOURCE-LCPARSE} contains methods for generating representations of incremental left-corner parsing operations.
 
-\section{{\blue\tt \%.linedeps}}
+\section{{\blue\tt \%.linedeps} (formerly {\red\tt \%.cuegraphs})}
 Generates sorted set of dependencies for each `line' (sentence, title, caption, etc.) in a corpus. If present, `0' dependencies are used to indicate vertex types.
 
 \begin{itemize}
@@ -878,7 +1053,7 @@ Conditional probability parweights.
       \end{itemize}
 \end{itemize}
 
-\subsection{Recipe: \blue\tt \%.mlr.parweights}
+\subsection{Recipe: \blue\tt \%\_mlr.parweights}
 
 Multinomial logistic regression parweights.
 
@@ -896,7 +1071,7 @@ Multinomial logistic regression parweights.
             \item \textit{Note:} This ordering has the advantage that, when sorted, parameters are grouped by condition
       \end{itemize}
       \item \textbf{Stem template:}\\
-      $\dtype{training-set-specifications}  \ \dcode{.mlr.parweights}$
+      $\dtype{training-set-specifications} \ \dcode{.} \ \dtype{L2-regularization-factor} \ \dcode{\_} \ \dtype{underflow-scaling-factor} \ \dcode{\_} \ \dtype{num-iterations} \ \dcode{\_mlr.parweights}$
       \item \textbf{Input(s):}
       \begin{itemize}
             \item $\dtype{training-set-specification} \ \dcode{.decpars}$

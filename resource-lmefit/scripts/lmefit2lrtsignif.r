@@ -1,4 +1,5 @@
 #!/usr/bin/Rscript
+options(width=200) 
 
 #########################
 #
@@ -55,6 +56,12 @@ printSignifSummary <- function(mainName, mainEffect, basemodel, testmodel, signi
     print(signif)
 }
 
+cat('Likelihood Ratio Test (LRT) Summary\n')
+cat('===================================\n\n')
+cat('Correlation of numeric variables in model:\n')
+print(main$correlations)
+cat('\n')
+
 smartPrint('Summary of baseline model')
 printSummary(base$model)
 smartPrint(paste('Summary of main effect (', setdiff(base$abl,main$abl), ') model', sep=''))
@@ -68,4 +75,7 @@ printSignifSummary(setdiff(base$abl,main$abl),
                    main$model,
                    anova(base$model, main$model))
 
-warnings()
+if (!is.null(main$lambda)) {
+    printBoxCoxInvBetas(main$beta_ms, main$lambda, main$y_mu)
+}
+

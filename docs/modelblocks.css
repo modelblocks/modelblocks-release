@@ -116,6 +116,8 @@ button {
   font-weight: bold;
   padding: 1rem;
   margin: 1rem;
+  max-height: 10rem;
+  overflow-y: scroll;
   background: rgba(0, 0, 0, 0.7);
   border-radius: 1rem;
   -moz-border-radius: 1rem;

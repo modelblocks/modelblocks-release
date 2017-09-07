@@ -1,4 +1,5 @@
 #!/usr/bin/Rscript
+options(width=200) 
 
 ########################################################
 #
@@ -40,15 +41,18 @@ params <- opts$options
 input <- opts$args[1] # positional arg, input file specification
 output <- opts$args[2] # positional arg, output file specification
 
+cat('Regression Modeling Log\n')
+cat('=======================\n\n')
+
 smartPrint('Reading data from file')
 data <- read.table(input, header=TRUE, quote='', comment.char='')
 data <- cleanupData(data, params$filterfiles, params$filterlines, params$filtersents, params$filterscreens, params$filterpunc, params$restrdomain)
 data <- recastEffects(data, params$splitcols, params$indicatorlevel, params$groupingfactor)
 
 if (params$dev) {
-    data <- create.dev(data, params$partition)
+    data <- create.dev(data, params$partitionmod, params$partitiondevindices)
 } else if (params$test) {
-    data <- create.test(data, params$partition)
+    data <- create.test(data, params$partitionmod, params$partitiondevindices)
 }
 
 if (!is.null(params$restrict)) {
@@ -79,6 +83,11 @@ for (effect in params$addEffects) {
     smartPrint(paste0('Range of main effect z.(', effect, '): ', max(data[[effect]])-min(data[[effect]])))
 }
 
+if (params$totable) {
+   smartPrint('Writing experiment data table to file') 
+   write.table(data, output, sep=' ', quote=FALSE, row.names=FALSE, na="nan")
+   quit()
+}
 
 if (length(params$groupingfactor) > 0) {
     for (e in params$addEffects) {

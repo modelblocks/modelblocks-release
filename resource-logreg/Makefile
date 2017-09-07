@@ -82,4 +82,8 @@ $(BIN)/%:  $(RESOURCE-LOGREG)/src/$$(notdir $$@).cpp  $(RESOURCE-LOGREG)/src/$$(
 %mlrmodel:  $(CONFIGDIR)/user-numthreads.txt  bin/mlr-lbfgs  $$(basename %).$$(lastword $$(subst _, ,$$*))mlrdecpars
 	cat $(word 3,$^)  |  $(word 2,$^)  `cat $(word 1,$^)`  $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 
+#### obtain multinomial logistic regression (maxent/softmax) model from predictor-result training data
+.PRECIOUS: %sgdmlrmodel
+%sgdmlrmodel:  $(CONFIGDIR)/user-numthreads.txt  bin/mlr-sgd  $$(basename %).$$(lastword $$(subst _, ,$$*))mlrdecpars
+	cat $(word 3,$^)  |  $(word 2,$^)  `cat $(word 1,$^)`  $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 

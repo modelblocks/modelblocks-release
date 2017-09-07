@@ -13,14 +13,14 @@ for s in sys.stdin:
     s = re.sub( '/[^ ;/]*\^;[^ ;/]*', '', s )   ## remove bottom carriers. (OBSOLETE)
     s = re.sub( ';$', '', s )                   ## remove trailing ;
     s = re.sub( '/ ', ' ', s )                  ## remove trailing /
-    s = re.sub( '/([^/; ]*)/', '/', s )          ## remove A carriers
-    s = re.sub( ';([^/; ]*);', ';', s )          ## remove B carriers
+    s = re.sub( '/([^; ]*)/', '/', s )          ## remove A carriers
+    s = re.sub( ';([^/ ]*);', ';', s )          ## remove B carriers
     m = re.search('^([^ ]*) (?!pos)(?:\[[^\]]*\]:)?([^ ]*) ([^ ]*) ([^ ]*) (?:.*;)?([^ ;\n]*)[ \n]',s)
     if m is not None:
         w,p,f,j,q = m.groups()
 
-        if f=='1': SS.append( Tree(p,[Tree(w)]) )
-        else:      attachB( SS[-1], [ Tree(p,[Tree(w)]) ] )
+        if f=='1' or f.startswith('f1'): SS.append( Tree(p,[Tree(w)]) )
+        else:                            attachB( SS[-1], [ Tree(p,[Tree(w)]) ] )
 
         if q=='':
             if len(SS)==1: print( SS[0] )
@@ -32,8 +32,8 @@ for s in sys.stdin:
 
             # print( w, p, f, j, a, b )
 
-            if j=='1': SS = SS[:-2] + [ attachB( SS[-2], [ SS[-1], Tree(b) ] ) ]
-            else:      SS = SS[:-1] + [ Tree( a, [ SS[-1], Tree(b) ] ) ]
+            if j=='1' or j.startswith('j1'): SS = SS[:-2] + [ attachB( SS[-2], [ SS[-1], Tree(b) ] ) ]
+            else:                            SS = SS[:-1] + [ Tree( a, [ SS[-1], Tree(b) ] ) ]
 
             # for t in SS: print( ' ... ' + str(t) )
 

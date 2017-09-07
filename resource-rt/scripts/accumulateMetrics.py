@@ -41,7 +41,6 @@ def main():
     else:
         cols = args.cols
     if fdur != None and len(cols) > 0:
-        data.sort([args.subj, args.sentid, args.sentpos], inplace=True)
         for col in cols:
             if data[col].dtype==object:
                 continue

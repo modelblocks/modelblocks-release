@@ -57,6 +57,7 @@ RESOURCE-NAME := WordNet
 define RESOURCE-DESCR =
 
 NAME: WordNet
+MB POINTER FILE: config/user-wordnet-directory.txt
 AVAILABILITY: Free
 URL: https://wordnet.princeton.edu/wordnet/download/
 DESCRIPTION: WordNet is a large lexical database of English.

@@ -59,6 +59,7 @@ RESOURCE-NAME := OntoNotes
 define RESOURCE-DESCR =
 
 NAME: OntoNotes
+MB POINTER FILE: config/user-ontonotes-directory.txt
 AVAILABILITY: Paid
 URL: https://catalog.ldc.upenn.edu/ldc2013t19
 DESCRIPTION: Syntactic and semantic annotations of a large corpus comprising

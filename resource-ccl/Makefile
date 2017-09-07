@@ -58,6 +58,7 @@ RESOURCE-NAME := CCL unsupervised parser (Seginer, 2007)
 define RESOURCE-DESCR =
 
 NAME: CCL unsupervised parser (Seginer, 2007)
+MB POINTER FILE: config/user-ccl-directory.txt
 AVAILABILITY: Free
 URL: http://www.seggu.net/ccl/
 DESCRIPTION: The CCL unsupervised constituency parser (Seginer, 2007).

@@ -102,6 +102,9 @@ GENERAL-SCRIPTS := $(RESOURCE-GENERAL)/scripts
 RESOURCE-GIGAWORD := $(abspath $(MBDIR)/resource-gigaword)
 GIGAWORD-SCRIPTS := $(RESOURCE-GIGAWORD)/scripts
 
+RESOURCE-GLOVE := $(abspath $(MBDIR)/resource-glove)
+GLOVE-SCRIPTS := $(RESOURCE-GLOVE)/scripts
+
 RESOURCE-INCRSEM := $(abspath $(MBDIR)/resource-incrsem)
 INCRSEM-SCRIPTS := $(RESOURCE-INCRSEM)/scripts
 
@@ -126,6 +129,9 @@ LVPCFG-SCRIPTS := $(RESOURCE-LVPCFG)/scripts
 RESOURCE-NATSTORIES := $(abspath $(MBDIR)/resource-naturalstories)
 NATSTORIES-SCRIPTS := $(RESOURCE-NATSTORIES)/scripts
 
+RESOURCE-PASSAGES := $(abspath $(MBDIR)/resource-passages)
+PASSAGES-SCRIPTS := $(RESOURCE-PASSAGES)/scripts
+
 RESOURCE-ONTONOTES := $(abspath $(MBDIR)/resource-ontonotes)
 ONTONOTES-SCRIPTS := $(RESOURCE-ONTONOTES)/scripts
 
@@ -145,6 +151,7 @@ RESOURCE-TOKENIZER := $(abspath $(MBDIR)/resource-tokenizer)
 TOKENIZER-SCRIPTS := $(RESOURCE-TOKENIZER)/scripts
 
 RESOURCE-TREEBANK := $(abspath $(MBDIR)/resource-treebank)
+RESOURCE-TREEBANK-VADAS := $(abspath $(MBDIR)/resource-treebank-vadas)
 TREEBANK-SCRIPTS := $(RESOURCE-TREEBANK)/scripts
 
 RESOURCE-TIGER := $(abspath $(MBDIR)/resource-tiger)
@@ -162,8 +169,15 @@ UPPARSE-SCRIPTS := $(RESOURCE-UPPARSE)/scripts
 RESOURCE-WORDNET := $(abspath $(MBDIR)/resource-wordnet)
 WORDNET-SCRIPTS := $(RESOURCE-WORDNET)/scripts
 
+RESOURCE-XLSX2CSV := $(abspath $(MBDIR)/resource-xlsx2csv)
+XLSX2CSV-SCRIPTS := $(RESOURCE-XLSX2CSV)/scripts
+
 BIN      := bin
 GENMODEL := genmodel
+
+define TEST =
+this is a test
+endef
 
 define INCLUDE-ALL :=
 include $(RESOURCE-TOKENIZER)/Makefile
@@ -174,9 +188,13 @@ include $(RESOURCE-LCPARSE)/Makefile
 include $(RESOURCE-BNC)/Makefile
 include $(RESOURCE-TREEBANK)/Makefile
 include $(RESOURCE-GIGAWORD)/Makefile
+include $(RESOURCE-GLOVE)/Makefile
 include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
+include $(RESOURCE-RT)/Makefile
+include $(RESOURCE-FMRI)/Makefile
+include $(RESOURCE-LMEFIT)/Makefile
 include $(RESOURCE-ALICE)/Makefile
 include $(RESOURCE-BMMM)/Makefile
 include $(RESOURCE-CCL)/Makefile
@@ -184,14 +202,13 @@ include $(RESOURCE-CHILDES)/Makefile
 include $(RESOURCE-DUNDEE)/Makefile
 include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
+include $(RESOURCE-PASSAGES)/Makefile
 include $(RESOURCE-ONTONOTES)/Makefile
 include $(RESOURCE-RHACKS)/Makefile
+include $(RESOURCE-XLSX2CSV)/Makefile
 include $(RESOURCE-UCL)/Makefile
 include $(RESOURCE-UPPARSE)/Makefile
 include $(RESOURCE-WORDNET)/Makefile
-include $(RESOURCE-FMRI)/Makefile
-include $(RESOURCE-RT)/Makefile
-include $(RESOURCE-LMEFIT)/Makefile
 endef
 
 ################################################################################

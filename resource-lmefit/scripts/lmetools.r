@@ -4,6 +4,8 @@
 #
 ########################################################
 
+'%ni%' <- Negate('%in%')
+
 # Requires the optparse library
 processLMEArgs <- function() {
     library(optparse)
@@ -13,13 +15,14 @@ processLMEArgs <- function() {
         make_option(c('-A', '--all'), type='character', default=NULL, help='Effect(s) to add, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
         make_option(c('-x', '--extra'), type='character', default=NULL, help='Additional (non-main) effect(s) to add, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
         make_option(c('-c', '--corpus'), type='character', default=NULL, help='Name of corpus (for output labeling). If not specified, will try to infer from output filename.'),
-        make_option(c('-B', '--bayesian'), type='logical', action='store_true', default=FALSE, help='Use Bayesian mixed-effects model (defaults to linear mixed-effects regression model).'),
+        make_option(c('-m', '--fitmode'), type='character', default='lme', help='Fit mode. Currently supports "lme" (linear mixed effects), "bme" (Bayesian mixed effects), and "lm" (simple linear regression, which discards all random terms). Defaults to "lme".'),
         make_option(c('-R', '--restrdomain'), type='character', default=NULL, help='Basename of *.restrdomain.txt file (must be in modelblocks-repository/resource-lmefit/scripts/) containing key-val pairs for restricting domain (see file "noNVposS1.restrdomain.txt" in this directory for formatting).'),
         make_option(c('-d', '--dev'), type='logical', action='store_true', default=FALSE, help='Run evaluation on dev dataset.'),
         make_option(c('-t', '--test'), type='logical', action='store_true', default=FALSE, help='Run evaluation on test dataset.'),
         make_option(c('-e', '--entire'), type='logical', action='store_true', default=FALSE, help='Run evaluation on entire dataset.'),
         make_option(c('-s', '--splitcols'), type='character', default='subject+sentid', help='"+"-delimited list of columns to intersect in order to create a single ID for splitting dev and test (default="subject+sentid")'),
-        make_option(c('-P', '--partition'), type='numeric', default=3, help='Skip to use in dev/test partition (default = 3).'),
+        make_option(c('-M', '--partitionmod'), type='numeric', default=3, help='Modulus to use in dev/test partition (default = 3).'),
+        make_option(c('-K', '--partitiondevindices'), type='character', default='0', help='Comma-delimited list of indices to retain in dev set (default = "0").'),
         make_option(c('-N', '--filterlines'), type='logical', action='store_true', default=FALSE, help='Filter out events at line boundaries.'),
         make_option(c('-S', '--filtersents'), type='logical', action='store_true', default=FALSE, help='Filter out events at sentence boundaries.'),
         make_option(c('-C', '--filterscreens'), type='logical', action='store_true', default=FALSE, help='Filter out events at screen boundaries.'),
@@ -32,7 +35,8 @@ processLMEArgs <- function() {
         make_option(c('-n', '--indicatorlevel'), type='character', default=NULL, help='If --groupingfactor has been specified, creates an indicator variable for a particular factor level to test for interaction with the main effect.'),
         make_option(c('-i', '--crossfactor'), type='character', default=NULL, help='An interaction term to cross with (and add to) the main effect (if numeric, remains numeric, otherwise identical to --groupingfactor).'),
         make_option(c('-r', '--restrict'), type='character', default=NULL, help='Restrict the data to a subset defined by <column>+<value>. Example usage: -r pos+N.'),
-        make_option(c('-I', '--interact'), type='logical', action='store_false', default=TRUE, help="Do not include interaction term between random slopes and random intercepts.")
+        make_option(c('-I', '--interact'), type='logical', action='store_false', default=TRUE, help="Do not include interaction term between random slopes and random intercepts."),
+        make_option(c('-T', '--totable'), type='logical', action='store_true', default=FALSE, help="Preprocess data and output table only (do not regress).")
     )
     opt_parser <- OptionParser(option_list=opt_list)
     opts <- parse_args(opt_parser, positional_arguments=2)
@@ -54,12 +58,6 @@ processLMEArgs <- function() {
     } else opts$options$ablEffects <- c()
 
     opts$options$addEffects = c(opts$options$addEffects, opts$options$ablEffects)
-
-    if (params$bayesian) {
-        opts$options$fitmode = 'bayesian'
-    } else {
-        opts$options$fitmode = 'linear'
-    }
 
     if (!is.null(params$extra)) {
         opts$options$extraEffects <- strsplit(params$extra,'+',fixed=T)[[1]]
@@ -86,6 +84,8 @@ processLMEArgs <- function() {
         opts$options$splitcols <- strsplit(params$splitcols, '+', fixed=T)[[1]]
         smartPrint(paste0('Splitting dev/test on ', paste(opts$options$splitcols, collapse=' + ')))
     }
+
+    opts$options$partitiondevindices <- as.numeric(strsplit(params$partitiondevindices, ',', fixed=T)[[1]])
 
     if (length(params$groupingfactor) > 0) {
        smartPrint(paste0('Grouping the main effect by factor ', params$groupingfactor))
@@ -265,8 +265,11 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
     for (x in colnames(data)[grepl('^embd', colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
+    for (x in colnames(data)[grepl('^startembd', colnames(data))]) {
+        data[[x]] <- as.numeric(as.character(data[[x]]))
+    }
     for (x in colnames(data)[grepl('^endembd', colnames(data))]) {
-        data[[x]] <- as.logical(as.character(data[[x]]))
+        data[[x]] <- as.numeric(as.character(data[[x]]))
     }
     for (x in colnames(data)[grepl('^dlt',colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
@@ -324,15 +327,15 @@ smartPrint <- function(string,stdout=TRUE,stderr=TRUE) {
 }
 
 # Partition data
-create.dev <- function(data, i) {
-    dev <- data[(data$splitID %% i) == 0,]
+create.dev <- function(data, i, devindices) {
+    dev <- data[(data$splitID %% i) %in% devindices,]
     smartPrint('Dev dimensions')
     smartPrint(dim(dev))
     return(dev)
 }
 
-create.test <- function(data, i) {
-    test <- data[(data$splitID %% i) != 0,]
+create.test <- function(data, i, devindices) {
+    test <- data[(data$splitID %% i) %ni% devindices,]
     smartPrint('Test dimensions')
     smartPrint(dim(test))
     return(test)
@@ -364,23 +367,16 @@ baseFormula <- function(bformfile, logdepvar=FALSE, lambda=NULL) {
 }
 
 processForm <- function(formList, addEffects=NULL, extraEffects=NULL, ablEffects=NULL,
-                        groupingfactor=NULL, indicatorlevel=NULL, crossfactor=NULL, logmain=FALSE, interact=TRUE) {
+                        groupingfactor=NULL, indicatorlevel=NULL, crossfactor=NULL,
+                        logmain=FALSE, interact=TRUE, include_random=TRUE) {
     formList <- addEffects(formList, addEffects, groupingfactor, indicatorlevel, crossfactor, logmain)
     formList <- addEffects(formList, extraEffects, groupingfactor, indicatorlevel, crossfactor, FALSE)
     formList <- ablateEffects(formList, ablEffects, groupingfactor, indicatorlevel, crossfactor, logmain)
-    return(formlist2form(formList,interact))
+    return(formlist2form(formList,interact,include_random))
 }
 
 processEffects <- function(effectList, data, logtrans) {
     srcList <- effectList
-    for (i in 1:length(effectList)) {
-        tryCatch({
-            z.(data[[srcList[i]]])
-            effectList[i] <- paste('z.(',effectList[i],')',sep='')
-        }, error = function (e) {
-            return
-        })
-    }
     if (logtrans) {
         for (i in 1:length(effectList)) {
             tryCatch({
@@ -391,11 +387,23 @@ processEffects <- function(effectList, data, logtrans) {
             })
         }
     }
+    for (i in 1:length(effectList)) {
+        tryCatch({
+            z.(data[[srcList[i]]])
+            effectList[i] <- paste('z.(',effectList[i],')',sep='')
+        }, error = function (e) {
+            return
+        })
+    }
     return(effectList)
 }
 
 update.formStr <- function(x, new) {
-    return(gsub('~','',paste(update.formula(as.formula(paste('~',x)), paste('~.',new,sep='')),collapse='')))
+    if (x != '') {   
+        return(gsub('~','',paste(update.formula(as.formula(paste('~',x)), paste('~.',new,sep='')),collapse='')))
+    } else {
+        return(new)
+    }
 }
 
 addEffect <- function(formList, newEffect, groupingfactor=NULL, indicator=NULL, crossfactor=NULL) {
@@ -449,15 +457,21 @@ ablateEffects <- function(formList, ablEffects, groupingfactor=NULL, indicator=N
     return(formList)
 }
 
-formlist2form <- function(formList, interact) {
+formlist2form <- function(formList, interact, include_random=TRUE) {
     if (interact) coef <- 1 else coef <- 0
-    formStr <- paste(formList$dep, ' ~ ', formList$fixed, ' + (', coef, ' + ',
-               formList$by_subject, ' | subject)', sep='')
+    if (include_random) {
+        formStr <- paste0(formList$dep, ' ~ ', formList$fixed, ' + (', coef, ' + ',
+                   formList$by_subject, ' | subject)')
+    } else {
+        formStr <- paste(formList$dep, ' ~ ', formList$fixed)
+    }
     formList[c('dep', 'fixed', 'by_subject')] <- NULL
-    if (!interact) formStr <- paste(formStr, '+ (1 | subject)')
-    if ('other' %in% names(formList)) {
-        other <- paste(formList, collapse=' + ')
-        formStr <- paste(formStr, '+', other)
+    if (include_random) {
+        if (!interact) formStr <- paste(formStr, '+ (1 | subject)')
+        if ('other' %in% names(formList)) {
+            other <- paste(formList, collapse=' + ')
+            formStr <- paste(formStr, '+', other)
+        }
     }
     form <- as.formula(formStr)
     return(form)
@@ -484,7 +498,7 @@ regressLinearModel <- function(dataset, form) {
     nlminb <- lmerControl(optimizer="optimx",optCtrl=list(method=c("nlminb"),maxit=50000))
    
     smartPrint('-----------------------------')
-    smartPrint('Fitting with bobyqa')
+    smartPrint('Fitting linear mixed-effects model with bobyqa')
     smartPrint(paste(' ', date()))
     m <- lmer(form, dataset, REML=F, control = bobyqa)
     smartPrint('-----------------------------')
@@ -494,7 +508,7 @@ regressLinearModel <- function(dataset, form) {
     
     if (!is.null(convWarn)) {
         m1 <- m
-        smartPrint('Regressing with nlminb')
+        smartPrint('Fitting linear mixed-effects model with nlminb')
         smartPrint(paste(' ', date()))
         m2 <- lmer(form, dataset, REML=F, control = nlminb)
         convWarnN <- m2@optinfo$conv$lme4$messages
@@ -512,7 +526,19 @@ regressLinearModel <- function(dataset, form) {
     return(m)
 }
 
-regressBayesianModel <- function(dataset, form, nchains=4) {
+regressSimpleLinearModel <- function(dataset, form) {
+    smartPrint('-----------------------------')
+    smartPrint('Fitting linear model')
+    m <- lm(form, dataset)
+    smartPrint('-----------------------------')
+    smartPrint('SUMMARY:')
+    printLMSummary(m)
+    smartPrint('logLik:')
+    smartPrint(logLik(m))
+    return(m)
+}
+
+regressBayesianModel <- function(dataset, form, nchains=4, algorithm='sampling') {
     library(rstanarm)
     attach(dataset)
     depVar <- eval(parse(text=as.character(form)[[2]]))
@@ -523,30 +549,46 @@ regressBayesianModel <- function(dataset, form, nchains=4) {
     smartPrint('Fitting (MCMC) with stan_lmer')
     smartPrint(paste(' ', date()))
 
-    m <- stan_lmer(formula = form,
-                   prior_intercept = normal(mean(depVar), 1),
-                   prior = normal(0, 1),
-                   prior_covariance = decov(regularization = 2),
-                   data = dataset,
-                   chains = nchains,
-                   cores = nchains,
-                   iter = 2000,
-                   # QR = TRUE,
-                   refresh = 1
-                   )
- 
+    if (algorithm == 'sampling') {
+        m <- stan_lmer(formula = form,
+                       prior_intercept = normal(mean(depVar), 0.001),
+                       prior = normal(0, 0.001),
+                       prior_covariance = decov(),
+                       data = dataset,
+                       algorithm = 'meanfield',
+                       QR = TRUE
+                       )
+        cat('PRE-TRAINING SUMMARY:\n')
+        printBayesSummary(m)
+        m <- update(m,
+                    chains = nchains,
+                    cores = nchains,
+                    algorithm = algorithm,
+                    iter = 2000,
+                    QR = TRUE,
+                    refresh = 1
+                    )
+    } else {
+        m <- stan_lmer(formula = form,
+                       prior_intercept = normal(mean(depVar), 1),
+                       prior = normal(0, 1),
+                       prior_covariance = decov(),
+                       data = dataset,
+                       algorithm = algorithm,
+                       QR = TRUE
+                       )
+    }
+
     smartPrint('-----------------------------')
     
     smartPrint('SUMMARY:')
-    printSummary(m)
-    convWarn <- m@optinfo$conv$lme4$messages
     printBayesSummary(m)
     return(m)
 }
 
 # Output a summary of model fit
 printSummary <- function(reg) {
-    cat(paste0('LME Fit Summary (',reg@optinfo$optimizer,')\n'))
+    cat(paste0('LME Summary (',reg@optinfo$optimizer,'):\n'))
     print(summary(reg))
     cat('Convergence Warnings:\n')
     convWarn <- reg@optinfo$conv$lme4$messages
@@ -561,8 +603,19 @@ printSummary <- function(reg) {
     smartPrint(AIC(logLik(reg)))
 }
 
-printBayesSummary <- function(m) {
+printLMSummary <- function(m) {
+    cat(paste0('LM Summary:\n'))
     print(summary(m))
+}
+
+printBayesSummary <- function(m) {
+    # Get fixed effect names
+    cat(paste0('BME Summary:\n'))
+    cols = names(m$coefficients)
+    fixed = cols[substr(cols, 1, 2) != 'b[']
+    print(summary(m, pars=fixed, digits=5))
+    cat('\nError terms:\n')
+    print(VarCorr(m))
 }
 
 
@@ -578,26 +631,66 @@ binEffect <- function(x) {
     return ("negative")
 }
 
+getModelVars <- function(bform) {
+    if (bform == '') {
+        return('')
+    } else {
+        
+    }
+}
+
+getCorrelations <- function(data, bform) {
+    vars = all.vars(bform)
+    vars = vars[vars %ni% c('subject', 'word')]
+    return(cor(data[,vars]))
+}
+
 # Fit mixed-effects regression
-fitModel <- function(dataset, output, bformfile, fitmode='linear',
+fitModel <- function(dataset, output, bformfile, fitmode='lme',
                    logmain=FALSE, logdepvar=FALSE, lambda=NULL,
                    addEffects=NULL, extraEffects=NULL, ablEffects=NULL, groupingfactor=NULL,
                    indicatorlevel=NULL, crossfactor=NULL, interact=TRUE,
                    corpusname='corpus') {
+   
+    if (fitmode == 'lm') {
+        bform <- processForm(baseFormula(bformfile, logdepvar, lambda),
+                             addEffects, extraEffects, ablEffects,
+                             groupingfactor, indicatorlevel,
+                             crossfactor, logmain, interact,
+                             include_random=FALSE)
+    } else { 
+        bform <- processForm(baseFormula(bformfile, logdepvar, lambda),
+                             addEffects, extraEffects, ablEffects,
+                             groupingfactor, indicatorlevel,
+                             crossfactor, logmain, interact)
+    }
     
-    bform <- processForm(baseFormula(bformfile, logdepvar, lambda),
-                         addEffects, extraEffects, ablEffects,
-                         groupingfactor, indicatorlevel,
-                         crossfactor, logmain, interact)
-    
+    correlations = getCorrelations(dataset, bform)
+    cat('\n')
+    cat('Correlation of numeric variables in model:\n')
+    print(correlations) 
+    cat('\n')
+
     smartPrint('Regressing model:')
     smartPrint(deparse(bform))
 
-    if (fitmode=='bayesian') {
+    if (fitmode=='bme') {
         outputModel <- regressBayesianModel(dataset, bform)
+    } else if (fitmode=='lm') {
+        outputModel <- regressSimpleLinearModel(dataset, bform)
     } else {
         outputModel <- regressLinearModel(dataset, bform)
     }
+    if (params$boxcox) {
+        mixed = fitmode %in% c('lme', 'bme')
+        bc_inv_out = getBoxCoxInvBetas(dataset, bform, lambda, outputModel, mixed=mixed) 
+        beta_ms = bc_inv_out$beta_ms 
+        y_mu = bc_inv_out$y_mu 
+        printBoxCoxInvBetas(beta_ms, lambda, y_mu) 
+    } else { 
+        beta_ms = fixef(outputModel) 
+        y_mu = NULL 
+    } 
     fitOutput <- list(
         abl = ablEffects,
         ablEffects = processEffects(ablEffects, data, logmain),
@@ -605,9 +698,43 @@ fitModel <- function(dataset, output, bformfile, fitmode='linear',
         model = outputModel,
         logmain = logmain,
         logdepvar = logdepvar,
-        lambda = lambda
+        lambda = lambda,
+        beta_ms = beta_ms,
+        y_mu = y_mu,
+        correlations = correlations
     )
     save(fitOutput, file=output)
+}
+
+getBoxCoxInvBetas <- function(dataset, bform, lambda, outputModel, mixed=True) {
+    attach(dataset)
+    response = as.character(bform)[[2]]
+    if (substr(response, 1, 3) %in% c('c.(', 'z.(')) {
+        response = substr(response, 4, nchar(response)-1)
+        print(response)
+    }
+    y_mu = mean(eval(parse(text=response)))
+    detach(dataset)
+    if (mixed) {
+        fixednames = names(fixef(outputModel))
+        fixedbetas = fixef(outputModel)
+    } else {
+        fixednames = names(outputModel$coefficients)
+        fixedbetas = outputModel$coefficients
+    }
+    beta_ms = list()
+    for (f in fixednames) {
+        beta = fixedbetas[[f]]
+        beta_ms[[f]] = boxcox_inv(lambda, beta, y_mu)
+    }
+    return(list(beta_ms=beta_ms, y_mu=y_mu))
+}
+
+printBoxCoxInvBetas <- function(beta_ms, lambda, y_mu) {
+    cat(paste0('\nInverse Box-Cox estimates (ms) using lambda = ', lambda, ' and mean y = ', y_mu, '\n'))
+    for (f in names(beta_ms)) {
+        cat(paste0('Beta (ms) of effect ', f, ': ', beta_ms[[f]], '\n'))
+    }
 }
 
 # LME error analysis
@@ -635,10 +762,7 @@ error_anal <- function(data, params) {
     return(errData)
 }
 
-boxcox_rev_estimate <- function(l, beta, intercept, x_0 = 0) {
-    y_0 = (l * (x_0 * beta + intercept) + 1) ^ (1/l)
-    y_1 = (l * ((x_0 + 1) * beta + intercept) + 1) ^ (1/l)
-    print(y_0)
-    print(y_1)
-    return(y_1 - y_0)
+boxcox_inv <- function(lambda, beta, y_mu) {
+    return((lambda*(y_mu + beta) + 1)^(1/lambda) - (lambda*y_mu + 1)^(1/lambda))
 }
+

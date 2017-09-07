@@ -58,6 +58,7 @@ RESOURCE-NAME := KenLM Language Model Toolkit
 define RESOURCE-DESCR =
 
 NAME: KenLM Language Model Toolkit
+MB POINTER FILE: config/user-kenlm-directory.txt
 AVAILABILITY: Free
 URL: https://kheafield.com/code/kenlm/
 DESCRIPTION: KenLM estimates, filters, and queries language models. Estimation
@@ -80,6 +81,7 @@ RESOURCE-NAME := KenLM Language Model Toolkit (model binaries directory)
 define RESOURCE-DESCR =
 
 NAME: KenLM Language Model Toolkit (model binaries directory)
+MB POINTER FILE: config/user-kenlm-model-directory.txt
 AVAILABILITY: Free
 URL: https://kheafield.com/code/kenlm/
 DESCRIPTION: KenLM estimates, filters, and queries language models. Estimation
@@ -172,7 +174,6 @@ NgramParams:
   blockseq:
   - blocktype: NgramOrder
   - blocktype: NgramModel
-  - blocktype: NgramIZ
   blocktitle: N-gram Parameters
 endef
 define TargetBlock

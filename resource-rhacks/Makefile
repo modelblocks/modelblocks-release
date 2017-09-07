@@ -58,6 +58,7 @@ RESOURCE-NAME := R-Hacks
 define RESOURCE-DESCR =
 
 NAME: R-Hacks
+MB POINTER FILE: config/user-rhacks-directory.txt
 AVAILABILITY: Free
 URL: https://github.com/aufrank/R-hacks
 DESCRIPTION: Useful bits of code for programming and analysis in R.
@@ -81,6 +82,7 @@ endif
 $(RESOURCE-RHACKS)/scripts:
 	mkdir $(RESOURCE-RHACKS)/scripts
 
-$(RHACKS-SCRIPTS)/%.R: $$(DEP-RHACKS) $(RHACKSDIR)/%.R
+.PRECIOUS: $(RHACKS-SCRIPTS)/%.R
+$(RHACKS-SCRIPTS)/%.R: $$(DEP-RHACKS) $(RHACKSDIR)/%.R | $(RHACKS-SCRIPTS)
 	cp $(word 1, $^) $@
 

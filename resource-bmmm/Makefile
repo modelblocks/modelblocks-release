@@ -62,6 +62,7 @@ RESOURCE-NAME := The BMMM Unsupervised PoS tagger (Christodoulopoulos et al 2011
 define RESOURCE-DESCR =
 
 NAME: The BMMM Unsupervised PoS tagger (Christodoulopoulos et al 2011)
+MB POINTER FILE: config/user-bmmm-directory.txt
 AVAILABILITY: Free
 URL: https://github.com/christos-c/bmmm
 DESCRIPTION: A Bayesian multinomial mixture model (BMMM) for unsupervised

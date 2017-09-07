@@ -9,7 +9,7 @@ def main():
             fdur = name
             break
     if fdur:
-        data = data[data[fdur] > 0]
+        data = data.loc[data[fdur] != 0.0]
     else:
         sys.stderr.write('No duration column to filter on. Returning input DF.')
     data.to_csv(sys.stdout, ' ', index=False, na_rep='nan')

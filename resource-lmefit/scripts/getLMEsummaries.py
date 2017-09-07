@@ -60,11 +60,11 @@ for h in headers:
     header_row[h] = h
 
 converged = [r for r in rows if r['converged'] == 'True']
-converged.sort(key = lambda x: x['logLik'])
+converged.sort(key = lambda x: x['logLik'], reverse=True)
 converged.insert(0, header_row)
 
 nonconverged = [r for r in rows if r['converged'] == 'False']
-nonconverged.sort(key = lambda x: x['logLik'])
+nonconverged.sort(key = lambda x: x['logLik'], reverse=True)
 nonconverged.insert(0, header_row)
 
 if len(converged) > 1:

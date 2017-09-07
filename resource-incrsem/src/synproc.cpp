@@ -29,6 +29,7 @@ using namespace std;
 #include <nl-string.h>
 #include <Delimited.hpp>
 bool STORESTATE_TYPE = true;
+#include <RandoUnkWord.hpp>
 #include <BerkUnkWord.hpp>
 #include <StoreStateSynProc.hpp>
 #include <Beam.hpp>
@@ -36,6 +37,7 @@ bool STORESTATE_TYPE = true;
 uint BEAM_WIDTH      = 1000;
 uint VERBOSE         = 0;
 uint OUTPUT_MEASURES = 0;
+bool BERKUNK         = false;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -102,6 +104,7 @@ class StreamTrellis : public vector<Beam> {
 int main ( int nArgs, char* argv[] ) {
 
   uint numThreads = 10;
+  bool bUnkShrink = false;
 
   // Define model structures...
   map<FPredictor,map<F,double>> modF;
@@ -126,9 +129,12 @@ int main ( int nArgs, char* argv[] ) {
     for( int a=1; a<nArgs; a++ ) {
       if      ( 0==strcmp(argv[a],"-v") ) VERBOSE = 1;
       else if ( 0==strcmp(argv[a],"-V") ) VERBOSE = 2;
+      else if ( 0==strcmp(argv[a],"-u") ) BERKUNK = true;
       else if ( 0==strncmp(argv[a],"-b",2) ) BEAM_WIDTH = atoi(argv[a]+2);
       else if ( 0==strcmp(argv[a],"-c") ) OUTPUT_MEASURES = 1;
-      //else if ( string(argv[a]) == "t" ) STORESTATE_TYPE = true;
+      else if ( 0==strcmp(argv[a],"-d") ) NODEP = true;
+      else if ( 0==strcmp(argv[a],"-m") ) bUnkShrink = true;
+       //else if ( string(argv[a]) == "t" ) STORESTATE_TYPE = true;
       else {
         cerr << "Loading model " << argv[a] << "..." << endl;
         // Open file...
@@ -162,13 +168,13 @@ int main ( int nArgs, char* argv[] ) {
   // Add unk...
   for( auto& entry : lexW ){
     // for each word:{<category:prob>}
-    for( auto& unklistelem : lexW[unkWord(entry.first.getString().c_str())] ){
+    for( auto& unklistelem : lexW[ (BERKUNK) ? unkWordBerk(entry.first.getString().c_str()) : unkWord(entry.first.getString().c_str()) ] ){
       // for each possible unked(word) category:prob pair
       bool BAIL = false;
       for( auto& listelem : entry.second ) {
         if (listelem.first == unklistelem.first) {
           BAIL = true;
-          listelem.second = listelem.second + unklistelem.second; // merge actual likelihood and unk likelihood
+          listelem.second = listelem.second + ( ((bUnkShrink)?0.000001:1.0) * unklistelem.second ); // merge actual likelihood and unk likelihood
         }
       }
       if (not BAIL) entry.second.push_back(unklistelem);
@@ -233,8 +239,9 @@ int main ( int nArgs, char* argv[] ) {
 
             StoreState ss( q_tdec1, f_tdec1, j_tdec1, tpA.first, tpB.first, p_tdec1 );
             // For each possible lemma (context + label + prob) for preterminal of current word...
-            for( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[unkWord(w_t.getString().c_str())] ) if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(tpA.second) + log(tpB.second) + log(ktpr_p_t.second) > beams[t].rbegin()->first.first ) {
-              T t_p_t           = ktpr_p_t.first;  // label of cunnent preterminal
+            for( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[ (BERKUNK) ? unkWordBerk(w_t.getString().c_str()) : unkWord(w_t.getString().c_str()) ] )
+             if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(tpA.second) + log(tpB.second) + log(ktpr_p_t.second) > beams[t].rbegin()->first.first ) {
+              T t_p_t           = ktpr_p_t.first;  // label of current preterminal
               double probwgivkl = ktpr_p_t.second; // probability of current word given current preterminal
 
               if( VERBOSE>1 ) cout << "        W " << t_p_t << " : " << w_t << " = " << probwgivkl << endl;
@@ -317,8 +324,11 @@ int main ( int nArgs, char* argv[] ) {
       }
     }
     if( mls.size()==0 ) {
-      int u=1; auto iw=lwSent.begin(); for( ; iw!=lwSent.end(); iw++, u++ ) {
-        cout << *iw << " FAIL 1 1 ";
+      uint u=1; auto iw=lwSent.begin(); for( ; iw!=lwSent.end(); iw++, u++ ) {
+        if( u==1 && lwSent.size()==1 ) cout << *iw << " FAIL 1 1 ";
+        else if( u==1 )                cout << *iw << " FAIL 1 0 FAIL/FAIL ";
+        else if( u<lwSent.size() )   cout << *iw << " FAIL 1 1 FAIL/FAIL ";
+        else                           cout << *iw << " FAIL 0 1 ";
         if( OUTPUT_MEASURES ) cout << " " << vdSurp[u];
         cout << endl;
       }

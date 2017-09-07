@@ -21,6 +21,8 @@
 #include <iostream>
 #include <fstream>
 #include <list>
+#include <thread>
+#include <mutex>
 using namespace std;
 #include <armadillo>
 using namespace arma;
@@ -30,7 +32,9 @@ using namespace arma;
 #include <Delimited.hpp>
 bool STORESTATE_TYPE = true;
 bool STORESTATE_CHATTY = false;
+uint FEATCONFIG = 0;
 #include <StoreState.hpp>
+#include <Beam.hpp>
 
 uint BEAM_WIDTH = 1000;
 uint VERBOSE    = 0;
@@ -39,6 +43,8 @@ uint VERBOSE    = 0;
 
 char psSpcColonSpc[]  = " : ";
 char psSpcEqualsSpc[] = " = ";
+char psSpaceF[]       = " f";
+char psAmpersand[]    = "&";
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -48,49 +54,48 @@ typedef Delimited<T> B;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class BeamElement : public DelimitedSext<psX,Delimited<double>,psSpace,StoreState,psSpace,Sign,psSpace,Delimited<int>,psSpace,F,psSpace,J,psX> {
+class BeamElement : public DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX> {
  public:
-  BeamElement ( )                                                               : DelimitedSext<psX,Delimited<double>,psSpace,StoreState,psSpace,Sign,psSpace,Delimited<int>,psSpace,F,psSpace,J,psX>()            { }
-  BeamElement ( double d, const StoreState& q, const Sign& a, int i, F f, J j ) : DelimitedSext<psX,Delimited<double>,psSpace,StoreState,psSpace,Sign,psSpace,Delimited<int>,psSpace,F,psSpace,J,psX>(d,q,a,i,f,j) { }
+  BeamElement ( )                                                                 : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>()             { }
+  BeamElement ( const Sign& a, F f, E e, K k, JResponse jr, const StoreState& q ) : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>(a,f,e,k,jr,q) { }
 };
 
-class Beam : public DelimitedVector<psX,BeamElement,psLine,psX> {
- public:
-  Beam ( )        : DelimitedVector<psX,BeamElement,psLine,psX>()  { }
-  Beam ( uint i ) : DelimitedVector<psX,BeamElement,psLine,psX>(i) { }
-};
+typedef pair<double,const BeamElement&> ProbBack;
 
-class Trellis : public vector<Beam> {
+class Trellis : public vector<Beam<ProbBack,BeamElement>> {
  private:
-  DelimitedList<psX,BeamElement,psLine,psX> lbe;
+  DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX> lbe;
  public:
-  Trellis ( ) : vector<Beam>() { reserve(100); }
-  Beam& operator[] ( uint i ) { if ( i==size() ) emplace_back(); return vector<Beam>::operator[](i); }
-  const DelimitedList<psX,BeamElement,psLine,psX>& getMostLikelySequence ( ) {
-    lbe.clear();  // lbe.push_front( back().front() );
-    for( BeamElement& be : back() )  if( be.second().size()==0 ) { lbe.push_front( be ); break; }
-    if( lbe.size()>0 )  for( int t=size()-2; t>=0; t-- ) lbe.push_front( at(t).at(lbe.front().fourth()) );
+  Trellis ( ) : vector<Beam<ProbBack,BeamElement>>() { reserve(100); }
+  Beam<ProbBack,BeamElement>& operator[] ( uint i ) { if ( i==size() ) emplace_back(BEAM_WIDTH); return vector<Beam<ProbBack,BeamElement>>::operator[](i); }
+  const DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX>& getMostLikelySequence ( ) {
+    lbe.clear();  if( back().size()>0 ) lbe.push_front( pair<BeamElement,ProbBack>( back().begin()->second, back().begin()->first ) );
+    if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( at(t).get(lbe.front().second.second) );
+    if( lbe.size()>0 ) lbe.emplace_back( BeamElement(), ProbBack(0.0,BeamElement()) );
     return lbe;
   }
 };
 
+/*
 class StreamTrellis : public vector<Beam> {
  public:
   StreamTrellis ( ) : vector<Beam>(2) { }       // previous and next beam.
   Beam&       operator[] ( uint i )       { return vector<Beam>::operator[](i%2); }
   const Beam& operator[] ( uint i ) const { return vector<Beam>::operator[](i%2); }
 };
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
 int main ( int nArgs, char* argv[] ) {
 
+  uint numThreads = 10;
+
   // Define model structures...
   arma::mat matF;
+  arma::mat matJ;
   map<PPredictor,map<P,double>> modP;
   map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> lexW;
-  map<JPredictor,map<JResponse,double>> modJ;
   map<APredictor,map<A,double>> modA;
   map<BPredictor,map<B,double>> modB;
 
@@ -110,6 +115,7 @@ int main ( int nArgs, char* argv[] ) {
       if      ( 0==strcmp(argv[a],"-v") ) VERBOSE = 1;
       else if ( 0==strcmp(argv[a],"-V") ) VERBOSE = 2;
       else if ( 0==strncmp(argv[a],"-b",2) ) BEAM_WIDTH = atoi(argv[a]+2);
+      else if ( 0==strncmp(argv[a],"-f",2) ) FEATCONFIG = atoi(argv[a]+2);
       //else if ( string(argv[a]) == "t" ) STORESTATE_TYPE = true;
       else {
         cerr << "Loading model " << argv[a] << "..." << endl;
@@ -132,12 +138,29 @@ int main ( int nArgs, char* argv[] ) {
 
     // Populate model structures...
     matF = arma::mat( FResponse::getDomain().getSize(), FPredictor::getDomainSize() );
+    matJ = arma::mat( JResponse::getDomain().getSize(), JPredictor::getDomainSize() );
     for ( auto& prw : lF ) matF( prw.second().toInt(), prw.first().toInt() ) = prw.third();
     for ( auto& prw : lP ) modP[prw.first()][prw.second()] = prw.third();
     for ( auto& prw : lW ) lexW[prw.second()].emplace_back(prw.first(),prw.third());
-    for ( auto& prw : lJ ) modJ[prw.first()][prw.second()] = prw.third();
+    for ( auto& prw : lJ ) matJ( prw.second().toInt(), prw.first().toInt() ) = prw.third();
     for ( auto& prw : lA ) modA[prw.first()][prw.second()] = prw.third();
     for ( auto& prw : lB ) modB[prw.first()][prw.second()] = prw.third();
+  }
+
+  // Add unk...
+  for( auto& entry : lexW ) {
+    // for each word:{<category:prob>}
+    for( auto& unklistelem : lexW[unkWord(entry.first.getString().c_str())] ) {
+      // for each possible unked(word) category:prob pair
+      bool BAIL = false;
+      for( auto& listelem : entry.second ) {
+        if (listelem.first == unklistelem.first) {
+          BAIL = true;
+          listelem.second = listelem.second + ( 0.000001 * unklistelem.second ); // merge actual likelihood and unk likelihood
+        }
+      }
+      if (not BAIL) entry.second.push_back( DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>(unklistelem.first,0.000001*unklistelem.second) );
+    }
   }
 
   cerr<<"Models ready."<<endl;
@@ -150,9 +173,8 @@ int main ( int nArgs, char* argv[] ) {
     DelimitedList<psX,ObsWord,psSpace,psX> lwSent; // input list
 
     // Allocate space in beams to avoid reallocation...
-    for ( auto& b : beams ) b.reserve(1000);
     // Create initial beam element...
-    beams[0].emplace_back();
+    beams[0].tryAdd( BeamElement(), ProbBack(0.0,BeamElement()) );
     // Read sentence...
     cin >> lwSent >> "\n";
     cerr << "#" << linenum;
@@ -166,121 +188,110 @@ int main ( int nArgs, char* argv[] ) {
       // Create beam for current time step...
       beams[++t].clear();
 
-      // For each hypothesized storestate at previous time step...
-      for ( auto& be_tdec1 : beams[t-1] ) {
-        double            lgpr_tdec1 = be_tdec1.first();   // prob of prev storestate
-        const StoreState& q_tdec1    = be_tdec1.second();  // prev storestate
+      mutex mutexBeam;
+      vector<thread> vtWorkers;
+      for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&] (uint numt) {
 
-        if ( VERBOSE>1 ) cout << "  " << be_tdec1 << endl;
+        // For each hypothesized storestate at previous time step...
+        uint i=0; for( auto& be_tdec1 : beams[t-1] ) if( i++%numThreads==numt ){
+          double            lgpr_tdec1 = be_tdec1.first.first;      // prob of prev storestate
+          const StoreState& q_tdec1    = be_tdec1.second.sixth();  // prev storestate
 
-        // Calc distrib over response for each fork predictor...
-        arma::vec fresponses = arma::zeros( matF.n_rows );
-        list<FPredictor> lfpredictors;  q_tdec1.calcForkPredictors(lfpredictors);  lfpredictors.emplace_back();
-//        for ( auto& fpredr : q_tdec1.calcForkPredictors(lfpredictors) ) if ( fpredr != FPredictor::FPREDR_FAIL ) fresponses += matF.col( fpredr.toInt() );
-        for ( auto& fpredr : lfpredictors ) if ( fpredr.toInt() < matF.n_cols ) fresponses += matF.col( fpredr.toInt() );
-        if ( VERBOSE>1 ) for ( auto& fpredr : lfpredictors ) cout<<"    fpredr:"<<fpredr<<endl;
-        fresponses = arma::exp( fresponses );
+          if( VERBOSE>1 ) cout << "  from (" << be_tdec1.second << ")" << endl;
 
-        // Calc normalization term over responses...
-        double fnorm = arma::accu( fresponses );
+          // Calc distrib over response for each fork predictor...
+          arma::vec fresponses = arma::zeros( matF.n_rows );
+          list<FPredictor> lfpredictors;  q_tdec1.calcForkPredictors( lfpredictors, false );  lfpredictors.emplace_back();
+          for ( auto& fpredr : lfpredictors ) if ( fpredr.toInt() < matF.n_cols ) fresponses += matF.col( fpredr.toInt() );
+          if ( VERBOSE>1 ) for ( auto& fpredr : lfpredictors ) cout<<"    fpredr:"<<fpredr<<endl;
+          fresponses = arma::exp( fresponses );
 
-        // For each possible lemma (context + label + prob) for preterminal of current word...
-        for ( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[unkWord(w_t.getString().c_str())] ) {
-          K k_p_t           = ktpr_p_t.first.first;   // context of current preterminal
-          T t_p_t           = ktpr_p_t.first.second;  // label of cunnent preterminal
-          E e_p_t           = (t_p_t.getLastNonlocal()==N_NONE) ? 'N' : (t_p_t.getLastNonlocal()==N("-rN")) ? '0' : (t_p_t.getLastNonlocal().isArg()) ? t_p_t.getArity()+'1' : 'M';
-          double probwgivkl = ktpr_p_t.second;        // probability of current word given current preterminal
+          // Calc normalization term over responses...
+          double fnorm = arma::accu( fresponses );
 
-          if ( VERBOSE>1 ) cout << "     W " << k_p_t << " " << t_p_t << " : " << w_t << " = " << probwgivkl << endl;
+          // For each possible lemma (context + label + prob) for preterminal of current word...
+          for ( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[unkWord(w_t.getString().c_str())] ) {
+            if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(ktpr_p_t.second) > beams[t].rbegin()->first.first ) {
+              K k_p_t           = ktpr_p_t.first.first;   // context of current preterminal
+              T t_p_t           = ktpr_p_t.first.second;  // label of cunnent preterminal
+              E e_p_t           = (t_p_t.getLastNonlocal()==N_NONE) ? 'N' : (t_p_t.getLastNonlocal()==N("-rN")) ? '0' : (t_p_t.getLastNonlocal().isArg()) ? t_p_t.getArity()+'1' : 'M';
+              double probwgivkl = ktpr_p_t.second;        // probability of current word given current preterminal
 
-          // For each possible no-fork or fork decision...
-          for ( auto& f : {0,1} ) {
-            double scoreFork = ( uint(FResponse(f,e_p_t,k_p_t).toInt())<fresponses.n_rows ) ? fresponses(FResponse(f,e_p_t,k_p_t).toInt()) : 1.0 ;
-            if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << (scoreFork / fnorm) << endl;
+              if ( VERBOSE>1 ) cout << "     W " << k_p_t << " " << t_p_t << " : " << w_t << " = " << probwgivkl << endl;
 
-            // If preterminal prob is nonzero... 
-            PPredictor ppredictor = q_tdec1.calcPretrmTypeCondition(f,e_p_t,k_p_t);
-            if ( VERBOSE>1 ) cout << "      P " << ppredictor << "..." << endl;
-            if ( modP[ppredictor].end()!=modP[ppredictor].find(t_p_t) ) {
+              // For each possible no-fork or fork decision...
+              for ( auto& f : {0,1} ) {
+                double scoreFork = ( FResponse::exists(f,e_p_t,k_p_t) ) ? fresponses(FResponse(f,e_p_t,k_p_t).toInt()) : 1.0 ;
+                if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << (scoreFork / fnorm) << endl;
 
-              if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << t_p_t << " = " << modP[ppredictor][t_p_t] << endl;
+                // If preterminal prob is nonzero... 
+                PPredictor ppredictor = q_tdec1.calcPretrmTypeCondition(f,e_p_t,k_p_t);
+                if ( VERBOSE>1 ) cout << "      P " << ppredictor << "..." << endl;
+                if ( modP.end()!=modP.find(ppredictor) && modP[ppredictor].end()!=modP[ppredictor].find(t_p_t) ) {
 
-              // Calc probability for fork phase...
-              double probFork = (scoreFork / fnorm) * modP[q_tdec1.calcPretrmTypeCondition(f,e_p_t,k_p_t)][t_p_t] * probwgivkl;
-              if ( VERBOSE>1 ) cout << "      f: " << f <<"&"<< k_p_t << " " << scoreFork << " / " << fnorm << " * " << modP[q_tdec1.calcPretrmTypeCondition(f,e_p_t,k_p_t)][t_p_t] << " * " << probwgivkl << " = " << probFork << endl;
+                  if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << t_p_t << " = " << modP[ppredictor][t_p_t] << endl;
 
-              //NOT USED! const Sign& aAncstr = q_tdec1.getAncstr( f );                                        // aAncstr (brink of previous incomplete cat
-              Sign aPretrm;  aPretrm.first.emplace_back(k_p_t);  aPretrm.second = t_p_t;           // aPretrm (pos tag)
-              //NOT USED! Sign aLchildTmp;  const Sign& aLchild = q_tdec1.getLchild( aLchildTmp, f, e_p_t, aPretrm ); // aLchild (completed most subordinate apex)
-              list<JPredictor> jpredictors; q_tdec1.calcJoinPredictors( jpredictors, f, e_p_t, aPretrm ); // predictors for join
-              jpredictors.emplace_back();                                                               // add bias
-              double jnorm = 0.0;                                                                         // join normalization term (denominator)
-              int iFirstUnnormed = beams[t].size();                                                       // place in beam where normalization begins
-              // For each possible no-join or join decision...
-              for ( auto& j : {0,1} ) {
+                  // Calc probability for fork phase...
+                  double probFork = (scoreFork / fnorm) * modP[ppredictor][t_p_t] * probwgivkl;
+                  if ( VERBOSE>1 ) cout << "      f: " << f <<"&"<< k_p_t << " " << scoreFork << " / " << fnorm << " * " << modP[ppredictor][t_p_t] << " * " << probwgivkl << " = " << probFork << endl;
 
-                // For each possible extraction operation...
-                for ( auto& e : {'N','M','1','2','3'} ) {
-                  // For each possible left-child operation...
-                  for ( auto& opL : {'1','2','3','I','M','N','S'} ) {
+                  Sign aPretrm;  aPretrm.first().emplace_back(k_p_t);  aPretrm.second() = t_p_t;  aPretrm.third() = S_A;          // aPretrm (pos tag)
+                  const LeftChildSign aLchild( q_tdec1, f, e_p_t, aPretrm );
+                  list<JPredictor> ljpredictors; q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
+                  ljpredictors.emplace_back();                                                                  // add bias
+                  arma::vec jresponses = arma::zeros( matJ.n_rows );
+                  for ( auto& jpredr : ljpredictors ) if ( jpredr.toInt() < matJ.n_cols ) jresponses += matJ.col( jpredr.toInt() );
+                  jresponses = arma::exp( jresponses );
+                  double jnorm = arma::accu( jresponses );  // 0.0;                                           // join normalization term (denominator)
 
-                    // For each possible apex category label...
-                    APredictor apredictor = q_tdec1.calcApexTypeCondition( f, j, e_p_t, e, opL, aPretrm );  // save apredictor for use in prob calc
-                    if ( VERBOSE>1 ) cout << "         A " << apredictor << "..." << endl;
-                    for ( auto& tpA : modA[apredictor] ) {
+                  // For each possible no-join or join decision, and operator decisions...
+                  for( JResponse jresponse; jresponse<JResponse::getDomain().getSize(); ++jresponse ) {
+                    if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(jresponses[jresponse.toInt()]/jnorm) > beams[t].rbegin()->first.first ) {
+                      J j   = jresponse.getJoin();
+                      E e   = jresponse.getE();
+                      O opL = jresponse.getLOp();
+                      O opR = jresponse.getROp();
+                      double probJoin = jresponses[jresponse.toInt()] / jnorm;
+                      if ( VERBOSE>1 ) cout << "       J ... " << " : " << jresponse << " = " << probJoin << endl;
 
-                      if ( VERBOSE>1 ) cout << "         A " << apredictor << " : " << tpA.first << " = " << tpA.second << endl;
+                      // For each possible apex category label...
+                      APredictor apredictor = q_tdec1.calcApexTypeCondition( f, j, e_p_t, e, opL, aLchild );  // save apredictor for use in prob calc
+                      if ( VERBOSE>1 ) cout << "         A " << apredictor << "..." << endl;
+                      if ( modA.end()!=modA.find(apredictor) )
+                       for ( auto& tpA : modA[apredictor] ) {
+                        if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) > beams[t].rbegin()->first.first ) {
 
-                      // For each possible right-child operation...
-                      for ( auto& opR : {'1','2','3','I','M','N'} ) {
+                          if ( VERBOSE>1 ) cout << "         A " << apredictor << " : " << tpA.first << " = " << tpA.second << endl;
 
-                        // Calculate sum of weights for join predictors...
-                        if ( VERBOSE>1 ) for ( auto& jpredr : jpredictors ) cout<<"          jpredr:"<<jpredr<<" : "<<JResponse(j,e,opL,opR)<<" = "<<modJ[jpredr][JResponse(j,e,opL,opR)]<<endl;
-//                        double logscoreJ = 0.0;  for ( auto& jpredr : jpredictors ) if ( jpredr != JPredictor::JPREDR_FAIL )  logscoreJ += modJ[jpredr][JResponse(j,e,opL,opR)];
-                        double logscoreJ = 0.0;  for ( auto& jpredr : jpredictors ) if ( modJ.end() != modJ.find(jpredr) )  logscoreJ += modJ[jpredr][JResponse(j,e,opL,opR)];
+                          // For each possible brink category label...
+                          BPredictor bpredictor = q_tdec1.calcBrinkTypeCondition( f, j, e_p_t, e, opL, opR, tpA.first, aLchild );  // bpredictor for prob calc
+                          if ( VERBOSE>1 ) cout << "          B " << bpredictor << "..." << endl;
+                          if ( modB.end()!=modB.find(bpredictor) )
+                           for ( auto& tpB : modB[bpredictor] ) {
+                            lock_guard<mutex> guard( mutexBeam );
+                            if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second) > beams[t].rbegin()->first.first ) {
 
-                        // For each possible brink category label...
-                        BPredictor bpredictor = q_tdec1.calcBrinkTypeCondition( f, j, e_p_t, e, opL, opR, tpA.first, aPretrm );  // bpredictor for prob calc
-                        if ( VERBOSE>1 ) cout << "          B " << bpredictor << "..." << endl;
-                        for ( auto& tpB : modB[bpredictor] ) {
-
-//                        if ( VERBOSE>1 ) cout << "            B " << bpredictor << " : " << tpB.first << " = " << tpB.second << endl;
-
-                          // Calculate probability and storestate and add to beam...
-                          double scoreJoin = exp(logscoreJ) * tpA.second * tpB.second;  // save score for jnorm update
-                          beams[t].emplace_back( scoreJoin, StoreState( q_tdec1, f, j, e_p_t, e, opL, opR, tpA.first, tpB.first, aPretrm ), aPretrm, &be_tdec1-&beams[t-1][0], f, j );
-                          // Update join normalization term...
-                          jnorm += scoreJoin;
-
-                          if ( VERBOSE>1 ) cout << "            " << q_tdec1 << "  ==(f" << f << ",j" << j << ",e_p_t" << e_p_t << ",e" << e << "," << opL << "," << opR << "," << tpA.first << "," << tpB.first << "," << aPretrm << ")=>  " << beams[t].back().second() << "  q" << lgpr_tdec1 << " f" << log(probFork) << " (j" << logscoreJ << " a" << log(tpA.second) << " b" << log(tpB.second) << " = " << log(scoreJoin) << ")" << endl;
+                              // Calculate probability and storestate and add to beam...
+                              StoreState ss( q_tdec1, f, j, e_p_t, e, opL, opR, tpA.first, tpB.first, aPretrm, aLchild );
+                              if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
+                                beams[t].tryAdd( BeamElement( aPretrm, f,e_p_t,k_p_t, jresponse, ss ), ProbBack( lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second), be_tdec1.second ) );
+                                if( VERBOSE>1 ) cout << "                send (" << be_tdec1.second << ") to (" << ss << ") with "
+                                                     << (lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second)) << endl;
+                              }
+                            }
+                          }
                         }
                       }
                     }
                   }
                 }
               }
-              // Normalize join probabilities...
-              if ( VERBOSE>1 ) cout << "        renorm " << iFirstUnnormed << " " << beams[t].size() << endl;
-              for ( auto it=beams[t].begin()+iFirstUnnormed; it!=beams[t].end(); it++ )  it->first() = lgpr_tdec1 + log(probFork) + log(it->first()) - log(jnorm);
             }
           }
-          if ( VERBOSE>1 ) cout << "      end Fs" << endl;
         }
-        if ( VERBOSE>1 ) cout << "    end lemmas" << endl; 
-      }
+      }, numtglobal ));
 
-      if ( VERBOSE>1 ) cout << "with spurious sentence breaks: beams[t].size()=" << beams[t].size() << endl;
-
-      // Remove sentence breaks before end of sentence...
-      if ( t != lwSent.size() )
-        for ( auto it=beams[t].begin(); it<beams[t].end(); it++ )
-          if ( it->second().size()==0 ) beams[t].erase(it);
-
-      if ( VERBOSE>1 ) cout << "without spurious sentence breaks: beams[t].size()=" << beams[t].size() << endl;
-
-      // Sort and truncate beam...
-      std::sort( beams[t].begin(), beams[t].end(), [] (const BeamElement& a, const BeamElement& b) { return b<a; } );
-      if ( beams[t].size() > BEAM_WIDTH ) beams[t].erase( beams[t].begin()+BEAM_WIDTH, beams[t].end() );
+      for( auto& w : vtWorkers ) w.join();
 
       // Write output...
       cerr << " (" << beams[t].size() << ")";
@@ -289,11 +300,23 @@ int main ( int nArgs, char* argv[] ) {
     cerr << endl;
     if ( VERBOSE ) cout << "MLS" << endl;
 
-    /// cout << beams.getMostLikelySequence() << endl;
     auto& mls = beams.getMostLikelySequence();
-    auto ibe=next(mls.begin()); auto iw=lwSent.begin(); for ( ; ibe!=mls.end() && iw!=lwSent.end(); ibe++, iw++ )
-      cout << *iw << " " << ibe->third() << " " << ibe->fifth() << " " << ibe->sixth() << " " << ibe->second() << endl;
-    if ( mls.size()==0 ) cout << "FAIL FAIL 1 1 " << endl;
+    if( mls.size()>0 ) {
+      int u=1; auto ibe=next(mls.begin()); auto iw=lwSent.begin(); for( ; ibe!=mls.end() && iw!=lwSent.end(); ibe++, iw++, u++ ) {
+        cout << *iw << " " << ibe->first;
+//ibe->first.first() << " " << ibe->first.second() << " " << ibe->first.third() << " " << ibe->first.fourth();
+//        if( OUTPUT_MEASURES ) cout << " " << vdSurp[u];
+        cout << endl;
+      }
+    }
+    if( mls.size()==0 ) {
+      cout << "FAIL FAIL 1 1 " << endl;
+//      int u=1; auto iw=lwSent.begin(); for( ; iw!=lwSent.end(); iw++, u++ ) {
+//        cout << *iw << " FAIL 1 1 ";
+//        if( OUTPUT_MEASURES ) cout << " " << vdSurp[u];
+//        cout << endl;
+//      }
+    }
   }
 }
 

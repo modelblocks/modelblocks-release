@@ -55,8 +55,17 @@ while ( <> ) {
   s/ \)/\)/g;
   s/\)\(/\) \(/g;
 
+  ## conjoin disjoint trees with root node
+  s/^(\(*[^S\( ].*)$/\(S \1\)/;
+  s/^(.*[^\)]\))$/\(S \1\)/;
+
+  ## conjoin erroneously split punctuation
+  s/\(\. \?\) \(\. \?\)/\(\? \?\)/g;
+  
   #### post-coling12 fixes
   if (!$opts{c}) {
+    # correct wrong type of empty category
+    s/\((WH[^ ]*-([0-9]+) )(?!.* \*T\*-\2)(.* )\*-\2\)/\(\1\3\*T\*-\2\)/;
     # line 200
     s/\(NP-SBJ \(PRP he\) \) \(VP \(VBZ says\)  \(NP \(-NONE- \*-2\) \)\)/\(NP-SBJ \(PRP he\) \) \(VP \(VBZ says\)  \(NP \(-NONE- \*T\*-2\) \)\)/;
     # line 1628 from 02to21
@@ -481,6 +490,8 @@ while ( <> ) {
   s/\[/\(/g;
   s/\]/\)/g;
 
+  ## VBN .. by without (-NONE- *) gets it...
+  s/\(VBN (?!traveled|forced|pressured|said)([^ \)]*)\)([^ ]* *\(PP \(IN by)/\(VBN \1\) \(NP \(-NONE- \*\)\)\2/g;
 
   ## output...
   print $_;
