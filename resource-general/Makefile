@@ -102,6 +102,9 @@ GENERAL-SCRIPTS := $(RESOURCE-GENERAL)/scripts
 RESOURCE-GIGAWORD := $(abspath $(MBDIR)/resource-gigaword)
 GIGAWORD-SCRIPTS := $(RESOURCE-GIGAWORD)/scripts
 
+RESOURCE-GLOVE := $(abspath $(MBDIR)/resource-glove)
+GLOVE-SCRIPTS := $(RESOURCE-GLOVE)/scripts
+
 RESOURCE-INCRSEM := $(abspath $(MBDIR)/resource-incrsem)
 INCRSEM-SCRIPTS := $(RESOURCE-INCRSEM)/scripts
 
@@ -148,6 +151,7 @@ RESOURCE-TOKENIZER := $(abspath $(MBDIR)/resource-tokenizer)
 TOKENIZER-SCRIPTS := $(RESOURCE-TOKENIZER)/scripts
 
 RESOURCE-TREEBANK := $(abspath $(MBDIR)/resource-treebank)
+RESOURCE-TREEBANK-VADAS := $(abspath $(MBDIR)/resource-treebank-vadas)
 TREEBANK-SCRIPTS := $(RESOURCE-TREEBANK)/scripts
 
 RESOURCE-TIGER := $(abspath $(MBDIR)/resource-tiger)
@@ -184,6 +188,7 @@ include $(RESOURCE-LCPARSE)/Makefile
 include $(RESOURCE-BNC)/Makefile
 include $(RESOURCE-TREEBANK)/Makefile
 include $(RESOURCE-GIGAWORD)/Makefile
+include $(RESOURCE-GLOVE)/Makefile
 include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile

@@ -1,4 +1,5 @@
 #!/usr/bin/Rscript
+options(width=200) 
 
 ########################################################
 #
@@ -82,6 +83,11 @@ for (effect in params$addEffects) {
     smartPrint(paste0('Range of main effect z.(', effect, '): ', max(data[[effect]])-min(data[[effect]])))
 }
 
+if (params$totable) {
+   smartPrint('Writing experiment data table to file') 
+   write.table(data, output, sep=' ', quote=FALSE, row.names=FALSE, na="nan")
+   quit()
+}
 
 if (length(params$groupingfactor) > 0) {
     for (e in params$addEffects) {

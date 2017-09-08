@@ -35,7 +35,8 @@ processLMEArgs <- function() {
         make_option(c('-n', '--indicatorlevel'), type='character', default=NULL, help='If --groupingfactor has been specified, creates an indicator variable for a particular factor level to test for interaction with the main effect.'),
         make_option(c('-i', '--crossfactor'), type='character', default=NULL, help='An interaction term to cross with (and add to) the main effect (if numeric, remains numeric, otherwise identical to --groupingfactor).'),
         make_option(c('-r', '--restrict'), type='character', default=NULL, help='Restrict the data to a subset defined by <column>+<value>. Example usage: -r pos+N.'),
-        make_option(c('-I', '--interact'), type='logical', action='store_false', default=TRUE, help="Do not include interaction term between random slopes and random intercepts.")
+        make_option(c('-I', '--interact'), type='logical', action='store_false', default=TRUE, help="Do not include interaction term between random slopes and random intercepts."),
+        make_option(c('-T', '--totable'), type='logical', action='store_true', default=FALSE, help="Preprocess data and output table only (do not regress).")
     )
     opt_parser <- OptionParser(option_list=opt_list)
     opts <- parse_args(opt_parser, positional_arguments=2)
@@ -680,8 +681,9 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
     } else {
         outputModel <- regressLinearModel(dataset, bform)
     }
-    if (params$boxcox) { 
-        bc_inv_out = getBoxCoxInvBetas(dataset, bform, lambda, outputModel) 
+    if (params$boxcox) {
+        mixed = fitmode %in% c('lme', 'bme')
+        bc_inv_out = getBoxCoxInvBetas(dataset, bform, lambda, outputModel, mixed=mixed) 
         beta_ms = bc_inv_out$beta_ms 
         y_mu = bc_inv_out$y_mu 
         printBoxCoxInvBetas(beta_ms, lambda, y_mu) 
@@ -704,7 +706,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
     save(fitOutput, file=output)
 }
 
-getBoxCoxInvBetas <- function(dataset, bform, lambda, outputModel) {
+getBoxCoxInvBetas <- function(dataset, bform, lambda, outputModel, mixed=True) {
     attach(dataset)
     response = as.character(bform)[[2]]
     if (substr(response, 1, 3) %in% c('c.(', 'z.(')) {
@@ -713,11 +715,16 @@ getBoxCoxInvBetas <- function(dataset, bform, lambda, outputModel) {
     }
     y_mu = mean(eval(parse(text=response)))
     detach(dataset)
-    fixed = names(fixef(outputModel))
-    fixed = fixed[! fixed %in% c('(Intercept)')]
+    if (mixed) {
+        fixednames = names(fixef(outputModel))
+        fixedbetas = fixef(outputModel)
+    } else {
+        fixednames = names(outputModel$coefficients)
+        fixedbetas = outputModel$coefficients
+    }
     beta_ms = list()
-    for (f in fixed) {
-        beta = fixef(outputModel)[[f]]
+    for (f in fixednames) {
+        beta = fixedbetas[[f]]
         beta_ms[[f]] = boxcox_inv(lambda, beta, y_mu)
     }
     return(list(beta_ms=beta_ms, y_mu=y_mu))

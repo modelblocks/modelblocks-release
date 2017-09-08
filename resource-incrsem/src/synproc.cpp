@@ -325,9 +325,9 @@ int main ( int nArgs, char* argv[] ) {
     }
     if( mls.size()==0 ) {
       uint u=1; auto iw=lwSent.begin(); for( ; iw!=lwSent.end(); iw++, u++ ) {
-        if( u==1 && vdSurp.size()==1 ) cout << *iw << " FAIL 1 1 ";
+        if( u==1 && lwSent.size()==1 ) cout << *iw << " FAIL 1 1 ";
         else if( u==1 )                cout << *iw << " FAIL 1 0 FAIL/FAIL ";
-        else if( u<vdSurp.size()-1 )   cout << *iw << " FAIL 1 1 FAIL/FAIL ";
+        else if( u<lwSent.size() )   cout << *iw << " FAIL 1 1 FAIL/FAIL ";
         else                           cout << *iw << " FAIL 0 1 ";
         if( OUTPUT_MEASURES ) cout << " " << vdSurp[u];
         cout << endl;

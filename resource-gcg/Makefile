@@ -28,6 +28,26 @@
 
 all:  wsj23-comparativized-gcg15-nofail.wsj02to21-comparativized-gcg15-1671-5sm.fullberk.parsed.syneval
 
+ifndef MAKED
+$(info Building source code dependencies using recursive sub-make to $(RESOURCE-GCG)/Makefile...)
+## create dependencies for files in python, src, include directories
+DUMMY := $(shell $(MAKE) MAKED=1 MAKECONFIG=1 $(subst .py,.d,$(wildcard $(GCG-SCRIPTS)/*.py)) $(subst .cpp,.d,$(wildcard $(SRC)/*.cpp)))
+$(info Source code dependencies built and loaded.)
+endif
+
+## include those dependencies
+include $(wildcard $(RESOURCE-GCG)/*/*.d)
+
+ifdef MAKED
+#### python dependencies
+.PRECIOUS:  $(GCG-SCRIPTS)/%.d
+$(GCG-SCRIPTS)/%.d:  $(GCG-SCRIPTS)/%.py
+	echo '$@: \'  >  $@   #' ##
+	egrep '^from|^import' $<  |  sed 's/^from \(.*\) import .*/$$(wildcard $$(GCG-SCRIPTS)\/\1.py) \\/;s/^import \(.*\)$$/$$(wildcard $$(GCG-SCRIPTS)\/\1.py) \\/'  >>  $@
+	echo ''  >>  $@
+	cat $@  |  sed 's/\.d:/\.py:/'  >>  $@
+endif
+
 ################################################################################
 #
 #  GCG reannotation
@@ -44,6 +64,8 @@ all:  wsj23-comparativized-gcg15-nofail.wsj02to21-comparativized-gcg15-1671-5sm.
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.morphed.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  %.linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
+%.linetrees.validation:  %.linetrees  $(GCG-SCRIPTS)/validate-linetrees.py  $(GCG-SCRIPTS)/validate-linetrees.d
+	cat $<  |  python $(word 2,$^)  >  $@
 
 define ParamVal
 GCG:
@@ -156,8 +178,10 @@ endef
 
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
 .PRECIOUS: %.cuegraphs
-%.cuegraphs:  %.protographs  $(GCG-SCRIPTS)/protographs2cuegraphs.pl
-	cat $<  |  perl -p $(word 2,$^)  >  $@
+%.cuegraphs:  %.linetrees  $(GCG-SCRIPTS)/linetrees2cuegraphs.py
+	cat $<  |  python $(word 2,$^)  >  $@
+#%.cuegraphs:  %.protographs  $(GCG-SCRIPTS)/protographs2cuegraphs.pl
+#	cat $<  |  perl -p $(word 2,$^)  >  $@
 
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
 .PRECIOUS: %.refconts
