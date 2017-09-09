@@ -11,6 +11,12 @@ import semcuegraph
 
 numpy.set_printoptions(linewidth=200)
 
+I = 100 #100    ## number of iterations
+Y = 10 #50    ## number of types
+L = 5       ## number of dep labels (arg positions)
+alpha = 0.1
+beta  = 0.1  ## pseudocount mass
+
 ################################################################################
 
 def numberTerminals( t, n=0 ):
@@ -76,40 +82,81 @@ def setKL( t, KINTS ):
 ################################################################################
 
 def calcBackward( t, L, M, N ):                ## bottom-up likelihood calculation
+  t.l = L + ( int( t.c.partition('|')[0] ) if t.c[0]!='|' else 0 )
   t.u = numpy.ones((Y,1))
   for st in t.ch:
     if st.c[0]!='0': calcBackward( st, L, M, N )
-    l = int( st.c.partition('|')[0] ) if st.c[0]!='|' else 0
-    if st.c[0]!='0': t.u = numpy.multiply( t.u, M[[L+l],:,:].reshape((Y,Y)).dot( st.u )  )
-    else:            t.u = numpy.multiply( t.u, N[:,[uniqInt(st.c)]] )
+    t.u = numpy.multiply( t.u, M[st.l].dot( st.u ) if st.c[0]!='0' else N[:,[uniqInt(st.c)]] )
+
+V0 = numpy.zeros((1,Y))
+V0[0,0] = 1
+
+def calcForward( t, M, N, vAbove=V0 ):
+  t.v = vAbove.dot( M[t.l] )
+#  print( 'result', t.c, t.v.dot( t.u ) )
+  ## cumulative from right...
+  vR = numpy.ones((1,Y))
+  for st in reversed( t.ch ):
+    st.v = vR
+    vR = numpy.multiply( vR, M[st.l].dot( st.u ).T if st.c[0]!='0' else N[:,[uniqInt(st.c)]].T )
+  ## cumulative from left...
+  vL = t.v
+  for st in t.ch:
+    if st.c[0]!='0': calcForward( st, M, N, numpy.multiply( st.v, vL ) )
+    vL = numpy.multiply( vL, M[st.l].dot( st.u ).T if st.c[0]!='0' else N[:,[uniqInt(st.c)]].T )
 
 ################################################################################
 
-def sampleTypes( t, L, M, N, yAbove=0 ):        ## top-down sampling
-  l = int( t.c.partition('|')[0] ) if t.c[0]!='|' else 0
-  post = numpy.multiply( M[[L+l],[yAbove],:], t.u.T ).reshape(Y)
+def sampleTypes( t, M, N, yAbove=0 ):        ## top-down sampling
+#  l = int( t.c.partition('|')[0] ) if t.c[0]!='|' else 0
+  post = numpy.multiply( M[[t.l],[yAbove],:], t.u.T ).reshape(Y)
   t.y = numpy.random.choice( Y, p=post/post.sum() )
   for st in t.ch:
-    if st.c[0]!='0': sampleTypes( st, L, M, N, t.y )
+    if st.c[0]!='0': sampleTypes( st, M, N, t.y )
 
 ################################################################################
 
-def addToCount( p, t, L, Mcount, Ncount, yAbove=0 ):
-  l = int( t.c.partition('|')[0] ) if t.c[0]!='|' else 0
+def addToCount( p, t, Mcount, Ncount, yAbove=0 ):
+#  l = int( t.c.partition('|')[0] ) if t.c[0]!='|' else 0
   if t.c[0]=='0': Ncount[yAbove,uniqInt(t.c)] += p
   else:
-    Mcount[L+l,yAbove,t.y   ] += p
-    Mcount[L-l,t.y   ,yAbove] += p
+    Mcount[t.l,    yAbove,t.y   ] += p
+    Mcount[2*L-t.l,t.y   ,yAbove] += p
     for st in t.ch:
-      addToCount( p, st, L, Mcount, Ncount, t.y )
+      addToCount( p, st, Mcount, Ncount, t.y )
 
-################################################################################
-################################################################################
+def rownormalize( M ):
+  for y in range( Y ):
+    denom = M[y].sum()
+    if denom!=0.0: M[y] /= denom
+#    M[[y],:] /= M[[y],:].sum()
+  return M
 
-def averageTypeOutcomes( p, t, Ymap, N2N, src='00', srcy=-1 ):
-  if t.c[0]=='0': Ymap[ N2N[int(src[:2])] ][ '-x%:' + t.c[2:] + '|%y' + str(srcy) ] += p
+def addToModel( p, t, M, N, C, D, vAbove=V0 ):
+  if t.c[0]=='0':
+    D[:,uniqInt(t.c)] += p * vAbove.reshape(Y)/vAbove.sum()  #* N[:,uniqInt(t.c)]
+#    D[:,uniqInt(t.c)] += p * numpy.multiply( vAbove.reshape(Y)/vAbove.sum(), N[:,uniqInt(t.c)] )
+#    print( D )
+  else:
+#    print( ( vAbove.T/vAbove.sum() ).dot( t.u.T/t.u.sum() ) )
+#    C[t.l]            += p * ( vAbove.T/vAbove.sum() ).dot( t.u.T/t.u.sum() )  * M[t.l]
+    contrib = p * numpy.multiply( vAbove.T/vAbove.sum(), rownormalize( numpy.multiply( M[t.l], t.u.T ) ) )
+    C[t.l]     += contrib
+    C[2*L-t.l] += contrib.T
+#    C[t.l]            += p * numpy.multiply( vAbove.T/vAbove.sum(), rownormalize( numpy.multiply( M[t.l], t.u.T ) ) )
+#    C[t.l]            += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( M[t.l].dot( numpy.diagflat( t.u/t.u.sum() ) ) )
+#    C[t.l]            += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( rownormalize( M[t.l].dot( numpy.diagflat( t.u ) ) ) )
+#    C[[t.l],:,:]      += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( rownormalize( M[[t.l],:,:].reshape((Y,Y)).dot( numpy.diagflat( t.u ) ) ) )
   for st in t.ch:
-    averageTypeOutcomes( p, st, Ymap, N2N, re.sub('.*[|]','',t.c), t.y )
+    addToModel( p, st, M, N, C, D, t.v )
+
+################################################################################
+################################################################################
+
+def mergeTypeOutcomes( p, t, Ymap, N2N, src='00', srcy=-1 ):
+  if t.c[0]=='0': Ymap[ N2N[int(src[:2])] ][ '-x%' + t.c.split(':')[1] + '|%y' + str(srcy) ] += p
+  for st in t.ch:
+    mergeTypeOutcomes( p, st, Ymap, N2N, re.sub('.*[|]','',t.c), t.y )
 
 ################################################################################
 
@@ -126,12 +173,6 @@ def annotY( t, Ymap, ctr=0 ):
 
 ################################################################################
 ################################################################################
-
-I = 10 #100    ## number of iterations
-Y = 5 #50    ## number of types
-L = 5       ## number of dep labels (arg positions)
-alpha = 0.1
-beta  = 0.1  ## pseudocount mass
 
 ## read in corpus and convert to traversal trees...
 lt       = [ ]
@@ -175,24 +216,60 @@ for i in range( I ):
     for p,t,trav in lpttrav:
 
       ## draw types from model and observations...
-      calcBackward ( trav, L, M, N )   ## bot-up
-      sampleTypes  ( trav, L, M, N )   ## top-dn
+      calcBackward ( trav, L, M, N )   ## bot-up (inside)
+      sampleTypes  ( trav,    M, N )   ## top-dn (outside)
 
       ## recalculate counts...
-      addToCount( p, trav, L, C, D )
+      addToCount( p, trav, C, D )
 
-      logprob += numpy.log( p * M[0,0,:].dot( trav.u ) )
+#      logprob += numpy.log( p * M[L+0,0].dot( trav.u ) )
+      logprob += numpy.log( p * M[L+0,0,:].reshape((1,Y)).dot( trav.u ) )
 
   sys.stderr.write( 'iteration ' + str(i) + ' logprob: ' + str(logprob) + '\n' )
+
+## expectation maximization iterations...
+for i in range( I ):
+  logprob = 0.0
+  ## iterate over corpus...
+  for lpttrav in llpttrav:
+    for p,t,trav in lpttrav:
+      calcBackward ( trav, L, M, N )   ## bot-up (inside)
+      calcForward  ( trav,    M, N )   ## top-dn (outside)
+      logprob += numpy.log( p * trav.v.dot( trav.u ) )
+#      logprob += numpy.log( p * M[L+0,0].dot( trav.u ) )
+#      logprob += numpy.log( p * M[L+0,0,:].reshape((1,Y)).dot( trav.u ) )
+  sys.stderr.write( 'iteration ' + str(i) + ' logprob: ' + str(logprob) + '\n' )
+  C.fill( 0.0 )
+  D.fill( 0.0 )
+  ## iterate over corpus...
+  for lpttrav in llpttrav:
+    for p,t,trav in lpttrav:
+      addToModel( p, trav, M, N, C, D )
+#  sys.stderr.write( str(numpy.linalg.norm(M,ord=1,axis=2)[:,:,None]) )
+  M.fill( 0.0 )
+  N.fill( 0.0 )
+  for l in range( 2*L ):
+    for y in range( Y ):
+      denom = C[l,y].sum()
+      if denom!=0.0: M[l,y] = C[l,y] / denom
+#      denom = C[[l],[y],:].sum()
+#      if denom!=0.0: M[[l],[y],:] = C[[l],[y],:] / denom
+#    M[[l],:,:] = C[[l],:,:] / numpy.linalg.norm(M[[l],:,:],ord=1,axis=1).reshape((Y,1))
+#  M = C / numpy.linalg.norm(C,ord=1,axis=2)[:,:,None]
+#  for y in range( Y ):
+#    denom = N[[y],:].sum()
+#    if denom!=0.0: N[[y],:] = D[[y],:] / denom
+  N = D / numpy.linalg.norm(D,ord=1,axis=1)[:,None]
+#  N = D / numpy.linalg.norm(D,ord=1,axis=1)
 
 ## dump models...
 for l in range( 2*L ):
   for y in range( Y ):
-    for z in range( Y ):
-      print( 'M ' + str(l) + ' ' + str(y) + ' : ' + str(z) + ' = ' + str(M[l,y,z]) )
+    for p,z in sorted( [ (M[l,y,z],z) for z in range(Y) ], reverse=True ):   #range( Y ):
+      print( 'M ' + str(l) + ' ' + str(y) + ' : ' + str(z) + ' = ' + str(p) )   #str(M[l,y,z]) )
 for y in range( Y ):
-  for k in KINTS:
-    print( 'K ' + str(y) + ' : ' + k + ' = ' + str(N[y,KINTS[k]]) )
+  for p,k in sorted( [ (N[y,KINTS[k]],k) for k in KINTS ], reverse=True ):     #KINTS:
+    print( 'K ' + str(y) + ' : ' + k + ' = ' + str(p) )    #str(N[y,KINTS[k]]) )
 
 ## print types on trees...
 for i,lpttrav in enumerate( llpttrav ):
@@ -203,7 +280,7 @@ for i,lpttrav in enumerate( llpttrav ):
     mapFactoredToOrig( t, N2N )
 #    print( trav )
 #    print( N2N )
-    averageTypeOutcomes( p, trav, Ymap, N2N )
+    mergeTypeOutcomes( p, trav, Ymap, N2N )
 #    print( Ymap )
 
 #  print( semcuegraph.SemCueGraph(lt[i]) )
