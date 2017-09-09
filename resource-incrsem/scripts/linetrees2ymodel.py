@@ -12,7 +12,7 @@ import semcuegraph
 numpy.set_printoptions(linewidth=200)
 
 I = 100 #100    ## number of iterations
-Y = 10 #50    ## number of types
+Y = 50 #50    ## number of types
 L = 5       ## number of dep labels (arg positions)
 alpha = 0.1
 beta  = 0.1  ## pseudocount mass
@@ -125,22 +125,21 @@ def addToCount( p, t, Mcount, Ncount, yAbove=0 ):
     for st in t.ch:
       addToCount( p, st, Mcount, Ncount, t.y )
 
-def rownormalize( M ):
-  for y in range( Y ):
-    denom = M[y].sum()
-    if denom!=0.0: M[y] /= denom
-#    M[[y],:] /= M[[y],:].sum()
-  return M
+#def rownormalize( M ):
+#  for y in range( Y ):
+#    denom = M[y].sum()
+#    if denom!=0.0: M[y] /= denom
+##    M[[y],:] /= M[[y],:].sum()
+#  return M
 
 def addToModel( p, t, M, N, C, D, vAbove=V0 ):
   if t.c[0]=='0':
-    D[:,uniqInt(t.c)] += p * vAbove.reshape(Y)/vAbove.sum()  #* N[:,uniqInt(t.c)]
-#    D[:,uniqInt(t.c)] += p * numpy.multiply( vAbove.reshape(Y)/vAbove.sum(), N[:,uniqInt(t.c)] )
-#    print( D )
+    D[:,uniqInt(t.c)] += p * vAbove.reshape(Y)/vAbove.sum()
   else:
-#    print( ( vAbove.T/vAbove.sum() ).dot( t.u.T/t.u.sum() ) )
 #    C[t.l]            += p * ( vAbove.T/vAbove.sum() ).dot( t.u.T/t.u.sum() )  * M[t.l]
-    contrib = p * numpy.multiply( vAbove.T/vAbove.sum(), rownormalize( numpy.multiply( M[t.l], t.u.T ) ) )
+#    contrib = p * numpy.multiply( vAbove.T/vAbove.sum(), rownormalize( numpy.multiply( M[t.l], t.u.T ) ) )
+    contrib = numpy.multiply( vAbove.T, numpy.multiply( M[t.l], t.u.T ) )
+    contrib *= p / contrib.sum()
     C[t.l]     += contrib
     C[2*L-t.l] += contrib.T
 #    C[t.l]            += p * numpy.multiply( vAbove.T/vAbove.sum(), rownormalize( numpy.multiply( M[t.l], t.u.T ) ) )
