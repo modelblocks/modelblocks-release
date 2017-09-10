@@ -59,10 +59,11 @@ def relabel( t ):
     if '-lM' in t.ch[0].c:                        p = re.findall('^[^-]*',t.ch[1].c)[0] + ''.join(deps(t.ch[1].c,'abcd')) + lcpsi + rcpsi       ## Ma
     if '-lM' in t.ch[1].c:                        p = re.findall('^[^-]*',t.ch[0].c)[0] + ''.join(deps(t.ch[0].c,'abcd')) + lcpsi + rcpsi       ## Mb
     if '-lG' in t.ch[0].c:                        p = re.sub( '(.*)'+deps(t.ch[1].c,'g')[-1], '\\1', t.ch[1].c, 1 ) + lcpsi                     ## G
-    if '-lH' in t.ch[1].c:                        p = re.sub( '(.*)'+deps(t.ch[0].c,'h')[-1], '\\1', t.ch[0].c, 1 ) + rcpsi                     ## H
+    if '-lH' in t.ch[1].c:                        p = re.sub( '(.*)'+deps(t.ch[0].c,'h')[-1], '\\1', t.ch[0].c, 1 ) + ''.join( deps(re.sub(deps(t.ch[0].c,'h')[-1][3:-1],'',t.ch[1].c),'ghirv') )   ## H
     if '-lI' in t.ch[1].c:                        p = re.findall('^[^-]*',t.ch[0].c)[0] + ''.join(deps(t.ch[0].c,'abcd')[:-1]) + lcpsi + ''.join( deps(t.ch[1].c,'ghirv')[:-1] )  ## I
     if '-lR' in t.ch[0].c:                        p = t.ch[1].c                                                                                 ## Ra (off-spec)
     if '-lR' in t.ch[1].c:                        p = t.ch[0].c                                                                                 ## R
+#    print( p + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c )
     ## add calculated parent of children as unary branch if different from t.c...
     if re.sub('-[lx][^-]*','',p) != re.sub('-[lx][^-]*','',t.c):
       if VERBOSE: print( 'T rule: ' + t.c + ' -> ' + p )

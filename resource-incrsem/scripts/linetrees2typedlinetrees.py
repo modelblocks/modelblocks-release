@@ -11,11 +11,11 @@ import semcuegraph
 
 numpy.set_printoptions(linewidth=200)
 
-I = 100 #100    ## number of iterations
-Y = 50 #50    ## number of types
-L = 5       ## number of dep labels (arg positions)
-alpha = 0.1
-beta  = 0.1  ## pseudocount mass
+I = 100                   ## number of iterations
+Y = int(sys.argv[1])  #50 ## number of types
+L = 5                     ## number of dep labels (arg positions)
+alpha = 0.1               ## pseudocount mass for word distribs
+beta  = 0.1               ## pseudocount mass for transition distribs
 
 ################################################################################
 
@@ -87,6 +87,7 @@ def calcBackward( t, L, M, N ):                ## bottom-up likelihood calculati
   for st in t.ch:
     if st.c[0]!='0': calcBackward( st, L, M, N )
     t.u = numpy.multiply( t.u, M[st.l].dot( st.u ) if st.c[0]!='0' else N[:,[uniqInt(st.c)]] )
+#  print( t.c, t.u )
 
 V0 = numpy.zeros((1,Y))
 V0[0,0] = 1
@@ -105,6 +106,22 @@ def calcForward( t, M, N, vAbove=V0 ):
     if st.c[0]!='0': calcForward( st, M, N, numpy.multiply( st.v, vL ) )
     vL = numpy.multiply( vL, M[st.l].dot( st.u ).T if st.c[0]!='0' else N[:,[uniqInt(st.c)]].T )
 
+def calcViterbi( t, LOGM, LOGN ):
+  if t.c[0]=='0':
+    t.u = LOGN[:,[uniqInt(t.c)]]
+  else:
+    tmp = numpy.copy( LOGM[t.l] )
+    for st in t.ch:
+      calcViterbi( st, LOGM, LOGN )
+      tmp += st.u.T
+#  t.u = LOGN[:,[uniqInt(t.c)]] if t.c[0]=='0' else numpy.zeros((Y,1))  ## for each parent type, lists the likelihood of the best subtree
+    t.u = numpy.zeros((Y,1))
+    t.z = numpy.zeros((Y,1),dtype=int)                                   ## for each parent type, lists the root type  of the best subtree
+    for i in range( Y ):
+      for j in range( Y ):
+        if tmp[i,j] >= tmp[i,t.z[i]]: t.z[i] = j
+      t.u[i] += tmp[i,t.z[i]]
+
 ################################################################################
 
 def sampleTypes( t, M, N, yAbove=0 ):        ## top-down sampling
@@ -113,6 +130,11 @@ def sampleTypes( t, M, N, yAbove=0 ):        ## top-down sampling
   t.y = numpy.random.choice( Y, p=post/post.sum() )
   for st in t.ch:
     if st.c[0]!='0': sampleTypes( st, M, N, t.y )
+
+def maximizeTypes( t, yAbove=0 ):
+  t.y = int(t.z[yAbove])
+  for st in t.ch:
+    if st.c[0]!='0': maximizeTypes( st, t.y )
 
 ################################################################################
 
@@ -138,6 +160,7 @@ def addToModel( p, t, M, N, C, D, vAbove=V0 ):
   else:
 #    C[t.l]            += p * ( vAbove.T/vAbove.sum() ).dot( t.u.T/t.u.sum() )  * M[t.l]
 #    contrib = p * numpy.multiply( vAbove.T/vAbove.sum(), rownormalize( numpy.multiply( M[t.l], t.u.T ) ) )
+#    print( t.c )
     contrib = numpy.multiply( vAbove.T, numpy.multiply( M[t.l], t.u.T ) )
     contrib *= p / contrib.sum()
     C[t.l]     += contrib
@@ -179,6 +202,7 @@ llpttrav = [ ]
 for line in sys.stdin:
   Marked = { }
   lt.append( gcgtree.GCGTree(line) )
+#  print( semcuegraph.StoreStateCueGraph(lt[-1]) )
   numberTerminals( lt[-1] )
   lptFactored = factorConj( lt[-1] )
   llpttrav.append( [ (p,t,makeTraversal(semcuegraph.SimpleCueGraph(semcuegraph.SemCueGraph(t)),Marked)) for p,t in lptFactored ] )
@@ -270,11 +294,18 @@ for y in range( Y ):
   for p,k in sorted( [ (N[y,KINTS[k]],k) for k in KINTS ], reverse=True ):     #KINTS:
     print( 'K ' + str(y) + ' : ' + k + ' = ' + str(p) )    #str(N[y,KINTS[k]]) )
 
+LOGM = numpy.log( M )
+LOGN = numpy.log( N )
+
 ## print types on trees...
 for i,lpttrav in enumerate( llpttrav ):
 
   Ymap = collections.defaultdict( lambda : collections.defaultdict(float) )
   for p,t,trav in lpttrav:
+
+    calcViterbi   ( trav, LOGM, LOGN )
+    maximizeTypes ( trav )
+
     N2N = { }
     mapFactoredToOrig( t, N2N )
 #    print( trav )
@@ -285,5 +316,4 @@ for i,lpttrav in enumerate( llpttrav ):
 #  print( semcuegraph.SemCueGraph(lt[i]) )
   annotY( lt[i], Ymap )
   print( str(lt[i]) )
-
 
