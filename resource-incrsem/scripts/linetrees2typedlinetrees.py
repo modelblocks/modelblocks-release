@@ -11,11 +11,11 @@ import semcuegraph
 
 numpy.set_printoptions(linewidth=200)
 
-I = 100                   ## number of iterations
-Y = int(sys.argv[1])  #50 ## number of types
-L = 5                     ## number of dep labels (arg positions)
-alpha = 0.1               ## pseudocount mass for word distribs
-beta  = 0.1               ## pseudocount mass for transition distribs
+I = 100                ## number of iterations
+Y = int(sys.argv[1])   ## number of types
+L = 5                  ## number of dep labels (arg positions) -- gets overridden by data
+alpha = 0.1            ## pseudocount mass for word distribs
+beta  = 0.1            ## pseudocount mass for transition distribs
 
 ################################################################################
 
@@ -176,6 +176,7 @@ def addToModel( p, t, M, N, C, D, vAbove=V0 ):
 ################################################################################
 
 def mergeTypeOutcomes( p, t, Ymap, N2N, src='00', srcy=-1 ):
+#  print( src )
   if t.c[0]=='0': Ymap[ N2N[int(src[:2])] ][ '-x%' + t.c.split(':')[1] + '|%y' + str(srcy) ] += p
   for st in t.ch:
     mergeTypeOutcomes( p, st, Ymap, N2N, re.sub('.*[|]','',t.c), t.y )

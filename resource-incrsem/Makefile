@@ -79,7 +79,7 @@ ifdef MAKED
 .PRECIOUS:  $(INCRSEM-SCRIPTS)/%.d
 $(INCRSEM-SCRIPTS)/%.d:  $(INCRSEM-SCRIPTS)/%.py
 	echo '$@: \'  >  $@   #' ##
-	grep 'import' $<  |  sed 's/^from \(.*\) import .*/$$(wildcard $$(INCRSEM-SCRIPTS)\/\1.py) \\/;s/^import \(.*\)$$/$$(wildcard $$(INCRSEM-SCRIPTS)\/\1.py) \\/'  >>  $@
+	grep 'import' $<  |  sed 's/^from \(.*\) import .*/$$(wildcard $$(RESOURCE-INCRSEM)\/..\/\*\/scripts\/\1.py) \\/;s/^import \(.*\)$$/$$(wildcard $$(RESOURCE-INCRSEM)\/..\/\*\/scripts\/\1.py) \\/'  >>  $@
 	echo ''  >>  $@
 	cat $@  |  sed 's/\.d:/\.py:/'  >>  $@
 
