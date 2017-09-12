@@ -91,7 +91,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     l,d = ('B',G.a) if s==0 else ('A',G.b)
     dUpper,dLower = (G.a+'u',G.a) if s==0 else (G.b,G.b+'u')  ## bottom-up on left child, top-down on right child
 
-    if '-lV' in sD:                               ## V
+    if '-lV' in sD:                                   ## V
       sN = re.findall('-v(?:[^-{}]|{[^{}]*})',sD)[-1]
       n = G.findNolo( sN, d )
       if n=='':
@@ -101,21 +101,21 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       else: G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',n), '1\'', G.result('s',dUpper) )
       G.equate( G.result('s',dUpper), 'e', G.result('r',G.result('s',dLower)) )
-    elif '-lQ' in sD:                             ## Q
+    elif '-lQ' in sD:                                 ## Q
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('1\'',G.result('s',d)), '2\'', G.result('s',d+'u') )  ## switch 1' & 2' arguments (same process top-down as bottom-up)
       G.equate( G.result('2\'',G.result('s',d)), '1\'', G.result('s',d+'u') )
       G.equate( G.result('s',dUpper), 'e', G.result('r',G.result('s',dLower)) )
-    elif '-lZ' in sD and sC.startswith('A-aN-x'): ## Zc
+    elif '-lZ' in sD and sC.startswith('A-aN-x'):     ## Zc
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',dLower),                 '2', G.result('r',G.result('s',dUpper)) )
       G.equate( G.result('1\'',G.result('s',dUpper)), '1', G.result('r',G.result('s',dUpper)) )
       G.equate( 'A-aN-bN:~',                          '0', G.result('r',G.result('s',dUpper)) )
-    elif '-lZ' in sD and sC.startswith('A-a'):    ## Za
+    elif '-lZ' in sD and sC.startswith('A-a'):        ## Za
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('r',G.result('r',G.result('s',dLower))), '1\'', G.result('s',dUpper) )
       G.equate( G.result('s',dUpper), 'h', G.result('s',dLower) )              ## hypothetical world inheritance -- should be implemented throughout
-    elif '-lZ' in sD and sC.startswith('R-a'):    ## Zb
+    elif '-lZ' in sD and sC.startswith('R-a'):        ## Zb
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',dLower),                 '2', G.result('r',G.result('s',dUpper)) )
       G.equate( G.result('1\'',G.result('s',dUpper)), '1', G.result('r',G.result('s',dUpper)) )
@@ -129,13 +129,13 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         G.equate( sN, '0', n )
         G.equate( G.result(l,d), l, n )
       else: G.equate( G.result(l,d), l, d+'u' )
-      if sN.endswith('-aN}'):                     ## Eb,Ed
+      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
         G.equate( G.result('r',G.result('s',dLower)), '1\'', id+'y' )
         G.equate( G.result('s',n), 'e', id+'y' )
-      else:                                       ## Ea,Ec
+      else:                                           ## Ea,Ec
         G.equate( G.result('s',n), 'e', G.result( str(G.getArity(sD))+'\'', G.result('s',dLower) ) )
       G.equate( G.result('s',d), 's', d+'u' )
-    elif '-l' not in sD:                          ## T
+    elif '-l' not in sD:                              ## T
       ## update category of every nonlocal sign on store that changes with type change...
       hideps = gcgtree.deps( sC )
       lodeps = gcgtree.deps( sD )
@@ -172,7 +172,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     G.equate( sE, '0', G.b )
     if j==0:
       c = id + 'a'
-      G.equate( c, 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE else G.b )
+      G.equate( c, 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or re.match('.*-[ri]N-lH$',sE)!=None else G.b )
       G.equate( sC, '0', c )
       ## add all nonlocal dependencies with no nolo on store...
       b = c
@@ -184,7 +184,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     if j==1:
       c = G.result( 'B', G.a )
       while (c,'B') in G: c = G[c,'B']            ## if there are non-local dependencies on B
-      G.equate( G.result('A',c), 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE else G.b )
+      G.equate( G.result('A',c), 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or re.match('.*-[ri]N-lH$',sE)!=None else G.b )
 
     d,e = G.a,G.b
     if   '-lA' in sD:                               ## Aa
@@ -225,8 +225,13 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     elif '-lH' in sE:                               ## H
       G.equate( G.result('s',d), 's', c )
       n = G.findNolo( gcgtree.lastdep(sD), d )
-      if n!='': G.equate( G.result('s',e), 's', n )
-      if n!='': G[n,'0']+='-closed'  ## close off nolo
+      if n!='':
+        if re.match('.*-[ri]N-lH$',sE)!=None:       ## Hb
+          G.equate( G.result('r',G.result('s',n)), 's', G.result('A',e) )
+          G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
+        else:                                       ## Ha
+          G.equate( G.result('s',e), 's', n )
+        G[n,'0']+='-closed'  ## close off nolo
     elif '-lI' in sE:                               ## I
       G.equate( G.result('s',d), 's', c )
       if sD.startswith('N-b{V-g') or sD.startswith('N-b{I-aN-g'):                                 ## nominal clause

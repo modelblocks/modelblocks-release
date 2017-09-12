@@ -79,7 +79,7 @@ ifdef MAKED
 .PRECIOUS:  $(INCRSEM-SCRIPTS)/%.d
 $(INCRSEM-SCRIPTS)/%.d:  $(INCRSEM-SCRIPTS)/%.py
 	echo '$@: \'  >  $@   #' ##
-	grep 'import' $<  |  sed 's/^from \(.*\) import .*/$$(wildcard $$(INCRSEM-SCRIPTS)\/\1.py) \\/;s/^import \(.*\)$$/$$(wildcard $$(INCRSEM-SCRIPTS)\/\1.py) \\/'  >>  $@
+	grep 'import' $<  |  sed 's/^from \(.*\) import .*/$$(wildcard $$(RESOURCE-INCRSEM)\/..\/\*\/scripts\/\1.py) \\/;s/^import \(.*\)$$/$$(wildcard $$(RESOURCE-INCRSEM)\/..\/\*\/scripts\/\1.py) \\/'  >>  $@
 	echo ''  >>  $@
 	cat $@  |  sed 's/\.d:/\.py:/'  >>  $@
 
@@ -277,14 +277,17 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 #
 ########################################
 
-.PRECIOUS: %_ymodel
-%_ymodel:  $$(basename %).refconts  $(INCRSEM-SCRIPTS)/refconts2reftypes.py
-	@echo "WARNING: long build for '$@'!  Press CTRL-C to abort!"
-	@sleep 5
-	cat $<  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+#.PRECIOUS: %_ymodel
+#%_ymodel:  $$(basename %).refconts  $(INCRSEM-SCRIPTS)/refconts2reftypes.py
+#	@echo "WARNING: long build for '$@'!  Press CTRL-C to abort!"
+#	@sleep 5
+#	cat $<  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+#
+#%typed.linetrees:  $(INCRSEM-SCRIPTS)/make-trees-typed.py  $$(basename %).linetrees  %_2000_5e-2_1e-2_N-aD\:_1_ymodel
+#	cat $(word 2,$^)  |  python $(word 1,$^) $(word 3,$^)  >  $@
 
-%typed.linetrees:  $(INCRSEM-SCRIPTS)/make-trees-typed.py  $$(basename %).linetrees  %_2000_5e-2_1e-2_N-aD\:_1_ymodel
-	cat $(word 2,$^)  |  python $(word 1,$^) $(word 3,$^)  >  $@
+%typed.linetrees:  $$(basename %).linetrees  $(INCRSEM-SCRIPTS)/linetrees2typedlinetrees.d  $(INCRSEM-SCRIPTS)/linetrees2typedlinetrees.py
+	cat $<  |  python $(word 3,$^) $(subst .,,$(suffix $*))  >  $@
 
 ########################################
 #
