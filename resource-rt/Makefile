@@ -86,10 +86,10 @@ sed '1s/.*/cum$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
 mv $@{.tmp,};
 
 SPILLOVER := S1
-SURP := fwprob5surp synsurp lexsurp totsurp 
+SURP := fwprob5surp totsurp 
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
 FJ := noF yesJ embddepthAny embddepthMin endembdMin startembdMin noFlen noFdr noFdrv embdlen embddr embddrv 
-COREF := corefbin coreflenw coreflenr corefsize
+COREF := # corefbin coreflenw coreflenr corefsize
 SEMDIST := incrSemCosDistMin incrSemCosDistMax incrSemCosDistMean incrSemCosDistSum incrSemDistMin incrSemDistMax incrSemDistMean incrSemDistSum incrSemNACosDistMin incrSemNACosDistMax incrSemNACosDistMean incrSemNACosDistSum incrSemNADistMin incrSemNADistMax incrSemNADistMean incrSemNADistSum
 GCG-CATS := A B C D F G
 EMBDDEPTHS := 1 2 3 4 5
@@ -419,7 +419,7 @@ $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst G
 #
 # NOTE: this assumes you have not created any *.lmeform files of your own that end in *SP.lmeform.
 # If you have, it would be best to rename them before running this target.
-BASENAME-NB := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm
+BASENAME-NB := genmodel/dundee.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm
 BASELINE-SPILL-EVAL-%: $(RT-SCRIPTS)/permuteSpillover.py $(RT-SCRIPTS)/$$(word 1, $$(subst _, ,%)).lmeform \
 $$(foreach b, \
 $$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \

@@ -60,7 +60,7 @@ def printPermPreds(bform, src_form_name, preds, perms, outdir, dryrun=True):
         preds_new = updatePreds(preds, perm)
         for l in bform[1:]:
             for i in xrange(len(preds)):
-                l = l.replace(preds[i], preds_new[i])
+                l = re.sub(r'([+^ (])'+preds[i]+'([+$ )])', r'\1'+preds_new[i]+r'\2', l)
             bform_out.append(l)
         path = outdir + '/' + form_name + '.lmeform'
         if not dryrun and not os.path.exists(path):

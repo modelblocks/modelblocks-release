@@ -645,6 +645,16 @@ getCorrelations <- function(data, bform) {
     return(cor(data[,vars]))
 }
 
+getSDs <- function(data, bform) {
+    vars = all.vars(bform)
+    vars = vars[vars %ni% c('subject', 'word')]
+    sd_vals = list()
+    for (c in vars) {
+        sd_vals[[c]] = sd(data[[c]])
+    }
+    return(sd_vals)
+}
+
 # Fit mixed-effects regression
 fitModel <- function(dataset, output, bformfile, fitmode='lme',
                    logmain=FALSE, logdepvar=FALSE, lambda=NULL,
@@ -669,6 +679,12 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
     cat('\n')
     cat('Correlation of numeric variables in model:\n')
     print(correlations) 
+    cat('\n\n')
+    sd_vals = getSDs(dataset, bform)
+    cat('Standard deviations of numeric variables in model:\n')
+    for (c in names(sd_vals)) {
+        cat(paste0(c, ': ', sd_vals[[c]], '\n'))
+    }
     cat('\n')
 
     smartPrint('Regressing model:')
@@ -686,7 +702,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         bc_inv_out = getBoxCoxInvBetas(dataset, bform, lambda, outputModel, mixed=mixed) 
         beta_ms = bc_inv_out$beta_ms 
         y_mu = bc_inv_out$y_mu 
-        printBoxCoxInvBetas(beta_ms, lambda, y_mu) 
+        printBoxCoxInvBetas(beta_ms, lambda, y_mu, sd_vals) 
     } else { 
         beta_ms = fixef(outputModel) 
         y_mu = NULL 
@@ -701,7 +717,8 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         lambda = lambda,
         beta_ms = beta_ms,
         y_mu = y_mu,
-        correlations = correlations
+        correlations = correlations,
+        sd_vals = sd_vals
     )
     save(fitOutput, file=output)
 }
@@ -730,10 +747,17 @@ getBoxCoxInvBetas <- function(dataset, bform, lambda, outputModel, mixed=True) {
     return(list(beta_ms=beta_ms, y_mu=y_mu))
 }
 
-printBoxCoxInvBetas <- function(beta_ms, lambda, y_mu) {
+printBoxCoxInvBetas <- function(beta_ms, lambda, y_mu, sd_vals=NULL) {
     cat(paste0('\nInverse Box-Cox estimates (ms) using lambda = ', lambda, ' and mean y = ', y_mu, '\n'))
     for (f in names(beta_ms)) {
-        cat(paste0('Beta (ms) of effect ', f, ': ', beta_ms[[f]], '\n'))
+        name = f
+        beta = beta_ms[[f]]
+        cat(paste0('Beta (ms) of effect ', name, ': ', beta, '\n'))
+        if (!is.null(sd_vals) && substr(f, 1, 3) == 'z.(') {
+            name = substr(f, 4, nchar(f)-1)
+            beta = beta_ms[[f]] / sd_vals[[name]]
+            cat(paste0('Beta (ms) of effect ', name, ': ', beta, '\n'))
+        }
     }
 }
 

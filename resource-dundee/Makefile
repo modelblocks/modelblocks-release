@@ -71,12 +71,9 @@ python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).tokmeasu
 sed '1s/.*/$(subst -,,$(grammar))cumtotsurp/' | paste -d' ' $@ - > $@.tmp; \
 mv $@{.tmp,};
 
-SPILL-DUNDEE := S1 S2 S3
-DLT-DUNDEE := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
-FJ-DUNDEE := fjprob endembd embdlen embdlendr embdlendrv noF noFlen noFlendr noFlendrv reinst reinstlen reinstlendr reinstlendrv
-ALL-MEM = $(DLT-DUNDEE) $(FJ-DUNDEE)
-ALL-MEM-SPILL = $(ALL-MEM) $(foreach var,$(ALL-MEM),$(foreach spill,$(SPILL-DUNDEE),$(var)$(spill)))
-
+DUNDEE-BASENAME := genmodel/dundee.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.eyeFPbest
+DUNDEE-LMEDEFAULT := -NSCFX
+$(eval $(call RT-EXPERIMENTS,dundee,$(DUNDEE-BASENAME),$(DUNDEE-LMEDEFAULT)))
 
 ################################################################################
 #
@@ -193,27 +190,6 @@ genmodel/dundee.linetoks: $$(foreach sect,$$(DUNDEESECTS),genmodel/dundee$$(sect
 
 %dundee.lineitems: %dundee.linetoks $(RT-SCRIPTS)/toks2sents.py %dundee.textdata
 	cat <(echo word) <(cat $(word 3, $^) | awk '!/^WORD/') | python $(word 2, $^) $< > $@
-
-################################################################################
-#
-#  Param files for constructing experiment data table
-#
-################################################################################    
-
-genmodel/dundee.merge_tables.params: | genmodel
-	echo 'word sentid sentpos' > $@
-
-genmodel/dundee.accumulateMetrics.params: | genmodel
-	echo 'fwprob5 totsurp' $(ALL-MEM-SPILL) > $@
-
-genmodel/dundee.spilloverMetrics.params: | genmodel
-	echo '-n1 -p fwprob5 totsurp' > $@
-
-genmodel/dundee.futureMetrics.params: | genmodel
-	echo 'cumfwprob5 cumtotsurp' > $@
-
-genmodel/dundee.rm_unfix_items.params: | genmodel
-	echo '' > $@
 
 ################################################################################
 #
