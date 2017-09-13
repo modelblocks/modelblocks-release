@@ -2,9 +2,6 @@ import sys, os, re, collections
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import gcgtree
 
-VERBOSE = False
-
-
 ################################################################################
 
 class CueGraph( dict ):
@@ -16,7 +13,7 @@ class CueGraph( dict ):
       G[x,l]=y
 
   def __str__( G ):
-    return ' '.join( [ ','.join( (x,l,G[x,l]) ) for x,l in G ] )
+    return ' '.join( [ ','.join( (x,l,G[x,l]) ) for x,l in sorted(G) ] )
 
   def rename( G, xNew, xOld ):
     if xOld != xNew:
