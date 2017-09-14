@@ -262,15 +262,15 @@ BMEFitRT:
     kwargs:
       outerdelim: _
 endef
-.PRECIOUS: %.tokmeasures
-%.tokmeasures: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
-genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
-$$(subst .,,$$(suffix $$*))).filt.evmeasures \
-scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
-$(LMEFIT-SCRIPTS)/lmetools.r \
-$(RHACKS-SCRIPTS)/mer-utils.R \
-$(RHACKS-SCRIPTS)/regression-utils.R
-	$< $(word 2, $^) $@ $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) -T > $*.lme
+# .PRECIOUS: %.tokmeasures
+# %.tokmeasures: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
+# genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
+# $$(subst .,,$$(suffix $$*))).filt.evmeasures \
+# scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
+# $(LMEFIT-SCRIPTS)/lmetools.r \
+# $(RHACKS-SCRIPTS)/mer-utils.R \
+# $(RHACKS-SCRIPTS)/regression-utils.R
+# 	$< $(word 2, $^) $@ $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) -T > $*.lme
 
 .PRECIOUS: %.lmefit %.lme %lme.rdata
 %.lme.rdata %.lmefit %.lme: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
