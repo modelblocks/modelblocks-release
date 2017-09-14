@@ -77,9 +77,15 @@ def relabel( t ):
     nolos = deps(t.c,'ghirv')
     chlocs = deps(t.ch[0].c,'abcd')
     if   len(locs)>1 and len(chlocs)>1 and locs!=chlocs and locs[0][2:]==chlocs[1][2:] and locs[1][2:]==chlocs[0][2:]: t.ch[0].c += '-lQ'       ## Q
+#    elif re.match('^[AR]-a',t.c)!=None and len(t.ch)==1 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L'+(''.join(deps(t.c,'abcd')))+'-vN-lV', t.ch ) ]   ## V
     elif re.match('^[AR]-a',t.c) and len(t.ch)==1 and t.ch[0].c.startswith('L-aN'): t.ch = [ tree.Tree( 'L-aN-vN-lV', t.ch ) ]                  ## V
     elif t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('N') and len(t.ch[0].ch)>0: t.ch[0].c += '-lZ'                         ## Za
     elif t.c.startswith('R-a') and len(t.ch)==1 and t.ch[0].c.startswith('N') and len(t.ch[0].ch)>0: t.ch[0].c += '-lZ'                         ## Zb
+#    elif re.match('^A-[ghirv]N',t.c)!=None and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch = [ tree.Tree( 'A-aN-lE', t.ch ) ]              ## Ea
+    elif len(chlocs)>len(locs) and len(nolos)>0 and chlocs[len(locs)][2:]==nolos[0][2:]:                                                        ## Ea
+      t.ch = [ tree.Tree( re.sub(nolos[0],chlocs[len(locs)],re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
+    elif len(chlocs)>len(locs) and len(nolos)>0 and chlocs[-1][2:]==nolos[0][2:]:                                                               ## Ea
+      t.ch = [ tree.Tree( t.ch[0].c+'-lE', t.ch ) ]
     elif len(nolos)>0 and nolos[0][2]!='{' and len(deps(t.c))==len(deps(t.ch[0].c)) and len(chlocs)>len(locs) and nolos[0]!=chlocs[len(locs)]:  ## Ea
       t.ch = [ tree.Tree( re.sub(nolos[0],chlocs[len(locs)],re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
     elif t.c.startswith('A-vN') and t.ch[0].c=='N': t.ch = [ tree.Tree( 'A-aN-lE', t.ch ) ]

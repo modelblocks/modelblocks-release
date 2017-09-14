@@ -77,8 +77,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 
     ## attach rel pro / interrog pro antecedent...
     for i,psi in enumerate( gcgtree.deps(sD) ):
-      if psi[1] in 'ir':
-        G.equate( G.result('s',G.findNolo(psi,id)), 'e', G.result('r',G.result('s',id)) )    ## restrictive relpro
+      if psi[1] in 'ir' and sD[0] in 'AR':
+        G.equate( G.result('s',G.findNolo(psi,id)), 'e', G.result('2',G.result('r',G.result('s',id))) )    ## adverbial relpro
+      elif psi[1] in 'ir':
+        G.equate( G.result('s',G.findNolo(psi,id)), 'e', G.result('r',G.result('s',id)) )                  ## restrictive nominal relpro
 
 
   def updateUna( G, s, sC, sD, id ):
@@ -129,7 +131,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         G.equate( sN, '0', n )
         G.equate( G.result(l,d), l, n )
       else: G.equate( G.result(l,d), l, d+'u' )
-      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
+      if len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ):  ## Eb,Ed
+#      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
         G.equate( G.result('r',G.result('s',dLower)), '1\'', id+'y' )
         G.equate( G.result('s',n), 'e', id+'y' )
       else:                                           ## Ea,Ec
@@ -307,6 +310,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         ## place pred in ##e or ##r node, depending on category...
         if s[0]=='N' and not s.startswith('N-b{N-aD}') and not s.startswith('N-b{V-g{R') and not s.startswith('N-b{I-aN-g{R'):
           G.equate( s, '0', x+'e' )
+          if (x+'s','h') in G: G.equate( G.result('h',x+'s'), 'h', x+'e' )      ## inherit possible/hypothetical world from s node.
           G.equate( G.result('r',G.result('s',x)), '1', x+'e' )
         else: G.equate( s, '0', G.result('r',G.result('s',x)) )
         ## coindex subject of raising construction with subject of direct object...
@@ -347,6 +351,7 @@ def last_inh( z, G ):
 #' '.join( [ x+','+l+','+G[x,l] for x,l in sorted(G) ] ) )
   if (z,'r') in G: return last_inh( G[z,'r'], G )
   if (z,'e') in G: return last_inh( G[z,'e'], G )
+  if (z,'h') in G: return last_inh( G[z,'h'], G )
   return z
 
 
@@ -356,7 +361,9 @@ class SimpleCueGraph( cuegraph.CueGraph ):
     for x,l in G:
       if '0'<=l and l<='9':
         H[ last_inh(x,G), l ] = last_inh( G[x,l], G )
-
+    for x,l in G:
+      if l=='0':
+        H.rename( x, last_inh(x,G) )
 
 
 

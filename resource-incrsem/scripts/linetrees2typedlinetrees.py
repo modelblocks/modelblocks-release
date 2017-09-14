@@ -11,7 +11,7 @@ import semcuegraph
 
 numpy.set_printoptions(linewidth=200)
 
-I = 100                ## number of iterations
+I = 2 #100                ## number of iterations
 Y = int(sys.argv[1])   ## number of types
 L = 5                  ## number of dep labels (arg positions) -- gets overridden by data
 alpha = 0.1            ## pseudocount mass for word distribs
@@ -115,12 +115,14 @@ def calcViterbi( t, LOGM, LOGN ):
       calcViterbi( st, LOGM, LOGN )
       tmp += st.u.T
 #  t.u = LOGN[:,[uniqInt(t.c)]] if t.c[0]=='0' else numpy.zeros((Y,1))  ## for each parent type, lists the likelihood of the best subtree
-    t.u = numpy.zeros((Y,1))
-    t.z = numpy.zeros((Y,1),dtype=int)                                   ## for each parent type, lists the root type  of the best subtree
-    for i in range( Y ):
-      for j in range( Y ):
-        if tmp[i,j] >= tmp[i,t.z[i]]: t.z[i] = j
-      t.u[i] += tmp[i,t.z[i]]
+#    t.u = numpy.zeros((Y,1))
+#    t.z = numpy.zeros((Y,1),dtype=int)                                   ## for each parent type, lists the root type  of the best subtree
+    t.z = numpy.argmax ( tmp, axis=1 )
+    t.u = numpy.max    ( tmp, axis=1 )
+#    for i in range( Y ):
+#      for j in range( Y ):
+#        if tmp[i,j] >= tmp[i,t.z[i]]: t.z[i] = j
+#      t.u[i] += tmp[i,t.z[i]]
 
 ################################################################################
 
@@ -143,7 +145,7 @@ def addToCount( p, t, Mcount, Ncount, yAbove=0 ):
   if t.c[0]=='0': Ncount[yAbove,uniqInt(t.c)] += p
   else:
     Mcount[t.l,    yAbove,t.y   ] += p
-    Mcount[2*L-t.l,t.y   ,yAbove] += p
+#    Mcount[2*L-t.l,t.y   ,yAbove] += p
     for st in t.ch:
       addToCount( p, st, Mcount, Ncount, t.y )
 
@@ -156,19 +158,20 @@ def addToCount( p, t, Mcount, Ncount, yAbove=0 ):
 
 def addToModel( p, t, M, N, C, D, vAbove=V0 ):
   if t.c[0]=='0':
-    D[:,uniqInt(t.c)] += p * vAbove.reshape(Y)/vAbove.sum()
+    contrib = vAbove * N[:,uniqInt(t.c)].reshape((1,Y))
+    D[:,uniqInt(t.c)] += contrib.reshape(Y) * ( p / contrib.sum() )   ##p * vAbove.reshape(Y)/vAbove.sum()
   else:
-#    C[t.l]            += p * ( vAbove.T/vAbove.sum() ).dot( t.u.T/t.u.sum() )  * M[t.l]
-#    contrib = p * numpy.multiply( vAbove.T/vAbove.sum(), rownormalize( numpy.multiply( M[t.l], t.u.T ) ) )
-#    print( t.c )
+##    C[t.l]            += p * ( vAbove.T/vAbove.sum() ).dot( t.u.T/t.u.sum() )  * M[t.l]
+##    contrib = p * numpy.multiply( vAbove.T/vAbove.sum(), rownormalize( numpy.multiply( M[t.l], t.u.T ) ) )
+##    print( t.c )
     contrib = numpy.multiply( vAbove.T, numpy.multiply( M[t.l], t.u.T ) )
     contrib *= p / contrib.sum()
     C[t.l]     += contrib
-    C[2*L-t.l] += contrib.T
-#    C[t.l]            += p * numpy.multiply( vAbove.T/vAbove.sum(), rownormalize( numpy.multiply( M[t.l], t.u.T ) ) )
-#    C[t.l]            += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( M[t.l].dot( numpy.diagflat( t.u/t.u.sum() ) ) )
-#    C[t.l]            += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( rownormalize( M[t.l].dot( numpy.diagflat( t.u ) ) ) )
-#    C[[t.l],:,:]      += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( rownormalize( M[[t.l],:,:].reshape((Y,Y)).dot( numpy.diagflat( t.u ) ) ) )
+#    C[2*L-t.l] += contrib.T
+##    C[t.l]            += p * numpy.multiply( vAbove.T/vAbove.sum(), rownormalize( numpy.multiply( M[t.l], t.u.T ) ) )
+##    C[t.l]            += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( M[t.l].dot( numpy.diagflat( t.u/t.u.sum() ) ) )
+##    C[t.l]            += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( rownormalize( M[t.l].dot( numpy.diagflat( t.u ) ) ) )
+##    C[[t.l],:,:]      += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( rownormalize( M[[t.l],:,:].reshape((Y,Y)).dot( numpy.diagflat( t.u ) ) ) )
   for st in t.ch:
     addToModel( p, st, M, N, C, D, t.v )
 
@@ -207,6 +210,9 @@ for line in sys.stdin:
   numberTerminals( lt[-1] )
   lptFactored = factorConj( lt[-1] )
   llpttrav.append( [ (p,t,makeTraversal(semcuegraph.SimpleCueGraph(semcuegraph.SemCueGraph(t)),Marked)) for p,t in lptFactored ] )
+#  for p,t in lptFactored:
+#    print( '==>', str( semcuegraph.SemCueGraph(t) ) )
+#    print( '--->', str( semcuegraph.SimpleCueGraph(semcuegraph.SemCueGraph(t)) ) )
 
 ## set size params...
 K,L = 0,0
@@ -309,6 +315,7 @@ for i,lpttrav in enumerate( llpttrav ):
 
     N2N = { }
     mapFactoredToOrig( t, N2N )
+#    print( t )
 #    print( trav )
 #    print( N2N )
     mergeTypeOutcomes( p, trav, Ymap, N2N )
