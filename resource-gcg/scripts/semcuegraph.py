@@ -248,6 +248,11 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('s',c), 's', e )
       G.equate( G.result('s',e), 's', G.result('B',d) )
       G.equate( gcgtree.lastdep(sD), '0', G.result('B',d) )
+    elif 'I-aN-g{R-aN}-lR' == sE:                   ## Rc (off-spec)
+      G.equate( G.result('s',d),     's', c )
+      G.equate( 'A-aN-bN:support',   '0', G.result('r',G.result('s',G.result('A',e))) )
+      G.equate( G.result('s',d),     '2', G.result('r',G.result('s',G.result('A',e))) )
+      G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
     elif '-lR' in sE:                               ## R
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('s',d), 's', G.result('A',e) )
