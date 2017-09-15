@@ -49,8 +49,9 @@ ifndef SAMPLE-START
 SAMPLE-START := 0
 endif
 
-BYSENT-PRED-BASES := wlen $(SURP) $(DLT) $(FJ)
+BYSENT-PRED-BASES := wlen $(SURP) $(DLT) $(FJ) $(SEMDIST)
 BYSENT-PREDS := nwrds $(foreach pred,$(BYSENT-PRED-BASES),$(foreach agg,Mean Sum Max,$(pred)$(agg)))
+BYSENT-PREDS += semCosDistMin semCosDistMax semCosDistMean semCosDistSum semDistMin semDistMax semDistMean semDistSum
 
 # ARGS:
 #   1 = corpus name
@@ -114,8 +115,8 @@ endef
 %.hrf.itemmeasures: $$(basename %).t.itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py scripts/$$(subst .,,$$(suffix $$*)).pred_list.txt
 	python $(word 2, $^) $(word 1, $^) --start $(SAMPLE-START) --predictors $(shell cat $(word 3, $^)) > $@
 
-%.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py
-	cat $(word 1, $^) | python $(word 2, $^) > $@
+%.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py $$(word 1, $$(subst ., , %)).glove.linemeasures
+	cat $(word 1, $^) | python $(word 2, $^) | paste -d' ' - <(cut -d' ' -f 2- $(word 3, $^)) > $@
 
 .PRECIOUS: %.hrf.core.evmeasures
 %.hrf.core.evmeasures : %.hrf.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \

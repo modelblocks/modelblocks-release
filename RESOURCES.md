@@ -191,6 +191,16 @@ URL: https://github.com/aufrank/R-hacks
 DESCRIPTION: Useful bits of code for programming and analysis in R.  
 
 
+The Roark Parser (Roark 2001, 2004)
+--------------------------------------------------
+NAME: The Roark Parser
+MB-POINTER-FILE: config/user-roark-directory.txt  
+AVAILABILITY: Free  
+URL: https://github.com/roarkbr/incremental-top-down-parser
+DESCRIPTION: A standard parser from Roark (2001, 2004) that computes psycholinguistic
+complexity measures.
+
+
 SRILM Language Model Toolkit
 --------------------------------------------------
 NAME: SRILM Language Model Toolkit  

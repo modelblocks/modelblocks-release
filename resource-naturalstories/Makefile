@@ -122,9 +122,9 @@ $(CONFIGDIR)/user-naturalstories-directory.txt | %
 	cat $(word 2, $^) | perl $(word 1, $^) > $@
 
 genmodel/naturalstories.linetoks: genmodel/naturalstories.penn.linetrees $(NATSTORIES-SCRIPTS)/penn2sents.py | genmodel
-	cat $< | python $(word 2, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' > $@
+	cat $< | python $(word 2, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peeked/peaked/g;' > $@
 
-%naturalstories.items: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv $(RT-SCRIPTS)/get_rttokenization.py \
+%naturalstories.items: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.tsv $(RT-SCRIPTS)/get_rttokenization.py \
 $(CONFIGDIR)/user-naturalstories-directory.txt
 	cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word, 2, $^) item zone > $@
 
@@ -138,10 +138,10 @@ $(CONFIGDIR)/user-naturalstories-directory.txt
 	paste -d' ' <(cat $(word 1, $^) | sed 's/\t/ /g;') <(cat $(word 2, $^) | python $(word 3, $^) | cut -d' ' -f 2-) \
 	<(cat $(word 1, $^) | sed 's/\t/ /g;' | awk -f $(word 5, $^) -v cols=item - | python $(word 4, $^) item docid) > $@
 
-%naturalstories.evmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.csv \
+%naturalstories.evmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.tsv \
 $(RT-SCRIPTS)/rename_cols.py $(NATSTORIES-SCRIPTS)/merge_natstor.py %naturalstories.mfields.itemmeasures \
 $(CONFIGDIR)/user-naturalstories-directory.txt
-	python $(word 3, $^) <(cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;s/peaked/peeked/g;print;' | python $(word 2, $^) WorkerId subject RT fdur) \
+	python $(word 3, $^) <(cat $(word 1, $^) | perl -ne 's/\t/ /g;s/peaked/peeked/g;print;' | python $(word 2, $^) WorkerId subject RT fdur) \
 	$(word 4, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' > $@
   
 %naturalstories.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.linetrees %naturalstories.linetoks
