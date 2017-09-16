@@ -211,8 +211,8 @@ for line in sys.stdin:
   lptFactored = factorConj( lt[-1] )
   llpttrav.append( [ (p,t,makeTraversal(semcuegraph.SimpleCueGraph(semcuegraph.SemCueGraph(t)),Marked)) for p,t in lptFactored ] )
 #  for p,t in lptFactored:
-#    print( '==>', str( semcuegraph.SemCueGraph(t) ) )
-#    print( '--->', str( semcuegraph.SimpleCueGraph(semcuegraph.SemCueGraph(t)) ) )
+#    print( '==FULL==>', str( semcuegraph.SemCueGraph(t) ) )
+#    print( '--SIMPLE->', str( semcuegraph.SimpleCueGraph(semcuegraph.SemCueGraph(t)) ) )
 
 ## set size params...
 K,L = 0,0

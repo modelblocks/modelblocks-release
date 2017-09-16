@@ -93,7 +93,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     l,d = ('B',G.a) if s==0 else ('A',G.b)
     dUpper,dLower = (G.a+'u',G.a) if s==0 else (G.b,G.b+'u')  ## bottom-up on left child, top-down on right child
 
-    if '-lV' in sD:                                   ## V
+    if '-lV' in sD:                                          ## V
       sN = re.findall('-v(?:[^-{}]|{[^{}]*})',sD)[-1]
       n = G.findNolo( sN, d )
       if n=='':
@@ -103,21 +103,21 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       else: G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',n), '1\'', G.result('s',dUpper) )
       G.equate( G.result('s',dUpper), 'e', G.result('r',G.result('s',dLower)) )
-    elif '-lQ' in sD:                                 ## Q
+    elif '-lQ' in sD:                                        ## Q
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('1\'',G.result('s',d)), '2\'', G.result('s',d+'u') )  ## switch 1' & 2' arguments (same process top-down as bottom-up)
       G.equate( G.result('2\'',G.result('s',d)), '1\'', G.result('s',d+'u') )
       G.equate( G.result('s',dUpper), 'e', G.result('r',G.result('s',dLower)) )
-    elif '-lZ' in sD and sC.startswith('A-aN-x'):     ## Zc
+    elif '-lZ' in sD and sC.startswith('A-aN-x'):            ## Zc
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',dLower),                 '2', G.result('r',G.result('s',dUpper)) )
       G.equate( G.result('1\'',G.result('s',dUpper)), '1', G.result('r',G.result('s',dUpper)) )
       G.equate( 'A-aN-bN:~',                          '0', G.result('r',G.result('s',dUpper)) )
-    elif '-lZ' in sD and sC.startswith('A-a'):        ## Za
+    elif '-lZ' in sD and sC.startswith('A-a'):               ## Za
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('r',G.result('r',G.result('s',dLower))), '1\'', G.result('s',dUpper) )
       G.equate( G.result('s',dUpper), 'h', G.result('s',dLower) )              ## hypothetical world inheritance -- should be implemented throughout
-    elif '-lZ' in sD and sC.startswith('R-a'):        ## Zb
+    elif '-lZ' in sD and sC.startswith('R-a'):               ## Zb
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',dLower),                 '2', G.result('r',G.result('s',dUpper)) )
       G.equate( G.result('1\'',G.result('s',dUpper)), '1', G.result('r',G.result('s',dUpper)) )
@@ -131,14 +131,16 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         G.equate( sN, '0', n )
         G.equate( G.result(l,d), l, n )
       else: G.equate( G.result(l,d), l, d+'u' )
-      if len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ):  ## Eb,Ed
+      if len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN.endswith('-rN}'):  ## Ee
+        G.equate( G.result('s',n), 'e', G.result('r',G.result('s',dLower)) )
+      elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ):  ## Eb,Ed
 #      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
         G.equate( G.result('r',G.result('s',dLower)), '1\'', id+'y' )
         G.equate( G.result('s',n), 'e', id+'y' )
-      else:                                           ## Ea,Ec
+      else:                                                  ## Ea,Ec
         G.equate( G.result('s',n), 'e', G.result( str(G.getArity(sD))+'\'', G.result('s',dLower) ) )
       G.equate( G.result('s',d), 's', d+'u' )
-    elif '-l' not in sD:                              ## T
+    elif '-l' not in sD:                                     ## T
       ## update category of every nonlocal sign on store that changes with type change...
       hideps = gcgtree.deps( sC )
       lodeps = gcgtree.deps( sD )
@@ -365,7 +367,10 @@ class SimpleCueGraph( cuegraph.CueGraph ):
   def __init__( H, G ):
     for x,l in G:
       if '0'<=l and l<='9':
-        H[ last_inh(x,G), l ] = last_inh( G[x,l], G )
+#        print( 'trying to add '+x+','+l+','+G[x,l] +' as ' + last_inh(x,G) + ',' + l + ',' + last_inh( G[x,l], G ) )
+        H.equate( last_inh(G[x,l],G), l, last_inh(x,G) )
+#        H[ last_inh(x,G), l ] = last_inh( G[x,l], G )
+#        print( 'adding '+x+','+l+','+G[x,l] +' to ' + last_inh(x,G) + ',' + l + ',' + last_inh( G[x,l], G ) )
     for x,l in G:
       if l=='0':
         H.rename( x, last_inh(x,G) )

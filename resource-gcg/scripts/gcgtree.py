@@ -67,7 +67,7 @@ def relabel( t ):
     if '-lR' in t.ch[1].c:                        p = t.ch[0].c                                                                                 ## R
 #    print( p + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c )
     ## add calculated parent of children as unary branch if different from t.c...
-    if re.sub('-[lx][^-]*','',p) != re.sub('-[lx][^-]*','',t.c):
+    if re.sub('-[lx][^-]*','',p) != re.sub('-[lx][^-]*','',t.c) and re.sub('(.*)-c\{?\\1\}?','X-cX',t.c)!=p:
       if VERBOSE: print( 'T rule: ' + t.c + ' -> ' + p )
       t.ch = [ tree.Tree( p, t.ch ) ]
 
