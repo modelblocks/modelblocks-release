@@ -82,7 +82,7 @@ def relabel( t ):
     elif t.c.startswith('A-a') and len(t.ch)==1 and t.ch[0].c.startswith('N') and len(t.ch[0].ch)>0: t.ch[0].c += '-lZ'                         ## Za
     elif t.c.startswith('R-a') and len(t.ch)==1 and t.ch[0].c.startswith('N') and len(t.ch[0].ch)>0: t.ch[0].c += '-lZ'                         ## Zb
 #    elif re.match('^A-[ghirv]N',t.c)!=None and len(t.ch)==1 and t.ch[0].c.startswith('N'): t.ch = [ tree.Tree( 'A-aN-lE', t.ch ) ]              ## Ea
-    elif len(chlocs)>len(locs) and len(nolos)>0 and chlocs[len(locs)][2:]==nolos[0][2:]:                                                        ## Ea
+    elif len(chlocs)>len(locs) and len(nolos)>0 and ( chlocs[len(locs)][2:]==nolos[0][2:] or chlocs[len(locs)][2:]=='{A-aN}' and nolos[0][2:]=='{R-aN}' ) :  ## Ea
       t.ch = [ tree.Tree( re.sub(nolos[0],chlocs[len(locs)],re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
     elif len(chlocs)>len(locs) and len(nolos)>0 and chlocs[-1][2:]==nolos[0][2:]:                                                               ## Ea
       t.ch = [ tree.Tree( t.ch[0].c+'-lE', t.ch ) ]
