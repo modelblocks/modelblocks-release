@@ -11,7 +11,7 @@ import semcuegraph
 
 numpy.set_printoptions(linewidth=200)
 
-I = 2 #100                ## number of iterations
+I = 100                ## number of iterations
 Y = int(sys.argv[1])   ## number of types
 L = 5                  ## number of dep labels (arg positions) -- gets overridden by data
 alpha = 0.1            ## pseudocount mass for word distribs
@@ -157,6 +157,7 @@ def addToCount( p, t, Mcount, Ncount, yAbove=0 ):
 #  return M
 
 def addToModel( p, t, M, N, C, D, vAbove=V0 ):
+
   if t.c[0]=='0':
     contrib = vAbove * N[:,uniqInt(t.c)].reshape((1,Y))
     D[:,uniqInt(t.c)] += contrib.reshape(Y) * ( p / contrib.sum() )   ##p * vAbove.reshape(Y)/vAbove.sum()
@@ -172,8 +173,23 @@ def addToModel( p, t, M, N, C, D, vAbove=V0 ):
 ##    C[t.l]            += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( M[t.l].dot( numpy.diagflat( t.u/t.u.sum() ) ) )
 ##    C[t.l]            += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( rownormalize( M[t.l].dot( numpy.diagflat( t.u ) ) ) )
 ##    C[[t.l],:,:]      += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( rownormalize( M[[t.l],:,:].reshape((Y,Y)).dot( numpy.diagflat( t.u ) ) ) )
+
+#  for st in t.ch:
+#    addToModel( p, st, M, N, C, D, t.v )
+
+  t.v = vAbove.dot( M[t.l] )
+  ## cumulative from right...
+  vR = numpy.ones((1,Y))
+  for st in reversed( t.ch ):
+    st.v = vR
+    vR = numpy.multiply( vR, M[st.l].dot( st.u ).T if st.c[0]!='0' else N[:,[uniqInt(st.c)]].T )
+  ## cumulative from left...
+  vL = t.v
   for st in t.ch:
-    addToModel( p, st, M, N, C, D, t.v )
+    if st.c[0]!='0': addToModel( p, st, M, N, C, D, numpy.multiply( st.v, vL ) )
+    else:            addToModel( p, st, M, N, C, D, t.v )
+    vL = numpy.multiply( vL, M[st.l].dot( st.u ).T if st.c[0]!='0' else N[:,[uniqInt(st.c)]].T )
+
 
 ################################################################################
 ################################################################################
