@@ -115,12 +115,14 @@ def calcViterbi( t, LOGM, LOGN ):
       calcViterbi( st, LOGM, LOGN )
       tmp += st.u.T
 #  t.u = LOGN[:,[uniqInt(t.c)]] if t.c[0]=='0' else numpy.zeros((Y,1))  ## for each parent type, lists the likelihood of the best subtree
-    t.u = numpy.zeros((Y,1))
-    t.z = numpy.zeros((Y,1),dtype=int)                                   ## for each parent type, lists the root type  of the best subtree
-    for i in range( Y ):
-      for j in range( Y ):
-        if tmp[i,j] >= tmp[i,t.z[i]]: t.z[i] = j
-      t.u[i] += tmp[i,t.z[i]]
+#    t.u = numpy.zeros((Y,1))
+#    t.z = numpy.zeros((Y,1),dtype=int)                                   ## for each parent type, lists the root type  of the best subtree
+    t.z = numpy.argmax ( tmp, axis=1 )
+    t.u = numpy.max    ( tmp, axis=1 )
+#    for i in range( Y ):
+#      for j in range( Y ):
+#        if tmp[i,j] >= tmp[i,t.z[i]]: t.z[i] = j
+#      t.u[i] += tmp[i,t.z[i]]
 
 ################################################################################
 
@@ -143,7 +145,7 @@ def addToCount( p, t, Mcount, Ncount, yAbove=0 ):
   if t.c[0]=='0': Ncount[yAbove,uniqInt(t.c)] += p
   else:
     Mcount[t.l,    yAbove,t.y   ] += p
-    Mcount[2*L-t.l,t.y   ,yAbove] += p
+#    Mcount[2*L-t.l,t.y   ,yAbove] += p
     for st in t.ch:
       addToCount( p, st, Mcount, Ncount, t.y )
 
@@ -155,22 +157,39 @@ def addToCount( p, t, Mcount, Ncount, yAbove=0 ):
 #  return M
 
 def addToModel( p, t, M, N, C, D, vAbove=V0 ):
+
   if t.c[0]=='0':
-    D[:,uniqInt(t.c)] += p * vAbove.reshape(Y)/vAbove.sum()
+    contrib = vAbove * N[:,uniqInt(t.c)].reshape((1,Y))
+    D[:,uniqInt(t.c)] += contrib.reshape(Y) * ( p / contrib.sum() )   ##p * vAbove.reshape(Y)/vAbove.sum()
   else:
-#    C[t.l]            += p * ( vAbove.T/vAbove.sum() ).dot( t.u.T/t.u.sum() )  * M[t.l]
-#    contrib = p * numpy.multiply( vAbove.T/vAbove.sum(), rownormalize( numpy.multiply( M[t.l], t.u.T ) ) )
-#    print( t.c )
+##    C[t.l]            += p * ( vAbove.T/vAbove.sum() ).dot( t.u.T/t.u.sum() )  * M[t.l]
+##    contrib = p * numpy.multiply( vAbove.T/vAbove.sum(), rownormalize( numpy.multiply( M[t.l], t.u.T ) ) )
+##    print( t.c )
     contrib = numpy.multiply( vAbove.T, numpy.multiply( M[t.l], t.u.T ) )
     contrib *= p / contrib.sum()
     C[t.l]     += contrib
-    C[2*L-t.l] += contrib.T
-#    C[t.l]            += p * numpy.multiply( vAbove.T/vAbove.sum(), rownormalize( numpy.multiply( M[t.l], t.u.T ) ) )
-#    C[t.l]            += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( M[t.l].dot( numpy.diagflat( t.u/t.u.sum() ) ) )
-#    C[t.l]            += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( rownormalize( M[t.l].dot( numpy.diagflat( t.u ) ) ) )
-#    C[[t.l],:,:]      += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( rownormalize( M[[t.l],:,:].reshape((Y,Y)).dot( numpy.diagflat( t.u ) ) ) )
+#    C[2*L-t.l] += contrib.T
+##    C[t.l]            += p * numpy.multiply( vAbove.T/vAbove.sum(), rownormalize( numpy.multiply( M[t.l], t.u.T ) ) )
+##    C[t.l]            += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( M[t.l].dot( numpy.diagflat( t.u/t.u.sum() ) ) )
+##    C[t.l]            += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( rownormalize( M[t.l].dot( numpy.diagflat( t.u ) ) ) )
+##    C[[t.l],:,:]      += p * numpy.diagflat( vAbove/vAbove.sum() ).dot( rownormalize( M[[t.l],:,:].reshape((Y,Y)).dot( numpy.diagflat( t.u ) ) ) )
+
+#  for st in t.ch:
+#    addToModel( p, st, M, N, C, D, t.v )
+
+  t.v = vAbove.dot( M[t.l] )
+  ## cumulative from right...
+  vR = numpy.ones((1,Y))
+  for st in reversed( t.ch ):
+    st.v = vR
+    vR = numpy.multiply( vR, M[st.l].dot( st.u ).T if st.c[0]!='0' else N[:,[uniqInt(st.c)]].T )
+  ## cumulative from left...
+  vL = t.v
   for st in t.ch:
-    addToModel( p, st, M, N, C, D, t.v )
+    if st.c[0]!='0': addToModel( p, st, M, N, C, D, numpy.multiply( st.v, vL ) )
+    else:            addToModel( p, st, M, N, C, D, t.v )
+    vL = numpy.multiply( vL, M[st.l].dot( st.u ).T if st.c[0]!='0' else N[:,[uniqInt(st.c)]].T )
+
 
 ################################################################################
 ################################################################################
@@ -207,6 +226,9 @@ for line in sys.stdin:
   numberTerminals( lt[-1] )
   lptFactored = factorConj( lt[-1] )
   llpttrav.append( [ (p,t,makeTraversal(semcuegraph.SimpleCueGraph(semcuegraph.SemCueGraph(t)),Marked)) for p,t in lptFactored ] )
+#  for p,t in lptFactored:
+#    print( '==FULL==>', str( semcuegraph.SemCueGraph(t) ) )
+#    print( '--SIMPLE->', str( semcuegraph.SimpleCueGraph(semcuegraph.SemCueGraph(t)) ) )
 
 ## set size params...
 K,L = 0,0
@@ -309,6 +331,7 @@ for i,lpttrav in enumerate( llpttrav ):
 
     N2N = { }
     mapFactoredToOrig( t, N2N )
+#    print( t )
 #    print( trav )
 #    print( N2N )
     mergeTypeOutcomes( p, trav, Ymap, N2N )

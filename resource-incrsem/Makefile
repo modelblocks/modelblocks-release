@@ -125,7 +125,7 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 	cat $<  |  grep -v '([^ ]*-[hiv]'  >  $@
 
 %.qop.linetrees:  %.linetrees  $(INCRSEM-SCRIPTS)/annotateQop.pl
-	cat $<  |  perl -pe's/[[:^ascii:]]/\!nonasc\!/g'  |  perl $(word 2,$^)  >  $@
+	cat $<  |  grep '^('  |  perl -pe's/[[:^ascii:]]/\!nonasc\!/g'  |  perl $(word 2,$^)  >  $@
 
 ## obtain word counts from trees...
 %.wordcounts:  %.linetrees
@@ -286,6 +286,7 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 #%typed.linetrees:  $(INCRSEM-SCRIPTS)/make-trees-typed.py  $$(basename %).linetrees  %_2000_5e-2_1e-2_N-aD\:_1_ymodel
 #	cat $(word 2,$^)  |  python $(word 1,$^) $(word 3,$^)  >  $@
 
+.PRECIOUS: %typed.linetrees
 %typed.linetrees:  $$(basename %).linetrees  $(INCRSEM-SCRIPTS)/linetrees2typedlinetrees.d  $(INCRSEM-SCRIPTS)/linetrees2typedlinetrees.py
 	cat $<  |  python $(word 3,$^) $(subst .,,$(suffix $*))  >  $@
 

@@ -24,7 +24,7 @@
 #  
 #  1. %.pcfg.tokmeasures: Incremental pcfg parser output (parser-tokeniziation - 
 #     separate punctuation toks)
-#  2. %.syn.tokmeasures: PCFG praser output with center-embedding data 
+#  2. %.syn.tokmeasures: PCFG parser output with center-embedding data 
 #     calculated from gold trees (parser tokenization)
 #  3. %.itemmeasures: All syntactic predictors with ngram probabilities 
 #     (experiment tokenization, in which parser tokenization should be nested)
@@ -350,6 +350,12 @@ $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
 	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
+
+%.r.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures $$(basename %).roark.itemmeasures \
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
+	cat $< | python $(word 4, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
+	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | paste -d' ' - $(word 3, $^) | python $(word 5, $^) -d | \
+	$(word 6, $^) > $@
 
 define CompositeBlock
 RTDataParams:
