@@ -37,7 +37,9 @@
 .SUFFIXES:
 .SECONDEXPANSION:
 
-GIGASECTS = afp_eng apw_eng cna_eng ltw_eng nyt_eng xin_eng
+GIGA3SECTS = afp_eng apw_eng cna_eng ltw_eng nyt_eng xin_eng
+GIGA4SECTS = afp_eng apw_eng cna_eng ltw_eng nyt_eng xin_eng
+GIGA5SECTS = afp_eng apw_eng cna_eng ltw_eng nyt_eng wpb_eng xin_eng
 
 ################################################################################
 #
@@ -49,34 +51,84 @@ GIGASECTS = afp_eng apw_eng cna_eng ltw_eng nyt_eng xin_eng
 ################################################################################
 
 ifndef MAKECONFIG
+CONFIG := $(CONFIGDIR)/user-gigaword3-directory.txt
+ifeq (,$(firstword $(wildcard $(CONFIG))))
+$(info $(call CONFIGWARN, $(CONFIG)))
+DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
+endif
+GIGA3DIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(GIGA3DIR))))
+RESOURCE-NAME := English Gigaword 3
+define RESOURCE-DESCR =
+
+NAME: English Gigaword 3
+MB POINTER FILE: config/user-gigaword3-directory.txt
+AVAILABILITY: Paid
+URL: https://catalog.ldc.upenn.edu/LDC2007T07
+DESCRIPTION: A comprehensive archive of newswire text data in English that
+has been acquired over several years by the Linguistic Data Consortium.
+endef
+GIGAWORD3-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-GIGAWORD3 = $(error $(GIGAWORD3-ERROR))
+else
+DEP-GIGAWORD3 :=
+endif
+
 CONFIG := $(CONFIGDIR)/user-gigaword4-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
 $(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
-GIGADIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(GIGADIR))))
-RESOURCE-NAME := English Gigaword
+GIGA4DIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(GIGA4DIR))))
+RESOURCE-NAME := English Gigaword 4
 define RESOURCE-DESCR =
 
-NAME: English Gigaword
+NAME: English Gigaword 4
 MB POINTER FILE: config/user-gigaword4-directory.txt
 AVAILABILITY: Paid
-URL: https://catalog.ldc.upenn.edu/ldc2003t05
+URL: https://catalog.ldc.upenn.edu/LDC2009T13
 DESCRIPTION: A comprehensive archive of newswire text data in English that
 has been acquired over several years by the Linguistic Data Consortium.
 endef
-GIGAWORD-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
-DEP-GIGAWORD = $(error $(GIGAWORD-ERROR))
+GIGAWORD4-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-GIGAWORD4 = $(error $(GIGAWORD4-ERROR))
 else
-DEP-GIGAWORD :=
+DEP-GIGAWORD4 :=
+endif
+
+CONFIG := $(CONFIGDIR)/user-gigaword5-directory.txt
+ifeq (,$(firstword $(wildcard $(CONFIG))))
+$(info $(call CONFIGWARN, $(CONFIG)))
+DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
+endif
+GIGA5DIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(GIGA5DIR))))
+RESOURCE-NAME := English Gigaword 5
+define RESOURCE-DESCR =
+
+NAME: English Gigaword 5
+MB POINTER FILE: config/user-gigaword5-directory.txt
+AVAILABILITY: Paid
+URL: https://catalog.ldc.upenn.edu/ldc2011t07
+DESCRIPTION: A comprehensive archive of newswire text data in English that
+has been acquired over several years by the Linguistic Data Consortium.
+endef
+GIGAWORD5-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-GIGAWORD5 = $(error $(GIGAWORD5-ERROR))
+else
+DEP-GIGAWORD5 :=
 endif
 endif
 
 
 
+%/user-gigaword3-directory.txt: | %
+	echo '/home/corpora/original/english/gigaword-3' > $@
 %/user-gigaword4-directory.txt: | %
 	echo '/home/corpora/original/english/gigaword-4' > $@
+%/user-gigaword5-directory.txt: | %
+	echo '/home/corpora/original/english/gigaword-5' > $@
 
 ################################################################################
 #
@@ -84,7 +136,16 @@ endif
 #
 ################################################################################
     
-gigaword4%.linetoks: $$(DEP-GIGAWORD) $(GIGADIR)/data/$$*/*.gz $(GIGAWORD-SCRIPTS)/preprocess_gigaword.py \
+gigaword3%.linetoks: $$(DEP-GIGAWORD3) $(GIGA3DIR)/data/$$*/*.gz $(GIGAWORD-SCRIPTS)/preprocess_gigaword.py \
+$(CONFIGDIR)/user-gigaword3-directory.txt | genmodel
+	mkdir tmp
+	cp $(word 1, $^) tmp/
+	gunzip tmp/*
+	cat tmp/* > $@.tmp
+	python $(word 2, $^) $@.tmp > $@
+	rm -rf tmp $@.tmp
+
+gigaword4%.linetoks: $$(DEP-GIGAWORD4) $(GIGA4DIR)/data/$$*/*.gz $(GIGAWORD-SCRIPTS)/preprocess_gigaword.py \
 $(CONFIGDIR)/user-gigaword4-directory.txt | genmodel
 	mkdir tmp
 	cp $(word 1, $^) tmp/
@@ -93,10 +154,35 @@ $(CONFIGDIR)/user-gigaword4-directory.txt | genmodel
 	python $(word 2, $^) $@.tmp > $@
 	rm -rf tmp $@.tmp
 
-%gigaword4.linetoks: $(foreach sect,$(GIGASECTS),%gigaword4$(sect).linetoks) | genmodel
+gigaword5%.linetoks: $$(DEP-GIGAWORD5) $(GIGA5DIR)/data/$$*/*.gz $(GIGAWORD-SCRIPTS)/preprocess_gigaword.py \
+$(CONFIGDIR)/user-gigaword5-directory.txt | genmodel
+	mkdir tmp
+	cp $(word 1, $^) tmp/
+	gunzip tmp/*
+	cat tmp/* > $@.tmp
+	python $(word 2, $^) $@.tmp > $@
+	rm -rf tmp $@.tmp
+
+%gigaword3.linetoks: $(foreach sect,$(GIGA3SECTS),%gigaword3$(sect).linetoks) | genmodel
 	cat $^ | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" > $@
 	rm -f $^
-  
-%gigaword4lower.linetoks: $(foreach sect,$(GIGASECTS),%gigaword4$(sect).linetoks) | genmodel
+
+%gigaword4.linetoks: $(foreach sect,$(GIGA4SECTS),%gigaword4$(sect).linetoks) | genmodel
+	cat $^ | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" > $@
+	rm -f $^
+
+%gigaword5.linetoks: $(foreach sect,$(GIGA5SECTS),%gigaword5$(sect).linetoks) | genmodel
+	cat $^ | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" > $@
+	rm -f $^
+
+%gigaword3lower.linetoks: $(foreach sect,$(GIGA3SECTS),%gigaword3$(sect).linetoks) | genmodel
+	cat $^ | tr '[:upper:]' '[:lower:]' | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" > $@
+	rm -f $^
+
+%gigaword4lower.linetoks: $(foreach sect,$(GIGA4SECTS),%gigaword4$(sect).linetoks) | genmodel
+	cat $^ | tr '[:upper:]' '[:lower:]' | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" > $@
+	rm -f $^
+
+%gigaword5lower.linetoks: $(foreach sect,$(GIGA5SECTS),%gigaword5$(sect).linetoks) | genmodel
 	cat $^ | tr '[:upper:]' '[:lower:]' | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" > $@
 	rm -f $^
