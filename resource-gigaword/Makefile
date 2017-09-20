@@ -118,14 +118,14 @@ GIGASECTS = $(shell cat $(CONFIGDIR)/user-gigaword-sects.txt)
 #
 ################################################################################
     
-gigaword%.linetoks: $$(DEP-GIGAWORD) $(GIGADIR)/data/$$*/*.gz $(GIGAWORD-SCRIPTS)/preprocess_gigaword.py \
+gigaword%.linetoks: $$(DEP-GIGAWORD) $(GIGAWORD-SCRIPTS)/preprocess_gigaword.py $(GIGADIR)/data/$$*/*.gz \
 $(CONFIGDIR)/user-gigaword-directory.txt | genmodel
-	mkdir tmp
-	cp $(word 1, $^) tmp/
-	gunzip tmp/*
-	cat tmp/* > $@.tmp
-	python $(word 2, $^) $@.tmp > $@
-	rm -rf tmp $@.tmp
+	mkdir gigatmp
+	cp $(wordlist 2,$(shell echo $$(($(words $^) - 1))),$^) gigatmp/
+	gunzip gigatmp/*
+	cat gigatmp/* > $@.gigatmp
+	python $(word 1, $^) $@.gigatmp > $@
+	rm -rf gigatmp $@.gigatmp
 
 %gigaword.linetoks: $(foreach sect,$(GIGASECTS),%gigaword$(sect).linetoks) | genmodel
 	cat $^ | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" > $@
