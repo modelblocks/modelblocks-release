@@ -92,16 +92,16 @@ V0 = numpy.zeros((1,Y))
 V0[0,0] = 1
 
 def calcForward( t, M, N, vAbove=V0 ):
-  t.v = vAbove.dot( M[t.l] )
+  t.v = vAbove
   ## cumulative from right...
   vR = numpy.ones((1,Y))
   for st in reversed( t.ch ):
     st.v = vR
     vR = numpy.multiply( vR, M[st.l].dot( st.u ).T if st.c[0]!='0' else N[:,[uniqInt(st.c)]].T )
   ## cumulative from left...
-  vL = t.v
+  vL = t.v.dot( M[t.l] )
   for st in t.ch:
-    if st.c[0]!='0': calcForward( st, M, N, numpy.multiply( st.v, vL ) )
+    calcForward( st, M, N, numpy.multiply( st.v, vL ) )
     vL = numpy.multiply( vL, M[st.l].dot( st.u ).T if st.c[0]!='0' else N[:,[uniqInt(st.c)]].T )
 
 def calcViterbi( t, LOGM, LOGN ):
@@ -138,30 +138,17 @@ def addToCount( p, t, Mcount, Ncount, yAbove=0 ):
     for st in t.ch:
       addToCount( p, st, Mcount, Ncount, t.y )
 
-def addToModel( p, t, M, N, C, D, vAbove=V0 ):
-
+def addToModel( p, t, M, N, C, D ):
   if t.c[0]=='0':
-    contrib = vAbove * N[:,uniqInt(t.c)].reshape((1,Y))
-    D[:,uniqInt(t.c)] += contrib.reshape(Y) * ( p / contrib.sum() )   ##p * vAbove.reshape(Y)/vAbove.sum()
+    contrib = t.v * N[:,uniqInt(t.c)].reshape((1,Y))
+    D[:,uniqInt(t.c)] += contrib.reshape(Y) * ( p / contrib.sum() )
   else:
-    contrib = numpy.multiply( vAbove.T, numpy.multiply( M[t.l], t.u.T ) )
+    contrib = numpy.multiply( t.v.T, numpy.multiply( M[t.l], t.u.T ) )
     contrib *= p / contrib.sum()
     C[t.l]     += contrib
     C[2*L-t.l] += contrib.T
-
-  t.v = vAbove.dot( M[t.l] )
-  ## cumulative from right...
-  vR = numpy.ones((1,Y))
-  for st in reversed( t.ch ):
-    st.v = vR
-    vR = numpy.multiply( vR, M[st.l].dot( st.u ).T if st.c[0]!='0' else N[:,[uniqInt(st.c)]].T )
-  ## cumulative from left...
-  vL = t.v
   for st in t.ch:
-    if st.c[0]!='0': addToModel( p, st, M, N, C, D, numpy.multiply( st.v, vL ) )
-    else:            addToModel( p, st, M, N, C, D, t.v )
-    vL = numpy.multiply( vL, M[st.l].dot( st.u ).T if st.c[0]!='0' else N[:,[uniqInt(st.c)]].T )
-
+    addToModel( p, st, M, N, C, D )
 
 ################################################################################
 ################################################################################
@@ -251,7 +238,7 @@ for i in range( I ):
     for p,t,trav in lpttrav:
       calcBackward ( trav, L, M, N )   ## bot-up (inside)
       calcForward  ( trav,    M, N )   ## top-dn (outside)
-      logprob += numpy.log( p * trav.v.dot( trav.u ) )
+      logprob += numpy.log( p * trav.v.dot( M[trav.l] ).dot( trav.u ) )    ###M[L+0,0].dot( trav.u ) )   ####trav.v.dot( trav.u ) )
   sys.stderr.write( 'iteration ' + str(i) + ' logprob: ' + str(logprob) + '\n' )
   C.fill( 0.0 )
   D.fill( 0.0 )
