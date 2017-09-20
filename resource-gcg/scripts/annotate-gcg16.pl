@@ -270,7 +270,7 @@ debug("p-rule ", "$_");
         (s/\^([SQCFVIBLAGR])([^ ]*?)($CODA) (<.*\[-NONE- \*ICH\*(-[0-9]+)\].*) <(SBAR[^ ]*\5 $SUITABLE_REL_CLAUSE)>\^/\^\1\2\3 <\1\2-h{C-rN}\5-lI-fNIL \4> <C-rN-lN-f\6>\^/ && ($j=5)) ||
         # branch off final SBAR as extraposed modifier IP:                           {VP ... t#' ... <SBAR#' [WH# which/who/that/nil] ... t# ...>} => {<VP-gRP ...> <IP WH# ... t# ...>}
         # try not to take [AR]-aN-x by having [^ x]* instead of normal [^ ]*
-        (s/\^([SQCFVIBLAGR])([^ x]*?)($CODA) (<.*\[-NONE- \*ICH\*(-[0-9]+)\].*) <(SBAR[^ ]*\5) \[WH[^ ]*(-[0-9]+) \[-NONE- 0\]\] \[S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] ([^>]*) \[ADVP \[-NONE- \*T\*\7\]\]([^>]*)\]>\^/\^\1\2\3 <\1\2-h{C-rN}\5-lI-fNIL \4> <I-aN-lN-f\6 \8\9>\^/ && ($j=6)) ||
+        (s/\^([SQCFVIBLAGR])([^ x]*?)($CODA) (<.*\[-NONE- \*ICH\*(-[0-9]+)\].*) <(SBAR[^ ]*\5) \[WH[^ ]*(-[0-9]+) \[-NONE- 0\]\] \[S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] ([^>]*) \[ADVP \[-NONE- \*T\*\7\]\]([^>]*)\]>\^/\^\1\2\3 <\1\2-h{I-aN}\5-lI-fNIL \4> <I-aN-lN-f\6 \8\9>\^/ && ($j=6)) ||
         # branch off final SBAR as extraposed modifier CS complement:                {VP ... t#' ... <SBAR#' [WH# which/who/that/nil] ... t# ...>} => {<VP-g{C-rN} ...> <CS ...>}
         (s/\^([SQCFVIBLAGRN])([^ ]*?)($CODA) (<.*\[-NONE- \*ICH\*(-[0-9]+)\].*) <(SBAR[^ ]*\5 \[(?:IN|DT) that\][^>]*)>\^/\^\1\2\3 <\1\2-hC\5-lI-fNIL \4> <C-lN-f\6>\^/ && ($j=7)) ||
         # branch off final PP as extraposed modifier:
@@ -499,12 +499,12 @@ debug("p-rule ", "$_");
 
         #### final VP|IP|BP|LP|AP (following auxiliary) -- raising verbs, pass subject to complement
         # branch off final VP as argument BP
-        (s/\^(Q|[VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (<.*(?:TO |MD | [Dd]o[\]>]| [Dd]oes[\]>]| [Dd]id[\]>]).*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<VP.*>)\^/\^\1\2\3 <\1-b{B-aN}-lI-fNIL \4> <B-aN\2-lA-fNIL \5\6>\^/ && ($j=80)) ||
+        (s/\^(Q|[VIBLAGR]-aN(?!-x))([ce]?)($CODA) (<.*(?:TO |MD | [Dd]o[\]>]| [Dd]oes[\]>]| [Dd]id[\]>]).*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<VP.*>)\^/\^\1\2\3 <\1-b{B-aN}-lI-fNIL \4> <B-aN\2-lA-fNIL \5\6>\^/ && ($j=80)) ||
         # there propagation through BP
         (s/\^(Q|[VIBLGR])(-a\{A-aN\})([^ ]*?)($CODA) (<.*(?:TO |MD | [Dd]o[\]>]| [Dd]oes[\]>]| [Dd]id[\]>]).*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<VP.*>)\^/\^\1\2\3\4 <\1-aX-b\{B-aX\}-lI-fNIL \5> <B-a\{A-aN\}\3-lA-fNIL \6\7>\^/ && ($j=80.5)) ||
         # branch off final VP as argument LP (w. special cases b/c 's ambiguous between 'has' and 'is')
-        (s/\^(Q|[VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (.*(?: [Hh]ave| [Hh]aving| [Hh]as| [Hh]ad| 've|VBD 'd)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<VP.*>)\^/\^\1\2\3 <\1-b{L-aN}-lI-fNIL \4> <L-aN\2-lA-fNIL \5\6>\^/ && ($j=81)) ||
-        (s/\^(Q|[VIBLAG]-aN(?!-x))([^ ]*?)($CODA) (.*<VBZ *'s>.*?) (<RB.*)?(<VP[^\]]* (?:$LP_FIRST).*>)\^/\^\1\2\3 <\1-b{L-aN}-lI-fNIL \4> <L-aN\2-lA-fNIL \5\6>\^/ && ($j=82)) ||
+        (s/\^(Q|[VIBLAGR]-aN(?!-x))([ce]?)($CODA) (.*(?: [Hh]ave| [Hh]aving| [Hh]as| [Hh]ad| 've|VBD 'd)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<VP.*>)\^/\^\1\2\3 <\1-b{L-aN}-lI-fNIL \4> <L-aN\2-lA-fNIL \5\6>\^/ && ($j=81)) ||
+        (s/\^(Q|[VIBLAG]-aN(?!-x))([ce]?)($CODA) (.*<VBZ *'s>.*?) (<RB.*)?(<VP[^\]]* (?:$LP_FIRST).*>)\^/\^\1\2\3 <\1-b{L-aN}-lI-fNIL \4> <L-aN\2-lA-fNIL \5\6>\^/ && ($j=82)) ||
         # there propagation through LP
         (s/\^(Q|[VIBLGR])(-a\{A-aN\})([^ ]*?)($CODA) (.*(?: [Hh]ave| [Hh]aving| [Hh]as| [Hh]ad| 've|VBD 'd)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<VP.*>)\^/\^\1\2\3\4 <\1-aX-b\{L-aX\}-lI-fNIL \5> <L-a\{A-aN\}\3-lA-fNIL \6\7>\^/ && ($j=82.3)) ||
         (s/\^(Q|[VIBLGR])(-a\{A-aN\})([^ ]*?)($CODA) (.*<VBZ *'s>.*?) (<RB.*)?(<VP[^\]]* (?:$LP_FIRST).*>)\^/\^\1\2\3\4 <\1-aX-b\{L-aX\}-lI-fNIL \5> <L-a\{A-aN\}\3-lA-fNIL \6\7>\^/ && ($j=82.6)) ||
@@ -520,11 +520,11 @@ debug("p-rule ", "$_");
         # there propagation
         (s/\^([VIBLG]-a\{.-aN\})($CODA) (<.*) <(NP(?!-(ADV|TMP|EXT|LOC|DIR|MNR|PRP|VOC))|[^ ]+-PRD)([^>]*)>\^/\^\1\2 <\1-bN-lI-fNIL \3> <N-lA-f\4\6>\^/ && ($j=84.5)) ||
         # branch off final VP|ADJP as argument AP
-        (s/\^(Q|[VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (.*(?: [Bb]e| [Bb]eing| [Bb]een| [Ii]s| [Ww]as|VBZ 's| [Aa]re| [Ww]ere| 're)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<(?:VP|VB[DNG]|ADJP|JJ|CD|PP[^ ]*-PRD|IN|UCP|ADVP[^ ]*-PRD|SBAR[^ ]*-PRD (?!\[WH|\[IN that)).*>)\^/\^\1\2\3 <\1-b{A-aN}-lI-fNIL \4> <A-aN\2-lA-fNIL \5\6>\^/ && ($j=85)) ||
-        (s/\^(Q|[VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (.*(?: [Bb]e| [Bb]eing| [Bb]een| [Ii]s| [Ww]as|VBZ 's| [Aa]re| [Ww]ere| 're)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<(?![^ ]*-SBJ)$NOMINALS[^>]*>)\^/\^\1\2\3 <\1-b{A-aN}-lI-fNIL \4> <A-aN\2-lA-fNIL \5\6>\^/ && ($j=86)) ||
+        (s/\^(Q|[VIBLAGR]-aN(?!-x))([ce]?)($CODA) (.*(?: [Bb]e| [Bb]eing| [Bb]een| [Ii]s| [Ww]as|VBZ 's| [Aa]re| [Ww]ere| 're)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<(?:VP|VB[DNG]|ADJP|JJ|CD|PP[^ ]*-PRD|IN|UCP|ADVP[^ ]*-PRD|SBAR[^ ]*-PRD (?!\[WH|\[IN that)).*>)\^/\^\1\2\3 <\1-b{A-aN}-lI-fNIL \4> <A-aN\2-lA-fNIL \5\6>\^/ && ($j=85)) ||
+        (s/\^(Q|[VIBLAGR]-aN(?!-x))([ce]?)($CODA) (.*(?: [Bb]e| [Bb]eing| [Bb]een| [Ii]s| [Ww]as|VBZ 's| [Aa]re| [Ww]ere| 're)>.*?) ((?:<RB[^>]*> |<ADVP[^>]*> )*)(<(?![^ ]*-SBJ|[^ ]*-ADV)$NOMINALS[^>]*>)\^/\^\1\2\3 <\1-b{A-aN}-lI-fNIL \4> <A-aN\2-lA-fNIL \5\6>\^/ && ($j=86)) ||
         (s/\^(N)([^ ]*?)($CODA) (.*(?: [Bb]e| [Bb]eing| [Bb]een| [Ii]s| [Ww]as|VBZ 's| [Aa]re| [Ww]ere| 're)>.*?) (<RB.*)?(<(?:VP|VB[DNG]|ADJP|JJ|CD|PP[^ ]*-PRD|IN|UCP|ADVP[^ ]*-PRD|SBAR[^ ]*-PRD (?!\[WH|\[IN that)).*>)\^/\^\1\2\3 <\1\2-b{A-aN}-lI-fNIL \4> <A-aN-lA-fNIL \5\6>\^/ && ($j=85.5)) ||
         (s/\^(N)([^ ]*?)($CODA) (.*(?: [Bb]e| [Bb]eing| [Bb]een| [Ii]s| [Ww]as|VBZ 's| [Aa]re| [Ww]ere| 're)>.*?) (<RB.*)?(<(?:NP|NN|S[^ ]*-NOM|SBAR[^ ]*-NOM|SBAR[^ ]*-PRD).*>)\^/\^\1\2\3 <\1\2-b{A-aN}-lI-fNIL \4> <A-aN-lA-fNIL <N-lI-fNIL \5\6>>\^/ && ($j=86.5)) ||
-        (s/\^(Q|[VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (<.*) <(ADJP|PRT|ADVP[^ ]*-PRD|PP[^ ]*-PRD|VP$NO_VP_HEAD \[VB[NG])([^>]*)>\^/\^\1\2\3 <\1-b{A-aN}-lI-fNIL \4> <A-aN\2-lA-f\5\6>\^/ && ($j=87)) ||
+        (s/\^(Q|[VIBLAGR]-aN(?!-x))([ce]?)($CODA) (<.*) <(ADJP|PRT|ADVP[^ ]*-PRD|PP[^ ]*-PRD|VP$NO_VP_HEAD \[VB[NG])([^>]*)>\^/\^\1\2\3 <\1-b{A-aN}-lI-fNIL \4> <A-aN\2-lA-f\5\6>\^/ && ($j=87)) ||
         (s/\^([AR]-aN(?!-x))([^ ]*?)($CODA) (<IN[^>]*>) <(JJ)([^>]*)>\^/\^\1\2\3 <\1\2-b{A-aN}-lI-fNIL \4> <A-aN-lA-f\5\6>\^/ && ($j=88)) ||
         # branch off final argument embedded question SS w. quotations
         (s/\^(Q|[VIBLAGR]-aN(?!-x))([^ ]*?)($CODA) (<.*) <(SBARQ[^>]*)>\^/\^\1\2\3 <\1\2-bS-lI-fNIL \4> <S-lA-f\5>\^/ && ($j=89)) ||
@@ -532,8 +532,8 @@ debug("p-rule ", "$_");
         #### final NS
         # initiate passive - must have A/R-aN starting with VBN and first -NONE- in last <...> 
         ##(s/\^([AR]-aN[^-]*(?!-x))([^ ]*?)($CODA) (<VBN (?:[^<](?!-NONE-))* <[^>]* \[-NONE- \*(?:-[0-9]*)?[\*\]][^<]*)\^/\^\1\2\3 <L-aN\2-vN\3 \4>\^/ && ($j=90)) ||
-        (s/\^([AR]-aN[^-]*(?!-x))([^ ]*?)($CODA) (<VBN [^>]*> <PP[^>]*> <S(?![^ ]*-PRP)[^ ]* \[NP[^ ]* \[-NONE- \*(?:-[0-9]*)?[\*\]][^<]*)\^/\^\1\2\3 <L-aN\2-vN\3 \4>\^/ && ($j=89.5)) ||
-        (s/\^([AR]-aN[^-]*(?!-x))([^ ]*?)($CODA) (<VBN [^>]*>( <[^\]]*>)* <[^>]* \[-NONE- \*(?:-[0-9]*)?[\*\]][^<]*)\^/\^\1\2\3 <L-aN\2-vN\3 \4>\^/ && ($j=90)) ||
+        (s/\^([AR]-aN[^-]*(?!-x))([^ ]*?)($CODA) (<VBN [^>]*> <PP[^>]*> <S(?![^ ]*-PRP)[^ ]* \[NP[^ ]* \[-NONE- \*(?:-[0-9]*)?[\*\]].*)\^/\^\1\2\3 <L-aN\2-vN\3 \4>\^/ && ($j=89.5)) ||
+        (s/\^([AR]-aN[^-]*(?!-x))([^ ]*?)($CODA) (<VBN [^>]*>( <[^\]]*>)* <[^>]* \[-NONE- \*(?:-[0-9]*)?[\*\]].*)\^/\^\1\2\3 <L-aN\2-vN\3 \4>\^/ && ($j=90)) ||
         (s/\^([AR]-aN-x)(?=[^ ]*-fVBN)([^ ]*?)($CODA) ([^>]*)\^/\^\1\2\3 <L-aN-bN-x\2-lI \4>\^/ && ($j=90.1)) ||
         #(s/\^([AR]-aN-x)(?=[^ ]*-fVBN)([^ ]*?)($CODA) ([^>]*)\^/\^\1\2\3 <L-aN-bN\2-lI \4>\^/ && ($j=90.1)) ||
         #(s/\^([AR]-aN[^-]*(?!-x))([^ ]*?)($CODA) (.*<VBN [^>]*>[^\]>]* \[[^ ]* \[-NONE- \*(?:-[0-9]*)?[\*\]]+.*)\^/\^\1\2\3 <L-aN\2-vN\3 \4>\^/ && ($j=90.5)) ||
@@ -667,7 +667,7 @@ debug("p-rule ", "$_");
 #        # branch off final SBAR as argument QC:                                        {XP ... <SBAR [WH# what/whichN/who/where/why/when/how/if/whether] ... t# ...>} => {XP <XP-bQC ...> <QC ... t# ...>}   ****SHOULD BE QC****
 #        s/\^([VIBLAGR]P|NS|NP)([^ ]*?)($CODA) (<.*) <(SBAR[^ ]* \[WH(?![^\]]*that))([^>]*)>\^/\^\1\2\3 <\1\2-bVS-iNS-lI-fNIL \4> <VS-iNS-lA-f\5\6>\^/ ||
         # delete final empty SBAR given gap Cr and re-run:
-        (s/\^([SQCFVIBLAGRN])(-h{C-rN})(-[0-9]+)([^ ]*) (<.*) <SBAR[^>\]]*\[-NONE- \*(?:T|ICH)\*\3\][^>\[]*>\^/<\1\2\3\4 \5>/ && ($j=136)) ||
+        (s/\^([SQCFVIBLAGRN])(-h{C-rN}|-h{I-aN})(-[0-9]+)([^ ]*) (<.*) <SBAR[^>\]]*\[-NONE- \*(?:T|ICH)\*\3\][^>\[]*>\^/<\1\2\3\4 \5>/ && ($j=136)) ||
         # branch off final SBAR as argument CS:                                        {XP ... <SBAR [IN that/nil] ...>} => {XP <XP-bCS ...> <CS ...>}   *****SHOULD BE CS******
         (s/\^(N(?!-a))([^ ]*?)($CODA) (<.*) <(SBAR)([^>]*)>\^/\^\1\2\3 <\1\2-kC-lI-fNIL \4> <C-lN-f\5\6>\^/ && ($j=136.9)) ||
         (s/\^([VIBLAGRN]-a[ND](?!-x)|N(?!-a))([^ ]*?)($CODA) (<.*) <(SBAR)([^>]*)>\^/\^\1\2\3 <\1\2-bC-lI-fNIL \4> <C-lA-f\5\6>\^/ && ($j=137)) ||
@@ -822,7 +822,7 @@ debug("p-rule ", "$_");
            (s/\^([^ \{]*)(-g{[VC]-rN})(-[0-9]+)((?![0-9]).*) <((?![^ ]*\2\3)[^ ]*?)(-[fghjl][^>]*\[-NONE- *\*(?:T|ICH|INTERNAL)\*\3\][^>]*)>(.*)\^/\^\1\2\3\4 <\5\2\3\6>\7\^/  && ($k=1.5)) ||
            (s/\^([^ ]*)(-g[^- \{\}]*|-g\{[^ \{\}]*\})(-[0-9]+)((?![0-9]).*) <((?![^ ]*\2\3)[^ ]*?)(-[fghjl][^>]*\[-NONE- *\*(?:T|ICH|INTERNAL)\*\3\][^>]*)>(.*)\^/\^\1\2\3\4 <\5\2\3\6>\7\^/  && ($k=2)) ||
            # propagate -h right-node-raising gap tag from parent to each child dominating trace with matching index
-           (s/\^([^ ]*)(-h[^- ]*|-h{[VC]-rN}|-h{R-aN})(-[0-9]+)((?![0-9]).*) <((?![^ ]*\2\3)[^ ]*?)(-[fghjl][^>]*\[-NONE- *\*(?:RNR|ICH)\*\3\][^>]*)>(.*)\^/\^\1\2\3\4 <\5\2\3\6>\7\^/  && ($k=3)) ||
+           (s/\^([^ ]*)(-h[^- ]*|-h{[VC]-rN}|-h{R-aN}|-h{I-aN})(-[0-9]+)((?![0-9]).*) <((?![^ ]*\2\3)[^ ]*?)(-[fghjl][^>]*\[-NONE- *\*(?:RNR|ICH)\*\3\][^>]*)>(.*)\^/\^\1\2\3\4 <\5\2\3\6>\7\^/  && ($k=3)) ||
            # propagate -v passivization tag from parent to first child containing a trace
            (s/\^([^ ]*)(-v[^- \}]*)((?:.(?!-NONE-))*) <((?![^ ]*\2)[^ ]*?)(-[fghjl][^>]*\[-NONE- \*(?:-[0-9]*)?[\*\]]*\])(.*)\^/\^\1\2\3 <\4\2\5\6\^/  && ($k=4)) ||
 #           # add -j it-cleft tag to each constituent following expletive trace that non-immediately dominates cleft complement with matching index

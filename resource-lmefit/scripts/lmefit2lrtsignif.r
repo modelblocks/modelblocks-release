@@ -60,6 +60,11 @@ cat('Likelihood Ratio Test (LRT) Summary\n')
 cat('===================================\n\n')
 cat('Correlation of numeric variables in model:\n')
 print(main$correlations)
+cat('\n\n')
+cat('SDs of numeric variables in model:\n')
+for (c in names(main$sd_vals)) {
+    cat(paste0(c, ': ', main$sd_vals[[c]], '\n'))
+}
 cat('\n')
 
 smartPrint('Summary of baseline model')
@@ -76,6 +81,6 @@ printSignifSummary(setdiff(base$abl,main$abl),
                    anova(base$model, main$model))
 
 if (!is.null(main$lambda)) {
-    printBoxCoxInvBetas(main$beta_ms, main$lambda, main$y_mu)
+    printBoxCoxInvBetas(main$beta_ms, main$lambda, main$y_mu, main$sd_vals)
 }
 

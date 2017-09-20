@@ -24,7 +24,7 @@
 #  
 #  1. %.pcfg.tokmeasures: Incremental pcfg parser output (parser-tokeniziation - 
 #     separate punctuation toks)
-#  2. %.syn.tokmeasures: PCFG praser output with center-embedding data 
+#  2. %.syn.tokmeasures: PCFG parser output with center-embedding data 
 #     calculated from gold trees (parser tokenization)
 #  3. %.itemmeasures: All syntactic predictors with ngram probabilities 
 #     (experiment tokenization, in which parser tokenization should be nested)
@@ -86,10 +86,10 @@ sed '1s/.*/cum$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
 mv $@{.tmp,};
 
 SPILLOVER := S1
-SURP := fwprob5surp synsurp lexsurp totsurp 
+SURP := fwprob5surp totsurp 
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
 FJ := noF yesJ embddepthAny embddepthMin endembdMin startembdMin noFlen noFdr noFdrv embdlen embddr embddrv 
-COREF := corefbin coreflenw coreflenr corefsize
+COREF := # corefbin coreflenw coreflenr corefsize
 SEMDIST := incrSemCosDistMin incrSemCosDistMax incrSemCosDistMean incrSemCosDistSum incrSemDistMin incrSemDistMax incrSemDistMean incrSemDistSum incrSemNACosDistMin incrSemNACosDistMax incrSemNACosDistMean incrSemNACosDistSum incrSemNADistMin incrSemNADistMax incrSemNADistMean incrSemNADistSum
 GCG-CATS := A B C D F G
 EMBDDEPTHS := 1 2 3 4 5
@@ -351,6 +351,12 @@ $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
+%.r.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures $$(basename %).roark.itemmeasures \
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
+	cat $< | python $(word 4, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
+	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | paste -d' ' - $(word 3, $^) | python $(word 5, $^) -d | \
+	$(word 6, $^) > $@
+
 define CompositeBlock
 RTDataParams:
   blockseq:
@@ -419,7 +425,7 @@ $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst G
 #
 # NOTE: this assumes you have not created any *.lmeform files of your own that end in *SP.lmeform.
 # If you have, it would be best to rename them before running this target.
-BASENAME-NB := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm
+BASENAME-NB := genmodel/dundee.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm
 BASELINE-SPILL-EVAL-%: $(RT-SCRIPTS)/permuteSpillover.py $(RT-SCRIPTS)/$$(word 1, $$(subst _, ,%)).lmeform \
 $$(foreach b, \
 $$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \

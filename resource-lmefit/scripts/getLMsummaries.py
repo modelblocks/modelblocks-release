@@ -10,7 +10,7 @@ def deRify(s):
 # http://stackoverflow.com/questions/5084743/how-to-print-pretty-string-output-in-python)
 def getPrintTable(row_collection, key_list, field_sep=' '):
   return '\n'.join([field_sep.join([str(row[col]).ljust(width)
-    for (col, width) in zip(key_list, [max(map(len, column_vector))
+    for (col, width) in zip(key_list, [max(map(lambda x: len(str(x)), column_vector))
       for column_vector in [ [v[k]
         for v in row_collection if k in v]
           for k in key_list ]])])
@@ -31,7 +31,7 @@ for path in fit_list:
         for i,l in enumerate(text):
             if deRify(l.strip()).startswith('logLik'):
                 loglik = float(deRify(text[i+1].strip()))
-    rows.append({'modelname': name, 'logLik': str(loglik), 'cliargs': str(cliargs)})
+    rows.append({'modelname': name, 'logLik': loglik, 'cliargs': str(cliargs)})
 
 headers = ['modelname', 'logLik', 'cliargs']
 header_row = {}

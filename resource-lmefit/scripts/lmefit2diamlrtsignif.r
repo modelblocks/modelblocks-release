@@ -73,6 +73,11 @@ cat('Diamond Likelihood Ratio Test (LRT) Summary\n')
 cat('===========================================\n\n')
 cat('Correlation of numeric variables in model:\n')
 print(both$correlations)
+cat('\n\n')
+cat('SDs of numeric variables in model:\n')
+for (c in names(both$sd_vals)) {
+    cat(c, ': ', both$sd_vals[[c]], '\n')
+}
 cat('\n')
 
 smartPrint('Base summary:')
@@ -92,7 +97,7 @@ printSignifSummary(setdiff(base$abl,left$abl),
                    left$model,
                    anova(base$model, left$model))
 if (!is.null(left$lambda)) {
-    printBoxCoxInvBetas(left$beta_ms, left$lambda, left$y_mu)
+    printBoxCoxInvBetas(left$beta_ms, left$lambda, left$y_mu, left$sd_vals)
 }
 
 smartPrint(paste('Effect 2 (', params$right, ') vs. Baseline', sep=''))
@@ -102,7 +107,7 @@ printSignifSummary(setdiff(base$abl,right$abl),
                    right$model,
                    anova(base$model, right$model))
 if (!is.null(right$lambda)) {
-    printBoxCoxInvBetas(right$beta_ms, right$lambda, right$y_mu)
+    printBoxCoxInvBetas(right$beta_ms, right$lambda, right$y_mu, right$sd_vals)
 }
 
 smartPrint(paste('Both vs. Effect 1 (', params$left, '):', sep=''))
@@ -112,7 +117,7 @@ printSignifSummary(setdiff(left$abl,both$abl),
                    both$model,
                    anova(left$model, both$model))
 if (!is.null(both$lambda)) {
-    printBoxCoxInvBetas(both$beta_ms, both$lambda, both$y_mu)
+    printBoxCoxInvBetas(both$beta_ms, both$lambda, both$y_mu, both$sd_vals)
 }
 
 smartPrint(paste('Both vs. Effect 2 (', params$right, '):', sep=''))
@@ -121,7 +126,7 @@ printSignifSummary(setdiff(right$abl,both$abl),
                    right$model,
                    both$model,
                    anova(right$model, both$model))
-f (!is.null(both$lambda)) {
-    printBoxCoxInvBetas(both$beta_ms, both$lambda, both$y_mu)
+if (!is.null(both$lambda)) {
+    printBoxCoxInvBetas(both$beta_ms, both$lambda, both$y_mu, both$sd_vals)
 }
 
