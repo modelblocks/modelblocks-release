@@ -43,8 +43,6 @@ GIGA3SECTS = afp_eng apw_eng cna_eng nyt_eng ltw_eng xin_eng
 GIGA4SECTS = afp_eng apw_eng cna_eng nyt_eng ltw_eng xin_eng
 GIGA5SECTS = afp_eng apw_eng cna_eng nyt_eng ltw_eng wpb_eng xin_eng
 
-GIGASECTS = $(GIGA4SECTS)
-
 ################################################################################
 #
 #  User-specific parameter files (not shared; created by default with default values)
@@ -55,6 +53,13 @@ GIGASECTS = $(GIGA4SECTS)
 ################################################################################
 
 ifndef MAKECONFIG
+CONFIG := $(CONFIGDIR)/user-gigaword-sects.txt
+ifeq (,$(firstword $(wildcard $(CONFIG))))
+$(info $(call CONFIGWARN, $(CONFIG)))
+DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
+endif
+GIGASECTS := $(shell cat $(CONFIG))
+
 CONFIG := $(CONFIGDIR)/user-gigaword-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
 $(info $(call CONFIGWARN, $(CONFIG)))
@@ -75,7 +80,7 @@ endef
 
 define RESOURCE-DESCR =
 NAME: English Gigaword 4
-MB POINTER FILE: config/user-gigaword4-directory.txt
+MB POINTER FILE: config/user-gigaword-directory.txt
 AVAILABILITY: Paid
 URL: https://catalog.ldc.upenn.edu/LDC2009T13
 DESCRIPTION: A comprehensive archive of newswire text data in English that
@@ -84,7 +89,7 @@ endef
 
 define RESOURCE-DESCR =
 NAME: English Gigaword 5
-MB POINTER FILE: config/user-gigaword5-directory.txt
+MB POINTER FILE: config/user-gigaword-directory.txt
 AVAILABILITY: Paid
 URL: https://catalog.ldc.upenn.edu/ldc2011t07
 DESCRIPTION: A comprehensive archive of newswire text data in English that
@@ -98,9 +103,14 @@ DEP-GIGAWORD :=
 endif
 endif
 
-## Default version of Gigaword is Gigaword 4, but feel free to change this
+## Default version of Gigaword is Gigaword 4, FYI
 %/user-gigaword-directory.txt: | %
 	echo '/home/corpora/original/english/gigaword-4' > $@
+
+%/user-gigaword-sects.txt: | %
+	echo $(GIGA4SECTS) > $@
+
+GIGASECTS = $(shell cat $(CONFIGDIR)/user-gigaword-sects.txt)
 
 ################################################################################
 #
