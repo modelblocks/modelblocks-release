@@ -118,7 +118,6 @@ def calcViterbi( t, LOGM, LOGN ):
 ################################################################################
 
 def sampleTypes( t, M, N, yAbove=0 ):        ## top-down sampling
-#  l = int( t.c.partition('|')[0] ) if t.c[0]!='|' else 0
   post = numpy.multiply( M[[t.l],[yAbove],:], t.u.T ).reshape(Y)
   t.y = numpy.random.choice( Y, p=post/post.sum() )
   for st in t.ch:
@@ -135,7 +134,7 @@ def addToCount( p, t, Mcount, Ncount, yAbove=0 ):
   if t.c[0]=='0': Ncount[yAbove,uniqInt(t.c)] += p
   else:
     Mcount[t.l,    yAbove,t.y   ] += p
-#    Mcount[2*L-t.l,t.y   ,yAbove] += p
+    Mcount[2*L-t.l,t.y   ,yAbove] += p
     for st in t.ch:
       addToCount( p, st, Mcount, Ncount, t.y )
 
@@ -148,7 +147,7 @@ def addToModel( p, t, M, N, C, D, vAbove=V0 ):
     contrib = numpy.multiply( vAbove.T, numpy.multiply( M[t.l], t.u.T ) )
     contrib *= p / contrib.sum()
     C[t.l]     += contrib
-#    C[2*L-t.l] += contrib.T
+    C[2*L-t.l] += contrib.T
 
   t.v = vAbove.dot( M[t.l] )
   ## cumulative from right...
@@ -168,7 +167,7 @@ def addToModel( p, t, M, N, C, D, vAbove=V0 ):
 ################################################################################
 
 def mergeTypeOutcomes( p, t, Ymap, N2N, src='00', srcy=-1 ):
-  if t.c[0]=='0': Ymap[ N2N[int(src[:2])] ][ '-x%' + t.c.split(':')[1] + '|%y' + str(srcy) ] += p
+  if t.c[0]=='0' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x%' + t.c.split(':')[1] + '|%y' + str(srcy) ] += p
   for st in t.ch:
     mergeTypeOutcomes( p, st, Ymap, N2N, re.sub('.*[|]','',t.c), t.y )
 

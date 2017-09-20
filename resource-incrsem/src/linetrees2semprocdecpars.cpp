@@ -61,12 +61,12 @@ int getArityGivenLabel ( const L& l ) {
 ////////////////////////////////////////////////////////////////////////////////
 
 O getOp ( const L& l, const L& lSibling, const L& lParent ) {
-  if ( string::npos != l.find("-lN") ) return 'N';
+  if ( string::npos != l.find("-lN") || string::npos != l.find("-lG") || string::npos != l.find("-lH") || string::npos != l.find("-lR") ) return 'N';
   if ( string::npos != l.find("-lV") ) return 'V';
   if ( string::npos == l.find("-l")  || string::npos != l.find("-lS") || string::npos != l.find("-lC") ) return 'I';
-  if ( string::npos != l.find("-lM") || string::npos != l.find("-lQ")      ) return 'M';
-  if ( string::npos != l.find("-lA") && string::npos != lParent.find("\\") ) return '0'+getArityGivenLabel( string(lParent,lParent.find("\\")+1) );
-  if ( string::npos != l.find("-lA") && string::npos == lParent.find('\\') ) return '0'+getArityGivenLabel( lSibling );
+  if ( string::npos != l.find("-lM") || string::npos != l.find("-lQ") || string::npos != l.find("-lU") ) return 'M';
+  if ( (string::npos != l.find("-lA") || string::npos != l.find("-lI")) && string::npos != lParent.find("\\") ) return '0'+getArityGivenLabel( string(lParent,lParent.find("\\")+1) );
+  if ( (string::npos != l.find("-lA") || string::npos != l.find("-lI")) && string::npos == lParent.find('\\') ) return '0'+getArityGivenLabel( lSibling );
   cerr << "ERROR: unhandled -l tag in label \"" << l << "\"" << endl;
   return O();
 }
@@ -100,33 +100,62 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
   // If punct, but not special !-delimited label...
   if ( ispunct(lW[0]) && ('!'!=lW[0] || lW.size()==1) ) return pair<K,T>(K::kBot,t);
 
+  string sLemma = lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
+//  if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end() || mldLemmaCounts[sLemma]<MINCOUNTS ) sLemma = "!unk!";
+//  if ( isdigit(lW[0]) )                                                                        sLemma = "!num!";
+  string sType = t.getString();  regex_replace( sType, regex("-x.*"), string("") );
+  string sPred = sType + ':' + sLemma;
+
+  smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^-]*)(.*?)$")); s=m[3] ) {
+    string sX = m[2];
+    smatch mX;
+    if( regex_match( sX, mX, regex("^(.*)%(.*)%(.*)[|](.*)%(.*)%(.*)$") ) )        // transfix (prefix+infix+suffix) rule application
+      sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"(.*)"+regex_escape(mX[3])+"$"), string(mX[4])+"$1"+string(mX[5])+"$2"+string(mX[6]) );
+    if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)[%](.*)$") ) )              // circumfix (prefix+suffix) rule application
+      sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"$"), string(mX[3])+"$1"+string(mX[4]) );
+  }
+  cerr << "applying " << lP << " to " << lW << " to get " << sPred << endl;
+
+  int iSplit = sPred.find( ":", 1 );
+  sType  = sPred.substr( 0, iSplit-1 );
+  sLemma = sPred.substr( iSplit+1 );
+  if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end() || mldLemmaCounts[sLemma]<MINCOUNTS ) sLemma = "!unk!";
+  if ( isdigit(lW[0]) )                                                                        sLemma = "!num!";
+
+  return pair<K,T>( ( sType + ':' + sLemma + '_' + ((lP[0]=='N') ? '1' : '0') ).c_str(), t );
+
+
+  /*
   // Make predicate be lowercase...
-  string sPred=lW;  transform(sPred.begin(), sPred.end(), sPred.begin(), [](unsigned char c) { return std::tolower(c); });
-  string sBaseType = t.getString();
+  string sLemma=lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
+  string sSignType = t.getString();
 
   // If preterm is morphrule-annotated, use baseform in pred...
   smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^-:|]*:|[^-%:|]*)([^-%:|]*?)%([^-%:|]*)[|](.)([^-:|]*:|[^-%:|]*)([^-%:|]*?)%([^-%:|]*)(.*)$")); s=m[9] ) {
     //cout<<"MATCH "<<string(m[1])<<" "<<string(m[2])<<" "<<string(m[3])<<" "<<string(m[4])<<" "<<string(m[5])<<" "<<string(m[6])<<" "<<string(m[7])<<" "<<string(m[8])<<" "<<string(m[9])<<endl;
-    sPred = regex_replace( sPred, regex("^"+regex_escape(m[3])+"(.*)"+regex_escape(m[4])+"$"), string(m[7])+"$1"+string(m[8]) );
-    sBaseType[0] = string(m[5])[0];
+    sLemma = regex_replace( sLemma, regex("^"+regex_escape(m[3])+"(.*)"+regex_escape(m[4])+"$"), string(m[7])+"$1"+string(m[8]) );
+    sSignType[0] = string(m[5])[0];
   }
-  sBaseType = regex_replace( sBaseType, regex("-x.*"), string("") );
-  //t = getType( sBaseType );
+  sSignType = regex_replace( sSignType, regex("-x.*"), string("") );
+  //t = getType( sSignType );
+  */
 
   /*
   // If preterm is morphrule-annotated, use baseform in pred...
   smatch m;  if ( regex_match( lP, m,regex("(.*?)-o.*[|]([^- ]*)") ) ) {
-    sBaseType = (lP[0]=='V' || lP[0]=='B' || lP[0]=='L' || lP[0]=='G') ? "B" + string(m[1],1) + "-o" + string(m[2])
+    sSignType = (lP[0]=='V' || lP[0]=='B' || lP[0]=='L' || lP[0]=='G') ? "B" + string(m[1],1) + "-o" + string(m[2])
               : (lP[0]=='N')                                           ? "N" + string(m[1],1) + "-o" + string(m[2])
               : (lP[0]=='A' || lP[0]=='R')                             ? "A" + string(m[1],1) + "-o" + string(m[2])
                                                                        : "ERROR:UNDEFINED_BASE";
-    sPred     = regex_replace( sPred, regex(string(m[4])+"$"), string(m[3]) );
+    sLemma     = regex_replace( sLemma, regex(string(m[4])+"$"), string(m[3]) );
   }
   */
 
-  if ( mldLemmaCounts.find(sPred)==mldLemmaCounts.end() || mldLemmaCounts[sPred]<MINCOUNTS ) sPred = "!unk!";
-  if ( isdigit(lW[0]) )                                                                      sPred = "!num!";
-  return pair<K,T>( (sBaseType + ':' + sPred + '_' + ((lP[0]=='N') ? '1' : '0')).c_str(), t );
+  /*
+  if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end() || mldLemmaCounts[sLemma]<MINCOUNTS ) sLemma = "!unk!";
+  if ( isdigit(lW[0]) )                                                                      sLemma = "!num!";
+  return pair<K,T>( (sSignType + ':' + sLemma + '_' + ((lP[0]=='N') ? '1' : '0')).c_str(), t );
+  */
 }
 
 ////////////////////////////////////////////////////////////////////////////////
