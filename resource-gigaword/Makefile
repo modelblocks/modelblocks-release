@@ -37,7 +37,11 @@
 .SUFFIXES:
 .SECONDEXPANSION:
 
-GIGASECTS = afp_eng apw_eng cna_eng ltw_eng nyt_eng xin_eng
+GIGA1SECTS = afe apw nyt xie
+GIGA2SECTS = afp_eng apw_eng cna_eng nyt_eng xin_eng
+GIGA3SECTS = afp_eng apw_eng cna_eng nyt_eng ltw_eng xin_eng
+GIGA4SECTS = afp_eng apw_eng cna_eng nyt_eng ltw_eng xin_eng
+GIGA5SECTS = afp_eng apw_eng cna_eng nyt_eng ltw_eng wpb_eng xin_eng
 
 ################################################################################
 #
@@ -49,23 +53,49 @@ GIGASECTS = afp_eng apw_eng cna_eng ltw_eng nyt_eng xin_eng
 ################################################################################
 
 ifndef MAKECONFIG
-CONFIG := $(CONFIGDIR)/user-gigaword4-directory.txt
+CONFIG := $(CONFIGDIR)/user-gigaword-sects.txt
+ifeq (,$(firstword $(wildcard $(CONFIG))))
+$(info $(call CONFIGWARN, $(CONFIG)))
+DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
+endif
+GIGASECTS := $(shell cat $(CONFIG))
+
+CONFIG := $(CONFIGDIR)/user-gigaword-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
 $(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 GIGADIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(GIGADIR))))
+
 RESOURCE-NAME := English Gigaword
 define RESOURCE-DESCR =
-
-NAME: English Gigaword
-MB POINTER FILE: config/user-gigaword4-directory.txt
+NAME: English Gigaword 3
+MB POINTER FILE: config/user-gigaword-directory.txt
 AVAILABILITY: Paid
-URL: https://catalog.ldc.upenn.edu/ldc2003t05
+URL: https://catalog.ldc.upenn.edu/LDC2007T07
 DESCRIPTION: A comprehensive archive of newswire text data in English that
 has been acquired over several years by the Linguistic Data Consortium.
 endef
+
+define RESOURCE-DESCR =
+NAME: English Gigaword 4
+MB POINTER FILE: config/user-gigaword-directory.txt
+AVAILABILITY: Paid
+URL: https://catalog.ldc.upenn.edu/LDC2009T13
+DESCRIPTION: A comprehensive archive of newswire text data in English that
+has been acquired over several years by the Linguistic Data Consortium.
+endef
+
+define RESOURCE-DESCR =
+NAME: English Gigaword 5
+MB POINTER FILE: config/user-gigaword-directory.txt
+AVAILABILITY: Paid
+URL: https://catalog.ldc.upenn.edu/ldc2011t07
+DESCRIPTION: A comprehensive archive of newswire text data in English that
+has been acquired over several years by the Linguistic Data Consortium.
+endef
+
 GIGAWORD-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
 DEP-GIGAWORD = $(error $(GIGAWORD-ERROR))
 else
@@ -73,10 +103,14 @@ DEP-GIGAWORD :=
 endif
 endif
 
-
-
-%/user-gigaword4-directory.txt: | %
+## Default version of Gigaword is Gigaword 4, FYI
+%/user-gigaword-directory.txt: | %
 	echo '/home/corpora/original/english/gigaword-4' > $@
+
+%/user-gigaword-sects.txt: | %
+	echo $(GIGA4SECTS) > $@
+
+GIGASECTS = $(shell cat $(CONFIGDIR)/user-gigaword-sects.txt)
 
 ################################################################################
 #
@@ -84,19 +118,19 @@ endif
 #
 ################################################################################
     
-gigaword4%.linetoks: $$(DEP-GIGAWORD) $(GIGADIR)/data/$$*/*.gz $(GIGAWORD-SCRIPTS)/preprocess_gigaword.py \
-$(CONFIGDIR)/user-gigaword4-directory.txt | genmodel
-	mkdir tmp
-	cp $(word 1, $^) tmp/
-	gunzip tmp/*
-	cat tmp/* > $@.tmp
-	python $(word 2, $^) $@.tmp > $@
-	rm -rf tmp $@.tmp
+gigaword%.linetoks: $$(DEP-GIGAWORD) $(GIGAWORD-SCRIPTS)/preprocess_gigaword.py $(GIGADIR)/data/$$*/*.gz \
+$(CONFIGDIR)/user-gigaword-directory.txt | genmodel
+	mkdir gigatmp
+	cp $(wordlist 2,$(shell echo $$(($(words $^) - 1))),$^) gigatmp/
+	gunzip gigatmp/*
+	cat gigatmp/* > $@.gigatmp
+	python $(word 1, $^) $@.gigatmp > $@
+	rm -rf gigatmp $@.gigatmp
 
-%gigaword4.linetoks: $(foreach sect,$(GIGASECTS),%gigaword4$(sect).linetoks) | genmodel
+%gigaword.linetoks: $(foreach sect,$(GIGASECTS),%gigaword$(sect).linetoks) | genmodel
 	cat $^ | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" > $@
 	rm -f $^
-  
-%gigaword4lower.linetoks: $(foreach sect,$(GIGASECTS),%gigaword4$(sect).linetoks) | genmodel
+
+%gigawordlower.linetoks: $(foreach sect,$(GIGASECTS),%gigaword$(sect).linetoks) | genmodel
 	cat $^ | tr '[:upper:]' '[:lower:]' | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" > $@
 	rm -f $^

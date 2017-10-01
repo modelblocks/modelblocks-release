@@ -67,7 +67,7 @@ endef
 KENLM-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
 DEP-KENLM = $(error $(KENLM-ERROR))
 else
-DEP-KENML :=
+DEP-KENLM :=
 endif
 
 CONFIG := $(CONFIGDIR)/user-kenlm-model-directory.txt
@@ -93,7 +93,33 @@ endef
 KENLMMOD-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
 DEP-KENLMMOD = $(error $(KENLMMOD-ERROR))
 else
-DEP-KENML :=
+DEP-KENLM :=
+endif
+
+CONFIG := $(CONFIGDIR)/user-kenlm-flags.txt
+ifeq (,$(firstword $(wildcard $(CONFIG))))
+$(info $(call CONFIGWARN $(CONFIG)))
+DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
+endif
+KENLMFLAGS := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(KENLMFLAGS))))
+RESOURCE-NAME := KenLM Language Model Toolkit (runtime flags)
+define RESOURCE-DESCR =
+
+NAME: KenLM Language Model Toolkit (runtime flags)
+MB POINTER FILE: config/user-kenlm-flags.txt
+AVAILABILITY: Free
+URL: https://kheafield.com/code/kenlm/
+DESCRIPTION: KenLM estimates, filters, and queries language models. Estimation
+is fast and scalable due to streaming algorithms.
+
+This resource is a holder for runtime flags used with kenlm on your system.
+You can revise the flags using the file above.
+endef
+KENLMFLAGS-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-KENLMFLAGS = $(error $(KENLMFLAGS-ERROR))
+else
+DEP-KENLM :=
 endif
 endif
 
@@ -101,11 +127,12 @@ endif
 
 %/user-kenlm-directory.txt: | %
 	echo '/home/compling/kenlm_git' > $@
-  
+
 %/user-kenlm-model-directory.txt: | %
 	echo '/home/compling/kenlm_models' > $@
-  
-  
+
+%/user-kenlm-flags.txt: | %
+	echo '-T kenlmtmp -S 50%' > $@
 
 ################################################################################
 #
@@ -118,22 +145,22 @@ endif
 	#careful, this removes the source after compressing a copy
 	#saves space, but it makes the order of the dependencies in a make item crucial; e.g. revsents.bz2 must come before sents.bz2
 	bzip2 $<
-  
+
 .PRECIOUS: %.kenlm
 # especially good for unigram models since kenlm doesn't permit those to be made into binaries
 %.kenlm: $$(DEP-KENLM) $(CONFIGDIR)/user-kenlm-directory.txt $(KENLMDIR)/bin/lmplz \
-$$(basename %).linetoks.bz2
+$$(basename %).linetoks.bz2 $(CONFIGDIR)/user-kenlm-flags.txt
 	mkdir kenlmtmp
-	$(word 2,$^) -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 50% < $(word 3, $^) > $@
+	$(word 2,$^) -o $(subst .,,$(suffix $*)) $(shell cat $(word 4,$^)) < $(word 3, $^) > $@
 	rm -rf kenlmtmp
-    
-.PRECIOUS: %.fw.kenlm
-# especially good for unigram models since kenlm doesn't permit those to be made into binaries
-%.fw.kenlm: $$(DEP-KENLM) $(KENLMDIR)/bin/lmplz $$(basename %).linetoks.bz2 \
-$(CONFIGDIR)/user-kenlm-directory.txt | genmodel
-	mkdir kenlmtmp
-	$(word 1, $^) -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 50% < $(word 2, $^) > $@
-	rm -rf kenlmtmp
+
+#.PRECIOUS: %.fw.kenlm
+## especially good for unigram models since kenlm doesn't permit those to be made into binaries
+#%.fw.kenlm: $$(DEP-KENLM) $(KENLMDIR)/bin/lmplz $$(basename %).linetoks.bz2 \
+#$(CONFIGDIR)/user-kenlm-directory.txt | genmodel
+#	mkdir kenlmtmp
+#	$(word 1, $^) -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 20G < $(word 2, $^) > $@
+#	rm -rf kenlmtmp
 
 .PRECIOUS: %.kenlm.bin
 # uses array pointer compression
@@ -190,14 +217,14 @@ endef
 .PRECIOUS: %.kenlm.ngram.itemmeasures
 %.kenlm.ngram.itemmeasures: $$(DEP-KENLM) $(KENLMDIR)/bin/query \
 $$(basename %).lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
-$(KENLMMODDIR)/gigaword4$$(suffix $$*).kenlm.bin \
+$(KENLMMODDIR)/gigaword$$(suffix $$*).kenlm.bin \
 $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
 	$(word 1, $^) -\n $(word 4,$^) < $(word 2,$^) | python3 $(word 3,$^) --fwprobs - | \
 	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
 
 %.kenlm.ngram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLMDIR)/bin/query \
 $$(basename %).lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
-$(KENLMMODDIR)/gigaword4$$(suffix $$*).kenlm \
+$(KENLMMODDIR)/gigaword$$(suffix $$*).kenlm \
 $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
 	$(word 1, $^) -\n $(word 4,$^) < $(word 2,$^) | python3 $(word 3,$^) --fwprobs - | \
 	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@

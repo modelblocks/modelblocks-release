@@ -17,7 +17,7 @@ def main():
 
     for s in data1['subject'].unique():
         data1_s = data1.loc[data1['subject'] == s]
-        merged = pd.merge(data1_s, data2, how='outer', on=['item', 'zone', 'word'])
+        merged = pd.merge(data1_s, data2, how='inner', on=['item', 'zone', 'word'])
         merged['subject'] = s
         frames.append(merged)
     merged = pd.concat(frames)
