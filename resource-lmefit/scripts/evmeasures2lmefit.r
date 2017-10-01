@@ -46,7 +46,7 @@ cat('=======================\n\n')
 
 smartPrint('Reading data from file')
 data <- read.table(input, header=TRUE, quote='', comment.char='')
-data <- cleanupData(data, params$filterfiles, params$filterlines, params$filtersents, params$filterscreens, params$filterpunc, params$restrdomain)
+data <- cleanupData(data, params$filterfiles, params$filterlines, params$filtersents, params$filterscreens, params$filterpunc, params$restrdomain, params$upperbound, params$lowerbound, params$mincorrect)
 data <- recastEffects(data, params$splitcols, params$indicatorlevel, params$groupingfactor)
 
 if (params$dev) {
@@ -105,6 +105,8 @@ if (length(params$groupingfactor) > 0) {
     }
 }
 
+print(head(data, 100))
+print(tail(data, 100))
 
 fitModel(data, output, params$bformfile, params$fitmode,
                      params$logmain, params$logdepvar, params$lambda,

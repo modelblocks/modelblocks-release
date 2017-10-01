@@ -56,7 +56,7 @@ endef
 .SECONDEXPANSION:
 
 NATSTORIES-BASENAME := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.sprbest
-NATSTORIES-LMEDEFAULT := -NSCFX
+NATSTORIES-LMEDEFAULT := -NSCFX_-o_5
 $(eval $(call RT-EXPERIMENTS,naturalstories,$(NATSTORIES-BASENAME),$(NATSTORIES-LMEDEFAULT)))
 
 ################################################################################

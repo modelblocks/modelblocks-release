@@ -57,11 +57,9 @@ endef
 .SUFFIXES:
 .SECONDEXPANSION:
 
-SPILL-DUNDEE := S1 S2 S3
-DLT-DUNDEE := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
-FJ-DUNDEE := fjprob endembd embdlen embdlendr embdlendrv noF noFlen noFlendr noFlendrv reinst reinstlen reinstlendr reinstlendrv
-ALL-MEM = $(DLT-DUNDEE) $(FJ-DUNDEE)
-ALL-MEM-SPILL = $(ALL-MEM) $(foreach var,$(ALL-MEM),$(foreach spill,$(SPILL-DUNDEE),$(var)$(spill)))
+UCL-BASENAME := genmodel/ucl.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.eyeFPucl
+UCL-LMEDEFAULT := -NSCFX
+$(eval $(call RT-EXPERIMENTS,ucl,$(UCL-BASENAME),$(UCL-LMEDEFAULT)))
 
 ################################################################################
 #

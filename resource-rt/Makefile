@@ -430,16 +430,14 @@ BASELINE-SPILL-EVAL-%: $(RT-SCRIPTS)/permuteSpillover.py $(RT-SCRIPTS)/$$(word 1
 $$(foreach b, \
 $$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
 $$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
-$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
-$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts), \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts), \
 $$(BASENAME-NB).$$(basename $$(notdir $$(b))).-$$(word 2, $$(subst _, ,$$*)).lm);
 
 BASELINE-SPILL-EVAL-%: $(RT-SCRIPTS)/permuteSpillover.py $(CURDIR)/scripts/$$(word 1, $$(subst _, ,%)).lmeform \
 $$(foreach b, \
 $$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
 $$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
-$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
-$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts), \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts), \
 $$(BASENAME-NB).$$(basename $$(notdir $$(b))).-$$(word 2, $$(subst _, ,$$*)).lm);
 
 ################################################################################
