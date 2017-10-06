@@ -114,10 +114,9 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
     if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)[%](.*)$") ) )              // circumfix (prefix+suffix) rule application
       sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"$"), string(mX[3])+"$1"+string(mX[4]) );
   }
-  cerr << "applying " << lP << " to " << lW << " to get " << sPred << endl;
 
   int iSplit = sPred.find( ":", 1 );
-  sType  = sPred.substr( 0, iSplit-1 );
+  sType  = sPred.substr( 0, iSplit );
   sLemma = sPred.substr( iSplit+1 );
   if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end() || mldLemmaCounts[sLemma]<MINCOUNTS ) sLemma = "!unk!";
   if ( isdigit(lW[0]) )                                                                        sLemma = "!num!";
@@ -160,30 +159,34 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calcContext ( const Tree& tr, int s=1, int d=0, E e='N' ) {
+void calcContext ( const Tree& tr, int s=1, int d=0, E e='N', L l=L() ) {
   static F          f;
   static E          eF;
   static Sign       aPretrm;
   static StoreState q;
 
+  if( l==L() ) l = L(tr);
+
   // At unary preterminal...
   if ( tr.size()==1 && tr.front().size()==0 ) {
 
     f               = 1 - s;
-    if( e=='N' ) eF = e = getExtr ( tr );
+//    if( e=='N' ) 
+    eF = e = ( e!='N' ) ? e : getExtr ( tr );
     pair<K,T> kt    = getPred ( L(tr), L(tr.front()) );
-    K k             = kt.first;
-    T t             = kt.second;
-    aPretrm         = Sign( k, t, S_A );
+    K k             = (FEATCONFIG & 2) ? K::kBot : kt.first;
+//    T t             = kt.second;
+    aPretrm         = Sign( k, getType(l), S_A );
 
     // Print preterminal / fork-phase predictors...
     DelimitedList<psX,FPredictor,psComma,psX> lfp;  q.calcForkPredictors(lfp);
     cout<<"----"<<q<<endl;
     cout << "F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e,k) << endl;
-    cout << "P " << q.calcPretrmTypeCondition(f,e,k) << " : " << t              << endl;
-    cout << "W " << k << " " << t                    << " : " << L(tr.front())  << endl;
+    cout << "P " << q.calcPretrmTypeCondition(f,e,k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
+    cout << "W " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
   }
 
+/*
   // At unary prepreterminal (prior to filling gaps)...
   else if ( tr.size()==1 && tr.front().size()==1 && tr.front().front().size()==0 ) {
 
@@ -201,11 +204,13 @@ void calcContext ( const Tree& tr, int s=1, int d=0, E e='N' ) {
     cout << "P " << q.calcPretrmTypeCondition(f,e,k) << " : " << aPretrm.getType()     << endl;
     cout << "W " << k << " " << aPretrm.getType()    << " : " << L(tr.front().front()) << endl;
   }
+*/
 
   // At unary prepreterminal...
   else if ( tr.size()==1 ) {
-    E e = getExtr ( tr );
-    calcContext ( tr.front(), s, d, e );
+    e = ( e!='N' ) ? e : getExtr ( tr );
+//    cout << "==== " << L(tr) << " -> " << L(tr.front()) << endl;
+    calcContext ( tr.front(), s, d, e, l );
   }
 
   // At binary nonterminal...
@@ -219,7 +224,7 @@ void calcContext ( const Tree& tr, int s=1, int d=0, E e='N' ) {
     //NOT USED! Sign aLchildTmp;
     //NOT USED! Sign aLchild = q.getLchild ( aLchildTmp, f, aPretrm );
     LeftChildSign aLchild ( q, f, eF, aPretrm );
-    e            = getExtr ( tr ) ;
+    e            = ( e!='N' ) ? e : getExtr ( tr ) ;
     O oL         = getOp ( L(tr.front()), L(tr.back()),  L(tr) );
     O oR         = getOp ( L(tr.back()),  L(tr.front()), L(tr) );
 
@@ -227,11 +232,11 @@ void calcContext ( const Tree& tr, int s=1, int d=0, E e='N' ) {
     DelimitedList<psX,JPredictor,psComma,psX> ljp;  q.calcJoinPredictors(ljp,f,eF,aLchild);
     cout << "==== " << aLchild << "   " << L(tr) << " -> " << L(tr.front()) << " " << L(tr.back()) << endl;
     cout << "J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e,oL,oR)  << endl;
-    cout << "A " << q.calcApexTypeCondition(f,j,eF,e,oL,aLchild)                   << " : " << getType(tr)         << endl;
-    cout << "B " << q.calcBrinkTypeCondition(f,j,eF,e,oL,oR,getType(tr),aLchild)   << " : " << getType(tr.back())  << endl;
+    cout << "A " << q.calcApexTypeCondition(f,j,eF,e,oL,aLchild)                  << " : " << getType(l)          << endl;
+    cout << "B " << q.calcBrinkTypeCondition(f,j,eF,e,oL,oR,getType(l),aLchild)   << " : " << getType(tr.back())  << endl;
 
     // Update storestate...
-    q = StoreState ( q, f, j, eF, e, oL, oR, getType(tr), getType(tr.back()), aPretrm, aLchild );
+    q = StoreState ( q, f, j, eF, e, oL, oR, getType(l), getType(tr.back()), aPretrm, aLchild );
 
     // Traverse right child...
     calcContext ( tr.back(), 1, d );
@@ -252,8 +257,8 @@ int main ( int nArgs, char* argv[] ) {
   // For each command-line flag or model file...
   for ( int a=1; a<nArgs; a++ ) {
     //if ( 0==strcmp(argv[a],"t") ) STORESTATE_TYPE = true;
-    if( '-'==argv[a][0] && 'f'==argv[a][1] ) FEATCONFIG = atoi( argv[a]+2 );
-    if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS = atoi( argv[a]+2 );
+    if(      '-'==argv[a][0] && 'f'==argv[a][1] ) FEATCONFIG = atoi( argv[a]+2 );
+    else if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS  = atoi( argv[a]+2 );
     else {
       cerr << "Loading model " << argv[a] << "..." << endl;
       // Open file...

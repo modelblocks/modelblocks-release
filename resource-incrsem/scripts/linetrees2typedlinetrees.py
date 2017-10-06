@@ -68,15 +68,19 @@ def uniqInt( k ):
   global KINTS
   if k not in KINTS: KINTS[k]=len(KINTS)
   return KINTS[k]
+uniqInt( '0|-' )     ## type for non-eventualities
 
 ################################################################################
 
 def setKL( t, KINTS ):
   L = int( t.c.partition('|')[0] )+1 if t.c[0]!='|' else 1
+  bHasPred = ( t.c[0]=='0' )
   if t.c[0]=='0': uniqInt(t.c)
   for st in t.ch:
     k,l = setKL( st, KINTS )
     L = max(L,l)
+    if st.c[0]=='0': bHasPred = True
+  if not bHasPred: t.ch += [ tree.Tree('0|-') ]
   return len(KINTS),L
 
 ################################################################################
@@ -154,7 +158,7 @@ def addToModel( p, t, M, N, C, D ):
 ################################################################################
 
 def mergeTypeOutcomes( p, t, Ymap, N2N, src='00', srcy=-1 ):
-  if t.c[0]=='0' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x%' + t.c.split(':')[1] + '|%y' + str(srcy) ] += p
+  if t.c[0]=='0' and t.c!='0|-' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x%' + t.c.split(':')[1] + '|%y' + str(srcy) ] += p
   for st in t.ch:
     mergeTypeOutcomes( p, st, Ymap, N2N, re.sub('.*[|]','',t.c), t.y )
 
