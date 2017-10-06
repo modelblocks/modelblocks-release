@@ -28,6 +28,9 @@ processLMEArgs <- function() {
         make_option(c('-C', '--filterscreens'), type='logical', action='store_true', default=FALSE, help='Filter out events at screen boundaries.'),
         make_option(c('-F', '--filterfiles'), type='logical', action='store_true', default=FALSE, help='Filter out events at file boundaries.'),
         make_option(c('-p', '--filterpunc'), type='logical', action='store_true', default=FALSE, help='Filter out events containing phrasal punctuation.'),
+        make_option(c('-U', '--upperbound'), type='numeric', default=NULL, help='Filter out events with response value >= n.'),
+        make_option(c('-B', '--lowerbound'), type='numeric', default=NULL, help='Filter out events with response value <= n.'),
+        make_option(c('-o', '--mincorrect'), type='numeric', default=NULL, help='Filter out events with number correct < n.'),
         make_option(c('-l', '--logdepvar'), type='logical', action='store_true', default=FALSE, help='Log transform fixation durations.'),
         make_option(c('-X', '--boxcox'), type='logical', action='store_true', default=FALSE, help='Use Box & Cox (1964) to find and apply the best power transform of the dependent variable.'),
         make_option(c('-L', '--logmain'), type='logical', action='store_true', default=FALSE, help='Log transform main effect.'),
@@ -114,7 +117,7 @@ processLMEArgs <- function() {
 }
 
 
-cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=FALSE, filterscreens=FALSE, filterpunc=FALSE, restrdomain=NULL) {
+cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=FALSE, filterscreens=FALSE, filterpunc=FALSE, restrdomain=NULL, upperbound=NULL, lowerbound=NULL, mincorrect=NULL) {
     smartPrint(paste('Number of data rows (raw):', nrow(data)))
     
     if (!is.null(data$wdelta)) {
@@ -171,6 +174,19 @@ cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=
         } else smartPrint('No phrasal punctuation field to filter')
     } else {
         smartPrint('Phrasal punctuation filtering off')
+    }
+    if (!is.null(upperbound)) {
+        smartPrint(paste0('Filtering out rows with response variable >= ', toString(upperbound)))
+        data <- data[data$fdur < upperbound,]
+    }
+    if (!is.null(lowerbound)) {
+        smartPrint(paste0('Filtering out rows with response variable >= ', toString(lowerbound)))
+        data <- data[data$fdur > lowerbound,]
+    }
+
+    if (!is.null(mincorrect) & 'correct' %in% colnames(data)) {
+        smartPrint(paste0('Filtering out rows with correct < ', toString(mincorrect)))
+        data <- data[data$correct < mincorrect,]
     }
 
     # Remove any incomplete rows
@@ -707,6 +723,11 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         beta_ms = fixef(outputModel) 
         y_mu = NULL 
     } 
+    err = predict(outputModel, dataset)
+    mae = mean(abs(err))
+    mse = mean(err^2)
+    smartPrint(paste0('Mean absolute error: ', toString(mae)))
+    smartPrint(paste0('Mean squared error:  ', toString(mse)))
     fitOutput <- list(
         abl = ablEffects,
         ablEffects = processEffects(ablEffects, data, logmain),
