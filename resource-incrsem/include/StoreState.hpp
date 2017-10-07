@@ -51,27 +51,6 @@ typedef W ObsWord;
 
 class T;
 typedef T N;
-/*
-DiscreteDomain<int> domN;
-class N : public Delimited<DiscreteDomainRV<int,domN>> {
- private:
-  static map<N,bool> mnbLft;
-  static map<N,bool> mnbArg;
-  void calcDetermModels ( const char* ps ) {
-    if( mnbArg.end()==mnbArg.find(*this) ) { mnbArg[*this]=( strlen(ps)<=4 ); }
-    if( mnbLft.end()==mnbLft.find(*this) ) { mnbLft[*this]=( ps[0]!='\0' && ps[1]!='h' ); }
-  }
- public:
-  N ( )                : Delimited<DiscreteDomainRV<int,domN>> ( )    { }
-  N ( int i )          : Delimited<DiscreteDomainRV<int,domN>> ( i )  { }
-  N ( const char* ps ) : Delimited<DiscreteDomainRV<int,domN>> ( ps ) { calcDetermModels(ps); }
-  bool isArg ( ) { return mnbArg[*this]; }
-  bool isLft ( ) { return mnbLft[*this]; }
-};
-map<N,bool> N::mnbArg;
-map<N,bool> N::mnbLft;
-const N N_NONE("");
-*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -521,26 +500,11 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
 
     //// A. FIND STORE LANDMARKS AND EXISTING P,A,B CARRIERS...
 
-    /*
-    // Find store landmarks...
-    int iNextLowestA = qPrev.size();  int iNextLowestB = qPrev.size();  int iLowestA = qPrev.size();  int iLowestB = qPrev.size()-1;
-    for( int i=iLowestB; i>=0; i-- ) if( !qPrev[i].getType().isCarrier() ) {
-      if( iNextLowestA > iNextLowestB ) iNextLowestA = i;
-      if( iNextLowestB > iLowestA )     iNextLowestB = i;
-      if( iLowestA     > iLowestB )     iLowestA     = i;
-    }
-
-    // Find ancestors...
-    int iAncestorA = ( f==0 ) ? iNextLowestA : iLowestA;
-    int iAncestorB = ( f==0 ) ? iNextLowestB : iLowestB;
-    */
-
     int iAncestorA = qPrev.getAncestorAIndex(f);
     int iAncestorB = qPrev.getAncestorBIndex(f);
     int iLowerA    = (f==1) ? qPrev.size() : qPrev.getAncestorAIndex(1);
 
     // Find existing nonlocal carriers...
-//    N nP = aPretrm.getType().getLastNonlocal();  N nL = ((f==0)?qPrev[iLowerA]:aPretrm).getType().getLastNonlocal();  N nA = tA.getLastNonlocal();  N nB = tB.getLastNonlocal();
     N nP = aPretrm.getType().getLastNonlocal();  N nA = tA.getLastNonlocal();  N nB = tB.getLastNonlocal();  N nL = aLchild.getType().getLastNonlocal();
     int iCarrierP = -1;                          int iCarrierA = -1;           int iCarrierB = -1;           int iCarrierL = -1;
     // Find preterm nonlocal carrier, traversing up from ancestorB through carriers or noncarriers containing preterminal nonlocal, until carrier found...

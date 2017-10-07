@@ -101,8 +101,6 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
   if ( ispunct(lW[0]) && ('!'!=lW[0] || lW.size()==1) ) return pair<K,T>(K::kBot,t);
 
   string sLemma = lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
-//  if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end() || mldLemmaCounts[sLemma]<MINCOUNTS ) sLemma = "!unk!";
-//  if ( isdigit(lW[0]) )                                                                        sLemma = "!num!";
   string sType = t.getString();  regex_replace( sType, regex("-x.*"), string("") );
   string sPred = sType + ':' + sLemma;
 
@@ -122,39 +120,6 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
   if ( isdigit(lW[0]) )                                                                        sLemma = "!num!";
 
   return pair<K,T>( ( sType + ':' + sLemma + '_' + ((lP[0]=='N') ? '1' : '0') ).c_str(), t );
-
-
-  /*
-  // Make predicate be lowercase...
-  string sLemma=lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
-  string sSignType = t.getString();
-
-  // If preterm is morphrule-annotated, use baseform in pred...
-  smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^-:|]*:|[^-%:|]*)([^-%:|]*?)%([^-%:|]*)[|](.)([^-:|]*:|[^-%:|]*)([^-%:|]*?)%([^-%:|]*)(.*)$")); s=m[9] ) {
-    //cout<<"MATCH "<<string(m[1])<<" "<<string(m[2])<<" "<<string(m[3])<<" "<<string(m[4])<<" "<<string(m[5])<<" "<<string(m[6])<<" "<<string(m[7])<<" "<<string(m[8])<<" "<<string(m[9])<<endl;
-    sLemma = regex_replace( sLemma, regex("^"+regex_escape(m[3])+"(.*)"+regex_escape(m[4])+"$"), string(m[7])+"$1"+string(m[8]) );
-    sSignType[0] = string(m[5])[0];
-  }
-  sSignType = regex_replace( sSignType, regex("-x.*"), string("") );
-  //t = getType( sSignType );
-  */
-
-  /*
-  // If preterm is morphrule-annotated, use baseform in pred...
-  smatch m;  if ( regex_match( lP, m,regex("(.*?)-o.*[|]([^- ]*)") ) ) {
-    sSignType = (lP[0]=='V' || lP[0]=='B' || lP[0]=='L' || lP[0]=='G') ? "B" + string(m[1],1) + "-o" + string(m[2])
-              : (lP[0]=='N')                                           ? "N" + string(m[1],1) + "-o" + string(m[2])
-              : (lP[0]=='A' || lP[0]=='R')                             ? "A" + string(m[1],1) + "-o" + string(m[2])
-                                                                       : "ERROR:UNDEFINED_BASE";
-    sLemma     = regex_replace( sLemma, regex(string(m[4])+"$"), string(m[3]) );
-  }
-  */
-
-  /*
-  if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end() || mldLemmaCounts[sLemma]<MINCOUNTS ) sLemma = "!unk!";
-  if ( isdigit(lW[0]) )                                                                      sLemma = "!num!";
-  return pair<K,T>( (sSignType + ':' + sLemma + '_' + ((lP[0]=='N') ? '1' : '0')).c_str(), t );
-  */
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -171,11 +136,9 @@ void calcContext ( const Tree& tr, int s=1, int d=0, E e='N', L l=L() ) {
   if ( tr.size()==1 && tr.front().size()==0 ) {
 
     f               = 1 - s;
-//    if( e=='N' ) 
     eF = e = ( e!='N' ) ? e : getExtr ( tr );
     pair<K,T> kt    = getPred ( L(tr), L(tr.front()) );
     K k             = (FEATCONFIG & 2) ? K::kBot : kt.first;
-//    T t             = kt.second;
     aPretrm         = Sign( k, getType(l), S_A );
 
     // Print preterminal / fork-phase predictors...
@@ -186,30 +149,9 @@ void calcContext ( const Tree& tr, int s=1, int d=0, E e='N', L l=L() ) {
     cout << "W " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
   }
 
-/*
-  // At unary prepreterminal (prior to filling gaps)...
-  else if ( tr.size()==1 && tr.front().size()==1 && tr.front().front().size()==0 ) {
-
-    f            = 1 - s;
-    if( e=='N' ) eF = e = getExtr ( tr );
-    pair<K,T> kt = getPred ( L(tr.front()), L(tr.front().front()) );             // use lower category (with gap filled) for predicate.
-    K k          = kt.first;
-    //T t          = kt.second;
-    aPretrm      = Sign( k, getPred(L(tr),L(tr.front().front())).second, S_A );  // use upper category (with gap empty) for sign.
-
-    // Print preterminal / fork-phase predictors...
-    DelimitedList<psX,FPredictor,psComma,psX> lfp;  q.calcForkPredictors(lfp);
-    cout<<"----"<<q<<endl;
-    cout << "F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e,k) << endl;
-    cout << "P " << q.calcPretrmTypeCondition(f,e,k) << " : " << aPretrm.getType()     << endl;
-    cout << "W " << k << " " << aPretrm.getType()    << " : " << L(tr.front().front()) << endl;
-  }
-*/
-
   // At unary prepreterminal...
   else if ( tr.size()==1 ) {
     e = ( e!='N' ) ? e : getExtr ( tr );
-//    cout << "==== " << L(tr) << " -> " << L(tr.front()) << endl;
     calcContext ( tr.front(), s, d, e, l );
   }
 
@@ -220,9 +162,6 @@ void calcContext ( const Tree& tr, int s=1, int d=0, E e='N', L l=L() ) {
     calcContext ( tr.front(), 0, d+s );
 
     J j          = s;
-    //NOT USED! Sign aAncstr = q.getAncstr ( f );
-    //NOT USED! Sign aLchildTmp;
-    //NOT USED! Sign aLchild = q.getLchild ( aLchildTmp, f, aPretrm );
     LeftChildSign aLchild ( q, f, eF, aPretrm );
     e            = ( e!='N' ) ? e : getExtr ( tr ) ;
     O oL         = getOp ( L(tr.front()), L(tr.back()),  L(tr) );
