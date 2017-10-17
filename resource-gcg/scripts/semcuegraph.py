@@ -354,7 +354,7 @@ class SemCueGraph( cuegraph.CueGraph ):
 ################################################################################
 
 def last_inh( z, G ):
-  if (z,'r') in G and (z,'e') in G: sys.stderr.write( 'ERROR MULTIPLE INHERITANCES: ' + z + ' in ' + str(G) )
+  if (z,'r') in G and (z,'e') in G: sys.stderr.write( 'ERROR MULTIPLE INHERITANCES: ' + z + ' in ' + str(G) + '\n' )
 #' '.join( [ x+','+l+','+G[x,l] for x,l in sorted(G) ] ) )
   if (z,'r') in G: return last_inh( G[z,'r'], G )
   if (z,'e') in G: return last_inh( G[z,'e'], G )
