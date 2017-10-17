@@ -36,7 +36,14 @@ class CorefPredictors:
         self.ref_cats = ['N','V','G','B','L'] #noun, finite-verb, gerund, base-form, participle
         self.pronouns = ['It', 'it', 'he', 'He', 'she', 'She', 'They', 'they', 'them', 'Them', 'I', 'her', 'Her', 'Him', 'him', 'Himself', 'himself', 'herself', 'Herself', 'themselves', 'Themselves', 'We', 'we', 'this','This', 'that','That','those','Those', 'You','you','us','Us', 'itself','Itself', 'myself', 'Myself', 'Ourselves', 'ourselves', 'That', 'that'] #doesn't include some that we didn't mark, relative pronouns, interrogative pronouns, etc.  also, some of these included have ambiguous POS (e.g., nominal, relativizer or determiner 'that', nominal or determiner 'that'). but that's not a problem since we're only subsetting pronouns out of mentions already marked as anaphoric.
         self.predictors = []
-        #self.id2word = {} #TODO populate id2word dict using lines
+        self.storyidxes = {"bradfordboar":(1,57), "aqua":(58,95), "matchstickgirl":(96,149), "birdking":(150,204), "elvis":(205,249), "mrsticky":(250,313), "textmsg":(314,361), "ufo":(362,394), "tulipmania":(395,442), "tourettes":(443,485)} #{storyid:(startidx,endidx), ...}
+
+    def sentidx2storyid(self, sentidx):
+        #self.sentidx2storyid = {} #{idx:storyid, ...}
+        for story in self.storyidxes:
+            if sentidx in range(self.storyidxes[story][0], self.storyidxes[story][1]+1):
+                return story
+        return None
 
     def is_pro(self, word):
         return True if word in self.pronouns else False
@@ -113,6 +120,19 @@ class CorefPredictors:
         
         pass
 
+    def get_story_pos(self, sentidx):
+        #find story given sentidx
+        storyid = self.sentidx2storyid(sentidx)
+        #lookup story start idx
+        storystartidx = self.storyidxes[storyid][0]
+        #lookup story length in sentences
+        storylen = self.storyidxes[storyid][1] - self.storyidxes[storyid][0]
+        #convert sentidx to be 1-indexed (subtract start index of story)
+        csentidx = sentidx - storystartidx
+        #return story pos as 1indexed sentidx / storylen
+        storypos = csentidx / storylen
+        return storypos
+
     def get_predictors(self):
         for idx, line in enumerate(self.lines):
             #if idx % 100 == 0:
@@ -120,6 +140,9 @@ class CorefPredictors:
             #if idx % 100 == 0 and idx > 1: #testing only - REMOVE THESE TWO LINES
             #    break
             curr_id = line.split(":")[0] #current word id group
+            #last2 are wordidx, rest are sentidx
+            sentidx = int(curr_id[:-2])
+            story_pos = self.get_story_pos(sentidx)
             match = re.search(r".*-[nm]([0-9]+) ", line)
             if match is not None:
                 ante_id = match.group(1) # antecedent id group
@@ -137,9 +160,9 @@ class CorefPredictors:
 
             else:
                 binary_coref_indic = 0
-                word_dist = 0
-                ref_dist = 0
-                chain_size = 0
+                word_dist = "nan"
+                ref_dist = "nan"
+                chain_size = "nan"
                 isanaphpro = "n"
 
                 #self.predictors.append([curr_id, str(binary_coref_indic),"0","0","0","0"])
@@ -148,15 +171,17 @@ class CorefPredictors:
                 word_dist_log = log1p(word_dist)
                 ref_dist_log = log1p(ref_dist)
                 chain_size_log = log1p(chain_size)
-            except:
-                pdb.set_trace()
+            except TypeError:
+                word_dist_log = "nan"
+                ref_dist_log = "nan"
+                chain_size_log = "nan"
             #self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro]) #list of lists
-            self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro, str(word_dist_log), str(ref_dist_log), str(chain_size_log)]) #list of lists
+            self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro, str(word_dist_log), str(ref_dist_log), str(chain_size_log), str(story_pos)]) #list of lists
                 
 
     def print_predictors(self):
         #pdb.set_trace()
-        print(DELIM.join(["uid", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog"]))
+        print(DELIM.join(["uid", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog", "storypos"]))
         for p in self.predictors:
             print(DELIM.join(p))
 
