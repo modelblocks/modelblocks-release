@@ -84,6 +84,9 @@ CHILDES-SCRIPTS := $(RESOURCE-CHILDES)/scripts
 RESOURCE-DMV := $(abspath $(MBDIR)/resource-dmv)
 DMV-SCRIPTS := $(RESOURCE-DMV)/scripts
 
+RESOURCE-DTSR := $(abspath $(MBDIR)/resource-dtsr)
+DTSR-SCRIPTS := $(RESOURCE-DTSR)/scripts
+
 RESOURCE-DUNDEE := $(abspath $(MBDIR)/resource-dundee)
 DUNDEE-SCRIPTS := $(RESOURCE-DUNDEE)/scripts
 
@@ -196,6 +199,7 @@ include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
 include $(RESOURCE-RT)/Makefile
+include $(RESOURCE-DTSR)/Makefile
 include $(RESOURCE-FMRI)/Makefile
 include $(RESOURCE-LMEFIT)/Makefile
 include $(RESOURCE-ALICE)/Makefile
