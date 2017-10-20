@@ -108,18 +108,6 @@ endif
 #
 ################################################################################
 
-define 10MMFORM = 
-scripts/$(1)%10mm.lmeform: scripts/%10mm.template.lmeform
-	mkdir -p scripts
-	cat $$< | sed 's/ALICEROI/$(1)/g;' > $$@
-endef
-
-define ALICE-FORMS 
-$(foreach ROI, $(ALICE-ROI), $(eval $(call 10MMFORM,$(ROI))))
-endef
-
-$(eval $(ALICE-FORMS))
-
 %/alice.original.linetoks: $$(DEP-TOKENIZER) srcmodel/alice.original.txt $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | %
 	cat $< | sed "s/‘/\'/g;s/’/\'/g;s/—/ -/g;s/“/\'/g;s/”/\'/g;" | $(word 2, $^) > $@
 

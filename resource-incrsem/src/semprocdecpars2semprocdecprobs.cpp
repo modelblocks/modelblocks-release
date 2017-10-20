@@ -32,6 +32,7 @@ using namespace arma;
 #include <Delimited.hpp>
 bool STORESTATE_TYPE = true;
 bool STORESTATE_CHATTY = false;
+uint FEATCONFIG = 0;
 #include <StoreState.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,21 +71,24 @@ int main ( int nArgs, char* argv[] ) {
 
     // For each command-line flag or model file...
     for ( int a=1; a<nArgs; a++ ) {
-      cerr << "Loading model " << argv[a] << "..." << endl;
-      // Open file...
-      ifstream fin (argv[a], ios::in );
-      // Read model lists...
-      int linenum = 0;
-      while ( fin && EOF!=fin.peek() ) {
-        if ( fin.peek()=='F' ) fin >> "F " >> *lF.emplace(lF.end()) >> "\n";
-        if ( fin.peek()=='P' ) fin >> "P " >> *lP.emplace(lP.end()) >> "\n";
-        if ( fin.peek()=='W' ) fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
-        if ( fin.peek()=='J' ) fin >> "J " >> *lJ.emplace(lJ.end()) >> "\n";
-        if ( fin.peek()=='A' ) fin >> "A " >> *lA.emplace(lA.end()) >> "\n";
-        if ( fin.peek()=='B' ) fin >> "B " >> *lB.emplace(lB.end()) >> "\n";
-        if ( ++linenum%1000000==0 ) cerr << "  " << linenum << " items loaded..." << endl;
+      if ( 0==strncmp(argv[a],"-f",2) ) FEATCONFIG = atoi(argv[a]+2);
+      else {
+        cerr << "Loading model " << argv[a] << "..." << endl;
+        // Open file...
+        ifstream fin (argv[a], ios::in );
+        // Read model lists...
+        int linenum = 0;
+        while ( fin && EOF!=fin.peek() ) {
+          if ( fin.peek()=='F' ) fin >> "F " >> *lF.emplace(lF.end()) >> "\n";
+          if ( fin.peek()=='P' ) fin >> "P " >> *lP.emplace(lP.end()) >> "\n";
+          if ( fin.peek()=='W' ) fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
+          if ( fin.peek()=='J' ) fin >> "J " >> *lJ.emplace(lJ.end()) >> "\n";
+          if ( fin.peek()=='A' ) fin >> "A " >> *lA.emplace(lA.end()) >> "\n";
+          if ( fin.peek()=='B' ) fin >> "B " >> *lB.emplace(lB.end()) >> "\n";
+          if ( ++linenum%1000000==0 ) cerr << "  " << linenum << " items loaded..." << endl;
+        }
+        cerr << "Model " << argv[a] << " loaded." << endl;
       }
-      cerr << "Model " << argv[a] << " loaded." << endl;
     }
 
     // Populate model structures...

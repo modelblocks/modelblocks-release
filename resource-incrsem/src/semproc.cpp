@@ -114,6 +114,7 @@ int main ( int nArgs, char* argv[] ) {
     for ( int a=1; a<nArgs; a++ ) {
       if      ( 0==strcmp(argv[a],"-v") ) VERBOSE = 1;
       else if ( 0==strcmp(argv[a],"-V") ) VERBOSE = 2;
+      else if ( 0==strncmp(argv[a],"-p",2) ) numThreads = atoi(argv[a]+2);
       else if ( 0==strncmp(argv[a],"-b",2) ) BEAM_WIDTH = atoi(argv[a]+2);
       else if ( 0==strncmp(argv[a],"-f",2) ) FEATCONFIG = atoi(argv[a]+2);
       //else if ( string(argv[a]) == "t" ) STORESTATE_TYPE = true;
@@ -137,8 +138,8 @@ int main ( int nArgs, char* argv[] ) {
     }
 
     // Populate model structures...
-    matF = arma::mat( FResponse::getDomain().getSize(), FPredictor::getDomainSize() );
-    matJ = arma::mat( JResponse::getDomain().getSize(), JPredictor::getDomainSize() );
+    matF = arma::zeros( FResponse::getDomain().getSize(), FPredictor::getDomainSize() );
+    matJ = arma::zeros( JResponse::getDomain().getSize(), JPredictor::getDomainSize() );
     for ( auto& prw : lF ) matF( prw.second().toInt(), prw.first().toInt() ) = prw.third();
     for ( auto& prw : lP ) modP[prw.first()][prw.second()] = prw.third();
     for ( auto& prw : lW ) lexW[prw.second()].emplace_back(prw.first(),prw.third());
@@ -201,7 +202,7 @@ int main ( int nArgs, char* argv[] ) {
 
           // Calc distrib over response for each fork predictor...
           arma::vec fresponses = arma::zeros( matF.n_rows );
-          list<FPredictor> lfpredictors;  q_tdec1.calcForkPredictors( lfpredictors, false );  lfpredictors.emplace_back();
+          list<FPredictor> lfpredictors;  q_tdec1.calcForkPredictors( lfpredictors, false );  lfpredictors.emplace_back();  // add bias term
           for ( auto& fpredr : lfpredictors ) if ( fpredr.toInt() < matF.n_cols ) fresponses += matF.col( fpredr.toInt() );
           if ( VERBOSE>1 ) for ( auto& fpredr : lfpredictors ) cout<<"    fpredr:"<<fpredr<<endl;
           fresponses = arma::exp( fresponses );
@@ -212,10 +213,10 @@ int main ( int nArgs, char* argv[] ) {
           // For each possible lemma (context + label + prob) for preterminal of current word...
           for ( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[unkWord(w_t.getString().c_str())] ) {
             if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(ktpr_p_t.second) > beams[t].rbegin()->first.first ) {
-              K k_p_t           = ktpr_p_t.first.first;   // context of current preterminal
-              T t_p_t           = ktpr_p_t.first.second;  // label of cunnent preterminal
+              K k_p_t           = (FEATCONFIG & 2) ? K::kBot : ktpr_p_t.first.first;   // context of current preterminal
+              T t_p_t           = ktpr_p_t.first.second;                               // label of cunnent preterminal
               E e_p_t           = (t_p_t.getLastNonlocal()==N_NONE) ? 'N' : (t_p_t.getLastNonlocal()==N("-rN")) ? '0' : (t_p_t.getLastNonlocal().isArg()) ? t_p_t.getArity()+'1' : 'M';
-              double probwgivkl = ktpr_p_t.second;        // probability of current word given current preterminal
+              double probwgivkl = ktpr_p_t.second;                                     // probability of current word given current preterminal
 
               if ( VERBOSE>1 ) cout << "     W " << k_p_t << " " << t_p_t << " : " << w_t << " = " << probwgivkl << endl;
 

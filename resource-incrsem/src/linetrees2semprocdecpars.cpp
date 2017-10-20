@@ -61,12 +61,12 @@ int getArityGivenLabel ( const L& l ) {
 ////////////////////////////////////////////////////////////////////////////////
 
 O getOp ( const L& l, const L& lSibling, const L& lParent ) {
-  if ( string::npos != l.find("-lN") ) return 'N';
+  if ( string::npos != l.find("-lN") || string::npos != l.find("-lG") || string::npos != l.find("-lH") || string::npos != l.find("-lR") ) return 'N';
   if ( string::npos != l.find("-lV") ) return 'V';
   if ( string::npos == l.find("-l")  || string::npos != l.find("-lS") || string::npos != l.find("-lC") ) return 'I';
-  if ( string::npos != l.find("-lM") || string::npos != l.find("-lQ")      ) return 'M';
-  if ( string::npos != l.find("-lA") && string::npos != lParent.find("\\") ) return '0'+getArityGivenLabel( string(lParent,lParent.find("\\")+1) );
-  if ( string::npos != l.find("-lA") && string::npos == lParent.find('\\') ) return '0'+getArityGivenLabel( lSibling );
+  if ( string::npos != l.find("-lM") || string::npos != l.find("-lQ") || string::npos != l.find("-lU") ) return 'M';
+  if ( (string::npos != l.find("-lA") || string::npos != l.find("-lI")) && string::npos != lParent.find("\\") ) return '0'+getArityGivenLabel( string(lParent,lParent.find("\\")+1) );
+  if ( (string::npos != l.find("-lA") || string::npos != l.find("-lI")) && string::npos == lParent.find('\\') ) return '0'+getArityGivenLabel( lSibling );
   cerr << "ERROR: unhandled -l tag in label \"" << l << "\"" << endl;
   return O();
 }
@@ -100,83 +100,59 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
   // If punct, but not special !-delimited label...
   if ( ispunct(lW[0]) && ('!'!=lW[0] || lW.size()==1) ) return pair<K,T>(K::kBot,t);
 
-  // Make predicate be lowercase...
-  string sPred=lW;  transform(sPred.begin(), sPred.end(), sPred.begin(), [](unsigned char c) { return std::tolower(c); });
-  string sBaseType = t.getString();
+  string sLemma = lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
+  string sType = t.getString();  regex_replace( sType, regex("-x.*"), string("") );
+  string sPred = sType + ':' + sLemma;
 
-  // If preterm is morphrule-annotated, use baseform in pred...
-  smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^-:|]*:|[^-%:|]*)([^-%:|]*?)%([^-%:|]*)[|](.)([^-:|]*:|[^-%:|]*)([^-%:|]*?)%([^-%:|]*)(.*)$")); s=m[9] ) {
-    //cout<<"MATCH "<<string(m[1])<<" "<<string(m[2])<<" "<<string(m[3])<<" "<<string(m[4])<<" "<<string(m[5])<<" "<<string(m[6])<<" "<<string(m[7])<<" "<<string(m[8])<<" "<<string(m[9])<<endl;
-    sPred = regex_replace( sPred, regex("^"+regex_escape(m[3])+"(.*)"+regex_escape(m[4])+"$"), string(m[7])+"$1"+string(m[8]) );
-    sBaseType[0] = string(m[5])[0];
+  smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^-]*)(.*?)$")); s=m[3] ) {
+    string sX = m[2];
+    smatch mX;
+    if( regex_match( sX, mX, regex("^(.*)%(.*)%(.*)[|](.*)%(.*)%(.*)$") ) )        // transfix (prefix+infix+suffix) rule application
+      sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"(.*)"+regex_escape(mX[3])+"$"), string(mX[4])+"$1"+string(mX[5])+"$2"+string(mX[6]) );
+    if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)[%](.*)$") ) )              // circumfix (prefix+suffix) rule application
+      sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"$"), string(mX[3])+"$1"+string(mX[4]) );
   }
-  sBaseType = regex_replace( sBaseType, regex("-x.*"), string("") );
-  //t = getType( sBaseType );
 
-  /*
-  // If preterm is morphrule-annotated, use baseform in pred...
-  smatch m;  if ( regex_match( lP, m,regex("(.*?)-o.*[|]([^- ]*)") ) ) {
-    sBaseType = (lP[0]=='V' || lP[0]=='B' || lP[0]=='L' || lP[0]=='G') ? "B" + string(m[1],1) + "-o" + string(m[2])
-              : (lP[0]=='N')                                           ? "N" + string(m[1],1) + "-o" + string(m[2])
-              : (lP[0]=='A' || lP[0]=='R')                             ? "A" + string(m[1],1) + "-o" + string(m[2])
-                                                                       : "ERROR:UNDEFINED_BASE";
-    sPred     = regex_replace( sPred, regex(string(m[4])+"$"), string(m[3]) );
-  }
-  */
+  int iSplit = sPred.find( ":", 1 );
+  sType  = sPred.substr( 0, iSplit );
+  sLemma = sPred.substr( iSplit+1 );
+  if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end() || mldLemmaCounts[sLemma]<MINCOUNTS ) sLemma = "!unk!";
+  if ( isdigit(lW[0]) )                                                                        sLemma = "!num!";
 
-  if ( mldLemmaCounts.find(sPred)==mldLemmaCounts.end() || mldLemmaCounts[sPred]<MINCOUNTS ) sPred = "!unk!";
-  if ( isdigit(lW[0]) )                                                                      sPred = "!num!";
-  return pair<K,T>( (sBaseType + ':' + sPred + '_' + ((lP[0]=='N') ? '1' : '0')).c_str(), t );
+  return pair<K,T>( ( sType + ':' + sLemma + '_' + ((lP[0]=='N') ? '1' : '0') ).c_str(), t );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calcContext ( const Tree& tr, int s=1, int d=0, E e='N' ) {
+void calcContext ( const Tree& tr, int s=1, int d=0, E e='N', L l=L() ) {
   static F          f;
   static E          eF;
   static Sign       aPretrm;
   static StoreState q;
 
+  if( l==L() ) l = L(tr);
+
   // At unary preterminal...
   if ( tr.size()==1 && tr.front().size()==0 ) {
 
     f               = 1 - s;
-    if( e=='N' ) eF = e = getExtr ( tr );
+    eF = e = ( e!='N' ) ? e : getExtr ( tr );
     pair<K,T> kt    = getPred ( L(tr), L(tr.front()) );
-    K k             = kt.first;
-    T t             = kt.second;
-    aPretrm         = Sign( k, t, S_A );
+    K k             = (FEATCONFIG & 2) ? K::kBot : kt.first;
+    aPretrm         = Sign( k, getType(l), S_A );
 
     // Print preterminal / fork-phase predictors...
     DelimitedList<psX,FPredictor,psComma,psX> lfp;  q.calcForkPredictors(lfp);
     cout<<"----"<<q<<endl;
     cout << "F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e,k) << endl;
-    cout << "P " << q.calcPretrmTypeCondition(f,e,k) << " : " << t              << endl;
-    cout << "W " << k << " " << t                    << " : " << L(tr.front())  << endl;
-  }
-
-  // At unary prepreterminal (prior to filling gaps)...
-  else if ( tr.size()==1 && tr.front().size()==1 && tr.front().front().size()==0 ) {
-
-    f            = 1 - s;
-    if( e=='N' ) eF = e = getExtr ( tr );
-    pair<K,T> kt = getPred ( L(tr.front()), L(tr.front().front()) );             // use lower category (with gap filled) for predicate.
-    K k          = kt.first;
-    //T t          = kt.second;
-    aPretrm      = Sign( k, getPred(L(tr),L(tr.front().front())).second, S_A );  // use upper category (with gap empty) for sign.
-
-    // Print preterminal / fork-phase predictors...
-    DelimitedList<psX,FPredictor,psComma,psX> lfp;  q.calcForkPredictors(lfp);
-    cout<<"----"<<q<<endl;
-    cout << "F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e,k) << endl;
-    cout << "P " << q.calcPretrmTypeCondition(f,e,k) << " : " << aPretrm.getType()     << endl;
-    cout << "W " << k << " " << aPretrm.getType()    << " : " << L(tr.front().front()) << endl;
+    cout << "P " << q.calcPretrmTypeCondition(f,e,k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
+    cout << "W " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
   }
 
   // At unary prepreterminal...
   else if ( tr.size()==1 ) {
-    E e = getExtr ( tr );
-    calcContext ( tr.front(), s, d, e );
+    e = ( e!='N' ) ? e : getExtr ( tr );
+    calcContext ( tr.front(), s, d, e, l );
   }
 
   // At binary nonterminal...
@@ -186,11 +162,8 @@ void calcContext ( const Tree& tr, int s=1, int d=0, E e='N' ) {
     calcContext ( tr.front(), 0, d+s );
 
     J j          = s;
-    //NOT USED! Sign aAncstr = q.getAncstr ( f );
-    //NOT USED! Sign aLchildTmp;
-    //NOT USED! Sign aLchild = q.getLchild ( aLchildTmp, f, aPretrm );
     LeftChildSign aLchild ( q, f, eF, aPretrm );
-    e            = getExtr ( tr ) ;
+    e            = ( e!='N' ) ? e : getExtr ( tr ) ;
     O oL         = getOp ( L(tr.front()), L(tr.back()),  L(tr) );
     O oR         = getOp ( L(tr.back()),  L(tr.front()), L(tr) );
 
@@ -198,11 +171,11 @@ void calcContext ( const Tree& tr, int s=1, int d=0, E e='N' ) {
     DelimitedList<psX,JPredictor,psComma,psX> ljp;  q.calcJoinPredictors(ljp,f,eF,aLchild);
     cout << "==== " << aLchild << "   " << L(tr) << " -> " << L(tr.front()) << " " << L(tr.back()) << endl;
     cout << "J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e,oL,oR)  << endl;
-    cout << "A " << q.calcApexTypeCondition(f,j,eF,e,oL,aLchild)                   << " : " << getType(tr)         << endl;
-    cout << "B " << q.calcBrinkTypeCondition(f,j,eF,e,oL,oR,getType(tr),aLchild)   << " : " << getType(tr.back())  << endl;
+    cout << "A " << q.calcApexTypeCondition(f,j,eF,e,oL,aLchild)                  << " : " << getType(l)          << endl;
+    cout << "B " << q.calcBrinkTypeCondition(f,j,eF,e,oL,oR,getType(l),aLchild)   << " : " << getType(tr.back())  << endl;
 
     // Update storestate...
-    q = StoreState ( q, f, j, eF, e, oL, oR, getType(tr), getType(tr.back()), aPretrm, aLchild );
+    q = StoreState ( q, f, j, eF, e, oL, oR, getType(l), getType(tr.back()), aPretrm, aLchild );
 
     // Traverse right child...
     calcContext ( tr.back(), 1, d );
@@ -223,8 +196,8 @@ int main ( int nArgs, char* argv[] ) {
   // For each command-line flag or model file...
   for ( int a=1; a<nArgs; a++ ) {
     //if ( 0==strcmp(argv[a],"t") ) STORESTATE_TYPE = true;
-    if( '-'==argv[a][0] && 'f'==argv[a][1] ) FEATCONFIG = atoi( argv[a]+2 );
-    if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS = atoi( argv[a]+2 );
+    if(      '-'==argv[a][0] && 'f'==argv[a][1] ) FEATCONFIG = atoi( argv[a]+2 );
+    else if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS  = atoi( argv[a]+2 );
     else {
       cerr << "Loading model " << argv[a] << "..." << endl;
       // Open file...

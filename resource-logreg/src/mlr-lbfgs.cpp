@@ -88,7 +88,7 @@ class SpMatLogisticRegressionFunction {
 
   double Evaluate(const arma::mat& parameters)  {
 
-    cerr<<"inEval\n";
+////    cerr<<"inEval\n";
 
     const double regularization = 0.5 * lambda * dUnderflowScaler * arma::accu( parameters % parameters );
 
@@ -126,7 +126,7 @@ class SpMatLogisticRegressionFunction {
       }, jglobal ));
     for ( auto& t : vtWorkers ) t.join();
     cerr<<"regularized logP = "<<totlogprob - regularization<<"\n";
-    cerr<<"trace param: "<<parameters(0,0)<<"\n";
+////    cerr<<"trace param: "<<parameters(0,0)<<"\n";
     return -totlogprob + regularization;
   }
 
@@ -135,7 +135,7 @@ class SpMatLogisticRegressionFunction {
     // Regularization term.
     arma::mat regularization = lambda * dUnderflowScaler * parameters;
 
-    cerr<<"inGrad\n";
+////    cerr<<"inGrad\n";
 
 ////    const arma::mat scoredistrs = arma::exp( parameters * predictors );
 ////    const arma::mat norms       = arma::ones<rowvec>(parameters.n_rows) * scoredistrs;
@@ -143,7 +143,7 @@ class SpMatLogisticRegressionFunction {
 ////    gradient                    = - (responses - predictions) * predictors.t();
 
     gradient = - ( cooccurrences - expectations ) + regularization;
-    cerr<<"trace param gradient: "<<gradient(0,0)<<"\n";
+////    cerr<<"trace param gradient: "<<gradient(0,0)<<"\n";
   }
 
   const arma::mat& GetInitialPoint ( ) const { return initialpoint; }
@@ -169,7 +169,7 @@ int main ( int nArgs, char* argv[] ) {
   cerr << "Data read: x=" << domXFeat.getSize() << " y=" << domYVal.getSize() << ".\n";
 
   // Populate predictor matrix and result vector...
-  SpMatLogisticRegressionFunction f ( domXFeat.getSize(), domYVal.getSize(), nArgs>1 ? atof(argv[1]) : 0.0, nArgs>2 ? atoi(argv[2]) : 1, nArgs>3 ? atof(argv[3]) : 1.0 );
+  SpMatLogisticRegressionFunction f ( domXFeat.getSize(), domYVal.getSize(), nArgs>1 ? atoi(argv[1]) : 1, nArgs>2 ? atof(argv[2]) : 0.0, nArgs>3 ? atof(argv[3]) : 1.0 );
   sp_mat& DbyFX = f.Predictors();
   sp_mat& DbyY  = f.Responses();
   umat xlocs ( 2, numfeattokens );

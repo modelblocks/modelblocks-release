@@ -28,7 +28,7 @@
 #     calculated from gold trees (parser tokenization)
 #  3. %.itemmeasures: All syntactic predictors with ngram probabilities 
 #     (experiment tokenization, in which parser tokenization should be nested)
-#  4. %.full.evmeasures: itemmeasures data merged with reading event data 
+#  4. %.core.evmeasures: itemmeasures data merged with reading event data 
 #     (*.evmeasures), i.e. the complete data set
 #
 #  To generate these files, the experiment must have (or have recipes to 
@@ -78,10 +78,10 @@ COMMA :=,
 
 VPATH += $(RESOURCE-RT)
 
-MERGESURP = python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).full.evmeasures --i totsurp | \
+MERGESURP = python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).core.evmeasures --i totsurp | \
 sed '1s/.*/$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
 mv $@{.tmp,}; \
-python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).full.evmeasures --i cumtotsurp | \
+python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).core.evmeasures --i cumtotsurp | \
 sed '1s/.*/cum$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
 mv $@{.tmp,};
 
@@ -351,6 +351,12 @@ $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
+%.t.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.t.itemmeasures \
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
+	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
+	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
+	$(word 5, $^) > $@
+
 %.r.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures $$(basename %).roark.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
 	cat $< | python $(word 4, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
@@ -406,10 +412,10 @@ $(RT-SCRIPTS)/rm_na_items.py
 	python $(word 10, $^) > $@
 
 # Generate and merge parser data from multiple grammars
-# Template: mydata.training-GRAMMAR-other-args.stuff.parser1_parser2_parser3.merged.full.evmeasures
-.PRECIOUS: %.merged.full.evmeasures
-.merged.full.evmeasures: $(GENERAL-SCRIPTS)/querydataframe.py \
-$$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*)).full.evmeasures)
+# Template: mydata.training-GRAMMAR-other-args.stuff.parser1_parser2_parser3.merged.core.evmeasures
+.PRECIOUS: %.merged.core.evmeasures
+.merged.core.evmeasures: $(GENERAL-SCRIPTS)/querydataframe.py \
+$$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*)).core.evmeasures)
 	@echo 'Newer than target: ' $?
 	cp $(word 2, $^) $@
 	cat $@ | sed 's/ cumtotsurp / cum$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))totsurp /' | \

@@ -298,6 +298,8 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 
 %.prtrm.linetrees: %.linetrees
 	cat $<  |  perl -pe 's/\(([^\(\) ]*) ([^\(\) ]*)\)/\(\1-PRTRM \2\)/g'  >  $@
+%.pptrm.linetrees: %.linetrees
+	cat $<  |  perl -pe 's/\(([^\(\) ]*) ([^\(\) ]*)\)/\(\1-PRTRM \2\)/g;s/\(([^\(\) ]*) (\([^\(\)]*\))\)/\(\1-PRTRM \2\)/g;s/\(([^\(\) ]*) (\([^\(\) ]* \([^\(\)]*\)\))\)/\(\1-PRTRM \2\)/g;s/((?:-l.|-x)*)(-PRTRM)/\2\1/g'  >  $@
 
 .PRECIOUS: %pcfg.x-ccu.model
 %pcfg.x-ccu.model:  $$(basename %).rules  $(BIN)/pcfgcptdecpars-unker
@@ -347,8 +349,8 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 %.nod.synprocdecprobs:  genmodel/$$(basename $$*).nod.synproccptdecpars  $(BIN)/synprocdecpars2synprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))model
 	cat $(word 1,$^)  |  $(word 2,$^) -d $(word 3,$^)  >  $@
 
-%.semprocdecprobs:  genmodel/$$(basename $$*).semprocdecpars  $(BIN)/semprocdecpars2semprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))model
-	cat $(word 1,$^)  |  $(word 2,$^) $(word 3,$^)  >  $@
+%semprocdecprobs:  genmodel/$$(basename $$(basename $$*)).semprocdecpars  $(BIN)/semprocdecpars2semprocdecprobs  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$(basename $$*))))model
+	cat $(word 1,$^)  |  $(word 2,$^) $(subst .,,$(subst _, ,$(suffix $*))) $(word 3,$^)  >  $@
 
 
 #################################################
