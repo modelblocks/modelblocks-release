@@ -166,8 +166,8 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 			$$(basename $$(basename %)).lemmacounts  \
 			$$(basename $$(basename %)).nol.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
 	cat $(word 1,$^)  |  grep -v '()'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
-%semprocdecpars:  $$(basename $$(basename %)).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename $$(basename %)).lemmacounts
-	cat $(word 1,$^)  |  grep -v '()'  |  grep -v '='  |  $(word 2,$^) $(subst _, ,$(subst .,, $(suffix $*))) $(word 3,$^)  >  $@
+#%semprocdecpars:  $$(basename $$(basename %)).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename $$(basename %)).lemmacounts
+#	cat $(word 1,$^)  |  grep -v '()'  |  grep -v '='  |  $(word 2,$^) $(subst _, ,$(subst .,, $(suffix $*))) $(word 3,$^)  >  $@
 #%f.semprocdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename %).lemmacounts
 #	cat $(word 1,$^)  |  grep -v '()'  |  grep -v '='  |  $(word 2,$^) -f$(subst .,,$(suffix $*)) $(word 3,$^)  >  $@
 %uc.semprocdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename %).lemmacounts
@@ -229,8 +229,9 @@ endef
 	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
 
 ## push together semantic processing models...
-.PRECIOUS: %.semprocmodel
-%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1000_1e-2_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+.PRECIOUS: %semprocmodel
+#%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1000_1e-2_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e-1_1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
 	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
 	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
