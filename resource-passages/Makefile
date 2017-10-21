@@ -62,8 +62,6 @@ endef
 .SUFFIXES:
 .SECONDEXPANSION:
 
-VPATH += $(RESOURCE-PASSAGES)
-
 PASSAGES-ROI := LPostTemp LAntTemp LAngG LIFG LMFG LIFGorb AllROI
 PASSAGES72-BASENAME := genmodel/passages72.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.bysent
 PASSAGES72-LMEDEFAULT := 
@@ -118,18 +116,6 @@ endif
 #  Data formatting items
 #
 ################################################################################
-
-define PASSAGES-FORM = 
-scripts/$(1)%.lmeform: scripts/%.template.lmeform
-	mkdir -p scripts
-	cat $$< | sed 's/PASSAGESROI/$(1)/g;' > $$@
-endef
-
-define PASSAGES-FORMS 
-$(foreach ROI, $(PASSAGES-ROI), $(eval $(call PASSAGES-FORM,$(ROI))))
-endef
-
-$(eval $(PASSAGES-FORMS))
 
 genmodel/%.xlsx: $$(DEP-PASSAGES) $(PASSAGESDIR)/$$*.xlsx $(CONFIGDIR)/user-passages-directory.txt | genmodel
 	cp $(word 1, $^) $@

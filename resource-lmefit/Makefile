@@ -22,7 +22,7 @@
 #  Includes
 #
 #  Include statements to this file should be preceded by includes to any 
-#  Makefiles needed to produce the data to evaluate: <data-name>.full.evmeasures. 
+#  Makefiles needed to produce the data to evaluate: <data-name>.core.evmeasures. 
 #  For reading time experiments, this is usually resource-rt/Makefile and all 
 #  Makefiles used to generate and combine experiment-specific data.
 #
@@ -490,7 +490,7 @@ $(LMEFIT-SCRIPTS)/lmetools.r
 %.signiftable.txt: $$(abspath $$@)
 	$(info )
 
-%.error.evmeasures: genmodel/$$(basename $$(basename $$(basename $$*))).full.evmeasures \
+%.error.evmeasures: genmodel/$$(basename $$(basename $$(basename $$*))).core.evmeasures \
 $(LMEFIT-SCRIPTS)/lmefit2error.r \
 $$(basename $$(basename $$*)).-a_$$(subst .,,$$(suffix $$(basename $$*)))_-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$*))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix %)).lme.rdata \
 $$(basename $$(basename $$*)).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$*))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix %)).lme.rdata \

@@ -35,6 +35,9 @@ def main():
     else:
         cols = []
 
+    # Ensure that colnames processed are unique
+    cols = list(set(cols))
+
     if len(cols) == 0:
         sys.stderr.write('Nothing to compute future metrics for. Returning input table.\n')
     else:
