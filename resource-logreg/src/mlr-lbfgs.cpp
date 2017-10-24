@@ -70,21 +70,23 @@ class SpMatLogisticRegressionFunction {
   //arma::mat     norms;         // cache norms during Evaluate for use in Gradient
   arma::mat     cooccurrences; // cache cooccurrences from beginning
   arma::mat     expectations;  // cache expectationa during Evaluate for use in Gradient
+  arma::vec     counts;        // for (superposed) fractional or repeated items in data
   vector<mutex> vmExpectationRows;
   double        dUnderflowScaler;
 
  public:
 
   SpMatLogisticRegressionFunction ( uint nX, uint nY, uint nT = 1, double l = 0.0, double dS = 1.0 ) : lambda(l), numThreads(nT), dUnderflowScaler(dS), vmExpectationRows(nX) {
-    initialpoint.randn ( nX, nY );
+    initialpoint.randn( nX, nY );
     initialpoint *= 0.01;
-    expectations.zeros ( nX, nY );
+    expectations.zeros( nX, nY );
     cerr << "L2 regularization parameter: " << lambda << "\n";
   }
 
   arma::sp_mat&       Predictors ( )        { return predictors; }
   arma::sp_mat&       Responses  ( )        { return responses;  }
   const arma::sp_mat& Responses  ( ) const  { return responses;  }
+  arma::vec&          Counts     ( )        { return counts;     }
 
   double Evaluate(const arma::mat& parameters)  {
 
@@ -100,7 +102,7 @@ class SpMatLogisticRegressionFunction {
 ////    return -arma::accu(logprobs) + regularization;
 
     if ( cooccurrences.n_cols == 0 ) predictors *= dUnderflowScaler;
-    if ( cooccurrences.n_cols == 0 ) cooccurrences = predictors * responses.t();
+    if ( cooccurrences.n_cols == 0 ) cooccurrences = predictors * arma::diagmat(counts) * responses.t();
     double totlogprob = 0;
     mutex mTotlogprob;
     expectations.zeros ( );
@@ -115,11 +117,11 @@ class SpMatLogisticRegressionFunction {
         arma::vec scoredistr = arma::exp( logscoredistr );
         double norm = arma::accu( scoredistr );
         { lock_guard<mutex> guard ( mTotlogprob );
-          totlogprob += arma::accu( logscoredistr % responses.col(c) ) - log(norm);
+          totlogprob += counts(c) * ( arma::accu( logscoredistr % responses.col(c) ) - log(norm) );
           }
         for ( uint i=predictors.col_ptrs[c]; i<predictors.col_ptrs[c+1]; i++ ) {
           lock_guard<mutex> guard ( vmExpectationRows[predictors.row_indices[i]] );
-          expectations.row(predictors.row_indices[i]) += predictors.values[i] * scoredistr.t() / norm;
+          expectations.row(predictors.row_indices[i]) += counts(c) * predictors.values[i] * scoredistr.t() / norm;
           }
         ////if ( c%100000==0 ) cerr<<c<<"/"<<predictors.n_cols<<" done\n";	
         }
@@ -156,15 +158,17 @@ int main ( int nArgs, char* argv[] ) {
   uint maxiters = nArgs>4 ? atoi(argv[4]) : 0;
   cerr << "Max iters (0 = no bound): " << maxiters << "\n";
 
-  list<pair<DelimitedList<psX,DelimitedPair<psX,Delimited<XFeat>,psEquals,Delimited<double>,psX>,psComma,psX>,Delimited<YVal>>> lplpfdy;
+  list<trip<DelimitedList<psX,DelimitedPair<psX,Delimited<XFeat>,psEquals,Delimited<double>,psX>,psComma,psX>,Delimited<YVal>,Delimited<double>>> lplpfdy;
 
   // Read data...
   cerr << "Reading data...\n";
   int numfeattokens = 0;
   while ( cin && EOF!=cin.peek() ) {
     auto& plpfdy = *lplpfdy.emplace(lplpfdy.end());
-    cin >> plpfdy.first >> " : " >> plpfdy.second >> "\n";
-    numfeattokens += plpfdy.first.size();
+    cin >> plpfdy.first() >> " : " >> plpfdy.second() >> vector<const char*>({"\n"," "});
+    if( '=' == cin.peek() ) cin >> "= " >> plpfdy.third() >> "\n";
+    else plpfdy.third() = 1;
+    numfeattokens += plpfdy.first().size();
   }
   cerr << "Data read: x=" << domXFeat.getSize() << " y=" << domYVal.getSize() << ".\n";
 
@@ -172,21 +176,24 @@ int main ( int nArgs, char* argv[] ) {
   SpMatLogisticRegressionFunction f ( domXFeat.getSize(), domYVal.getSize(), nArgs>1 ? atoi(argv[1]) : 1, nArgs>2 ? atof(argv[2]) : 0.0, nArgs>3 ? atof(argv[3]) : 1.0 );
   sp_mat& DbyFX = f.Predictors();
   sp_mat& DbyY  = f.Responses();
+  vec& Dcounts  = f.Counts();
   umat xlocs ( 2, numfeattokens );
   vec  xvals (    numfeattokens );
   umat ylocs ( 2, lplpfdy.size() );
   vec  yvals (    lplpfdy.size() );
+  Dcounts.zeros ( lplpfdy.size() );
   int t = 0; int i = 0;
   for ( auto& plpfdy : lplpfdy ) {
-    for ( auto& pfd : plpfdy.first ) {
+    for ( auto& pfd : plpfdy.first() ) {
       xlocs(0,i) = pfd.first.toInt();
       xlocs(1,i) = t;
       xvals(i)   = pfd.second;
       i++;
     }
-    ylocs(0,t) = plpfdy.second.toInt();
+    ylocs(0,t) = plpfdy.second().toInt();
     ylocs(1,t) = t;
     yvals(t) = 1.0;
+    Dcounts(t) = plpfdy.third();
     t++;
   }
   DbyFX = sp_mat ( true, xlocs, xvals, domXFeat.getSize(), lplpfdy.size() );

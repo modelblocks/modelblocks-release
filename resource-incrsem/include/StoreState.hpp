@@ -38,6 +38,8 @@ const S S_B(";");
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef W__
+#define W__
 DiscreteDomain<int> domW;
 class W : public Delimited<DiscreteDomainRV<int,domW>> {
  public:
@@ -46,6 +48,7 @@ class W : public Delimited<DiscreteDomainRV<int,domW>> {
   W ( const char* ps ) : Delimited<DiscreteDomainRV<int,domW>> ( ps ) { }
 };
 typedef W ObsWord;
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -62,6 +65,9 @@ class T : public DiscreteDomainRV<int,domT> {
   static map<T,bool>         mtbIsCarry;
   static map<T,N>            mtnLastNol;
   static map<pair<T,N>,bool> mtnbIn;
+  static map<T,T>            mttLets;
+  static map<T,int>          mtiNums;
+  static map<pair<T,int>,T>  mtitLetNum;
   int getArity ( const char* l ) {
     int depth = 0;
     int ctr   = 0;
@@ -90,6 +96,10 @@ class T : public DiscreteDomainRV<int,domT> {
     if( mtiArity.end()  ==mtiArity.  find(*this) ) { mtiArity  [*this]=getArity(ps); }
     if( mtbIsCarry.end()==mtbIsCarry.find(*this) ) { mtbIsCarry[*this]=( ps[0]=='-' && ps[1]>='a' && ps[1]<='z' ); }  //( ps[strlen(ps)-1]=='^' ); }
     if( strlen(ps)>0 && !(ps[0]=='-'&&ps[1]>='a'&&ps[1]<='z') && mtnLastNol.end()==mtnLastNol.find(*this) ) { N& n=mtnLastNol[*this]; n=getLastNolo(ps); }
+    if( mttLets.end()==mttLets.find(*this) ) { const char* ps_=strchr(ps,'_');
+                                               if( ps_!=NULL ) { mttLets[*this] = string(ps,0,ps_-ps).c_str(); mtiNums[*this] = atoi(ps_+1);
+                                                                 mtitLetNum[pair<T,int>(mttLets[*this],mtiNums[*this])]=*this; } }
+                                               //else { mttLets[*this]=*this; mtiNums[*this]=0; mtitLetNum[pair<T,int>(*this,0)]=*this; } }
     uint depth = 0;  uint beg = strlen(ps);
     for( uint i=0; i<strlen(ps); i++ ) {
       if ( ps[i]=='{' ) depth++;
@@ -102,17 +112,23 @@ class T : public DiscreteDomainRV<int,domT> {
  public:
   T ( )                : DiscreteDomainRV<int,domT> ( )    { }
   T ( const char* ps ) : DiscreteDomainRV<int,domT> ( ps ) { calcDetermModels(ps); }
-  bool isArg           ( )     { return mnbArg[*this]; }
-  int  getArity        ( )     { return mtiArity  [*this]; }
-  bool isCarrier       ( )     { return mtbIsCarry[*this]; }
-  N    getLastNonlocal ( )     { return mtnLastNol[*this]; }
-  bool containsCarrier ( N n ) { return mtnbIn.find(pair<T,N>(*this,n))!=mtnbIn.end(); }
+  bool isArg           ( )       const { return mnbArg[*this]; }
+  int  getArity        ( )       const { return mtiArity  [*this]; }
+  bool isCarrier       ( )       const { return mtbIsCarry[*this]; }
+  N    getLastNonlocal ( )       const { return mtnLastNol[*this]; }
+  bool containsCarrier ( N n )   const { return mtnbIn.find(pair<T,N>(*this,n))!=mtnbIn.end(); }
+  T    getLets         ( )       const { const auto& x = mttLets.find(*this); return (x==mttLets.end()) ? *this : x->second; }
+  int  getNums         ( )       const { const auto& x = mtiNums.find(*this); return (x==mtiNums.end()) ? 0 : x->second; }
+  T    addNum          ( int i ) const { const auto& x = mtitLetNum.find(pair<T,int>(*this,i)); return (x==mtitLetNum.end()) ? *this : x->second; }
 };
 map<N,bool>         T::mnbArg;
 map<T,int>          T::mtiArity;
 map<T,bool>         T::mtbIsCarry;
 map<T,N>            T::mtnLastNol;
 map<pair<T,N>,bool> T::mtnbIn;
+map<T,T>            T::mttLets;
+map<T,int>          T::mtiNums;
+map<pair<T,int>,T>  T::mtitLetNum;
 const T tTop("T");
 const T tBot("-");
 const T tBOT("bot");  // not sure if this really needs to be distinct from tBot
@@ -242,6 +258,7 @@ class FPredictor {
   static bool exists ( D d, T t )        { return( mdti.end()!=mdti.find(pair<D,T>(d,t)) ); }
   static bool exists ( D d, K kF, K kA ) { return( mdkki.end()!=mdkki.find(trip<D,K,K>(d,kF,kA)) ); }
   static bool exists ( K kF, K kA )      { return( mkki.end()!=mkki.find(pair<K,K>(kF,kA)) ); }
+  FPredictor  addNum ( int i ) const     { return( FPredictor( mid[id], mit[id].addNum(i) ) ); }
 };
 uint                  FPredictor::nextid = 1;   // space for bias "" predictor
 map<uint,D>           FPredictor::mid;
@@ -358,6 +375,7 @@ class JPredictor {
   }
   static bool exists ( D d, T tA, T tL )       { return( mdtti.end()!=mdtti.find(trip<D,T,T>(d,tA,tL)) ); }
   static bool exists ( D d, K kF, K kA, K kL ) { return( mdkkki.end()!=mdkkki.find(quad<D,K,K,K>(d,kF,kA,kL)) ); }
+  JPredictor addNums ( int i, int j ) const    { return( JPredictor( mid[id], mitA[id].addNum(i), mitL[id].addNum(j) ) ); }
 };
 uint                    JPredictor::nextid = 1;  // space for bias "" predictor
 map<uint,D>             JPredictor::mid;

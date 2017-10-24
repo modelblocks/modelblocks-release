@@ -110,7 +110,7 @@ $(BERKPARSEDIR)/berkeleyParser.jar  |  bin  #$$(abspath $$(dir $$@))
 
 #### add extra paren and change '-' ops to '+' for berkeley trainer
 %.extrparplusops.linetrees:  %.linetrees
-	cat $<  |  sed 's/^\((.*\)$$/(\1)/g'  |  perl -pe 's/\-(?=[a-z][^\)]* )/+/g'  >  $@
+	cat $<  |  sed 's/^\((.*\)$$/(\1)/g'  |  perl -pe 's/\-(?=[a-z][^\)]* )/+/g;s/\-PRTRM/+PRTRM/g'  >  $@
 
 #### sm grammar using berkeley trainer
 ## no validation -- external jarfile
