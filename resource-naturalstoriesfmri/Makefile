@@ -119,5 +119,5 @@ naturalstoriesfmri%.tokmeasures: naturalstories%.tokmeasures
 naturalstoriesfmri%.itemmeasures: naturalstories%.itemmeasures
 	cp $(word 1, $^) $@
 
-%naturalstoriesfmri.evmeasures: $(DEP-NATSTORIESFMRI) $(NATSTORFMRIDIR)/naturalstoriesFMRI.evmeasures $(NATSTORIESFMRI-SCRIPTS)/preprocess_natstor_fmri.py | %
+%naturalstoriesfmri.evmeasures: $$(DEP-NATSTORIESFMRI) $(NATSTORFMRIDIR)/naturalstoriesFMRI.evmeasures $(NATSTORIESFMRI-SCRIPTS)/preprocess_natstor_fmri.py | %
 	cat $(word 1, $^) | python $(word 2, $^) $(NATSTOR-STORIES) > $@
