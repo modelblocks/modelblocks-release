@@ -89,7 +89,7 @@ class StreamTrellis : public vector<Beam> {
 
 int main ( int nArgs, char* argv[] ) {
 
-  uint numThreads = 10;
+  uint numThreads = 1;
 
   // Define model structures...
   arma::mat matF;

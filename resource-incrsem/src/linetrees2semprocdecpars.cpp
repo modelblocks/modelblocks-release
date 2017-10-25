@@ -91,7 +91,7 @@ void normalize( arma::mat& M, int n, int dir ) {    //return M / (M * arma::ones
 ////////////////////////////////////////////////////////////////////////////////
 
 inline string regex_escape(const string& string_to_escape) {
-    return regex_replace( string_to_escape, regex("[.^$|()\\[\\]{}*+?\\\\]"), string("\\\\$1") );
+    return regex_replace( string_to_escape, regex("([.^$|()\\[\\]{}*+?\\\\])"), "\\$1" );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -133,13 +133,13 @@ E getExtr ( const Tree<LVU>& tr ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-T T_COLON ( "Pk" );                       // must be changed to avoid confusion with ":" delimiter in K's (where type occurs individually).
-T T_CONTAINS_COMMA ( "!containscomma!" ); // must be changed to avoid confusion with "," delimiter in F,J params.
+//// T T_COLON ( "Pk" );                       // must be changed to avoid confusion with ":" delimiter in K's (where type occurs individually).
+//// T T_CONTAINS_COMMA ( "!containscomma!" ); // must be changed to avoid confusion with "," delimiter in F,J params.
 
 T getType ( const L& l ) {
-  if ( l[0]==':' )                 return T_COLON;
-  if ( l.find(',')!=string::npos ) return T_CONTAINS_COMMA;
-  return regex_replace( l, regex("-[xl](?:(?!-[a-z])[^ }])*"), string("") ).c_str();
+////  if ( l[0]==':' )                 return T_COLON;
+////  if ( l.find(',')!=string::npos ) return T_CONTAINS_COMMA;
+  return regex_replace( regex_replace( l, regex("%[^ %|]*[|]"), string("") ), regex("-[xl](?:(?!-[a-z])[^ }])*"), string("") ).c_str();
 //  return string( string( l, 0, l.find("-l") ), 0, l.find("-x") ).c_str();
 }
 
@@ -194,6 +194,10 @@ arma::vec& setBackwardMessages ( Tree<LVU>& tr ) {
     else                      tr.u() = normalize( itwv->second, 1 );
 //    tr.u() = normalize( ( itwv != mtwvL.end() ) ? itwv->second : mtwvL[ pair<T,W>( getType(tr), unkWordBerk( L(tr.front()).c_str() ) ) ], 1 );
   }
+  // At unary identity nonpreterminal...
+  else if ( tr.size()==1 and getType(tr)==getType(tr.front()) ) {
+    tr.u() = setBackwardMessages( tr.front() );
+  }
   // At unary nonpreterminal...
   else if ( tr.size()==1 ) {
     arma::vec u0 = setBackwardMessages( tr.front() );
@@ -214,6 +218,10 @@ void setForwardMessages ( Tree<LVU>& tr, const arma::rowvec v ) {
   tr.v() = v;
   // At unary preterminal...
   if( tr.size()==1 && tr.front().size()==0 ) {
+  }
+  // At unary identity nonpreterminal...
+  else if ( tr.size()==1 and getType(tr)==getType(tr.front()) ) {
+    setForwardMessages( tr.front(), v );
   }
   // At unary nonpreterminal...
   else if ( tr.size()==1 ) {
@@ -262,6 +270,11 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
     vW = ((vW.n_elem) ? vW : arma::zeros(iMaxNums))          + normalize( (vOnes.t() * D).t() % (U * tr.u()), 1 );
 //if( q.calcPretrmTypeCondition(f,e,k).fourth()==T("N-aD") and getType(tr)==T("R-aN") ) 
 //cout<<"D for "<<tr<<" with b="<<q.calcPretrmTypeCondition(f,e,k).fourth()<<endl<<D<<endl<<tr.u()<<endl;
+  }
+
+  // At unary identity nonpreterminal...
+  else if ( tr.size()==1 and getType(tr)==getType(tr.front()) ) {
+    calcContext( tr.front(), D, U, s, d, e, l );
   }
 
   // At unary nonpreterminal...
