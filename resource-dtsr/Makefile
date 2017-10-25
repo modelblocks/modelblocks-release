@@ -86,5 +86,5 @@ endif
 	cat $(word 1, $^) | python $(word 2, $^) > $@
 
 %.y.evmeasures: %.evmeasures $$(RT-SCRIPTS)/filter_cols.awk
-	cat $(word 1, $^) | awk -f $(word 2, $^) -v cols=fdur:fdurFP:fdurGP:time:subject:docid:sentid:word:correct:startofsentence:endofsentence:startofline:endofline:startofscreen:endofscreen:startoffile:endoffile > $@
+	cat $(word 1, $^) | awk -f $(word 2, $^) -v cols=fdur:fdurFP:fdurGP:time:subject:docid:sentid:word:correct:startofsentence:endofsentence:startofline:endofline:startofscreen:endofscreen:startoffile:endoffile:wdelta > $@
 
