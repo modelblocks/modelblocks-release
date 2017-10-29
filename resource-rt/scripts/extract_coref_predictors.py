@@ -8,7 +8,7 @@ Generate by-word tsv of predictors for coreference-based features. Uses annotate
 To run:
     python extract_coref_predictors.py <input_filename>
 
-"uid", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog"
+"uid", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog", "storypos", "storypos13bin", "storypos23bin", "storypos33bin"
 
 Output format:
 Column 1: word_id, in sentenceid_wordid format
@@ -16,7 +16,16 @@ Column 2: binary corefence indicator
 Column 3: distance in words to antecedent
 Column 4: distance in nouns,verbs to antecedent
 Column 5: size of chain in mention count up to current mention
+Column 6: binary indicator if is anaphoric and pronominal
+Column 7: distance in words, log transformed
+Column 8: distance in referents, log transformed
+Column 9: incremental mention count size, log transformed
+Column 10: relative sentence position in story, from 0 to 1
+Column 11: binary indicator if sentence in 1st third of story
+Column 12: binary indicator if sentence in 2nd third of story
+Column 13: binary indicator if sentence in 3rd third of story
 '''
+
 from __future__ import division, print_function
 from math import log
 import sys
@@ -133,6 +142,20 @@ class CorefPredictors:
         storypos = csentidx / storylen
         return storypos
 
+    def get_story_pos_third_bins(self, storypos):
+        assert storypos <= 1 and  storypos >=0
+        if storypos < 0.333:
+            first3rd = "y"
+        else: first3rd = "n"
+        if storypos >= 0.333 and storypos <= 0.666:
+            second3rd = "y"
+        else: second3rd = "n"
+        if storypos > 0.666:
+            third3rd = "y"
+        else: third3rd = "n"
+        return first3rd, second3rd, third3rd
+
+
     def get_predictors(self):
         for idx, line in enumerate(self.lines):
             #if idx % 100 == 0:
@@ -143,6 +166,7 @@ class CorefPredictors:
             #last2 are wordidx, rest are sentidx
             sentidx = int(curr_id[:-2])
             story_pos = self.get_story_pos(sentidx)
+            storypos13bin, storypos23bin, storypos33bin = self.get_story_pos_third_bins(story_pos)
             match = re.search(r".*-[nm]([0-9]+) ", line)
             if match is not None:
                 ante_id = match.group(1) # antecedent id group
@@ -176,12 +200,12 @@ class CorefPredictors:
                 ref_dist_log = "nan"
                 chain_size_log = "nan"
             #self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro]) #list of lists
-            self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro, str(word_dist_log), str(ref_dist_log), str(chain_size_log), str(story_pos)]) #list of lists
+            self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro, str(word_dist_log), str(ref_dist_log), str(chain_size_log), str(story_pos), str(storypos13bin), str(storypos23bin), str(storypos33bin)]) #list of lists
                 
 
     def print_predictors(self):
         #pdb.set_trace()
-        print(DELIM.join(["uid", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog", "storypos"]))
+        print(DELIM.join(["uid", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog", "storypos", "storypos13bin", "storypos23bin", "storypos33bin"]))
         for p in self.predictors:
             print(DELIM.join(p))
 
