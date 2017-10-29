@@ -40,6 +40,8 @@ def main():
         cols = data.columns.values[:]
     else:
         cols = args.cols
+    # Ensure that colnames processed are unique
+    cols = list(set(cols))
     if fdur != None and len(cols) > 0:
         for col in cols:
             if data[col].dtype==object:

@@ -1,4 +1,4 @@
-# Use 'allbut' instruction to exclude data rows without key-val.
+# Use 'only' instruction to exclude data rows without key-val.
 # Use 'noneof' instruction to exclude data rows with key-val.
 # Each row consists of "<instruction> <column/key> <val>".
 # Instructions are processed in order.

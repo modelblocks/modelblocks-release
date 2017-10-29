@@ -89,7 +89,7 @@ class StreamTrellis : public vector<Beam> {
 
 int main ( int nArgs, char* argv[] ) {
 
-  uint numThreads = 10;
+  uint numThreads = 1;
 
   // Define model structures...
   arma::mat matF;
@@ -269,6 +269,7 @@ int main ( int nArgs, char* argv[] ) {
                           if ( VERBOSE>1 ) cout << "          B " << bpredictor << "..." << endl;
                           if ( modB.end()!=modB.find(bpredictor) )
                            for ( auto& tpB : modB[bpredictor] ) {
+                            if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << tpB.first << " = " << tpB.second << endl;
                             lock_guard<mutex> guard( mutexBeam );
                             if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second) > beams[t].rbegin()->first.first ) {
 

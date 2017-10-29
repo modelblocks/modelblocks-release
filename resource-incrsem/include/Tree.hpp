@@ -26,28 +26,29 @@ typedef Delimited<string> L;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Tree : public DelimitedList<psX,Tree,psSpace,psX> {
- private:
-  L l;
+template<class D>
+class Tree : public D, public DelimitedList<psX,Tree<D>,psSpace,psX> {
+// private:
+//  D d;
  public:
-  Tree ( )                : DelimitedList<psX,Tree,psSpace,psX> ( )        { }
-  Tree ( const char* ps ) : DelimitedList<psX,Tree,psSpace,psX> ( ), l(ps) { }
-  friend pair<istream&,Tree&> operator>> ( istream& is, Tree& t ) {
-    return pair<istream&,Tree&>(is,t);
+  Tree ( )                : D( ),    DelimitedList<psX,Tree<D>,psSpace,psX>( ) { }
+  Tree ( const char* ps ) : D( ps ), DelimitedList<psX,Tree<D>,psSpace,psX>( ) { }    // NOTE: This only creates leaf nodes.
+  friend pair<istream&,Tree<D>&> operator>> ( istream& is, Tree& t ) {
+    return pair<istream&,Tree<D>&>(is,t);
   }
-  friend istream& operator>> ( pair<istream&,Tree&> ist, const char* psDelim ) {
-    if ( ist.first.peek()=='(' ) return ist.first >> "(" >> ist.second.l >> " " >> (DelimitedList<psX,Tree,psSpace,psX>&)ist.second >> ")" >> psDelim;
-    else                         return ist.first >> ist.second.l >> psDelim;
+  friend istream& operator>> ( pair<istream&,Tree<D>&> ist, const char* psDelim ) {
+    if ( ist.first.peek()=='(' ) return ist.first >> "(" >> (D&)ist.second >> " " >> (DelimitedList<psX,Tree<D>,psSpace,psX>&)ist.second >> ")" >> psDelim;
+    else                         return ist.first >> (D&)ist.second >> psDelim;
   }
-  friend bool operator>> ( pair<istream&,Tree&> ist, const vector<const char*>& vpsDelim ) {
-    if ( ist.first.peek()=='(' ) return ist.first >> "(" >> ist.second.l >> " " >> (DelimitedList<psX,Tree,psSpace,psX>&)ist.second >> ")" >> vpsDelim;
-    else                         return ist.first >> ist.second.l >> vpsDelim;
+  friend bool operator>> ( pair<istream&,Tree<D>&> ist, const vector<const char*>& vpsDelim ) {
+    if ( ist.first.peek()=='(' ) return ist.first >> "(" >> (D&)ist.second >> " " >> (DelimitedList<psX,Tree<D>,psSpace,psX>&)ist.second >> ")" >> vpsDelim;
+    else                         return ist.first >> (D&)ist.second >> vpsDelim;
   }
-  friend ostream& operator<< ( ostream& os, const Tree& t ) {
-    if ( t.size()>0 ) return os << psOpenParen << t.l << psSpace << (DelimitedList<psX,Tree,psSpace,psX>&)t << psCloseParen;
-    else              return os << t.l;
+  friend ostream& operator<< ( ostream& os, const Tree<D>& t ) {
+    if ( t.size()>0 ) return os << psOpenParen << (D&)t << psSpace << (DelimitedList<psX,Tree<D>,psSpace,psX>&)t << psCloseParen;
+    else              return os << (D&)t;
   }
-  operator const L ( ) const { return l; }
+//  operator const D ( ) const { return (D&)t; }
 };
 
 

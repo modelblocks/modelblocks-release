@@ -333,12 +333,18 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     ## for each syntactic dependency...
     for x,l in sorted(G):
       if l[-1]=='\'':
-        ## add semantic dependencies...
-        if   (x,'r') in G and (G[x,'r'],'0') in G:                                 G.equate( G[x,l], l[:-1], G.result('r',x) )         ## predicate
-        elif (x,'e') in G and (G[x,'e'],'r') in G and (G[G[x,'e'],'r'],'0') in G:  G.equate( G[x,l], l[:-1], x )                       ## extraction of predicate
-        elif (x[:-1]+'e','0') in G:                                                G.equate( G[x,l], str(int(l[:-1])+1), x[:-1]+'e' )  ## nominal
+        if VERBOSE:
+          sys.stderr.write( 'Creating semantic dependencies for ' + x + ',' + l + '...\n' )
+        try:
+          ## add semantic dependencies...
+          if   (x,'r') in G and (G[x,'r'],'0') in G:                                 G.equate( G[x,l], l[:-1], G.result('r',x) )         ## predicate
+          elif (x,'e') in G and (G[x,'e'],'r') in G and (G[G[x,'e'],'r'],'0') in G:  G.equate( G[x,l], l[:-1], x )                       ## extraction of predicate
+          elif (x[:-1]+'e','0') in G:                                                G.equate( G[x,l], str(int(l[:-1])+1), x[:-1]+'e' )  ## nominal
 #BAD;NON-PRED      elif (x,'e') in G and (G[x,'e'],'r') in G and (G[G[x,'e'],'r'][:-1]+'e','0') in G: G.equate( G[x,l], str(int(l[:-1])+1), x )           ## extraction of nominal
-
+          if VERBOSE:
+            sys.stderr.write( str(G) + '\n' )
+        except KeyError as e:
+          sys.stderr.write( 'KeyError ' + str(e) + ' in ' + str(t) + '\n' )
 
 ################################################################################
 
@@ -349,7 +355,6 @@ class SemCueGraph( cuegraph.CueGraph ):
     for x,l in sorted(G.keys()):
       if l!='A' and l!='B' and l!='s' and l!='w' and (l!='0' or x[-1] in 'er') and l[-1]!='\'':
         H[x,l] = G[x,l]
-
 
 ################################################################################
 

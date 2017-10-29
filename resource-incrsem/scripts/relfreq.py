@@ -13,7 +13,8 @@ args = argparser.parse_args()
 counts = model.CondModel() 
 for line in sys.stdin:
   predictor,response = line.strip('\n').split(' : ')
-  counts[predictor][response] += 1
+  response,count = response.split(' = ') if ' = ' in response else (response,'1')
+  counts[predictor][response] += float(count)
 
 if not args.nonorm:
   for predictor in sorted(counts):

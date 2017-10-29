@@ -84,6 +84,9 @@ CHILDES-SCRIPTS := $(RESOURCE-CHILDES)/scripts
 RESOURCE-DMV := $(abspath $(MBDIR)/resource-dmv)
 DMV-SCRIPTS := $(RESOURCE-DMV)/scripts
 
+RESOURCE-DTSR := $(abspath $(MBDIR)/resource-dtsr)
+DTSR-SCRIPTS := $(RESOURCE-DTSR)/scripts
+
 RESOURCE-DUNDEE := $(abspath $(MBDIR)/resource-dundee)
 DUNDEE-SCRIPTS := $(RESOURCE-DUNDEE)/scripts
 
@@ -128,6 +131,9 @@ LVPCFG-SCRIPTS := $(RESOURCE-LVPCFG)/scripts
 
 RESOURCE-NATSTORIES := $(abspath $(MBDIR)/resource-naturalstories)
 NATSTORIES-SCRIPTS := $(RESOURCE-NATSTORIES)/scripts
+
+RESOURCE-NATSTORIESFMRI := $(abspath $(MBDIR)/resource-naturalstoriesfmri)
+NATSTORIESFMRI-SCRIPTS := $(RESOURCE-NATSTORIESFMRI)/scripts
 
 RESOURCE-PASSAGES := $(abspath $(MBDIR)/resource-passages)
 PASSAGES-SCRIPTS := $(RESOURCE-PASSAGES)/scripts
@@ -196,6 +202,7 @@ include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
 include $(RESOURCE-RT)/Makefile
+include $(RESOURCE-DTSR)/Makefile
 include $(RESOURCE-FMRI)/Makefile
 include $(RESOURCE-LMEFIT)/Makefile
 include $(RESOURCE-ALICE)/Makefile
@@ -205,6 +212,7 @@ include $(RESOURCE-CHILDES)/Makefile
 include $(RESOURCE-DUNDEE)/Makefile
 include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
+include $(RESOURCE-NATSTORIESFMRI)/Makefile
 include $(RESOURCE-PASSAGES)/Makefile
 include $(RESOURCE-ONTONOTES)/Makefile
 include $(RESOURCE-RHACKS)/Makefile

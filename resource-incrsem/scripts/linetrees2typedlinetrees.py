@@ -17,6 +17,11 @@ L = 5                  ## number of dep labels (arg positions) -- gets overridde
 alpha = 0.1            ## pseudocount mass for word distribs
 beta  = 0.1            ## pseudocount mass for transition distribs
 
+for a in sys.argv:
+  if a=='-d':
+    gcgtree.VERBOSE = True
+    semcuegraph.VERBOSE = True
+
 ################################################################################
 
 def numberTerminals( t, n=0 ):

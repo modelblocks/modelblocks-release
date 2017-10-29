@@ -70,25 +70,27 @@ class SpMatLogisticRegressionFunction {
   //arma::mat     norms;         // cache norms during Evaluate for use in Gradient
   arma::mat     cooccurrences; // cache cooccurrences from beginning
   arma::mat     expectations;  // cache expectationa during Evaluate for use in Gradient
+  arma::vec     counts;        // for (superposed) fractional or repeated items in data
   vector<mutex> vmExpectationRows;
   double        dUnderflowScaler;
 
  public:
 
   SpMatLogisticRegressionFunction ( uint nX, uint nY, uint nT = 1, double l = 0.0, double dS = 1.0 ) : lambda(l), numThreads(nT), dUnderflowScaler(dS), vmExpectationRows(nX) {
-    initialpoint.randn ( nX, nY );
+    initialpoint.randn( nX, nY );
     initialpoint *= 0.01;
-    expectations.zeros ( nX, nY );
+    expectations.zeros( nX, nY );
     cerr << "L2 regularization parameter: " << lambda << "\n";
   }
 
   arma::sp_mat&       Predictors ( )        { return predictors; }
   arma::sp_mat&       Responses  ( )        { return responses;  }
   const arma::sp_mat& Responses  ( ) const  { return responses;  }
+  arma::vec&          Counts     ( )        { return counts;     }
 
   double Evaluate(const arma::mat& parameters)  {
 
-////    cerr<<"inEval\n";
+////    cerr<<"inEval"<<endl;
 
     const double regularization = 0.5 * lambda * dUnderflowScaler * arma::accu( parameters % parameters );
 
@@ -99,35 +101,61 @@ class SpMatLogisticRegressionFunction {
 ////    cerr<<parameters(0,0)<<"\n";
 ////    return -arma::accu(logprobs) + regularization;
 
-    if ( cooccurrences.n_cols == 0 ) predictors *= dUnderflowScaler;
-    if ( cooccurrences.n_cols == 0 ) cooccurrences = predictors * responses.t();
+    if ( cooccurrences.n_cols == 0 ) {
+//?!      predictors *= dUnderflowScaler;
+      arma::sp_mat weighted_responses( responses );
+      for( uint i=0; i<weighted_responses.n_cols; i++ )
+//      weighted_responses.col(i) *= counts(i) * dUnderflowScaler;
+       for( uint j=weighted_responses.col_ptrs[i]; j<weighted_responses.col_ptrs[i+1]; j++ )
+          weighted_responses(weighted_responses.row_indices[j],i) *= counts(i) * dUnderflowScaler;
+      cooccurrences = predictors * weighted_responses.t();
+    }
+//    if ( cooccurrences.n_cols == 0 ) cooccurrences = predictors * arma::diagmat(counts) * dUnderflowScaler * responses.t();
     double totlogprob = 0;
     mutex mTotlogprob;
     expectations.zeros ( );
     vector<thread> vtWorkers; // ( numThreads, 
     for ( uint jglobal=0; jglobal<numThreads; jglobal++ ) vtWorkers.push_back( thread( [&] (int j) {
-      // multi-threaded...
+      // multi-threaded -- each worker processes a division of the data items (columns)...
       ////cerr<<"thread "<<j<<" "<<((predictors.n_cols*j)/numThreads)<<" "<<((predictors.n_cols*(j+1))/numThreads)<<" started...\n";
       for ( uint c=(predictors.n_cols*j)/numThreads; c<(predictors.n_cols*(j+1))/numThreads; c++ ) {
         arma::vec logscoredistr = arma::zeros( parameters.n_cols );
+        // Add effect of each (sparse) predictor as vector of output weights...
         for ( uint i=predictors.col_ptrs[c]; i<predictors.col_ptrs[c+1]; i++ )
           logscoredistr += parameters.row(predictors.row_indices[i]).t() * predictors.values[i];
         arma::vec scoredistr = arma::exp( logscoredistr );
         double norm = arma::accu( scoredistr );
-        { lock_guard<mutex> guard ( mTotlogprob );
-          totlogprob += arma::accu( logscoredistr % responses.col(c) ) - log(norm);
-          }
-        for ( uint i=predictors.col_ptrs[c]; i<predictors.col_ptrs[c+1]; i++ ) {
-          lock_guard<mutex> guard ( vmExpectationRows[predictors.row_indices[i]] );
-          expectations.row(predictors.row_indices[i]) += predictors.values[i] * scoredistr.t() / norm;
-          }
-        ////if ( c%100000==0 ) cerr<<c<<"/"<<predictors.n_cols<<" done\n";	
+        // Prevent overflow...
+        if ( norm == 1.0/0.0 ) {
+          ////cerr<<"WARNING: infinite norm in data item "<<c<<"; substituting Dirac delta at max."<<endl;
+          uint ind_max=0; for( uint i=0; i<logscoredistr.size(); i++ ) if( logscoredistr(i)>ind_max ) ind_max=i;
+          logscoredistr.fill(0.0); logscoredistr(ind_max) = exp(1.0);
+          scoredistr.fill(0.0);    scoredistr(ind_max)    = 1.0;
+          norm = exp(1.0);
         }
-      }, jglobal ));
+        if ( norm == -1.0/0.0 ) cerr<<"WARNING: neg inf norm!"<<endl;
+        if ( norm == 0.0 ) cerr<<"WARNING: zero norm!"<<endl;
+        { lock_guard<mutex> guard ( mTotlogprob );
+          totlogprob += counts(c) * dUnderflowScaler * ( arma::accu( logscoredistr % responses.col(c) ) - log(norm) );
+//cerr<<"?!?! "<< counts(c) << " * " << dUnderflowScaler << " * ( " << arma::accu( logscoredistr % responses.col(c) ) << " - " << log(norm) << " )" << endl;
+        }
+        for ( uint i=predictors.col_ptrs[c]; i<predictors.col_ptrs[c+1]; i++ ) {
+//          if( arma::accu( expectations.row(predictors.row_indices[i]) + (counts(c) * dUnderflowScaler * predictors.values[i] * scoredistr.t()) ) != 1.0/0.0 ) {
+            lock_guard<mutex> guard ( vmExpectationRows[predictors.row_indices[i]] );
+            expectations.row(predictors.row_indices[i]) += counts(c) * dUnderflowScaler * predictors.values[i] * (scoredistr.t() / norm);
+//          } else {
+//            cerr<<"WARNING: infinite expectation row; skipping."<<endl;
+//          }
+	}
+        ////if ( c%100000==0 ) cerr<<c<<"/"<<predictors.n_cols<<" done\n";	
+      }
+    }, jglobal ));
     for ( auto& t : vtWorkers ) t.join();
-    cerr<<"regularized logP = "<<totlogprob - regularization<<"\n";
-////    cerr<<"trace param: "<<parameters(0,0)<<"\n";
-    return -totlogprob + regularization;
+    cerr<<"regularized logP (inverse cost) = "<<totlogprob - regularization<<"\n";
+
+////    cerr<<"outEval"<<endl;
+
+    return ( -totlogprob + regularization ) / dUnderflowScaler;
   }
 
   void Gradient(const arma::mat& parameters, arma::mat& gradient)  {
@@ -135,7 +163,7 @@ class SpMatLogisticRegressionFunction {
     // Regularization term.
     arma::mat regularization = lambda * dUnderflowScaler * parameters;
 
-////    cerr<<"inGrad\n";
+////    cerr<<"inGrad"<<endl;
 
 ////    const arma::mat scoredistrs = arma::exp( parameters * predictors );
 ////    const arma::mat norms       = arma::ones<rowvec>(parameters.n_rows) * scoredistrs;
@@ -143,7 +171,8 @@ class SpMatLogisticRegressionFunction {
 ////    gradient                    = - (responses - predictions) * predictors.t();
 
     gradient = - ( cooccurrences - expectations ) + regularization;
-////    cerr<<"trace param gradient: "<<gradient(0,0)<<"\n";
+
+////    cerr<<"outGrad "<<arma::accu(expectations)<<endl;
   }
 
   const arma::mat& GetInitialPoint ( ) const { return initialpoint; }
@@ -156,15 +185,17 @@ int main ( int nArgs, char* argv[] ) {
   uint maxiters = nArgs>4 ? atoi(argv[4]) : 0;
   cerr << "Max iters (0 = no bound): " << maxiters << "\n";
 
-  list<pair<DelimitedList<psX,DelimitedPair<psX,Delimited<XFeat>,psEquals,Delimited<double>,psX>,psComma,psX>,Delimited<YVal>>> lplpfdy;
+  list<trip<DelimitedList<psX,DelimitedPair<psX,Delimited<XFeat>,psEquals,Delimited<double>,psX>,psComma,psX>,Delimited<YVal>,Delimited<double>>> lplpfdy;
 
   // Read data...
   cerr << "Reading data...\n";
   int numfeattokens = 0;
   while ( cin && EOF!=cin.peek() ) {
     auto& plpfdy = *lplpfdy.emplace(lplpfdy.end());
-    cin >> plpfdy.first >> " : " >> plpfdy.second >> "\n";
-    numfeattokens += plpfdy.first.size();
+    cin >> plpfdy.first() >> " : " >> plpfdy.second() >> vector<const char*>({"\n"," "});
+    if( '=' == cin.peek() ) cin >> "= " >> plpfdy.third() >> "\n";
+    else plpfdy.third() = 1;
+    numfeattokens += plpfdy.first().size();
   }
   cerr << "Data read: x=" << domXFeat.getSize() << " y=" << domYVal.getSize() << ".\n";
 
@@ -172,32 +203,35 @@ int main ( int nArgs, char* argv[] ) {
   SpMatLogisticRegressionFunction f ( domXFeat.getSize(), domYVal.getSize(), nArgs>1 ? atoi(argv[1]) : 1, nArgs>2 ? atof(argv[2]) : 0.0, nArgs>3 ? atof(argv[3]) : 1.0 );
   sp_mat& DbyFX = f.Predictors();
   sp_mat& DbyY  = f.Responses();
+  vec& Dcounts  = f.Counts();
   umat xlocs ( 2, numfeattokens );
   vec  xvals (    numfeattokens );
   umat ylocs ( 2, lplpfdy.size() );
   vec  yvals (    lplpfdy.size() );
+  Dcounts.zeros ( lplpfdy.size() );
   int t = 0; int i = 0;
   for ( auto& plpfdy : lplpfdy ) {
-    for ( auto& pfd : plpfdy.first ) {
+    for ( auto& pfd : plpfdy.first() ) {
       xlocs(0,i) = pfd.first.toInt();
       xlocs(1,i) = t;
       xvals(i)   = pfd.second;
       i++;
     }
-    ylocs(0,t) = plpfdy.second.toInt();
+    ylocs(0,t) = plpfdy.second().toInt();
     ylocs(1,t) = t;
     yvals(t) = 1.0;
+    Dcounts(t) = plpfdy.third();
     t++;
   }
   DbyFX = sp_mat ( true, xlocs, xvals, domXFeat.getSize(), lplpfdy.size() );
   DbyY  = sp_mat ( true, ylocs, yvals, domYVal.getSize(),  lplpfdy.size() );
-  cerr<<"populated.\n";
+  cerr<<"Populated "<<DbyFX.n_cols<<" data items."<<endl;
 
   // Regress and print params...
   auto o = L_BFGS<SpMatLogisticRegressionFunction> ( f, 5, maxiters );
   auto W = f.GetInitialPoint();
   o.Optimize(W);
-  cerr<<"done.\n";
+  cerr<<"Done.\n";
 
 ////  // Regress and print params...
 ////  auto& w = LogisticRegression<>(X,y).Parameters();

@@ -96,7 +96,7 @@ inline pair<istream&,Delimited<T>&> operator>> ( istream& is, Delimited<T>& f ) 
 
 template<class T>
 inline istream& operator>> ( pair<istream&,Delimited<T>&> isps, const char* psDelim ) {
-  if ( isDummy==isps.first ) return isDummy;
+  if ( &isDummy==&isps.first ) return isDummy;
   String sBuff(100);
   int i = 0;
   int j = 0;
@@ -114,7 +114,7 @@ inline istream& operator>> ( pair<istream&,Delimited<T>&> isps, const char* psDe
 
 template<class T>
 inline bool operator>> ( pair<istream&,Delimited<T>&> isps, const vector<const char*>& vpsDelim ) {
-  if ( isDummy==isps.first ) return isDummy;
+  if ( &isDummy==&isps.first ) return false;
   String sBuff(100);
   int i = 0;
   vector<int> vj(vpsDelim.size(),0);
