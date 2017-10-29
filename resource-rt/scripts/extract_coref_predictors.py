@@ -1,14 +1,14 @@
 '''
 Title: extract_coref_predictors.py
 Author: Evan Jaffe
-Date: 3/28/2017
+Original date: 3/28/2017
 
 Generate by-word tsv of predictors for coreference-based features. Uses annotated numbered editable linetrees file, with X-nID and X-mID as indicating the id of the antecedent.
 
 To run:
     python extract_coref_predictors.py <input_filename>
 
-"uid", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog", "storypos", "storypos13bin", "storypos23bin", "storypos33bin"
+"uid", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog", "storypos", "storypos13bin", "storypos23bin", "storypos33bin", "storypos12bin", "storypos22bin"
 
 Output format:
 Column 1: word_id, in sentenceid_wordid format
@@ -24,6 +24,8 @@ Column 10: relative sentence position in story, from 0 to 1
 Column 11: binary indicator if sentence in 1st third of story
 Column 12: binary indicator if sentence in 2nd third of story
 Column 13: binary indicator if sentence in 3rd third of story
+Column 14: binary indicator if sentence in 1st half of story
+Column 15: binary indicator if sentence in 2nd half of story
 '''
 
 from __future__ import division, print_function
@@ -142,20 +144,16 @@ class CorefPredictors:
         storypos = csentidx / storylen
         return storypos
 
-    def get_story_pos_third_bins(self, storypos):
+    def get_story_pos_bins(self, storypos):
         assert storypos <= 1 and  storypos >=0
-        if storypos < 0.333:
-            first3rd = "y"
-        else: first3rd = "n"
-        if storypos >= 0.333 and storypos <= 0.666:
-            second3rd = "y"
-        else: second3rd = "n"
-        if storypos > 0.666:
-            third3rd = "y"
-        else: third3rd = "n"
-        return first3rd, second3rd, third3rd
+        first3rd = "y" if storypos < 0.333 else "n"
+        second3rd = "y" if (storypos >= 0.333 and storypos <= 0.666) else "n"
+        third3rd = "y" if storypos > 0.666 else "n"
+        firsthalf = "y" if storypos < 0.5 else "n"
+        secondhalf = "y" if storypos >= 0.5 else "n"
+        return first3rd, second3rd, third3rd, firsthalf, secondhalf
 
-
+    
     def get_predictors(self):
         for idx, line in enumerate(self.lines):
             #if idx % 100 == 0:
@@ -166,7 +164,7 @@ class CorefPredictors:
             #last2 are wordidx, rest are sentidx
             sentidx = int(curr_id[:-2])
             story_pos = self.get_story_pos(sentidx)
-            storypos13bin, storypos23bin, storypos33bin = self.get_story_pos_third_bins(story_pos)
+            storypos13bin, storypos23bin, storypos33bin, storypos12bin, storypos22bin  = self.get_story_pos_bins(story_pos)
             match = re.search(r".*-[nm]([0-9]+) ", line)
             if match is not None:
                 ante_id = match.group(1) # antecedent id group
@@ -200,12 +198,12 @@ class CorefPredictors:
                 ref_dist_log = "nan"
                 chain_size_log = "nan"
             #self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro]) #list of lists
-            self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro, str(word_dist_log), str(ref_dist_log), str(chain_size_log), str(story_pos), str(storypos13bin), str(storypos23bin), str(storypos33bin)]) #list of lists
+            self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro, str(word_dist_log), str(ref_dist_log), str(chain_size_log), str(story_pos), str(storypos13bin), str(storypos23bin), str(storypos33bin), str(storypos12bin), str(storypos22bin)]) #list of lists
                 
 
     def print_predictors(self):
         #pdb.set_trace()
-        print(DELIM.join(["uid", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog", "storypos", "storypos13bin", "storypos23bin", "storypos33bin"]))
+        print(DELIM.join(["uid", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog", "storypos", "storypos13bin", "storypos23bin", "storypos33bin", "storypos12bin", "storypos22bin"]))
         for p in self.predictors:
             print(DELIM.join(p))
 
