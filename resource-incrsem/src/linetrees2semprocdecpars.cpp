@@ -114,7 +114,7 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
     if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)[%](.*)$") ) )              // circumfix (prefix+suffix) rule application
       sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"$"), string(mX[3])+"$1"+string(mX[4]) );
   }
-  cerr << "applying " << lP << " to " << lW << " to get " << sPred << endl;
+  ////cerr << "applying " << lP << " to " << lW << " to get " << sPred << endl;
 
   int iSplit = sPred.find( ":", 1 );
   sType  = sPred.substr( 0, iSplit-1 );
