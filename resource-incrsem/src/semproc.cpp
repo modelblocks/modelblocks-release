@@ -206,9 +206,15 @@ int main ( int nArgs, char* argv[] ) {
           for ( auto& fpredr : lfpredictors ) if ( fpredr.toInt() < matF.n_cols ) fresponses += matF.col( fpredr.toInt() );
           if ( VERBOSE>1 ) for ( auto& fpredr : lfpredictors ) cout<<"    fpredr:"<<fpredr<<endl;
           fresponses = arma::exp( fresponses );
-
           // Calc normalization term over responses...
           double fnorm = arma::accu( fresponses );
+
+          // Relace overflow distribs with Dirac...
+          if( fnorm == 1.0/0.0 ) {
+            uint ind_max=0; for( i=0; i<fresponses.size(); i++ ) if( fresponses(i)>fresponses(ind_max) ) ind_max=i;
+            fresponses.fill( 0.0 );  fresponses( ind_max ) = 1.0;
+            fnorm = 1.0;
+          }
 
           // For each possible lemma (context + label + prob) for preterminal of current word...
           for ( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[unkWord(w_t.getString().c_str())] ) {
@@ -244,6 +250,13 @@ int main ( int nArgs, char* argv[] ) {
                   for ( auto& jpredr : ljpredictors ) if ( jpredr.toInt() < matJ.n_cols ) jresponses += matJ.col( jpredr.toInt() );
                   jresponses = arma::exp( jresponses );
                   double jnorm = arma::accu( jresponses );  // 0.0;                                           // join normalization term (denominator)
+
+                  // Relace overflow distribs with Dirac...
+                  if( jnorm == 1.0/0.0 ) {
+                    uint ind_max=0; for( i=0; i<jresponses.size(); i++ ) if( jresponses(i)>jresponses(ind_max) ) ind_max=i;
+                    jresponses.fill( 0.0 );  jresponses( ind_max ) = 1.0;
+                    jnorm = 1.0;
+                  }
 
                   // For each possible no-join or join decision, and operator decisions...
                   for( JResponse jresponse; jresponse<JResponse::getDomain().getSize(); ++jresponse ) {

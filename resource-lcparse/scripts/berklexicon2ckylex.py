@@ -8,6 +8,7 @@
 
 import re
 import sys
+import numpy
 
 for line in sys.stdin:
         match = re.search('([^ ]+) ([^ ]+) \[(.*)\]', line)
@@ -25,6 +26,7 @@ for line in sys.stdin:
                 #        m2 = m2.replace(":","!colon!")
                 i = 0
                 for x in m3.split(","):
+                    if "NaN" not in x:
                         print("CC %s_%d : - - = 1" % (m1,i))
                         print("X %s_%d : %s = %s" % (m1,i, m2, x))
-                        i+=1
+                    i+=1

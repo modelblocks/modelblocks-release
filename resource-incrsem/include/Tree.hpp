@@ -48,6 +48,11 @@ class Tree : public D, public DelimitedList<psX,Tree<D>,psSpace,psX> {
     if ( t.size()>0 ) return os << psOpenParen << (D&)t << psSpace << (DelimitedList<psX,Tree<D>,psSpace,psX>&)t << psCloseParen;
     else              return os << (D&)t;
   }
+  uint           size  ( ) const { return DelimitedList<psX,Tree<D>,psSpace,psX>::size ( ); }
+  const Tree<D>& front ( ) const { return DelimitedList<psX,Tree<D>,psSpace,psX>::front( ); }
+  const Tree<D>& back  ( ) const { return DelimitedList<psX,Tree<D>,psSpace,psX>::back ( ); }
+  Tree<D>&       front ( )       { return DelimitedList<psX,Tree<D>,psSpace,psX>::front( ); }
+  Tree<D>&       back  ( )       { return DelimitedList<psX,Tree<D>,psSpace,psX>::back ( ); }
 //  operator const D ( ) const { return (D&)t; }
 };
 

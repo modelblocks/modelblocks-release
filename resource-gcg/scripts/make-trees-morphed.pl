@@ -548,7 +548,7 @@ while ( <> ) {
   ## Xb* (/s/bed/bing)
   s/\(([BVLG])([^ %]*) ([^ ]*?[^bmr])(b)(|s|bed|bing)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/gi;
   ## Xd* (/s/ded/ding)
-  s/\(([BVLG])([^ %]*) ([^ ]*?[^adelnrs'](?<![aeiou][aeiouw])|embe)(d)(|s|ded|ding)\)/\(B\2-o\1%\4\5|B%4 \3\4\)/gi;
+  s/\(([BVLG])([^ %]*) ([^ ]*?[^adelnrs'](?<![aeiou][aeiouw])|embe)(d)(|s|ded|ding)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/gi;
   ## Xg* (/s/ged/ging)
   s/\(([BVLG])([^ %]*) ([^ ]*?[^gnrs])(g)(|s|ged|ging)\)/\(B\2-o\1%\4\5|B%\4 \3\4\)/gi;
   ## Xk* (/s/ked/king)

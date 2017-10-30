@@ -163,7 +163,7 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 ## obtain predictors and responses for all semantic processing models...
 .PRECIOUS: %sm_semprocdecpars
 %sm_semprocdecpars:     $$(basename $$(basename %)).linetrees  \
-			$(BIN)/linetrees2semprocdecpars  \
+			$(BIN)/linetrees2sm_semprocdecpars  \
 			$$(basename $$(basename %)).lemmacounts  \
 			$$(basename $$(basename %)).nol.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
 	cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@

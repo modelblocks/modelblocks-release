@@ -73,7 +73,7 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-E getExtr ( const Tree& tr ) {
+E getExtr ( const Tree<L>& tr ) {
   N n =  T(L(tr).c_str()).getLastNonlocal();
   if ( n == N_NONE ) return 'N';
   if ( (tr.front().size()==0 || tr.front().front().size()==0) && n == N("-rN") ) return '0';
@@ -160,7 +160,7 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calcContext ( const Tree& tr, int s=1, int d=0, E e='N' ) {
+void calcContext ( const Tree<L>& tr, int s=1, int d=0, E e='N' ) {
   static F          f;
   static E          eF;
   static Sign       aPretrm;
@@ -272,7 +272,7 @@ int main ( int nArgs, char* argv[] ) {
   int linenum = 0;
   while ( cin && EOF!=cin.peek() ) {
     linenum++;
-    Tree t("T"); t.emplace_back(); t.emplace_back("T");
+    Tree<L> t("T"); t.emplace_back(); t.emplace_back("T");
     cin >> t.front() >> "\n";
     cout.flush();
     cout << "TREE " << linenum << ": " << t << "\n";

@@ -128,7 +128,7 @@ class SpMatLogisticRegressionFunction {
         // Prevent overflow...
         if ( norm == 1.0/0.0 ) {
           ////cerr<<"WARNING: infinite norm in data item "<<c<<"; substituting Dirac delta at max."<<endl;
-          uint ind_max=0; for( uint i=0; i<logscoredistr.size(); i++ ) if( logscoredistr(i)>ind_max ) ind_max=i;
+          uint ind_max=0; for( uint i=0; i<logscoredistr.size(); i++ ) if( logscoredistr(i)>logscoredistr(ind_max) ) ind_max=i;
           logscoredistr.fill(0.0); logscoredistr(ind_max) = exp(1.0);
           scoredistr.fill(0.0);    scoredistr(ind_max)    = 1.0;
           norm = exp(1.0);
