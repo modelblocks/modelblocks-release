@@ -186,7 +186,8 @@ cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=
 
     if (!is.null(mincorrect) & 'correct' %in% colnames(data)) {
         smartPrint(paste0('Filtering out rows with correct < ', toString(mincorrect)))
-        data <- data[data$correct < mincorrect,]
+        data <- data[data$correct > mincorrect,]
+        smartPrint(paste0('Number of data rows (min correct): ', nrow(data)))
     }
 
     # Remove any incomplete rows
@@ -307,6 +308,9 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
     }
     for (x in colnames(data)[grepl('prob',colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
+    }
+    if ('correct' %in% colnames(data)) {
+        data$correct <- as.numeric(as.character(data$correct))
     }
 
     ## Exploratory/confirmatory partition utility column
