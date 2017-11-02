@@ -186,7 +186,7 @@ cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=
 
     if (!is.null(mincorrect) & 'correct' %in% colnames(data)) {
         smartPrint(paste0('Filtering out rows with correct < ', toString(mincorrect)))
-        data <- data[data$correct > mincorrect,]
+        data <- data[data$correct >= mincorrect,]
         smartPrint(paste0('Number of data rows (min correct): ', nrow(data)))
     }
 
