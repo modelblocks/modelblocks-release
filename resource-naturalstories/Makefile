@@ -138,6 +138,10 @@ $(CONFIGDIR)/user-naturalstories-directory.txt
 	paste -d' ' <(cat $(word 1, $^) | sed 's/\t/ /g;s/peaked/peeked/g') <(cat $(word 2, $^) | python $(word 3, $^) | cut -d' ' -f 2-) \
 	<(cat $(word 1, $^) | sed 's/\t/ /g;' | awk -f $(word 5, $^) -v cols=item - | python $(word 4, $^) item docid) > $@
 
+%naturalstories.soundPower.itemmeasures: $$(DEP-NATSTORIES) $(CONFIGDIR)/user-naturalstories-directory.txt $(NATSTORIES-SCRIPTS)/get_sound_power.py \
+$(NATSTORDIR)/audio/*.wav | %
+	python $(word 2, $^) $(wordlist 3, $(words $^), $^) > $@
+
 naturalstories.%.t.itemmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/audio naturalstories.%.itemmeasures $$(NATSTORIES-SCRIPTS)/textGrid2itemmeasures.py
 	python $(word 3, $^) $(word 2, $^) $(word 1, $^) > $@
 

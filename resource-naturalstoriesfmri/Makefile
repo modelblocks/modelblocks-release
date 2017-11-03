@@ -119,5 +119,7 @@ naturalstoriesfmri%.tokmeasures: naturalstories%.tokmeasures
 naturalstoriesfmri%.itemmeasures: naturalstories%.itemmeasures
 	cp $(word 1, $^) $@
 
-%naturalstoriesfmri.evmeasures: $$(DEP-NATSTORIESFMRI) $(NATSTORFMRIDIR)/naturalstoriesFMRI.evmeasures $(NATSTORIESFMRI-SCRIPTS)/preprocess_natstor_fmri.py | %
-	cat $(word 1, $^) | python $(word 2, $^) $(NATSTOR-STORIES) > $@
+
+%naturalstoriesfmri.evmeasures: $$(DEP-NATSTORIESFMRI) $(NATSTORFMRIDIR)/naturalstoriesFMRI.evmeasures $(NATSTORIESFMRI-SCRIPTS)/preprocess_natstor_fmri.py \
+%naturalstories.soundPower.itemmeasures $(RT-SCRIPTS)/merge_tables.py $(CONFIGDIR)/user-naturalstories-fmri-directory.txt | %
+	python $(word 4, $^) $(word 3, $^) <(cat $(word 1, $^) | python $(word 2, $^) $(NATSTOR-STORIES)) sampleid > $@
