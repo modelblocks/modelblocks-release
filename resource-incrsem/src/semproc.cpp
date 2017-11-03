@@ -209,7 +209,7 @@ int main ( int nArgs, char* argv[] ) {
           // Calc normalization term over responses...
           double fnorm = arma::accu( fresponses );
 
-          // Relace overflow distribs with Dirac...
+          // Replace overflow distribs with Dirac...
           if( fnorm == 1.0/0.0 ) {
             uint ind_max=0; for( i=0; i<fresponses.size(); i++ ) if( fresponses(i)>fresponses(ind_max) ) ind_max=i;
             fresponses.fill( 0.0 );  fresponses( ind_max ) = 1.0;
@@ -220,7 +220,7 @@ int main ( int nArgs, char* argv[] ) {
           for ( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[unkWord(w_t.getString().c_str())] ) {
             if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(ktpr_p_t.second) > beams[t].rbegin()->first.first ) {
               K k_p_t           = (FEATCONFIG & 2) ? K::kBot : ktpr_p_t.first.first;   // context of current preterminal
-              T t_p_t           = ktpr_p_t.first.second;                               // label of cunnent preterminal
+              T t_p_t           = ktpr_p_t.first.second;                               // label of current preterminal
               E e_p_t           = (t_p_t.getLastNonlocal()==N_NONE) ? 'N' : (t_p_t.getLastNonlocal()==N("-rN")) ? '0' : (t_p_t.getLastNonlocal().isArg()) ? t_p_t.getArity()+'1' : 'M';
               double probwgivkl = ktpr_p_t.second;                                     // probability of current word given current preterminal
 
@@ -240,7 +240,7 @@ int main ( int nArgs, char* argv[] ) {
 
                   // Calc probability for fork phase...
                   double probFork = (scoreFork / fnorm) * modP[ppredictor][t_p_t] * probwgivkl;
-                  if ( VERBOSE>1 ) cout << "      f: " << f <<"&"<< k_p_t << " " << scoreFork << " / " << fnorm << " * " << modP[ppredictor][t_p_t] << " * " << probwgivkl << " = " << probFork << endl;
+                  if ( VERBOSE>1 ) cout << "      f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << scoreFork << " / " << fnorm << " * " << modP[ppredictor][t_p_t] << " * " << probwgivkl << " = " << probFork << endl;
 
                   Sign aPretrm;  aPretrm.first().emplace_back(k_p_t);  aPretrm.second() = t_p_t;  aPretrm.third() = S_A;          // aPretrm (pos tag)
                   const LeftChildSign aLchild( q_tdec1, f, e_p_t, aPretrm );
@@ -251,7 +251,7 @@ int main ( int nArgs, char* argv[] ) {
                   jresponses = arma::exp( jresponses );
                   double jnorm = arma::accu( jresponses );  // 0.0;                                           // join normalization term (denominator)
 
-                  // Relace overflow distribs with Dirac...
+                  // Replace overflow distribs with Dirac...
                   if( jnorm == 1.0/0.0 ) {
                     uint ind_max=0; for( i=0; i<jresponses.size(); i++ ) if( jresponses(i)>jresponses(ind_max) ) ind_max=i;
                     jresponses.fill( 0.0 );  jresponses( ind_max ) = 1.0;

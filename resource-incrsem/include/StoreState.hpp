@@ -87,7 +87,7 @@ class T : public DiscreteDomainRV<int,domT> {
       if ( l[i]=='}' ) depth--;
       if ( l[i]=='-' && (l[i+1]=='g' || l[i+1]=='h'   // || l[i+1]=='i'
                                                          || l[i+1]=='r' || l[i+1]=='v') && depth==0 ) beg = i;
-      if ( beg<i && end>i && depth==0 && (l[i]=='-' || l[i]=='\\' || l[i]=='^') ) end = i;
+      if ( beg<i && end>i && depth==0 && (l[i]=='-' || l[i]=='_' || l[i]=='\\' || l[i]=='^') ) end = i;
     }
     return N( string(l,beg,end-beg).c_str() );  // l+strlen(l);
   }
@@ -106,7 +106,7 @@ class T : public DiscreteDomainRV<int,domT> {
       if ( ps[i]=='}' ) depth--;
       if ( depth==0 && ps[i]=='-' && (ps[i+1]=='g' || ps[i+1]=='h'    // || ps[i+1]=='i'
                                                                          || ps[i+1]=='r' || ps[i+1]=='v') ) beg = i;
-      if ( depth==0 && beg<i && (ps[i+1]=='-' || ps[i+1]=='\\' || ps[i+1]=='^' || ps[i+1]=='\0') ) { mtnbIn[pair<T,N>(*this,string(ps,beg,i).c_str())]=true;  beg = strlen(ps); }
+      if ( depth==0 && beg<i && (ps[i+1]=='-' || ps[i+1]=='_' || ps[i+1]=='\\' || ps[i+1]=='^' || ps[i+1]=='\0') ) { mtnbIn[pair<T,N>(*this,string(ps,beg,i).c_str())]=true;  beg = strlen(ps); }
     }
   }
  public:
