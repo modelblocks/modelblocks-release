@@ -180,7 +180,7 @@ cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=
         data <- data[data$fdur < upperbound,]
     }
     if (!is.null(lowerbound)) {
-        smartPrint(paste0('Filtering out rows with response variable >= ', toString(lowerbound)))
+        smartPrint(paste0('Filtering out rows with response variable <= ', toString(lowerbound)))
         data <- data[data$fdur > lowerbound,]
     }
 

@@ -3,9 +3,11 @@ import re
 import numpy as np
 import pandas as pd
 import librosa
-from matplotlib import pyplot as plt
 
 DEBUG = False
+if DEBUG:
+    from matplotlib import pyplot as plt
+
 name = re.compile('^.*/?([^ /])+\.wav *$')
 ix2name = ['Boar', 'Aqua', 'MatchstickSeller', 'KingOfBirds', 'Elvis', 'MrSticky', 'HighSchool', 'Roswell', 'Tulips', 'Tourettes']
 

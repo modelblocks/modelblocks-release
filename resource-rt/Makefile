@@ -88,7 +88,7 @@ mv $@{.tmp,};
 SPILLOVER := S1
 SURP := fwprob5surp totsurp 
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
-FJ := noF yesJ embddepthAny embddepthMin endembdMin startembdMin noFlen noFdr noFdrv embdlen embddr embddrv 
+FJ := noF yesJ embddepthMin endembdMin startembdMin noFlen noFdr noFdrv embdlen embddr embddrv 
 COREF := # corefbin coreflenw coreflenr corefsize
 SEMDIST := incrSemCosDistMin incrSemCosDistMax incrSemCosDistMean incrSemCosDistSum incrSemDistMin incrSemDistMax incrSemDistMean incrSemDistSum incrSemNACosDistMin incrSemNACosDistMax incrSemNACosDistMean incrSemNACosDistSum incrSemNADistMin incrSemNADistMax incrSemNADistMean incrSemNADistSum
 GCG-CATS := A B C D F G
@@ -340,27 +340,35 @@ $(RT-SCRIPTS)/filter_cols.py
 	mv $^ $@
 
 %.itemmeasures: $$(DEP-RHACKS) $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
 	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
-	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
+	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
+        paste -d' ' - <(cat $(word 8, $^) | sed 's/\[/!/g;s/\]/!/g;' | cut -f 2- -d' ') | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
 %.t.itemmeasures: $$(basename %).t.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
 	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
-	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
+	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
+        paste -d' ' - <(cat $(word 8, $^) | sed 's/\[/!/g;s/\]/!/g;' | cut -f 2- -d' ') | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
 %.t.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.t.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
 	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
-	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
+	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
+        paste -d' ' - <(cat $(word 8, $^) | sed 's/\[/!/g;s/\]/!/g;' | cut -f 2- -d' ') | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
 %.r.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures $$(basename %).roark.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
 	cat $< | python $(word 4, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
-	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | paste -d' ' - $(word 3, $^) | python $(word 5, $^) -d | \
+	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | paste -d' ' - $(word 3, $^) | \
+        paste -d' ' - <(cat $(word 9, $^) | sed 's/\[/!/g;s/\]/!/g;' | cut -f 2- -d' ') | python $(word 5, $^) -d | \
 	$(word 6, $^) > $@
 
 define CompositeBlock
@@ -409,6 +417,7 @@ $(RT-SCRIPTS)/rm_na_items.py
 	python $(word 6, $^) | \
 	python $(word 7, $^) -I -c $(shell echo $(COLS) | python $(word 9, $^) -f) | \
 	python $(word 8, $^) -I -C $(shell echo $(COLS) | python $(word 9, $^) -s) | \
+	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(COLS))) | \
 	python $(word 10, $^) > $@
 
 # Generate and merge parser data from multiple grammars

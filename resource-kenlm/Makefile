@@ -244,3 +244,6 @@ $(RT-SCRIPTS)/filter_cols.py
 	paste -d' ' $< <(cat $(word 2, $^) | python $(word 4, $^) -c fwprob3) \
 	<(cat $(word 3, $^) | python $(word 4, $^) -c fwprob4) > $@
 
+%.kenlm.unigram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLM-SCRIPTS)/unigram.py $(KENLMMODDIR)/gigaword.1.fw.kenlm %.lineitems \
+$(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
+	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
