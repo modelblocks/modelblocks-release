@@ -615,8 +615,8 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
   }
 
   PPredictor calcPretrmTypeCondition ( F f, E e, K k_p_t ) const {
-    if( FEATCONFIG & 1 ) return PPredictor( 0, f, (FEATCONFIG & 4) ? E('-') : e, at(size()-1).getType(), (FEATCONFIG & 2) ? tBot : k_p_t.getType() );
-    return             PPredictor( getDepth(), f, (FEATCONFIG & 4) ? E('-') : e, at(size()-1).getType(), (FEATCONFIG & 2) ? tBot : k_p_t.getType() );
+    if( FEATCONFIG & 1 ) return PPredictor( 0, f, (FEATCONFIG & 8) ? E('-') : e, at(size()-1).getType(), (FEATCONFIG & 2) ? tBot : k_p_t.getType() );
+    return             PPredictor( getDepth(), f, (FEATCONFIG & 8) ? E('-') : e, at(size()-1).getType(), (FEATCONFIG & 2) ? tBot : k_p_t.getType() );
   }
 
   list<JPredictor>& calcJoinPredictors ( list<JPredictor>& ljp, F f, E eF, const LeftChildSign& aLchild, bool bAdd=true ) const {
@@ -636,13 +636,13 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
   }
 
   APredictor calcApexTypeCondition ( F f, J j, E eF, E eJ, O opL, const LeftChildSign& aLchild ) const {
-    if( FEATCONFIG & 1 ) return APredictor( 0, 0, j, (FEATCONFIG & 2) ? E('-') : eJ, (FEATCONFIG & 2) ? O('-') : opL, at(getAncestorBIndex(f)).getType(), (j==0) ? aLchild.getType() : tBot );
-    return         APredictor( getDepth()+f-j, f, j, (FEATCONFIG & 2) ? E('-') : eJ, (FEATCONFIG & 2) ? O('-') : opL, at(getAncestorBIndex(f)).getType(), (j==0) ? aLchild.getType() : tBot );
+    if( FEATCONFIG & 1 ) return APredictor( 0, 0, j, (FEATCONFIG & 4) ? E('-') : eJ, (FEATCONFIG & 4) ? O('-') : opL, at(getAncestorBIndex(f)).getType(), (j==0) ? aLchild.getType() : tBot );
+    return         APredictor( getDepth()+f-j, f, j, (FEATCONFIG & 4) ? E('-') : eJ, (FEATCONFIG & 4) ? O('-') : opL, at(getAncestorBIndex(f)).getType(), (j==0) ? aLchild.getType() : tBot );
   }
 
   BPredictor calcBrinkTypeCondition ( F f, J j, E eF, E eJ, O opL, O opR, T tParent, const LeftChildSign& aLchild ) const {
-    if( FEATCONFIG & 1 ) return  BPredictor( 0, 0, 0, (FEATCONFIG & 2) ? E('-') : eJ, (FEATCONFIG & 2) ? O('-') : opL, (FEATCONFIG & 2) ? O('-') : opR, tParent, aLchild.getType() );
-    return          BPredictor( getDepth()+f-j, f, j, (FEATCONFIG & 2) ? E('-') : eJ, (FEATCONFIG & 2) ? O('-') : opL, (FEATCONFIG & 2) ? O('-') : opR, tParent, aLchild.getType() );
+    if( FEATCONFIG & 1 ) return  BPredictor( 0, 0, 0, (FEATCONFIG & 4) ? E('-') : eJ, (FEATCONFIG & 4) ? O('-') : opL, (FEATCONFIG & 4) ? O('-') : opR, tParent, aLchild.getType() );
+    return          BPredictor( getDepth()+f-j, f, j, (FEATCONFIG & 4) ? E('-') : eJ, (FEATCONFIG & 4) ? O('-') : opL, (FEATCONFIG & 4) ? O('-') : opR, tParent, aLchild.getType() );
   }
 };
 const Sign StoreState::aTop( KSet(K::kTop), tTop, S_B );

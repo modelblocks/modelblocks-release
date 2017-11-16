@@ -72,7 +72,7 @@ def relabel( t ):
       t.ch = [ tree.Tree( p, t.ch ) ]
 
   ## for (new or old) unary branches...
-  if len(t.ch)==1:
+  if len(t.ch)==1 and '-lQ' not in t.ch[0].c and '-lV' not in t.ch[0].c and '-lZ' not in t.ch[0].c and '-lE' not in t.ch[0].c:
     locs  = deps(t.c,'abcd')
     nolos = deps(t.c,'ghirv')
     chlocs = deps(t.ch[0].c,'abcd')
@@ -91,6 +91,9 @@ def relabel( t ):
     elif t.c.startswith('A-vN') and t.ch[0].c=='N': t.ch = [ tree.Tree( 'A-aN-lE', t.ch ) ]
     elif len(locs)==len(chlocs) and len(deps(t.c))>len(deps(t.ch[0].c)) and len(nolos)>0 and nolos[0][2]=='{':                                  ## Eb
       t.ch = [ tree.Tree( re.sub(nolos[0],'',re.sub('-l.','',t.c),1)+'-lE', t.ch ) ]
+
+#  if len(t.ch)==1 and t.c==t.ch[0].c and '-l' in t.ch[0].c:
+#    t.ch = t.ch[0].ch
 
   for st in t.ch:
     relabel( st )

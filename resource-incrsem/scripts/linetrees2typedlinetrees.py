@@ -163,7 +163,8 @@ def addToModel( p, t, M, N, C, D ):
 ################################################################################
 
 def mergeTypeOutcomes( p, t, Ymap, N2N, src='00', srcy=-1 ):
-  if t.c[0]=='0' and t.c!='0|-' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x%' + t.c.split(':')[1] + '|%y' + str(srcy) ] += p
+#  if t.c[0]=='0' and t.c!='0|-' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x%' + t.c.split(':')[1] + '|%y' + str(srcy) ] += p
+  if t.c[0]=='0' and t.c!='0|-' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x' + t.c.split('|')[1].split(':')[0] + '%' + t.c.split(':')[1] + '|Y%y' + str(srcy) ] += p
   for st in t.ch:
     mergeTypeOutcomes( p, st, Ymap, N2N, re.sub('.*[|]','',t.c), t.y )
 

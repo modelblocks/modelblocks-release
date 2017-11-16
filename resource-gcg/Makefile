@@ -151,6 +151,10 @@ endef
 %.semlctrans.linetrees: %.linetrees ../incrsem/scripts/semlctrans.pl 
 	cat $< | perl $(word 2,$^) > $@
 
+#### lengthen trees to full gcg derivation...
+%.long.linetrees:  %.linetrees  $(GCG-SCRIPTS)/lengthentrees.py  $(GCG-SCRIPTS)/lengthentrees.d
+	cat $<  |  python $(word 2,$^)  >  $@
+
 #### Remove traces
 %.nt.linetrees: %.linetrees
 	cat $^ | sed 's/(-DFL- \+E_S) *//g;s/  \+/ /g;s/\t/ /g;s/\([^ ]\)(/\1 (/g;s/_//g;s/-UNDERSCORE-//g;s/([^ ()]\+ \+\*[^ ()]*)//g;s/( *-NONE-[^ ()]\+ *[^ ()]* *)//g;s/([^ ()]\+ )//g;s/ )/)/g;s/( /(/g;s/  \+/ /g;' | awk '!/^\s*\(CODE/' > $@ 

@@ -9,8 +9,8 @@ $SHORT = '(?!<[aeiou])(?:[aeiou])';
 
 while ( <> ) {
 
-  ## remove old -lI tag
-  s/-lI[^\)]* //g;
+#  ## remove old -lI tag
+#  s/-lI[^\)]* //g;
 
 #  ## lowercase all words -- U (uppercase) category in gcg16 lets us reconstruct capitalization for proper names if we want it
 #  s/ ((?!-)[^\(\)]*)\)/ \L\1\E\)/gi;
