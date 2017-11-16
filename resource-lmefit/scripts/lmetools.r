@@ -178,10 +178,12 @@ cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=
     if (!is.null(upperbound)) {
         smartPrint(paste0('Filtering out rows with response variable >= ', toString(upperbound)))
         data <- data[data$fdur < upperbound,]
+        smartPrint(paste0('Number of data rows (fdur < ', upperbound, '): ', nrow(data)))
     }
     if (!is.null(lowerbound)) {
-        smartPrint(paste0('Filtering out rows with response variable >= ', toString(lowerbound)))
+        smartPrint(paste0('Filtering out rows with response variable <= ', toString(lowerbound)))
         data <- data[data$fdur > lowerbound,]
+        smartPrint(paste0('Number of data rows (fdur > ', lowerbound, '): ', nrow(data)))
     }
 
     if (!is.null(mincorrect) & 'correct' %in% colnames(data)) {
@@ -318,6 +320,7 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
     for (col in splitcols) {
         data$splitID <- data$splitID + as.numeric(data[[col]])
     }
+    print(head(data$splitID))
 
     ## Columns if using categorical grouping variables
     if (length(indicatorlevel) > 0) {
