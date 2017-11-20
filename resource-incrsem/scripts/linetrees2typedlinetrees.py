@@ -153,7 +153,7 @@ def addToModel( p, t, M, N, C, D ):
     D[:,uniqInt(t.c)] += contrib.reshape(Y) * ( p / contrib.sum() )
   else:
     contrib = numpy.multiply( t.v.T, numpy.multiply( M[t.l], t.u.T ) )
-    contrib *= p / contrib.sum()
+    if contrib.sum() > 0.0: contrib *= p / contrib.sum()
     C[t.l]     += contrib
     C[2*L-t.l] += contrib.T
   for st in t.ch:

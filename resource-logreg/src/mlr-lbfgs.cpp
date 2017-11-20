@@ -76,7 +76,7 @@ class SpMatLogisticRegressionFunction {
 
  public:
 
-  SpMatLogisticRegressionFunction ( uint nX, uint nY, uint nT = 1, double l = 0.0, double dS = 1.0 ) : lambda(l), numThreads(nT), dUnderflowScaler(dS), vmExpectationRows(nX) {
+  SpMatLogisticRegressionFunction ( uint nX, uint nY, uint nT = 1, double l = 0.0, double dS = 1.0 ) : lambda(l), numThreads(nT), vmExpectationRows(nX), dUnderflowScaler(dS) {
     initialpoint.randn( nX, nY );
     initialpoint *= 0.01;
     expectations.zeros( nX, nY );
@@ -205,7 +205,7 @@ int main ( int nArgs, char* argv[] ) {
   sp_mat& DbyY  = f.Responses();
   vec& Dcounts  = f.Counts();
   umat xlocs ( 2, numfeattokens );
-  vec  xvals (    numfeattokens );
+  vec  xvals = arma::zeros( numfeattokens );
   umat ylocs ( 2, lplpfdy.size() );
   vec  yvals (    lplpfdy.size() );
   Dcounts.zeros ( lplpfdy.size() );
@@ -214,7 +214,7 @@ int main ( int nArgs, char* argv[] ) {
     for ( auto& pfd : plpfdy.first() ) {
       xlocs(0,i) = pfd.first.toInt();
       xlocs(1,i) = t;
-      xvals(i)   = pfd.second;
+      xvals(i)   += pfd.second;
       i++;
     }
     ylocs(0,t) = plpfdy.second().toInt();

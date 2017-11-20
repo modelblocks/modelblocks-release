@@ -233,7 +233,7 @@ endef
 ## push together semantic processing models...
 .PRECIOUS: %semprocmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e4_1e-6_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
-%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1_1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e-2_1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
 	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
 	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@

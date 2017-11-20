@@ -140,6 +140,7 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
 ////////////////////////////////////////////////////////////////////////////////
 
 E getExtr ( const Tree<LVU>& tr ) {
+//if( FEATCONFIG & 16 ) return 'N';
   N n =  T(L(tr).c_str()).getLastNonlocal();
   if ( n == N_NONE ) return 'N';
   if ( (tr.front().size()==0 || tr.front().front().size()==0) && n == N("-rN") ) return '0';
@@ -163,6 +164,9 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
 
   // If punct, but not special !-delimited label...
   if ( ispunct(lW[0]) && ('!'!=lW[0] || lW.size()==1) ) return pair<K,T>(K::kBot,t);
+
+if( FEATCONFIG & 16)
+  return pair<K,T>( ( string("Y:y0_") + ((lP[0]=='N') ? '1' : '0') ).c_str(), t );
 
 cout<<"reducing "<<lP<<" now "<<t;
   string sLemma = lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
