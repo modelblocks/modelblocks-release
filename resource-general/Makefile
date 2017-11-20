@@ -205,6 +205,7 @@ include $(RESOURCE-RT)/Makefile
 include $(RESOURCE-DTSR)/Makefile
 include $(RESOURCE-FMRI)/Makefile
 include $(RESOURCE-LMEFIT)/Makefile
+include $(RESOURCE-LOGREG)/Makefile
 include $(RESOURCE-ALICE)/Makefile
 include $(RESOURCE-BMMM)/Makefile
 include $(RESOURCE-CCL)/Makefile
