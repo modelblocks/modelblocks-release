@@ -201,25 +201,28 @@ int main ( int nArgs, char* argv[] ) {
           if( VERBOSE>1 ) cout << "  from (" << be_tdec1.second << ")" << endl;
 
           // Calc distrib over response for each fork predictor...
-          arma::vec fresponses = arma::zeros( matF.n_rows );
+          arma::vec flogresponses = arma::zeros( matF.n_rows );
           list<FPredictor> lfpredictors;  q_tdec1.calcForkPredictors( lfpredictors, false );  lfpredictors.emplace_back();  // add bias term
-          for ( auto& fpredr : lfpredictors ) if ( fpredr.toInt() < matF.n_cols ) fresponses += matF.col( fpredr.toInt() );
+          for ( auto& fpredr : lfpredictors ) if ( fpredr.toInt() < matF.n_cols ) flogresponses += matF.col( fpredr.toInt() );
           if ( VERBOSE>1 ) for ( auto& fpredr : lfpredictors ) cout<<"    fpredr:"<<fpredr<<endl;
-          fresponses = arma::exp( fresponses );
+          arma::vec fresponses = arma::exp( flogresponses );
           // Calc normalization term over responses...
           double fnorm = arma::accu( fresponses );
 
-          // Replace overflow distribs with Dirac...
+          // Rescale overflowing distribs by max...
           if( fnorm == 1.0/0.0 ) {
             uint ind_max=0; for( i=0; i<fresponses.size(); i++ ) if( fresponses(i)>fresponses(ind_max) ) ind_max=i;
-            fresponses.fill( 0.0 );  fresponses( ind_max ) = 1.0;
-            fnorm = 1.0;
+            flogresponses -= flogresponses( ind_max );
+            fresponses = arma::exp( flogresponses );
+            fnorm = arma::accu( fresponses );
+//            fresponses.fill( 0.0 );  fresponses( ind_max ) = 1.0;
+//            fnorm = 1.0;
           }
 
           // For each possible lemma (context + label + prob) for preterminal of current word...
           for ( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[unkWord(w_t.getString().c_str())] ) {
             if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(ktpr_p_t.second) > beams[t].rbegin()->first.first ) {
-              K k_p_t           = (FEATCONFIG & 2) ? K::kBot : ktpr_p_t.first.first;   // context of current preterminal
+              K k_p_t           = (FEATCONFIG & 8) ? K::kBot : ktpr_p_t.first.first;   // context of current preterminal
               T t_p_t           = ktpr_p_t.first.second;                               // label of current preterminal
               E e_p_t           = (t_p_t.getLastNonlocal()==N_NONE) ? 'N' : (t_p_t.getLastNonlocal()==N("-rN")) ? '0' : (t_p_t.getLastNonlocal().isArg()) ? t_p_t.getArity()+'1' : 'M';
               double probwgivkl = ktpr_p_t.second;                                     // probability of current word given current preterminal
@@ -246,16 +249,19 @@ int main ( int nArgs, char* argv[] ) {
                   const LeftChildSign aLchild( q_tdec1, f, e_p_t, aPretrm );
                   list<JPredictor> ljpredictors; q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
                   ljpredictors.emplace_back();                                                                  // add bias
-                  arma::vec jresponses = arma::zeros( matJ.n_rows );
-                  for ( auto& jpredr : ljpredictors ) if ( jpredr.toInt() < matJ.n_cols ) jresponses += matJ.col( jpredr.toInt() );
-                  jresponses = arma::exp( jresponses );
+                  arma::vec jlogresponses = arma::zeros( matJ.n_rows );
+                  for ( auto& jpredr : ljpredictors ) if ( jpredr.toInt() < matJ.n_cols ) jlogresponses += matJ.col( jpredr.toInt() );
+                  arma::vec jresponses = arma::exp( jlogresponses );
                   double jnorm = arma::accu( jresponses );  // 0.0;                                           // join normalization term (denominator)
 
-                  // Replace overflow distribs with Dirac...
+                  // Replace overflowing distribs by max...
                   if( jnorm == 1.0/0.0 ) {
-                    uint ind_max=0; for( i=0; i<jresponses.size(); i++ ) if( jresponses(i)>jresponses(ind_max) ) ind_max=i;
-                    jresponses.fill( 0.0 );  jresponses( ind_max ) = 1.0;
-                    jnorm = 1.0;
+                    uint ind_max=0; for( i=0; i<jlogresponses.size(); i++ ) if( jlogresponses(i)>jlogresponses(ind_max) ) ind_max=i;
+                    jlogresponses -= jlogresponses( ind_max );
+                    jresponses = arma::exp( jlogresponses );
+                    jnorm = arma::accu( jresponses );
+//                    jresponses.fill( 0.0 );  jresponses( ind_max ) = 1.0;
+//                    jnorm = 1.0;
                   }
 
                   // For each possible no-join or join decision, and operator decisions...

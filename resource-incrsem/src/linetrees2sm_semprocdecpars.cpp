@@ -166,7 +166,7 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
   if ( ispunct(lW[0]) && ('!'!=lW[0] || lW.size()==1) ) return pair<K,T>(K::kBot,t);
 
 if( FEATCONFIG & 16)
-  return pair<K,T>( ( string("Y:y0_") + ((lP[0]=='N') ? '1' : '0') ).c_str(), t );
+  return pair<K,T>( ( (lP[0]=='N') ? string("N:y0_1") : string("B:y0_0") ).c_str(), t );
 
 cout<<"reducing "<<lP<<" now "<<t;
   string sLemma = lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -275,7 +275,7 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
     f               = 1 - s;
     eF = e = ( e!='N' ) ? e : getExtr ( tr );
     pair<K,T> kt    = getPred ( L(tr), L(tr.front()) );
-    K k             = (FEATCONFIG & 2) ? K::kBot : kt.first;
+    K k             = (FEATCONFIG & 8) ? K::kBot : kt.first;
     aPretrm         = Sign( k, getType(l), S_A );
 
     // Print preterminal / fork-phase predictors...
