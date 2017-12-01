@@ -155,9 +155,9 @@ endef
 #   3 = basename string
 #   4 = LME args
 define SPILL
-$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-$(1):$(3).$(var)$(1).$(4)..lrt
+$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-$(1):$(3).$(var)$(1).$(4).-p_dev.lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-$(1)_%:$(3).$(var)$(1).%..lrt;
+$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-$(1)_%:$(3).$(var)$(1).%.-p_dev.lrt;
 )
 $(2)-DLT-$(1): $(foreach var, $(DLT), $(2)-$(var)-$(1))
 $(2)-DLT-$(1)_%: $(foreach var, $(DLT), $(2)-$(var)-$(1)_%);
@@ -170,9 +170,9 @@ $(2)-SEMDIST-$(1)_%: $(foreach var, $(SEMDIST), $(2)-$(var)-$(1)_%);
 $(2)-MEM-$(1): $(2)-DLT-$(1) $(2)-FJ-$(1) $(2)-COREF-$(1) $(2)-SEMDIST-$(1)
 $(2)-MEM-$(1)_%: $(2)-DLT-$(1)_% $(2)-FJ-$(1)_% $(2)-COREF-$(1)_% $(2)-SEMDIST-$(1)_%;
 
-$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-cum-$(1):$(3).cum$(var)$(1).$(4)..lrt
+$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-cum-$(1):$(3).cum$(var)$(1).$(4).-p_dev.lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-cum-$(1)_%:$(3).cum$(var)$(1).%..lrt
+$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-cum-$(1)_%:$(3).cum$(var)$(1).%.-p_dev.lrt
 )
 $(2)-DLT-cum-$(1): $(foreach var, $(DLT), $(2)-$(var)-cum-$(1))
 $(2)-DLT-cum-$(1)_%: $(foreach var, $(DLT), $(2)-$(var)-cum-$(1)_%);
@@ -192,9 +192,9 @@ endef
 #   2 = basename string
 #   3 = LME args
 define RT-EXPERIMENTS
-$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(1)-$(var):$(2).$(var).$(3)..lrt
+$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(1)-$(var):$(2).$(var).$(3).-p_dev.lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(1)-$(var)_%:$(2).$(var).%..lrt;
+$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(1)-$(var)_%:$(2).$(var).%.-p_dev.lrt;
 )
 $(1)-DLT: $(foreach var, $(DLT), $(1)-$(var))
 $(1)-DLT_%: $(foreach var, $(DLT), $(1)-$(var)_%);
@@ -207,9 +207,9 @@ $(1)-SEMDIST_%: $(foreach var, $(SEMDIST), $(1)-$(var)_%);
 $(1)-MEM: $(1)-DLT $(1)-FJ $(1)-COREF $(1)-SEMDIST
 $(1)-MEM_%: $(1)-DLT_% $(1)-FJ_% $(1)-COREF_% $(1)-SEMDIST_%;
 
-$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(1)-$(var)-cum:$(2).cum$(var).$(3)..lrt
+$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(1)-$(var)-cum:$(2).cum$(var).$(3).-p_dev.lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF)i $(SEMDIST),$(1)-$(var)-cum_%:$(2).cum$(var).%..lrt;
+$(foreach var, $(DLT) $(FJ) $(COREF)i $(SEMDIST),$(1)-$(var)-cum_%:$(2).cum$(var).%.-p_dev.lrt;
 )
 $(1)-DLT-cum: $(foreach var, $(DLT), $(1)-$(var)-cum)
 $(1)-DLT-cum_%: $(foreach var, $(DLT), $(1)-$(var)-cum_%);
@@ -419,6 +419,15 @@ $(RT-SCRIPTS)/rm_na_items.py
 	python $(word 8, $^) -I -C $(shell echo $(COLS) | python $(word 9, $^) -s) | \
 	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(COLS))) | \
 	python $(word 10, $^) > $@
+
+%.train.evmeasures: %.evmeasures $(RT-SCRIPTS)/split.py
+	cat $(word 1, $^) | python $(word 2, $^) train > $@
+
+%.dev.evmeasures: %.evmeasures $(RT-SCRIPTS)/split.py
+	cat $(word 1, $^) | python $(word 2, $^) dev > $@
+
+%.test.evmeasures: %.evmeasures $(RT-SCRIPTS)/split.py
+	cat $(word 1, $^) | python $(word 2, $^) test > $@
 
 # Generate and merge parser data from multiple grammars
 # Template: mydata.training-GRAMMAR-other-args.stuff.parser1_parser2_parser3.merged.core.evmeasures

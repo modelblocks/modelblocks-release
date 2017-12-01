@@ -57,8 +57,8 @@ endef
 .SUFFIXES:
 .SECONDEXPANSION:
 
-UCL-BASENAME := genmodel/ucl.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.eyeGPucl
-UCL-LMEDEFAULT := -NSCFX
+UCL-BASENAME := genmodel/ucl.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.eyeGP
+UCL-LMEDEFAULT := -NSCFXuw
 $(eval $(call RT-EXPERIMENTS,ucl,$(UCL-BASENAME),$(UCL-LMEDEFAULT)))
 
 ################################################################################

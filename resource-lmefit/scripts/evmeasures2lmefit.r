@@ -28,7 +28,7 @@ source('../../resource-rhacks/scripts/mer-utils.R') #obtained from https://githu
 source('../../resource-rhacks/scripts/regression-utils.R') #obtained from https://github.com/aufrank
 source('../../resource-lmefit/scripts/lmetools.r')
 setwd(wd)
-#options('warn'=1) #report non-convergences, etc
+options('warn'=1) #report non-convergences, etc
 
 ########################################################
 #
@@ -48,6 +48,7 @@ smartPrint('Reading data from file')
 data <- read.table(input, header=TRUE, quote='', comment.char='')
 data <- cleanupData(data, params$filterfiles, params$filterlines, params$filtersents, params$filterscreens, params$filterpunc, params$restrdomain, params$upperbound, params$lowerbound, params$mincorrect)
 data <- recastEffects(data, params$splitcols, params$indicatorlevel, params$groupingfactor)
+data_full <- data
 
 if (params$dev) {
     data <- create.dev(data, params$partitionmod, params$partitiondevindices)
@@ -105,11 +106,36 @@ if (length(params$groupingfactor) > 0) {
     }
 }
 
-print(head(data, 100))
-print(tail(data, 100))
-
-fitModel(data, output, params$bformfile, params$fitmode,
+fit <- fitModel(data, output, params$bformfile, params$fitmode,
                      params$logmain, params$logdepvar, params$lambda,
                      params$addEffects, params$extraEffects, params$ablEffects,
                      params$groupingfactor, params$indicatorlevel, params$crossfactor,
                      params$interact, params$corpus)
+
+m = fit$m
+f = fit$f
+
+if (params$trainmse) {
+    data <- create.dev(data, params$partitionmod, params$partitiondevindices)
+    mse = (predict(m, newdata=data) - model.frame(f, data=data)[toString(as.formula(f)[2])])^2
+    colnames(mse) = c('mse')
+    outfile = gsub('.rdata', '.train.mse.txt', output)
+    write.table(mse, file=outfile, quote=FALSE, row.names=FALSE)
+}
+
+if (params$devmse) {
+    data <- create.dev(data_full, params$partitionmod, params$partitionmod-2)
+    mse = (predict(m, newdata=data) - model.frame(f, data=data)[toString(as.formula(f)[2])])^2
+    colnames(mse) = c('mse')
+    outfile = gsub('.rdata', '.dev.mse.txt', output)
+    write.table(mse, file=outfile, quote=FALSE, row.names=FALSE)
+}
+
+if (params$testmse) {
+    data <- create.dev(data_full, params$partitionmod, params$partitionmod-1)
+    mse = (predict(m, newdata=data) - model.frame(f, data=data)[toString(as.formula(f)[2])])^2
+    mse = data.frame(mse=mse)
+    outfile = gsub('.rdata', '.test.mse.txt', output)
+    write.table(mse, file=outfile, quote=FALSE, row.names=FALSE)
+}
+

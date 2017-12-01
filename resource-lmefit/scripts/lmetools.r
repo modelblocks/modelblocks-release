@@ -21,8 +21,8 @@ processLMEArgs <- function() {
         make_option(c('-t', '--test'), type='logical', action='store_true', default=FALSE, help='Run evaluation on test dataset.'),
         make_option(c('-e', '--entire'), type='logical', action='store_true', default=FALSE, help='Run evaluation on entire dataset.'),
         make_option(c('-s', '--splitcols'), type='character', default='subject+sentid', help='"+"-delimited list of columns to intersect in order to create a single ID for splitting dev and test (default="subject+sentid")'),
-        make_option(c('-M', '--partitionmod'), type='numeric', default=3, help='Modulus to use in dev/test partition (default = 3).'),
-        make_option(c('-K', '--partitiondevindices'), type='character', default='0', help='Comma-delimited list of indices to retain in dev set (default = "0").'),
+        make_option(c('-M', '--partitionmod'), type='numeric', default=4, help='Modulus to use in dev/test partition (default = 4)'),
+        make_option(c('-K', '--partitiondevindices'), type='character', default='0,1', help='Comma-delimited list of indices to retain in dev set (default = "0,1")'),
         make_option(c('-N', '--filterlines'), type='logical', action='store_true', default=FALSE, help='Filter out events at line boundaries.'),
         make_option(c('-S', '--filtersents'), type='logical', action='store_true', default=FALSE, help='Filter out events at sentence boundaries.'),
         make_option(c('-C', '--filterscreens'), type='logical', action='store_true', default=FALSE, help='Filter out events at screen boundaries.'),
@@ -39,6 +39,9 @@ processLMEArgs <- function() {
         make_option(c('-i', '--crossfactor'), type='character', default=NULL, help='An interaction term to cross with (and add to) the main effect (if numeric, remains numeric, otherwise identical to --groupingfactor).'),
         make_option(c('-r', '--restrict'), type='character', default=NULL, help='Restrict the data to a subset defined by <column>+<value>. Example usage: -r pos+N.'),
         make_option(c('-I', '--interact'), type='logical', action='store_false', default=TRUE, help="Do not include interaction term between random slopes and random intercepts."),
+        make_option(c('-u', '--trainmse'), type='logical', action='store_true', default=FALSE, help='Generate error table for train partition.'),
+        make_option(c('-v', '--devmse'), type='logical', action='store_true', default=FALSE, help='Generate error table for dev partition.'),
+        make_option(c('-w', '--testmse'), type='logical', action='store_true', default=FALSE, help='Generate error table for test partition.'),
         make_option(c('-T', '--totable'), type='logical', action='store_true', default=FALSE, help="Preprocess data and output table only (do not regress).")
     )
     opt_parser <- OptionParser(option_list=opt_list)
@@ -116,6 +119,16 @@ processLMEArgs <- function() {
     return(opts)
 }
 
+computeSplitIDs <- function(data, splitcols) {
+    ## Exploratory/confirmatory partition utility column
+    data$splitID <- 0
+    for (col in splitcols) {
+        ## Convert to factor and then zero-index for consistent handling of all forms of ID
+        x <- as.numeric(as.factor(data[[col]])) - 1
+        data$splitID <- data$splitID + x
+    }
+    return(data)
+}
 
 cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=FALSE, filterscreens=FALSE, filterpunc=FALSE, restrdomain=NULL, upperbound=NULL, lowerbound=NULL, mincorrect=NULL) {
     smartPrint(paste('Number of data rows (raw):', nrow(data)))
@@ -749,6 +762,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         sd_vals = sd_vals
     )
     save(fitOutput, file=output)
+    return(list(m=outputModel, f=bform))
 }
 
 getBoxCoxInvBetas <- function(dataset, bform, lambda, outputModel, mixed=True) {
@@ -818,3 +832,36 @@ boxcox_inv <- function(lambda, beta, y_mu) {
     return((lambda*(y_mu + beta) + 1)^(1/lambda) - (lambda*y_mu + 1)^(1/lambda))
 }
 
+permutation_test <- function(err1, err2, n_iter=10000, n_tails=2) {
+    base_diff = mean(err1) - mean(err2)
+    err_matrix = matrix(c(err1, err2), length(err1), 2)
+    hits = 0
+    cat('Permutation testing...\n', file=stderr())
+    for (i in 1:n_iter) {
+        cat(paste0('\r',i, '/', n_iter), file=stderr())
+        shuffle = runif(length(err1)) > 0.5
+        shuffle = as.numeric(shuffle)
+        m1 = err_matrix[cbind(seq_along(shuffle), shuffle+1)]
+        m2 = err_matrix[cbind(seq_along(shuffle), 2-shuffle)]
+        curr_diff = mean(m1) - mean(m2)
+        if (n_tails == 1) {
+            if (base_diff < 0 & curr_diff <= base_diff) {
+                hits = hits + 1
+            } else if (base_diff > 0 & curr_diff >= base_diff) {
+                hits = hits + 1
+            } else if (base_diff == 0) {
+                hits = hits + 1
+            }    
+        } else if (n_tails == 2) {
+            if (abs(curr_diff) >= abs(base_diff)) {
+                hits = hits + 1
+            }
+        } else {
+            stop('Error: n_tails must be in {1,2}')
+        }
+    }
+    p = (hits + 1) / (n_iter + 1)
+    
+    cat(paste0('\np=',p,'\n'), file=stderr())
+    return(list(p=p, base_diff=base_diff))
+}
