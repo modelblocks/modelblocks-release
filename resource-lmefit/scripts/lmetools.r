@@ -269,7 +269,7 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
     for (x in colnames(data)[grepl('^subject', colnames(data))]) {
-        data[[x]] <- as.numeric(as.factor(as.character(data[[x]])))
+        data[[x]] <- as.factor(data[[x]])
     }
     for (x in colnames(data)[grepl('^sentpos', colnames(data))]) {
         data[[x]] <- as.integer(as.character(data[[x]]))
@@ -327,13 +327,6 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
     if ('correct' %in% colnames(data)) {
         data$correct <- as.numeric(as.character(data$correct))
     }
-
-    ## Exploratory/confirmatory partition utility column
-    data$splitID <- 0
-    for (col in splitcols) {
-        data$splitID <- data$splitID + as.numeric(data[[col]])
-    }
-    print(head(data$splitID))
 
     ## Columns if using categorical grouping variables
     if (length(indicatorlevel) > 0) {

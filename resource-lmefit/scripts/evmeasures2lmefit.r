@@ -46,6 +46,7 @@ cat('=======================\n\n')
 
 smartPrint('Reading data from file')
 data <- read.table(input, header=TRUE, quote='', comment.char='')
+data <- computeSplitIDs(data, params$splitcols)
 data <- cleanupData(data, params$filterfiles, params$filterlines, params$filtersents, params$filterscreens, params$filterpunc, params$restrdomain, params$upperbound, params$lowerbound, params$mincorrect)
 data <- recastEffects(data, params$splitcols, params$indicatorlevel, params$groupingfactor)
 data_full <- data
