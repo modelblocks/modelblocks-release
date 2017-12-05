@@ -59,10 +59,11 @@ endef
 VPATH += $(RESOURCE-NATSTORIESFMRI)
 
 NATSTOR-STORIES := Boar Aqua MatchstickSeller KingOfBirds Elvis MrSticky HighSchool Roswell Tulips Tourettes
-NATSTOR-ROI := LPostTemp LPostTempZ LAntTemp LAntTempZ LIFG LIFGZ LIFGorb LIFGorbZ LMFG LMFGZ LAngG LAngGZ LHip LHipZ
+NATSTOR-ROI := LPostTemp LPostTempZ LAntTemp LAntTempZ LIFG LIFGZ LIFGorb LIFGorbZ LMFG LMFGZ LAngG LAngGZ LHip RHip Hip LHipZ RHipZ HipZ
 NATSTORIESFMRI-BASENAME := genmodel/naturalstoriesfmri.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.hrf
 NATSTORIESFMRI-LMEDEFAULT := -S
-$(eval $(call RT-EXPERIMENTS,naturalstoriesfmri,$(NATSTORIESFMRI-BASENAME),$(NATSTORIESFMRI-LMEDEFAULT)))
+$(eval $(call FMRI-HRF-CONTROLS,naturalstoriesfmri,$(NATSTORIESFMRI-BASENAME),$(NATSTOR-ROI),fmriEmpty,$(NATSTORIESFMRI-LMEDEFAULT)))
+$(eval $(call FMRI-HRF-EXPERIMENTS,naturalstoriesfmri,$(NATSTORIESFMRI-BASENAME),$(NATSTOR-ROI),fmriEmpty,$(NATSTORIESFMRI-LMEDEFAULT)))
 $(eval $(call FMRI-HRF-EXPERIMENTS,naturalstoriesfmri,$(NATSTORIESFMRI-BASENAME),$(NATSTOR-ROI),nsfMRI,$(NATSTORIESFMRI-LMEDEFAULT)))
 
 ################################################################################

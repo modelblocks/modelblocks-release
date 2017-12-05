@@ -51,16 +51,12 @@ for col in cols:
             data[s_name] = grouped[col].shift(i)
             if data[s_name].dtype == object:
                 data[s_name].fillna('null', inplace=True)
-            else:
-                data[s_name].fillna(0, inplace=True)
     else:
         for i in range(1,args.n+1):
             s_name = col + 'S' + str(i)
             data[s_name] = grouped[col].shift(i)
             if data[s_name].dtype == object:
                 data[s_name].fillna('null', inplace=True)
-            else:
-                data[s_name].fillna(0, inplace=True)
 
 data.to_csv(sys.stdout, sep=' ', index=False, na_rep='nan')
             

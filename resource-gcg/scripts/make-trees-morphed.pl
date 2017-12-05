@@ -9,8 +9,8 @@ $SHORT = '(?!<[aeiou])(?:[aeiou])';
 
 while ( <> ) {
 
-  ## remove old -lI tag
-  s/-lI[^\)]* //g;
+#  ## remove old -lI tag
+#  s/-lI[^\)]* //g;
 
 #  ## lowercase all words -- U (uppercase) category in gcg16 lets us reconstruct capitalization for proper names if we want it
 #  s/ ((?!-)[^\(\)]*)\)/ \L\1\E\)/gi;
@@ -344,6 +344,8 @@ while ( <> ) {
 
   $NOMINALS = '(account|advance|aid|aim|alarm|answer|appeal|arrest|audition|bail|balance|bargain|bend|benefit|bet|bid|bite|blame|blunder|blur|bounce|bow|branch|break|brew|bribe|bumble|burn|buzz|call|care|challenge|change|chat|cheat|check|cheer|chew|clash|claim|climb|cling|close|collapse|combat|comment|compromise|consent|control|cost|count|cover|crack|crash|crawl|creak|crest|crumble|crust|cry|cut|dance|deal|debut|decrease|default|defect|demand|deposit|design|dip|dislike|display|drift|drink|drive|drop|dump|ease|ebb|edge|end|escape|estimate|exit|fade|fall|favor|fear|fight|find|finish|fit|flash|flinch|flip|float|flow|focus|fold|freeze|fret|frolic|gain|gamble|glaze|glide|gnaw|grimace|guess|hang|help|hint|hit|hold|holler|homer|hum|hurt|increase|influence|issue|joke|jump|knock|kowtow|lack|laugh|leap|leapfrog|limit|loan|look|mail|maneuver|manufacture|mesh|miss|moan|murder|offer|order|output|overbid|override|panic|pass|pay|peak|pick|pinch|plummet|plunge|pop|pose|practice|premiere|press|profit|promise|pull|pump|punch|purchase|push|quarrel|quote|rage|rain|rally|range|rank|reach|rebound|record|refocus|reform|rehash|release|remark|request|renege|reply|report|resort|rest|result|retreat|return|review|ride|rise|roll|roost|row|rule|run|rush|sanction|save|scream|scurry|search|shift|shine|shiver|skid|skim|slide|slip|slog|slump|smoke|sound|spin|split|spread|stampede|start|stay|step|stop|strain|stray|strike|study|stumble|supply|support|surge|survey|sway|swell|switch|take|talk|taste|tick|touch|trade|transfer|travel|trend|tumble|turn|twist|twitch|use|veto|view|vote|wade|wail|wait|walk|want|waste|watch|win|wonder|work|worry|yearn|yield|zoom)';
   s/\((N)([^ ]*) $NOMINALS()()\)/\(B\2-o\1%\4\5|BNOM%\4 \3\4\)/gi;
+
+  s/BNOM/B/g;
 
   ######## B -> V|B|L|G:
 

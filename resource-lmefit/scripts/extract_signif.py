@@ -206,7 +206,7 @@ else:
             print(getPrintTable(converged, headers))
         else:
             for r in converged:
-                print(', '.join([r[h] for h in headers]))
+                print(','.join([r[h] for h in headers]))
 
         if len(nonconverged) > 1: #First element is the header row
             if args.H:
@@ -219,5 +219,5 @@ else:
                 print(getPrintTable(nonconverged, headers))
             else:
                 for r in nonconverged[int(len(converged)>0):]:
-                    print(', '.join([r[h] for h in headers]))
+                    print(','.join([r[h] for h in headers]))
 

@@ -49,8 +49,9 @@ ifndef SAMPLE-START
 SAMPLE-START := 0
 endif
 
-ROI := LPostTemp RPostTemp LPostTempZ RPostTempZ LAntTemp RAntTemp LAntTempZ RAntTempZ LIFG RIFG LIFGZ RIFGZ LIFGorb RIFGorb LIFGorbZ RIFGorbZ LMFG RMFG LMFGZ RMFGZ LAngG RAngG LAngGZ RAngGZ LHip RHip LHipZ RHipZ LATL LIPL LPreM LPTL RATL 
+ROI := LPostTemp RPostTemp LPostTempZ RPostTempZ LAntTemp RAntTemp LAntTempZ RAntTempZ LIFG RIFG LIFGZ RIFGZ LIFGorb RIFGorb LIFGorbZ RIFGorbZ LMFG RMFG LMFGZ RMFGZ LAngG RAngG LAngGZ RAngGZ LHip RHip Hip LHipZ RHipZ HipZ LATL LIPL LPreM LPTL RATL 
 
+FMRI-PRED-CONTROLS := sentpos wlen rate soundPower unigramSurp
 FMRI-PRED-BASES := wlen $(SURP) $(DLT) $(FJ) $(SEMDIST)
 BYSENT-PREDS := nwrds $(foreach pred,$(FMRI-PRED-BASES),$(foreach agg,Mean Sum Max,$(pred)$(agg)))
 BYSENT-PREDS += semCosDistMin semCosDistMax semCosDistMean semCosDistSum semDistMin semDistMax semDistMean semDistSum
@@ -80,6 +81,21 @@ $(foreach var, $(FMRI-PRED-BASES),$(1)-$(var)-$(4)_%: $(foreach roi,$(3),$(2).$(
 )
 $(1)-HRF-$(4): $(foreach var, $(FMRI-PRED-BASES), $(1)-$(var)-$(4))
 $(1)-HRF-$(4)_%: $(foreach var, $(FMRI-PRED-BASES), $(1)-$(var)-$(4)_%);
+endef
+
+# ARGS:
+#   1 = corpus name
+#   2 = basename string
+#   3 = ROI list
+#   4 = LME formula name
+#   5 = default LME args
+define FMRI-HRF-CONTROLS
+$(foreach var, $(FMRI-PRED-CONTROLS),$(1)-$(var)-$(4): $(foreach roi,$(3),$(2).$(roi)$(4).$(var).$(5)..lrt)
+)
+$(foreach var, $(FMRI-PRED-CONTROLS),$(1)-$(var)-$(4)_%: $(foreach roi,$(3),$(2).$(roi)$(4).$(var).%..lrt);
+)
+$(1)-HRFCONTROLS-$(4): $(foreach var, $(FMRI-PRED-CONTROLS), $(1)-$(var)-$(4))
+$(1)-HRFCONTROLS-$(4)_%: $(foreach var, $(FMRI-PRED-CONTROLS), $(1)-$(var)-$(4)_%);
 endef
 
 # ARGS:

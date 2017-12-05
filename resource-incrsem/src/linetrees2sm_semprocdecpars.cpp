@@ -96,6 +96,7 @@ inline string regex_escape(const string& string_to_escape) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
 int getArityGivenLabel ( const L& l ) {
   int depth = 0;
   int arity = 0;
@@ -105,31 +106,10 @@ int getArityGivenLabel ( const L& l ) {
     if ( l[i]=='}' ) depth--;
     if ( l[i]=='-' && l[i+1]>='a' && l[i+1]<='d' && depth==0 ) arity++;
   }
+if( arity>7 ) cerr<<"i think that "<<l<<" has "<<arity<<" args."<<endl;
   return arity;
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
-O getOp ( const L& l, const L& lSibling, const L& lParent ) {
-  if ( string::npos != l.find("-lN") || string::npos != l.find("-lG") || string::npos != l.find("-lH") || string::npos != l.find("-lR") ) return 'N';
-  if ( string::npos != l.find("-lV") ) return 'V';
-  if ( string::npos == l.find("-l")  || string::npos != l.find("-lS") || string::npos != l.find("-lC") ) return 'I';
-  if ( string::npos != l.find("-lM") || string::npos != l.find("-lQ") || string::npos != l.find("-lU") ) return 'M';
-  if ( (string::npos != l.find("-lA") || string::npos != l.find("-lI")) && string::npos != lParent.find("\\") ) return '0'+getArityGivenLabel( string(lParent,lParent.find("\\")+1) );
-  if ( (string::npos != l.find("-lA") || string::npos != l.find("-lI")) && string::npos == lParent.find('\\') ) return '0'+getArityGivenLabel( lSibling );
-  cerr << "ERROR: unhandled -l tag in label \"" << l << "\"" << endl;
-  return O();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-E getExtr ( const Tree<LVU>& tr ) {
-  N n =  T(L(tr).c_str()).getLastNonlocal();
-  if ( n == N_NONE ) return 'N';
-  if ( (tr.front().size()==0 || tr.front().front().size()==0) && n == N("-rN") ) return '0';
-  if ( T(L(tr.front()).c_str()).getLastNonlocal()==n || T(L(tr.back()).c_str()).getLastNonlocal()==n ) return 'N';
-  return ( n.isArg() ) ? T(L(tr).c_str()).getArity()+'1' : 'M';
-}
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -139,8 +119,42 @@ E getExtr ( const Tree<LVU>& tr ) {
 T getType ( const L& l ) {
 ////  if ( l[0]==':' )                 return T_COLON;
 ////  if ( l.find(',')!=string::npos ) return T_CONTAINS_COMMA;
-  return regex_replace( regex_replace( l, regex("%[^ %|]*[|]"), string("") ), regex("-[xl](?:(?!-[a-z])[^ }])*"), string("") ).c_str();
+  return regex_replace( regex_replace( l, regex("-x[^} ][^ |]*[|][^- ]*"), string("") ), regex("-l."), string("") ).c_str();
+//  return regex_replace( regex_replace( l, regex("%[^ %|]*[|]"), string("") ), regex("-[xl](?:(?!-[a-z])[^ }])*"), string("") ).c_str();
 //  return string( string( l, 0, l.find("-l") ), 0, l.find("-x") ).c_str();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+O getOp ( const L& l, const L& lSibling, const L& lParent ) {
+  if ( string::npos != l.find("-lN") || string::npos != l.find("-lG") || string::npos != l.find("-lH") || string::npos != l.find("-lR") ) return 'N';
+  if ( string::npos != l.find("-lV") ) return 'V';
+  if ( string::npos == l.find("-l")  || string::npos != l.find("-lS") || string::npos != l.find("-lC") ) return 'I';
+  if ( string::npos != l.find("-lM") || string::npos != l.find("-lQ") || string::npos != l.find("-lU") ) return 'M';
+  if ( (string::npos != l.find("-lA") || string::npos != l.find("-lI")) && string::npos != lParent.find("\\") ) return '0'+getType( string(lParent,lParent.find("\\")+1).c_str() ).getArity();
+  if ( (string::npos != l.find("-lA") || string::npos != l.find("-lI")) && string::npos == lParent.find('\\') ) return '0'+getType( lSibling ).getArity();
+  cerr << "WARNING: unhandled -l tag in label \"" << l << "\"" << " -- assuming identity."<<endl;
+  return 'I';
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+E getExtr ( const Tree<LVU>& tr ) {
+//if( FEATCONFIG & 16 ) return 'N';
+  N n =  T(L(tr).c_str()).getLastNonlocal();
+  if ( n == N_NONE ) return 'N';
+  if ( (tr.front().size()==0 || tr.front().front().size()==0) && n == N("-rN") ) return '0';
+  if( string::npos != L(tr.front()).find("-lE") )
+    return ( T(L(tr.front()).c_str()).getArity() > T(L(tr).c_str()).getArity() ) ? ('0'+T(L(tr.front()).c_str()).getArity()) : 'M';
+  else return 'N';
+/*
+  N n =  T(L(tr).c_str()).getLastNonlocal();
+cout<<" . . . "<<" n="<<n<<" for "<<tr<<endl<<(T(L(tr.front()).c_str()).getLastNonlocal()==n)<<" "<<(T(L(tr.back()).c_str()).getLastNonlocal()==n)<<endl;
+  if ( n == N_NONE ) return 'N';
+  if ( (tr.front().size()==0 || tr.front().front().size()==0) && n == N("-rN") ) return '0';
+  if ( T(L(tr.front()).c_str()).getLastNonlocal()==n || T(L(tr.back()).c_str()).getLastNonlocal()==n ) return 'N';
+  return ( n.isArg() ) ? T(L(tr).c_str()).getArity()+'1' : 'M';
+*/
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -151,17 +165,26 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
   // If punct, but not special !-delimited label...
   if ( ispunct(lW[0]) && ('!'!=lW[0] || lW.size()==1) ) return pair<K,T>(K::kBot,t);
 
-  string sLemma = lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
-  string sType = t.getString();  regex_replace( sType, regex("-x-x(?:(?!-[a-z])[^ }])*"), string("") );
-  string sPred = sType + ':' + sLemma;
+if( FEATCONFIG & 16)
+  return pair<K,T>( ( (lP[0]=='N') ? string("N:y0_1") : string("B:y0_0") ).c_str(), t );
 
-  smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x((?:(?!-[a-z])[^ }])*)(.*?)$")); s=m[3] ) {
+cout<<"reducing "<<lP<<" now "<<t;
+  string sLemma = lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
+//  string sType = t.getString();  regex_replace( sType, regex("-x-x(?:(?!-[a-z])[^ }])*"), string("") );
+  string sType = t.getString();  // regex_replace( sType, regex("-x[^| ]*[|](?:(?!-[a-z])[^ }])*"), string("") );
+  string sPred = sType + ':' + sLemma;
+cout<<" to "<<sType<<endl;
+
+//  smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x((?:(?!-[a-z])[^ }])*)(.*?)$")); s=m[3] ) {
+  smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^} ][^| ]*[|](?:(?!-[a-z])[^ }])*)(.*?)$")); s=m[3] ) {
     string sX = m[2];
     smatch mX;
+cout<<"applying "<<sX<<" to "<<sPred;
     if( regex_match( sX, mX, regex("^(.*)%(.*)%(.*)[|](.*)%(.*)%(.*)$") ) )        // transfix (prefix+infix+suffix) rule application
       sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"(.*)"+regex_escape(mX[3])+"$"), string(mX[4])+"$1"+string(mX[5])+"$2"+string(mX[6]) );
     if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)[%](.*)$") ) )              // circumfix (prefix+suffix) rule application
       sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"$"), string(mX[3])+"$1"+string(mX[4]) );
+cout<<" obtains "<<sPred<<endl;
   }
 
   int iSplit = sPred.find( ":", 1 );
@@ -252,15 +275,15 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
     f               = 1 - s;
     eF = e = ( e!='N' ) ? e : getExtr ( tr );
     pair<K,T> kt    = getPred ( L(tr), L(tr.front()) );
-    K k             = (FEATCONFIG & 2) ? K::kBot : kt.first;
+    K k             = (FEATCONFIG & 8) ? K::kBot : kt.first;
     aPretrm         = Sign( k, getType(l), S_A );
 
     // Print preterminal / fork-phase predictors...
     DelimitedList<psX,FPredictor,psComma,psX> lfp;  q.calcForkPredictors(lfp);
     cout<<"----"<<q<<endl;
-////    cout << "F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e,k) << endl;
-////    cout << "P " << q.calcPretrmTypeCondition(f,e,k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
-////    cout << "W " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
+    cout << "note: F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e,k) << endl;
+    cout << "note: P " << q.calcPretrmTypeCondition(f,e,k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
+    cout << "note: W " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
 
     arma::vec& vF = mvfrv[ pair<vector<FPredictor>,FResponse>( vector<FPredictor>( lfp.begin(), lfp.end() ), FResponse(f,e,k) ) ];
     arma::mat& mP = mpppmP[ pair<PPredictor,T>(q.calcPretrmTypeCondition(f,e,k),aPretrm.getType()) ];
@@ -301,9 +324,9 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
     // Print binary / join-phase predictors...
     DelimitedList<psX,JPredictor,psComma,psX> ljp;  q.calcJoinPredictors(ljp,f,eF,aLchild);
     cout << "==== " << aLchild << "   " << L(tr) << " -> " << L(tr.front()) << " " << L(tr.back()) << endl;
-////    cout << "J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e,oL,oR)  << endl;
-////    cout << "A " << q.calcApexTypeCondition(f,j,eF,e,oL,aLchild)                  << " : " << getType(l)          << endl;
-////    cout << "B " << q.calcBrinkTypeCondition(f,j,eF,e,oL,oR,getType(l),aLchild)   << " : " << getType(tr.back())  << endl;
+    cout << "note: J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e,oL,oR)  << endl;
+    cout << "note: A " << q.calcApexTypeCondition(f,j,eF,e,oL,aLchild)                  << " : " << getType(l)          << endl;
+    cout << "note: B " << q.calcBrinkTypeCondition(f,j,eF,e,oL,oR,getType(l),aLchild)   << " : " << getType(tr.back())  << endl;
     APredictor apred = q.calcApexTypeCondition(f,j,eF,e,oL,aLchild);
     BPredictor bpred = q.calcBrinkTypeCondition(f,j,eF,e,oL,oR,getType(l),aLchild);
 

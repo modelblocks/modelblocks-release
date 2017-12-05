@@ -153,7 +153,7 @@ def addToModel( p, t, M, N, C, D ):
     D[:,uniqInt(t.c)] += contrib.reshape(Y) * ( p / contrib.sum() )
   else:
     contrib = numpy.multiply( t.v.T, numpy.multiply( M[t.l], t.u.T ) )
-    contrib *= p / contrib.sum()
+    if contrib.sum() > 0.0: contrib *= p / contrib.sum()
     C[t.l]     += contrib
     C[2*L-t.l] += contrib.T
   for st in t.ch:
@@ -163,7 +163,8 @@ def addToModel( p, t, M, N, C, D ):
 ################################################################################
 
 def mergeTypeOutcomes( p, t, Ymap, N2N, src='00', srcy=-1 ):
-  if t.c[0]=='0' and t.c!='0|-' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x%' + t.c.split(':')[1] + '|%y' + str(srcy) ] += p
+#  if t.c[0]=='0' and t.c!='0|-' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x%' + t.c.split(':')[1] + '|%y' + str(srcy) ] += p
+  if t.c[0]=='0' and t.c!='0|-' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x' + t.c.split('|')[1].split(':')[0] + '%' + t.c.split(':')[1] + '|Y%y' + str(srcy) ] += p
   for st in t.ch:
     mergeTypeOutcomes( p, st, Ymap, N2N, re.sub('.*[|]','',t.c), t.y )
 
