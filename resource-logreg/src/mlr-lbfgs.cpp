@@ -72,11 +72,10 @@ class SpMatLogisticRegressionFunction {
   arma::mat     expectations;  // cache expectationa during Evaluate for use in Gradient
   arma::vec     counts;        // for (superposed) fractional or repeated items in data
   vector<mutex> vmExpectationRows;
-  double        dUnderflowScaler;
 
  public:
 
-  SpMatLogisticRegressionFunction ( uint nX, uint nY, uint nT = 1, double l = 0.0, double dS = 1.0 ) : lambda(l), numThreads(nT), vmExpectationRows(nX), dUnderflowScaler(dS) {
+  SpMatLogisticRegressionFunction ( uint nX, uint nY, uint nT = 1, double l = 0.0 ) : lambda(l), numThreads(nT), vmExpectationRows(nX) {
     initialpoint.randn( nX, nY );
     initialpoint *= 0.01;
     expectations.zeros( nX, nY );
@@ -92,7 +91,7 @@ class SpMatLogisticRegressionFunction {
 
 ////    cerr<<"inEval"<<endl;
 
-    const double regularization = 0.5 * lambda * dUnderflowScaler * arma::accu( parameters % parameters );
+    const double regularization = 0.5 * lambda * arma::accu( parameters % parameters );
 
 ////    const arma::mat logscoredistrs = parameters * predictors;
 ////    const arma::mat logscores      = arma::ones<rowvec>(parameters.n_rows) * (responses % logscoredistrs);
@@ -107,7 +106,7 @@ class SpMatLogisticRegressionFunction {
       for( uint i=0; i<weighted_responses.n_cols; i++ )
 //      weighted_responses.col(i) *= counts(i) * dUnderflowScaler;
        for( uint j=weighted_responses.col_ptrs[i]; j<weighted_responses.col_ptrs[i+1]; j++ )
-          weighted_responses(weighted_responses.row_indices[j],i) *= counts(i) * dUnderflowScaler;
+          weighted_responses(weighted_responses.row_indices[j],i) *= counts(i);
       cooccurrences = predictors * weighted_responses.t();
     }
 //    if ( cooccurrences.n_cols == 0 ) cooccurrences = predictors * arma::diagmat(counts) * dUnderflowScaler * responses.t();
@@ -139,13 +138,13 @@ class SpMatLogisticRegressionFunction {
         if ( norm == -1.0/0.0 ) cerr<<"WARNING: neg inf norm!"<<endl;
         if ( norm == 0.0 ) cerr<<"WARNING: zero norm!"<<endl;
         { lock_guard<mutex> guard ( mTotlogprob );
-          totlogprob += counts(c) * dUnderflowScaler * ( arma::accu( logscoredistr % responses.col(c) ) - log(norm) );
+          totlogprob += counts(c) * ( arma::accu( logscoredistr % responses.col(c) ) - log(norm) );
 //cerr<<"?!?! "<< counts(c) << " * " << dUnderflowScaler << " * ( " << arma::accu( logscoredistr % responses.col(c) ) << " - " << log(norm) << " )" << endl;
         }
         for ( uint i=predictors.col_ptrs[c]; i<predictors.col_ptrs[c+1]; i++ ) {
 //          if( arma::accu( expectations.row(predictors.row_indices[i]) + (counts(c) * dUnderflowScaler * predictors.values[i] * scoredistr.t()) ) != 1.0/0.0 ) {
             lock_guard<mutex> guard ( vmExpectationRows[predictors.row_indices[i]] );
-            expectations.row(predictors.row_indices[i]) += counts(c) * dUnderflowScaler * predictors.values[i] * (scoredistr.t() / norm);
+            expectations.row(predictors.row_indices[i]) += counts(c) * predictors.values[i] * (scoredistr.t() / norm);
 //          } else {
 //            cerr<<"WARNING: infinite expectation row; skipping."<<endl;
 //          }
@@ -158,13 +157,13 @@ class SpMatLogisticRegressionFunction {
 
 ////    cerr<<"outEval"<<endl;
 
-    return ( -totlogprob + regularization ) / dUnderflowScaler;
+    return -totlogprob + regularization;
   }
 
   void Gradient(const arma::mat& parameters, arma::mat& gradient)  {
 
     // Regularization term.
-    arma::mat regularization = lambda * dUnderflowScaler * parameters;
+    arma::mat regularization = lambda * parameters;
 
 ////    cerr<<"inGrad"<<endl;
 
@@ -185,7 +184,7 @@ class SpMatLogisticRegressionFunction {
 
 int main ( int nArgs, char* argv[] ) {
 
-  uint maxiters = nArgs>4 ? atoi(argv[4]) : 0;
+  uint maxiters = nArgs>4 ? atoi(argv[3]) : 0;
   cerr << "Max iters (0 = no bound): " << maxiters << "\n";
 
   list<trip<DelimitedList<psX,DelimitedPair<psX,Delimited<XFeat>,psEquals,Delimited<double>,psX>,psComma,psX>,Delimited<YVal>,Delimited<double>>> lplpfdy;
@@ -203,7 +202,7 @@ int main ( int nArgs, char* argv[] ) {
   cerr << "Data read: x=" << domXFeat.getSize() << " y=" << domYVal.getSize() << ".\n";
 
   // Populate predictor matrix and result vector...
-  SpMatLogisticRegressionFunction f ( domXFeat.getSize(), domYVal.getSize(), nArgs>1 ? atoi(argv[1]) : 1, nArgs>2 ? atof(argv[2]) : 0.0, nArgs>3 ? atof(argv[3]) : 1.0 );
+  SpMatLogisticRegressionFunction f ( domXFeat.getSize(), domYVal.getSize(), nArgs>1 ? atoi(argv[1]) : 1, nArgs>2 ? atof(argv[2]) : 0.0 );
   sp_mat& DbyFX = f.Predictors();
   sp_mat& DbyY  = f.Responses();
   vec& Dcounts  = f.Counts();

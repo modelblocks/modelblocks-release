@@ -8,6 +8,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gc
 import tree
 import gcgtree
 import semcuegraph
+import morph
 
 numpy.set_printoptions(linewidth=200)
 
@@ -164,7 +165,7 @@ def addToModel( p, t, M, N, C, D ):
 
 def mergeTypeOutcomes( p, t, Ymap, N2N, src='00', srcy=-1 ):
 #  if t.c[0]=='0' and t.c!='0|-' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x%' + t.c.split(':')[1] + '|%y' + str(srcy) ] += p
-  if t.c[0]=='0' and t.c!='0|-' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x' + t.c.split('|')[1].split(':')[0] + '%' + t.c.split(':')[1] + '|Y%y' + str(srcy) ] += p
+  if t.c[0]=='0' and t.c!='0|-' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x' + t.c.split('|')[1].split(':')[0] + '%' + t.c.split(':')[1] + '|' + ('N' if t.c[2]=='N' else 'B') + '%y' + str(srcy) ] += p
   for st in t.ch:
     mergeTypeOutcomes( p, st, Ymap, N2N, re.sub('.*[|]','',t.c), t.y )
 
@@ -176,6 +177,8 @@ def annotY( t, Ymap, ctr=0 ):
     if ctr in Ymap:
       p,xy = max( [ (Ymap[ctr][y],y) for y in Ymap[ctr] ] )
       t.c += xy
+    else:
+      t.c += '-x%' + morph.getLemma(t.c,t.ch[0].c) + '|%Bot' 
   for st in t.ch:
     ctr = annotY( st, Ymap, ctr )
   return ctr

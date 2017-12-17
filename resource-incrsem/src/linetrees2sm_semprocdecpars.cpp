@@ -165,8 +165,8 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
   // If punct, but not special !-delimited label...
   if ( ispunct(lW[0]) && ('!'!=lW[0] || lW.size()==1) ) return pair<K,T>(K::kBot,t);
 
-if( FEATCONFIG & 16)
-  return pair<K,T>( ( (lP[0]=='N') ? string("N:y0_1") : string("B:y0_0") ).c_str(), t );
+//if( FEATCONFIG & 16)
+//  return pair<K,T>( ( (lP[0]=='N') ? string("N:y0_1") : string("B:y0_0") ).c_str(), t );
 
 cout<<"reducing "<<lP<<" now "<<t;
   string sLemma = lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -186,6 +186,9 @@ cout<<"applying "<<sX<<" to "<<sPred;
       sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"$"), string(mX[3])+"$1"+string(mX[4]) );
 cout<<" obtains "<<sPred<<endl;
   }
+
+if( FEATCONFIG & 16)
+  if( sPred[0]=='Y' ) sPred[0] = ( (lP[0]=='N') ? 'N' : 'B' );
 
   int iSplit = sPred.find( ":", 1 );
   sType  = sPred.substr( 0, iSplit );
@@ -275,7 +278,7 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
     f               = 1 - s;
     eF = e = ( e!='N' ) ? e : getExtr ( tr );
     pair<K,T> kt    = getPred ( L(tr), L(tr.front()) );
-    K k             = (FEATCONFIG & 8) ? K::kBot : kt.first;
+    K k             = (FEATCONFIG & 8 && kt.first.getString()[2]!='y') ? K::kBot : kt.first;
     aPretrm         = Sign( k, getType(l), S_A );
 
     // Print preterminal / fork-phase predictors...

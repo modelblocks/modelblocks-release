@@ -222,7 +222,7 @@ int main ( int nArgs, char* argv[] ) {
           // For each possible lemma (context + label + prob) for preterminal of current word...
           for ( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[unkWord(w_t.getString().c_str())] ) {
             if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(ktpr_p_t.second) > beams[t].rbegin()->first.first ) {
-              K k_p_t           = (FEATCONFIG & 8) ? K::kBot : ktpr_p_t.first.first;   // context of current preterminal
+              K k_p_t           = (FEATCONFIG & 8 && ktpr_p_t.first.first.getString()[2]!='y') ? K::kBot : ktpr_p_t.first.first;   // context of current preterminal
               T t_p_t           = ktpr_p_t.first.second;                               // label of current preterminal
               E e_p_t           = (t_p_t.getLastNonlocal()==N_NONE) ? 'N' : (t_p_t.getLastNonlocal()==N("-rN")) ? '0' : (t_p_t.getLastNonlocal().isArg()) ? t_p_t.getArity()+'1' : 'M';
               double probwgivkl = ktpr_p_t.second;                                     // probability of current word given current preterminal
