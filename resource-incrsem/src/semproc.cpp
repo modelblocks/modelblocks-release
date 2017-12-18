@@ -55,7 +55,7 @@ typedef Delimited<T> B;
 ////////////////////////////////////////////////////////////////////////////////
 
 class BeamElement : public DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX> {
- public:
+public:
   BeamElement ( )                                                                 : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>()             { }
   BeamElement ( const Sign& a, F f, E e, K k, JResponse jr, const StoreState& q ) : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>(a,f,e,k,jr,q) { }
 };
@@ -63,27 +63,32 @@ class BeamElement : public DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmp
 typedef pair<double,const BeamElement&> ProbBack;
 
 class Trellis : public vector<Beam<ProbBack,BeamElement>> {
- private:
-  DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX> lbe;
- public:
+  // private:
+  //  DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX> lbe;
+public:
   Trellis ( ) : vector<Beam<ProbBack,BeamElement>>() { reserve(100); }
   Beam<ProbBack,BeamElement>& operator[] ( uint i ) { if ( i==size() ) emplace_back(BEAM_WIDTH); return vector<Beam<ProbBack,BeamElement>>::operator[](i); }
-  const DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX>& getMostLikelySequence ( ) {
+  void setMostLikelySequence ( DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX>& lbe ) {
     lbe.clear();  if( back().size()>0 ) lbe.push_front( pair<BeamElement,ProbBack>( back().begin()->second, back().begin()->first ) );
     if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( at(t).get(lbe.front().second.second) );
     if( lbe.size()>0 ) lbe.emplace_back( BeamElement(), ProbBack(0.0,BeamElement()) );
-    return lbe;
+    if( lbe.size()==0 ) {
+      lbe.emplace_front( BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(1,'N','N','N'), StoreState() ), ProbBack(0.0,BeamElement()) );
+      lbe.emplace_front( BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(1,'N','N','N'), StoreState() ), ProbBack(0.0,BeamElement()) );
+      cerr<<"i tried"<<endl;
+    }
+    //    return lbe;
   }
 };
 
 /*
-class StreamTrellis : public vector<Beam> {
+ class StreamTrellis : public vector<Beam> {
  public:
-  StreamTrellis ( ) : vector<Beam>(2) { }       // previous and next beam.
-  Beam&       operator[] ( uint i )       { return vector<Beam>::operator[](i%2); }
-  const Beam& operator[] ( uint i ) const { return vector<Beam>::operator[](i%2); }
-};
-*/
+ StreamTrellis ( ) : vector<Beam>(2) { }       // previous and next beam.
+ Beam&       operator[] ( uint i )       { return vector<Beam>::operator[](i%2); }
+ const Beam& operator[] ( uint i ) const { return vector<Beam>::operator[](i%2); }
+ };
+ */
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -166,35 +171,56 @@ int main ( int nArgs, char* argv[] ) {
 
   cerr<<"Models ready."<<endl;
 
+  list<DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX>> MLSs;
+  list<DelimitedList<psX,ObsWord,psSpace,psX>> sents;
+  mutex mutexMLSList;
+  vector<thread> vtWorkers;
+  uint linenum = 1;
+
   // For each line in stdin...
-  for ( int linenum=1; cin && EOF!=cin.peek(); linenum++ ) {
+  //  for ( int linenum=1; cin && EOF!=cin.peek(); linenum++ ) {
+  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&] (uint numt) {
 
-    Trellis                                beams;  // sequence of beams
-    uint                                   t=0;    // time step
-    DelimitedList<psX,ObsWord,psSpace,psX> lwSent; // input list
+    while( true ) {
 
-    // Allocate space in beams to avoid reallocation...
-    // Create initial beam element...
-    beams[0].tryAdd( BeamElement(), ProbBack(0.0,BeamElement()) );
-    // Read sentence...
-    cin >> lwSent >> "\n";
-    cerr << "#" << linenum;
+      Trellis                                beams;  // sequence of beams
+      uint                                   t=0;    // time step
+      DelimitedList<psX,ObsWord,psSpace,psX> lwSent; // input list
 
-    // For each word...
-    for ( auto& w_t : lwSent ) {
+      // Allocate space in beams to avoid reallocation...
+      // Create initial beam element...
+      beams[0].tryAdd( BeamElement(), ProbBack(0.0,BeamElement()) );
 
-      cerr << " " << w_t;
-      if ( VERBOSE ) cout << "WORD:" << w_t << endl;
+      mutexMLSList.lock( );
+      if( not ( cin && EOF!=cin.peek() ) ) { mutexMLSList.unlock(); break; }
+      // Read sentence...
+      uint currline = linenum++;
+      cin >> lwSent >> "\n";
+      cerr << "Reading sentence " << currline << ": " << lwSent << " ..." << endl;
+      // Add mls to list...
+      MLSs.emplace_back( );
+      auto& mls = MLSs.back();
+      sents.emplace_back( lwSent );
+      mutexMLSList.unlock();
 
-      // Create beam for current time step...
-      beams[++t].clear();
+      if ( numtglobal == 1 ) cerr << "#" << currline;
 
-      mutex mutexBeam;
-      vector<thread> vtWorkers;
-      for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&] (uint numt) {
+      // For each word...
+      for ( auto& w_t : lwSent ) {
+
+        if ( numtglobal == 1 ) cerr << " " << w_t;
+        if ( VERBOSE ) cout << "WORD:" << w_t << endl;
+
+        // Create beam for current time step...
+        beams[++t].clear();
+
+        //      mutex mutexBeam;
+        //      vector<thread> vtWorkers;
+        //      for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&] (uint numt) {
 
         // For each hypothesized storestate at previous time step...
-        uint i=0; for( auto& be_tdec1 : beams[t-1] ) if( i++%numThreads==numt ){
+        uint i=0; for( auto& be_tdec1 : beams[t-1] ) {
+          //         if( i++%numThreads==numt ){
           double            lgpr_tdec1 = be_tdec1.first.first;      // prob of prev storestate
           const StoreState& q_tdec1    = be_tdec1.second.sixth();  // prev storestate
 
@@ -215,8 +241,8 @@ int main ( int nArgs, char* argv[] ) {
             flogresponses -= flogresponses( ind_max );
             fresponses = arma::exp( flogresponses );
             fnorm = arma::accu( fresponses );
-//            fresponses.fill( 0.0 );  fresponses( ind_max ) = 1.0;
-//            fnorm = 1.0;
+            //            fresponses.fill( 0.0 );  fresponses( ind_max ) = 1.0;
+            //            fnorm = 1.0;
           }
 
           // For each possible lemma (context + label + prob) for preterminal of current word...
@@ -234,7 +260,7 @@ int main ( int nArgs, char* argv[] ) {
                 double scoreFork = ( FResponse::exists(f,e_p_t,k_p_t) ) ? fresponses(FResponse(f,e_p_t,k_p_t).toInt()) : 1.0 ;
                 if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << (scoreFork / fnorm) << endl;
 
-                // If preterminal prob is nonzero... 
+                // If preterminal prob is nonzero...
                 PPredictor ppredictor = q_tdec1.calcPretrmTypeCondition(f,e_p_t,k_p_t);
                 if ( VERBOSE>1 ) cout << "      P " << ppredictor << "..." << endl;
                 if ( modP.end()!=modP.find(ppredictor) && modP[ppredictor].end()!=modP[ppredictor].find(t_p_t) ) {
@@ -260,8 +286,8 @@ int main ( int nArgs, char* argv[] ) {
                     jlogresponses -= jlogresponses( ind_max );
                     jresponses = arma::exp( jlogresponses );
                     jnorm = arma::accu( jresponses );
-//                    jresponses.fill( 0.0 );  jresponses( ind_max ) = 1.0;
-//                    jnorm = 1.0;
+                    //                    jresponses.fill( 0.0 );  jresponses( ind_max ) = 1.0;
+                    //                    jnorm = 1.0;
                   }
 
                   // For each possible no-join or join decision, and operator decisions...
@@ -278,31 +304,31 @@ int main ( int nArgs, char* argv[] ) {
                       APredictor apredictor = q_tdec1.calcApexTypeCondition( f, j, e_p_t, e, opL, aLchild );  // save apredictor for use in prob calc
                       if ( VERBOSE>1 ) cout << "         A " << apredictor << "..." << endl;
                       if ( modA.end()!=modA.find(apredictor) )
-                       for ( auto& tpA : modA[apredictor] ) {
-                        if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) > beams[t].rbegin()->first.first ) {
+                        for ( auto& tpA : modA[apredictor] ) {
+                          if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) > beams[t].rbegin()->first.first ) {
 
-                          if ( VERBOSE>1 ) cout << "         A " << apredictor << " : " << tpA.first << " = " << tpA.second << endl;
+                            if ( VERBOSE>1 ) cout << "         A " << apredictor << " : " << tpA.first << " = " << tpA.second << endl;
 
-                          // For each possible brink category label...
-                          BPredictor bpredictor = q_tdec1.calcBrinkTypeCondition( f, j, e_p_t, e, opL, opR, tpA.first, aLchild );  // bpredictor for prob calc
-                          if ( VERBOSE>1 ) cout << "          B " << bpredictor << "..." << endl;
-                          if ( modB.end()!=modB.find(bpredictor) )
-                           for ( auto& tpB : modB[bpredictor] ) {
-                            if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << tpB.first << " = " << tpB.second << endl;
-                            lock_guard<mutex> guard( mutexBeam );
-                            if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second) > beams[t].rbegin()->first.first ) {
+                            // For each possible brink category label...
+                            BPredictor bpredictor = q_tdec1.calcBrinkTypeCondition( f, j, e_p_t, e, opL, opR, tpA.first, aLchild );  // bpredictor for prob calc
+                            if ( VERBOSE>1 ) cout << "          B " << bpredictor << "..." << endl;
+                            if ( modB.end()!=modB.find(bpredictor) )
+                              for ( auto& tpB : modB[bpredictor] ) {
+                                if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << tpB.first << " = " << tpB.second << endl;
+                                //                            lock_guard<mutex> guard( mutexBeam );
+                                if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second) > beams[t].rbegin()->first.first ) {
 
-                              // Calculate probability and storestate and add to beam...
-                              StoreState ss( q_tdec1, f, j, e_p_t, e, opL, opR, tpA.first, tpB.first, aPretrm, aLchild );
-                              if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
-                                beams[t].tryAdd( BeamElement( aPretrm, f,e_p_t,k_p_t, jresponse, ss ), ProbBack( lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second), be_tdec1.second ) );
-                                if( VERBOSE>1 ) cout << "                send (" << be_tdec1.second << ") to (" << ss << ") with "
-                                                     << (lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second)) << endl;
+                                  // Calculate probability and storestate and add to beam...
+                                  StoreState ss( q_tdec1, f, j, e_p_t, e, opL, opR, tpA.first, tpB.first, aPretrm, aLchild );
+                                  if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
+                                    beams[t].tryAdd( BeamElement( aPretrm, f,e_p_t,k_p_t, jresponse, ss ), ProbBack( lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second), be_tdec1.second ) );
+                                    if( VERBOSE>1 ) cout << "                send (" << be_tdec1.second << ") to (" << ss << ") with "
+                                      << (lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second)) << endl;
+                                  }
+                                }
                               }
-                            }
                           }
                         }
-                      }
                     }
                   }
                 }
@@ -310,34 +336,58 @@ int main ( int nArgs, char* argv[] ) {
             }
           }
         }
-      }, numtglobal ));
+        //      }, numtglobal ));
 
-      for( auto& w : vtWorkers ) w.join();
+        //      for( auto& w : vtWorkers ) w.join();
 
-      // Write output...
-      cerr << " (" << beams[t].size() << ")";
-      if ( VERBOSE ) cout << beams[t] << endl;
-    }
-    cerr << endl;
-    if ( VERBOSE ) cout << "MLS" << endl;
+        // Write output...
+        if ( numtglobal == 1 ) cerr << " (" << beams[t].size() << ")";
+        if ( VERBOSE ) cout << beams[t] << endl;
+      }
+      if ( numtglobal == 1 ) cerr << endl;
+      if ( VERBOSE ) cout << "MLS" << endl;
 
-    auto& mls = beams.getMostLikelySequence();
-    if( mls.size()>0 ) {
-      int u=1; auto ibe=next(mls.begin()); auto iw=lwSent.begin(); for( ; ibe!=mls.end() && iw!=lwSent.end(); ibe++, iw++, u++ ) {
-        cout << *iw << " " << ibe->first;
-//ibe->first.first() << " " << ibe->first.second() << " " << ibe->first.third() << " " << ibe->first.fourth();
-//        if( OUTPUT_MEASURES ) cout << " " << vdSurp[u];
-        cout << endl;
+      //DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX> mls;
+      { lock_guard<mutex> guard( mutexMLSList );
+        if( numtglobal > 1 ) cerr << "Finished line " << currline << " (" << beams[t].size() << ")..." << endl;
+        beams.setMostLikelySequence( mls );
+      }
+      /*
+       if( mls.size()>0 ) {
+       int u=1; auto ibe=next(mls.begin()); auto iw=lwSent.begin(); for( ; ibe!=mls.end() && iw!=lwSent.end(); ibe++, iw++, u++ ) {
+       cout << *iw << " " << ibe->first;
+       //ibe->first.first() << " " << ibe->first.second() << " " << ibe->first.third() << " " << ibe->first.fourth();
+       //        if( OUTPUT_MEASURES ) cout << " " << vdSurp[u];
+       cout << endl;
+       }
+       }
+       if( mls.size()==0 ) {
+       cout << "FAIL FAIL 1 1 " << endl;
+       //      int u=1; auto iw=lwSent.begin(); for( ; iw!=lwSent.end(); iw++, u++ ) {
+       //        cout << *iw << " FAIL 1 1 ";
+       //        if( OUTPUT_MEASURES ) cout << " " << vdSurp[u];
+       //        cout << endl;
+       //      }
+       }
+       */
+
+      { lock_guard<mutex> guard( mutexMLSList );
+//        for( auto& mls : MLSs )// cerr<<"on list: "<<mls.size()<<endl;
+//          for( auto& be : mls ) cerr<<"on list: " << be.first << endl;
+        while( MLSs.size()>0 && MLSs.front().size()>0 ) {
+          auto& mls = MLSs.front( );
+          int u=1; auto ibe=next(mls.begin()); auto iw=sents.front().begin(); for( ; ibe!=mls.end() && iw!=sents.front().end(); ibe++, iw++, u++ ) {
+            cout << *iw << " " << ibe->first;
+            cout << endl;
+          }
+          MLSs.pop_front();
+          sents.pop_front();
+        }
       }
     }
-    if( mls.size()==0 ) {
-      cout << "FAIL FAIL 1 1 " << endl;
-//      int u=1; auto iw=lwSent.begin(); for( ; iw!=lwSent.end(); iw++, u++ ) {
-//        cout << *iw << " FAIL 1 1 ";
-//        if( OUTPUT_MEASURES ) cout << " " << vdSurp[u];
-//        cout << endl;
-//      }
-    }
-  }
+  }, numtglobal ));
+
+  for( auto& w : vtWorkers ) w.join();
+
 }
 
