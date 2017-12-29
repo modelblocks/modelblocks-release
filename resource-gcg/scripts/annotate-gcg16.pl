@@ -388,11 +388,11 @@ debug("p-rule ", "$_");
         # branch off initial modifier RP with colon
         (s/\^([SQCFVIBLAG](?!-a))((?!-[cp])[^ ]*?)($CODA) <(PP|RB|ADVP|CC|FRAG|NP|[^ ]*-ADV|[^ ]*-LOC|[^ ]*-TMP|SBAR[^ ]* \[IN (?!that))([^>]*)> <([^ ]*) (:)> (<.*)\^/\^\1\2\3 <R-aN-lM-fNIL <R-aN-lI-f\4\5> <\6 \7>> <\1\2-lI-fNIL \8>\^/ && ($j=28)) ||
         # branch off initial modifier RP IP
-        (s/\^([SQCFVIBLAG](?!-a)|[VIBLG]-aN)((?!-[cp])[^ ]*?)($CODA) <S(?![^ ]*-SBJ)[^ ]* \[NP[^ ]* \[-NONE- \*(?:-[0-9]*)?\]\] ($NO_AP_HEAD\[TO[^>]*)> (<.*)\^/\^\1\2\3 <R-aN-lM-fNIL <I-aN-lI-fNIL \4>> <\1\2-lI-fNIL \5>\^/ && ($j=29)) ||
+        (s/\^([SQCFVIBLAG](?!-a)|[VIBLG]-aN)((?!-[cp])[^ ]*?)($CODA) <S(?![^ ]*-SBJ)[^ ]* \[NP[^ ]* \[-NONE- \*(?:-[0-9]*)?\]\] ($NO_AP_HEAD\[TO[^>]*)> (?!.*<CC.*\^)(<.*)\^/\^\1\2\3 <R-aN-lM-fNIL <I-aN-lI-fNIL \4>> <\1\2-lI-fNIL \5>\^/ && ($j=29)) ||
         # branch off initial modifier RP AP
-        (s/\^([SQCFVIBLAG](?!-a)|[VIBLG]-aN)((?!-[cp])[^ ]*?)($CODA) <S(?![^ ]*-SBJ)[^ ]* \[NP[^ ]* \[-NONE- \*(?:-[0-9]*)?\]\] ([^>]*)> (<.*)\^/\^\1\2\3 <R-aN-lM-fNIL \4> <\1\2-lI-fNIL \5>\^/ && ($j=30)) ||
+        (s/\^([SQCFVIBLAG](?!-a)|[VIBLG]-aN)((?!-[cp])[^ ]*?)($CODA) <S(?![^ ]*-SBJ)[^ ]* \[NP[^ ]* \[-NONE- \*(?:-[0-9]*)?\]\] ([^>]*)> (?!.*<CC.*\^)(<.*)\^/\^\1\2\3 <R-aN-lM-fNIL \4> <\1\2-lI-fNIL \5>\^/ && ($j=30)) ||
         # branch off initial modifier RP from SBAR
-        (s/\^([SQCFVIBLAG](?!-a)|[VIBLG]-aN)((?!-[cp])[^ ]*?)($CODA) <(SBAR(?![^ ]*-SBJ)[^ ]* (?!\[IN that|\[IN for|\[IN where|\[IN when)(?!\[WH[^  ]*))([^>]*)> (<.*)\^/\^\1\2\3 <R-aN-lM-f\4\5> <\1\2-lI-fNIL \6>\^/ && ($j=31)) ||
+        (s/\^([SQCFVIBLAG](?!-a)|[VIBLG]-aN)((?!-[cp])[^ ]*?)($CODA) <(SBAR(?![^ ]*-SBJ)[^ ]* (?!\[IN that|\[IN for|\[IN where|\[IN when)(?!\[WH[^  ]*))([^>]*)> (?!.*<CC.*<SBAR.*\^)(<.*)\^/\^\1\2\3 <R-aN-lM-f\4\5> <\1\2-lI-fNIL \6>\^/ && ($j=31)) ||
         # branch off initial modifier RC from SBAR-ADV
         (s/\^([SQCFVIBLAG](?!-a)|[VIBLG]-aN)((?!-[cp])[^ ]*?)($CODA) <(SBAR(?:-ADV|-TMP)[^ ]* \[WH)([^>]*)> (<.*)\^/\^\1\2\3 <V-rN-lN-f\4\5> <\1\2-lI-fNIL \6>\^/ && ($j=32)) ||
         # branch off initial RB + JJS as modifier RP  (e.g. "at least/most/strongest/weakest")

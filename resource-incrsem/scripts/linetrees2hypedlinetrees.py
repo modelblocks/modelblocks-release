@@ -206,7 +206,7 @@ for lpttrav in llpttrav:
   for p,t,trav in lpttrav:
     K,l = setKL( trav, KINTS )
     L = max(L,l)
-print( str(K) + ' predicate constants, ' + str(L) + ' dependency labels.' )
+sys.stderr.write( str(K) + ' predicate constants, ' + str(L) + ' dependency labels.\n' )
 
 ## init models...
 M, N = numpy.zeros((L*2,Y,Y)), numpy.zeros((Y,K))
@@ -272,10 +272,10 @@ for i in range( I ):
 for l in range( 2*L ):
   for y in range( Y ):
     for p,z in sorted( [ (M[l,y,z],z) for z in range(Y) ], reverse=True ):   #range( Y ):
-      print( 'M ' + str(l) + ' ' + str(y) + ' : ' + str(z) + ' = ' + str(p) )   #str(M[l,y,z]) )
+      sys.stderr.write( 'M ' + str(l) + ' ' + str(y) + ' : ' + str(z) + ' = ' + str(p) + '\n' )   #str(M[l,y,z]) )
 for y in range( Y ):
   for p,k in sorted( [ (N[y,KINTS[k]],k) for k in KINTS ], reverse=True ):     #KINTS:
-    print( 'K ' + str(y) + ' : ' + k + ' = ' + str(p) )    #str(N[y,KINTS[k]]) )
+    sys.stderr.write( 'K ' + str(y) + ' : ' + k + ' = ' + str(p) + '\n' )    #str(N[y,KINTS[k]]) )
 
 LOGM = numpy.log( M )
 LOGN = numpy.log( N )

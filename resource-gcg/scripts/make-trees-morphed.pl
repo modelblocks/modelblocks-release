@@ -1,8 +1,9 @@
 
 use Getopt::Std;
 
-getopts("s");
-$SEM = $opt_s;
+getopts("sx");
+$SEM  = $opt_s;
+$XTRA = $opt_x;
 print( $SEM );
 
 $SHORT = '(?!<[aeiou])(?:[aeiou])';
@@ -15,38 +16,39 @@ while ( <> ) {
 #  ## lowercase all words -- U (uppercase) category in gcg16 lets us reconstruct capitalization for proper names if we want it
 #  s/ ((?!-)[^\(\)]*)\)/ \L\1\E\)/gi;
 
+ if ( $XTRA ) {
   ######## N -> N:
 
   #### irregular nouns:
   ## this
-  s/\((N(?!-b{N-aD}))([^ %]*) ([Tt]his|[^ ]*[Ss]pecies|[^ ]*[Ss]eries)\)/\(\1\2-o\1%\3|N%\3 \3\)/gi;
+  s/\((N(?!-b\{N-aD}))([^ %]*) ([Tt]his|[^ ]*[Ss]pecies|[^ ]*[Ss]eries)\)/\(\1\2-o\1%\3|N%\3 \3\)/gi;
   ## analysis (%is|%es)
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:aeg|bas|chass|bet|cris|gnos|cler|lys|mes|phas|ps|thes))()(is|es)\)/\(\1\2-o\1%\4\5|N%\4is \3\4is\)/gi;
+  s/\((N(?!-b\{N-aD}))([^ %]*) ([^ ]*?(?:aeg|bas|chass|bet|cris|gnos|cler|lys|mes|phas|ps|thes))()(is|es)\)/\(\1\2-o\1%\4\5|N%\4is \3\4is\)/gi;
   ## beastie (%|%s)
-  s/\((N(?!-b{N-aD}))([^ %]*) (lie|pie|tie|[^ ]*?(?:beastie|calorie|cookie|goodie|movie|prarie|talkie|yippie|yuppie|zombie))()(|s)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
+  s/\((N(?!-b\{N-aD}))([^ %]*) (lie|pie|tie|[^ ]*?(?:beastie|calorie|cookie|goodie|movie|prarie|talkie|yippie|yuppie|zombie))()(|s)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
   ## bus (%s|%ses)
-  s/\((N(?!-b{N-aD}))([^ %]*) (bu|[^ ]*?(?:s|canva|[^x]cu|iri|nu|pu|plu|tu))(s)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
+  s/\((N(?!-b\{N-aD}))([^ %]*) (bu|[^ ]*?(?:s|canva|[^x]cu|iri|nu|pu|plu|tu))(s)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
   ## echo (%o|%oes)
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:ech|embarg|grott|her|potat|tomat|vet))(o)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
+  s/\((N(?!-b\{N-aD}))([^ %]*) ([^ ]*?(?:ech|embarg|grott|her|potat|tomat|vet))(o)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
   ## leaf (%f|%ves)
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:ar|el|ol|[Ll]ea|thei))()(f|ves)\)/\(\1\2-o\1%\4\5|N%\4f \3\4f\)/gi;
+  s/\((N(?!-b\{N-aD}))([^ %]*) ([^ ]*?(?:ar|el|ol|[Ll]ea|thei))()(f|ves)\)/\(\1\2-o\1%\4\5|N%\4f \3\4f\)/gi;
   ## life,wife (%fe|%ves)
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:[Ll]i|[Ww]i))()(fe|ves)\)/\(\1\2-o\1%\4\5|N%\4fe \3\4fe\)/gi;
+  s/\((N(?!-b\{N-aD}))([^ %]*) ([^ ]*?(?:[Ll]i|[Ww]i))()(fe|ves)\)/\(\1\2-o\1%\4\5|N%\4fe \3\4fe\)/gi;
   ## man (%an|%en)
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:[Ww]o|))([Mm])(an|en)\)/\(\1\2-o\1%\4\5|N%\4an \3\4an\)/gi;
+  s/\((N(?!-b\{N-aD}))([^ %]*) ([^ ]*?(?:[Ww]o|))([Mm])(an|en)\)/\(\1\2-o\1%\4\5|N%\4an \3\4an\)/gi;
   ## %z|%zes
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?z)(z)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
+  s/\((N(?!-b\{N-aD}))([^ %]*) ([^ ]*?z)(z)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
   ## %h|%hes
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?[cs](?<! ac))(h)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
+  s/\((N(?!-b\{N-aD}))([^ %]*) ([^ ]*?[cs](?<! ac))(h)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
   ## %x|%xes
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?)(x)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
+  s/\((N(?!-b\{N-aD}))([^ %]*) ([^ ]*?)(x)(|es)\)/\(\1\2-o\1%\4\5|N%\4 \3\4\)/gi;
   ## %y|%ies
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?[^aeou])(y|ies)\)/\(\1\2-o\1%\4|N%y \3y\)/gi;
+  s/\((N(?!-b\{N-aD}))([^ %]*) ([^ ]*?[^aeou])(y|ies)\)/\(\1\2-o\1%\4|N%y \3y\)/gi;
   ## atlas,... (%|%es)
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?(?:autics|bias|bris|botics|enis|ennis|etics|estos|ethos|itis|itics|matics|ntics|o[mn]ics|ssis|stics|thics|tlas|ysics))(|es)\)/\(\1\2-o\1%\4|N% \3\)/gi;
+  s/\((N(?!-b\{N-aD}))([^ %]*) ([^ ]*?(?:autics|bias|bris|botics|enis|ennis|etics|estos|ethos|itis|itics|matics|ntics|o[mn]ics|ssis|stics|thics|tlas|ysics))(|es)\)/\(\1\2-o\1%\4|N% \3\)/gi;
 
   #### regular nouns:
-  s/\((N(?!-b{N-aD}))([^ %]*) ([^ ]*?[^u])(|s)\)/\(\1\2-o\1%\4|N% \3\)/gi;
+  s/\((N(?!-b\{N-aD}))([^ %]*) ([^ ]*?[^u])(|s)\)/\(\1\2-o\1%\4|N% \3\)/gi;
 
   ######## ADJECTIVAL NOMINALIZATION  A -> N:
 
@@ -346,6 +348,7 @@ while ( <> ) {
   s/\((N)([^ ]*) $NOMINALS()()\)/\(B\2-o\1%\4\5|BNOM%\4 \3\4\)/gi;
 
   s/BNOM/B/g;
+ }
 
   ######## B -> V|B|L|G:
 
@@ -602,6 +605,7 @@ while ( <> ) {
   ## X*
   s/\(([BVLG])([^ %]*) ([^ ]*?)(|s|ed|ing)\)/\(B\2-o\1%\4|B% \3\)/gi;
 
+ if ( $XTRA ) {
   ######## NEGATIVE FOR VERBS
 
   ## un%
@@ -613,6 +617,7 @@ while ( <> ) {
 
   ## re%
   s/\((B)([^ ]*) ([Rr]e-?)$NORE([^ ]*?)()\)/\(B\2-o\1%:\L\3\E%|\1REP%:% \4\)/gi;
+ }
 
   ######## CAUSAL, INCHOATIVE, STATIVE
   if( $SEM ) {

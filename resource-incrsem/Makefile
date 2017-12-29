@@ -303,9 +303,9 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 #%typed.linetrees:  $(INCRSEM-SCRIPTS)/make-trees-typed.py  $$(basename %).linetrees  %_2000_5e-2_1e-2_N-aD\:_1_ymodel
 #	cat $(word 2,$^)  |  python $(word 1,$^) $(word 3,$^)  >  $@
 
-.PRECIOUS: %typed.linetrees
-%typed.linetrees:  $$(basename %).linetrees  $(INCRSEM-SCRIPTS)/linetrees2typedlinetrees.d  $(INCRSEM-SCRIPTS)/linetrees2typedlinetrees.py
-	cat $<  |  OMP_NUM_THREADS=1 python $(word 3,$^) $(subst .,,$(suffix $*))  >  $@
+.PRECIOUS: %hyped.linetrees
+%hyped.linetrees:  $$(basename %).linetrees  $(INCRSEM-SCRIPTS)/linetrees2hypedlinetrees.d  $(INCRSEM-SCRIPTS)/linetrees2hypedlinetrees.py
+	cat $<  |  OMP_NUM_THREADS=1 python $(word 3,$^) $(subst .,,$(suffix $*))  >  $@  2>  $@.log
 
 ########################################
 #
