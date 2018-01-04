@@ -106,7 +106,7 @@ if (!is.null(permutation_test_data)) {
     }
     mse1 = read.csv(mse1_file, sep=' ', quote='', comment.char='', header=TRUE)
     mse2 = read.csv(mse2_file, sep=' ', quote='', comment.char='', header=TRUE)
-    ptest_out = permutation_test(mse1$mse, mse2$mse, n_iter=10000, n_tail=2)
+    ptest_out = permutation_test(mse1$se, mse2$se, n_iter=10000, n_tail=2)
     signif = ptest_out$p
     base_diff = ptest_out$base_diff
 } else {

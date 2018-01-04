@@ -268,9 +268,6 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
     for (x in colnames(data)[grepl('^sentid', colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
-    for (x in colnames(data)[grepl('^subject', colnames(data))]) {
-        data[[x]] <- as.factor(data[[x]])
-    }
     for (x in colnames(data)[grepl('^sentpos', colnames(data))]) {
         data[[x]] <- as.integer(as.character(data[[x]]))
     }
@@ -569,6 +566,7 @@ regressSimpleLinearModel <- function(dataset, form) {
 
 regressBayesianModel <- function(dataset, form, nchains=4, algorithm='sampling') {
     library(rstanarm)
+    options(mc.cores = parallel::detectCores())
     attach(dataset)
     depVar <- eval(parse(text=as.character(form)[[2]]))
     detach(dataset)    
@@ -578,14 +576,14 @@ regressBayesianModel <- function(dataset, form, nchains=4, algorithm='sampling')
     smartPrint('Fitting (MCMC) with stan_lmer')
     smartPrint(paste(' ', date()))
 
-    if (algorithm == 'sampling') {
+    if (FALSE) {
         m <- stan_lmer(formula = form,
-                       prior_intercept = normal(mean(depVar), 0.001),
-                       prior = normal(0, 0.001),
+                       prior_intercept = normal(mean(depVar), 1),
+                       prior = normal(0, 1),
                        prior_covariance = decov(),
                        data = dataset,
                        algorithm = 'meanfield',
-                       QR = TRUE
+                       QR = FALSE
                        )
         cat('PRE-TRAINING SUMMARY:\n')
         printBayesSummary(m)
@@ -594,7 +592,7 @@ regressBayesianModel <- function(dataset, form, nchains=4, algorithm='sampling')
                     cores = nchains,
                     algorithm = algorithm,
                     iter = 2000,
-                    QR = TRUE,
+                    QR = FALSE,
                     refresh = 1
                     )
     } else {
@@ -604,7 +602,7 @@ regressBayesianModel <- function(dataset, form, nchains=4, algorithm='sampling')
                        prior_covariance = decov(),
                        data = dataset,
                        algorithm = algorithm,
-                       QR = TRUE
+                       QR = FALSE
                        )
     }
 
@@ -736,12 +734,8 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         beta_ms = fixef(outputModel) 
         y_mu = NULL 
     } 
-    err = predict(outputModel, dataset)
-    mae = mean(abs(err))
-    mse = mean(err^2)
-    smartPrint(paste0('Mean absolute error: ', toString(mae)))
-    smartPrint(paste0('Mean squared error:  ', toString(mse)))
     fitOutput <- list(
+        fitmode = fitmode,
         abl = ablEffects,
         ablEffects = processEffects(ablEffects, data, logmain),
         corpus = corpusname,
@@ -755,7 +749,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         sd_vals = sd_vals
     )
     save(fitOutput, file=output)
-    return(list(m=outputModel, f=bform))
+    return(list(m=outputModel, f=bform, fitmode=fitmode))
 }
 
 getBoxCoxInvBetas <- function(dataset, bform, lambda, outputModel, mixed=True) {
@@ -830,6 +824,7 @@ permutation_test <- function(err1, err2, n_iter=10000, n_tails=2) {
     err_matrix = matrix(c(err1, err2), length(err1), 2)
     hits = 0
     cat('Permutation testing...\n', file=stderr())
+    cat(paste0('base_diff: ', base_diff, '\n'))
     for (i in 1:n_iter) {
         cat(paste0('\r',i, '/', n_iter), file=stderr())
         shuffle = runif(length(err1)) > 0.5
@@ -837,17 +832,22 @@ permutation_test <- function(err1, err2, n_iter=10000, n_tails=2) {
         m1 = err_matrix[cbind(seq_along(shuffle), shuffle+1)]
         m2 = err_matrix[cbind(seq_along(shuffle), 2-shuffle)]
         curr_diff = mean(m1) - mean(m2)
+        cat(paste0('curr_diff: ', curr_diff, '\n'))
         if (n_tails == 1) {
-            if (base_diff < 0 & curr_diff <= base_diff) {
+            if ((base_diff < 0) & (curr_diff <= base_diff)) {
                 hits = hits + 1
-            } else if (base_diff > 0 & curr_diff >= base_diff) {
+	        cat(paste0('Hit! Count: ', hits, '\n'))
+            } else if ((base_diff > 0) & (curr_diff >= base_diff)) {
                 hits = hits + 1
+	        cat(paste0('Hit! Count: ', hits, '\n'))
             } else if (base_diff == 0) {
                 hits = hits + 1
+	        cat(paste0('Hit! Count: ', hits, '\n'))
             }    
         } else if (n_tails == 2) {
             if (abs(curr_diff) >= abs(base_diff)) {
                 hits = hits + 1
+	        cat(paste0('Hit! Count: ', hits, '\n'))
             }
         } else {
             stop('Error: n_tails must be in {1,2}')

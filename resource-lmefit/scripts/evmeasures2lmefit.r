@@ -113,30 +113,55 @@ fit <- fitModel(data, output, params$bformfile, params$fitmode,
                      params$groupingfactor, params$indicatorlevel, params$crossfactor,
                      params$interact, params$corpus)
 
-m = fit$m
-f = fit$f
-
-if (params$trainmse) {
-    data <- create.dev(data, params$partitionmod, params$partitiondevindices)
-    mse = (predict(m, newdata=data) - model.frame(f, data=data)[toString(as.formula(f)[2])])^2
-    colnames(mse) = c('mse')
-    outfile = gsub('.rdata', '.train.mse.txt', output)
-    write.table(mse, file=outfile, quote=FALSE, row.names=FALSE)
-}
-
-if (params$devmse) {
-    data <- create.dev(data_full, params$partitionmod, params$partitionmod-2)
-    mse = (predict(m, newdata=data) - model.frame(f, data=data)[toString(as.formula(f)[2])])^2
-    colnames(mse) = c('mse')
-    outfile = gsub('.rdata', '.dev.mse.txt', output)
-    write.table(mse, file=outfile, quote=FALSE, row.names=FALSE)
-}
-
-if (params$testmse) {
-    data <- create.dev(data_full, params$partitionmod, params$partitionmod-1)
-    mse = (predict(m, newdata=data) - model.frame(f, data=data)[toString(as.formula(f)[2])])^2
-    mse = data.frame(mse=mse)
-    outfile = gsub('.rdata', '.test.mse.txt', output)
-    write.table(mse, file=outfile, quote=FALSE, row.names=FALSE)
-}
-
+if (fit$fitmode != 'bme') {
+    m = fit$m
+    f = fit$f
+    f = as.formula(paste0(toString(f[2]), ' ~ 1'))
+     
+    if (params$trainmse) {
+        data <- create.dev(data, params$partitionmod, params$partitiondevindices)
+        y <- model.frame(f, data=data)[toString(f[2])]
+        colnames(y) = c('y')
+        y_hat <- data.frame(list(y_hat=predict(m, newdata=data, type='response', allow.new.levels=TRUE)))
+        err = y-y_hat
+        colnames(err) = c('err')
+        ae = abs(err)
+        colnames(ae) = c('ae')
+        se = err^2
+        colnames(se) = c('se')
+        outfile = gsub('.rdata', '.train.mse.txt', output)
+        write.table(cbind(y,y_hat,err,ae,se), file=outfile, quote=FALSE, row.names=FALSE)
+    }
+    
+    if (params$devmse) {
+        data <- create.dev(data_full, params$partitionmod, params$partitionmod-2)
+        y <- model.frame(f, data=data)[toString(f[2])]
+        colnames(y) = c('y')
+        y_hat <- data.frame(list(y_hat=predict(m, newdata=data, type='response', allow.new.levels=TRUE)))
+        colnames(y_hat) = c('y_hat')
+        err = y-y_hat
+        colnames(err) = c('err')
+        ae = abs(err)
+        colnames(ae) = c('ae')
+        se = err^2
+        colnames(se) = c('se')
+        outfile = gsub('.rdata', '.dev.mse.txt', output)
+        write.table(cbind(y,y_hat,err,ae,se), file=outfile, quote=FALSE, row.names=FALSE)
+    }
+    
+    if (params$testmse) {
+        data <- create.dev(data_full, params$partitionmod, params$partitionmod-1)
+        y <- model.frame(f, data=data)[toString(f[2])]
+        colnames(y) = c('y')
+        y_hat <- data.frame(list(y_hat=predict(m, newdata=data, type='response', allow.new.levels=TRUE)))
+        colnames(y_hat) = c('y_hat')
+        err = y-y_hat
+        colnames(err) = c('err')
+        ae = abs(err)
+        colnames(ae) = c('ae')
+        se = err^2
+        colnames(se) = c('se')
+        outfile = gsub('.rdata', '.test.mse.txt', output)
+        write.table(cbind(y,y_hat,err,ae,se), file=outfile, quote=FALSE, row.names=FALSE)
+    }
+} 

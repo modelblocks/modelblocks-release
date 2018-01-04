@@ -1,4 +1,4 @@
 fdur
-sentpos + wlen + fwprob5surp + totsurp + unigram + sentposS1 + wlenS1 + fwprob5surpS1 + totsurpS1 + unigramS1 + sentposS2 + wlenS2 + fwprob5surpS2 + totsurpS2 + unigramS2 + sentposS3 + wlenS3 + fwprob5surpS3 + totsurpS3 + unigramS3
+sentpos + wlen + fwprob5surp + totsurp + unigram + sentposS1 + wlenS1 + fwprob5surpS1 + totsurpS1 + unigramS1 + sentposS2 + wlenS2 + fwprob5surpS2 + totsurpS2 + unigramS2 + sentposS3 + wlenS3 + fwprob5surpS3 + totsurpS3 + unigramS3 + noF + noFS1 + noFS2 + noFS3
 sentpos
 (1|word) + (1|subject:sentid)
