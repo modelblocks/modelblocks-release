@@ -8,6 +8,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gc
 import tree
 import gcgtree
 import semcuegraph
+import morph
 
 numpy.set_printoptions(linewidth=200)
 
@@ -153,7 +154,7 @@ def addToModel( p, t, M, N, C, D ):
     D[:,uniqInt(t.c)] += contrib.reshape(Y) * ( p / contrib.sum() )
   else:
     contrib = numpy.multiply( t.v.T, numpy.multiply( M[t.l], t.u.T ) )
-    contrib *= p / contrib.sum()
+    if contrib.sum() > 0.0: contrib *= p / contrib.sum()
     C[t.l]     += contrib
     C[2*L-t.l] += contrib.T
   for st in t.ch:
@@ -163,7 +164,8 @@ def addToModel( p, t, M, N, C, D ):
 ################################################################################
 
 def mergeTypeOutcomes( p, t, Ymap, N2N, src='00', srcy=-1 ):
-  if t.c[0]=='0' and t.c!='0|-' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x%' + t.c.split(':')[1] + '|%y' + str(srcy) ] += p
+#  if t.c[0]=='0' and t.c!='0|-' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x%' + t.c.split(':')[1] + '|%y' + str(srcy) ] += p
+  if t.c[0]=='0' and t.c!='0|-' and len(src)>2 and src[2] in 're': Ymap[ N2N[int(src[:2])] ][ '-x' + t.c.split('|')[1].split(':')[0] + '%' + t.c.split(':')[1] + '|' + ('N' if t.c[2]=='N' else 'B') + '%y' + str(srcy) ] += p
   for st in t.ch:
     mergeTypeOutcomes( p, st, Ymap, N2N, re.sub('.*[|]','',t.c), t.y )
 
@@ -175,6 +177,8 @@ def annotY( t, Ymap, ctr=0 ):
     if ctr in Ymap:
       p,xy = max( [ (Ymap[ctr][y],y) for y in Ymap[ctr] ] )
       t.c += xy
+    else:
+      t.c += '-x%' + morph.getLemma(t.c,t.ch[0].c) + '|%Bot' 
   for st in t.ch:
     ctr = annotY( st, Ymap, ctr )
   return ctr
@@ -202,7 +206,7 @@ for lpttrav in llpttrav:
   for p,t,trav in lpttrav:
     K,l = setKL( trav, KINTS )
     L = max(L,l)
-print( str(K) + ' predicate constants, ' + str(L) + ' dependency labels.' )
+sys.stderr.write( str(K) + ' predicate constants, ' + str(L) + ' dependency labels.\n' )
 
 ## init models...
 M, N = numpy.zeros((L*2,Y,Y)), numpy.zeros((Y,K))
@@ -268,10 +272,10 @@ for i in range( I ):
 for l in range( 2*L ):
   for y in range( Y ):
     for p,z in sorted( [ (M[l,y,z],z) for z in range(Y) ], reverse=True ):   #range( Y ):
-      print( 'M ' + str(l) + ' ' + str(y) + ' : ' + str(z) + ' = ' + str(p) )   #str(M[l,y,z]) )
+      sys.stderr.write( 'M ' + str(l) + ' ' + str(y) + ' : ' + str(z) + ' = ' + str(p) + '\n' )   #str(M[l,y,z]) )
 for y in range( Y ):
   for p,k in sorted( [ (N[y,KINTS[k]],k) for k in KINTS ], reverse=True ):     #KINTS:
-    print( 'K ' + str(y) + ' : ' + k + ' = ' + str(p) )    #str(N[y,KINTS[k]]) )
+    sys.stderr.write( 'K ' + str(y) + ' : ' + k + ' = ' + str(p) + '\n' )    #str(N[y,KINTS[k]]) )
 
 LOGM = numpy.log( M )
 LOGN = numpy.log( N )

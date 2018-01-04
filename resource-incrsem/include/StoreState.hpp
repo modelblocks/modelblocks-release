@@ -615,34 +615,34 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
   }
 
   PPredictor calcPretrmTypeCondition ( F f, E e, K k_p_t ) const {
-    if( FEATCONFIG & 1 ) return PPredictor( 0, f, (FEATCONFIG & 4) ? E('-') : e, at(size()-1).getType(), (FEATCONFIG & 2) ? tBot : k_p_t.getType() );
-    return             PPredictor( getDepth(), f, (FEATCONFIG & 4) ? E('-') : e, at(size()-1).getType(), (FEATCONFIG & 2) ? tBot : k_p_t.getType() );
+    if( FEATCONFIG & 1 ) return PPredictor( 0, f, (FEATCONFIG & 4) ? E('-') : e, at(size()-1).getType(), (FEATCONFIG & 16384) ? tBot : k_p_t.getType() );
+    return             PPredictor( getDepth(), f, (FEATCONFIG & 4) ? E('-') : e, at(size()-1).getType(), (FEATCONFIG & 16384) ? tBot : k_p_t.getType() );
   }
 
   list<JPredictor>& calcJoinPredictors ( list<JPredictor>& ljp, F f, E eF, const LeftChildSign& aLchild, bool bAdd=true ) const {
     int d = (FEATCONFIG & 1) ? 0 : getDepth()+f;
     int iCarrierB = getAncestorBCarrierIndex( f );
     const Sign& aAncstr  = at( getAncestorBIndex(f) );
-    const KSet& ksAncstr = aAncstr.getKSet();
-    const KSet& ksFiller = (iCarrierB<0) ? KSet() : at( iCarrierB ).getKSet();
-    const KSet& ksLchild = ( aLchild.getKSet().size()==0 ) ? KSet(K::kBot) : aLchild.getKSet() ;
+    const KSet& ksAncstr = ( aAncstr.getKSet().size()==0 ) ? ksBot : aAncstr.getKSet();
+    const KSet& ksFiller = ( iCarrierB<0                 ) ? ksBot : at( iCarrierB ).getKSet();
+    const KSet& ksLchild = ( aLchild.getKSet().size()==0 ) ? ksBot : aLchild.getKSet() ;
     if( STORESTATE_TYPE ) ljp.emplace_back( d, aAncstr.getType(), aLchild.getType() );
-    if( !(FEATCONFIG & 2) ) {
-      for( auto& kA : (ksAncstr.size()==0) ? ksBot : ksAncstr ) for( auto& kL :                                ksLchild ) if( bAdd || JPredictor::exists(d,kNil,kA,kL) ) ljp.emplace_back( d, kNil, kA, kL );
-      for( auto& kF :                                ksFiller ) for( auto& kA : (ksAncstr.size()==0) ? ksBot : ksAncstr ) if( bAdd || JPredictor::exists(d,kF,kA,kNil) ) ljp.emplace_back( d, kF, kA, kNil );
-      for( auto& kF :                                ksFiller ) for( auto& kL :                                ksLchild ) if( bAdd || JPredictor::exists(d,kF,kNil,kL) ) ljp.emplace_back( d, kF, kNil, kL );
+    if( !(FEATCONFIG & 32) ) {
+      for( auto& kA : ksAncstr ) for( auto& kL : ksLchild ) if( bAdd || JPredictor::exists(d,kNil,kA,kL) ) ljp.emplace_back( d, kNil, kA, kL );
+      for( auto& kF : ksFiller ) for( auto& kA : ksAncstr ) if( bAdd || JPredictor::exists(d,kF,kA,kNil) ) ljp.emplace_back( d, kF, kA, kNil );
+      for( auto& kF : ksFiller ) for( auto& kL : ksLchild ) if( bAdd || JPredictor::exists(d,kF,kNil,kL) ) ljp.emplace_back( d, kF, kNil, kL );
     }
     return ljp;
   }
 
   APredictor calcApexTypeCondition ( F f, J j, E eF, E eJ, O opL, const LeftChildSign& aLchild ) const {
-    if( FEATCONFIG & 1 ) return APredictor( 0, 0, j, (FEATCONFIG & 2) ? E('-') : eJ, (FEATCONFIG & 2) ? O('-') : opL, at(getAncestorBIndex(f)).getType(), (j==0) ? aLchild.getType() : tBot );
-    return         APredictor( getDepth()+f-j, f, j, (FEATCONFIG & 2) ? E('-') : eJ, (FEATCONFIG & 2) ? O('-') : opL, at(getAncestorBIndex(f)).getType(), (j==0) ? aLchild.getType() : tBot );
+    if( FEATCONFIG & 1 ) return APredictor( 0, 0, j, (FEATCONFIG & 64) ? E('-') : eJ, (FEATCONFIG & 128) ? O('-') : opL, at(getAncestorBIndex(f)).getType(), (j==0) ? aLchild.getType() : tBot );
+    return         APredictor( getDepth()+f-j, f, j, (FEATCONFIG & 64) ? E('-') : eJ, (FEATCONFIG & 128) ? O('-') : opL, at(getAncestorBIndex(f)).getType(), (j==0) ? aLchild.getType() : tBot );
   }
 
   BPredictor calcBrinkTypeCondition ( F f, J j, E eF, E eJ, O opL, O opR, T tParent, const LeftChildSign& aLchild ) const {
-    if( FEATCONFIG & 1 ) return  BPredictor( 0, 0, 0, (FEATCONFIG & 2) ? E('-') : eJ, (FEATCONFIG & 2) ? O('-') : opL, (FEATCONFIG & 2) ? O('-') : opR, tParent, aLchild.getType() );
-    return          BPredictor( getDepth()+f-j, f, j, (FEATCONFIG & 2) ? E('-') : eJ, (FEATCONFIG & 2) ? O('-') : opL, (FEATCONFIG & 2) ? O('-') : opR, tParent, aLchild.getType() );
+    if( FEATCONFIG & 1 ) return  BPredictor( 0, 0, 0, (FEATCONFIG & 64) ? E('-') : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, tParent, aLchild.getType() );
+    return          BPredictor( getDepth()+f-j, f, j, (FEATCONFIG & 64) ? E('-') : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, tParent, aLchild.getType() );
   }
 };
 const Sign StoreState::aTop( KSet(K::kTop), tTop, S_B );

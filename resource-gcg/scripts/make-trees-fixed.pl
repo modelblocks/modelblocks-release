@@ -61,7 +61,10 @@ while ( <> ) {
 
   ## conjoin erroneously split punctuation
   s/\(\. \?\) \(\. \?\)/\(\? \?\)/g;
-  
+
+  ## fix auto tagged complementizers
+  s/\(SBAR([^ ]*) *\((DT|RB) that/\(SBAR\1 \(IN that/g;
+
   #### post-coling12 fixes
   if (!$opts{c}) {
     # correct wrong type of empty category

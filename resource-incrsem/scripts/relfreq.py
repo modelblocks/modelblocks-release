@@ -12,7 +12,7 @@ args = argparser.parse_args()
 
 counts = model.CondModel() 
 for line in sys.stdin:
-  predictor,response = line.strip('\n').split(' : ')
+  predictor,_,response = line.strip('\n').rpartition(' : ')
   response,count = response.split(' = ') if ' = ' in response else (response,'1')
   counts[predictor][response] += float(count)
 
