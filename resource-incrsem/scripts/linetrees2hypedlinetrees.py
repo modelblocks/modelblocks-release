@@ -15,8 +15,8 @@ numpy.set_printoptions(linewidth=200)
 I = 100                ## number of iterations
 Y = int(sys.argv[1])   ## number of types
 L = 5                  ## number of dep labels (arg positions) -- gets overridden by data
-alpha = 0.1            ## pseudocount mass for word distribs
-beta  = 0.1            ## pseudocount mass for transition distribs
+alpha = 0.1            ## pseudocount mass for transition distribs
+beta  = 0.02           ## pseudocount mass for word distribs
 
 for a in sys.argv:
   if a=='-d':
@@ -272,10 +272,10 @@ for i in range( I ):
 for l in range( 2*L ):
   for y in range( Y ):
     for p,z in sorted( [ (M[l,y,z],z) for z in range(Y) ], reverse=True ):   #range( Y ):
-      sys.stderr.write( 'M ' + str(l) + ' ' + str(y) + ' : ' + str(z) + ' = ' + str(p) + '\n' )   #str(M[l,y,z]) )
+      if p!=0.0: sys.stderr.write( 'M ' + str(l) + ' ' + str(y) + ' : ' + str(z) + ' = ' + str(p) + '\n' )   #str(M[l,y,z]) )
 for y in range( Y ):
   for p,k in sorted( [ (N[y,KINTS[k]],k) for k in KINTS ], reverse=True ):     #KINTS:
-    sys.stderr.write( 'K ' + str(y) + ' : ' + k + ' = ' + str(p) + '\n' )    #str(N[y,KINTS[k]]) )
+    if p!=0.0: sys.stderr.write( 'K ' + str(y) + ' : ' + k + ' = ' + str(p) + '\n' )    #str(N[y,KINTS[k]]) )
 
 LOGM = numpy.log( M )
 LOGN = numpy.log( N )
