@@ -131,6 +131,11 @@ endef
 %.nofail.linetrees:  %.linetrees
 	cat $<  |  grep -v '^$$'  >  $@
 
+%.noqp.linetrees:  %.linetrees  $(GCG-SCRIPTS)/remove-qps.pl
+	cat $<  |  perl $(word 2,$^)  >  $@
+%.fixdollar.linetrees:  %.linetrees
+	cat $<  |  perl -pe 's/\(N \$$\)/\(N-aD \$$\)/g'  >  $@
+
 #### annotate branch and depth
 %.bd.linetrees:  %.linetrees  $(GCG-SCRIPTS)/annotateDepth.py
 	cat $<  |  python3 $(word 2,$^)  >  $@
