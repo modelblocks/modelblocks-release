@@ -63,13 +63,13 @@ endef
 .SECONDEXPANSION:
 
 PASSAGES-ROI := LPostTemp LAntTemp LAngG LIFG LMFG LIFGorb AllROI
-PASSAGES72-BASENAME := genmodel/passages72.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.bysent
+PASSAGES72-BASENAME := genmodel/passages72.wsj02to21-gcg15-nol-prtrm-3sm-synproc-+c_+u_+b5000.syn.5-kenlm.bysent
 PASSAGES72-LMEDEFAULT := 
 $(eval $(call FMRI-BYSENT-EXPERIMENTS,passages72,$(PASSAGES72-BASENAME),$(PASSAGES-ROI),passagesBasic,$(PASSAGES72-LMEDEFAULT)))
-PASSAGES96-BASENAME := genmodel/passages96.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.bysent
+PASSAGES96-BASENAME := genmodel/passages96.wsj02to21-gcg15-nol-prtrm-3sm-synproc-+c_+u_+b5000.syn.5-kenlm.bysent
 PASSAGES96-LMEDEFAULT := 
 $(eval $(call FMRI-BYSENT-EXPERIMENTS,passages96,$(PASSAGES96-BASENAME),$(PASSAGES-ROI),passagesBasic,$(PASSAGES96-LMEDEFAULT)))
-PASSAGES-BASENAME := genmodel/passages.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.bysent
+PASSAGES-BASENAME := genmodel/passages.wsj02to21-gcg15-nol-prtrm-3sm-synproc-+c_+u_+b5000.syn.5-kenlm.bysent
 PASSAGES-LMEDEFAULT := 
 $(eval $(call FMRI-BYSENT-EXPERIMENTS,passages,$(PASSAGES-BASENAME),$(PASSAGES-ROI),fmriEmpty,$(PASSAGES-LMEDEFAULT)))
 $(eval $(call FMRI-BYSENT-EXPERIMENTS,passages,$(PASSAGES-BASENAME),$(PASSAGES-ROI),passagesNwrds,$(PASSAGES-LMEDEFAULT)))
