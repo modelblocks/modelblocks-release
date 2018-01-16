@@ -350,16 +350,30 @@ endef
 	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
 .PRECIOUS: %.nounary_syneval
 %.nounary_syneval:  bin/evalb \
-            $(RESOURCE-GENERAL)/srcmodel/new.prm \
-            genmodel/$$(subst -,.,$$(basename $$*)).nounary.linetrees \
-            $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).nounary.linetrees
+                    $(RESOURCE-GENERAL)/srcmodel/new.prm \
+                    genmodel/$$(subst -,.,$$(basename $$*)).nounary.linetrees \
+                    $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).nounary.linetrees
 	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
 .PRECIOUS: %.noberkstuff_nounary_syneval
 %.noberkstuff_nounary_syneval:  bin/evalb \
-            $(RESOURCE-GENERAL)/srcmodel/new.prm \
-            genmodel/$$(subst -,.,$$(basename $$*)).nounary.linetrees \
-            $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).noberkstuff.nounary.linetrees
+                                $(RESOURCE-GENERAL)/srcmodel/new.prm \
+                                genmodel/$$(subst -,.,$$(basename $$*)).nounary.linetrees \
+                                $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).noberkstuff.nounary.linetrees
 	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
+
+%.syneval.errs:  $(LTREES-SCRIPTS)/tree-compare.py \
+                 genmodel/$$(subst -,.,$$(basename $$*)).linetrees \
+                 $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).linetrees
+	python $^  >  $@
+%.nounary_syneval.errs:  $(LTREES-SCRIPTS)/tree-compare.py \
+                         genmodel/$$(subst -,.,$$(basename $$*)).nounary.linetrees \
+                         $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).nounary.linetrees
+	python $^  >  $@
+%.noberkstuff_nounary_syneval.errs:  $(LTREES-SCRIPTS)/tree-compare.py \
+                                     genmodel/$$(subst -,.,$$(basename $$*)).nounary.linetrees \
+                                     $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).noberkstuff.nounary.linetrees
+	python $^  >  $@
+
 #%.syneval:  bin/evalb \
 #            $(RESOURCE-GENERAL)/srcmodel/new.prm \
 #            genmodel/$$(subst -,.,$$(basename $$(basename $$(basename $$(notdir $$*))))).linetrees \

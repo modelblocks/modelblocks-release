@@ -71,7 +71,7 @@ python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).tokmeasu
 sed '1s/.*/$(subst -,,$(grammar))cumtotsurp/' | paste -d' ' $@ - > $@.tmp; \
 mv $@{.tmp,};
 
-DUNDEE-BASENAME := genmodel/dundee.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.eyeGP
+DUNDEE-BASENAME := genmodel/dundee.wsj02to21-gcg15-nol-prtrm-3sm-synproc-+c_+u_+b5000.syn.5-kenlm.eyeGP
 DUNDEE-LMEDEFAULT := -NSCFX
 $(eval $(call RT-EXPERIMENTS,dundee,$(DUNDEE-BASENAME),$(DUNDEE-LMEDEFAULT)))
 

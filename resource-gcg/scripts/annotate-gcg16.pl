@@ -566,8 +566,10 @@ debug("p-rule ", "$_");
         (s/\^(R-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(DT|WHNP|S[^ ]*-NOM)(?![^ ]*-ADV|[^ ]*-TMP|[^ ]*-EXT)([^>]*)>\^/\^\1\2\3\4 <\1\2-bN-lI-fNIL \5> <N\3-lA-f\6\7>\^/ && ($j=97.5)) ||
         (s/\^([VIBLAGR]-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(NP|DT|NN|WHNP|S[^ ]*-NOM)(?![^ ]*-ADV|[^ ]*-TMP|[^ ]*-EXT)([^>]*)>\^/\^\1\2\3\4 <\1\2-bN-lI-fNIL \5> <N\3-lA-f\6\7>\^/ && ($j=98)) ||
         # gerund: branch off final argument NS
-        (s/\^(N)([^ ]*?)($CODA) (<(?:(?!VB|JJ|MD|TO|NN)[^>])*VBG[^>]*>) <(NP)([^>]*)>\^/\^\1\2\3 <\1\2-bN-lI-fNIL \4> <N-lA-fNS\6>\^/ && ($j=98.5)) ||
-        (s/\^(N)([^ ]*?)($CODA) (<(?:(?!VB|JJ|MD|TO|NN)[^>])*VBG[^>]*>) <(S[^ ]*-NOM)([^>]*)>\^/\^\1\2\3 <\1\2-bN-lI-fNIL \4> <N-lA-f\5\6>\^/ && ($j=99)) ||
+        (s/\^(N)([^ ]*?)($CODA) (.*<VBG.* <NP[^>]*>)\^/\^\1\2\3 <G-aN\2-lI-fNIL \4>\^/ && ($j=98.5)) ||
+        (s/\^(N)([^ ]*?)($CODA) (.*<VBG.* <S[^ ]*-NOM[^>]*>)\^/\^\1\2\3 <G-aN\2-lI-fNIL \4>\^/ && ($j=99)) ||
+#        (s/\^(N)([^ ]*?)($CODA) (<(?:(?!VB|JJ|MD|TO|NN)[^>])*VBG[^>]*>) <(NP)([^>]*)>\^/\^\1\2\3 <\1\2-bN-lI-fNIL \4> <N-lA-fNS\6>\^/ && ($j=98.5)) ||
+#        (s/\^(N)([^ ]*?)($CODA) (<(?:(?!VB|JJ|MD|TO|NN)[^>])*VBG[^>]*>) <(S[^ ]*-NOM)([^>]*)>\^/\^\1\2\3 <\1\2-bN-lI-fNIL \4> <N-lA-f\5\6>\^/ && ($j=99)) ||
 
         # branch off final modifier empty S|SBAR it-expletive trace Ne (keep around for use in cleft)
         (s/\^([VIBLAGR]-aN(?!-x)|N(?!c|-a))([^ ]*?)($CODA) (<.*) <([^>\]]*-NONE- \*EXP\*[^>\[]*)>\^/\^\1e\2\3 <\1e\2-lI-fNIL \4> <\5>\^/ && ($j=100)) ||
@@ -616,7 +618,8 @@ debug("p-rule ", "$_");
         # branch off final SBAR as argument NS (nom clause):                           {VP ... <SBAR [WH# what/who] ... t# ...>} => {NS <VP-bNS ...> <NS ... t# ...>}
         (s/\^([VIBLAGR]-aN(?!-x))([^ ]*?)(-[ir][^- \}]*)?($CODA) (<.*) <(SBAR[^ ]*-NOM|SBAR [^\]]*(?:when|whether))([^>]*)>\^/\^\1\2\3\4 <\1\2-bN-lI-fNIL \5> <N\3-lA-f\6\7>\^/ && ($j=117)) ||
         # branch off final SBAR as argument NS (gerund's nom clause):                  {NS ... <SBAR [WH# what/who] ... t# ...>} => {NS <NS-bNS ...> <NS ... t# ...>}
-        (s/\^(N)([^ ]*?)($CODA) (<(?:(?!VB|JJ|MD|TO|NP)[^>])*VBG[^>]*>) <(SBAR[^ ]*-NOM)([^>]*)>\^/\^\1\2\3 <\1\2-bN-lI-fNIL \4> <N-lA-f\5\6>\^/ && ($j=118)) ||
+        (s/\^(N)([^ ]*?)($CODA) (.*<VBG.* <SBAR[^ ]*-NOM[^>]*>)\^/\^\1\2\3 <G-aN\2-lI-fNIL \4>\^/ && ($j=118)) ||
+#       (s/\^(N)([^ ]*?)($CODA) (<(?:(?!VB|JJ|MD|TO|NP)[^>])*VBG[^>]*>) <(SBAR[^ ]*-NOM)([^>]*)>\^/\^\1\2\3 <\1\2-bN-lI-fNIL \4> <N-lA-f\5\6>\^/ && ($j=118)) ||
 #        # branch off final SBAR as argument IP:                                        {VP ... <SBAR [WH# nil] [S [NS nil t#] [ ... to ...]>} => {VP-bIP ... <IP ... to ...>}
 #        (s/\^([VIBLAGR]-aN(?!-x)|N)([^ ]*?)($CODA) (<.*) <SBAR[^ ]* \[WH[^ ]*(-[0-9]+)[^ ]* \[-NONE- [^ ]*\]\] \[S[^ ]* \[NP[^ ]* \[-NONE- \*T\*\5\]\] (\[VP[^ ]* \[TO to\][^>]*)\]>\^/\^\1\2\3 <\1\2-b{I-aN}-lI-fNIL \4> <I-aN-lA-fNIL \6>\^/ && ($j=119)) ||
        # branch off final SBAR as modifier IP:                                        {VP ... <SBAR [WH# nil] [S [NS nil t#] [ ... to ...]>} => {VP-bIP ... <IP ... to ...>}

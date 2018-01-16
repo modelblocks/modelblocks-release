@@ -319,8 +319,8 @@ $(RT-SCRIPTS)/filter_cols.py
 	cat $< | paste -d' ' - <(cat $(word 2, $^) | python $(word 3, $^) -x word sentid) > $@
 
 # Computes parser complexity predictors 
-%_parsed.tokmeasures: %_parsed.output 
-	cat $(word 1, $^) > $@
+%_parsed.tokmeasures: %_parsed.tokdecs $(RT-SCRIPTS)/filter_cols.awk
+	cat $< | awk '!/^ /' | awk -f $(word 2, $^) -v cols=word:totsurp > $@
 
 # TODO: merges surprisal columns from multiple parses together
 %.merged.pcfg.tokmeasures: scripts/$$(subst .,,$$(suffix $$*)).PCFGmerge.txt 
