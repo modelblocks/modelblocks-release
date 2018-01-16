@@ -1,4 +1,4 @@
 fdurGP
-z.(wlen) + z.(wdelta) + z.(prevwasfix) + z.(unigram) + z.(unigramS1) + z.(cumfwprob5surp) + z.(cumfwprob5surpS1)
-z.(wlen) + z.(wdelta) + z.(prevwasfix) + z.(unigram) + z.(unigramS1) + z.(cumfwprob5surp) + z.(cumfwprob5surpS1)
+z.(wlen) + z.(wdelta) + z.(prevwasfix) + z.(unigramSurp) + z.(unigramSurpS1) + z.(cumfwprob5surp) + z.(cumfwprob5surpS1)
+z.(wlen) + z.(wdelta) + z.(prevwasfix) + z.(unigramSurp) + z.(unigramSurpS1) + z.(cumfwprob5surp) + z.(cumfwprob5surpS1)
 (1 | word) + (1 | sentid:subject)
