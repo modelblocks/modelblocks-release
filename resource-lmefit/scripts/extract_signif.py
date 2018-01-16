@@ -10,6 +10,7 @@ args, unknown = argparser.parse_known_args()
 
 val = re.compile('^.+: *([^ "]+) *"?\n')
 effectpair = re.compile('([^ ]+)-vs-([^ ]+)')
+loss_improvement = False
 
 R = re.compile('(\[[0-9]+\] "?)?([^"$]*)"?')
 true = ['TRUE', 'true']
@@ -34,7 +35,11 @@ def compute_row(f, diamName=None, vs=None):
     assert line.startswith('t value'), 'Input not properly formatted'
     row['t value'] = '%.5g'%(float(val.match(line).group(1)))
     line = deRify(f.readline())
-    assert line.startswith('Significance (Pr(>Chisq))'), 'Input not properly formatted'
+    assert line.startswith('p value:') or line.startswith('MSE loss improvement'), 'Input not properly formatted'
+    if line.startswith('MSE loss improvement'):
+        row['loss_improvement'] = '%.5g'%(float(val.match(line).group(1)))
+        line = deRify(f.readline())
+    assert line.startswith('p value:'), 'Input not properly formatted'
     row['signif'] = '%.5g'%(float(val.match(line).group(1)))
     line = deRify(f.readline())
     assert line.startswith('Relative gradient (baseline)'), 'Input not properly formatted'
@@ -69,8 +74,11 @@ def compute_row(f, diamName=None, vs=None):
         row['pair'] = str(row['effect']) + '-vs-' + str(vs)
     return(row)
 
-def print_row(row):
-    out = [row['effect'], row['corpus'], row['estimate'], row['t value'], row['signif'], row['rel_grad_base'], row['rel_grad_main']]
+def print_row(row, loss_improvement=False):
+    if loss_improvement:
+        out = [row['effect'], row['corpus'], row['estimate'], row['t value'], row['loss_improvement'], row['signif'], row['rel_grad_base'], row['rel_grad_main']]
+    else:
+        out = [row['effect'], row['corpus'], row['estimate'], row['t value'], row['signif'], row['rel_grad_base'], row['rel_grad_main']]
     print(' '.join(out))
 
 # Thanks to Daniel Sparks on StackOverflow for this one (post available at 
@@ -93,12 +101,6 @@ if args.D:
             print('==================================')
             print('')
 
-        headers = ['effect', 'corpus', 'diamondname', 'pair', 'estimate', 't value', 'signif', 'converged_base', 'rel_grad_base', 'converged_main', 'rel_grad_main', 'formname', 'lmeargs', 'filename']
-
-        header_row = {}
-        for h in headers:
-            header_row[h] = h
-
         rows = []
 
         for path in diam_evals:
@@ -116,6 +118,8 @@ if args.D:
                     line = f.readline()
                 assert line, 'Input not properly formatted'
                 row = compute_row(f, diamName, 'baseline')
+                if 'loss_improvement' in row:
+                    loss_improvement = True
                 row['filename'] = filename
                 row['formname'] = formname
                 row['lmeargs'] = lmeargs
@@ -124,6 +128,8 @@ if args.D:
                     line = f.readline()
                 assert line, 'Input not properly formatted'
                 row = compute_row(f, diamName, 'baseline')
+                if 'loss_improvement' in row:
+                    loss_improvement = True
                 row['filename'] = filename
                 row['formname'] = formname
                 row['lmeargs'] = lmeargs
@@ -132,6 +138,8 @@ if args.D:
                     line = f.readline()
                 assert line, 'Input not properly formatted'
                 row = compute_row(f, diamName, 'both')
+                if 'loss_improvement' in row:
+                    loss_improvement = True
                 row['filename'] = filename
                 row['formname'] = formname
                 row['lmeargs'] = lmeargs
@@ -140,10 +148,21 @@ if args.D:
                     line = f.readline()
                 assert line, 'Input not properly formatted'
                 row = compute_row(f, diamName, 'both')
+                if 'loss_improvement' in row:
+                    loss_improvement = True
                 row['filename'] = filename
                 row['formname'] = formname
                 row['lmeargs'] = lmeargs
                 rows.append(row)
+
+        if loss_improvement:
+            headers = ['effect', 'corpus', 'diamondname', 'pair', 'estimate', 't value', 'loss_improvement', 'signif', 'converged_base', 'rel_grad_base', 'converged_main', 'rel_grad_main', 'formname', 'lmeargs', 'filename']
+        else:
+            headers = ['effect', 'corpus', 'diamondname', 'pair', 'estimate', 't value', 'signif', 'converged_base', 'rel_grad_base', 'converged_main', 'rel_grad_main', 'formname', 'lmeargs', 'filename']
+
+        header_row = {}
+        for h in headers:
+            header_row[h] = h
 
         converged = [header_row] + [x for x in rows if (x['converged_base'] in true and x['converged_main'] in true)]
         nonconverged = [header_row] + [x for x in rows if not(x['converged_base'] in true and x['converged_main'] in true)]
@@ -177,12 +196,6 @@ else:
             print('===================================')
             print('')
 
-        headers = ['effect', 'corpus', 'estimate', 't value', 'signif', 'converged_base', 'rel_grad_base', 'converged_main', 'rel_grad_main', 'formname', 'lmeargs', 'filename']
-        
-        header_row = {}
-        for h in headers:
-            header_row[h] = h
-
         rows = []
 
         for path in pair_evals:
@@ -192,10 +205,21 @@ else:
                 formname = filechunks[-5]
                 lmeargs = filechunks[-3]
                 row = compute_row(f)
+                if 'loss_improvement' in row:
+                    loss_improvement = True
                 row['filename'] = filename
                 row['formname'] = formname
                 row['lmeargs'] = lmeargs
                 rows.append(row)
+
+        if loss_improvement:
+            headers = ['effect', 'corpus', 'estimate', 't value', 'loss_improvement', 'signif', 'converged_base', 'rel_grad_base', 'converged_main', 'rel_grad_main', 'formname', 'lmeargs', 'filename']
+        else:
+            headers = ['effect', 'corpus', 'estimate', 't value', 'signif', 'converged_base', 'rel_grad_base', 'converged_main', 'rel_grad_main', 'formname', 'lmeargs', 'filename']
+        
+        header_row = {}
+        for h in headers:
+            header_row[h] = h
 
         converged = [header_row] + sorted([x for x in rows if (x['converged_base'] in true and x['converged_main'] in true)], \
                     key = lambda y: float(y['signif']))

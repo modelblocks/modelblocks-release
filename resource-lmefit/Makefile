@@ -272,7 +272,7 @@ endef
 # $(RHACKS-SCRIPTS)/regression-utils.R
 # 	$< $(word 2, $^) $@ $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) -T > $*.lme
 
-.PRECIOUS: %.lmefit %.lme %lme.rdata
+.PRECIOUS: %.lmefit %.lme %.lme.rdata
 %.lme.rdata %.lmefit %.lme: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
 genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
 $$(subst .,,$$(suffix $$*))).filt.evmeasures \
@@ -392,6 +392,18 @@ $(LMEFIT-SCRIPTS)/lmetools.r \
 $(RHACKS-SCRIPTS)/mer-utils.R \
 $(RHACKS-SCRIPTS)/regression-utils.R
 	$(wordlist 1,3,$^) $(subst _, ,$(subst .,,$(suffix $*))) > $@
+
+.PRECIOUS: %.permsignif %.perm
+%.permsignif %.perm: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
+$$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
+$$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
+$(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$(LMEFIT-SCRIPTS)/lmetools.r \
+$(RHACKS-SCRIPTS)/mer-utils.R \
+$(RHACKS-SCRIPTS)/regression-utils.R
+	$(wordlist 1,3,$^) $(subst _, ,$(subst .,,$(suffix $*))) -perm > $@
+
+
 
 # Runs a diamond LRT evaluation based on the following template:
 #     

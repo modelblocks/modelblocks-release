@@ -49,9 +49,9 @@ ifndef SAMPLE-START
 SAMPLE-START := 0
 endif
 
-ROI := LPostTemp RPostTemp LPostTempZ RPostTempZ LAntTemp RAntTemp LAntTempZ RAntTempZ LIFG RIFG LIFGZ RIFGZ LIFGorb RIFGorb LIFGorbZ RIFGorbZ LMFG RMFG LMFGZ RMFGZ LAngG RAngG LAngGZ RAngGZ LHip RHip Hip LHipZ RHipZ HipZ LATL LIPL LPreM LPTL RATL 
+ROI := LPostTemp RPostTemp LPostTempZ RPostTempZ LAntTemp RAntTemp LAntTempZ RAntTempZ LIFG RIFG LIFGZ RIFGZ LIFGorb RIFGorb LIFGorbZ RIFGorbZ LMFG RMFG LMFGZ RMFGZ LAngG RAngG LAngGZ RAngGZ LHip RHip Hip LHipZ RHipZ HipZ LATL LIPL LPreM LPTL RATL AllROI 
 
-FMRI-PRED-CONTROLS := sentpos wlen rate soundPower unigramSurp
+FMRI-PRED-CONTROLS := sentpos wlen rate soundPower unigram
 FMRI-PRED-BASES := wlen $(SURP) $(DLT) $(FJ) $(SEMDIST)
 BYSENT-PREDS := nwrds $(foreach pred,$(FMRI-PRED-BASES),$(foreach agg,Mean Sum Max,$(pred)$(agg)))
 BYSENT-PREDS += semCosDistMin semCosDistMax semCosDistMean semCosDistSum semDistMin semDistMax semDistMean semDistSum
