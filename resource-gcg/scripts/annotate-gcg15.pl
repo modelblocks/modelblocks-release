@@ -54,6 +54,9 @@ while ( <> ) {
   s/^\(NP(?!-f)/\(N-lS-fNP/;
   # use CONJP for "as well as"
   s/(\([^ ]* as\) \([^ ]* well\) \([^ ]* as\))/\(CONJP \1\)/g;
+  # use VB for "VB CC VB"
+  s/(\((VB(?! wait)[^ ]*)[^()]*\)(?: +\(, ,\) +\(VB[^()]*\))* +\(CC[^()]*\) +\(VB[^()]*\))/\(\2 \1\)/g;
+#  s/(\(VB[^()]*\)) +(\(CC[^()]*\)) +(\(VB[^()]*\))( +\(NP +\(-NONE- \*-[^()]*\)\))?/\(VP \1\4 \2 \3\4\)/g;
 #  # use CONJP for "yet"
 #  s/\([^ ]* (\([^ ]* yet\))\)/\(CONJP \1\)/g;
   # use CC for CONJP
@@ -490,7 +493,7 @@ debug("p-rule ", "$_");
         (s/\^([SQCFVIBLAGRN])([^ ]*?)($CODA) (<.*) <(PRN|S(?![A-Z]))([^>]* \[S[^>]*\[-NONE- \*INTERNAL\*(-[0-9]+)[^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <V-gS\7-lN-f\5\6>\^/ && ($j=78)) ||
 
         # branch NS -> DS A-aN-x: 'the best' construction
-        (s/\^(N(?!-a))([^ ]*?)($CODA) <(?:DT)([^>]*)> <(?:RB|ADJP)([^>]*)>\^/\^\1\2\3 <D-lA-f\4> <N-aD-lI-f\5>\^/ && ($j=79)) ||
+        (s/\^(N(?!-a))([^ ]*?)($CODA) <(?:DT)([^>]*)> <(?:RB|ADJP)([^>]*)>\^/\^\1\2\3 <N-b\{N-aD\}-lI-f\4> <N-aD\2-lA-f\5>\^/ && ($j=79)) ||
 
         #### final VP|IP|BP|LP|AP (following auxiliary) -- raising verbs, pass subject to complement
         # branch off final VP as argument BP
@@ -884,12 +887,9 @@ debug("p-rule ", "$_");
 
   # correct VBNs
   s/\(L-aN([^ ]*)-fVB[A-Z]*/\(L-aN\1-fVBN/g;
-  s/\(([AR]-aN$CODA-fVBN) ([^ \(\)]*)\)/\(\1 \(L-aN-bN-fVBN \2\)\)/g;   ## mark passive
-#  s/\((A-aN|A-aN-x|R-aN|R-aN-x)([^ ]*)-fVB[ND]/\(\1\2-v-fVBN-v/g;     ## mark passive
-  s/\((A-aN|A-aN-x|R-aN|R-aN-x|N-aD|N)([^ ]*)-fVB[G]/\(G-aN\2-fVBG-o/g;   ## mark progressive/gerund
 
-  # change $ POS to N
-  s/\(\$/\(N/g;
+  # change $ POS to N-aD
+  s/\(\$/\(N-aD/g;
 
 #  s/\(([^ ]*)(-fVB)/\(\1-wasvb\2/g;  ## helps mecommon?
 
@@ -916,6 +916,10 @@ debug("p-rule ", "$_");
   s/\(([^ ]*)(-l[^I])([^ ]*) ([^\(\)]*)\)/\(\1\2\3 \(\1-lI\3 \4\)\)/g;
 #  s/\(([^ ]*)-g(N|S)([^ ]*) ([^\(\)]*)\)/\(\1-g\2\3 \(\1-u\2\3 \4\)\)/g;
   s/\(([^ ]*)-g(\{R-aN}|\{C-rN})(?!})([^ ]*) ([^\(\)]*)\)/\(\1-g\2\3 \(\1\3 \4\)\)/g;
+
+  s/\(([AR]-aN$CODA-fVBN) ([^ \(\)]*)\)/\(\1 \(L-aN-bN-fVBN \2\)\)/g;   ## mark passive
+#  s/\((A-aN|A-aN-x|R-aN|R-aN-x)([^ ]*)-fVB[ND]/\(\1\2-v-fVBN-v/g;     ## mark passive
+  s/\((A-aN|A-aN-x|R-aN|R-aN-x|N-aD|N)([^ ]*)-fVBG (?!\()/\(G-aN\2-fVBG-o /g;   ## mark progressive/gerund
 
   # elim -lI (default)...
   s/-lI//g;

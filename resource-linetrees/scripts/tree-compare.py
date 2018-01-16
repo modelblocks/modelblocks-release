@@ -11,7 +11,7 @@ for a in sys.argv:
 
 def compare( tG, tH ):
   if tG.c == tH.c and len( tG.words() ) == len( tH.words() ) and len( tG.ch ) == len( tH.ch ) and ( len(tH.ch) < 2 or len( tG.ch[0].words() ) == len( tH.ch[0].words() ) ):
-    sys.stdout.write( ' (' if len(tG.ch)>0 else ' ' + tG.c )
+    sys.stdout.write( ( ' (' if len(tG.ch)>0 else ' ' ) + tG.c )
     for i in range( len(tH.ch) ):
       compare( tG.ch[i] if i<len(tG.ch) else tree.Tree(), tH.ch[i] )
     if len(tG.ch)>0: sys.stdout.write( ')' )
@@ -33,6 +33,6 @@ for i,lineH in enumerate(fH):
   tG.read( lineG )
 
   sys.stdout.write( 'TREE ' + str(i+1) + ':\n' )
-  compare( tH, tG )
+  compare( tG, tH )
   sys.stdout.write( '\n' )
 
