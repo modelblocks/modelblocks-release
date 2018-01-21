@@ -273,6 +273,7 @@ debug("p-rule ", "$_");
         # branch off final SBAR as extraposed modifier IP:                           {VP ... t#' ... <SBAR#' [WH# which/who/that/nil] ... t# ...>} => {<VP-gRP ...> <IP WH# ... t# ...>}
         # try not to take [AR]-aN-x by having [^ x]* instead of normal [^ ]*
         (s/\^([SQCFVIBLAGR])([^ x]*?)($CODA) (<.*\[-NONE- \*ICH\*(-[0-9]+)\].*) <(SBAR[^ ]*\5) \[WH[^ ]*(-[0-9]+) \[-NONE- 0\]\] \[S[^ ]* \[NP[^ ]* \[-NONE- \*\]\] ([^>]*) \[ADVP \[-NONE- \*T\*\7\]\]([^>]*)\]>\^/\^\1\2\3 <\1\2-h\{I-aN}\5-lI-fNIL \4> <I-aN-lN-f\6 \8\9>\^/ && ($j=6)) ||
+        (s/\^([SQCFVIBLAGRN])([^ x]*?)($CODA) (<.*\[-NONE- \*ICH\*(-[0-9]+)\].*) <(S[^ ]*\5) \[NP[^ ]* \[-NONE- \*\]\] ([^>]*)>\^/\^\1\2\3 <\1\2-h\{I-aN}\5-lI-fNIL \4> <I-aN-lN-f\6 \7>\^/ && ($j=6.5)) ||
         # branch off final SBAR as extraposed modifier CS complement:                {VP ... t#' ... <SBAR#' [WH# which/who/that/nil] ... t# ...>} => {<VP-g{C-rN} ...> <CS ...>}
         (s/\^([SQCFVIBLAGRN])([^ ]*?)($CODA) (<.*\[-NONE- \*ICH\*(-[0-9]+)\].*) <(SBAR[^ ]*\5 \[(?:IN|DT) that\][^>]*)>\^/\^\1\2\3 <\1\2-hC\5-lI-fNIL \4> <C-lN-f\6>\^/ && ($j=7)) ||
         # branch off final PP as extraposed modifier:
@@ -582,8 +583,10 @@ debug("p-rule ", "$_");
         (s/\^([SQCFVIBLAGRN])([^ x]*?)($CODA) (<.*) <(S-TOBE[A]S[^ ]*(?:-ADV|-PRP)[^ ]*) $EMPTY_SUBJ ([^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <R-aN-lM-f\5 \6>\^/ && ($j=102)) ||
         (s/\^([SQCFVIBLAGRN])([^ x]*?)($CODA) (<.*) <(S-TOBE[I]P[^ ]*(?:-ADV|-PRP)[^ ]*) ([^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <R-aN-lM-fNIL <I-aN-lI-f\5 \6>>\^/ && ($j=103)) ||
         (s/\^([SQCFVIBLAGRN])([^ x]*?)($CODA) (<.*) <(S-TOBE[A]P[^ ]*(?:-ADV|-PRP)[^ ]*) ([^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <R-aN-lM-f\5 \6>\^/ && ($j=104)) ||
+        # branch off final S with empty subject as modifier AP
+        (s/\^(N)([^ x]*?)($CODA) (<.* <. -->) <(S-TOBE[A]P[^ ]*) ([^>]*)>\^/\^\1\2\3 <\1\2-lI-fNIL \4> <A-aN-lM-f\5 \6>\^/ && ($j=104.5)) ||
         # branch off final S with empty subject as argument BP|IP|AP|VP
-        (s/\^(N(?!-a))([^ x]*?)($CODA) (<.*-NONE-.*) <(S-TOBE([VIBA])S[^ ]*) $EMPTY_SUBJ ([^>]*)>\^/\^\1\2\3 <\1\2-k\{\6-aN}-lI-fNIL \4> <\6-aN-lN-f\5 \7>\^/ && ($j=104.9)) ||
+#        (s/\^(N(?!-a))([^ x]*?)($CODA) (<.*-NONE-.*) <(S-TOBE([VIBA])S[^ ]*) $EMPTY_SUBJ ([^>]*)>\^/\^\1\2\3 <\1\2-k\{\6-aN}-lI-fNIL \4> <\6-aN-lN-f\5 \7>\^/ && ($j=104.9)) ||
         (s/\^(?![^ ]*-v)([SQCFVIBLAGRN])([^ x]*?)($CODA) (<.*) <(S-TOBE([VIBA])S[^ ]*) $EMPTY_SUBJ ([^>]*)>\^/\^\1\2\3 <\1\2-b\{\6-aN}-lI-fNIL \4> <\6-aN-lA-f\5 \7>\^/ && ($j=105)) ||
         (s/\^([SQCFVIBLAGRN])([^ x]*?)($CODA) (<.*-NONE-.*) <(S-TOBE([VIBA])S[^ ]*) $EMPTY_SUBJ ([^>]*)>\^/\^\1\2\3 <\1\2-b\{\6-aN}-lI-fNIL \4> <\6-aN-lA-f\5 \7>\^/ && ($j=105.1)) ||
         #(s/\^([SQCFVIBLAGRN])([^ x]*?)($CODA) (<.*-NONE-.*) <(S-TOBE([VIBA])S[^ ]*) $EMPTY_SUBJ ([^>]*)>\^/\^\1\2\3 <\1\2-b{\6-aN}-lI-fNIL \4> <\6-aN-lA-f\5 \7>\^/ && ($j=105)) ||
@@ -591,6 +594,8 @@ debug("p-rule ", "$_");
         (s/\^(N(?!-a))([^ x]*?)($CODA) (<.*) <(S-TOBE([VIBA])P[^ ]*) ([^>]*)>\^/\^\1\2\3 <\1\2-k\{\6-aN}-lI-fNIL \4> <\6-aN-lN-f\5 \7>\^/ && ($j=105.9)) ||
         (s/\^(?![^ ]*-v)([SQCFVIBLAGRN])([^ x]*?)($CODA) (<.*) <(S-TOBE([VIBA])P[^ ]*) ([^>]*)>\^/\^\1\2\3 <\1\2-b\{\6-aN}-lI-fNIL \4> <\6-aN-lA-f\5 \7>\^/ && ($j=106)) ||
         (s/\^([SQCFVIBLAGRN])([^ x]*?)($CODA) (<.*-NONE-.*) <(S-TOBE([VIBA])P[^ ]*) ([^>]*)>\^/\^\1\2\3 <\1\2-b\{\6-aN}-lI-fNIL \4> <\6-aN-lA-f\5 \7>\^/ && ($j=106.1)) ||
+        # branch off final empty S as whatever linked -h says it should be
+        (s/\^([VIBLAGRN])([^ ]*?)-h\{(I-aN)\}(-[0-9]+)([^ ]*?)($CODA) (.*) <(S[^ ]* \[-NONE- \*ICH\*\4\])>\^/\^\1\2-h\{\3\}\4\5\6 <\1\2-k\{\3\}-lI-fNIL \7> <\3-lA-f\8>\^/ && ($j=106.2)) ||
         # branch off final 'so' + S as modifier RP
         (s/\^([SQCFVIBLAGR])([^ x]*?)($CODA) (<.*) (<[^>\]]* so\]*> <S-TOBE[V]S[^>]*>)\^/\^\1\2\3 <\1\2-lI-fNIL \4> <R-aN-lM-fNIL \5>\^/ && ($j=107)) ||
         # branch off final IN|TO + S as modifier RP
@@ -751,7 +756,7 @@ debug("p-rule ", "$_");
         # branch off initial modifier A-aN-x (wh adv)
         (s/\^N(-aD)?([^ ]*?)(-[ir][^- \}]*)?([^ \}]*?)($CODA) <(WHADJP|WRB)([^>]*)> (.*<(?:DT|NP|NX|NN|VB|VP|JJ|ADJP|CD|\$|QP \[\$).*)\^/\^N\1\2\3\4\5 <A-aN-x\3-lM-f\6\7> <N-aD\2\4-lI-fNIL \8>\^/ && ($j=161)) ||
         # branch off initial modifier A-aN-x (noun modifier)
-        (s/\^N(-aD)?([^ ]*?)(-[ir][^- \}]*)?([^ \}]*?)($CODA) <(NN[^>]*)> (.*<(?:DT|NN|NX|NP|VB|VP|JJ|ADJP|CD|\$|QP \[\$).*)\^/\^N\1\2\3\4\5 <A-aN-x-lM-fNIL <N-aD-lI-f\6>> <N-aD\3\4-lI-fNIL \7>\^/ && ($j=161.2)) ||
+        (s/\^N(-aD)?([^ ]*?)(-[ir][^- \}]*)?([^ \}]*?)($CODA) <(NN[^>]*)> (.*<(?:DT|NN|NX|NP|VB|VP|JJ|ADJP|CD|\$|QP \[\$).*)\^/\^N\1\2\3\4\5 <A-aN-x-lM-fNIL <N-aD-lI-f\6>> <N-aD\2\3\4-lI-fNIL \7>\^/ && ($j=161.2)) ||
         # branch off initial modifier A-aN-x
         (s/\^(N-aD)([^ ]*?)(-[fghjlrp][^ \}]*?)N-aD <(NN)([^>]*)> (.*<(?:DT|NN|NX|NP|VB|VP|JJ|ADJP|CD|\$|QP \[\$).*)\^/\^\1\2\3N <A-aN-x-lM-f\4\5> <\1\2-lI-fNIL \6>\^/ && ($j=161.39)) ||
         (s/\^(N)([^ ]*?)(-[fghjlrp][^ \}]*?)N-aD <(NN)([^>]*)> (.*<(?:DT|NN|NX|NP|VB|VP|JJ|ADJP|CD|\$|QP \[\$).*)\^/\^\1\2\3N <A-aN-x-lM-f\4\5> <\1-aD\2-lI-fNIL \6>\^/ && ($j=161.4)) ||
