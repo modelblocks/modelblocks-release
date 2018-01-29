@@ -26,26 +26,9 @@ testSent = readStrFromTree(test)
 #test1Sent = readStrFromTree(test1)    
 trainSent = readStrFromTree(train)    
 
-#devSent = pickle.load(open("dev.raw.sent.pkl"))
-#testSent = pickle.load(open("test.raw.sent.pkl"))
-#trainSent = pickle.load(open("train.raw.sent.pkl"))
 print "dev", len(devSent), "test", len(testSent)
-#print "test1", len(test1Sent),
 print "train", len(trainSent)
 
-#pickle.dump(devSent,open("dev.raw.sent.pkl", "wb"))
-#pickle.dump(testSent,open("test.raw.sent.pkl", "wb"))
-#pickle.dump(trainSent,open("train.raw.sent.pkl", "wb"))
-
-#devFile = open("genmodel/dev.raw.sent","wb")
-#testFile = open("genmodel/test.raw.sent", "wb")
-#for s in devSent:
-#    devFile.write(s+'\n')
-#devFile.close()
-
-#for s in testSent:
-#    testFile.write(s+'\n')
-#testFile.close()
     
 gcgDev = open("genmodel/chgcg.same.dev.linetrees","wb")
 gcgTest = open("genmodel/chgcg.same.test.linetrees","wb")
@@ -69,25 +52,18 @@ for line in file(gcg):
     elif st in testSent:
         gcgTest.write(line)
         ccgSameTest.write(testSent[st])
-#    elif st in test1Sent:
-#        gcgTest1.write(line)
-#        ccgSameTest1.write(test1Sent[st])
     elif st in trainSent:
         gcgTrain.write(line)
         ccgSameTrain.write(trainSent[st])
     else:
         notFound += 1
         extraGcg.write(line)
-#        print line
-#        print st
         
 gcgDev.close()
 gcgTest.close()
-#gcgTest1.close()
 gcgTrain.close()
 
 ccgSameDev.close()
 ccgSameTest.close()
-#ccgSameTest1.close()
 ccgSameTrain.close()
 print notFound

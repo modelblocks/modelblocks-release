@@ -13,9 +13,6 @@ def readStrFromTree(f):
     return strDic
 
 
-#dev = open("genmodel/chgcg.same.dev.linetrees","rb")
-#test = open("genmodel/chgcg.same.test.linetrees","rb")
-#train = open("genmodel/chgcg.train.linetrees","rb")
 
 chtb = sys.argv[1]
 
@@ -37,15 +34,11 @@ for s in testSent:
     testFile.write(s+'\n')
 testFile.close()
     
-#chtbTrain = open("genmodel/chtb.same.train.linetrees","wb")
-#chtbDev = open("genmodel/chtb.same.dev.linetrees","wb")
-#chtbTest = open("genmodel/chtb.same.test.linetrees","wb")
 chtbTrain = open(sys.argv[2],"wb")
 chtbDev = open(sys.argv[3],"wb")
 chtbTest = open(sys.argv[4],"wb")
 
 for line in file(chtb):
-#    print line
     t = tree.Tree()
     t.read(line)
     st = re.sub(" +"," ", t.leaf())

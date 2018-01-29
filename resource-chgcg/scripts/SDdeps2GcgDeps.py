@@ -30,12 +30,6 @@ def decreaseWordIdx(d):
 
 sdF = open(sys.argv[1], 'r', encoding="utf8")
 sdDeps = DepsTools.readDepsFromFile(sdF)
-#print(len(sdDeps))
-#gcgDeps = DepsTools.readDepsFromFile(sys.argv[2])
-##for f in sdDeps:
-#    for d in f:
-#        print(d)
-#    break
 
 
 

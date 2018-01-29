@@ -25,18 +25,3 @@ class Dependency:
         
 
 
-#deps = ["Nmod(纪录-28, 世界-27)", "2(取得-10, 纪录-28)", "1(项-26, 纪录-28)", "2(打破-24, 纪录-28)","punc(打破-24, ；-29)"]
-#
-#for d in deps:
-#    D = Dependency()
-#    D.read(d)
-#    print(D)
-##    print(D.child)
-#
-#
-#D = Dependency()
-#D.head = "纪录-28"
-#D.child = "世界-27"
-#D.label= "Nmod"
-#D.write()
-#    
