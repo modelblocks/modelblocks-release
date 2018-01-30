@@ -1,4 +1,4 @@
 fdur
-z.(wlen) + z.(unigramSurp) + z.(unigramSurpS1) + z.(fwprob5surp) + z.(fwprob5surpS1)
-z.(wlen) + z.(unigramSurp) + z.(unigramSurpS1) + z.(fwprob5surp) + z.(fwprob5surpS1)
+z.(wlen) + z.(unigram) + z.(unigramS1) + z.(fwprob5surp) + z.(fwprob5surpS1)
+z.(wlen) + z.(unigram) + z.(unigramS1) + z.(fwprob5surp) + z.(fwprob5surpS1)
 (1 | word) + (1 | sentid:subject)

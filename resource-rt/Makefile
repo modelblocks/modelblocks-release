@@ -78,12 +78,9 @@ COMMA :=,
 
 VPATH += $(RESOURCE-RT)
 
-MERGESURP = python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).core.evmeasures --i totsurp | \
-sed '1s/.*/$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
-mv $@{.tmp,}; \
-python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).core.evmeasures --i cumtotsurp | \
-sed '1s/.*/cum$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
-mv $@{.tmp,};
+MERGESURP = paste - <(cat $(subst GRAMMAR,$(grammar),$(basename $*)).core.evmeasures | \
+awk -f $(word 1, $^) -v cols=totsurp | \
+sed 's/totsurp/$(subst -,,$(grammar))/g')
 
 SPILLOVER := S1
 SURP := fwprob5surp totsurp 
@@ -431,13 +428,11 @@ $(RT-SCRIPTS)/rm_na_items.py
 # Generate and merge parser data from multiple grammars
 # Template: mydata.training-GRAMMAR-other-args.stuff.parser1_parser2_parser3.merged.core.evmeasures
 .PRECIOUS: %.merged.core.evmeasures
-.merged.core.evmeasures: $(GENERAL-SCRIPTS)/querydataframe.py \
+%.merged.core.evmeasures: $(RT-SCRIPTS)/filter_cols.awk \
 $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*)).core.evmeasures)
 	@echo 'Newer than target: ' $?
 	cp $(word 2, $^) $@
-	cat $@ | sed 's/ cumtotsurp / cum$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))totsurp /' | \
-	sed 's/ totsurp / $(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))totsurp /' > $@.tmp
-	mv $@{.tmp,}
+	cat $@ | sed 's/totsurp/$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))surp/' > $@
 	$(foreach grammar,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))),$(MERGESURP))
 
 # Spillover evaluation for a baseline model, comparing all permutations of adjacent spillover values
