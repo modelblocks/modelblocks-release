@@ -430,7 +430,6 @@ $(RT-SCRIPTS)/rm_na_items.py
 .PRECIOUS: %.merged.core.evmeasures
 %.merged.core.evmeasures: $(RT-SCRIPTS)/filter_cols.awk \
 $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*)).core.evmeasures)
-	@echo 'Newer than target: ' $?
 	cp $(word 2, $^) $@
 	cat $@ | sed 's/totsurp/$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))surp/' > $@
 	$(foreach grammar,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))),$(MERGESURP))
