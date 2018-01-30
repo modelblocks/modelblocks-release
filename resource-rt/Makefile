@@ -433,7 +433,6 @@ $(RT-SCRIPTS)/rm_na_items.py
 .PRECIOUS: %.merged.core.evmeasures
 .merged.core.evmeasures: $(GENERAL-SCRIPTS)/querydataframe.py \
 $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*)).core.evmeasures)
-	@echo 'Newer than target: ' $?
 	cp $(word 2, $^) $@
 	cat $@ | sed 's/ cumtotsurp / cum$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))totsurp /' | \
 	sed 's/ totsurp / $(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))totsurp /' > $@.tmp
