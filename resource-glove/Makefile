@@ -89,10 +89,10 @@ endif
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s > $@
 
 %.glove.linemeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
-	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o linemeasures -w $WINDOWLEN > $@
+	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o linemeasures -w $(WINDOWLEN) > $@
 
 %.glove.tokmeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
-	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o tokmeasures -w $WINDOWLEN > $@
+	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o tokmeasures -w $(WINDOWLEN) > $@
 
 
 
