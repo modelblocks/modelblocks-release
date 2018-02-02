@@ -298,7 +298,7 @@ genmodel/rename_cols.params: | genmodel
 	cat $< | python $(word 2, $^) > $@
 
 # Pastes GloVe predictors to existing identically tokenized tokmeasures file
-%.glove.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).glove.tokmeasures
+%.glove.tokmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., ,%))$$(suffix $$*).glove.tokmeasures
 	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g') > $@
 
 # Pastes coreference predictors to existing identically tokenized tokmeasures file
@@ -328,11 +328,11 @@ $(RT-SCRIPTS)/filter_cols.py
 	cat $(word 1, $^) | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) > $@
 
 # Shortcut: With co-ref features
-%.syn.tokmeasures: %_parsed.dlt.lc.glove.coref.tokmeasures
+%.syn.tokmeasures: %_parsed.dlt.lc.CC.glove.coref.tokmeasures
 	mv $^ $@
 
 # Shortcut: Without co-ref features
-%.syn.tokmeasures: %_parsed.dlt.lc.glove.tokmeasures
+%.syn.tokmeasures: %_parsed.dlt.lc.CC.glove.tokmeasures
 	mv $^ $@
 
 %.itemmeasures: $$(DEP-RHACKS) $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
