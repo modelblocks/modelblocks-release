@@ -175,6 +175,9 @@ UHHMM-SCRIPTS := $(RESOURCE-UHHMM)/scripts
 RESOURCE-UPPARSE := $(abspath $(MBDIR)/resource-upparse)
 UPPARSE-SCRIPTS := $(RESOURCE-UPPARSE)/scripts
 
+RESOURCE-WORD2VEC := $(abspath $(MBDIR)/resource-word2vec)
+WORD2VEC-SCRIPTS := $(RESOURCE-WORD2VEC)/scripts
+
 RESOURCE-WORDNET := $(abspath $(MBDIR)/resource-wordnet)
 WORDNET-SCRIPTS := $(RESOURCE-WORDNET)/scripts
 
@@ -220,6 +223,7 @@ include $(RESOURCE-RHACKS)/Makefile
 include $(RESOURCE-XLSX2CSV)/Makefile
 include $(RESOURCE-UCL)/Makefile
 include $(RESOURCE-UPPARSE)/Makefile
+include $(RESOURCE-WORD2VEC)/Makefile
 include $(RESOURCE-WORDNET)/Makefile
 endef
 

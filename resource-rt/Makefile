@@ -78,7 +78,7 @@ COMMA :=,
 
 VPATH += $(RESOURCE-RT)
 
-MERGESURP = paste - <(cat $(subst GRAMMAR,$(grammar),$(basename $*)).core.evmeasures | \
+MERGESURP = paste - <(cat $(subst GRAMMAR,$(grammar),$(basename $*))_parsed.tokmeasures | \
 awk -f $(word 1, $^) -v cols=totsurp | \
 sed 's/totsurp/$(subst -,,$(grammar))/g')
 
@@ -320,8 +320,8 @@ $(RT-SCRIPTS)/filter_cols.py
 	cat $< | awk '!/^ /' | awk -f $(word 2, $^) -v cols=word:totsurp > $@
 
 # TODO: merges surprisal columns from multiple parses together
-%.merged.pcfg.tokmeasures: scripts/$$(subst .,,$$(suffix $$*)).PCFGmerge.txt 
-	@echo 'Merging PCFGs'
+%_merged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*))_parsed.tokmeasures)
+	cat $(word 2, $^) | sed '1s/totsurp/$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))surp/' | $(foreach grammar,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))), $(MERGESURP))
 
 # %.tokmeasures with a time column, requires %.time.tokmeasures with timestamps for tokens in stimulus
 %.t.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., , %)).time.tokmeasures

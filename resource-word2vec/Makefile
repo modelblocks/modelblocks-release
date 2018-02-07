@@ -32,16 +32,6 @@ SRCMODEL := $(THISDIR)srcmodel
 SCRIPTS  := $(THISDIR)scripts
 WINDOWLEN := 1
 
-#GloVe internal parameters
-VERBOSE := 2
-MEMORY := 4.0
-VOCAB_MIN_COUNT := 5
-MAX_ITER := 15
-WINDOW_SIZE := 15
-BINARY := 0
-NUM_THREADS := 8
-X_MAX := 100
-
 ################################################################################
 #
 #  ii. User-specific parameter files (not shared; created by default with default values)
@@ -57,39 +47,38 @@ X_MAX := 100
 
 #### Create user-*.txt file for resource at include time, prior to make-item dependency graph construction...
 ifndef MAKECONFIG
-CONFIG := $(CONFIGDIR)/user-glove-directory.txt
+CONFIG := $(CONFIGDIR)/user-word2vec-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
 $(info $(call CONFIGWARN, $(CONFIG))) 
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
-GLOVEDIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(GLOVEDIR))))
-RESOURCE-NAME := GloVe
+WORD2VECDIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(WORD2VECDIR))))
+RESOURCE-NAME := Word2Vec
 define RESOURCE-DESCR =
 
-NAME: GloVe
-MB POINTER FILE: config/user-glove-directory.txt
+NAME: Word2Vec
+MB POINTER FILE: config/user-word2vec-directory.txt
 AVAILABILITY: Free
-URL: https://nlp.stanford.edu/projects/glove/
-DESCRIPTION: GloVe is an unsupervised learning algorithm for obtaining vector representations
-for words. Training is performed on aggregated global word-word co-occurrence statistics from
-a corpus, and the resulting representations showcase interesting linear substructures of the
-word vector space.
+URL: https://github.com/dav/word2vec
+DESCRIPTION: This tool provides an efficient implementation of the continuous bag-of-words
+and skip-gram architectures for computing vector representations of words. These
+representations can be subsequently used in many natural language processing applications
+and for further research.
 
-These recipes automate training of GloVe vectors on arbitrary text data.
+These recipes automate training of Word2Vec vectors on arbitrary text data.
 
-They also support the use of embeddings pre-trained on the 840B Common Crawl dataset, which can be
-downloaded at the URL above.
+They also support the use of embeddings pre-trained for computing semantic distance.
 endef
-GLOVE-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
-DEP-GLOVE = $(error $(GLOVE-ERROR))
+WORD2VEC-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-WORD2VEC = $(error $(WORD2VEC-ERROR))
 endif
 endif
 
 
 
-%/user-glove-directory.txt: | % 
-	echo '/home/compling/GloVe-1.2/' > $@
+%/user-word2vec-directory.txt: | % 
+	echo '/home/compling/word2vec/' > $@
 
 ################################################################################
 #
@@ -97,34 +86,22 @@ endif
 #
 ################################################################################
 
-%.CC.glove.tokembeddings: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
+%.word2vec.tokembeddings: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s > $@
 
-%.CC.glove.linemeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
+%.word2vec.linemeasures: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o linemeasures -w $(WINDOWLEN) > $@
 
-%.CC.glove.tokmeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
+%.word2vec.tokmeasures: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o tokmeasures -w $(WINDOWLEN) > $@
 
-%.glove.tokembeddings: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
-	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s > $@
+%.word2phrase1.txt: $$(DEP-WORD2VEC) %.linetoks $(WORD2VECDIR)word2phrase
+	$(word 2, $^) -train $(word 1, $^) -output $@ -threshold 200 -debug 2
 
-%.glove.linemeasures: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
-	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o linemeasures -w $(WINDOWLEN) > $@
+%.word2phrase2.txt: $$(DEP-WORD2VEC) %.word2phrase1.txt $(WORD2VECDIR)word2phrase
+	$(word 2, $^) -train $(word 1, $^) -output $@ -threshold 100 -debug 2
 
-%.glove.tokmeasures: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
-	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o tokmeasures -w $(WINDOWLEN) > $@
-
-%.vocab.txt: $$(DEP-GLOVE) %.linetoks $(GLOVEDIR)build/vocab_count
-	$(word 2, $^) -min-count $(VOCAB_MIN_COUNT) -verbose $(VERBOSE) < $(word 1, $^) > $@
-
-%.cooccurrence.bin: $$(DEP-GLOVE) %.linetoks %.vocab.txt $(GLOVEDIR)build/cooccur
-	$(word 3, $^) -m $(MEMORY) -vocab-file $(word 2, $^) -verbose $(VERBOSE) -window-size $(WINDOW_SIZE) < $(word 1, $^) > $@
-
-%.cooccurrence.shuf.bin: $$(DEP-GLOVE) %.cooccurrence.bin $(GLOVEDIR)build/shuffle
-	$(word 2, $^) -memory $(MEMORY) -verbose $(VERBOSE) < $(word 1, $^) > $@
-
-.PRECIOUS: %.glove.txt
-%.glove.txt: $$(DEP-GLOVE) $$(basename %).vocab.txt $$(basename %).cooccurrence.shuf.bin $(GLOVEDIR)build/glove
-	$(word 3, $^) -save-file $(basename $@) -threads $(NUM_THREADS) -input-file $(word 2, $^) -x-max $(X_MAX) -iter $(MAX_ITER) -vector-size $(subst .,,$(suffix $*)) -binary $(BINARY) -vocab-file $(word 1, $^) -verbose $(VERBOSE)
+.PRECIOUS: %.word2vec.txt
+%.word2vec.txt: $$(DEP-WORD2VEC) $$(basename %).word2phrase2.txt $(WORD2VECDIR)word2vec
+	$(word 2, $^) -output $@ -cbow 1 -size $(subst .,,$(suffix $*)) -window 15 -negative 10 -hs 0 -sample 1e-5 -threads 40 -binary 0 -iter 3 -min-count 10
 
