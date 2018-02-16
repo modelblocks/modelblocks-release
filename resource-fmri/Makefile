@@ -54,7 +54,7 @@ ROI := LPostTemp RPostTemp LPostTempZ RPostTempZ LAntTemp RAntTemp LAntTempZ RAn
 FMRI-PRED-CONTROLS := sentpos wlen rate soundPower unigram
 FMRI-PRED-BASES := wlen $(SURP) $(DLT) $(FJ) $(SEMDIST)
 BYSENT-PREDS := nwrds $(foreach pred,$(FMRI-PRED-BASES),$(foreach agg,Mean Sum Max,$(pred)$(agg)))
-BYSENT-PREDS += semCosDistMin semCosDistMax semCosDistMean semCosDistSum semDistMin semDistMax semDistMean semDistSum
+BYSENT-PREDS += sdCosMean sdEuclMean
 
 define FMRI-FORM =
 scripts/$(1)%.lmeform: scripts/%.template.lmeform

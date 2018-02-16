@@ -1,4 +1,4 @@
 fdur
-sentpos + wlen + fwprob5surp + totsurp + sentposS1 + wlenS1 + fwprob5surpS1 + totsurpS1 + sentposS2 + wlenS2 + fwprob5surpS2 + totsurpS2 + sentposS3 + wlenS3 + fwprob5surpS3 + totsurpS3 + noF + noFS1 + noFS2 + noFS3 + unigram + unigramS1 + unigramS2 + unigramS3
+sentpos + wlen + wlenS1 + wlenS2 + wlenS3 + unigram + unigramS1 + unigramS2 + unigramS3 + fwprob5surp + fwprob5surpS1 + fwprob5surpS2 + fwprob5surpS3 + gcg15surp + gcg15surpS1 + gcg15surpS2 + gcg15surpS3 + nodashtagssurp + nodashtagssurpS1 + nodashtagssurpS2 + nodashtagssurpS3 + sdCosMeanW1 + sdCosMeanW1S1 + sdCosMeanW1S2 + sdCosMeanW1S3 + sdEuclMeanW1 + sdEuclMeanW1S1 + sdEuclMeanW1S2 + sdEuclMeanW1S3
 sentpos
 (1|word) + (1|subject:sentid)

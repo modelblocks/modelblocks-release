@@ -57,8 +57,8 @@ endef
 .SUFFIXES:
 .SECONDEXPANSION:
 
-UCL-BASENAME := genmodel/ucl.wsj02to21-gcg15-nol-prtrm-3sm-synproc-+c_+u_+b5000.syn.5-kenlm.eyeGP
-UCL-LMEDEFAULT := -NSCFX
+UCL-BASENAME := genmodel/naturalstories.wsj02to21-GRAMMAR-nol-prtrm-3sm-synproc-+c_+u_+b5000.gcg15_nodashtags.merged.syn.5-kenlm.eyeGP
+UCL-LMEDEFAULT := -NSCFl
 $(eval $(call RT-EXPERIMENTS,ucl,$(UCL-BASENAME),$(UCL-LMEDEFAULT)))
 
 ################################################################################
@@ -167,7 +167,7 @@ genmodel/ucl.rm_unfix_items.params: | genmodel
   
 %/ucl.linetoks: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
 $(UCLDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | %
-	cut -f 2 $(word 3,$^) | tail -n+2 | $(word 4,$^) > $@
+	cut -f 2 $(word 3,$^) | tail -n+2 | $(word 4,$^) | sed 's/ $$//g' > $@
 
 %/ucl.lineitems: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
 $(UCLDIR)/eye_movement/stimuli.txt | %

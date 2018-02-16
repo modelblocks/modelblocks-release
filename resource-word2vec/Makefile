@@ -86,14 +86,14 @@ endif
 #
 ################################################################################
 
-%.word2vec.tokembeddings: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
-	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s > $@
+%.word2vec.tokembeddings: $$(basename $$(basename %)).linetoks $(GLOVE-SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).word2vec.txt
+	cat $(word 1, $^) | python $(word 2, $^) <(tail -n +2 $(word 3, $^)) -s > $@
 
-%.word2vec.linemeasures: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
-	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o linemeasures -w $(WINDOWLEN) > $@
+%.word2vec.linemeasures: $$(basename $$(basename $$(basename %))).linetoks $(GLOVE-SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename $$(basename %))))$$(suffix $$(basename $$*)).word2vec.txt
+	cat $(word 1, $^) | python $(word 2, $^) <(tail -n +2 $(word 3, $^)) -s -o linemeasures -w $(subst .,,$(suffix, $*)) > $@
 
-%.word2vec.tokmeasures: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
-	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o tokmeasures -w $(WINDOWLEN) > $@
+%.word2vec.tokmeasures: $$(basename $$(basename $$(basename %))).linetoks $(GLOVE-SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename $$(basename %))))$$(suffix $$(basename $$*)).word2vec.txt
+	cat $(word 1, $^) | python $(word 2, $^) <(tail -n +2 $(word 3, $^)) -s -o tokmeasures -w $(subst .,,$(suffix $*)) > $@
 
 %.word2phrase1.txt: $$(DEP-WORD2VEC) %.linetoks $(WORD2VECDIR)word2phrase
 	$(word 2, $^) -train $(word 1, $^) -output $@ -threshold 200 -debug 2
@@ -103,5 +103,5 @@ endif
 
 .PRECIOUS: %.word2vec.txt
 %.word2vec.txt: $$(DEP-WORD2VEC) $$(basename %).word2phrase2.txt $(WORD2VECDIR)word2vec
-	$(word 2, $^) -output $@ -cbow 1 -size $(subst .,,$(suffix $*)) -window 15 -negative 10 -hs 0 -sample 1e-5 -threads 40 -binary 0 -iter 3 -min-count 10
+	$(word 2, $^) -train $(word 1, $^) -output $@ -cbow 1 -size $(subst .,,$(suffix $*)) -window 15 -negative 10 -hs 0 -sample 1e-5 -threads 40 -binary 0 -iter 3 -min-count 10
 

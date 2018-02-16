@@ -97,23 +97,23 @@ endif
 #
 ################################################################################
 
-%.CC.glove.tokembeddings: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
+%.CC.300.glove.tokembeddings: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s > $@
 
-%.CC.glove.linemeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
+%.CC.300.glove.linemeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o linemeasures -w $(WINDOWLEN) > $@
 
-%.CC.glove.tokmeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
+%.CC.300.glove.tokmeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o tokmeasures -w $(WINDOWLEN) > $@
 
 %.glove.tokembeddings: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s > $@
 
-%.glove.linemeasures: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
-	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o linemeasures -w $(WINDOWLEN) > $@
+%.glove.linemeasures: $$(basename $$(basename $$(basename %))).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename $$(basename %))))$$(suffix $$(basename $$*)).glove.txt
+	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o linemeasures -w $(subst .,,$(suffix $*)) > $@
 
-%.glove.tokmeasures: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
-	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o tokmeasures -w $(WINDOWLEN) > $@
+%.glove.tokmeasures: $$(basename $$(basename $$(basename %))).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename $$(basename %))))$$(suffix $$(basename $$*)).glove.txt
+	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o tokmeasures -w $(subst .,,$(suffix $*)) > $@
 
 %.vocab.txt: $$(DEP-GLOVE) %.linetoks $(GLOVEDIR)build/vocab_count
 	$(word 2, $^) -min-count $(VOCAB_MIN_COUNT) -verbose $(VERBOSE) < $(word 1, $^) > $@
