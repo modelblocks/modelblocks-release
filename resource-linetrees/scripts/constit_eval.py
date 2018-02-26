@@ -585,11 +585,12 @@ def main():
       print('  Found: %d' %max_proj_scores[cat]['hit'])
       print('  Not found: %d' %max_proj_scores[cat]['miss'])
       print('  % ' + cat + ' constituents identified: %.4f' %(float(max_proj_scores[cat]['hit']) / float(max_proj_scores[cat]['hit'] + max_proj_scores[cat]['miss'])))
-      print('  Labeling of found ' + cat + ' constituents:')
-      total = max_proj_scores[cat]['hit']
-      for label in same_g2t[cat]:
-        print('    Label ' + label + ': %.2f' %(float(same_g2t[cat][label])/float(total) * 100))
-      print('')
+      if cat in same_g2t:
+        print('  Labeling of found ' + cat + ' constituents:')
+        total = max_proj_scores[cat]['hit']
+        for label in same_g2t[cat]:
+          print('    Label ' + label + ': %.2f' %(float(same_g2t[cat][label])/float(total) * 100))
+        print('')
     else:
       print('  No instances of %s found in gold trees' %cat)
       print('')

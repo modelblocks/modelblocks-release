@@ -40,6 +40,9 @@ sub debug {
 
 ## for each tree...
 while ( <> ) {
+
+  s/\~/!tilde!/g;  # change all tildes to markup tildes
+
   s/[\[\]]/!/g; # change bracks to exclams 
 #  ## translate to parens...
 #  s/\[/\(/g;
@@ -76,6 +79,9 @@ while ( <> ) {
   ## translate to parens again...
   $_ =~ s/\[/\(/g;
   $_ =~ s/\]/\)/g;
+
+  $_ =~ s/!tilde!/\~/g;  # change all markup tildes to tildes
+
   ## output...
   print $_;
 }

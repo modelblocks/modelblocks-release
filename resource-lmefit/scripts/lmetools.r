@@ -377,9 +377,9 @@ baseFormula <- function(bformfile, logdepvar=FALSE, lambda=NULL) {
         depvar <- paste0('((', depvar, '^', lambda, '-1)/', lambda, ')')
     }
     else if (logdepvar) {
-        depvar <- paste('log1p(', depvar,')', sep='')
+        depvar <- paste('log(', depvar,')', sep='')
     }
-    depvar <- paste('c.(', depvar, ')', sep='')
+    # depvar <- paste('c.(', depvar, ')', sep='')
     bform <- list(
         dep=depvar,
         fixed=flines[2],

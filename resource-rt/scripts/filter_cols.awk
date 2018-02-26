@@ -1,4 +1,5 @@
 BEGIN {
+    FS = "[ ]";
     split(cols,out,":")
 }
 NR==1 {

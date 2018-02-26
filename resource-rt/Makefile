@@ -78,19 +78,16 @@ COMMA :=,
 
 VPATH += $(RESOURCE-RT)
 
-MERGESURP = python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).core.evmeasures --i totsurp | \
-sed '1s/.*/$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
-mv $@{.tmp,}; \
-python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).core.evmeasures --i cumtotsurp | \
-sed '1s/.*/cum$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
-mv $@{.tmp,};
+MERGESURP = paste -d' ' - <(cat $(subst GRAMMAR,$(grammar),$(basename $*))_parsed.tokmeasures | \
+awk -f $(word 1, $^) -v cols=totsurp | \
+sed 's/totsurp/$(subst -,,$(grammar))surp/g')
 
 SPILLOVER := S1
 SURP := fwprob5surp totsurp 
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
 FJ := noF yesJ embddepthMin endembdMin startembdMin noFlen noFdr noFdrv embdlen embddr embddrv 
 COREF := # corefbin coreflenw coreflenr corefsize
-SEMDIST := incrSemCosDistMin incrSemCosDistMax incrSemCosDistMean incrSemCosDistSum incrSemDistMin incrSemDistMax incrSemDistMean incrSemDistSum incrSemNACosDistMin incrSemNACosDistMax incrSemNACosDistMean incrSemNACosDistSum incrSemNADistMin incrSemNADistMax incrSemNADistMean incrSemNADistSum
+SEMDIST := sdCosMeanW1 sdEuclMeanW1 sdNACosMeanW1 sdNAEuclMeanW1
 GCG-CATS := A B C D F G
 EMBDDEPTHS := 1 2 3 4 5
 
@@ -301,8 +298,12 @@ genmodel/rename_cols.params: | genmodel
 	cat $< | python $(word 2, $^) > $@
 
 # Pastes GloVe predictors to existing identically tokenized tokmeasures file
-%.glove.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).glove.tokmeasures
-	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g') > $@
+%.glove.tokmeasures: $$(basename $$(basename %)).tokmeasures $$(word 1, $$(subst ., ,%)).gigaword$$(suffix $$(basename $$*))$$(suffix $$*).glove.tokmeasures
+	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g'| cut -f 3- -d' ') > $@
+
+# Pastes Word2Vec predictors to existing identically tokenized tokmeasures file
+%.word2vec.tokmeasures: $$(basename $$(basename %)).tokmeasures $$(word 1, $$(subst ., ,%)).gigaword$$(suffix $$(basename $$*))$$(suffix $$*).word2vec.tokmeasures
+	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g' | cut -f 3- -d' ') > $@
 
 # Pastes coreference predictors to existing identically tokenized tokmeasures file
 %.coref.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).coref.tokmeasures
@@ -320,54 +321,54 @@ $(RT-SCRIPTS)/filter_cols.py
 
 # Computes parser complexity predictors 
 %_parsed.tokmeasures: %_parsed.tokdecs $(RT-SCRIPTS)/filter_cols.awk
-	cat $< | awk '!/^ /' | awk -f $(word 2, $^) -v cols=word:totsurp > $@
+	cat $< | awk -f $(word 2, $^) -v cols=word:totsurp > $@
 
 # TODO: merges surprisal columns from multiple parses together
-%.merged.pcfg.tokmeasures: scripts/$$(subst .,,$$(suffix $$*)).PCFGmerge.txt 
-	@echo 'Merging PCFGs'
+%.merged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*))_parsed.tokmeasures)
+	cat $(word 2, $^) | sed '1s/totsurp/$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))surp/' | $(foreach grammar,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))), $(MERGESURP)) > $@
 
 # %.tokmeasures with a time column, requires %.time.tokmeasures with timestamps for tokens in stimulus
 %.t.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., , %)).time.tokmeasures
 	cat $(word 1, $^) | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) > $@
 
 # Shortcut: With co-ref features
-%.syn.tokmeasures: %_parsed.dlt.lc.glove.coref.tokmeasures
+%.syn.tokmeasures: %_parsed.dlt.lc.100.1.word2vec.coref.tokmeasures
 	mv $^ $@
 
 # Shortcut: Without co-ref features
-%.syn.tokmeasures: %_parsed.dlt.lc.glove.tokmeasures
+%.syn.tokmeasures: %_parsed.dlt.lc.100.1.word2vec.tokmeasures
 	mv $^ $@
 
 %.itemmeasures: $$(DEP-RHACKS) $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
-	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
+	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
-        paste -d' ' - <(cat $(word 8, $^) | sed 's/\[/!/g;s/\]/!/g;' | cut -f 2- -d' ') | python $(word 4, $^) -d | \
+        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
 %.t.itemmeasures: $$(basename %).t.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
-	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
+	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
-        paste -d' ' - <(cat $(word 8, $^) | sed 's/\[/!/g;s/\]/!/g;' | cut -f 2- -d' ') | python $(word 4, $^) -d | \
+        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
 %.t.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.t.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
-	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
+	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
-        paste -d' ' - <(cat $(word 8, $^) | sed 's/\[/!/g;s/\]/!/g;' | cut -f 2- -d' ') | python $(word 4, $^) -d | \
+        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
 %.r.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures $$(basename %).roark.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
-	cat $< | python $(word 4, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
+	cat $< | python $(word 4, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | paste -d' ' - $(word 3, $^) | \
-        paste -d' ' - <(cat $(word 9, $^) | sed 's/\[/!/g;s/\]/!/g;' | cut -f 2- -d' ') | python $(word 5, $^) -d | \
+        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python $(word 5, $^) -d | \
 	$(word 6, $^) > $@
 
 define CompositeBlock
@@ -427,18 +428,6 @@ $(RT-SCRIPTS)/rm_na_items.py
 
 %.test.evmeasures: %.evmeasures $(RT-SCRIPTS)/split.py
 	cat $(word 1, $^) | python $(word 2, $^) test > $@
-
-# Generate and merge parser data from multiple grammars
-# Template: mydata.training-GRAMMAR-other-args.stuff.parser1_parser2_parser3.merged.core.evmeasures
-.PRECIOUS: %.merged.core.evmeasures
-.merged.core.evmeasures: $(GENERAL-SCRIPTS)/querydataframe.py \
-$$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*)).core.evmeasures)
-	@echo 'Newer than target: ' $?
-	cp $(word 2, $^) $@
-	cat $@ | sed 's/ cumtotsurp / cum$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))totsurp /' | \
-	sed 's/ totsurp / $(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))totsurp /' > $@.tmp
-	mv $@{.tmp,}
-	$(foreach grammar,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))),$(MERGESURP))
 
 # Spillover evaluation for a baseline model, comparing all permutations of adjacent spillover values
 # Because the *.lmeform names are unpredictable this is a weird target that will not be able to clean

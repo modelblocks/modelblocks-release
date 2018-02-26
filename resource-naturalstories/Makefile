@@ -55,8 +55,8 @@ endef
 .SUFFIXES:
 .SECONDEXPANSION:
 
-NATSTORIES-BASENAME := genmodel/naturalstories.wsj02to21-gcg15-nol-prtrm-3sm-synproc-+c_+u_+b5000.syn.5-kenlm.spr
-NATSTORIES-LMEDEFAULT := -NSCFX_-o_5_-B_100_-U_3000
+NATSTORIES-BASENAME := genmodel/naturalstories.wsj02to21-GRAMMAR-nol-prtrm-3sm-synproc-+c_+u_+b5000.gcg15_nodashtags.merged.syn.5-kenlm.spr
+NATSTORIES-LMEDEFAULT := -NSCFl_-o_5_-B_100_-U_3000
 $(eval $(call RT-EXPERIMENTS,naturalstories,$(NATSTORIES-BASENAME),$(NATSTORIES-LMEDEFAULT)))
 
 ################################################################################
