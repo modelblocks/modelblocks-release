@@ -922,6 +922,7 @@ debug("p-rule ", "$_");
   s/-TOBE..//g;
 
   # convert added extraposition '-k' into '-h'
+  s/(-[hk]O)(-[hk]\{I-aN\})/\2\1/g;
   s/\(([^ ]*)-k([^ ]*) ([^\(\)]*)\)/\(\1-h\2 \(\1-b\2 \3\)\)/g;
   s/-k(?=[^ \)]* [^\(])/-b/g;
   while ( s/-k([^ \)]*) /-h\1 / ) { }
