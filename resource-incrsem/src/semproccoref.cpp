@@ -33,7 +33,7 @@ using namespace arma;
 bool STORESTATE_TYPE = true;
 bool STORESTATE_CHATTY = false;
 uint FEATCONFIG = 0;
-#include <StoreState.hpp>
+#include <StoreStateCoref.hpp>
 #include <Beam.hpp>
 
 uint BEAM_WIDTH = 1000;
