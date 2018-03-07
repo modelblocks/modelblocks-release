@@ -120,7 +120,7 @@ GIGASECTS = $(shell cat $(CONFIGDIR)/user-gigaword-sects.txt)
     
 gigaword%.linetoks: $$(DEP-GIGAWORD) $(GIGAWORD-SCRIPTS)/preprocess_gigaword.py $(GIGADIR)/data/$$*/*.gz \
 $(CONFIGDIR)/user-gigaword-directory.txt | genmodel
-	mkdir gigatmp
+	mkdir -p gigatmp
 	cp $(wordlist 2,$(shell echo $$(($(words $^) - 1))),$^) gigatmp/
 	gunzip gigatmp/*
 	cat gigatmp/* > $@.gigatmp

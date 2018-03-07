@@ -575,7 +575,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
                                     -10;       // (will not map)
   }
 
-  const Sign& at ( int i ) const { assert(i<size()); return (i<0) ? aTop : operator[](i); }
+  const Sign& at ( int i ) const { assert(i<int(size())); return (i<0) ? aTop : operator[](i); }
 
   int getDepth ( ) const {
     int d = 0; for( int i=size()-1; i>=0; i-- ) if( !operator[](i).getType().isCarrier() && operator[](i).getSide()==S_B ) d++;
@@ -630,7 +630,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     const KSet& ksAncstr = ( aAncstr.getKSet().size()==0 ) ? ksBot : aAncstr.getKSet();
     const KSet& ksFiller = ( iCarrierB<0                 ) ? ksBot : at( iCarrierB ).getKSet();
     const KSet& ksLchild = ( aLchild.getKSet().size()==0 ) ? ksBot : aLchild.getKSet() ;
-    if( STORESTATE_TYPE ) ljp.emplace_back( d, aAncstr.getType(), aLchild.getType() );
+    if( STORESTATE_TYPE ) if( bAdd || JPredictor::exists(d,aAncstr.getType(),aLchild.getType()) ) ljp.emplace_back( d, aAncstr.getType(), aLchild.getType() );
     if( !(FEATCONFIG & 32) ) {
       for( auto& kA : ksAncstr ) for( auto& kL : ksLchild ) if( bAdd || JPredictor::exists(d,kNil,kA,kL) ) ljp.emplace_back( d, kNil, kA, kL );
       for( auto& kF : ksFiller ) for( auto& kA : ksAncstr ) if( bAdd || JPredictor::exists(d,kF,kA,kNil) ) ljp.emplace_back( d, kF, kA, kNil );

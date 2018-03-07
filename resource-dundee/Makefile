@@ -64,15 +64,8 @@ DUNDEESECTS = 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20
 DUNDEESUBJS = sa sb sc sd se sf sg sh si sj
 DUNDEESUBJSFILT := sb sc se sf sg sh si sj
 
-MERGESURP = python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).tokmeasures --i totsurp | \
-sed '1s/.*/$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
-mv $@{.tmp,}; \
-python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).tokmeasures --i cumtotsurp | \
-sed '1s/.*/$(subst -,,$(grammar))cumtotsurp/' | paste -d' ' $@ - > $@.tmp; \
-mv $@{.tmp,};
-
-DUNDEE-BASENAME := genmodel/dundee.wsj02to21-gcg15-nol-prtrm-3sm-synproc-+c_+u_+b5000.syn.5-kenlm.eyeGP
-DUNDEE-LMEDEFAULT := -NSCFX
+DUNDEE-BASENAME := genmodel/dundee.wsj02to21-GRAMMAR-nol-prtrm-3sm-synproc-+c_+u_+b5000.gcg15_nodashtags.merged.syn.5-kenlm.eyeGP
+DUNDEE-LMEDEFAULT := -NSCFl
 $(eval $(call RT-EXPERIMENTS,dundee,$(DUNDEE-BASENAME),$(DUNDEE-LMEDEFAULT)))
 
 ################################################################################

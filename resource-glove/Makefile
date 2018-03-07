@@ -30,6 +30,17 @@
 THISDIR := $(dir $(abspath $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 SRCMODEL := $(THISDIR)srcmodel
 SCRIPTS  := $(THISDIR)scripts
+WINDOWLEN := 1
+
+#GloVe internal parameters
+VERBOSE := 2
+MEMORY := 4.0
+VOCAB_MIN_COUNT := 5
+MAX_ITER := 15
+WINDOW_SIZE := 15
+BINARY := 0
+NUM_THREADS := 8
+X_MAX := 100
 
 ################################################################################
 #
@@ -65,7 +76,9 @@ for words. Training is performed on aggregated global word-word co-occurrence st
 a corpus, and the resulting representations showcase interesting linear substructures of the
 word vector space.
 
-These recipes use the embeddings pre-trained on the 840B Common Crawl dataset, which can be
+These recipes automate training of GloVe vectors on arbitrary text data.
+
+They also support the use of embeddings pre-trained on the 840B Common Crawl dataset, which can be
 downloaded at the URL above.
 endef
 GLOVE-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
@@ -84,14 +97,34 @@ endif
 #
 ################################################################################
 
-%.glove.tokembeddings: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
+%.CC.300.glove.tokembeddings: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s > $@
 
-%.glove.linemeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
-	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o linemeasures -w inf > $@
+%.CC.300.glove.linemeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
+	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o linemeasures -w $(WINDOWLEN) > $@
 
-%.glove.tokmeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
-	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o tokmeasures -w inf > $@
+%.CC.300.glove.tokmeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
+	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o tokmeasures -w $(WINDOWLEN) > $@
 
+%.glove.tokembeddings: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
+	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s > $@
 
+%.glove.linemeasures: $$(basename $$(basename $$(basename %))).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename $$(basename %))))$$(suffix $$(basename $$*)).glove.txt
+	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o linemeasures -w $(subst .,,$(suffix $*)) > $@
+
+%.glove.tokmeasures: $$(basename $$(basename $$(basename %))).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename $$(basename %))))$$(suffix $$(basename $$*)).glove.txt
+	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o tokmeasures -w $(subst .,,$(suffix $*)) > $@
+
+%.vocab.txt: $$(DEP-GLOVE) %.linetoks $(GLOVEDIR)build/vocab_count
+	$(word 2, $^) -min-count $(VOCAB_MIN_COUNT) -verbose $(VERBOSE) < $(word 1, $^) > $@
+
+%.cooccurrence.bin: $$(DEP-GLOVE) %.linetoks %.vocab.txt $(GLOVEDIR)build/cooccur
+	$(word 3, $^) -m $(MEMORY) -vocab-file $(word 2, $^) -verbose $(VERBOSE) -window-size $(WINDOW_SIZE) < $(word 1, $^) > $@
+
+%.cooccurrence.shuf.bin: $$(DEP-GLOVE) %.cooccurrence.bin $(GLOVEDIR)build/shuffle
+	$(word 2, $^) -memory $(MEMORY) -verbose $(VERBOSE) < $(word 1, $^) > $@
+
+.PRECIOUS: %.glove.txt
+%.glove.txt: $$(DEP-GLOVE) $$(basename %).vocab.txt $$(basename %).cooccurrence.shuf.bin $(GLOVEDIR)build/glove
+	$(word 3, $^) -save-file $(basename $@) -threads $(NUM_THREADS) -input-file $(word 2, $^) -x-max $(X_MAX) -iter $(MAX_ITER) -vector-size $(subst .,,$(suffix $*)) -binary $(BINARY) -vocab-file $(word 1, $^) -verbose $(VERBOSE)
 

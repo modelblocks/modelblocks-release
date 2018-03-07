@@ -157,6 +157,10 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 #	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/%[^ %|]*\|//g;s/-x(?:(?!-[a-z])[^ }])*(?=[^\)]* )//g'  >  $@
 #	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/-x[^- \}]*%[^- ]*(?=[^\)]* )//g'  >  $@
 
+## remove scope and coref tags...
+%.nosem.linetrees:  %.linetrees
+	cat $<  |  perl -pe 's/[-+](?:[nms]|nn+)[0-9]+(?=[^\)]* )//g;'  >  $@
+
 ## obtain lemma counts from trees...
 %.lemmacounts:  %.linetrees  $(INCRSEM-SCRIPTS)/printlemmas.py  $(INCRSEM-SCRIPTS)/printlemmas.d
 	cat $<  |  python $(word 2,$^)  |  LC_COLLATE=C sort  |  LC_COLLATE=C uniq -c  |  sed 's/^ *//'  >  $@
@@ -465,7 +469,7 @@ endef
 %parsed.tokdecs:  bin/$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$(subst +,-,$$(subst -,.,$$*)))))) \
                   $$(basename %).linetoks \
                   genmodel/$$(basename $$(subst +,-,$$(subst -,.,$$(subst .,,$$(suffix $$*)))))model  |  $(CONFIGDIR)/user-numthreads.txt
-	cat $(word 2,$^)  |  $(word 1,$^) -p$(shell cat $|) $(subst _, ,$(subst +,-,$(subst .,,$(suffix $(subst -,.,$*))))) $(word 3,$^)  >  $@
+	cat $(word 2,$^)  |  $(word 1,$^) -p$(shell cat $|) $(subst _, ,$(subst +,-,$(subst .,,$(suffix $(subst -,.,$*))))) $(word 3,$^)  >  $@  2>  $@.log
 
 ### obtain parsed token states for sem proc model...
 ##.PRECIOUS: %semproc-parsed.tokdecs
