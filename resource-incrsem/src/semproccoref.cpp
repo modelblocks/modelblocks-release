@@ -227,10 +227,10 @@ int main ( int nArgs, char* argv[] ) {
           if( VERBOSE>1 ) cout << "  from (" << be_tdec1.second << ")" << endl;
           //loop over ksAnt
           //for ( pair<ProbBack,BeamElement> biant (ProbBack(0.0,be_tdec1),BeamElement()) ; biant.first.second.something != Null ; biant = biant.first.second()) { //ej loop over antecedent beam items, with dummy BeamElement 
-          pair<const BeamElement, ProbBack> biDummy(const BeamElement(), ProbBack(0.0,be_tdec1));
-          const pair<BeamElement,ProbBack>& biAnt = biDummy;
-          for ( int tAnt = t; tAnt>0; tAnt--,biAnt=beams[tAnt].get(biAnt.second.second)) { //iterate over candidate antecedent ks, following trellis backpointers ej change for coref TODO set indentation right, add if braces
-            const KSet ksAnt (biAnt.first.fourth());
+          pair<const BeamElement, ProbBack> biDummy( BeamElement(), ProbBack(0.0,be_tdec1.first.second) );
+          const pair<const BeamElement,ProbBack>* pbiAnt = &biDummy;
+          for ( int tAnt = t; tAnt>0; tAnt--, pbiAnt=&beams[tAnt].get(pbiAnt->second.second) ) { //iterate over candidate antecedent ks, following trellis backpointers ej change for coref TODO set indentation right, add if braces
+            const KSet ksAnt (pbiAnt->first.fourth());
             // Calc distrib over response for each fork predictor...
             arma::vec flogresponses = arma::zeros( matF.n_rows );
           list<FPredictor> lfpredictors;  q_tdec1.calcForkPredictors( lfpredictors, ksAnt, false );  lfpredictors.emplace_back();  // add bias term //ej change

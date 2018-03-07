@@ -640,7 +640,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     if( !(FEATCONFIG & 2) ) {
       for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(d,kNil,kA,kNil) ) lfp.emplace_back( d, kNil, kA, kNil ); //ej change to add coreference
       for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(d,kF,kNil,kNil) ) lfp.emplace_back( d, kF, kNil, kNil ); //ej change to add coreference 
-      for (auto& kAntecedent : ksAnt) if ( bAdd || Fpredictor::exists(d,kNil,kNil,kAntecedent) ) lfp.emplace_back( d, kNil, kNil, kAntecedent); // ej change to add coreference
+      for (auto& kAntecedent : ksAnt) if ( bAdd || FPredictor::exists(d,kNil,kNil,kAntecedent) ) lfp.emplace_back( d, kNil, kNil, kAntecedent); // ej change to add coreference
 //    } else if( FEATCONFIG & 1 ) {
 //      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(kNil,kA) ) lfp.emplace_back( kNil, kA );
 //      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(kF,kNil) ) lfp.emplace_back( kF, kNil );
