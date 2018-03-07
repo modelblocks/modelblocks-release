@@ -13,7 +13,7 @@ class Beam : public set<pair<P,S>,std::greater<pair<P,S>>> {
 
   Beam(uint i) : iBeamWidth(i) { }
 
-  const pair<const S,P>& get( const S& s ) { return *msp.find(s); }
+  const pair<const S,P>& get( const S& s ) const { return *msp.find(s); }
 
   void tryAdd ( const S& s, P p ) {
     // Only add if extra space or prob beats min...

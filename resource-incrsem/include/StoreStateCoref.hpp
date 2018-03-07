@@ -245,14 +245,14 @@ class FPredictor {
     }
     if ( ist.first.peek()=='d' ) {
       D d;  ist.first >> "d" >> d >> "&";
-      if ( ist.first.peek()=='t' ) { Delimited<T> t;
+      if ( ist.first.peek()=='t' ) { Delimited<T> t; //if category, read in as Fpred(d,t)
                                      auto& o = ist.first >> "t" >> t >> psDelim;
                                      ist.second = FPredictor(d,t);
                                      return o;
       }
-      else                         { Delimited<K> kF, kA;  
-                                     auto& o = ist.first >> kF >> "&" >> kA >> psDelim;
-                                     ist.second = FPredictor(d,kF,kA);
+      else                         { Delimited<K> kF, kA, kAntecedent;  //ej change
+                                     auto& o = ist.first >> kF >> "&" >> kA >> "&" >> kAntecedent >> psDelim; //ej change 
+                                     ist.second = FPredictor(d,kF,kA,kAntecedent); //ej change
                                      return o;
       }
     } else { Delimited<K> kF, kA;  
@@ -269,9 +269,9 @@ class FPredictor {
                                      ist.second = FPredictor(d,t);
                                      return o;
       }
-      else                         { Delimited<K> kF, kA;
-                                     auto o = ist.first >> kF >> "&" >> kA >> vpsDelim;
-                                     ist.second = FPredictor(d,kF,kA);
+      else                         { Delimited<K> kF, kA, kAntecedent;
+                                     auto o = ist.first >> kF >> "&" >> kA >> "&" >> kAntecedent >> vpsDelim; //ej change
+                                     ist.second = FPredictor(d,kF,kA,kAntecedent); //ej change
                                      return o;
       }
     } else { Delimited<K> kF, kA;
@@ -282,7 +282,7 @@ class FPredictor {
   }
   friend ostream& operator<< ( ostream& os, const FPredictor& t ) {
     if      ( mit.end()  != mit.find(t.id)  ) return os << "d" << mid[t.id] << "&" << "t" << mit[t.id];
-    else if ( mid.end()  != mid.find(t.id)  ) return os << "d" << mid[t.id] << "&" << mikF[t.id] << "&" << mikA[t.id];
+    else if ( mid.end()  != mid.find(t.id)  ) return os << "d" << mid[t.id] << "&" << mikF[t.id] << "&" << mikA[t.id] << "&" << mikAnt[t.id]; //ej change
     else if ( mikA.end() != mikA.find(t.id) ) return os << mikF[t.id] << "&" << mikA[t.id];
     else                                      return os << "NON_STRING_ID_" << t.id;
   }
@@ -297,6 +297,7 @@ map<uint,D>             FPredictor::mid;
 map<uint,T>             FPredictor::mit;
 map<uint,K>             FPredictor::mikF;
 map<uint,K>             FPredictor::mikA;
+map<uint,K>             FPredictor::mikAnt; //ej change
 map<pair<D,T>,uint>     FPredictor::mdti;
 map<trip<D,K,K>,uint>   FPredictor::mdkki;
 map<pair<K,K>,uint>     FPredictor::mkki;
@@ -631,16 +632,15 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     return -1;
   } 
 
-  list<FPredictor>& calcForkPredictors ( list<FPredictor>& lfp, bool bAdd=true ) const {
+  list<FPredictor>& calcForkPredictors ( list<FPredictor>& lfp, const KSet& ksAnt, bool bAdd=true ) const { //ej change
     int d = (FEATCONFIG & 1) ? 0 : getDepth(); // max used depth - (dbar)
     const KSet& ksB = at(size()-1).getKSet(); //contexts of lowest b (bdbar)
     int iCarrier = getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
-    //TODO define ksetfrombackpointers
     if( STORESTATE_TYPE ) lfp.emplace_back( d, at(size()-1).getType() ); // flag to add depth and category label as predictor, default is true
     if( !(FEATCONFIG & 2) ) {
       for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(d,kNil,kA,kNil) ) lfp.emplace_back( d, kNil, kA, kNil ); //ej change to add coreference
       for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(d,kF,kNil,kNil) ) lfp.emplace_back( d, kF, kNil, kNil ); //ej change to add coreference 
-      for (auto& kAntecedent : ksetfrombackpointers) if ( bAdd || Fpredictor::exists(d,kNil,kNil,kAntecedent) ) lfp.emplace_back( d, kNil, kNil, kAntecedent); // ej change to add coreference
+      for (auto& kAntecedent : ksAnt) if ( bAdd || Fpredictor::exists(d,kNil,kNil,kAntecedent) ) lfp.emplace_back( d, kNil, kNil, kAntecedent); // ej change to add coreference
 //    } else if( FEATCONFIG & 1 ) {
 //      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(kNil,kA) ) lfp.emplace_back( kNil, kA );
 //      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(kF,kNil) ) lfp.emplace_back( kF, kNil );
