@@ -70,13 +70,17 @@ public:
   Trellis ( ) : vector<Beam<ProbBack,BeamElement>>() { reserve(100); }
   Beam<ProbBack,BeamElement>& operator[] ( uint i ) { if ( i==size() ) emplace_back(BEAM_WIDTH); return vector<Beam<ProbBack,BeamElement>>::operator[](i); }
   void setMostLikelySequence ( DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX>& lbe ) {
+    static StoreState ssLongFail( StoreState(), 1, 0, 'N', 'N', 'N', 'I', "FAIL", "FAIL", Sign(ksBot,"FAIL",0), Sign(ksBot,"FAIL",0) );
     lbe.clear();  if( back().size()>0 ) lbe.push_front( pair<BeamElement,ProbBack>( back().begin()->second, back().begin()->first ) );
     if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( at(t).get(lbe.front().second.second) );
     if( lbe.size()>0 ) lbe.emplace_back( BeamElement(), ProbBack(0.0,BeamElement()) );
     if( lbe.size()==0 ) {
-      lbe.emplace_front( BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(1,'N','N','N'), StoreState() ), ProbBack(0.0,BeamElement()) );
-      lbe.emplace_front( BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(1,'N','N','N'), StoreState() ), ProbBack(0.0,BeamElement()) );
-      cerr<<"i tried"<<endl;
+      for( int t=size()-2; t>=0; t-- ) lbe.push_front( pair<BeamElement,ProbBack>( BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(1,'N','N','I'), ssLongFail ), ProbBack(0.0,BeamElement()) ) );
+      lbe.front().first = BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(0,'N','N','I'), ssLongFail );
+      lbe.back( ).first = BeamElement( Sign(ksBot,"FAIL",0), 0, 'N', K::kBot, JResponse(1,'N','N','I'), StoreState() );
+      if( size()==2 ) lbe.front().first = BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(1,'N','N','I'), StoreState() );
+      lbe.push_front( pair<BeamElement,ProbBack>( BeamElement( Sign(ksBot,"FAIL",0), 0, 'N', K::kBot, JResponse(0,'N','N','I'), StoreState() ), ProbBack(0.0,BeamElement()) ) );
+      cerr<<"parse failed"<<endl;
     }
     //    return lbe;
   }
