@@ -37,8 +37,9 @@ uint FEATCONFIG = 0;
 #include <StoreState.hpp>
 #include <Beam.hpp>
 
-uint BEAM_WIDTH = 1000;
-uint VERBOSE    = 0;
+uint BEAM_WIDTH      = 1000;
+uint VERBOSE         = 0;
+uint OUTPUT_MEASURES = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -74,13 +75,25 @@ public:
     lbe.clear();  if( back().size()>0 ) lbe.push_front( pair<BeamElement,ProbBack>( back().begin()->second, back().begin()->first ) );
     if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( at(t).get(lbe.front().second.second) );
     if( lbe.size()>0 ) lbe.emplace_back( BeamElement(), ProbBack(0.0,BeamElement()) );
+    // If parse fails...
     if( lbe.size()==0 ) {
+      // Print a right branching structure...
       for( int t=size()-2; t>=0; t-- ) lbe.push_front( pair<BeamElement,ProbBack>( BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(1,'N','N','I'), ssLongFail ), ProbBack(0.0,BeamElement()) ) );
-      lbe.front().first = BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(0,'N','N','I'), ssLongFail );
-      lbe.back( ).first = BeamElement( Sign(ksBot,"FAIL",0), 0, 'N', K::kBot, JResponse(1,'N','N','I'), StoreState() );
-      if( size()==2 ) lbe.front().first = BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(1,'N','N','I'), StoreState() );
+      lbe.front().first = BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(0,'N','N','I'), ssLongFail );                    // front: fork no-join
+      lbe.back( ).first = BeamElement( Sign(ksBot,"FAIL",0), 0, 'N', K::kBot, JResponse(1,'N','N','I'), StoreState() );                  // back: join no-fork
+      if( size()==2 ) lbe.front().first = BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(1,'N','N','I'), StoreState() );  // unary case: fork and join
+      // Add dummy element (not sure why this is needed)...
       lbe.push_front( pair<BeamElement,ProbBack>( BeamElement( Sign(ksBot,"FAIL",0), 0, 'N', K::kBot, JResponse(0,'N','N','I'), StoreState() ), ProbBack(0.0,BeamElement()) ) );
       cerr<<"parse failed"<<endl;
+    }
+    // For each element of MLE after first dummy element...
+    int u=-1; for( auto& be : lbe ) if( ++u>0 and u<int(size()) ) {
+      // Calc surprisal as diff in exp of beam totals of successive elements, minus constant...
+      double probPrevTot = 0.0;
+      double probCurrTot = 0.0;
+      for( auto& beP : at(u-1) ) probPrevTot += exp( beP.first.first - at(u-1).begin()->first.first );
+      for( auto& beC : at(u  ) ) probCurrTot += exp( beC.first.first - at(u-1).begin()->first.first ); 
+      be.second.first = log2(probPrevTot) - log2(probCurrTot);     // store surp into prob field of beam item
     }
     //    return lbe;
   }
@@ -126,6 +139,7 @@ int main ( int nArgs, char* argv[] ) {
       else if ( 0==strcmp(argv[a],"-V") ) VERBOSE = 2;
       else if ( 0==strncmp(argv[a],"-p",2) ) numThreads = atoi(argv[a]+2);
       else if ( 0==strncmp(argv[a],"-b",2) ) BEAM_WIDTH = atoi(argv[a]+2);
+      else if ( 0==strcmp(argv[a],"-c") ) OUTPUT_MEASURES = 1;
       else if ( 0==strncmp(argv[a],"-f",2) ) FEATCONFIG = atoi(argv[a]+2);
       //else if ( string(argv[a]) == "t" ) STORESTATE_TYPE = true;
       else {
@@ -181,6 +195,8 @@ int main ( int nArgs, char* argv[] ) {
   mutex mutexMLSList;
   vector<thread> vtWorkers;  vtWorkers.reserve( numThreads );
   uint linenum = 1;
+
+  if( OUTPUT_MEASURES ) cout << "word pos f j store totsurp" << endl;
 
   // For each line in stdin...
   //  for ( int linenum=1; cin && EOF!=cin.peek(); linenum++ ) {
@@ -397,7 +413,7 @@ int main ( int nArgs, char* argv[] ) {
         while( MLSs.size()>0 && MLSs.front().size()>0 ) {
           auto& mls = MLSs.front( );
           int u=1; auto ibe=next(mls.begin()); auto iw=sents.front().begin(); for( ; ibe!=mls.end() && iw!=sents.front().end(); ibe++, iw++, u++ ) {
-            cout << *iw << " " << ibe->first;
+            cout << *iw << " " << ibe->first << " " << ibe->second.first;
             cout << endl;
           }
           MLSs.pop_front();
