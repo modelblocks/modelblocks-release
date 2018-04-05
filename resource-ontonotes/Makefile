@@ -54,7 +54,7 @@ $(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 ONTONOTESDIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(CHILDESDIR))))
+ifeq (, $(firstword $(wildcard $(ONTONOTESDIR))))
 RESOURCE-NAME := OntoNotes
 define RESOURCE-DESCR =
 
