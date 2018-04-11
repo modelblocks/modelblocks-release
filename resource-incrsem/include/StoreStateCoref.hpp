@@ -19,7 +19,7 @@
 
 #include<Delimited.hpp>
 #include<sstream>
-
+#include<regex> 
 ////////////////////////////////////////////////////////////////////////////////
 
 char psLBrack[] = "[";
@@ -120,6 +120,17 @@ class T : public DiscreteDomainRV<int,domT> {
   T    getLets         ( )       const { const auto& x = mttLets.find(*this); return (x==mttLets.end()) ? *this : x->second; }
   int  getNums         ( )       const { const auto& x = mtiNums.find(*this); return (x==mtiNums.end()) ? 0 : x->second; }
   T    addNum          ( int i ) const { const auto& x = mtitLetNum.find(pair<T,int>(*this,i)); return (x==mtitLetNum.end()) ? *this : x->second; }
+  T    removeLink      ( )       { 
+          string mtype = this->getString();
+          if (string::npos != mtype.find("-n")) {
+                  std::regex re ( "(.*)-n.*");
+                  std::smatch sm;
+                  if (std::regex_search(mtype,sm,re) && sm.size() > 1){
+                          return T(sm.str(1).c_str());
+                  }
+          }
+          return *this;
+                          } 
 };
 map<N,bool>         T::mnbArg;
 map<T,int>          T::mtiArity;
@@ -168,10 +179,11 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
 };
 map<K,T> K::mkt;
 map<pair<K,int>,K> K::mkik;
+const K K::kBot("Bot");//put Bot as default
+const K kNil(""); //swapped order of kNil and K_DITTO
 const K K_DITTO("\"");
-const K kNil("");
 const K K::kTop("Top");
-const K K::kBot("Bot");
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -508,7 +520,7 @@ const KSet ksBot = KSet( K::kBot );
 
 class Sign : public DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> {
  public:
-  Sign ( )                           : DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> ( )           { }
+  Sign ( )                           : DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> ( )           {third()=S_A; }
   Sign ( const KSet& ks1, T t, S s ) : DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> ( ks1, t, s ) { }
   Sign ( const KSet& ks1, const KSet& ks2, T t, S s ) {
     first().reserve( ks1.size() + ks2.size() );
@@ -521,7 +533,8 @@ class Sign : public DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> {
   T&          setType ( )       { return second(); }
   S&          setSide ( )       { return third();  }
   const KSet& getKSet ( ) const { return first();  }
-  T           getType ( ) const { return second(); }
+  //T           getType ( ) const { return second(); } //original getType for Sign class
+  T           getType ( ) const { return second().removeLink(); } //modify Sign to return linkless type
   S           getSide ( ) const { return third();  }
   bool        isDitto ( ) const { return getKSet().isDitto(); }
 };
@@ -635,12 +648,38 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
   list<FPredictor>& calcForkPredictors ( list<FPredictor>& lfp, const KSet& ksAnt, bool bAdd=true ) const { //ej change
     int d = (FEATCONFIG & 1) ? 0 : getDepth(); // max used depth - (dbar)
     const KSet& ksB = at(size()-1).getKSet(); //contexts of lowest b (bdbar)
+    for (auto& mksb : ksB) {
+            cerr << "cfp adding to ksB: " << mksb << endl;
+    }
     int iCarrier = getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
-    if( STORESTATE_TYPE ) lfp.emplace_back( d, at(size()-1).getType() ); // flag to add depth and category label as predictor, default is true
+    if( STORESTATE_TYPE ) {
+            cerr << "cfp adding d,label: " << d << "," << at(size()-1).getType().removeLink() << endl;
+            //cerr << "cfp adding d,label: " << d << "," << mytype << endl;
+            lfp.emplace_back( d, at(size()-1).getType().removeLink() ); // flag to add depth and category label as predictor, default is true
+            //lfp.emplace_back( d, mytype); // flag to add depth and category label as predictor, default is true
+    }
     if( !(FEATCONFIG & 2) ) {
-      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(d,kNil,kA,kNil) ) lfp.emplace_back( d, kNil, kA, kNil ); //ej change to add coreference
-      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(d,kF,kNil,kNil) ) lfp.emplace_back( d, kF, kNil, kNil ); //ej change to add coreference 
-      for (auto& kAntecedent : ksAnt) if ( bAdd || FPredictor::exists(d,kNil,kNil,kAntecedent) ) lfp.emplace_back( d, kNil, kNil, kAntecedent); // ej change to add coreference
+      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB ) {
+              cerr << "cfp processing kA: " << kA << endl;
+              if( bAdd || FPredictor::exists(d,kNil,kA,kNil) ) {
+                      cerr << "cfp adding kA: " << kA << endl;
+                      lfp.emplace_back( d, kNil, kA, kNil ); //ej change to add coreference
+              }
+      }
+      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) {
+              cerr << "cfp processing kF: " << kF << endl;
+              if( bAdd || FPredictor::exists(d,kF,kNil,kNil) ) {
+                      cerr << "cfp adding kF: " << kF << endl;
+                      lfp.emplace_back( d, kF, kNil, kNil ); //ej change to add coreference 
+              }
+      }
+      for (auto& kAntecedent : ksAnt) {
+              cerr << "cfp processing ksAnt: " << kAntecedent << endl;
+              if ( bAdd || FPredictor::exists(d,kNil,kNil,kAntecedent) ) {
+                      cerr << "cfp adding kAntecedent: " << kAntecedent << endl;
+                      lfp.emplace_back( d, kNil, kNil, kAntecedent); // ej change to add coreference
+              }
+      }
 //    } else if( FEATCONFIG & 1 ) {
 //      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(kNil,kA) ) lfp.emplace_back( kNil, kA );
 //      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(kF,kNil) ) lfp.emplace_back( kF, kNil );

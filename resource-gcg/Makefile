@@ -58,6 +58,8 @@ endif
 ################################################################################
 
 #### misc reannotation (there are multiple copies in case we want to do more than one w/o cycles)
+%.comparativized.linetrees:  $(GCG-SCRIPTS)/make-trees-comparativized.pl  %.linetrees
+	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.fixed.linetrees:  $(GCG-SCRIPTS)/make-trees-fixed.pl  %.linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.nommed.linetrees:  $(GCG-SCRIPTS)/make-trees-nommed.pl  %.linetrees

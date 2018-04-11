@@ -1,6 +1,7 @@
 import sys, os, re, getopt
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import tree
+import pdb
 
 
 def smallestContainingCat ( tr, targbeg, targend, catbeg=0 ):
@@ -11,8 +12,8 @@ def smallestContainingCat ( tr, targbeg, targend, catbeg=0 ):
 def getHead ( tr ):
   if len(tr.ch)==1 and len(tr.ch[0].ch)==0: return tr
   #if tr.l==tr.r: return tr
-  if len(tr.ch)==2 and tr.ch[0].c=='N-b{N-aD}' and '-lA' in tr.ch[1].c : return getHead ( tr.ch[1] )  # special case for complement of determiner as actual head
-  if len(tr.ch)==2 and '-lA' in tr.ch[0].c     and tr.ch[1].c=='D-aN'  : return getHead ( tr.ch[0] )  # special case for complement of 's as actual head
+  if len(tr.ch)==2 and tr.ch[0].c.startswith('N-b{N-aD}') and (('-lA' in tr.ch[1].c) or ('-lU' in tr.ch[1].c)) : return getHead ( tr.ch[1] )  # special case for complement of determiner as actual head
+  if len(tr.ch)==2 and ('-lA' in tr.ch[0].c or '-lU' in tr.ch[0].c) and tr.ch[1].c.startswith('D-aN')  : return getHead ( tr.ch[0] )  # special case for complement of 's as actual head
   for subtr in tr.ch:
     if '-l' not in subtr.c:
       return getHead ( subtr )
@@ -25,13 +26,18 @@ def addCoref ( tr, beg, end ):
 
 ## command-line options...
 optlist,args = getopt.gnu_getopt(sys.argv,'d')
+#optlist = [("-d","")]
 
 treefile = open ( args[1] ) #sys.argv[1] )
 
 PrevMention = { }
 
 linenum = 0
-for line in sys.stdin:
+#pdb.set_trace()
+coreffile = open (args[2] )
+
+#for line in sys.stdin: #coref file streamed from stdin
+for line in coreffile:
 
   if line.startswith('<TEXT') or line.startswith('</TEXT') or line.startswith('</DOC'):
     continue

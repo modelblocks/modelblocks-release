@@ -172,6 +172,13 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 			$$(basename %).lemmacounts  \
 			$$(basename %).nol.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
 	cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
+
+.PRECIOUS: %sm_corefsemprocdecpars
+%sm_corefsemprocdecpars:     $$(basename %).linetrees  \
+			$(BIN)/linetrees2sm_semprocdecpars_coref  \
+			$$(basename %).lemmacounts  \
+			$$(basename %).nol.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
 #%semprocdecpars:  $$(basename $$(basename %)).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename $$(basename %)).lemmacounts
 #	cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst _, ,$(subst .,, $(suffix $*))) $(word 3,$^)  >  $@
 #%f.semprocdecpars:  $$(basename %).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename %).lemmacounts
@@ -250,6 +257,23 @@ endef
 	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
 	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
 	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
+
+.PRECIOUS: %_corefsemprocmodel
+#%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e4_1e-6_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+#%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e-1_1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+%_corefsemprocmodel: $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_coref$$(suffix $$(basename $$(subst _,.,$$*)))_100_fmlrmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_coref$$(suffix $$(subst _,.,$$*))_100_jmlrmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_coref.pcptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_coref.acptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_coref.bcptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_coref.wcptmodel
+	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
+	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
+	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
+	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
+	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
+	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
+
 .PRECIOUS: %.semproctorchmodel
 %.semproctorchmodel:  %.-batchsize_100_fmlrtorchmodel  %.jmlrtorchmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
