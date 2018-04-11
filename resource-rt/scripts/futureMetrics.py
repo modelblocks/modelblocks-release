@@ -41,7 +41,7 @@ def main():
     if len(cols) == 0:
         sys.stderr.write('Nothing to compute future metrics for. Returning input table.\n')
     else:
-        data.sort([args.subj, args.sentid, args.sentpos], inplace=True)
+        data.sort_values(by=[args.subj, args.sentid, args.sentpos], inplace=True)
 
     for col in cols:
         data['fut' + col] = grouped[col].shift(-1)
