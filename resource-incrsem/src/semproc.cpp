@@ -61,8 +61,14 @@ public:
   BeamElement ( )                                                                 : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>()             { }
   BeamElement ( const Sign& a, F f, E e, K k, JResponse jr, const StoreState& q ) : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>(a,f,e,k,jr,q) { }
 };
+const BeamElement beStableDummy; //equivalent to "beStableDummy = BeamElement()"
 
-typedef pair<double,const BeamElement&> ProbBack;
+//typedef pair<double,const BeamElement&> ProbBack;
+class ProbBack : public pair<double, const BeamElement&> {
+ public :
+  ProbBack ( )                                  : pair<double, const BeamElement&> ( 0.0, beStableDummy ) { }
+  ProbBack ( double d , const BeamElement& be ) : pair<double, const BeamElement&> ( d,   be            ) { }
+};
 
 class Trellis : public vector<Beam<ProbBack,BeamElement>> {
   // private:
