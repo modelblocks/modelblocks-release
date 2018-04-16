@@ -73,8 +73,8 @@ def relabel( t ):
       t.ch = [ tree.Tree( p, t.ch ) ]
 
   ## for gappy preterminals, add projection with gap as arg (assume won't happen with extracted mods)...
-  if len(t.ch)==1 and len(t.ch[0].ch)==0 and ('-g' in t.c or '-h' in t.c):
-    t.ch = [ tree.Tree( re.sub('-l.','',re.sub('-[gh]','-b',t.c)), t.ch ) ]
+  if len(t.ch)==1 and len(t.ch[0].ch)==0 and ('-g' in t.c or '-h' in t.c or '-v' in t.c):
+    t.ch = [ tree.Tree( re.sub('-l.','',re.sub('-[ghv]','-b',t.c)), t.ch ) ]
 
   ## for (new or old) unary branches...
   if len(t.ch)==1 and '-lQ' not in t.ch[0].c and '-lV' not in t.ch[0].c and '-lZ' not in t.ch[0].c and '-lE' not in t.ch[0].c:
