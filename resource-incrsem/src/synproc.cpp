@@ -73,8 +73,14 @@ class BeamElement : public DelimitedQuad<psX,Sign,psSpace,F,psSpace,J,psSpace,St
   BeamElement ( )                                              : DelimitedQuad<psX,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psX>()        { }
   BeamElement ( const Sign& a, F f, J j, const StoreState& q ) : DelimitedQuad<psX,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psX>(a,f,j,q) { }
 };
+const BeamElement beStableDummy; //equivalent to "beStableDummy = BeamElement()"
 
-typedef pair<double,const BeamElement&> ProbBack;
+//typedef pair<double,const BeamElement&> ProbBack;
+class ProbBack : public pair<double, const BeamElement&> {
+  public :
+    ProbBack ( )                                  : pair<double, const BeamElement&> ( 0.0, beStableDummy ) { }
+    ProbBack ( double d , const BeamElement& be ) : pair<double, const BeamElement&> ( d,   be            ) { }
+};
 
 class Trellis : public vector<Beam<ProbBack,BeamElement>> {
 // private:

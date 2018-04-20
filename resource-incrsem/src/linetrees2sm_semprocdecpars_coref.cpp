@@ -32,26 +32,44 @@ using namespace arma;
 bool STORESTATE_TYPE = true;
 bool STORESTATE_CHATTY = true;
 int FEATCONFIG = 0;
-#include <StoreState.hpp>
+#include <StoreStateCoref.hpp> //ej change for coref
 #include <BerkUnkWord.hpp>
 #include <Tree.hpp>
+#include <ZeroPad.hpp>
 
 char psSpcColonSpc[]  = " : ";
 char psSpcEqualsSpc[] = " = ";
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class LVU : public trip<L,arma::rowvec,arma::vec> {
+class LVU : public trip<L,arma::rowvec,arma::vec> { //label, vec, vec
  public:
   // Constructor methods...
   LVU ( )                { }
   LVU ( const char* ps ) { first() = ps; }
+  L removeLink ( ) const {
+          if (string::npos != first().find("-n")) {
+            std::smatch sm;
+            std::regex re ("(.*)-n([0-9]+).*"); //get consecutive numbers after a "-n"
+            if (std::regex_search(first(), sm, re) && sm.size() > 2) { return(sm.str(1)); }
+          } else return(first());
+  } 
   // Accessor methods...
-  operator       const L ( ) const { return first(); }
-  const arma::rowvec&  v ( ) const { return second(); }
+  operator       const L ( ) const { return removeLink(); } //return unlinked label
+  const arma::rowvec&  v ( ) const { return second(); } 
   const arma::vec&     u ( ) const { return third(); }
+  L                    getL ( )    { return removeLink(); } //return unlinked label
+  operator             L ( )       { return removeLink(); } 
   arma::rowvec&        v ( )       { return second(); }
   arma::vec&           u ( )       { return third(); }
+  L              getLink ( ) const { 
+          if (string::npos != first().find("-n")) {
+            std::smatch sm;
+            std::regex re ("(.*)-n([0-9]+).*"); //get consecutive numbers after a "-n"
+            if (std::regex_search(first(), sm, re) && sm.size() > 2) { return(sm.str(2)); }
+          }
+          else return("");
+  } 
   // Input / output methods  ---  NOTE: only reads and writes label, not vectors...
   friend pair<istream&,LVU&> operator>> ( istream&            is,  LVU& t              )                 { return pair<istream&,LVU&>(is,t); }
   friend istream&            operator>> ( pair<istream&,LVU&> ist, const char* psDelim )                 { return pair<istream&,L&>(ist.first,ist.second.first())>>psDelim; }
@@ -139,6 +157,35 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+string getCorefId ( Tree<LVU>& tr ) { 
+  //given a tree, get the current "-n[0-9]+" coreference annotation. this id corresponds to a KSet that includes all K contexts up to and including that annotation. e.g., "The Lord said he-n0102 did wash his-n0104 shoes", "-n0102" includes "Lord_", "-n0104" includes "Lord_" and "he_".
+  L l = L(tr);
+  if (string::npos != l.find("-n")) {
+          string target = string(l);
+          std::smatch sm;
+          std::regex re (".*-n([0-9]+).*"); //get consecutive numbers after a "-n"
+          if (std::regex_search(target, sm, re) && sm.size() > 1) {return sm.str(1);} 
+  }
+  return "";
+}
+////////////////////////////////////////////////////////////////////////////////
+
+void removeCorefLink ( Tree<LVU>& tr) {
+  //remove -n link annotation from tree label
+  L l = L(tr); //get tree label
+  if (string::npos != l.find("-n")) {
+    string target = string(l);
+    std::regex re ("(.*)-n.*"); //find cat without -n stuff as newcat
+    std::smatch sm;
+    if (std::regex_search(target, sm, re) && sm.size() > 1) {
+            cerr << "found linked category: " << l << ", changing to newcat: " << sm.str(1) << endl; //debug
+            tr.getL() = sm.str(1);
+    } //set label without -n link
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 E getExtr ( const Tree<LVU>& tr ) {
 //if( FEATCONFIG & 16 ) return 'N';
   N n =  T(L(tr).c_str()).getLastNonlocal();
@@ -203,6 +250,7 @@ if( FEATCONFIG & 16)
 ////////////////////////////////////////////////////////////////////////////////
 
 const arma::mat& getG ( T t, T t0, T t1 ) {
+  //cerr << "entering getG..." << t << endl;
   if( mtttmG.end() == mtttmG.find( trip<T,T,T>(t,t0,t1) ) ) { cerr<<"WARNING: Failed to find "<<t<<" -> "<<t0<<" "<<t1<<".  Aborting tree."<<endl; return mFail; }
   return mtttmG[ trip<T,T,T>(t,t0,t1) ];
 }
@@ -210,6 +258,7 @@ const arma::mat& getG ( T t, T t0, T t1 ) {
 ////////////////////////////////////////////////////////////////////////////////
 
 arma::vec& setBackwardMessages ( Tree<LVU>& tr ) {
+  //cerr << "entering setBackwardMessages..." << tr << endl;
   // At abrupt terminal (e.g. 'T' discourse)...
   if ( tr.size()==0 ) tr.u() = vFirstHot;
   // At unary preterminal...
@@ -227,12 +276,16 @@ arma::vec& setBackwardMessages ( Tree<LVU>& tr ) {
   // At unary nonpreterminal...
   else if ( tr.size()==1 ) {
     arma::vec u0 = setBackwardMessages( tr.front() );
+    //cerr << "unary nonprtrm getg" << endl;
     tr.u() = getG( getType(tr), getType(tr.front()), "-" ) * arma::kron( u0, vFirstHot );
   }
   // At binary nonterminal...
   else if ( tr.size()==2 ) {
     arma::vec u0 = setBackwardMessages( tr.front() );
     arma::vec u1 = setBackwardMessages( tr.back()  );
+    //cerr << "binary nonterm getg" << endl;
+    //cerr << tr.front() << endl;
+    //cerr << u0 << u1 << endl;
     tr.u() = getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( u0, u1 );
   }
   return tr.u();
@@ -241,6 +294,7 @@ arma::vec& setBackwardMessages ( Tree<LVU>& tr ) {
 ////////////////////////////////////////////////////////////////////////////////
 
 void setForwardMessages ( Tree<LVU>& tr, const arma::rowvec v ) {
+  //cerr << "entering setForwardMessages..." << tr << endl;
   tr.v() = v;
   // At unary preterminal...
   if( tr.size()==1 && tr.front().size()==0 ) {
@@ -262,18 +316,22 @@ void setForwardMessages ( Tree<LVU>& tr, const arma::rowvec v ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, int s=1, int d=0, E e='N', L l=L() ) {
+void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const int sentnum, map<string,KSet>& annot2kset, int& wordnum, int s=1, int d=0, E e='N', L l=L()) { //ej change coref 
   static F          f;
   static E          eF;
   static Sign       aPretrm;
   static StoreState q;
   static arma::mat eye3( iMaxNums, iMaxNums*iMaxNums, arma::fill::zeros );  if( eye3(0,0)==0.0 ) for( int i=0; i<iMaxNums; i++ ) eye3(i,i*iMaxNums+i)=1.0;    // Init 3D diag.
 
+  //cerr << "entering calcContext..." << tr << endl;
   if( l==L() ) l = L(tr);
 
   // At unary preterminal...
   if ( tr.size()==1 && tr.front().size()==0 ) {
-    //// cerr<<"#T "<<getType(tr)<<" "<<L(tr.front())<<endl;
+    //cerr<<"#T "<<getType(tr)<<" "<<L(tr.front())<<endl;
+    string annot = tr.getLink(); 
+    //removeCorefLink(tr); // remove "-nXXX" from category label
+    cerr << "current label: " << L(tr) << endl; 
 
     f               = 1 - s;
     eF = e = ( e!='N' ) ? e : getExtr ( tr );
@@ -281,12 +339,36 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
     K k             = (FEATCONFIG & 8 && kt.first.getString()[2]!='y') ? K::kBot : kt.first;
     aPretrm         = Sign( k, getType(l), S_A );
 
+    // coref stuff
+    const KSet& ksAnt = (annot != "") ? annot2kset[annot] : KSet() ; //update annot2kset map with current k. 
+    const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
+    if (annot != "")  {
+            annot2kset[currentloc] = ksAnt;
+            cout << "found antecedent " << ksAnt << " from link: " << annot << endl;
+    }
+    annot2kset[currentloc].push_back(k); //add current k 
+    cout << "adding k " << k << " to annot2kset at loc: " << currentloc << endl;
+    //cout << "current annot2kset: " << annot2kset << endl; //can't print annot2kset - check friend operator << override
+    
+   
+    wordnum++; //increment word index at terminal
+
+
     // Print preterminal / fork-phase predictors...
-    DelimitedList<psX,FPredictor,psComma,psX> lfp;  q.calcForkPredictors(lfp);
+    DelimitedList<psX,FPredictor,psComma,psX> lfp;  
+
+    for (auto& fp : lfp) { cerr << "lfp includes: " << fp << endl; } //debug
+    for (auto& mk : ksAnt){ cerr << "ksAnt includes: " << mk << endl; } //debug
+    cerr << "begin calcForkPredictors..." << endl; //debug
+
+    q.calcForkPredictors(lfp, ksAnt); //add additional kset argument, should be set of all antecedents in referent cluster. requires global map from annotation to ksets, as in {"0204":Kset ["Lord_"], "0207": KSet ["Lord_", "he_"]}, etc.
     auto fpCat = lfp.front( );
     lfp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first element is category.
     lfp.sort( );             // sort to shorten mlr input
     lfp.push_front( fpCat );
+		
+    for (auto& fp : lfp) { cerr << "lfp after calcforkpredictors includes: " << fp << endl; } //debug
+
     cout<<"----"<<q<<endl;
     cout << "note: F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e,k) << endl;
     cout << "note: P " << q.calcPretrmTypeCondition(f,e,k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
@@ -304,23 +386,23 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
 
   // At unary identity nonpreterminal...
   else if ( tr.size()==1 and getType(tr)==getType(tr.front()) ) {
-    calcContext( tr.front(), D, U, s, d, e, l );
+    calcContext( tr.front(), D, U, sentnum, annot2kset, wordnum, s, d, e, l );
   }
 
   // At unary nonpreterminal...
   else if ( tr.size()==1 ) {
     //// cerr<<"#U"<<getType(tr)<<" "<<getType(tr.front())<<endl;
     e = ( e!='N' ) ? e : getExtr ( tr );
-    calcContext ( tr.front(), D, (getType(tr)==getType(tr.front())) ? U : U * getG(getType(tr),getType(tr.front()),"-") * arma::kron(mIdent,vOnes), s, d, e, l );
+    calcContext ( tr.front(), D, (getType(tr)==getType(tr.front())) ? U : U * getG(getType(tr),getType(tr.front()),"-") * arma::kron(mIdent,vOnes), sentnum, annot2kset, wordnum, s, d, e, l );
 //cout<<"unary at "<<L(tr)<<endl<<mtttmG[trip<T,T,T>(getType(tr),getType(tr.front()),"-")]<<endl;
   }
 
   // At binary nonterminal...
   else if ( tr.size()==2 ) {
-    //// cerr<<"#B "<<getType(tr)<<" "<<getType(tr.front())<<" "<<getType(tr.back())<<endl;
+    //cerr<<"#B "<<getType(tr)<<" "<<getType(tr.front())<<" "<<getType(tr.back())<<endl;
 
     // Traverse left child...
-    calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, 0, d+s );
+    calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, sentnum, annot2kset, wordnum, 0, d+s );
 
     J j          = s;
     LeftChildSign aLchild ( q, f, eF, aPretrm );
@@ -334,7 +416,7 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
     ljp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first elemenet is category.
     ljp.sort( );             // sort to shorten mlr input
     ljp.push_front( jpCat );
-    cout << "==== " << aLchild << "   " << L(tr) << " -> " << L(tr.front()) << " " << L(tr.back()) << endl;
+    cout << "==== " << aLchild << "   " << L(tr) << " -> " << L(tr.front()) << " " << L(tr.back()) << endl; 
     cout << "note: J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e,oL,oR)  << endl;
     cout << "note: A " << q.calcApexTypeCondition(f,j,eF,e,oL,aLchild)                  << " : " << getType(l)          << endl;
     cout << "note: B " << q.calcBrinkTypeCondition(f,j,eF,e,oL,oR,getType(l),aLchild)   << " : " << getType(tr.back())  << endl;
@@ -345,13 +427,13 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
     q = StoreState ( q, f, j, eF, e, oL, oR, getType(l), getType(tr.back()), aPretrm, aLchild );
 
     // Traverse right child...
-    calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, 1, d );
+    calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, sentnum, annot2kset, wordnum, 1, d ); 
 //    calcContext ( tr.back(), arma::diagmat( tr.v() * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( vOnes /*tr.front().u()*/, mIdent ) ), 1, d );
 
     arma::mat& mJ = mvjrm [ pair<vector<JPredictor>,JResponse>( vector<JPredictor>( ljp.begin(), ljp.end() ), JResponse(j,e,oL,oR) ) ];
     arma::mat& mA = mapamA[ pair<APredictor,T>(apred,getType(l)) ];
-    arma::mat& mB = mbpbmB[ pair<BPredictor,T>(bpred,getType(tr.back())) ];
-    arma::mat tmp; if( j ) tmp = tr.front().u()*vFirstHot.t(); else tmp = arma::diagmat(tr.front().u());
+    arma::mat& mB = mbpbmB[ pair<BPredictor,T>(bpred,getType(tr.back())) ]; 
+    arma::mat tmp; if( j ) tmp = tr.front().u()*vFirstHot.t(); else tmp = arma::diagmat(tr.front().u()); 
     mJ = ((mJ.n_elem) ? mJ : arma::zeros(iMaxNums,iMaxNums))          + normalize( D * U * getG(getType(tr),getType(tr.front()),getType(tr.back())) * arma::kron(mIdent,tr.back().u()),                                                   1 );
     mA = ((mA.n_elem) ? mA : arma::zeros(iMaxNums,iMaxNums*iMaxNums)) + normalize( eye3 * arma::kron( D.t(), U * getG(getType(tr),getType(tr.front()),getType(tr.back())) * arma::kron(tmp,tr.back().u()) ),                              1 );
     mB = ((mB.n_elem) ? mB : arma::zeros(iMaxNums,iMaxNums*iMaxNums)) + normalize( arma::diagmat(vOnes.t() * D) * U * getG(getType(tr),getType(tr.front()),getType(tr.back())) * arma::diagmat(arma::kron(tr.front().u(),tr.back().u())), 1 );
@@ -408,16 +490,28 @@ int main ( int nArgs, char* argv[] ) {
   vFirstHot = arma::zeros( iMaxNums );  vFirstHot(0)=1.0;
 
   int linenum = 0;
+  int discourselinenum = 0; // track article line number
+  map<string,KSet> annot2kset; // ej coref change - record previous sentences in article
   while ( cin && EOF!=cin.peek() ) {
     linenum++;
+    discourselinenum++;
     if( linenum%1000==0 ) cerr<<"line "<<linenum<<"..."<<endl;
-    Tree<LVU> t("T"); t.emplace_back(); t.emplace_back("T");
-    cin >> t.front() >> "\n";
-    cout.flush();
-    cout << "TREE " << linenum << ": " << t << "\n";
-    setBackwardMessages( t );
-    setForwardMessages( t, vFirstHot.t() );
-    if( t.front().size() > 0 ) calcContext( t, arma::diagmat(vFirstHot), mIdent );
+    if ( cin.peek() != '\n' ) {
+            Tree<LVU> t("T"); t.emplace_back(); t.emplace_back("T");
+            cin >> t.front() >> "\n";
+            cout.flush();
+            cout << "TREE " << linenum << ": " << t << "\n";
+            if ( t.front().size() > 0 and L(t.front().front()) == "!ARTICLE") {cerr<<"resetting discourse info..."<<endl;discourselinenum=0;annot2kset.clear();} 
+            else {
+                    setBackwardMessages( t );
+                    setForwardMessages( t, vFirstHot.t() );
+                    int wordnum = 1;
+                    //if( t.front().size() > 0 ) calcContext( t, arma::diagmat(vFirstHot), mIdent, linenum, annot2kset, wordnum ); 
+                    if( t.front().size() > 0 ) calcContext( t, arma::diagmat(vFirstHot), mIdent, discourselinenum, annot2kset, wordnum ); 
+            }
+
+    }
+    else {cin.get();}
   }
 
   cerr << "F TOTALS: " << FPredictor::getDomainSize() << " predictors, " << FResponse::getDomain().getSize() << " responses." << endl;

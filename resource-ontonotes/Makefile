@@ -54,7 +54,7 @@ $(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 ONTONOTESDIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(CHILDESDIR))))
+ifeq (, $(firstword $(wildcard $(ONTONOTESDIR))))
 RESOURCE-NAME := OntoNotes
 define RESOURCE-DESCR =
 
@@ -99,7 +99,8 @@ $$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/fi
 	tail -n +1 $(wordlist 3, $(words $^), $^)  |  perl -pe 's/==>.*<==/(U !ARTICLE)/'  >  $@
 
 %.linked.linetrees:  $(ONTONOTES-SCRIPTS)/coref2linkedlinetrees.py  $$(dir %)$$(word 1,$$(subst ., ,$$*)).coref  %.linetrees
-	cat $(word 2,$^)  |  python $(word 1,$^)  $(word 3,$^)  >  $@
+	#cat $(word 2,$^)  |  python $(word 1,$^)  $(word 3,$^)  >  $@
+	python $(word 1,$^)  $(word 3,$^)  $(word 2,$^)  >  $@
 
 #### collections
 genmodel/ontowsj02to21.%.linked.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/ontowsj$(sect).%.linked.linetrees)

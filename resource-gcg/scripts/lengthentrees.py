@@ -7,5 +7,5 @@ import tree
 import gcgtree
 
 for line in sys.stdin:
-  print( gcgtree.GCGTree(line) )
+  print( gcgtree.GCGTree(line.strip()) ) #strip to prevent adding additional blank lines
 

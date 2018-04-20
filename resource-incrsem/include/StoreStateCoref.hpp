@@ -19,7 +19,7 @@
 
 #include<Delimited.hpp>
 #include<sstream>
-
+#include<regex> 
 ////////////////////////////////////////////////////////////////////////////////
 
 char psLBrack[] = "[";
@@ -120,6 +120,17 @@ class T : public DiscreteDomainRV<int,domT> {
   T    getLets         ( )       const { const auto& x = mttLets.find(*this); return (x==mttLets.end()) ? *this : x->second; }
   int  getNums         ( )       const { const auto& x = mtiNums.find(*this); return (x==mtiNums.end()) ? 0 : x->second; }
   T    addNum          ( int i ) const { const auto& x = mtitLetNum.find(pair<T,int>(*this,i)); return (x==mtitLetNum.end()) ? *this : x->second; }
+  T    removeLink      ( )       { 
+          string mtype = this->getString();
+          if (string::npos != mtype.find("-n")) {
+                  std::regex re ( "(.*)-n.*");
+                  std::smatch sm;
+                  if (std::regex_search(mtype,sm,re) && sm.size() > 1){
+                          return T(sm.str(1).c_str());
+                  }
+          }
+          return *this;
+                          } 
 };
 map<N,bool>         T::mnbArg;
 map<T,int>          T::mtiArity;
@@ -168,10 +179,11 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
 };
 map<K,T> K::mkt;
 map<pair<K,int>,K> K::mkik;
+const K K::kBot("Bot");//put Bot as default
+const K kNil(""); //swapped order of kNil and K_DITTO
 const K K_DITTO("\"");
-const K kNil("");
 const K K::kTop("Top");
-const K K::kBot("Bot");
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -187,14 +199,15 @@ class FPredictor {
   static map<uint,T>           mit;
   static map<uint,K>           mikF;
   static map<uint,K>           mikA;
+  static map<uint,K>           mikAnt; //ej change for coreference
   static map<pair<D,T>,uint>   mdti;
   static map<trip<D,K,K>,uint> mdkki;
-  //static map<quad<D,K,K,K>,uint> mdkkki; //ej proposed change for coreference
+  static map<quad<D,K,K,K>,uint> mdkkki; //ej change for coreference
   static map<pair<K,K>,uint>   mkki;
 
  public:
 
-  // Construtors...
+  // Constructors...
   FPredictor ( ) : id(0) { }
   FPredictor ( D d, T t ) {
     const auto& it = mdti.find(pair<D,T>(d,t));
@@ -214,7 +227,12 @@ class FPredictor {
     else { id = nextid++;  mikF[id] = kF;  mikA[id] = kA;  mkki[pair<K,K>(kF,kA)] = id; }
     //cout<<"did id "<<id<<"/"<<nextid<<" as "<<*this<<endl;
   }
-
+  FPredictor ( D d, K kF, K kA, K kAntecedent ) { //ej new constructor with antecedent 
+    const auto& it = mdkkki.find(quad<D,K,K,K>(d,kF,kA,kAntecedent));
+    if ( it != mdkkki.end() ) id = it->second;
+    else { id = nextid++;  mid[id] = d;  mikF[id] = kF;  mikA[id] = kA;  mikAnt[id] = kAntecedent; mdkkki[quad<D,K,K,K>(d,kF,kA,kAntecedent)] = id; }
+    //cout<<"did id "<<id<<"/"<<nextid<<" as "<<*this<<endl;
+  }
   // Accessor methods...
   uint toInt() const { return id; }
   operator uint() const { return id; }
@@ -222,6 +240,7 @@ class FPredictor {
   T getT()        const { return mit[id]; }
   K getFillerK()  const { return mikF[id]; }
   K getAncstrK()  const { return mikA[id]; }
+  K getAntcdntK() const { return mikAnt[id]; } //ej change for coref
   static uint getDomainSize() { return nextid; }
 
   // Ordering operator...
@@ -232,44 +251,69 @@ class FPredictor {
     return pair<istream&,FPredictor&>(is,t);
   }
   friend istream& operator>> ( pair<istream&,FPredictor&> ist, const char* psDelim ) {
-    if ( ist.first.peek()==psDelim[0] ) { auto& o = ist.first >> psDelim;  ist.second = FPredictor();  return o; }
+    if ( ist.first.peek()==psDelim[0] ) { auto& o = ist.first >> psDelim;
+                                          ist.second = FPredictor();
+                                          return o;
+    }
     if ( ist.first.peek()=='d' ) {
       D d;  ist.first >> "d" >> d >> "&";
-      if ( ist.first.peek()=='t' ) { Delimited<T> t;       auto& o = ist.first >> "t" >> t        >> psDelim;  ist.second = FPredictor(d,t);      return o; }
-      else                         { Delimited<K> kF, kA;  auto& o = ist.first >> kF >> "&" >> kA >> psDelim;  ist.second = FPredictor(d,kF,kA);  return o; }
-    } else { 
-                                     Delimited<K> kF, kA;  auto& o = ist.first >> kF >> "&" >> kA >> psDelim;  ist.second = FPredictor(kF,kA);    return o;
+      if ( ist.first.peek()=='t' ) { Delimited<T> t; //if category, read in as Fpred(d,t)
+                                     auto& o = ist.first >> "t" >> t >> psDelim;
+                                     ist.second = FPredictor(d,t);
+                                     return o;
+      }
+      else                         { Delimited<K> kF, kA, kAntecedent;  //ej change
+                                     auto& o = ist.first >> kF >> "&" >> kA >> "&" >> kAntecedent >> psDelim; //ej change 
+                                     ist.second = FPredictor(d,kF,kA,kAntecedent); //ej change
+                                     return o;
+      }
+    } else { Delimited<K> kF, kA;  
+             auto& o = ist.first >> kF >> "&" >> kA >> psDelim;
+             ist.second = FPredictor(kF,kA);
+             return o;
     }
   }
   friend bool operator>> ( pair<istream&,FPredictor&> ist, const vector<const char*>& vpsDelim ) {
     D d;  ist.first >> "d" >> d >> "&"; 
     if ( ist.first.peek()=='d' ) { 
-      if ( ist.first.peek()=='t' ) { Delimited<T> t;       auto o = ist.first >> "t" >> t        >> vpsDelim;  ist.second = FPredictor(d,t);      return o; }
-      else                         { Delimited<K> kF, kA;  auto o = ist.first >> kF >> "&" >> kA >> vpsDelim;  ist.second = FPredictor(d,kF,kA);  return o; }
-    } else { 
-                                     Delimited<K> kF, kA;  auto o = ist.first >> kF >> "&" >> kA >> vpsDelim;  ist.second = FPredictor(kF,kA);    return o; 
+      if ( ist.first.peek()=='t' ) { Delimited<T> t;
+                                     auto o = ist.first >> "t" >> t >> vpsDelim;
+                                     ist.second = FPredictor(d,t);
+                                     return o;
+      }
+      else                         { Delimited<K> kF, kA, kAntecedent;
+                                     auto o = ist.first >> kF >> "&" >> kA >> "&" >> kAntecedent >> vpsDelim; //ej change
+                                     ist.second = FPredictor(d,kF,kA,kAntecedent); //ej change
+                                     return o;
+      }
+    } else { Delimited<K> kF, kA;
+             auto o = ist.first >> kF >> "&" >> kA >> vpsDelim;
+             ist.second = FPredictor(kF,kA);
+             return o; 
     }
   }
   friend ostream& operator<< ( ostream& os, const FPredictor& t ) {
     if      ( mit.end()  != mit.find(t.id)  ) return os << "d" << mid[t.id] << "&" << "t" << mit[t.id];
-    else if ( mid.end()  != mid.find(t.id)  ) return os << "d" << mid[t.id] << "&" << mikF[t.id] << "&" << mikA[t.id];
+    else if ( mid.end()  != mid.find(t.id)  ) return os << "d" << mid[t.id] << "&" << mikF[t.id] << "&" << mikA[t.id] << "&" << mikAnt[t.id]; //ej change
     else if ( mikA.end() != mikA.find(t.id) ) return os << mikF[t.id] << "&" << mikA[t.id];
     else                                      return os << "NON_STRING_ID_" << t.id;
   }
   static bool exists ( D d, T t )        { return( mdti.end()!=mdti.find(pair<D,T>(d,t)) ); }
   static bool exists ( D d, K kF, K kA ) { return( mdkki.end()!=mdkki.find(trip<D,K,K>(d,kF,kA)) ); }
   static bool exists ( K kF, K kA )      { return( mkki.end()!=mkki.find(pair<K,K>(kF,kA)) ); }
+  static bool exists ( D d, K kF, K kA, K kAntecedent) { return( mdkkki.end()!=mdkkki.find(quad<D,K,K,K>(d,kF,kA,kAntecedent)) ); } //ej changes for coref
   FPredictor  addNum ( int i ) const     { return( FPredictor( mid[id], mit[id].addNum(i) ) ); }
 };
-uint                  FPredictor::nextid = 1;   // space for bias "" predictor
-map<uint,D>           FPredictor::mid;
-map<uint,T>           FPredictor::mit;
-map<uint,K>           FPredictor::mikF;
-map<uint,K>           FPredictor::mikA;
-map<pair<D,T>,uint>   FPredictor::mdti;
-map<trip<D,K,K>,uint> FPredictor::mdkki;
-map<pair<K,K>,uint>   FPredictor::mkki;
-
+uint                    FPredictor::nextid = 1;   // space for bias "" predictor
+map<uint,D>             FPredictor::mid;
+map<uint,T>             FPredictor::mit;
+map<uint,K>             FPredictor::mikF;
+map<uint,K>             FPredictor::mikA;
+map<uint,K>             FPredictor::mikAnt; //ej change
+map<pair<D,T>,uint>     FPredictor::mdti;
+map<trip<D,K,K>,uint>   FPredictor::mdkki;
+map<pair<K,K>,uint>     FPredictor::mkki;
+map<quad<D,K,K,K>,uint> FPredictor::mdkkki; //ej change for coref
 ////////////////////////////////////////////////////////////////////////////////
 
 DiscreteDomain<int> domFResponse;
@@ -476,7 +520,7 @@ const KSet ksBot = KSet( K::kBot );
 
 class Sign : public DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> {
  public:
-  Sign ( )                           : DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> ( )           { }
+  Sign ( )                           : DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> ( )           {third()=S_A; }
   Sign ( const KSet& ks1, T t, S s ) : DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> ( ks1, t, s ) { }
   Sign ( const KSet& ks1, const KSet& ks2, T t, S s ) {
     first().reserve( ks1.size() + ks2.size() );
@@ -489,7 +533,8 @@ class Sign : public DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> {
   T&          setType ( )       { return second(); }
   S&          setSide ( )       { return third();  }
   const KSet& getKSet ( ) const { return first();  }
-  T           getType ( ) const { return second(); }
+  //T           getType ( ) const { return second(); } //original getType for Sign class
+  T           getType ( ) const { return second().removeLink(); } //modify Sign to return linkless type
   S           getSide ( ) const { return third();  }
   bool        isDitto ( ) const { return getKSet().isDitto(); }
 };
@@ -575,7 +620,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
                                     -10;       // (will not map)
   }
 
-  const Sign& at ( int i ) const { assert(i<int(size())); return (i<0) ? aTop : operator[](i); }
+  const Sign& at ( int i ) const { assert(i<size()); return (i<0) ? aTop : operator[](i); }
 
   int getDepth ( ) const {
     int d = 0; for( int i=size()-1; i>=0; i-- ) if( !operator[](i).getType().isCarrier() && operator[](i).getSide()==S_B ) d++;
@@ -600,17 +645,41 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     return -1;
   } 
 
-  list<FPredictor>& calcForkPredictors ( list<FPredictor>& lfp, bool bAdd=true ) const {
+  list<FPredictor>& calcForkPredictors ( list<FPredictor>& lfp, const KSet& ksAnt, bool bAdd=true ) const { //ej change
     int d = (FEATCONFIG & 1) ? 0 : getDepth(); // max used depth - (dbar)
     const KSet& ksB = at(size()-1).getKSet(); //contexts of lowest b (bdbar)
+    for (auto& mksb : ksB) {
+            cerr << "cfp adding to ksB: " << mksb << endl;
+    }
     int iCarrier = getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
-    if( STORESTATE_TYPE ) lfp.emplace_back( d, at(size()-1).getType() ); // flag to add depth and category label as predictor, default is true
+    if( STORESTATE_TYPE ) {
+            cerr << "cfp adding d,label: " << d << "," << at(size()-1).getType().removeLink() << endl;
+            //cerr << "cfp adding d,label: " << d << "," << mytype << endl;
+            lfp.emplace_back( d, at(size()-1).getType().removeLink() ); // flag to add depth and category label as predictor, default is true
+            //lfp.emplace_back( d, mytype); // flag to add depth and category label as predictor, default is true
+    }
     if( !(FEATCONFIG & 2) ) {
-      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(d,kNil,kA) ) lfp.emplace_back( d, kNil, kA ); 
-      //for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(d,kNil,kA,kNil) ) lfp.emplace_back( d, kNil, kA, kNil ); //ej proposed change to add coreference
-      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(d,kF,kNil) ) lfp.emplace_back( d, kF, kNil ); 
-      //for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(d,kF,kNil,kNil) ) lfp.emplace_back( d, kF, kNil, kNil ); //ej proposed change to add coreference 
-      // for (auto& kAntecedent : ksetfrombackpointers) if ( bAdd || Fpredictor::exists(d,kNil,kNil,kAntecedent) ) lfp.emplace_back( d, kNil, kNil, kAntecedent); // ej proposed change to add coreference
+      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB ) {
+              cerr << "cfp processing kA: " << kA << endl;
+              if( bAdd || FPredictor::exists(d,kNil,kA,kNil) ) {
+                      cerr << "cfp adding kA: " << kA << endl;
+                      lfp.emplace_back( d, kNil, kA, kNil ); //ej change to add coreference
+              }
+      }
+      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) {
+              cerr << "cfp processing kF: " << kF << endl;
+              if( bAdd || FPredictor::exists(d,kF,kNil,kNil) ) {
+                      cerr << "cfp adding kF: " << kF << endl;
+                      lfp.emplace_back( d, kF, kNil, kNil ); //ej change to add coreference 
+              }
+      }
+      for (auto& kAntecedent : ksAnt) {
+              cerr << "cfp processing ksAnt: " << kAntecedent << endl;
+              if ( bAdd || FPredictor::exists(d,kNil,kNil,kAntecedent) ) {
+                      cerr << "cfp adding kAntecedent: " << kAntecedent << endl;
+                      lfp.emplace_back( d, kNil, kNil, kAntecedent); // ej change to add coreference
+              }
+      }
 //    } else if( FEATCONFIG & 1 ) {
 //      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(kNil,kA) ) lfp.emplace_back( kNil, kA );
 //      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(kF,kNil) ) lfp.emplace_back( kF, kNil );
@@ -630,7 +699,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     const KSet& ksAncstr = ( aAncstr.getKSet().size()==0 ) ? ksBot : aAncstr.getKSet();
     const KSet& ksFiller = ( iCarrierB<0                 ) ? ksBot : at( iCarrierB ).getKSet();
     const KSet& ksLchild = ( aLchild.getKSet().size()==0 ) ? ksBot : aLchild.getKSet() ;
-    if( STORESTATE_TYPE ) if( bAdd || JPredictor::exists(d,aAncstr.getType(),aLchild.getType()) ) ljp.emplace_back( d, aAncstr.getType(), aLchild.getType() );
+    if( STORESTATE_TYPE ) ljp.emplace_back( d, aAncstr.getType(), aLchild.getType() );
     if( !(FEATCONFIG & 32) ) {
       for( auto& kA : ksAncstr ) for( auto& kL : ksLchild ) if( bAdd || JPredictor::exists(d,kNil,kA,kL) ) ljp.emplace_back( d, kNil, kA, kL );
       for( auto& kF : ksFiller ) for( auto& kA : ksAncstr ) if( bAdd || JPredictor::exists(d,kF,kA,kNil) ) ljp.emplace_back( d, kF, kA, kNil );
