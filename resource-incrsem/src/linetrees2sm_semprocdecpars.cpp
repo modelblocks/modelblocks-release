@@ -283,12 +283,15 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
 
     // Print preterminal / fork-phase predictors...
     DelimitedList<psX,FPredictor,psComma,psX> lfp;  q.calcForkPredictors(lfp);
+    auto fpCat = lfp.front( );
+    lfp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first element is category.
+    lfp.sort( );             // sort to shorten mlr input
+    lfp.push_front( fpCat );
     cout<<"----"<<q<<endl;
     cout << "note: F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e,k) << endl;
     cout << "note: P " << q.calcPretrmTypeCondition(f,e,k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
     cout << "note: W " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
 
-    lfp.sort( );
     arma::vec& vF = mvfrv[ pair<vector<FPredictor>,FResponse>( vector<FPredictor>( lfp.begin(), lfp.end() ), FResponse(f,e,k) ) ];
     arma::mat& mP = mpppmP[ pair<PPredictor,T>(q.calcPretrmTypeCondition(f,e,k),aPretrm.getType()) ];
     arma::vec& vW = mktwvW[ trip<K,T,W>(k,aPretrm.getType(),L(tr.front()).c_str()) ];
@@ -327,6 +330,10 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
 
     // Print binary / join-phase predictors...
     DelimitedList<psX,JPredictor,psComma,psX> ljp;  q.calcJoinPredictors(ljp,f,eF,aLchild);
+    auto jpCat = ljp.front( );
+    ljp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first elemenet is category.
+    ljp.sort( );             // sort to shorten mlr input
+    ljp.push_front( jpCat );
     cout << "==== " << aLchild << "   " << L(tr) << " -> " << L(tr.front()) << " " << L(tr.back()) << endl;
     cout << "note: J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e,oL,oR)  << endl;
     cout << "note: A " << q.calcApexTypeCondition(f,j,eF,e,oL,aLchild)                  << " : " << getType(l)          << endl;
@@ -341,7 +348,6 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
     calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, 1, d );
 //    calcContext ( tr.back(), arma::diagmat( tr.v() * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( vOnes /*tr.front().u()*/, mIdent ) ), 1, d );
 
-    ljp.sort( );
     arma::mat& mJ = mvjrm [ pair<vector<JPredictor>,JResponse>( vector<JPredictor>( ljp.begin(), ljp.end() ), JResponse(j,e,oL,oR) ) ];
     arma::mat& mA = mapamA[ pair<APredictor,T>(apred,getType(l)) ];
     arma::mat& mB = mbpbmB[ pair<BPredictor,T>(bpred,getType(tr.back())) ];
