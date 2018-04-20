@@ -90,10 +90,10 @@ endif
 	cat $(word 1, $^) | python $(word 2, $^) <(tail -n +2 $(word 3, $^)) -s > $@
 
 %.word2vec.linemeasures: $$(basename $$(basename $$(basename %))).linetoks $(GLOVE-SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename $$(basename %))))$$(suffix $$(basename $$*)).word2vec.txt
-	cat $(word 1, $^) | python $(word 2, $^) <(tail -n +2 $(word 3, $^)) -s -o linemeasures -w $(subst .,,$(suffix, $*)) > $@
+	cat $(word 1, $^) | python $(word 2, $^) <(tail -n +2 $(word 3, $^)) -s -o linemeasures -w $(subst _, ,$(subst .,,$(suffix, $*))) > $@
 
 %.word2vec.tokmeasures: $$(basename $$(basename $$(basename %))).linetoks $(GLOVE-SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename $$(basename %))))$$(suffix $$(basename $$*)).word2vec.txt
-	cat $(word 1, $^) | python $(word 2, $^) <(tail -n +2 $(word 3, $^)) -s -o tokmeasures -w $(subst .,,$(suffix $*)) > $@
+	cat $(word 1, $^) | python $(word 2, $^) <(tail -n +2 $(word 3, $^)) -s -o tokmeasures -w $(subst _, ,$(subst .,,$(suffix $*))) > $@
 
 %.word2phrase1.txt: $$(DEP-WORD2VEC) %.linetoks $(WORD2VECDIR)word2phrase
 	$(word 2, $^) -train $(word 1, $^) -output $@ -threshold 200 -debug 2

@@ -87,7 +87,7 @@ SURP := fwprob5surp totsurp
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
 FJ := noF yesJ embddepthMin endembdMin startembdMin noFlen noFdr noFdrv embdlen embddr embddrv 
 COREF := # corefbin coreflenw coreflenr corefsize
-SEMDIST := sdCosMeanW1 sdEuclMeanW1 sdNACosMeanW1 sdNAEuclMeanW1
+SEMDIST := sdCosMeanW1 sdEuclMeanW1 sdNACosMeanW1 sdNAEuclMeanW1 sdCosMeanW2 sdEuclMeanW2 sdNACosMeanW2 sdNAEuclMeanW2 sdCosMeanW3 sdEuclMeanW3 sdNACosMeanW3 sdNAEuclMeanW3 sdCosMeanWinf sdEuclMeanWinf sdNACosMeanWinf sdNAEuclMeanWinf
 GCG-CATS := A B C D F G
 EMBDDEPTHS := 1 2 3 4 5
 
@@ -332,11 +332,11 @@ $(RT-SCRIPTS)/filter_cols.py
 	cat $(word 1, $^) | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) > $@
 
 # Shortcut: With co-ref features
-%.syn.tokmeasures: %_parsed.dlt.lc.100.1.word2vec.coref.tokmeasures
+%.syn.tokmeasures: %_parsed.dlt.lc.100.1_2_3_inf.word2vec.coref.tokmeasures
 	mv $^ $@
 
 # Shortcut: Without co-ref features
-%.syn.tokmeasures: %_parsed.dlt.lc.100.1.word2vec.tokmeasures
+%.syn.tokmeasures: %_parsed.dlt.lc.100.1_2_3_inf.word2vec.tokmeasures
 	mv $^ $@
 
 %.itemmeasures: $$(DEP-RHACKS) $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
