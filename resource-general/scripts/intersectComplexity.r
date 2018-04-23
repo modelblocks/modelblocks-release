@@ -1,4 +1,4 @@
-#!/usr/bin/Rscript
+#!/usr/bin/env Rscript
 
 argoffset = 5 #this is the offset for sys.argv for running an rscript from cli
 
