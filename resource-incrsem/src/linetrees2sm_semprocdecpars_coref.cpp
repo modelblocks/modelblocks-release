@@ -178,7 +178,7 @@ void removeCorefLink ( Tree<LVU>& tr) {
     std::regex re ("(.*)-n.*"); //find cat without -n stuff as newcat
     std::smatch sm;
     if (std::regex_search(target, sm, re) && sm.size() > 1) {
-            cerr << "found linked category: " << l << ", changing to newcat: " << sm.str(1) << endl; //debug
+            //cerr << "found linked category: " << l << ", changing to newcat: " << sm.str(1) << endl; //debug
             tr.getL() = sm.str(1);
     } //set label without -n link
   }
@@ -344,10 +344,10 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
     if (annot != "")  {
             annot2kset[currentloc] = ksAnt;
-            cout << "found antecedent " << ksAnt << " from link: " << annot << endl;
+            //cerr << "found antecedent " << ksAnt << " from link: " << annot << endl;
     }
     annot2kset[currentloc].push_back(k); //add current k 
-    cout << "adding k " << k << " to annot2kset at loc: " << currentloc << endl;
+    //cerr << "adding k " << k << " to annot2kset at loc: " << currentloc << endl;
     //cout << "current annot2kset: " << annot2kset << endl; //can't print annot2kset - check friend operator << override
     
    
@@ -357,13 +357,13 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     // Print preterminal / fork-phase predictors...
     DelimitedList<psX,FPredictor,psComma,psX> lfp;  
 
-    for (auto& fp : lfp) { cerr << "lfp includes: " << fp << endl; } //debug
-    for (auto& mk : ksAnt){ cerr << "ksAnt includes: " << mk << endl; } //debug
-    cerr << "begin calcForkPredictors..." << endl; //debug
+    //for (auto& fp : lfp) { cerr << "lfp includes: " << fp << endl; } //debug
+    //for (auto& mk : ksAnt){ cerr << "ksAnt includes: " << mk << endl; } //debug
+    //cerr << "begin calcForkPredictors..." << endl; //debug
 
     q.calcForkPredictors(lfp, ksAnt); //add additional kset argument, should be set of all antecedents in referent cluster. requires global map from annotation to ksets, as in {"0204":Kset ["Lord_"], "0207": KSet ["Lord_", "he_"]}, etc.
 
-    for (auto& fp : lfp) { cerr << "lfp after calcforkpredictors includes: " << fp << endl; } //debug
+    //for (auto& fp : lfp) { cerr << "lfp after calcforkpredictors includes: " << fp << endl; } //debug
 
     cout<<"----"<<q<<endl;
     cout << "note: F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e,k) << endl;
