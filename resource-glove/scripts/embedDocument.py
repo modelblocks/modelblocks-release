@@ -203,7 +203,7 @@ class EmbeddingMap(object):
         if fromPath:
             textfile.close()
 
-    def printLineMeasure(self, embeddings, windowLen=np.inf):
+    def getLineMeasure(self, embeddings, windowLen=np.inf):
         sentid = embeddings[0].sentid
         self.setMeasure('cosDist')
         semCosMin = self.windowedSentenceMeasure(embeddings, windowLen=windowLen, agg='min')
@@ -217,21 +217,26 @@ class EmbeddingMap(object):
         semDistMean = self.windowedSentenceMeasure(embeddings, windowLen=windowLen, agg='mean')
         semDistSum = self.windowedSentenceMeasure(embeddings, windowLen=windowLen, agg='sum')
 
-        print(' '.join([str(x) for x in (sentid, semCosMin, semCosMax, semCosMean, semCosSum, semDistMin, semDistMax, semDistMean, semDistSum)]))
+        return(' '.join([str(x) for x in (sentid, semCosMin, semCosMax, semCosMean, semCosSum, semDistMin, semDistMax, semDistMean, semDistSum)]))
 
-    def text2LineMeasures(self, textfile, windowLen=np.inf):
+    def text2LineMeasures(self, textfile, windowLen=[np.inf]):
         if type(textfile) == str:
             fromPath = True
             textfile = file(textfile, 'rb')
         else:
             fromPath = False
 
-        if not np.isfinite(windowLen):
-            w = 'Winf'
-        else:
-            w = 'W%s' %windowLen
+        if not isinstance(windowLen, list):
+            windowLen = [windowLen]
 
-        headers = ['sentid',
+        headers = ['sentid']
+        for wl in windowLen:
+            if not np.isfinite(wl):
+                w = 'Winf'
+            else:
+                w = 'W%s' %wl
+
+            headers += [
                    'semCosMin%s'%w, 'semCosMax%s'%w, 'semCosMean%s'%w, 'semCosSum%s'%w,
                    'semDistMin%s'%w, 'semDistMax%s'%w, 'semDistMean%s'%w, 'semDistSum%s'%w
                   ]
@@ -239,15 +244,23 @@ class EmbeddingMap(object):
 
         sentid = 0
         for l in textfile:
+            linemeasures = []
             embeddings = self.embedSent(l, sentid)
-            self.printLineMeasure(embeddings, windowLen)
+            for i in range(len(windowLen)):
+                wl = windowLen[i]
+                if i == 0:
+                    linemeasures.append(self.getLineMeasure(embeddings, wl))
+                else:
+                    linemeasures.append(self.getLineMeasure(embeddings, wl)[1:])
+                print(' '.join(linemeasures))
             sentid += 1
 
         if fromPath:
             textfile.close()
 
-    def printTokMeasures(self, embeddings, windowLen=np.inf, agg='mean'):
+    def getTokMeasures(self, embeddings, windowLen=np.inf, agg='mean'):
         sentid = embeddings[0].sentid
+        rows = []
         for i in range(len(embeddings)):
             if not np.isfinite(windowLen):
                 start_ix = 0
@@ -283,27 +296,32 @@ class EmbeddingMap(object):
             sdEuclMean = sdNAEuclMean if np.isfinite(sdNAEuclMean) else 0
             sdEuclSum = sdNAEuclSum if np.isfinite(sdNAEuclSum) else 0
 
-            print(' '.join([str(x) for x in (embeddings[i].word,
+            rows.append([str(x) for x in (embeddings[i].word,
                                              embeddings[i].sentid,
                                              sdCosMin, sdCosMax, sdCosMean, sdCosSum,
                                              sdEuclMin, sdEuclMax, sdEuclMean, sdEuclSum,
                                              sdNACosMin, sdNACosMax, sdNACosMean, sdNACosSum,
                                              sdNAEuclMin, sdNAEuclMax, sdNAEuclMean, sdNAEuclSum,
-                                             )]))
+                                             )])
+        return rows
 
-    def text2TokMeasures(self, textfile, windowLen=np.inf):
+    def text2TokMeasures(self, textfile, windowLen=[np.inf]):
+        if not isinstance(windowLen, list):
+            windowLen = [windowLen]
         if type(textfile) == str:
             fromPath = True
             textfile = file(textfile, 'rb')
         else:
             fromPath = False
 
-        if not np.isfinite(windowLen):
-            w = 'Winf'
-        else:
-            w = 'W%s' %windowLen
+        headers = ['word', 'sentid']
+        for wl in windowLen:
+            if not np.isfinite(wl):
+                w = 'Winf'
+            else:
+                w = 'W%s' %wl
 
-        headers = ['word', 'sentid',
+            headers += [
                    'sdCosMin%s'%w, 'sdCosMax%s'%w, 'sdCosMean%s'%w, 'sdCosSum%s'%w,
                    'sdEuclMin%s'%w, 'sdEuclMax%s'%w, 'sdEuclMean%s'%w, 'sdEuclSum%s'%w,
                    'sdNACosMin%s'%w, 'sdNACosMax%s'%w, 'sdNACosMean%s'%w, 'sdNACosSum%s'%w,
@@ -313,8 +331,19 @@ class EmbeddingMap(object):
  
         sentid = 0
         for l in textfile:
+            tokmeasures = []
             embeddings = self.embedSent(l, sentid)
-            self.printTokMeasures(embeddings, windowLen)
+            for i in range(len(windowLen)):
+                wl = windowLen[i]
+                tokmeasures_cur = self.getTokMeasures(embeddings, wl)
+                if i == 0:
+                    for j in range(len(tokmeasures_cur)):
+                        tokmeasures.append(' '.join(tokmeasures_cur[j]))
+                else:
+                    for j in range(len(tokmeasures_cur)):
+                        tokmeasures[j] += ' ' + ' '.join(tokmeasures_cur[j][2:])
+            for row in tokmeasures:
+                print(row)
             sentid += 1
         
         if fromPath:
@@ -332,12 +361,13 @@ def main():
     argparser.add_argument('-t', '--text', default=sys.stdin, help='Path to text file to embed.')
     argparser.add_argument('-s', '--rmStopWrds', action='store_true', help='Don\'t embed stop words (columns will be filled with "nan").')
     argparser.add_argument('-o', '--outputType', default='embeddings', help='Output type (one of: "embeddings", "tokmeasures", "linemeasures").')
-    argparser.add_argument('-w', '--windowLen', default='inf', help='Window length in words within which to compute aggregate semantic distance, or "inf" to use a single window per sentence.')
+    argparser.add_argument('-w', '--windowLen', nargs='+', default=['inf'], help='Window length in words within which to compute aggregate semantic distance, or "inf" to use a single window per sentence.')
     args, unknown = argparser.parse_known_args()
-    if args.windowLen == 'inf':
-        args.windowLen = np.inf
-    else:
-        args.windowLen = int(args.windowLen)
+    for i in range(len(args.windowLen)):
+        if args.windowLen[i] == 'inf':
+            args.windowLen[i] = np.inf
+        else:
+            args.windowLen[i] = int(args.windowLen[i])
 
     textfile = args.text
     

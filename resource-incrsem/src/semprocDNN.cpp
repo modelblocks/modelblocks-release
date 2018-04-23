@@ -121,6 +121,7 @@ int main ( int nArgs, char* argv[] ) {
   uint numThreads = 1;
 
   // Define model structures...
+  arma::mat matE;
   arma::mat matF;
   arma::mat matJ;
   map<PPredictor,map<P,double>> modP;
@@ -129,7 +130,8 @@ int main ( int nArgs, char* argv[] ) {
   map<BPredictor,map<B,double>> modB;
 
   { // Define model lists...
-    list<DelimitedTrip<psX,FPredictor,psSpcColonSpc,Delimited<FResponse>,psSpcEqualsSpc,Delimited<double>,psX>> lF;
+    list<DelimitedTrip<psX,FPredictor,psSpcColonSpc,Delimited<int>,psSpcEqualsSpc,Delimited<double>,psX>> lE;
+    list<DelimitedTrip<psX,Delimited<int>,psSpcColonSpc,Delimited<FResponse>,psSpcEqualsSpc,Delimited<double>,psX>> lF;
     list<DelimitedTrip<psX,PPredictor,psSpcColonSpc,P,psSpcEqualsSpc,Delimited<double>,psX>> lP;
     list<DelimitedTrip<psX,WPredictor,psSpcColonSpc,W,psSpcEqualsSpc,Delimited<double>,psX>> lW;
     list<DelimitedTrip<psX,JPredictor,psSpcColonSpc,Delimited<JResponse>,psSpcEqualsSpc,Delimited<double>,psX>> lJ;
@@ -155,6 +157,7 @@ int main ( int nArgs, char* argv[] ) {
         // Read model lists...
         int linenum = 0;
         while ( fin && EOF!=fin.peek() ) {
+          if ( fin.peek()=='E' ) fin >> "E " >> *lE.emplace(lE.end()) >> "\n";
           if ( fin.peek()=='F' ) fin >> "F " >> *lF.emplace(lF.end()) >> "\n";
           if ( fin.peek()=='P' ) fin >> "P " >> *lP.emplace(lP.end()) >> "\n";
           if ( fin.peek()=='W' ) fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
@@ -168,9 +171,13 @@ int main ( int nArgs, char* argv[] ) {
     }
 
     // Populate model structures...
-    matF = arma::zeros( FResponse::getDomain().getSize(), FPredictor::getDomainSize() );
+    // CODE REVIEW: Infer embedding dim
+    int emb_dim = 128;
+    matE = arma::zeros( emb_dim, FPredictor::getDomainSize() );
+    matF = arma::zeros( FResponse::getDomain().getSize(), emb_dim );
     matJ = arma::zeros( JResponse::getDomain().getSize(), JPredictor::getDomainSize() );
-    for ( auto& prw : lF ) matF( prw.second().toInt(), prw.first().toInt() ) = prw.third();
+    for ( auto& prw : lE ) matE( prw.second(), prw.first().toInt() ) = prw.third();
+    for ( auto& prw : lF ) matF( prw.second().toInt(), prw.first() ) = prw.third();
     for ( auto& prw : lP ) modP[prw.first()][prw.second()] = prw.third();
     for ( auto& prw : lW ) lexW[prw.second()].emplace_back(prw.first(),prw.third());
     for ( auto& prw : lJ ) matJ( prw.second().toInt(), prw.first().toInt() ) = prw.third();
@@ -206,7 +213,7 @@ int main ( int nArgs, char* argv[] ) {
 
   // For each line in stdin...
   //  for ( int linenum=1; cin && EOF!=cin.peek(); linenum++ ) {
-  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&MLSs,&sents,&mutexMLSList,&linenum,numThreads,matF,modP,lexW,matJ,modA,modB] (uint numt) {
+  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&MLSs,&sents,&mutexMLSList,&linenum,numThreads,matE,matF,modP,lexW,matJ,modA,modB] (uint numt) {
 
     auto tpLastReport = chrono::high_resolution_clock::now();
     
@@ -258,7 +265,7 @@ int main ( int nArgs, char* argv[] ) {
           // Calc distrib over response for each fork predictor...
           arma::vec flogresponses = arma::zeros( matF.n_rows );
           list<FPredictor> lfpredictors;  q_tdec1.calcForkPredictors( lfpredictors, false );  lfpredictors.emplace_back();  // add bias term
-          for ( auto& fpredr : lfpredictors ) if ( fpredr.toInt() < matF.n_cols ) flogresponses += matF.col( fpredr.toInt() ); // add logprob for all indicated features. over all FEK responses.
+          for ( auto& fpredr : lfpredictors ) if ( fpredr.toInt() < matF.n_cols ) flogresponses += matF * matE.col( fpredr.toInt() ); // add logprob for all indicated features. over all FEK responses.
           if ( VERBOSE>1 ) for ( auto& fpredr : lfpredictors ) cout<<"    fpredr:"<<fpredr<<endl;
           arma::vec fresponses = arma::exp( flogresponses );
           // Calc normalization term over responses...

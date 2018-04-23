@@ -94,7 +94,7 @@ endif
 #### c++ executables  --  NOTE: $< must precede -l's on ubuntu g++
 .PRECIOUS: $(BIN)/%
 $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user-cflags.txt  |  $(BIN)  $(INCLUDE)
-	g++ -I/usr/include/libxml2/ -I$(word 2,$|) -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 3,$^)` -fpermissive -std=c++11 $< -lm -larmadillo -lmlpack -lpthread -o $@
+	g++ -I/usr/include/libxml2/ -I$(word 2,$|) -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 3,$^)` -fpermissive -std=c++11 $< -lm -larmadillo -lpthread -o $@
 
 ################################################################################
 #
@@ -345,6 +345,8 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 	cat $<  |  perl -pe 's/\(([^\(\) ]*) ([^\(\) ]*)\)/\(\1-PRTRM \2\)/g;s/\([^ ]*,[^ -]*/\(Pc/g;s/\(:/\(Pk/g'  >  $@
 %.pptrm.linetrees: %.linetrees      ## also change comma and colon to non-delimiter symbols
 	cat $<  |  perl -pe 's/\(([^\(\) ]*) ([^\(\) ]*)\)/\(\1-PRTRM \2\)/g;s/\(([^\(\) ]*) (\([^\(\)]*\))\)/\(\1-PRTRM \2\)/g;s/\(([^\(\) ]*) (\([^\(\) ]* \([^\(\)]*\)\))\)/\(\1-PRTRM \2\)/g;s/((?:-l.|-x)*)(-PRTRM)/\2\1/g;s/\([^ ]*,[^ ]* /\(Pc /g;s/\(: /\(Pk /g'  >  $@
+%.noprtrm.linetrees: %.linetrees
+	cat $< | sed 's/-PRTRM//g' > $@
 
 .PRECIOUS: %pcfg.x-ccu.model
 %pcfg.x-ccu.model:  $$(basename %).rules  $(BIN)/pcfgcptdecpars-unker
