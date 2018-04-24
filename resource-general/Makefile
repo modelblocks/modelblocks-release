@@ -90,6 +90,9 @@ DTSR-SCRIPTS := $(RESOURCE-DTSR)/scripts
 RESOURCE-DUNDEE := $(abspath $(MBDIR)/resource-dundee)
 DUNDEE-SCRIPTS := $(RESOURCE-DUNDEE)/scripts
 
+RESOURCE-FEDECOG := $(abspath $(MBDIR)/resource-fedorenkoetal16ecog)
+FEDECOG-SCRIPTS := $(RESOURCE-FEDECOG)/scripts
+
 RESOURCE-FMRI := $(abspath $(MBDIR)/resource-fmri)
 FMRI-SCRIPTS := $(RESOURCE-FMRI)/scripts
 
@@ -206,6 +209,7 @@ include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
 include $(RESOURCE-RT)/Makefile
 include $(RESOURCE-DTSR)/Makefile
+include $(RESOURCE-FEDECOG)/Makefile
 include $(RESOURCE-FMRI)/Makefile
 include $(RESOURCE-LMEFIT)/Makefile
 include $(RESOURCE-LOGREG)/Makefile

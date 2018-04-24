@@ -87,7 +87,7 @@ SURP := fwprob5surp totsurp
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
 FJ := noF yesJ embddepthMin endembdMin startembdMin noFlen noFdr noFdrv embdlen embddr embddrv 
 COREF := # corefbin coreflenw coreflenr corefsize
-SEMDIST := sdCosMeanW1 sdEuclMeanW1 sdNACosMeanW1 sdNAEuclMeanW1
+SEMDIST := sdCosMeanW1 sdEuclMeanW1 sdNACosMeanW1 sdNAEuclMeanW1 sdCosMeanW2 sdEuclMeanW2 sdNACosMeanW2 sdNAEuclMeanW2 sdCosMeanW3 sdEuclMeanW3 sdNACosMeanW3 sdNAEuclMeanW3 sdCosMeanWinf sdEuclMeanWinf sdNACosMeanWinf sdNAEuclMeanWinf
 GCG-CATS := A B C D F G
 EMBDDEPTHS := 1 2 3 4 5
 
@@ -152,9 +152,9 @@ endef
 #   3 = basename string
 #   4 = LME args
 define SPILL
-$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-$(1):$(3).$(var)$(1).$(4).-p_dev.lrt
+$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-$(1):$(3).$(var)$(1).$(4)..lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-$(1)_%:$(3).$(var)$(1).%.-p_dev.lrt;
+$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-$(1)_%:$(3).$(var)$(1).%..lrt;
 )
 $(2)-DLT-$(1): $(foreach var, $(DLT), $(2)-$(var)-$(1))
 $(2)-DLT-$(1)_%: $(foreach var, $(DLT), $(2)-$(var)-$(1)_%);
@@ -167,9 +167,9 @@ $(2)-SEMDIST-$(1)_%: $(foreach var, $(SEMDIST), $(2)-$(var)-$(1)_%);
 $(2)-MEM-$(1): $(2)-DLT-$(1) $(2)-FJ-$(1) $(2)-COREF-$(1) $(2)-SEMDIST-$(1)
 $(2)-MEM-$(1)_%: $(2)-DLT-$(1)_% $(2)-FJ-$(1)_% $(2)-COREF-$(1)_% $(2)-SEMDIST-$(1)_%;
 
-$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-cum-$(1):$(3).cum$(var)$(1).$(4).-p_dev.lrt
+$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-cum-$(1):$(3).cum$(var)$(1).$(4)..lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-cum-$(1)_%:$(3).cum$(var)$(1).%.-p_dev.lrt
+$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(2)-$(var)-cum-$(1)_%:$(3).cum$(var)$(1).%..lrt
 )
 $(2)-DLT-cum-$(1): $(foreach var, $(DLT), $(2)-$(var)-cum-$(1))
 $(2)-DLT-cum-$(1)_%: $(foreach var, $(DLT), $(2)-$(var)-cum-$(1)_%);
@@ -189,9 +189,9 @@ endef
 #   2 = basename string
 #   3 = LME args
 define RT-EXPERIMENTS
-$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(1)-$(var):$(2).$(var).$(3).-p_dev.lrt
+$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(1)-$(var):$(2).$(var).$(3)..lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(1)-$(var)_%:$(2).$(var).%.-p_dev.lrt;
+$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(1)-$(var)_%:$(2).$(var).%..lrt;
 )
 $(1)-DLT: $(foreach var, $(DLT), $(1)-$(var))
 $(1)-DLT_%: $(foreach var, $(DLT), $(1)-$(var)_%);
@@ -204,9 +204,9 @@ $(1)-SEMDIST_%: $(foreach var, $(SEMDIST), $(1)-$(var)_%);
 $(1)-MEM: $(1)-DLT $(1)-FJ $(1)-COREF $(1)-SEMDIST
 $(1)-MEM_%: $(1)-DLT_% $(1)-FJ_% $(1)-COREF_% $(1)-SEMDIST_%;
 
-$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(1)-$(var)-cum:$(2).cum$(var).$(3).-p_dev.lrt
+$(foreach var, $(DLT) $(FJ) $(COREF) $(SEMDIST),$(1)-$(var)-cum:$(2).cum$(var).$(3)..lrt
 )
-$(foreach var, $(DLT) $(FJ) $(COREF)i $(SEMDIST),$(1)-$(var)-cum_%:$(2).cum$(var).%.-p_dev.lrt;
+$(foreach var, $(DLT) $(FJ) $(COREF)i $(SEMDIST),$(1)-$(var)-cum_%:$(2).cum$(var).%..lrt;
 )
 $(1)-DLT-cum: $(foreach var, $(DLT), $(1)-$(var)-cum)
 $(1)-DLT-cum_%: $(foreach var, $(DLT), $(1)-$(var)-cum_%);
@@ -332,11 +332,11 @@ $(RT-SCRIPTS)/filter_cols.py
 	cat $(word 1, $^) | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) > $@
 
 # Shortcut: With co-ref features
-%.syn.tokmeasures: %_parsed.dlt.lc.100.1.word2vec.coref.tokmeasures
+%.syn.tokmeasures: %_parsed.dlt.lc.100.1_2_3_inf.word2vec.coref.tokmeasures
 	mv $^ $@
 
 # Shortcut: Without co-ref features
-%.syn.tokmeasures: %_parsed.dlt.lc.100.1.word2vec.tokmeasures
+%.syn.tokmeasures: %_parsed.dlt.lc.100.1_2_3_inf.word2vec.tokmeasures
 	mv $^ $@
 
 %.itemmeasures: $$(DEP-RHACKS) $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \

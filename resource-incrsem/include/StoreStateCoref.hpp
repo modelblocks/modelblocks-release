@@ -648,28 +648,24 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
   list<FPredictor>& calcForkPredictors ( list<FPredictor>& lfp, const KSet& ksAnt, bool bAdd=true ) const { //ej change
     int d = (FEATCONFIG & 1) ? 0 : getDepth(); // max used depth - (dbar)
     const KSet& ksB = at(size()-1).getKSet(); //contexts of lowest b (bdbar)
-    for (auto& mksb : ksB) {
-            cerr << "cfp adding to ksB: " << mksb << endl;
-    }
+    //for (auto& mksb : ksB) { cerr << "cfp adding to ksB: " << mksb << endl; }
     int iCarrier = getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
     if( STORESTATE_TYPE ) {
-            cerr << "cfp adding d,label: " << d << "," << at(size()-1).getType().removeLink() << endl;
-            //cerr << "cfp adding d,label: " << d << "," << mytype << endl;
+            //cerr << "cfp adding d,label: " << d << "," << at(size()-1).getType().removeLink() << endl;
             lfp.emplace_back( d, at(size()-1).getType().removeLink() ); // flag to add depth and category label as predictor, default is true
-            //lfp.emplace_back( d, mytype); // flag to add depth and category label as predictor, default is true
     }
     if( !(FEATCONFIG & 2) ) {
       for( auto& kA : (ksB.size()==0) ? ksBot  : ksB ) {
-              cerr << "cfp processing kA: " << kA << endl;
+              //cerr << "cfp processing kA: " << kA << endl;
               if( bAdd || FPredictor::exists(d,kNil,kA,kNil) ) {
-                      cerr << "cfp adding kA: " << kA << endl;
+                      //cerr << "cfp adding kA: " << kA << endl;
                       lfp.emplace_back( d, kNil, kA, kNil ); //ej change to add coreference
               }
       }
       for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) {
-              cerr << "cfp processing kF: " << kF << endl;
+              //cerr << "cfp processing kF: " << kF << endl;
               if( bAdd || FPredictor::exists(d,kF,kNil,kNil) ) {
-                      cerr << "cfp adding kF: " << kF << endl;
+                      //cerr << "cfp adding kF: " << kF << endl;
                       lfp.emplace_back( d, kF, kNil, kNil ); //ej change to add coreference 
               }
       }

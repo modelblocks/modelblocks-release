@@ -110,10 +110,10 @@ endif
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s > $@
 
 %.glove.linemeasures: $$(basename $$(basename $$(basename %))).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename $$(basename %))))$$(suffix $$(basename $$*)).glove.txt
-	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o linemeasures -w $(subst .,,$(suffix $*)) > $@
+	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o linemeasures -w $(subst _,  ,$(subst .,,$(suffix $*))) > $@
 
 %.glove.tokmeasures: $$(basename $$(basename $$(basename %))).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename $$(basename %))))$$(suffix $$(basename $$*)).glove.txt
-	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o tokmeasures -w $(subst .,,$(suffix $*)) > $@
+	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o tokmeasures -w $(subst _, ,$(subst .,,$(suffix $*))) > $@
 
 %.vocab.txt: $$(DEP-GLOVE) %.linetoks $(GLOVEDIR)build/vocab_count
 	$(word 2, $^) -min-count $(VOCAB_MIN_COUNT) -verbose $(VERBOSE) < $(word 1, $^) > $@
