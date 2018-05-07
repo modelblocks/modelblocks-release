@@ -45,7 +45,7 @@ def relabel( t ):
     if re.match('-b{.*-[ghirv].*}',lastdep(t.ch[0].c))!=None and '-lA' in t.ch[1].c:                                 t.ch[1].c = re.sub( '-lA', '-lI', t.ch[1].c )   ## I
     if re.match('^-[rg]',lastdep(t.ch[0].c))!=None and '-lN' in t.ch[0].c:                                           t.ch[0].c = re.sub( '-lN', '-lR', t.ch[0].c )   ## Ra (off-spec)
     if re.match('^-[rg]',lastdep(t.ch[1].c))!=None and '-lN' in t.ch[1].c:                                           t.ch[1].c = re.sub( '-lN', '-lR', t.ch[1].c )   ## R
-    if '-lA' in t.ch[1].c and re.match( '^(C-bV|E-bB|F-bI|O-bN|.-aN-b{.-aN}(-x.*)|N-b{N-aD})$', t.ch[0].c ) != None: t.ch[1].c = re.sub( '-lA', '-lU', t.ch[1].c )   ## U
+    if '-lA' in t.ch[1].c and re.match( '^(C-bV|E-bB|F-bI|O-bN|.-aN-b{.-aN}(-x.*)?$|N-b{N-aD})$', t.ch[0].c ) != None: t.ch[1].c = re.sub( '-lA', '-lU', t.ch[1].c )   ## U
     if '-lA' in t.ch[0].c and t.ch[1].c=='D-aN':                                                                     t.ch[0].c = re.sub( '-lA', '-lU', t.ch[0].c )
     ## fix gcg reannotation hacks ('said Kim' inversion, ':' as X-cX-dX, ':' as A-aN-bN)...
     if   '-lA' in t.ch[1].c and len( deps(t.ch[0].c,'b') )==0 and t.ch[0].c==':': t.ch[0] = tree.Tree( 'A-aN-bN', [ t.ch[0] ] ) 

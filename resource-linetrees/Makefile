@@ -112,8 +112,8 @@ Linetrees:
   blocktitle: Linetrees
   targetsuffix: .linetrees
 endef
-%.linetrees:  $(LTREES-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
-	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
+#%.linetrees:  $(LTREES-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
+#	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.lower.linetrees:  $(LTREES-SCRIPTS)/make-trees-lower.py  %.linetrees
 	cat $(word 2,$^)  |  python $(word 1,$^)  >  $@
 #### generate right-branching linetrees from linetoks

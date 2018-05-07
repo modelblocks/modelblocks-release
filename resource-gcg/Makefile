@@ -66,6 +66,9 @@ endif
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %morphed.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+## remove morph tags for eval...
+%.nox.linetrees:  %.linetrees
+	cat $<  |  perl -pe 's/[-+]x[^-} ][^ |]*[|][^- ]*//g'  >  $@
 %.linetrees.validation:  %.linetrees  $(GCG-SCRIPTS)/validate-linetrees.py  $(GCG-SCRIPTS)/validate-linetrees.d
 	cat $<  |  python $(word 2,$^)  >  $@
 
