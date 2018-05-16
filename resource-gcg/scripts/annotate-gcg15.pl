@@ -795,7 +795,7 @@ debug("p-rule ", "$_");
 
         1 ) {
            	if ($j==0) {
-           		while( s/\^(.*)<NP(.*)\^/\^\1<N\2\^/ && ($j=0.1) ) {}  #(this is to fix sent 12157)
+			while( s/\^(.*)<NP(.*)\^/\^\1<N\2\^/ && ($j=0.1) ) {}  #(this is to fix sents that fail but have their non-f failure cat deleted)
         		while( s/\^(.*)<NN(S|P)? (.*)\^/\^\1<NP\2 \3\^/ && ($j=0.2) ) {}  #(this is to fix sent 7919)
         	}
         	debug($step, " used rule $j")
