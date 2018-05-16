@@ -11,7 +11,7 @@ def attachB(t,lu):
 
 for s in sys.stdin:
     s = re.sub( '/[^ ;/]*\^;[^ ;/]*', '', s )   ## remove bottom carriers. (OBSOLETE)
-    s = re.sub( ';[ \n]', ' ', s )                   ## remove trailing ;
+    s = re.sub( '(?<=.);[ \n]', ' ', s )        ## remove trailing ;
     s = re.sub( '/ ', ' ', s )                  ## remove trailing /
     s = re.sub( '/([^; ]*)/', '/', s )          ## remove A carriers
     s = re.sub( ';([^/ ]*);', ';', s )          ## remove B carriers
