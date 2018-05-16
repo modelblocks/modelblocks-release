@@ -224,7 +224,7 @@ PTB:
   value: nodashtags
 endef
 %.nodashtags.linetrees:  %.linetrees
-	cat $<  |  perl -pe 's/([^\(])\-[^ \)]+ /\1 /g'  >  $@
+	cat $<  |  perl -pe 's/([^\(])[-=][^ \)]+ /\1 /g'  >  $@
 
 #### obtain tokenized input sentences from linetrees
 define TargetBlock
