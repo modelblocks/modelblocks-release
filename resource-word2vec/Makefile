@@ -86,7 +86,7 @@ endif
 #
 ################################################################################
 
-%.word2vec.tokembeddings: $$(basename $$(basename %)).linetoks $(GLOVE-SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).word2vec.txt
+%.word2vec.embeddings.tokmeasures: $$(basename $$(basename %)).linetoks $(GLOVE-SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).word2vec.txt
 	cat $(word 1, $^) | python $(word 2, $^) <(tail -n +2 $(word 3, $^)) -s > $@
 
 %.word2vec.linemeasures: $$(basename $$(basename $$(basename %))).linetoks $(GLOVE-SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename $$(basename %))))$$(suffix $$(basename $$*)).word2vec.txt

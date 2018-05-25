@@ -82,6 +82,10 @@ MERGESURP = paste -d' ' - <(cat $(subst GRAMMAR,$(grammar),$(basename $*))_parse
 awk -f $(word 1, $^) -v cols=totsurp | \
 sed 's/totsurp/$(subst -,,$(grammar))surp/g')
 
+MERGEPARSERSURP = paste -d' ' - <(cat $(subst PARSER,$(parser),$(basename $*))_parsed.tokmeasures | \
+awk -f $(word 1, $^) -v cols=totsurp | \
+sed 's/totsurp/$(subst +,,$(subst -,,$(parser)))surp/g')
+
 SPILLOVER := S1
 SURP := fwprob5surp totsurp 
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
@@ -305,6 +309,11 @@ genmodel/rename_cols.params: | genmodel
 %.word2vec.tokmeasures: $$(basename $$(basename %)).tokmeasures $$(word 1, $$(subst ., ,%)).gigaword$$(suffix $$(basename $$*))$$(suffix $$*).word2vec.tokmeasures
 	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g' | cut -f 3- -d' ') > $@
 
+# Pastes word embedding predictors to existing identically tokenized tokmeasures file
+%.embeddings.tokmeasures: $$(basename $$(basename %)).tokmeasures $$(word 1, $$(subst ., ,%)).gigaword$$(suffix $$(basename $$*))$$(suffix $$*).embeddings.tokmeasures
+	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g' | cut -f 3- -d' ') > $@
+
+# Pastes coreference predictors to existing identically tokenized tokmeasures file
 # Pastes coreference predictors to existing identically tokenized tokmeasures file
 %.coref.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).coref.tokmeasures
 	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g') > $@
@@ -323,9 +332,13 @@ $(RT-SCRIPTS)/filter_cols.py
 %_parsed.tokmeasures: %_parsed.tokdecs $(RT-SCRIPTS)/filter_cols.awk
 	cat $< | awk -f $(word 2, $^) -v cols=word:totsurp > $@
 
-# TODO: merges surprisal columns from multiple parses together
+# Merges surprisal columns from a parser trained on multiple grammars
 %.merged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*))_parsed.tokmeasures)
 	cat $(word 2, $^) | sed '1s/totsurp/$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))surp/' | $(foreach grammar,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))), $(MERGESURP)) > $@
+
+# Merges surprisal columns from multiple parsers trained on a grammar
+%.parsermerged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach parser,$$(subst -_+,-+,$$(subst +,_+,$$(subst _, ,$$(subst .,,$$(suffix $$*))))),genmodel/$$(subst PARSER,$$(parser),$$(basename $$*))_parsed.tokmeasures)
+	cat $(word 2, $^) | sed '1s/totsurp/$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))surp/' | $(foreach parser,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))), $(MERGEPARSERSURP)) > $@
 
 # %.tokmeasures with a time column, requires %.time.tokmeasures with timestamps for tokens in stimulus
 %.t.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., , %)).time.tokmeasures

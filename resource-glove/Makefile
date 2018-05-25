@@ -97,7 +97,7 @@ endif
 #
 ################################################################################
 
-%.CC.300.glove.tokembeddings: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
+%.CC.300.glove.embeddings.tokmeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s > $@
 
 %.CC.300.glove.linemeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
@@ -106,7 +106,7 @@ endif
 %.CC.300.glove.tokmeasures: $$(DEP-GLOVE) %.linetoks $(SCRIPTS)/embedDocument.py $(GLOVEDIR)glove.840B.300d.txt
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s -o tokmeasures -w $(WINDOWLEN) > $@
 
-%.glove.tokembeddings: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
+%.glove.embeddings.tokmeasures: $$(basename $$(basename %)).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename %)))$$(suffix $$*).glove.txt
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) -s > $@
 
 %.glove.linemeasures: $$(basename $$(basename $$(basename %))).linetoks $(SCRIPTS)/embedDocument.py $$(subst .,,$$(suffix $$(basename $$(basename %))))$$(suffix $$(basename $$*)).glove.txt

@@ -237,8 +237,8 @@ class EmbeddingMap(object):
                 w = 'W%s' %wl
 
             headers += [
-                   'semCosMin%s'%w, 'semCosMax%s'%w, 'semCosMean%s'%w, 'semCosSum%s'%w,
-                   'semDistMin%s'%w, 'semDistMax%s'%w, 'semDistMean%s'%w, 'semDistSum%s'%w
+                   'sdCosMin%s'%w, 'sdCosMax%s'%w, 'sdCosMean%s'%w, 'sdCosSum%s'%w,
+                   'sdEuclMin%s'%w, 'sdEuclMax%s'%w, 'sdEuclMean%s'%w, 'sdEuclSum%s'%w
                   ]
         print(' '.join(headers))
 
