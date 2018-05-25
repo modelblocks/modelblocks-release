@@ -102,10 +102,15 @@ $$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/fi
 	#cat $(word 2,$^)  |  python $(word 1,$^)  $(word 3,$^)  >  $@
 	python $(word 1,$^)  $(word 3,$^)  $(word 2,$^)  >  $@
 
+%.unlinked.linetrees: %.linetrees
+	cat $<  |  perl -pe 's/[-+]n[0-9]+(?=[^\)]* )//g'  >  $@
+
 #### collections
 genmodel/ontowsj02to21.%.linked.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/ontowsj$(sect).%.linked.linetrees)
 	cat $^  >  $@
 
+#genmodel/ontowsj02to21.%.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/ontowsj$(sect).%.linetrees)
+#	cat $^  >  $@
 
 #genmodel/ontowsj%.linked.linetrees:  user-ontonotes-directory.txt  scripts/ments2linkedtrees.py  $$(shell cat user-ontonotes-directory.txt)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*
 #	echo '' > $@

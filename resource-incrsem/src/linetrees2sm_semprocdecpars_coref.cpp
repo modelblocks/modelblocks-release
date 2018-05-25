@@ -265,10 +265,17 @@ arma::vec& setBackwardMessages ( Tree<LVU>& tr ) {
   else if( tr.size()==1 && tr.front().size()==0 ) {
     auto itwv = mtwvL.find( pair<T,W>( getType(tr), L(tr.front()).c_str() ) );
     if( itwv == mtwvL.end() ) itwv = mtwvL.find( pair<T,W>( getType(tr), unkWordBerk( L(tr.front()).c_str() ) ) );
-    if( itwv == mtwvL.end() ) { cerr<<"WARNING: No UNK for "<<L(tr)<<" -> "<<L(tr.front())<<".  Aborting tree."<<endl; tr.u() = arma::zeros( iMaxNums ); }
+    if( itwv == mtwvL.end() ) { cerr<<"WARNING: No UNK for "<<L(tr)<<" -> "<<L(tr.front())<<".  Aborting tree."<<endl; 
+                                tr.u() = arma::zeros( iMaxNums ); 
+                              }
     else                      tr.u() = normalize( itwv->second, 1 );
 //    tr.u() = normalize( ( itwv != mtwvL.end() ) ? itwv->second : mtwvL[ pair<T,W>( getType(tr), unkWordBerk( L(tr.front()).c_str() ) ) ], 1 );
+    //cout << "getType(tr): " << getType(tr) << endl;
+    //cout << "L(tr.front()): " << L(tr.front()) << endl;
+    //cout << "tr.u(): " << tr.u() << endl;
+    //cout << "unkberk: " << unkWordBerk( L(tr.front()).c_str() ) << endl;
   }
+
   // At unary identity nonpreterminal...
   else if ( tr.size()==1 and getType(tr)==getType(tr.front()) ) {
     tr.u() = setBackwardMessages( tr.front() );
@@ -283,9 +290,11 @@ arma::vec& setBackwardMessages ( Tree<LVU>& tr ) {
   else if ( tr.size()==2 ) {
     arma::vec u0 = setBackwardMessages( tr.front() );
     arma::vec u1 = setBackwardMessages( tr.back()  );
-    //cerr << "binary nonterm getg" << endl;
-    //cerr << tr.front() << endl;
-    //cerr << u0 << u1 << endl;
+    //cout << "sbm binary nonterm getg" << endl;
+    //cout << "sbm getg: " << getG( getType(tr), getType(tr.front()), getType(tr.back()) ) << endl;
+    //cout << "sbm getType(tr): " << getType(tr) << endl;
+    //cout << "sbm getType(tr.front()): " << getType(tr.front()) << " getType(tr.back()): " << getType(tr.back()) << endl;
+    //cout << "sbm u0: " << u0 << "  u1: " << u1 << endl;
     tr.u() = getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( u0, u1 );
   }
   return tr.u();
@@ -323,6 +332,11 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
   static StoreState q;
   static arma::mat eye3( iMaxNums, iMaxNums*iMaxNums, arma::fill::zeros );  if( eye3(0,0)==0.0 ) for( int i=0; i<iMaxNums; i++ ) eye3(i,i*iMaxNums+i)=1.0;    // Init 3D diag.
 
+  //cout << "vF vector: " << vF << endl;
+  //cout << "tree: " << tr << endl;
+  //cout << "D matrix: " << D << endl;
+  //cout << "U matrix: " << U << endl;
+  //cout << "tr.u(): " << tr.u() << endl;
   //cerr << "entering calcContext..." << tr << endl;
   if( l==L() ) l = L(tr);
 
@@ -331,7 +345,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     //cerr<<"#T "<<getType(tr)<<" "<<L(tr.front())<<endl;
     string annot = tr.getLink(); 
     //removeCorefLink(tr); // remove "-nXXX" from category label
-    cerr << "current label: " << L(tr) << endl; 
+    //cerr << "current label: " << L(tr) << endl; 
 
     f               = 1 - s;
     eF = e = ( e!='N' ) ? e : getExtr ( tr );
@@ -348,7 +362,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     }
     annot2kset[currentloc].push_back(k); //add current k 
     //cerr << "adding k " << k << " to annot2kset at loc: " << currentloc << endl;
-    //cout << "current annot2kset: " << annot2kset << endl; //can't print annot2kset - check friend operator << override
+    //cerr << "current annot2kset: " << annot2kset << endl; //can't print annot2kset - check friend operator << override
     
    
     wordnum++; //increment word index at terminal
@@ -362,6 +376,18 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     //cerr << "begin calcForkPredictors..." << endl; //debug
 
     q.calcForkPredictors(lfp, ksAnt); //add additional kset argument, should be set of all antecedents in referent cluster. requires global map from annotation to ksets, as in {"0204":Kset ["Lord_"], "0207": KSet ["Lord_", "he_"]}, etc.
+    
+    if (ksAnt.size() != 0) { //if ksAnt not empty KSet, print out ksAnt, print out lfp after calcForkPredictors
+      cerr << "ksAnt not empty, printing ksAnt..." << endl;
+      for (int i=0;i<ksAnt.size();i++){
+        cerr << ksAnt[i] << endl;
+      }
+      cerr << "lfp with fork predictors from ksAnt:" << endl;
+      //for (int i=0;i<lfp.size();i++){
+      //  cerr << lfp[i] << endl;
+      //}
+      cerr << lfp << endl;
+    }
 
     //for (auto& fp : lfp) { cerr << "lfp after calcforkpredictors includes: " << fp << endl; } //debug
     auto fpCat = lfp.front( );
@@ -376,7 +402,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     cout << "note: P " << q.calcPretrmTypeCondition(f,e,k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
     cout << "note: W " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
 
-    arma::vec& vF = mvfrv[ pair<vector<FPredictor>,FResponse>( vector<FPredictor>( lfp.begin(), lfp.end() ), FResponse(f,e,k) ) ];
+    arma::vec& vF = mvfrv[ pair<vector<FPredictor>,FResponse>( vector<FPredictor>( lfp.begin(), lfp.end() ), FResponse(f,e,k) ) ]; //describes berk version of probabilities between predictors and responses - see TACL paper
     arma::mat& mP = mpppmP[ pair<PPredictor,T>(q.calcPretrmTypeCondition(f,e,k),aPretrm.getType()) ];
     arma::vec& vW = mktwvW[ trip<K,T,W>(k,aPretrm.getType(),L(tr.front()).c_str()) ];
     vF = ((vF.n_elem) ? vF : arma::zeros(iMaxNums))          + normalize( D * U * tr.u(),                     1 );
@@ -402,7 +428,8 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
   // At binary nonterminal...
   else if ( tr.size()==2 ) {
     //cerr<<"#B "<<getType(tr)<<" "<<getType(tr.front())<<" "<<getType(tr.back())<<endl;
-
+    //cout << "getG and contents: " << getType(tr) << " " << getType(tr.front()) << " " << getType(tr.back()) << " " << getG( getType(tr), getType(tr.front()), getType(tr.back()) ) << endl; 
+    //cout << "tr.back().u(): " << tr.back().u() << endl; // right child outside probability
     // Traverse left child...
     calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, sentnum, annot2kset, wordnum, 0, d+s );
 
@@ -519,7 +546,9 @@ int main ( int nArgs, char* argv[] ) {
   cerr << "F TOTALS: " << FPredictor::getDomainSize() << " predictors, " << FResponse::getDomain().getSize() << " responses." << endl;
   cerr << "J TOTALS: " << JPredictor::getDomainSize() << " predictors, " << JResponse::getDomain().getSize() << " responses." << endl;
 
-  for( auto& vfrv : mvfrv ) for( int i=0; i<iMaxNums; i++ ) if( vfrv.second(i) != 0.0 )
+  for( auto& vfrv : mvfrv ) for( int i=0; i<iMaxNums; i++ ) //if( vfrv.second(i) != 0.0 ) //vfrv vector of predictors to fork response.  i is split/merge variants
+    //first.first[0].splitmergevalue - e.g., NP3
+    //loop over n is rest of predictors, e.g., extraction, brink, antecedent cat predictors
     { cout << "F " << vfrv.first.first[0].addNum(i) << "=1"; for( uint n=1; n<vfrv.first.first.size(); n++ ) cout << "," << vfrv.first.first[n] << "=1"; cout << " : " << vfrv.first.second << " = " << vfrv.second(i) << endl; }
   for( auto& pppm : mpppmP ) for( int i=0; i<iMaxNums; i++ ) for( int j=0; j<iMaxNums; j++ ) if( pppm.second(i,j) != 0.0 )
     cout << "P " << pppm.first.first.first() << " " << pppm.first.first.second() << " " << pppm.first.first.third() << " " << pppm.first.first.fourth().addNum(i) << " " << pppm.first.first.fifth() << " : " << pppm.first.second.addNum(j) << " = " << pppm.second(i,j) << endl;
