@@ -299,7 +299,7 @@ int main ( int nArgs, char* argv[] ) {
 
                 // If preterminal prob is nonzero...
                 PPredictor ppredictor = q_tdec1.calcPretrmTypeCondition(f,e_p_t,k_p_t);
-                if ( VERBOSE>1 ) cout << "      P " << ppredictor << "..." << endl;
+                if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << t_p_t << "...?" << endl;
                 if ( modP.end()!=modP.find(ppredictor) && modP.find(ppredictor)->second.end()!=modP.find(ppredictor)->second.find(t_p_t) ) {
 
                   if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << t_p_t << " = " << modP.find(ppredictor)->second.find(t_p_t)->second << endl;
