@@ -310,7 +310,7 @@ pc := %
 .PRECIOUS: %_lmer %_lmer.rdata
 %_lmer %_lmer.rdata: $$(DEP-RHACKS)  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
                      genmodel/$$(basename $$*).$$(subst $$(sp),_,$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*)))))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
-                     $$(subst -a,-a_,$$(subst -A,-A_,$$(subst .,,$$(suffix $$*))))).filt.evmeasures \
+                     $$(subst -a,-a_,$$(subst -A,-A_,$$(subst .,,$$(suffix $$*))))).filt-evmeasures \
                      scripts/$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
                      $(LMEFIT-SCRIPTS)/lmetools.r \
                      $(RHACKS-SCRIPTS)/mer-utils.R \
