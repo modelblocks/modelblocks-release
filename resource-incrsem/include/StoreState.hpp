@@ -41,7 +41,7 @@ typedef Delimited<int>  D;  // depth
 typedef Delimited<int>  F;  // fork decision
 typedef Delimited<int>  J;  // join decision
 typedef Delimited<char> O;  // composition operation
-typedef Delimited<char> E;  // extraction operation
+//typedef Delimited<char> E;  // extraction operation
 typedef Delimited<char> S;  // side (A,B)
 const S S_A("/");
 const S S_B(";");
@@ -356,36 +356,36 @@ map<pair<K,K>,uint>   FPredictor::mkki;
 DiscreteDomain<int> domFResponse;
 class FResponse : public DiscreteDomainRV<int,domFResponse> {
  private:
-  static map<FResponse,F>           mfrf;
-  static map<FResponse,E>           mfre;
-  static map<FResponse,K>           mfrk;
-  static map<trip<F,E,K>,FResponse> mfekfr;
+  static map<FResponse,F>              mfrf;
+  static map<FResponse,EVar>           mfre;
+  static map<FResponse,K>              mfrk;
+  static map<trip<F,EVar,K>,FResponse> mfekfr;
   void calcDetermModels ( const char* ps ) {
-    F f = ps[1]-'0';
-    E e = ps[3];
-    K k = ps+5;
+    F    f = ps[1]-'0';
+    EVar e = string(ps+2,uint(strchr(ps+2,'&')-(ps+2))).c_str();  //ps[3];
+    K    k = ps+4+e.getString().size();   //ps+5;
     if( mfrf.end()==mfrf.find(*this) ) mfrf[*this]=f;
     if( mfre.end()==mfre.find(*this) ) mfre[*this]=e;
     if( mfrk.end()==mfrk.find(*this) ) mfrk[*this]=k;
-    if( mfekfr.end()==mfekfr.find(trip<F,E,K>(f,e,k)) ) mfekfr[trip<F,E,K>(f,e,k)]=*this;
+    if( mfekfr.end()==mfekfr.find(trip<F,EVar,K>(f,e,k)) ) mfekfr[trip<F,EVar,K>(f,e,k)]=*this;
   }
  public:
-  FResponse ( )                : DiscreteDomainRV<int,domFResponse> ( )    { }
-  FResponse ( const char* ps ) : DiscreteDomainRV<int,domFResponse> ( ps ) { calcDetermModels(ps); }
-  FResponse ( F f, E e, K k )  : DiscreteDomainRV<int,domFResponse> ( )    {
-    *this = ( mfekfr.end()==mfekfr.find(trip<F,E,K>(f,e,k)) ) ? ("f" + to_string(f) + "&" + string(1,e) + "&" + k.getString()).c_str()
-                                                              : mfekfr[trip<F,E,K>(f,e,k)];
+  FResponse ( )                   : DiscreteDomainRV<int,domFResponse> ( )    { }
+  FResponse ( const char* ps )    : DiscreteDomainRV<int,domFResponse> ( ps ) { calcDetermModels(ps); }
+  FResponse ( F f, EVar e, K k )  : DiscreteDomainRV<int,domFResponse> ( )    {
+    *this = ( mfekfr.end()==mfekfr.find(trip<F,EVar,K>(f,e,k)) ) ? ("f" + to_string(f) + "&" + e.getString() + "&" + k.getString()).c_str()
+                                                                 : mfekfr[trip<F,EVar,K>(f,e,k)];
   }
-  static bool exists ( F f, E e, K k ) { return( mfekfr.end()!=mfekfr.find(trip<F,E,K>(f,e,k)) ); }
+  static bool exists ( F f, EVar e, K k ) { return( mfekfr.end()!=mfekfr.find(trip<F,EVar,K>(f,e,k)) ); }
 
-  F getFork ( ) const { return mfrf[*this]; }
-  E getE    ( ) const { return mfre[*this]; }
-  K getK    ( ) const { return mfrk[*this]; }
+  F    getFork ( ) const { return mfrf[*this]; }
+  EVar getE    ( ) const { return mfre[*this]; }
+  K    getK    ( ) const { return mfrk[*this]; }
 };
-map<FResponse,F>           FResponse::mfrf;
-map<FResponse,E>           FResponse::mfre;
-map<FResponse,K>           FResponse::mfrk;
-map<trip<F,E,K>,FResponse> FResponse::mfekfr;
+map<FResponse,F>              FResponse::mfrf;
+map<FResponse,EVar>           FResponse::mfre;
+map<FResponse,K>              FResponse::mfrk;
+map<trip<F,EVar,K>,FResponse> FResponse::mfekfr;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -474,60 +474,63 @@ map<quad<D,K,K,K>,uint> JPredictor::mdkkki;
 DiscreteDomain<int> domJResponse;
 class JResponse : public DiscreteDomainRV<int,domJResponse> {
  private:
-  static map<JResponse,J> mjrj;
-  static map<JResponse,E> mjre;
-  static map<JResponse,O> mjroL;
-  static map<JResponse,O> mjroR;
-  static map<quad<J,E,O,O>,JResponse> mjeoojr;
+  static map<JResponse,J>                mjrj;
+  static map<JResponse,EVar>             mjre;
+  static map<JResponse,O>                mjroL;
+  static map<JResponse,O>                mjroR;
+  static map<quad<J,EVar,O,O>,JResponse> mjeoojr;
   void calcDetermModels ( const char* ps ) {
     if( mjrj.end() ==mjrj.find(*this)  ) mjrj[*this]=ps[1]-'0';
-    if( mjre.end() ==mjre.find(*this)  ) mjre[*this]=ps[3];
-    if( mjroL.end()==mjroL.find(*this) ) mjroL[*this]=ps[5];
-    if( mjroR.end()==mjroR.find(*this) ) mjroR[*this]=ps[7];
-    if( mjeoojr.end()==mjeoojr.find(quad<J,E,O,O>(ps[1]-'0',ps[3],ps[5],ps[7])) ) mjeoojr[quad<J,E,O,O>(ps[1]-'0',ps[3],ps[5],ps[7])]=*this;
+    EVar e  = string(ps+2,uint(strchr(ps+2,'&')-(ps+2))).c_str();  //ps[3];
+    O    oL = ps[4+e.getString().size()];
+    O    oR = ps[6+e.getString().size()];
+    if( mjre.end() ==mjre.find(*this)  ) mjre[*this]=e;  //ps[3];
+    if( mjroL.end()==mjroL.find(*this) ) mjroL[*this]=oL;  //ps[5];
+    if( mjroR.end()==mjroR.find(*this) ) mjroR[*this]=oR;  //ps[7];
+    if( mjeoojr.end()==mjeoojr.find(quad<J,EVar,O,O>(ps[1]-'0',e,oL,oR)) ) mjeoojr[quad<J,EVar,O,O>(ps[1]-'0',e,oL,oR)]=*this;
   }
  public:
-  JResponse ( )                      : DiscreteDomainRV<int,domJResponse> ( )    { }
-  JResponse ( const char* ps )       : DiscreteDomainRV<int,domJResponse> ( ps ) { calcDetermModels(ps); }
-  JResponse ( J j, E e, O oL, O oR ) : DiscreteDomainRV<int,domJResponse> ( )    {
-    *this = ( mjeoojr.end()==mjeoojr.find(quad<J,E,O,O>(j,e,oL,oR)) ) ? ("j" + to_string(j) + "&" + string(1,e) + "&" + string(1,oL) + "&" + string(1,oR)).c_str()
-                                                                      : mjeoojr[quad<J,E,O,O>(j,e,oL,oR)];
+  JResponse ( )                         : DiscreteDomainRV<int,domJResponse> ( )    { }
+  JResponse ( const char* ps )          : DiscreteDomainRV<int,domJResponse> ( ps ) { calcDetermModels(ps); }
+  JResponse ( J j, EVar e, O oL, O oR ) : DiscreteDomainRV<int,domJResponse> ( )    {
+    *this = ( mjeoojr.end()==mjeoojr.find(quad<J,EVar,O,O>(j,e,oL,oR)) ) ? ("j" + to_string(j) + "&" + e.getString() + "&" + string(1,oL) + "&" + string(1,oR)).c_str()
+                                                                         : mjeoojr[quad<J,EVar,O,O>(j,e,oL,oR)];
   }
-  J getJoin ( ) const { return mjrj[*this]; }
-  E getE    ( ) const { return mjre[*this]; }
-  O getLOp  ( ) const { return mjroL[*this]; }
-  O getROp  ( ) const { return mjroR[*this]; }
-  static bool exists ( J j, E e, O oL, O oR ) { return( mjeoojr.end()!=mjeoojr.find(quad<J,E,O,O>(j,e,oL,oR)) ); }
+  J    getJoin ( ) const { return mjrj[*this]; }
+  EVar getE    ( ) const { return mjre[*this]; }
+  O    getLOp  ( ) const { return mjroL[*this]; }
+  O    getROp  ( ) const { return mjroR[*this]; }
+  static bool exists ( J j, EVar e, O oL, O oR ) { return( mjeoojr.end()!=mjeoojr.find(quad<J,EVar,O,O>(j,e,oL,oR)) ); }
 };
-map<JResponse,J>             JResponse::mjrj;
-map<JResponse,E>             JResponse::mjre;
-map<JResponse,O>             JResponse::mjroL;
-map<JResponse,O>             JResponse::mjroR;
-map<quad<J,E,O,O>,JResponse> JResponse::mjeoojr;
+map<JResponse,J>                JResponse::mjrj;
+map<JResponse,EVar>             JResponse::mjre;
+map<JResponse,O>                JResponse::mjroL;
+map<JResponse,O>                JResponse::mjroR;
+map<quad<J,EVar,O,O>,JResponse> JResponse::mjeoojr;
 
 ////////////////////////////////////////////////////////////////////////////////
 
 typedef Delimited<int> D;
 
-class PPredictor : public DelimitedQuint<psX,D,psSpace,F,psSpace,E,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> {
+class PPredictor : public DelimitedQuint<psX,D,psSpace,F,psSpace,EVar,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> {
  public:
-  PPredictor ( )                           : DelimitedQuint<psX,D,psSpace,F,psSpace,E,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> ( )                 { }
-  PPredictor ( D d, F f, E e, T tB, T tK ) : DelimitedQuint<psX,D,psSpace,F,psSpace,E,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> ( d, f, e, tB, tK ) { }
+  PPredictor ( )                              : DelimitedQuint<psX,D,psSpace,F,psSpace,EVar,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> ( )                 { }
+  PPredictor ( D d, F f, EVar e, T tB, T tK ) : DelimitedQuint<psX,D,psSpace,F,psSpace,EVar,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> ( d, f, e, tB, tK ) { }
 
 };
 
 class WPredictor : public DelimitedPair<psX,Delimited<K>,psSpace,Delimited<T>,psX> { };
 
-class APredictor : public DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,E,psSpace,O,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> {
+class APredictor : public DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,EVar,psSpace,O,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> {
  public:
-  APredictor ( )                                      : DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,E,psSpace,O,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> ( ) { }
-  APredictor ( D d, F f, J j, E e, O oL, T tB, T tL ) : DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,E,psSpace,O,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> ( d, f, j, e, oL, tB, tL ) { }
+  APredictor ( )                                         : DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,EVar,psSpace,O,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> ( ) { }
+  APredictor ( D d, F f, J j, EVar e, O oL, T tB, T tL ) : DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,EVar,psSpace,O,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> ( d, f, j, e, oL, tB, tL ) { }
 };
 
-class BPredictor : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,E,psSpace,O,psSpace,O,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> {
+class BPredictor : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,EVar,psSpace,O,psSpace,O,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> {
  public:
-  BPredictor ( )                                            : DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,E,psSpace,O,psSpace,O,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> ( )                         { }
-  BPredictor ( D d, F f, J j, E e, O oL, O oR, T tP, T tL ) : DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,E,psSpace,O,psSpace,O,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> ( d, f, j, e, oL, oR, tP, tL ) { }
+  BPredictor ( )                                               : DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,EVar,psSpace,O,psSpace,O,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> ( )                         { }
+  BPredictor ( D d, F f, J j, EVar e, O oL, O oR, T tP, T tL ) : DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,EVar,psSpace,O,psSpace,O,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> ( d, f, j, e, oL, oR, tP, tL ) { }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -588,7 +591,7 @@ class Sign : public DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> {
 class LeftChildSign : public Sign {
  public:
   LeftChildSign ( const Sign& a ) : Sign(a) { }
-  LeftChildSign ( const StoreState& qPrev, F f, E eF, const Sign& aPretrm );
+  LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm );
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -600,8 +603,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
   static const Sign aBot;
 
   StoreState ( ) : DelimitedVector<psX,Sign,psX,psX> ( ) { }
-  StoreState ( const StoreState& qPrev, F f, J j, E eF, E eJ, O opL, O opR, T tA, T tB, const Sign& aPretrm, const LeftChildSign& aLchild ) {
-EVar evF,evJ;
+  StoreState ( const StoreState& qPrev, F f, J j, EVar evF, EVar evJ, O opL, O opR, T tA, T tB, const Sign& aPretrm, const LeftChildSign& aLchild ) {
 
     //// A. FIND STORE LANDMARKS AND EXISTING P,A,B CARRIERS...
 
@@ -742,12 +744,12 @@ EVar evF,evJ;
     return lfp;
   }
 
-  PPredictor calcPretrmTypeCondition ( F f, E e, K k_p_t ) const {
-    if( FEATCONFIG & 1 ) return PPredictor( 0, f, (FEATCONFIG & 4) ? E('-') : e, at(size()-1).getType(), (FEATCONFIG & 16384) ? tBot : k_p_t.getType() );
-    return             PPredictor( getDepth(), f, (FEATCONFIG & 4) ? E('-') : e, at(size()-1).getType(), (FEATCONFIG & 16384) ? tBot : k_p_t.getType() );
+  PPredictor calcPretrmTypeCondition ( F f, EVar e, K k_p_t ) const {
+    if( FEATCONFIG & 1 ) return PPredictor( 0, f, (FEATCONFIG & 4) ? EVar("-") : e, at(size()-1).getType(), (FEATCONFIG & 16384) ? tBot : k_p_t.getType() );
+    return             PPredictor( getDepth(), f, (FEATCONFIG & 4) ? EVar('-') : e, at(size()-1).getType(), (FEATCONFIG & 16384) ? tBot : k_p_t.getType() );
   }
 
-  list<JPredictor>& calcJoinPredictors ( list<JPredictor>& ljp, F f, E eF, const LeftChildSign& aLchild, bool bAdd=true ) const {
+  list<JPredictor>& calcJoinPredictors ( list<JPredictor>& ljp, F f, EVar eF, const LeftChildSign& aLchild, bool bAdd=true ) const {
     int d = (FEATCONFIG & 1) ? 0 : getDepth()+f;
     int iCarrierB = getAncestorBCarrierIndex( f );
     const Sign& aAncstr  = at( getAncestorBIndex(f) );
@@ -763,14 +765,14 @@ EVar evF,evJ;
     return ljp;
   }
 
-  APredictor calcApexTypeCondition ( F f, J j, E eF, E eJ, O opL, const LeftChildSign& aLchild ) const {
-    if( FEATCONFIG & 1 ) return APredictor( 0, 0, j, (FEATCONFIG & 64) ? E('-') : eJ, (FEATCONFIG & 128) ? O('-') : opL, at(getAncestorBIndex(f)).getType(), (j==0) ? aLchild.getType() : tBot );
-    return         APredictor( getDepth()+f-j, f, j, (FEATCONFIG & 64) ? E('-') : eJ, (FEATCONFIG & 128) ? O('-') : opL, at(getAncestorBIndex(f)).getType(), (j==0) ? aLchild.getType() : tBot );
+  APredictor calcApexTypeCondition ( F f, J j, EVar eF, EVar eJ, O opL, const LeftChildSign& aLchild ) const {
+    if( FEATCONFIG & 1 ) return APredictor( 0, 0, j, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, at(getAncestorBIndex(f)).getType(), (j==0) ? aLchild.getType() : tBot );
+    return         APredictor( getDepth()+f-j, f, j, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, at(getAncestorBIndex(f)).getType(), (j==0) ? aLchild.getType() : tBot );
   }
 
-  BPredictor calcBrinkTypeCondition ( F f, J j, E eF, E eJ, O opL, O opR, T tParent, const LeftChildSign& aLchild ) const {
-    if( FEATCONFIG & 1 ) return  BPredictor( 0, 0, 0, (FEATCONFIG & 64) ? E('-') : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, tParent, aLchild.getType() );
-    return          BPredictor( getDepth()+f-j, f, j, (FEATCONFIG & 64) ? E('-') : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, tParent, aLchild.getType() );
+  BPredictor calcBrinkTypeCondition ( F f, J j, EVar eF, EVar eJ, O opL, O opR, T tParent, const LeftChildSign& aLchild ) const {
+    if( FEATCONFIG & 1 ) return  BPredictor( 0, 0, 0, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, tParent, aLchild.getType() );
+    return          BPredictor( getDepth()+f-j, f, j, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, tParent, aLchild.getType() );
   }
 };
 const Sign StoreState::aTop( KSet(K::kTop), tTop, S_B );
@@ -814,17 +816,28 @@ KSet::KSet ( const KSet& ks, int iProj, bool bUp, EVar e, const vector<int>& viC
 
 ////////////////////////////////////////////////////////////////////////////////
 
-LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, E eF, const Sign& aPretrm ) {
-    int         iCarrierB  = qPrev.getAncestorBCarrierIndex( 1 );
+LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm ) {
+//    int         iCarrierB  = qPrev.getAncestorBCarrierIndex( 1 );
+    uint        iAncestorB = qPrev.getAncestorBIndex(f);
+    T           tCurrB = qPrev.at(iAncestorB).getType();
+    vector<int> viCarrierB;  viCarrierB.reserve(4);
+    int         nNewCarriers = 0;
+    for( int i=qPrev.size(); i>=0; i-- ) {
+      N nB=tCurrB.getLastNonlocal(); if( i<iAncestorB && nB!=N_NONE && qPrev[i].getType()==nB                  ) { viCarrierB.push_back(i);  tCurrB=tCurrB.withoutLastNolo(); }
+                                     if( i<iAncestorB && nB!=N_NONE && !qPrev[i].getType().containsCarrier(nB) ) { viCarrierB.push_back(-1); tCurrB=tCurrB.withoutLastNolo(); }
+    }
     const Sign& aAncestorA = qPrev.at( qPrev.getAncestorAIndex(1) );
     const Sign& aAncestorB = qPrev.at( qPrev.getAncestorBIndex(1) );
-    const KSet& ksExtrtn   = (iCarrierB<0) ? KSet() : qPrev.at(iCarrierB).getKSet();
-    *this = (f==1 && eF!='N')                  ? Sign( KSet(ksExtrtn,-getDir(eF),aPretrm.getKSet()), aPretrm.getType(), S_A )
+//    const KSet& ksExtrtn   = (iCarrierB<0) ? KSet() : qPrev.at(iCarrierB).getKSet();
+    *this = (f==1 && eF!='N')                  ? Sign( KSet(KSet(),0,f==0,eF,viCarrierB,qPrev,aPretrm.getKSet()), aPretrm.getType(), S_A )
+                                                 //Sign( KSet(ksExtrtn,-getDir(eF),aPretrm.getKSet()), aPretrm.getType(), S_A )
           : (f==1)                             ? aPretrm                             // if fork, lchild is preterm.
           : (qPrev.size()<=0)                  ? StoreState::aTop                    // if no fork and stack empty, lchild is T (NOTE: should not happen).
-          : (!aAncestorA.isDitto() && eF!='N') ? Sign( KSet(ksExtrtn,-getDir(eF),aAncestorA.getKSet()), aAncestorA.getType(), S_A )
+          : (!aAncestorA.isDitto() && eF!='N') ? Sign( KSet(KSet(),0,f==0,eF,viCarrierB,qPrev,aAncestorA.getKSet()), aAncestorA.getType(), S_A )
+                                                 //Sign( KSet(ksExtrtn,-getDir(eF),aAncestorA.getKSet()), aAncestorA.getType(), S_A )
           : (!aAncestorA.isDitto())            ? aAncestorA                          // if no fork and stack exists and last apex context set is not ditto, return last apex.
-          :                                      Sign( KSet(ksExtrtn,-getDir(eF),aAncestorB.getKSet()), aPretrm.getKSet(), aAncestorA.getType(), S_A );  // otherwise make new context set.
+          :                                      Sign( KSet(KSet(),0,f==0,eF,viCarrierB,qPrev,aAncestorB.getKSet()), aPretrm.getKSet(), aAncestorA.getType(), S_A );
+                                                 //Sign( KSet(ksExtrtn,-getDir(eF),aAncestorB.getKSet()), aPretrm.getKSet(), aAncestorA.getType(), S_A );  // otherwise make new context set.
 }
 
 

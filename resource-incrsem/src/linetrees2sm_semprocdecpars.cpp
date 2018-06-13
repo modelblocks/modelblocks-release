@@ -139,14 +139,14 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-E getExtr ( const Tree<LVU>& tr ) {
+string getExtr ( const Tree<LVU>& tr ) {
 //if( FEATCONFIG & 16 ) return 'N';
   N n =  T(L(tr).c_str()).getLastNonlocal();
-  if ( n == N_NONE ) return 'N';
-  if ( (tr.front().size()==0 || tr.front().front().size()==0) && n == N("-rN") ) return '0';
+  if ( n == N_NONE ) return "";
+  if ( (tr.front().size()==0 || tr.front().front().size()==0) && n == N("-rN") ) return "0";
   if( string::npos != L(tr.front()).find("-lE") )
-    return ( T(L(tr.front()).c_str()).getArity() > T(L(tr).c_str()).getArity() ) ? ('0'+T(L(tr.front()).c_str()).getArity()) : 'M';
-  else return 'N';
+    return ( T(L(tr.front()).c_str()).getArity() > T(L(tr).c_str()).getArity() ) ? (string(1,'0'+T(L(tr.front()).c_str()).getArity())) : "M";
+  else return "";
 /*
   N n =  T(L(tr).c_str()).getLastNonlocal();
 cout<<" . . . "<<" n="<<n<<" for "<<tr<<endl<<(T(L(tr.front()).c_str()).getLastNonlocal()==n)<<" "<<(T(L(tr.back()).c_str()).getLastNonlocal()==n)<<endl;
@@ -262,9 +262,10 @@ void setForwardMessages ( Tree<LVU>& tr, const arma::rowvec v ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, int s=1, int d=0, E e='N', L l=L() ) {
+//void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, int s=1, int d=0, E e='N', L l=L() ) {
+void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, int s=1, int d=0, string e="N", L l=L() ) {
   static F          f;
-  static E          eF;
+  static string     eF;
   static Sign       aPretrm;
   static StoreState q;
   static arma::mat eye3( iMaxNums, iMaxNums*iMaxNums, arma::fill::zeros );  if( eye3(0,0)==0.0 ) for( int i=0; i<iMaxNums; i++ ) eye3(i,i*iMaxNums+i)=1.0;    // Init 3D diag.
@@ -276,7 +277,8 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
     //// cerr<<"#T "<<getType(tr)<<" "<<L(tr.front())<<endl;
 
     f               = 1 - s;
-    eF = e = ( e!='N' ) ? e : getExtr ( tr );
+//    eF = e = ( e!='N' ) ? e : getExtr ( tr );
+    eF              = e + getExtr( tr );
     pair<K,T> kt    = getPred ( L(tr), L(tr.front()) );
     K k             = (FEATCONFIG & 8 && kt.first.getString()[2]!='y') ? K::kBot : kt.first;
     aPretrm         = Sign( k, getType(l), S_A );
@@ -288,12 +290,12 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
     lfp.sort( );             // sort to shorten mlr input
     lfp.push_front( fpCat );
     cout<<"----"<<q<<endl;
-    cout << "note: F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e,k) << endl;
-    cout << "note: P " << q.calcPretrmTypeCondition(f,e,k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
+    cout << "note: F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e.c_str(),k) << endl;
+    cout << "note: P " << q.calcPretrmTypeCondition(f,e.c_str(),k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
     cout << "note: W " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
 
-    arma::vec& vF = mvfrv[ pair<vector<FPredictor>,FResponse>( vector<FPredictor>( lfp.begin(), lfp.end() ), FResponse(f,e,k) ) ];
-    arma::mat& mP = mpppmP[ pair<PPredictor,T>(q.calcPretrmTypeCondition(f,e,k),aPretrm.getType()) ];
+    arma::vec& vF = mvfrv[ pair<vector<FPredictor>,FResponse>( vector<FPredictor>( lfp.begin(), lfp.end() ), FResponse(f,e.c_str(),k) ) ];
+    arma::mat& mP = mpppmP[ pair<PPredictor,T>(q.calcPretrmTypeCondition(f,e.c_str(),k),aPretrm.getType()) ];
     arma::vec& vW = mktwvW[ trip<K,T,W>(k,aPretrm.getType(),L(tr.front()).c_str()) ];
     vF = ((vF.n_elem) ? vF : arma::zeros(iMaxNums))          + normalize( D * U * tr.u(),                     1 );
     mP = ((mP.n_elem) ? mP : arma::zeros(iMaxNums,iMaxNums)) + normalize( D * arma::diagmat(U * tr.u()),      1 );
@@ -310,7 +312,8 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
   // At unary nonpreterminal...
   else if ( tr.size()==1 ) {
     //// cerr<<"#U"<<getType(tr)<<" "<<getType(tr.front())<<endl;
-    e = ( e!='N' ) ? e : getExtr ( tr );
+    //e = ( e!='N' ) ? e : getExtr ( tr );
+    e = e + getExtr( tr );
     calcContext ( tr.front(), D, (getType(tr)==getType(tr.front())) ? U : U * getG(getType(tr),getType(tr.front()),"-") * arma::kron(mIdent,vOnes), s, d, e, l );
 //cout<<"unary at "<<L(tr)<<endl<<mtttmG[trip<T,T,T>(getType(tr),getType(tr.front()),"-")]<<endl;
   }
@@ -323,32 +326,33 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
     calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, 0, d+s );
 
     J j          = s;
-    LeftChildSign aLchild ( q, f, eF, aPretrm );
-    e            = ( e!='N' ) ? e : getExtr ( tr ) ;
+    LeftChildSign aLchild ( q, f, eF.c_str(), aPretrm );
+//    e            = ( e!='N' ) ? e : getExtr ( tr ) ;
+    e            = e + getExtr( tr );
     O oL         = getOp ( L(tr.front()), L(tr.back()),  L(tr) );
     O oR         = getOp ( L(tr.back()),  L(tr.front()), L(tr) );
 
     // Print binary / join-phase predictors...
-    DelimitedList<psX,JPredictor,psComma,psX> ljp;  q.calcJoinPredictors(ljp,f,eF,aLchild);
+    DelimitedList<psX,JPredictor,psComma,psX> ljp;  q.calcJoinPredictors(ljp,f,eF.c_str(),aLchild);
     auto jpCat = ljp.front( );
     ljp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first elemenet is category.
     ljp.sort( );             // sort to shorten mlr input
     ljp.push_front( jpCat );
     cout << "==== " << aLchild << "   " << L(tr) << " -> " << L(tr.front()) << " " << L(tr.back()) << endl;
-    cout << "note: J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e,oL,oR)  << endl;
-    cout << "note: A " << q.calcApexTypeCondition(f,j,eF,e,oL,aLchild)                  << " : " << getType(l)          << endl;
-    cout << "note: B " << q.calcBrinkTypeCondition(f,j,eF,e,oL,oR,getType(l),aLchild)   << " : " << getType(tr.back())  << endl;
-    APredictor apred = q.calcApexTypeCondition(f,j,eF,e,oL,aLchild);
-    BPredictor bpred = q.calcBrinkTypeCondition(f,j,eF,e,oL,oR,getType(l),aLchild);
+    cout << "note: J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e.c_str(),oL,oR)  << endl;
+    cout << "note: A " << q.calcApexTypeCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild)                  << " : " << getType(l)          << endl;
+    cout << "note: B " << q.calcBrinkTypeCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getType(l),aLchild)   << " : " << getType(tr.back())  << endl;
+    APredictor apred = q.calcApexTypeCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild);
+    BPredictor bpred = q.calcBrinkTypeCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getType(l),aLchild);
 
     // Update storestate...
-    q = StoreState ( q, f, j, eF, e, oL, oR, getType(l), getType(tr.back()), aPretrm, aLchild );
+    q = StoreState ( q, f, j, eF.c_str(), e.c_str(), oL, oR, getType(l), getType(tr.back()), aPretrm, aLchild );
 
     // Traverse right child...
     calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, 1, d );
 //    calcContext ( tr.back(), arma::diagmat( tr.v() * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( vOnes /*tr.front().u()*/, mIdent ) ), 1, d );
 
-    arma::mat& mJ = mvjrm [ pair<vector<JPredictor>,JResponse>( vector<JPredictor>( ljp.begin(), ljp.end() ), JResponse(j,e,oL,oR) ) ];
+    arma::mat& mJ = mvjrm [ pair<vector<JPredictor>,JResponse>( vector<JPredictor>( ljp.begin(), ljp.end() ), JResponse(j,e.c_str(),oL,oR) ) ];
     arma::mat& mA = mapamA[ pair<APredictor,T>(apred,getType(l)) ];
     arma::mat& mB = mbpbmB[ pair<BPredictor,T>(bpred,getType(tr.back())) ];
     arma::mat tmp; if( j ) tmp = tr.front().u()*vFirstHot.t(); else tmp = arma::diagmat(tr.front().u());
