@@ -533,6 +533,8 @@ class BPredictor : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,E,psSpa
 ////////////////////////////////////////////////////////////////////////////////
 
 class KSet : public DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> {
+ private:
+  EVar eBankedUnaryTransforms;
  public:
   static const KSet ksDummy;
   KSet ( )                                                      : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> ( ) { }
@@ -549,7 +551,11 @@ class KSet : public DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> {
   }
   // Constructor for nolos...
   KSet ( const KSet& ks, int iProj, bool bUp, EVar e, const vector<int>& viCarriers, const StoreState& ss, const KSet& ksAncestorB );
-  bool isDitto ( ) const { return ( size()>0 && front()==K_DITTO ); }
+  // Specification methods...
+  void addBankedUnaryTransform ( EVar& e ) { eBankedUnaryTransforms=e; }
+  // Accessor methods...
+  EVar getBankedUnaryTransform ( ) const { return eBankedUnaryTransforms; }
+  bool isDitto                 ( ) const { return ( size()>0 and front()==K_DITTO ); }
 };
 const KSet KSet::ksDummy;
 const KSet ksTop = KSet( K::kTop );
@@ -776,6 +782,9 @@ KSet::KSet ( const KSet& ks, int iProj, bool bUp, EVar e, const vector<int>& viC
   int nCarrierContexts=0;  for( uint iCarrierIndex : viCarrierIndices ) nCarrierContexts += ss.at(iCarrierIndex).getKSet().size();
   // Reserve size to avoid costly reallocation.
   reserve( ks.size() + nCarrierContexts + ksAncestorB.size() );
+  // If swap op is banked, swap participants...
+  if( eBankedUnaryTransforms==EVar("Q") and iProj==-1 ) iProj==-2;
+  if( eBankedUnaryTransforms==EVar("Q") and iProj==-2 ) iProj==-1;
   // Add projections of left child contexts...
   for( const K& k : ks ) if( k.project(iProj)!=K::kBot ) push_back( k.project(iProj) );
   // If going up...
@@ -783,14 +792,20 @@ KSet::KSet ( const KSet& ks, int iProj, bool bUp, EVar e, const vector<int>& viC
     // Build parent/pretrm bottom to top...
     for( uint i=viCarrierIndices.size()-1; e!=eNil; e=e.withoutBot() ) {
       if( e.bot()>='0' and e.bot()<='9' ) for( const K& k : ss.at(viCarrierIndices[i--]).getKSet() ) push_back( k.project(getDir(e.bot())) );  // For extractions.
-      else                                for(       K& k : *this                                  ) k = k.transform(bUp,e.bot());             // For reorderings.
+      else                              { for(       K& k : *this                                  ) k = k.transform(bUp,e.bot());             // For reorderings.
+                                          if( eBankedUnaryTransforms!=EVar() ) cerr << "ERROR StoreState:803: " << eBankedUnaryTransforms << " piled with " << e.bot() << endl;
+                                          eBankedUnaryTransforms = "Q"; // e.bot();
+                                        }
     }
   // If going down...
   } else {
     // Build parent/pretrm top to bottom...
     for( uint i=0; e!=eNil; e=e.withoutTop() ) {
       if( e.top()>='0' and e.top()<='9' ) for( const K& k : ss.at(viCarrierIndices[i++]).getKSet() ) push_back( k.project(getDir(e.top())) );  // For extractions.
-      else                                for(       K& k : *this                                  ) k = k.transform(bUp,e.bot());             // For reorderings.
+      else                              { for(       K& k : *this                                  ) k = k.transform(bUp,e.bot());             // For reorderings.
+                                          if( eBankedUnaryTransforms!=EVar() ) cerr << "ERROR StoreState:803: " << eBankedUnaryTransforms << " piled with " << e.top() << endl;
+                                          eBankedUnaryTransforms = "Q"; // e.top();
+                                        }
     }
   }
   // If not going up, add parent contexts...
