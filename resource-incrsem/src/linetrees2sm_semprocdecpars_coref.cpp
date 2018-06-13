@@ -81,6 +81,7 @@ class LVU : public trip<L,arma::rowvec,arma::vec> { //label, vec, vec
 
 map<L,double> mldLemmaCounts;
 int MINCOUNTS = 100;
+//int MINCOUNTS = 0;
 map<trip<T,T,T>,arma::mat> mtttmG;
 map<pair<T,W>,arma::vec> mtwvL;
 int iMaxNums = 0;
@@ -354,19 +355,21 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     aPretrm         = Sign( k, getType(l), S_A );
 
     // coref stuff
-    const KSet& ksAnt = (annot != "") ? annot2kset[annot] : KSet() ; //update annot2kset map with current k. 
+    const KSet& ksAnt = (annot != "") ? annot2kset[annot] : ksBot ; //update annot2kset map with current k. 
+    //const KSet& ksAnt = (annot != "") ? annot2kset[annot] : KSet(); //update annot2kset map with current k. 
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
     if (annot != "")  {
-            annot2kset[currentloc] = ksAnt;
-            //cerr << "found antecedent " << ksAnt << " from link: " << annot << endl;
+      annot2kset[currentloc] = ksAnt;
+      //cerr << "found antecedent " << ksAnt << " from link: " << annot << endl;
     }
     annot2kset[currentloc].push_back(k); //add current k 
     //cerr << "adding k " << k << " to annot2kset at loc: " << currentloc << endl;
     //cerr << "current annot2kset: " << annot2kset << endl; //can't print annot2kset - check friend operator << override
-    
+    for (auto& ant : ksAnt) {
+      aPretrm.first().emplace_back(ant); //add antecedent ks to aPretrm
+    }
    
     wordnum++; //increment word index at terminal
-
 
     // Print preterminal / fork-phase predictors...
     DelimitedList<psX,FPredictor,psComma,psX> lfp;  
