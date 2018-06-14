@@ -263,7 +263,7 @@ void setForwardMessages ( Tree<LVU>& tr, const arma::rowvec v ) {
 ////////////////////////////////////////////////////////////////////////////////
 
 //void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, int s=1, int d=0, E e='N', L l=L() ) {
-void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, int s=1, int d=0, string e="N", L l=L() ) {
+void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, int s=1, int d=0, string e="", L l=L() ) {
   static F          f;
   static string     eF;
   static Sign       aPretrm;
