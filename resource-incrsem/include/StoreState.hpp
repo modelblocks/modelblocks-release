@@ -148,7 +148,6 @@ class T : public DiscreteDomainRV<int,domT> {
     return T( string(l,0,beg).c_str() );  // l+strlen(l);
   }
   void calcDetermModels ( const char* ps ) {
-cerr<<"glitch "<<ps<<endl;
     if( mnbArg.end()==mnbArg.find(*this) ) { mnbArg[*this]=( strlen(ps)<=4 ); }
     if( mtiArity.end()==mtiArity.find(*this) ) { mtiArity[*this]=getArity(ps); }
     if( mtbIsCarry.end()==mtbIsCarry.find(*this) ) { mtbIsCarry[*this]=( ps[0]=='-' && ps[1]>='a' && ps[1]<='z' ); }  //( ps[strlen(ps)-1]=='^' ); }
@@ -172,7 +171,6 @@ cerr<<"glitch "<<ps<<endl;
         beg = strlen(ps);
       }
     }
-cerr<<"end glitch"<<endl;
   }
  public:
   T ( )                : DiscreteDomainRV<int,domT> ( )    { }
@@ -223,6 +221,7 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
       char cSelf = ('N'==ps[0]) ? '1' : '0';
       // Add associations to label and related K's...  (NOTE: related K's need two-step constructor so as to avoid infinite recursion!)
       if( mkt.end()==mkt.find(*this) ) mkt[*this]=T(string(ps,strchr(ps,':')).c_str());
+      if( mkik.end()==mkik.find(pair<K,int>(*this,-4)) && strlen(ps)>2 && ps[strlen(ps)-2]!='-' ) { K& k=mkik[pair<K,int>(*this,-4)]; k=string(ps).append("-4").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,-3)) && strlen(ps)>2 && ps[strlen(ps)-2]!='-' ) { K& k=mkik[pair<K,int>(*this,-3)]; k=string(ps).append("-3").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,-2)) && strlen(ps)>2 && ps[strlen(ps)-2]!='-' ) { K& k=mkik[pair<K,int>(*this,-2)]; k=string(ps).append("-2").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,-1)) && strlen(ps)>2 && ps[strlen(ps)-2]!='-' ) { K& k=mkik[pair<K,int>(*this,-1)]; k=string(ps).append("-1").c_str(); }
@@ -230,6 +229,7 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
       if( mkik.end()==mkik.find(pair<K,int>(*this,1)) && ps[strlen(ps)-2]!='-' && ps[strlen(ps)-1]==cSelf ) { K& k=mkik[pair<K,int>(*this,1)]; k=string(ps,strlen(ps)-1).append("1").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,2)) && ps[strlen(ps)-2]!='-' && ps[strlen(ps)-1]==cSelf ) { K& k=mkik[pair<K,int>(*this,2)]; k=string(ps,strlen(ps)-1).append("2").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,3)) && ps[strlen(ps)-2]!='-' && ps[strlen(ps)-1]==cSelf ) { K& k=mkik[pair<K,int>(*this,3)]; k=string(ps,strlen(ps)-1).append("3").c_str(); }
+      if( mkik.end()==mkik.find(pair<K,int>(*this,4)) && ps[strlen(ps)-2]!='-' && ps[strlen(ps)-1]==cSelf ) { K& k=mkik[pair<K,int>(*this,4)]; k=string(ps,strlen(ps)-1).append("4").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,1)) && ps[strlen(ps)-2]=='-' && ps[strlen(ps)-1]=='1' ) { K& k=mkik[pair<K,int>(*this,1)]; k=string(ps,strlen(ps)-2).c_str(); }
 //     if( mkkVU.end()==mkkVU.find(*this) && ps[strlen(ps)-2]=='-' && ps[strlen(ps)-1]=='1' ) { K& k=mkkVU[*this]; k=string(ps,strlen(ps)-2).append("-2").c_str(); }
 //     else if( mkkVU.end()==mkkVU.find(*this) )                                              { K& k=mkkQ[*this]; k=ps; }
@@ -290,7 +290,7 @@ class EVar : public DiscreteDomainRV<int,domE> {   // NOTE: can't be subclass of
   char bot        ( ) const { return   meoBot[*this]; }
   EVar withoutTop ( ) const { return meeNoTop[*this]; }
   EVar withoutBot ( ) const { return meeNoBot[*this]; }
-  char popTop     ( )       { char c = meoTop[*this]; *this = meeNoTop[*this]; return c; }
+  char popTop     ( )       { char c = meoTop[*this]; *this = meeNoTop[*this]; cout<<"ready for "<<c<<endl; return c; }
 };
 map<EVar,char> EVar::meoTop;
 map<EVar,char> EVar::meoBot;
@@ -664,15 +664,22 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     int nNewCarriers = 0;
     for( int i=qPrev.size()-1; i>=0; i-- ) {
       T tI = qPrev[i].getType();
-      N nP=tCurrP.getFirstNonlocal(); if( i<iAncestorB && nP!=N_NONE && qPrev[i].getType()==nP                     ) { viCarrierP.push_back(i);  tCurrP=tCurrP.withoutFirstNolo(); }
-                                     if( i<iAncestorB && nP!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nP) ) { viCarrierP.push_back(-1); tCurrP=tCurrP.withoutFirstNolo(); nNewCarriers++; }
-      N nL=tCurrL.getFirstNonlocal(); if( i<iLowerA    && nL!=N_NONE && qPrev[i].getType()==nL                     ) { viCarrierL.push_back(i);  tCurrL=tCurrL.withoutFirstNolo(); }
-                                     if( i<iLowerA    && nL!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nL) ) { viCarrierL.push_back(-1); tCurrL=tCurrL.withoutFirstNolo(); nNewCarriers++; }
-      N nA=tCurrA.getFirstNonlocal(); if( i<iLowerA    && nA!=N_NONE && qPrev[i].getType()==nA                     ) { viCarrierA.push_back(i);  tCurrA=tCurrA.withoutFirstNolo(); }
-                                     if( i<iLowerA    && nA!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nA) ) { viCarrierA.push_back(-1); tCurrA=tCurrA.withoutFirstNolo(); nNewCarriers++; }
-      N nB=tCurrB.getFirstNonlocal(); if( i<iAncestorB && nB!=N_NONE && qPrev[i].getType()==nB                     ) { viCarrierB.push_back(i);  tCurrB=tCurrB.withoutFirstNolo(); }
-                                     if( i<iAncestorB && nB!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nB) ) { viCarrierB.push_back(-1); tCurrB=tCurrB.withoutFirstNolo(); nNewCarriers++; }
+      N nP=tCurrP.getLastNonlocal(); if(                 nP!=N_NONE && qPrev[i].getType()==nP                     ) { viCarrierP.push_back(i);  tCurrP=tCurrP.withoutLastNolo(); }
+                                     if(                 nP!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nP) ) { viCarrierP.push_back(-1); tCurrP=tCurrP.withoutLastNolo(); nNewCarriers++; }
+      N nL=tCurrL.getLastNonlocal(); if( i<iLowerA    && nL!=N_NONE && qPrev[i].getType()==nL                     ) { viCarrierL.push_back(i);  tCurrL=tCurrL.withoutLastNolo(); }
+                                     if( i<iLowerA    && nL!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nL) ) { viCarrierL.push_back(-1); tCurrL=tCurrL.withoutLastNolo(); nNewCarriers++; }
+      N nA=tCurrA.getLastNonlocal(); if( i<iLowerA    && nA!=N_NONE && qPrev[i].getType()==nA                     ) { viCarrierA.push_back(i);  tCurrA=tCurrA.withoutLastNolo(); }
+                                     if( i<iLowerA    && nA!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nA) ) { viCarrierA.push_back(-1); tCurrA=tCurrA.withoutLastNolo(); nNewCarriers++; }
+      N nB=tCurrB.getLastNonlocal(); if( i<iAncestorB && nB!=N_NONE && qPrev[i].getType()==nB                     ) { viCarrierB.push_back(i);  tCurrB=tCurrB.withoutLastNolo(); }
+                                     if( i<iAncestorB && nB!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nB) ) { viCarrierB.push_back(-1); tCurrB=tCurrB.withoutLastNolo(); nNewCarriers++; }
     }
+
+for( int i : viCarrierP ) cout<<" "<<i;
+cout<<endl;
+for( int i : viCarrierA ) cout<<" "<<i;
+cout<<endl;
+for( int i : viCarrierL ) cout<<" "<<i;
+cout<<endl;
 
 /*
     // Find existing nonlocal carriers...
@@ -710,7 +717,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     for( int i=0; i<((f==0&&j==1)?iAncestorB:(f==0&&j==0)?iLowerA:(f==1&&j==1)?iAncestorB:iAncestorB+1); i++ ) {
       Sign& s = *emplace( end() );
       if( i==iAncestorA and j==1 and qPrev[i].isDitto() and opR!='I' )            { s = Sign( ksParent, qPrev[i].getType(), qPrev[i].getSide() ); }
-      else if( viCarrierP.size()>0 and i==viCarrierP.back() and evF.top()!='\0' ) { viCarrierP.pop_back(); s = Sign( KSet(ksLchild,getDir(evF.popTop()),qPrev[i].getKSet()), qPrev[i].getType(), qPrev[i].getSide() ); }
+      else if( viCarrierP.size()>0 and i==viCarrierP.back() and evF.top()!='\0' ) { viCarrierP.pop_back(); s = Sign( KSet(aPretrm.getKSet(),getDir(evF.popTop()),qPrev[i].getKSet()), qPrev[i].getType(), qPrev[i].getSide() ); }
       else if( viCarrierA.size()>0 and i==viCarrierA.back() and evJ.top()!='\0' ) { viCarrierA.pop_back(); s = Sign( KSet(ksParent,getDir(evJ.popTop()),qPrev[i].getKSet()), qPrev[i].getType(), qPrev[i].getSide() ); }
       else                                                                        { s = qPrev[i]; }
     }
@@ -723,10 +730,10 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
 
     // Add new non-locals with contexts from parent/rchild via new extraction or G/H/V operations...
     tCurrP = aPretrm.getType();  tCurrA = tA;
-    for( uint i : viCarrierP ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierP for "<<tCurrP.getLastNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
-                                             *emplace( end() ) = Sign( KSet( aPretrm.getKSet(), getDir(evF.popTop()) ), tCurrP.getLastNonlocal(), S_B ); tCurrP=tCurrP.withoutLastNolo(); }
-    for( uint i : viCarrierA ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierA for "<<tCurrA.getLastNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
-                                             *emplace( end() ) = Sign( KSet( ksParent,          getDir(evJ.popTop()) ), tCurrA.getLastNonlocal(), S_B ); tCurrA=tCurrA.withoutLastNolo(); }
+    for( uint i : viCarrierP ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierP for "<<tCurrP.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
+                                             *emplace( end() ) = Sign( KSet( aPretrm.getKSet(), getDir(evF.popTop()) ), tCurrP.getFirstNonlocal(), S_B ); tCurrP=tCurrP.withoutFirstNolo(); }
+    for( uint i : viCarrierA ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierA for "<<tCurrA.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
+                                             *emplace( end() ) = Sign( KSet( ksParent,          getDir(evJ.popTop()) ), tCurrA.getFirstNonlocal(), S_B ); tCurrA=tCurrA.withoutFirstNolo(); }
     /* 
     if( j==0 && nP!=N_NONE && iCarrierP==-1 )          if( STORESTATE_CHATTY ) cout<<"(adding carrierP for "<<nP<<" bc none above "<<iAncestorB<<")"<<endl;
     if( j==0 && nP!=N_NONE && iCarrierP==-1 )          *emplace( end() ) = Sign( KSet(aPretrm.getKSet(),getDir(eF)), nP, S_B );    // If no join and nonloc P with no existing carrier, add P carrier.
@@ -735,14 +742,22 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     */
     if( j==0 )                                         *emplace( end() ) = Sign( (opR=='I') ? KSet(K_DITTO) : ksParent, tA, S_A ); // If no join, add A sign.
     N nA = tA.getLastNonlocal();  N nB = tB.getLastNonlocal();  N nL = aLchild.getType().getLastNonlocal();
-    if( nB!=N_NONE && nB!=nA && viCarrierB[0]==-1 )    if( STORESTATE_CHATTY ) cout<<"(adding carrierB for "<<nB<<" bc none above "<<iAncestorB<<")"<<endl;
-    if( nB!=N_NONE && nB!=nA && viCarrierB[0]==-1 )    *emplace( end() ) = Sign( ksLchild, nB, S_A );                              // Add left child kset as A carrier (G rule).
+    if( nB!=N_NONE && nB!=nA && viCarrierB[0]==-1 ) {  if( STORESTATE_CHATTY ) cout<<"(adding carrierB for "<<nB<<" bc none above "<<iAncestorB<<")"<<endl;
+                                                       *emplace( end() ) = Sign( ksLchild, nB, S_A ); }                            // Add left child kset as A carrier (G rule).
     // WS: SUPPOSED TO BE FOR C-rN EXTRAPOSITION, BUT DOESN'T QUITE WORK...
     // if( nL!=N_NONE && iCarrierL>iAncestorB )    if( STORESTATE_CHATTY ) cout<<"(adding carrierL for "<<nL<<" bc none above "<<iLowerA<<" and below "<<iAncestorB<<")"<<endl;
     // if( nL!=N_NONE && iCarrierL>iAncestorB )    *emplace( end() ) = Sign( qPrev[iCarrierL].getKSet(), nL, S_A );            // Add right child kset as L carrier (H rule).
-    if( nL!=N_NONE && nL!=nA && viCarrierL[0]>iAncestorB ) if( STORESTATE_CHATTY ) cout<<"(attaching carrierL for "<<nL<<" above "<<iLowerA<<" and below "<<iAncestorB<<")"<<endl;
-    if( nL!=N_NONE && nL!=nA && viCarrierL[0]>iAncestorB ) *emplace( end() ) = Sign( qPrev[viCarrierL[0]].getKSet(), ksRchild, tB, S_B );  // Add right child kset as B (H rule).
-    else if( size()>0 )                                    *emplace( end() ) = Sign( ksRchild, tB, S_B );                              // Add B sign.
+   // Redefine viCarrier on current time step...
+   tCurrL=aLchild.getType();
+   for( int i=size()-1; i>=0; i-- ) {
+      T tI = at(i).getType();
+      N nL=tCurrL.getLastNonlocal(); if( i<iLowerA    && nL!=N_NONE && tI==nL                                     ) { viCarrierL.push_back(i);  tCurrL=tCurrL.withoutLastNolo(); }
+                                     if( i<iLowerA    && nL!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nL) ) { viCarrierL.push_back(-1); tCurrL=tCurrL.withoutLastNolo(); }
+    }
+    if( nL!=N_NONE && nL!=nA && viCarrierL[0]>iAncestorB ) { if( STORESTATE_CHATTY ) cout<<"(attaching carrierL for "<<nL<<" above "<<iLowerA<<" and below "<<iAncestorB<<")"<<endl;
+cout<<"dododo "<<at(viCarrierL[0])<<endl;
+                                                             *emplace( end() ) = Sign( at(viCarrierL[0]).getKSet(), ksRchild, tB, S_B ); }  // Add right child kset as B (H rule).
+    else if( size()>0 )                                    { *emplace( end() ) = Sign( ksRchild, tB, S_B ); }                             // Add B sign.
 
     //    cerr << "            " << qPrev << "  " << aLchild << "  ==(f" << f << ",j" << j << "," << opL << "," << opR << ")=>  " << *this << endl;
   }
