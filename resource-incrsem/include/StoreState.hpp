@@ -591,13 +591,13 @@ class KSet : public DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> {
     insert( end(), ks1.begin(), ks1.end() );
     insert( end(), ks2.begin(), ks2.end() );
   }
-  KSet ( const KSet& ks, int iProj, const KSet& ks2 = ksDummy ) : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> ( ) {
-    reserve( ks.size() + ks2.size() );
+  KSet ( const KSet& ks, int iProj, const KSet& ksUntransformed = ksDummy ) : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> ( ) {
+    reserve( ks.size() + ksUntransformed.size() );
     for( const K& k : ks ) if( k.project(iProj)!=K::kBot ) push_back( k.project(iProj) );
-    insert( end(), ks2.begin(), ks2.end() );
+    insert( end(), ksUntransformed.begin(), ksUntransformed.end() );
   }
   // Constructor for nolos...
-  KSet ( const KSet& ks, int iProj, bool bUp, EVar e, const vector<int>& viCarriers, const StoreState& ss, const KSet& ksAncestorB );
+  KSet ( const KSet& ks, int iProj, bool bUp, EVar e, const vector<int>& viCarriers, const StoreState& ss, const KSet& ksUntransformed );
   // Specification methods...
   void addBankedUnaryTransform ( EVar& e ) { eBankedUnaryTransforms=e; }
   // Accessor methods...
@@ -615,6 +615,8 @@ class Sign : public DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> {
   Sign ( )                           : DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> ( )           { }
   Sign ( const KSet& ks1, T t, S s ) : DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> ( ks1, t, s ) { }
   Sign ( const KSet& ks1, const KSet& ks2, T t, S s ) {
+cout<<ks1<<endl;
+cout<<ks2<<endl;
     first().reserve( ks1.size() + ks2.size() );
     first().insert( first().end(), ks1.begin(), ks1.end() );
     first().insert( first().end(), ks2.begin(), ks2.end() );
@@ -674,11 +676,17 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
                                      if( i<iAncestorB && nB!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nB) ) { viCarrierB.push_back(-1); tCurrB=tCurrB.withoutLastNolo(); nNewCarriers++; }
     }
 
+cout<<" viCarrierP=";
 for( int i : viCarrierP ) cout<<" "<<i;
 cout<<endl;
+cout<<" viCarrierA=";
 for( int i : viCarrierA ) cout<<" "<<i;
 cout<<endl;
+cout<<" viCarrierL=";
 for( int i : viCarrierL ) cout<<" "<<i;
+cout<<endl;
+cout<<" viCarrierB=";
+for( int i : viCarrierB ) cout<<" "<<i;
 cout<<endl;
 
 /*
@@ -706,7 +714,7 @@ cout<<endl;
 
     // Add existing nolo contexts to parent via extraction op...
     const KSet& ksLchild = aLchild.getKSet();
-    const KSet  ksParent = KSet( aLchild.getKSet(), -getDir(opL), j==0, evJ, viCarrierA, qPrev, qPrev.at(iAncestorB).getKSet() );
+    const KSet  ksParent = KSet( aLchild.getKSet(), -getDir(opL), j==0, evJ, viCarrierA, qPrev, (j==0) ? KSet() : qPrev.at(iAncestorB).getKSet() );
 /*
     const KSet  ksParent = (iCarrierA!=-1 && eJ!='N') ? KSet( aLchild.getKSet(), -getDir(opL), KSet( qPrev[iCarrierA].getKSet(), -getDir(eJ), (j==0) ? KSet() : qPrev.at(iAncestorB).getKSet() ) )
                          :                              KSet( aLchild.getKSet(), -getDir(opL),                                                (j==0) ? KSet() : qPrev.at(iAncestorB).getKSet()   );
@@ -729,37 +737,55 @@ cout<<endl;
 */
 
     // Add new non-locals with contexts from parent/rchild via new extraction or G/H/V operations...
-    tCurrP = aPretrm.getType();  tCurrA = tA;
-    for( uint i : viCarrierP ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierP for "<<tCurrP.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
-                                             *emplace( end() ) = Sign( KSet( aPretrm.getKSet(), getDir(evF.popTop()) ), tCurrP.getFirstNonlocal(), S_B ); tCurrP=tCurrP.withoutFirstNolo(); }
-    for( uint i : viCarrierA ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierA for "<<tCurrA.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
-                                             *emplace( end() ) = Sign( KSet( ksParent,          getDir(evJ.popTop()) ), tCurrA.getFirstNonlocal(), S_B ); tCurrA=tCurrA.withoutFirstNolo(); }
-    /* 
-    if( j==0 && nP!=N_NONE && iCarrierP==-1 )          if( STORESTATE_CHATTY ) cout<<"(adding carrierP for "<<nP<<" bc none above "<<iAncestorB<<")"<<endl;
-    if( j==0 && nP!=N_NONE && iCarrierP==-1 )          *emplace( end() ) = Sign( KSet(aPretrm.getKSet(),getDir(eF)), nP, S_B );    // If no join and nonloc P with no existing carrier, add P carrier.
-    if( j==0 && nA!=N_NONE && iCarrierA==-1 )          if( STORESTATE_CHATTY ) cout<<"(adding carrierA for "<<nA<<" bc none above "<<iLowerA<<")"<<endl;
-    if( j==0 && nA!=N_NONE && iCarrierA==-1 )          *emplace( end() ) = Sign( KSet(ksParent,         getDir(eJ)), nA, S_B );    // If no join and nonloc A with no existing carrier, add A carrier.
-    */
-    if( j==0 )                                         *emplace( end() ) = Sign( (opR=='I') ? KSet(K_DITTO) : ksParent, tA, S_A ); // If no join, add A sign.
+    if( j==0 ) {
+      tCurrP = aPretrm.getType();  tCurrA = tA;
+      for( uint i : viCarrierP ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierP for "<<tCurrP.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
+                                               *emplace( end() ) = Sign( KSet( aPretrm.getKSet(), getDir(evF.popTop()) ), tCurrP.getFirstNonlocal(), S_B ); tCurrP=tCurrP.withoutFirstNolo(); }
+      for( uint i : viCarrierA ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierA for "<<tCurrA.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
+                                               *emplace( end() ) = Sign( KSet( ksParent,          getDir(evJ.popTop()) ), tCurrA.getFirstNonlocal(), S_B ); tCurrA=tCurrA.withoutFirstNolo(); }
+      /* 
+      if( j==0 && nP!=N_NONE && iCarrierP==-1 )          if( STORESTATE_CHATTY ) cout<<"(adding carrierP for "<<nP<<" bc none above "<<iAncestorB<<")"<<endl;
+      if( j==0 && nP!=N_NONE && iCarrierP==-1 )          *emplace( end() ) = Sign( KSet(aPretrm.getKSet(),getDir(eF)), nP, S_B );    // If no join and nonloc P with no existing carrier, add P carrier.
+      if( j==0 && nA!=N_NONE && iCarrierA==-1 )          if( STORESTATE_CHATTY ) cout<<"(adding carrierA for "<<nA<<" bc none above "<<iLowerA<<")"<<endl;
+      if( j==0 && nA!=N_NONE && iCarrierA==-1 )          *emplace( end() ) = Sign( KSet(ksParent,         getDir(eJ)), nA, S_B );    // If no join and nonloc A with no existing carrier, add A carrier.
+      */
+      *emplace( end() ) = Sign( (opR=='I') ? KSet(K_DITTO) : ksParent, tA, S_A ); // If no join, add A sign.
+    }
     N nA = tA.getLastNonlocal();  N nB = tB.getLastNonlocal();  N nL = aLchild.getType().getLastNonlocal();
     if( nB!=N_NONE && nB!=nA && viCarrierB[0]==-1 ) {  if( STORESTATE_CHATTY ) cout<<"(adding carrierB for "<<nB<<" bc none above "<<iAncestorB<<")"<<endl;
                                                        *emplace( end() ) = Sign( ksLchild, nB, S_A ); }                            // Add left child kset as A carrier (G rule).
     // WS: SUPPOSED TO BE FOR C-rN EXTRAPOSITION, BUT DOESN'T QUITE WORK...
     // if( nL!=N_NONE && iCarrierL>iAncestorB )    if( STORESTATE_CHATTY ) cout<<"(adding carrierL for "<<nL<<" bc none above "<<iLowerA<<" and below "<<iAncestorB<<")"<<endl;
     // if( nL!=N_NONE && iCarrierL>iAncestorB )    *emplace( end() ) = Sign( qPrev[iCarrierL].getKSet(), nL, S_A );            // Add right child kset as L carrier (H rule).
-   // Redefine viCarrier on current time step...
-   tCurrL=aLchild.getType();
-   for( int i=size()-1; i>=0; i-- ) {
-      T tI = at(i).getType();
-      N nL=tCurrL.getLastNonlocal(); if( i<iLowerA    && nL!=N_NONE && tI==nL                                     ) { viCarrierL.push_back(i);  tCurrL=tCurrL.withoutLastNolo(); }
-                                     if( i<iLowerA    && nL!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nL) ) { viCarrierL.push_back(-1); tCurrL=tCurrL.withoutLastNolo(); }
-    }
-    if( nL!=N_NONE && nL!=nA && viCarrierL[0]>iAncestorB ) { if( STORESTATE_CHATTY ) cout<<"(attaching carrierL for "<<nL<<" above "<<iLowerA<<" and below "<<iAncestorB<<")"<<endl;
-cout<<"dododo "<<at(viCarrierL[0])<<endl;
-                                                             *emplace( end() ) = Sign( at(viCarrierL[0]).getKSet(), ksRchild, tB, S_B ); }  // Add right child kset as B (H rule).
-    else if( size()>0 )                                    { *emplace( end() ) = Sign( ksRchild, tB, S_B ); }                             // Add B sign.
+cout<<" *this="<<*this<<endl;
+    // If left child nont not listed in apex nonts (H rule)...
+    if( nL!=N_NONE and nL!=nA ) {
+      // If no join, use lowest left carrier as right...
+      // CODE REVIEW: should not keep lowest left carrier if using H rule.
+      if( j==0 ) {
+        // Redefine viCarrier on current time step...
+        tCurrL=aLchild.getType();
+        viCarrierL.clear();
+        for( int i=size()-1; i>=0; i-- ) {
+          T tI = at(i).getType();
+          N nL=tCurrL.getLastNonlocal(); if( i<iLowerA    && nL!=N_NONE && tI==nL                                     ) { viCarrierL.push_back(i);  tCurrL=tCurrL.withoutLastNolo(); }
+                                         if( i<iLowerA    && nL!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nL) ) { viCarrierL.push_back(-1); tCurrL=tCurrL.withoutLastNolo(); }
+        }
+cout<<" *this="<<*this<<endl;
+cout<<" viCarrierL=";
+for( int& i : viCarrierL ) cout<<" "<<i;
+cout<<endl;
+        if( viCarrierL[0]>iAncestorB ) { if( STORESTATE_CHATTY ) cout<<"(attaching carrierL for "<<nL<<" above "<<iLowerA<<" and below "<<iAncestorB<<")"<<endl;
+                                         *emplace( end() ) = Sign( at(viCarrierL[0]).getKSet(), ksRchild, tB, S_B ); }  // Add right child kset as B (H rule).
 
     //    cerr << "            " << qPrev << "  " << aLchild << "  ==(f" << f << ",j" << j << "," << opL << "," << opR << ")=>  " << *this << endl;
+      } else {  // If j==1...
+        if( evF.top()!='\0' and viCarrierL[0]!=-1 ) *emplace( end() ) = Sign( KSet( aPretrm.getKSet(), getDir(evF.popTop()), qPrev.at(viCarrierL[0]).getKSet() ), ksRchild, tB, S_B );
+        else if(evF.top()!='\0' )                   *emplace( end() ) = Sign( KSet( aPretrm.getKSet(), getDir(evF.popTop()) ), ksRchild, tB, S_B );
+        else                                        *emplace( end() ) = Sign( qPrev.at(viCarrierL[0]).getKSet(), ksRchild, tB, S_B );
+      }
+    }
+    else if( size()>0 )            { *emplace( end() ) = Sign( ksRchild, tB, S_B ); }                             // Add B sign.
   }
 
   const Sign& at ( int i ) const { assert(i<int(size())); return (i<0) ? aTop : operator[](i); }
@@ -840,39 +866,41 @@ const Sign StoreState::aTop( KSet(K::kTop), tTop, S_B );
 
 ////////////////////////////////////////////////////////////////////////////////
 
-KSet::KSet ( const KSet& ks, int iProj, bool bUp, EVar e, const vector<int>& viCarrierIndices, const StoreState& ss, const KSet& ksAncestorB ) {
+KSet::KSet ( const KSet& ks, int iProj, bool bUp, EVar e, const vector<int>& viCarrierIndices, const StoreState& ss, const KSet& ksUntransformed ) {
+cout<<"tomake "<<ks<<" iProj="<<iProj<<" bup="<<bUp<<" e="<<e<<" "<<viCarrierIndices.size()<<" "<<ss<<" "<<ksUntransformed<<endl;
   // Determine number of carrier contexts...
   int nCarrierContexts=0;  for( uint iCarrierIndex : viCarrierIndices ) if( iCarrierIndex>=0 ) nCarrierContexts += ss.at(iCarrierIndex).getKSet().size();
   // Reserve size to avoid costly reallocation.
-  reserve( ks.size() + nCarrierContexts + ksAncestorB.size() );
+  reserve( ks.size() + nCarrierContexts + ksUntransformed.size() );
   // If swap op is banked, swap participants...
   if( eBankedUnaryTransforms==EVar("Q") and iProj==-1 ) iProj==-2;
   if( eBankedUnaryTransforms==EVar("Q") and iProj==-2 ) iProj==-1;
   // Add projections of left child contexts...
   for( const K& k : ks ) if( k.project(iProj)!=K::kBot ) push_back( k.project(iProj) );
+cout<<"dfsajkl "<<*this<<endl;
   // If going up...
   if( bUp ) {
     // Build parent/pretrm bottom to top...
     for( uint i=viCarrierIndices.size()-1; i>=0 && e!=eNil; e=e.withoutBot() ) if( i!=-1 ) {
-      if( e.bot()>='0' and e.bot()<='9' ) for( const K& k : ss.at(viCarrierIndices[i--]).getKSet() ) push_back( k.project(getDir(e.bot())) );  // For extractions.
-      else                              { for(       K& k : *this                                  ) k = k.transform(bUp,e.bot());             // For reorderings.
-                                          if( eBankedUnaryTransforms!=EVar() ) cerr << "ERROR StoreState:803: " << eBankedUnaryTransforms << " piled with " << e.bot() << endl;
-                                          eBankedUnaryTransforms = "Q"; // e.bot();
-                                        }
+      if( e.bot()>='0' and e.bot()<='9' ) for( const K& k : ss.at(viCarrierIndices[i--]).getKSet() ) if( k.project(-getDir(e.bot()))!=K::kBot ) push_back( k.project(-getDir(e.bot())) );  // For extractions.
+      else if( e.bot()=='Q' or e.bot()=='V' ) { for(       K& k : *this                                  ) k = k.transform(bUp,e.bot());             // For reorderings.
+                                                if( eBankedUnaryTransforms!=EVar() ) cerr << "ERROR StoreState:859: " << eBankedUnaryTransforms << " piled with " << e.bot() << endl;
+                                                eBankedUnaryTransforms = "Q"; // e.bot();
+                                              }
     }
   // If going down...
   } else {
     // Build parent/pretrm top to bottom...
     for( uint i=0; i<viCarrierIndices.size() && e!=eNil; e=e.withoutTop() ) if( i!=-1 ) {
-      if( e.top()>='0' and e.top()<='9' ) for( const K& k : ss.at(viCarrierIndices[i++]).getKSet() ) push_back( k.project(getDir(e.top())) );  // For extractions.
-      else                              { for(       K& k : *this                                  ) k = k.transform(bUp,e.bot());             // For reorderings.
-                                          if( eBankedUnaryTransforms!=EVar() ) cerr << "ERROR StoreState:803: " << eBankedUnaryTransforms << " piled with " << e.top() << endl;
-                                          eBankedUnaryTransforms = "Q"; // e.top();
-                                        }
+      if( e.top()>='0' and e.top()<='9' ) for( const K& k : ss.at(viCarrierIndices[i++]).getKSet() ) if( k.project(-getDir(e.top()))!=K::kBot ) push_back( k.project(-getDir(e.top())) );  // For extractions.
+      else if( e.top()=='Q' or e.top()=='V' ) { for(       K& k : *this                                  ) k = k.transform(bUp,e.bot());             // For reorderings.
+                                                if( eBankedUnaryTransforms!=EVar() ) cerr << "ERROR StoreState:869: " << eBankedUnaryTransforms << " piled with " << e.top() << endl;
+                                                eBankedUnaryTransforms = "Q"; // e.top();
+                                              }
     }
   }
-  // If not going up, add parent contexts...
-  if( !bUp ) insert( end(), ksAncestorB.begin(), ksAncestorB.end() );
+  // Add unprojected contexts...
+  insert( end(), ksUntransformed.begin(), ksUntransformed.end() );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -884,20 +912,23 @@ LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign
     vector<int> viCarrierB;  viCarrierB.reserve(4);
     for( int i=qPrev.size(); i>=0; i-- ) {
       N nB=tCurrB.getLastNonlocal(); if( i<iAncestorB && nB!=N_NONE && qPrev[i].getType()==nB                  ) { viCarrierB.push_back(i);  tCurrB=tCurrB.withoutLastNolo(); }
-                                     if( i<iAncestorB && nB!=N_NONE && !qPrev[i].getType().containsCarrier(nB) ) { viCarrierB.push_back(-1); tCurrB=tCurrB.withoutLastNolo(); }
+                                     if( i<iAncestorB && nB!=N_NONE && !qPrev[i].getType().isCarrier() && !qPrev[i].getType().containsCarrier(nB) ) { viCarrierB.push_back(-1); tCurrB=tCurrB.withoutLastNolo(); }
     }
+cout<<" viCarrierB=";
+for( int i : viCarrierB ) cout<<" "<<i;
+cout<<endl;
     const Sign& aAncestorA = qPrev.at( qPrev.getAncestorAIndex(1) );
     const Sign& aAncestorB = qPrev.at( qPrev.getAncestorBIndex(1) );
 //    const KSet& ksExtrtn   = (iCarrierB<0) ? KSet() : qPrev.at(iCarrierB).getKSet();
-    *this = (f==1 && eF!='N')                  ? Sign( KSet(KSet(),0,f==0,eF,viCarrierB,qPrev,aPretrm.getKSet()), aPretrm.getType(), S_A )
-                                                 //Sign( KSet(ksExtrtn,-getDir(eF),aPretrm.getKSet()), aPretrm.getType(), S_A )
-          : (f==1)                             ? aPretrm                             // if fork, lchild is preterm.
-          : (qPrev.size()<=0)                  ? StoreState::aTop                    // if no fork and stack empty, lchild is T (NOTE: should not happen).
-          : (!aAncestorA.isDitto() && eF!='N') ? Sign( KSet(KSet(),0,f==0,eF,viCarrierB,qPrev,aAncestorA.getKSet()), aAncestorA.getType(), S_A )
-                                                 //Sign( KSet(ksExtrtn,-getDir(eF),aAncestorA.getKSet()), aAncestorA.getType(), S_A )
-          : (!aAncestorA.isDitto())            ? aAncestorA                          // if no fork and stack exists and last apex context set is not ditto, return last apex.
-          :                                      Sign( KSet(KSet(),0,f==0,eF,viCarrierB,qPrev,aAncestorB.getKSet()), aPretrm.getKSet(), aAncestorA.getType(), S_A );
-                                                 //Sign( KSet(ksExtrtn,-getDir(eF),aAncestorB.getKSet()), aPretrm.getKSet(), aAncestorA.getType(), S_A );  // otherwise make new context set.
+    *this = (f==1 && eF!=eNil)                  ? Sign( KSet(KSet(),0,true,eF,viCarrierB,qPrev,aPretrm.getKSet()), aPretrm.getType(), S_A )
+                                                  //Sign( KSet(ksExtrtn,-getDir(eF),aPretrm.getKSet()), aPretrm.getType(), S_A )
+          : (f==1)                              ? aPretrm                             // if fork, lchild is preterm.
+          : (qPrev.size()<=0)                   ? StoreState::aTop                    // if no fork and stack empty, lchild is T (NOTE: should not happen).
+          : (!aAncestorA.isDitto() && eF!=eNil) ? Sign( KSet(KSet(),0,true,eF,viCarrierB,qPrev,aAncestorA.getKSet()), aAncestorA.getType(), S_A )
+                                                  //Sign( KSet(ksExtrtn,-getDir(eF),aAncestorA.getKSet()), aAncestorA.getType(), S_A )
+          : (!aAncestorA.isDitto())             ? aAncestorA                          // if no fork and stack exists and last apex context set is not ditto, return last apex.
+          :                                       Sign( KSet(KSet(),0,true,eF,viCarrierB,qPrev,aAncestorB.getKSet()), aPretrm.getKSet(), aAncestorA.getType(), S_A );
+                                                  //Sign( KSet(ksExtrtn,-getDir(eF),aAncestorB.getKSet()), aPretrm.getKSet(), aAncestorA.getType(), S_A );  // otherwise make new context set.
 }
 
 
