@@ -176,7 +176,7 @@ cout<<"reducing "<<lP<<" now "<<t;
 cout<<" to "<<sType<<endl;
 
 //  smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x((?:(?!-[a-z])[^ }])*)(.*?)$")); s=m[3] ) {
-  smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^} ][^| ]*[|](?:(?!-[a-z])[^ }])*)(.*?)$")); s=m[3] ) {
+  smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^} ][^| ]*[|](?:(?!-[a-zA-Z])[^ }])*)(.*?)$")); s=m[3] ) {
     string sX = m[2];
     smatch mX;
 cout<<"applying "<<sX<<" to "<<sPred;

@@ -214,6 +214,28 @@ NgramProbs:
       outerdelim: '.'
       innerdelim: '.'
 endef
+
+## TO SPEC
+.PRECIOUS: %.kenlm.ngram.itemmeasures
+%-kenlm.itemmeasures: $$(DEP-KENLM) $(KENLMDIR)/bin/query \
+$$(basename %).lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
+$(KENLMMODDIR)/gigaword$$(suffix $$*).kenlm.bin \
+$(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
+	$(word 1, $^) -\n $(word 4,$^) < $(word 2,$^) | python3 $(word 3,$^) --fwprobs - | \
+	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
+
+%-kenlm.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLMDIR)/bin/query \
+$$(basename %).lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
+$(KENLMMODDIR)/gigaword$$(suffix $$*).kenlm \
+$(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
+	$(word 1, $^) -\n $(word 4,$^) < $(word 2,$^) | python3 $(word 3,$^) --fwprobs - | \
+	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
+
+%.unigram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLM-SCRIPTS)/unigram.py $(KENLMMODDIR)/gigaword.1.fw.kenlm %.lineitems \
+$(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
+	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+
+## not to spec
 .PRECIOUS: %.kenlm.ngram.itemmeasures
 %.kenlm.ngram.itemmeasures: $$(DEP-KENLM) $(KENLMDIR)/bin/query \
 $$(basename %).lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
@@ -247,3 +269,5 @@ $(RT-SCRIPTS)/filter_cols.py
 %.kenlm.unigram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLM-SCRIPTS)/unigram.py $(KENLMMODDIR)/gigaword.1.fw.kenlm %.lineitems \
 $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
 	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+
+

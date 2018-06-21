@@ -414,11 +414,55 @@ RTCoreEvmeasures:
     kwargs:
       innerdelim: .
 endef
+
+%.itemmeasures: %.lineitems
+	echo word  >  $@
+	cat $<  |  perl -pe 's/ /\n/g'  >>  $@
+%parsed.itemmeasures: %parsed.tokmeasures  $$(basename %).itemmeasures  $(RT-SCRIPTS)/roll_toks.py
+	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1  >  $@
+%.all-itemmeasures:  $(RT-SCRIPTS)/evmeas2uniqcols.py  $(RT-SCRIPTS)/filter_cols.py  $(RT-SCRIPTS)/addCols.r  \
+                         $$(patsubst $$(pc),$$(word 1,$$(subst ., ,$$*)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,$$*)),$$(subst ., ,%)))
+	paste -d ' ' $(wordlist 4,$(words $^),$^)  |  python $(word 1,$^)  |  python $(word 2,$^)  |  $(word 3,$^)  >  $@
+#%.core-itemmeasures: $$(patsubst $$(pc),$$(word 1,$$(subst ., ,%)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,%)),$$(subst ., ,%))) 
+#	paste $^  >  $@
+
+## TO SPEC
+.PRECIOUS: %.core-evmeasures
+%.core-evmeasures: %.all-itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
+$(RT-SCRIPTS)/merge_tables.py
+	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  > $@
+
+## TO SPEC
+%.filt-evmeasures: $$(basename %).core-evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
+$(RT-SCRIPTS)/inferPredictors.py \
+$(RT-SCRIPTS)/filter_cols.awk \
+$(RT-SCRIPTS)/accumulateMetrics.py \
+$(RT-SCRIPTS)/rm_unfix_items.py \
+$(RT-SCRIPTS)/futureMetrics.py \
+$(RT-SCRIPTS)/spilloverMetrics.py \
+$(RT-SCRIPTS)/parsePredictors.py \
+$(RT-SCRIPTS)/rm_na_items.py
+	$(eval CORECOLS := $(sort $(shell cat $(word 2, $^) | python $(word 3, $^) 1 ) $(shell echo $(subst +, ,$(word 2, $(subst _, ,$(subst .,,$(suffix $*))))) | python $(word 9, $^))))
+	$(eval COLS := $(sort $(shell cat $(word 2, $^) | python $(word 3, $^)) $(subst +, ,$(word 2, $(subst _, ,$(subst .,,$(suffix $*)))))))
+	@echo Extracting columns: $(CORECOLS)
+	@echo Computing columns: $(COLS)
+	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(CORECOLS))) $< | \
+	python $(word 5, $^) -c $(shell echo $(COLS) | python $(word 9, $^) -a) | \
+	python $(word 6, $^) | \
+	python $(word 7, $^) -I -c $(shell echo $(COLS) | python $(word 9, $^) -f) | \
+	python $(word 8, $^) -I -C $(shell echo $(COLS) | python $(word 9, $^) -s) | \
+	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(COLS))) | \
+	python $(word 10, $^) > $@
+
+
+
+## change .itemmeasures to .core-itemmeasures
 .PRECIOUS: %.core.evmeasures
 %.core.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
 	python $(word 3, $^) $< $(word 2, $^) sentid sentpos > $@
 
+## identical except filt.,core. <-> filt-,core-
 %.filt.evmeasures: $$(basename %).core.evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
 $(RT-SCRIPTS)/inferPredictors.py \
 $(RT-SCRIPTS)/filter_cols.awk \

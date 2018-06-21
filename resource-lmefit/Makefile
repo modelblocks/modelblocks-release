@@ -302,6 +302,22 @@ $(RHACKS-SCRIPTS)/mer-utils.R \
 $(RHACKS-SCRIPTS)/regression-utils.R
 	$< $(word 2, $^) $*.lm.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) -m lm > $*.lm
 
+sp :=
+sp +=
+pc := %
+
+## TO SPEC:
+.PRECIOUS: %_lmer %_lmer.rdata
+%_lmer %_lmer.rdata: $$(DEP-RHACKS)  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
+                     genmodel/$$(basename $$*).$$(subst $$(sp),_,$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*)))))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
+                     $$(subst -a,-a_,$$(subst -A,-A_,$$(subst .,,$$(suffix $$*))))).filt-evmeasures \
+                     scripts/$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
+                     $(LMEFIT-SCRIPTS)/lmetools.r \
+                     $(RHACKS-SCRIPTS)/mer-utils.R \
+                     $(RHACKS-SCRIPTS)/regression-utils.R
+	$< $(word 2, $^) $*_lmer.rdata $(subst -A,-A ,$(subst -a,-a ,$(filter -%,$(subst _, ,$(subst .,,$(suffix $*)))))) -b $(word 3, $^) > $*_lmer
+
+
 # Runs an LRT evaluation based on the following template:
 #
 #    <path>/<evmeasures-basename>.<formula-key>.<main-effect>.<eval-params>.<anova-params>.diamond.lrt
@@ -403,6 +419,16 @@ $(RHACKS-SCRIPTS)/mer-utils.R \
 $(RHACKS-SCRIPTS)/regression-utils.R
 	$(wordlist 1,3,$^) $(subst _, ,$(subst .,,$(suffix $*))) -perm > $@
 
+## TO SPEC:
+.PRECIOUS: %_lrtsignif
+%_lrtsignif: $$(DEP-RHACKS)  $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
+             $$(basename $$(basename $$*)).-a$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*))))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
+             $$(basename $$(basename $$*)).-A$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*))))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
+             $(RHACKS-SCRIPTS)/mer-utils.R  $(RHACKS-SCRIPTS)/regression-utils.R \
+             $(LMEFIT-SCRIPTS)/lmetools.r \
+             $(RHACKS-SCRIPTS)/mer-utils.R \
+             $(RHACKS-SCRIPTS)/regression-utils.R
+	$(wordlist 1,3,$^) $(filter -%,$(subst _, ,$(subst .,,$(suffix $*)))) > $@
 
 
 # Runs a diamond LRT evaluation based on the following template:
@@ -489,6 +515,22 @@ $(LMEFIT-SCRIPTS)/lmetools.r
 	$(wordlist 1,5,$^) -t '$(subst _,-vs-,$(subst .,,$(suffix $(basename $(basename $*)))))' \
   -l $(word 1, $(subst _, ,$(subst .,,$(suffix $(basename $(basename $*)))))) \
   -r $(word 2, $(subst _, ,$(subst .,,$(suffix $(basename $(basename $*)))))) > $@
+
+## TO SPEC:
+.PRECIOUS: %_dlrtsignif
+%_dlrtsignif: $$(DEP-RHACKS)  $(LMEFIT-SCRIPTS)/lmefit2diamlrtsignif.r \
+              $$(basename $$(basename $$*)).-a$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))+$$(word 2,$$(subst _, ,$$(suffix $$*)))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
+              $$(basename $$(basename $$*)).-a$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_-A$$(word 2,$$(subst _, ,$$(suffix $$*)))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
+              $$(basename $$(basename $$*)).-A$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_-a$$(word 2,$$(subst _, ,$$(suffix $$*)))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
+              $$(basename $$(basename $$*)).-A$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))+$$(word 2,$$(subst _, ,$$(suffix $$*)))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
+              $(RHACKS-SCRIPTS)/mer-utils.R  $(RHACKS-SCRIPTS)/regression-utils.R \
+              $(LMEFIT-SCRIPTS)/lmetools.r \
+              $(RHACKS-SCRIPTS)/mer-utils.R \
+              $(RHACKS-SCRIPTS)/regression-utils.R
+	$(wordlist 1,5,$^) -t '$(subst $(sp),-vs-,$(filter-out -%,$(subst _, ,$(subst .,,$(suffix $*)))))' \
+		-l $(word 1,$(subst _, ,$(subst .,,$(suffix $*)))) \
+		-r $(word 2,$(subst _, ,$(suffix $*))) > $@
+
 
 # Generates an easy-to-read table of summary data
 # from one or more %.lrtsignif files. Pulls in all %.lrtsignif files

@@ -83,7 +83,7 @@ public:
     if( lbe.size()==0 ) {
       lbe.emplace_front( BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(1,'N','N','N'), StoreState() ), ProbBack(0.0,BeamElement()) );
       lbe.emplace_front( BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(1,'N','N','N'), StoreState() ), ProbBack(0.0,BeamElement()) );
-      cerr<<"i tried"<<endl;
+      cerr<<"i failed"<<endl;
     }
     //    return lbe;
   }
@@ -230,68 +230,104 @@ int main ( int nArgs, char* argv[] ) {
 
         // For each hypothesized storestate at previous time step...
         //uint i=0; 
-        for( auto& be_tdec1 : beams[t-1] ) { //be_tdec1 is a Beam<Probback,BeamElement>, so first.first is the prob in the probback, and second is the beamelement, which is a sextuple of <sign, f, e, k, j, q>
+        for( const pair<ProbBack,BeamElement>& be_tdec1 : beams[t-1] ) { //beams[t-1] is a Beam<ProbBack,BeamElement>, so be_tdec1 is a beam item, which is a pair<ProbBack,BeamElement>. first.first is the prob in the probback, and second is the beamelement, which is a sextuple of <sign, f, e, k, j, q>
           //         if( i++%numThreads==numt ){
           double            lgpr_tdec1 = be_tdec1.first.first;      // prob of prev storestate
           const StoreState& q_tdec1    = be_tdec1.second.sixth();  // prev storestate
 
           //cerr << "be_tdec1.first: " << be_tdec1.first << endl;
-          if( VERBOSE>1 ) cerr << "be_tdec1.first.second: " << be_tdec1.first.second << endl;
-          if( VERBOSE>1 ) cerr << "addr be_tdec1.first.second: " << &be_tdec1.first.second << endl;
-          if( VERBOSE>1 ) cerr << "  from (" << be_tdec1.second << ")" << endl;
+          //if( VERBOSE>1 ) cerr << "be_tdec1.first.second: " << be_tdec1.first.second << endl;
+          //if( VERBOSE>1 ) cerr << "addr be_tdec1.first.second: " << &be_tdec1.first.second << endl;
+          //if( VERBOSE>1 ) cerr << "  from (" << be_tdec1.second << ")" << endl;
           
           //loop over ksAnt
           //for ( pair<ProbBack,BeamElement> biant (ProbBack(0.0,be_tdec1),BeamElement()) ; biant.first.second.something != Null ; biant = biant.first.second()) { //ej loop over antecedent beam items, with dummy BeamElement 
-          if( VERBOSE>1 ) cerr << "address of beStableDummy: " << &beStableDummy << endl;
-          const pair<const BeamElement, ProbBack> biDummy( BeamElement(), ProbBack(0.0,be_tdec1.first.second) );
+          //if( VERBOSE>1 ) cerr << "address of beStableDummy: " << &beStableDummy << endl;
+          const BeamElement beDummy = BeamElement();
+          const ProbBack pbDummy = ProbBack(0.0, be_tdec1.second);
+          //const ProbBack pbDummy = ProbBack(0.0, be_tdec1.first.second);
+          const pair<const BeamElement, ProbBack> biDummy( beDummy, pbDummy);
           if( VERBOSE>1 ) cerr << "bidummy second second: " << biDummy.second.second << endl;
           const pair<const BeamElement, ProbBack>* pbiAnt = &biDummy;
-          if( VERBOSE>1 ) cerr << "pbiAnt ptr to second second: " << pbiAnt->second.second << endl;
-
-          if( VERBOSE>1 ) cerr << "in main(): timestep t: " << t << endl;
-
-          for ( int tAnt = t; tAnt>0; tAnt--, pbiAnt=&beams[tAnt].get(pbiAnt->second.second) ) { //iterate over candidate antecedent ks, following trellis backpointers ej change for coref 
-            if( VERBOSE>1 ) cerr << "pbiAnt is biDummy: " << (pbiAnt == &biDummy) << endl;
-            if( VERBOSE>1 ) cerr << "in main(): tAnt: " << tAnt << endl;
-            if( VERBOSE>1 ) cerr << "in main(): beams[tAnt]: " << beams[tAnt] << endl;
-            //cerr << "in main(): beams[tAnt].get(pbiAnt->second.second): " << beams[tAnt].get(pbiAnt->second.second) << endl;
-
-            if( VERBOSE>1 ) cerr << "before ksAnt init, pbiant: " << pbiAnt->second.second << endl;
+          //if( VERBOSE>1 ) cerr << "pbiAnt ptr to second second: " << pbiAnt->second.second << endl;
+          //if( VERBOSE>1 ) cerr << "in main(): timestep t: " << t << endl;
+          //
+          //calculate denominator / normalizing constant over all antecedent timesteps
+          double fnorm = 0.0;
+          for ( int tAnt = t; tAnt>0; tAnt--, pbiAnt=&beams[tAnt].get(pbiAnt->second.second) ) { 
+            //if (VERBOSE>1) cerr << "*pbiAnt: " << *pbiAnt << endl;
+            if (VERBOSE>1) cerr << "pbiAnt->first: " << pbiAnt->first << endl;
+            if (VERBOSE>1) cerr << "pbiAnt->second.second: " << pbiAnt->second.second << endl;
+            //if (VERBOSE>1) cerr << "pbiAnt: " << pbiAnt << endl;
             const KSet ksAnt (pbiAnt->first.fourth());
-            // Calc distrib over response for each fork predictor...
-            //
-            if( VERBOSE>1 ) cerr << "after ksAnt init, pbiant: " << pbiAnt->second.second << endl;
-            if( VERBOSE>1 ) cerr << "ptr address: " << pbiAnt << endl;
-            arma::vec flogresponses = arma::zeros( matF.n_rows );
-
-            if( VERBOSE>1 ) cerr << "after flogresponses zero init, pbiant: " << pbiAnt->second.second << endl;
-            //cerr << "in main(): ksAnt: " << ksAnt << endl;
-            // pbiAnt.first is a const BeamElement
-            if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.fourth: " << pbiAnt->first.fourth() << endl; //" should be k
-            if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.third: " << pbiAnt->first.third() << endl;   // ^@ should be extraction
-            if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.second: " << pbiAnt->first.second() << endl; // 0 should be fork
-            if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.first: " << pbiAnt->first.first() << endl;   // []:T^@ should be a sign
             list<FPredictor> lfpredictors;  q_tdec1.calcForkPredictors( lfpredictors, ksAnt, false );  lfpredictors.emplace_back();  // add bias term //ej change
-            if( VERBOSE>1 ) cerr << "lfpredictors  emplaced" << endl;
-
-            if( VERBOSE>1 ) cerr << "pbi ptr address before break: " << pbiAnt << endl;
-
-            if( VERBOSE>1 ) cerr << "before flogresponses accum, pbiant: " << pbiAnt->second.second << endl; //ptr dEATH
+            arma::vec flogresponses = arma::zeros( matF.n_rows ); //distribution over f responses for a single antecedent features
             for ( auto& fpredr : lfpredictors ) {
               if ( fpredr.toInt() < matF.n_cols ) flogresponses += matF.col( fpredr.toInt() ); // add logprob for all indicated features. over all FEK responses.
-              if( VERBOSE>1 ) cerr << "lfpredictor found: " << fpredr << endl;
             }
-            if( VERBOSE>1 ) cerr << "passed fpredr loop" << endl;
+            
+            arma::vec fresponses = arma::exp( flogresponses );
+            double tempfnorm = arma::accu( fresponses );
+            //check for underflow
+            //
+            if( tempfnorm == 1.0/0.0 ) {
+              cerr << "WARNING: NaN for tempfnorm" << endl;
+              uint ind_max=0; for(uint i=0; i<fresponses.size(); i++ ) if( fresponses(i)>fresponses(ind_max) ) ind_max=i;
+              flogresponses -= flogresponses( ind_max );
+              fresponses = arma::exp( flogresponses );
+              tempfnorm = arma::accu( fresponses );
+            }
+            fnorm += tempfnorm;
+          }
+          pbiAnt = &biDummy; //reset pbiAnt pointer after calculating denominator
+          for ( int tAnt = t; tAnt>0; tAnt--, pbiAnt=&beams[tAnt].get(pbiAnt->second.second) ) { //iterate over candidate antecedent ks, following trellis backpointers ej change for coref 
+            //if( VERBOSE>1 ) cerr << "pbiAnt is biDummy: " << (pbiAnt == &biDummy) << endl;
+            //if( VERBOSE>1 ) cerr << "in main(): tAnt: " << tAnt << endl;
+            //if( VERBOSE>1 ) cerr << "in main(): beams[tAnt]: " << beams[tAnt] << endl;
+            //cerr << "in main(): beams[tAnt].get(pbiAnt->second.second): " << beams[tAnt].get(pbiAnt->second.second) << endl;
+
+            //if( VERBOSE>1 ) cerr << "before ksAnt init, pbiant: " << pbiAnt->second.second << endl;
+            const KSet ksAnt (pbiAnt->first.fourth());
+
+            if( VERBOSE>1 ) cerr << "ksAnt: " << ksAnt << endl;
+            // Calc distrib over response for each fork predictor...
+            //
+            //if( VERBOSE>1 ) cerr << "after ksAnt init, pbiant: " << pbiAnt->second.second << endl;
+            //if( VERBOSE>1 ) cerr << "ptr address: " << pbiAnt << endl;
+            arma::vec flogresponses = arma::zeros( matF.n_rows );
+
+            //if( VERBOSE>1 ) cerr << "after flogresponses zero init, pbiant: " << pbiAnt->second.second << endl;
+            //cerr << "in main(): ksAnt: " << ksAnt << endl;
+            // pbiAnt.first is a const BeamElement
+            //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.fourth: " << pbiAnt->first.fourth() << endl; //" should be k
+            //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.third: " << pbiAnt->first.third() << endl;   // ^@ should be extraction
+            //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.second: " << pbiAnt->first.second() << endl; // 0 should be fork
+            //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.first: " << pbiAnt->first.first() << endl;   // []:T^@ should be a sign
+            list<FPredictor> lfpredictors;  q_tdec1.calcForkPredictors( lfpredictors, ksAnt, false );  lfpredictors.emplace_back();  // add bias term //ej change
+            //if( VERBOSE>1 ) cerr << "lfpredictors  emplaced" << endl;
+
+            //if( VERBOSE>1 ) cerr << "pbi ptr address before break: " << pbiAnt << endl;
+
+            //if( VERBOSE>1 ) cerr << "before flogresponses accum, pbiant: " << pbiAnt->second.second << endl; //ptr dEATH
+            //
+            for ( auto& fpredr : lfpredictors ) {
+              if ( fpredr.toInt() < matF.n_cols ) flogresponses += matF.col( fpredr.toInt() ); // add logprob for all indicated features. over all FEK responses.
+              //if( VERBOSE>1 ) cerr << "lfpredictor found: " << fpredr << endl;
+            }
+            //if( VERBOSE>1 ) cerr << "passed fpredr loop" << endl;
             if ( VERBOSE>1 ) { for ( auto& fpredr : lfpredictors ) { cerr <<"    fpredr:"<<fpredr<<endl; } }
 
-            if( VERBOSE>1 ) cerr << "passed printout" << endl;
+            //if( VERBOSE>1 ) cerr << "passed printout" << endl;
             arma::vec fresponses = arma::exp( flogresponses );
             // Calc normalization term over responses...
-            double fnorm = arma::accu( fresponses );
+            //double fnorm = arma::accu( fresponses );
 
-            if( VERBOSE>1 ) cerr << "before overflow norm, pbiant: " << pbiAnt->second.second << endl;
+            //if( VERBOSE>1 ) cerr << "before overflow norm, pbiant: " << pbiAnt->second.second << endl;
             // Rescale overflowing distribs by max...
             if( fnorm == 1.0/0.0 ) {
+              cerr << "WARNING: NaN for fnorm" << endl;
+            }
+            /*
               uint ind_max=0; for(uint i=0; i<fresponses.size(); i++ ) if( fresponses(i)>fresponses(ind_max) ) ind_max=i;
               flogresponses -= flogresponses( ind_max );
               fresponses = arma::exp( flogresponses );
@@ -299,10 +335,11 @@ int main ( int nArgs, char* argv[] ) {
               //            fresponses.fill( 0.0 );  fresponses( ind_max ) = 1.0;
               //            fnorm = 1.0;
             }
+            */
 
             // For each possible lemma (context + label + prob) for preterminal of current word...
-            if( VERBOSE>1 ) cerr << "before ktprt loop, pbiant: " << pbiAnt->second.second << endl;
-            if( VERBOSE>1 ) cerr << "entering ktpr_p_t loop..." << endl;
+            //if( VERBOSE>1 ) cerr << "before ktprt loop, pbiant: " << pbiAnt->second.second << endl;
+            //if( VERBOSE>1 ) cerr << "entering ktpr_p_t loop..." << endl;
             for ( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[unkWord(w_t.getString().c_str())] ) {
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(ktpr_p_t.second) > beams[t].rbegin()->first.first ) {
                 K k_p_t           = (FEATCONFIG & 8 && ktpr_p_t.first.first.getString()[2]!='y') ? K::kBot : ktpr_p_t.first.first;   // context of current preterminal
@@ -316,7 +353,7 @@ int main ( int nArgs, char* argv[] ) {
                 for ( auto& f : {0,1} ) {
                   double scoreFork = ( FResponse::exists(f,e_p_t,k_p_t) ) ? fresponses(FResponse(f,e_p_t,k_p_t).toInt()) : 1.0 ;
                   if ( VERBOSE>1 ) cerr << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << (scoreFork / fnorm) << endl;
-                  if( VERBOSE>1 ) cerr << "fork pbiant: " << pbiAnt->second.second << endl;
+                  //if( VERBOSE>1 ) cerr << "fork pbiant: " << pbiAnt->second.second << endl;
 
                   // If preterminal prob is nonzero...
                   PPredictor ppredictor = q_tdec1.calcPretrmTypeCondition(f,e_p_t,k_p_t);
@@ -327,6 +364,10 @@ int main ( int nArgs, char* argv[] ) {
                     double probFork = (scoreFork / fnorm) * modP[ppredictor][t_p_t] * probwgivkl;
                     if ( VERBOSE>1 ) cerr << "      f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << scoreFork << " / " << fnorm << " * " << modP[ppredictor][t_p_t] << " * " << probwgivkl << " = " << probFork << endl;
                     Sign aPretrm;  aPretrm.first().emplace_back(k_p_t);  aPretrm.second() = t_p_t;  aPretrm.third() = S_A;          // aPretrm (pos tag)
+                    for (auto& ant : ksAnt) {
+                      //don't add ant if Bot
+                      aPretrm.first().emplace_back(ant); // coref change to add antecedent Ks to aPretrm 
+                    }
                     const LeftChildSign aLchild( q_tdec1, f, e_p_t, aPretrm );
                     list<JPredictor> ljpredictors; q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
                     ljpredictors.emplace_back();                                                                  // add bias
@@ -388,22 +429,22 @@ int main ( int nArgs, char* argv[] ) {
                       } // if beams
                     } // for jresponse
                   } // if modP
-                  if( VERBOSE>1 ) cerr << "finished modP. iterating f..." << endl;
-                  if( VERBOSE>1 ) cerr << "after modP, pbiant->second.second: " << pbiAnt->second.second << endl;
+                  //if( VERBOSE>1 ) cerr << "finished modP. iterating f..." << endl;
+                  //if( VERBOSE>1 ) cerr << "after modP, pbiant->second.second: " << pbiAnt->second.second << endl;
                 } // for f : {0,1}
-              if( VERBOSE>1 ) cerr << "finished iterating f.  iterating kptr_p_t..." << endl;
-              if( VERBOSE>1 ) cerr << "after f, pbiant->second.second: " << pbiAnt->second.second << endl;
+              //if( VERBOSE>1 ) cerr << "finished iterating f.  iterating kptr_p_t..." << endl;
+              //if( VERBOSE>1 ) cerr << "after f, pbiant->second.second: " << pbiAnt->second.second << endl;
               } // if beamsize
             } // for ktpr_p_t
-            if( VERBOSE>1 ) cerr << "finished iterating kptr_p_t. iterating tant previous timesteps..." << endl;
-            if( VERBOSE>1 ) cerr << "t-1: " << t-1 << " sizeof beams[t-1]: " << beams[t-1].size() << endl;
-            if( VERBOSE>1 ) cerr << "tAnt: " << tAnt << endl;
-            if( VERBOSE>1 ) cerr << "after kptr, pbiant->second.second: " << pbiAnt->second.second << endl;
+            //if( VERBOSE>1 ) cerr << "finished iterating kptr_p_t. iterating tant previous timesteps..." << endl;
+            //if( VERBOSE>1 ) cerr << "t-1: " << t-1 << " sizeof beams[t-1]: " << beams[t-1].size() << endl;
+            //if( VERBOSE>1 ) cerr << "tAnt: " << tAnt << endl;
+            //if( VERBOSE>1 ) cerr << "after kptr, pbiant->second.second: " << pbiAnt->second.second << endl;
             //cerr << "beams[0].get(pbiant->second.second): " << beams[0].get(pbiAnt->second.second) << endl;
           } //for tant 
-          if( VERBOSE>1 ) cerr << "finished antecedent timesteps, iterating beam item..." << endl;
+          //if( VERBOSE>1 ) cerr << "finished antecedent timesteps, iterating beam item..." << endl;
         } //for be_tdec1 : beams[t-1] 
-        if( VERBOSE>1 ) cerr << "finished beam items, iterating word..." << endl; 
+        //if( VERBOSE>1 ) cerr << "finished beam items, iterating word..." << endl; 
           //      }, numtglobal ));
 
           //      for( auto& w : vtWorkers ) w.join();

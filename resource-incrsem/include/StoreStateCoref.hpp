@@ -670,9 +670,9 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
               }
       }
       for (auto& kAntecedent : ksAnt) {
-              cerr << "cfp processing ksAnt: " << kAntecedent << endl;
+              //cerr << "cfp processing ksAnt: " << kAntecedent << endl;
               if ( bAdd || FPredictor::exists(d,kNil,kNil,kAntecedent) ) {
-                      cerr << "cfp adding kAntecedent: " << kAntecedent << endl;
+                      //cerr << "cfp adding kAntecedent: " << kAntecedent << endl;
                       lfp.emplace_back( d, kNil, kNil, kAntecedent); // ej change to add coreference
               }
       }
