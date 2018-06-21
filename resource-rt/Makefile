@@ -310,6 +310,9 @@ genmodel/rename_cols.params: | genmodel
 	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g' | cut -f 3- -d' ') > $@
 
 # Pastes word embedding predictors to existing identically tokenized tokmeasures file
+%.embeddings.tokmeasures: $$(basename $$(basename $$(basename %))).tokmeasures $$(word 1, $$(subst ., ,%))$$(suffix $$(basename $$(basename $$*)))$$(suffix $$(basename $$*))$$(suffix $$*).embeddings.tokmeasures
+	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g' | cut -f 3- -d' ') > $@
+
 %.embeddings.tokmeasures: $$(basename $$(basename %)).tokmeasures $$(word 1, $$(subst ., ,%)).gigaword$$(suffix $$(basename $$*))$$(suffix $$*).embeddings.tokmeasures
 	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g' | cut -f 3- -d' ') > $@
 
@@ -383,6 +386,10 @@ $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.item
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | paste -d' ' - $(word 3, $^) | \
         paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python $(word 5, $^) -d | \
 	$(word 6, $^) > $@
+
+%.docids.itemmeasures: %.itemmeasures $$(word 1,$$(subst ., ,%)).docids.itemmeasures $(RT-SCRIPTS)/merge_tables.py
+	python $(word 3, $^) $(word 1, $^) $(word 2, $^) word sentpos sentid > $@
+
 
 define CompositeBlock
 RTDataParams:
