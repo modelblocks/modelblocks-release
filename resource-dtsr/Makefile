@@ -114,8 +114,7 @@ $(DTSRDIR)/dtsr/formula.py
 	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(COLS))) | \
 	python $(word 10, $^) > $@
 
-.PHONY: %.dtsr
-%.dtsr: $$(DEP-DTSR) \
+%.dtsr_outdir/finished.txt: $$(DEP-DTSR) \
 %.filt.evmeasures \
 $$(word 1,$$(subst ., ,%)).evmeasures \
 scripts/$$(subst .,,$$(suffix $$*)).dtsrform \
@@ -126,8 +125,12 @@ $(DTSRDIR)/dtsr/bin/partition.py \
 $(DTSRDIR)/dtsr/bin/train.py \
 $(DTSRDIR)/dtsr/dtsr.py \
 $(DTSRDIR)/dtsr/dtsrbayes.py
-	mkdir -p $@
+	mkdir -p $(dir $@)
 	python3 $(word 7, $^) $(word 2, $^) -m 4 -n 3 -f $(shell cat $(word 3, $^) | python $(word 6, $^))
-	cat $(word 3, $^) | python $(word 5, $^) $(word 1, $^) $(word 2, $^) $@
-	python3 $(word 8, $^) $@/config.ini
+	cat $(word 3, $^) | python $(word 5, $^) $(word 1, $^) $(word 2, $^) $(dir $@)
+	python3 $(word 8, $^) $(dir $@)/config.ini
+	echo "" > $@
+
+.PHONY: %.dtsr
+%.dtsr: %.dtsr_outdir/finished.txt;
 
