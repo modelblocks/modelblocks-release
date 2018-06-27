@@ -278,14 +278,15 @@ int main ( int nArgs, char* argv[] ) {
 
           // For each possible lemma (context + label + prob) for preterminal of current word...
           if( lexW.end() == lexW.find(unkWord(w_t.getString().c_str())) ) cerr<<"ERROR: unable to find unk form: "<<unkWord(w_t.getString().c_str())<<endl;
-          for ( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW.find(w_t)->second : lexW.find(unkWord(w_t.getString().c_str()))->second ) {
-            if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(ktpr_p_t.second) > beams[t].rbegin()->first.first ) {
-              K     k_p_t       = (FEATCONFIG & 8 && ktpr_p_t.first.first.getString()[2]!='y') ? K::kBot : ktpr_p_t.first.first;   // context of current preterminal
-              T     t_p_t       = ktpr_p_t.first.second;                               // label of current preterminal
-              EVar  e_p_t       = (t_p_t.getLastNonlocal()==N_NONE) ? EVar::eNil : (t_p_t.getLastNonlocal()==N("-rN")) ? "0" : (t_p_t.getLastNonlocal().isArg()) ? vpsInts[t_p_t.getArity()+1] : "M";
-              double probwgivkl = ktpr_p_t.second;                                     // probability of current word given current preterminal
+          for ( auto& ektpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW.find(w_t)->second : lexW.find(unkWord(w_t.getString().c_str()))->second ) {
+            if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(ektpr_p_t.second) > beams[t].rbegin()->first.first ) {
+              EVar  e_p_t       = ektpr_p_t.first.first();
+              K     k_p_t       = (FEATCONFIG & 8 && ektpr_p_t.first.second().getString()[2]!='y') ? K::kBot : ektpr_p_t.first.second();   // context of current preterminal
+              T     t_p_t       = ektpr_p_t.first.third();                               // label of current preterminal
+//              EVar  e_p_t       = (t_p_t.getLastNonlocal()==N_NONE) ? EVar::eNil : (t_p_t.getLastNonlocal()==N("-rN")) ? "0" : (t_p_t.getLastNonlocal().isArg()) ? vpsInts[t_p_t.getArity()+1] : "M";
+              double probwgivkl = ektpr_p_t.second;                                     // probability of current word given current preterminal
 
-              if ( VERBOSE>1 ) cout << "     W " << k_p_t << " " << t_p_t << " : " << w_t << " = " << probwgivkl << endl;
+              if ( VERBOSE>1 ) cout << "     W " << e_p_t << " " << k_p_t << " " << t_p_t << " : " << w_t << " = " << probwgivkl << endl;
 
               // For each possible no-fork or fork decision...
               for ( auto& f : {0,1} ) {
@@ -296,7 +297,7 @@ int main ( int nArgs, char* argv[] ) {
                 if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
                   tpLastReport = chrono::high_resolution_clock::now();
                   lock_guard<mutex> guard( mutexMLSList );
-                  cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.second << " PRED " << ktpr_p_t << endl;
+                  cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.second << " PRED " << ektpr_p_t << endl;
                 }
 
                 // If preterminal prob is nonzero...
@@ -361,7 +362,7 @@ int main ( int nArgs, char* argv[] ) {
                                   if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
                                     tpLastReport = chrono::high_resolution_clock::now();
                                     lock_guard<mutex> guard( mutexMLSList );
-                                    cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.second << " PRED " << ktpr_p_t << " JRESP " << jresponse << " A " << tpA.first << " B " << tpB.first << endl;
+                                    cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.second << " PRED " << ektpr_p_t << " JRESP " << jresponse << " A " << tpA.first << " B " << tpB.first << endl;
                                   }
 
                                   // Calculate probability and storestate and add to beam...

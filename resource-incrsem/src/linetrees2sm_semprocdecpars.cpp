@@ -74,7 +74,7 @@ arma::vec vFirstHot;
 
 map<pair<vector<FPredictor>,FResponse>,arma::vec> mvfrv;
 map<pair<PPredictor,T>,arma::mat> mpppmP;
-map<trip<K,T,W>,arma::vec> mktwvW;
+map<quad<EVar,K,T,W>,arma::vec> mektwvW;
 map<pair<vector<JPredictor>,JResponse>,arma::mat> mvjrm;
 map<pair<APredictor,T>,arma::mat> mapamA;
 map<pair<BPredictor,T>,arma::mat> mbpbmB;
@@ -293,11 +293,11 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
     cout<<"----"<<q<<endl;
     cout << "note: F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e.c_str(),k) << endl;
     cout << "note: P " << q.calcPretrmTypeCondition(f,e.c_str(),k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
-    cout << "note: W " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
+    cout << "note: W " << e << " " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
 
     arma::vec& vF = mvfrv[ pair<vector<FPredictor>,FResponse>( vector<FPredictor>( lfp.begin(), lfp.end() ), FResponse(f,e.c_str(),k) ) ];
     arma::mat& mP = mpppmP[ pair<PPredictor,T>(q.calcPretrmTypeCondition(f,e.c_str(),k),aPretrm.getType()) ];
-    arma::vec& vW = mktwvW[ trip<K,T,W>(k,aPretrm.getType(),L(tr.front()).c_str()) ];
+    arma::vec& vW = mektwvW[ quad<EVar,K,T,W>(e.c_str(),k,aPretrm.getType(),L(tr.front()).c_str()) ];
     vF = ((vF.n_elem) ? vF : arma::zeros(iMaxNums))          + normalize( D * U * tr.u(),                     1 );
     mP = ((mP.n_elem) ? mP : arma::zeros(iMaxNums,iMaxNums)) + normalize( D * arma::diagmat(U * tr.u()),      1 );
     vW = ((vW.n_elem) ? vW : arma::zeros(iMaxNums))          + normalize( (vOnes.t() * D).t() % (U * tr.u()), 1 );
@@ -432,8 +432,8 @@ int main ( int nArgs, char* argv[] ) {
     { cout << "F " << vfrv.first.first[0].addNum(i) << "=1"; for( uint n=1; n<vfrv.first.first.size(); n++ ) cout << "," << vfrv.first.first[n] << "=1"; cout << " : " << vfrv.first.second << " = " << vfrv.second(i) << endl; }
   for( auto& pppm : mpppmP ) for( int i=0; i<iMaxNums; i++ ) for( int j=0; j<iMaxNums; j++ ) if( pppm.second(i,j) != 0.0 )
     cout << "P " << pppm.first.first.first() << " " << pppm.first.first.second() << " " << pppm.first.first.third() << " " << pppm.first.first.fourth().addNum(i) << " " << pppm.first.first.fifth() << " : " << pppm.first.second.addNum(j) << " = " << pppm.second(i,j) << endl;
-  for( auto& ktwv : mktwvW ) for( int i=0; i<iMaxNums; i++ ) if( ktwv.second(i) != 0.0 )
-    cout << "W " << ktwv.first.first() << " " << ktwv.first.second().addNum(i) << " : " << ktwv.first.third() << " = " << ktwv.second(i) << endl;
+  for( auto& ektwv : mektwvW ) for( int i=0; i<iMaxNums; i++ ) if( ektwv.second(i) != 0.0 )
+    cout << "W " << ektwv.first.first() << " " << ektwv.first.second() << " " << ektwv.first.third().addNum(i) << " : " << ektwv.first.fourth() << " = " << ektwv.second(i) << endl;
   for( auto& vjrm : mvjrm ) for( int i=0; i<iMaxNums; i++ ) for( int j=0; j<iMaxNums; j++ ) if( vjrm.second(i,j) )
     { cout << "J " << vjrm.first.first[0].addNums(i,j) << "=1"; for( uint n=1; n<vjrm.first.first.size(); n++ ) cout << "," << vjrm.first.first[n] << "=1"; cout << " : " << vjrm.first.second << " = " << vjrm.second(i,j) << endl; }
   for( auto& apam : mapamA ) for( int i=0; i<iMaxNums; i++ ) for( int j=0; j<iMaxNums; j++ ) for( int k=0; k<iMaxNums; k++ ) if( apam.second(i,j*iMaxNums+k) != 0.0 )

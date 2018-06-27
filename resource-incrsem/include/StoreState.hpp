@@ -565,7 +565,7 @@ class PPredictor : public DelimitedQuint<psX,D,psSpace,F,psSpace,Delimited<EVar>
 
 };
 
-class WPredictor : public DelimitedPair<psX,Delimited<K>,psSpace,Delimited<T>,psX> { };
+class WPredictor : public DelimitedTrip<psX,Delimited<EVar>,psSpace,Delimited<K>,psSpace,Delimited<T>,psX> { };
 
 class APredictor : public DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<T>,psSpace,Delimited<T>,psX> {
  public:
@@ -676,18 +676,18 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
                                      if(          i<iAncestorB && nB!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nB) ) { viCarrierB.push_back(-1); tCurrB=tCurrB.withoutLastNolo(); nNewCarriers++; }
     }
 
-cout<<" viCarrierP=";
-for( int i : viCarrierP ) cout<<" "<<i;
-cout<<endl;
-cout<<" viCarrierA=";
-for( int i : viCarrierA ) cout<<" "<<i;
-cout<<endl;
-cout<<" viCarrierL=";
-for( int i : viCarrierL ) cout<<" "<<i;
-cout<<endl;
-cout<<" viCarrierB=";
-for( int i : viCarrierB ) cout<<" "<<i;
-cout<<endl;
+//cout<<" viCarrierP=";
+//for( int i : viCarrierP ) cout<<" "<<i;
+//cout<<endl;
+//cout<<" viCarrierA=";
+//for( int i : viCarrierA ) cout<<" "<<i;
+//cout<<endl;
+//cout<<" viCarrierL=";
+//for( int i : viCarrierL ) cout<<" "<<i;
+//cout<<endl;
+//cout<<" viCarrierB=";
+//for( int i : viCarrierB ) cout<<" "<<i;
+//cout<<endl;
 
 /*
     // Find existing nonlocal carriers...
@@ -774,8 +774,7 @@ cout<<endl;
         viCarrierL.clear();
         for( int i=iLowerA-1; i>=-1; i-- ) {
           T tI = at(i).getType();
-          N nL=tCurrL.getLastNonlocal(); cout<<"????? "<<tI<<" "<<nL<<" "<<(nL!=N_NONE)<<" "<<(tI==nL)<<endl;
-                                         if( i>-1 && nL!=N_NONE && tI==nL                                     ) { viCarrierL.push_back(i);  tCurrL=tCurrL.withoutLastNolo(); }
+          N nL=tCurrL.getLastNonlocal(); if( i>-1 && nL!=N_NONE && tI==nL                                     ) { viCarrierL.push_back(i);  tCurrL=tCurrL.withoutLastNolo(); }
                                          if(         nL!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nL) ) { viCarrierL.push_back(-1); tCurrL=tCurrL.withoutLastNolo(); }
         }
 cout<<" viCarrierL=";
