@@ -139,11 +139,12 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-string getExtr ( const Tree<LVU>& tr ) {
+string getUnaryOp ( const Tree<LVU>& tr ) {
 //if( FEATCONFIG & 16 ) return 'N';
+  if( string::npos != L(tr.front()).find("-lV") ) return "V";
   N n =  T(L(tr).c_str()).getLastNonlocal();
-  if ( n == N_NONE ) return "";
-  if ( (tr.front().size()==0 || tr.front().front().size()==0) && n == N("-rN") ) return "0";
+  if( n == N_NONE ) return "";
+  if( (tr.front().size()==0 || tr.front().front().size()==0) && n == N("-rN") ) return "0";
   if( string::npos != L(tr.front()).find("-lE") )
     return ( T(L(tr.front()).c_str()).getArity() > T(L(tr).c_str()).getArity() ) ? (string(1,'0'+T(L(tr.front()).c_str()).getArity())) : "M";
   else return "";
@@ -277,8 +278,8 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
     //// cerr<<"#T "<<getType(tr)<<" "<<L(tr.front())<<endl;
 
     f               = 1 - s;
-//    eF = e = ( e!='N' ) ? e : getExtr ( tr );
-    eF              = e + getExtr( tr );
+//    eF = e = ( e!='N' ) ? e : getUnaryOp ( tr );
+    eF              = e + getUnaryOp( tr );
     pair<K,T> kt    = getPred ( L(tr), L(tr.front()) );
     K k             = (FEATCONFIG & 8 && kt.first.getString()[2]!='y') ? K::kBot : kt.first;
     aPretrm         = Sign( k, getType(l), S_A );
@@ -312,8 +313,8 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
   // At unary nonpreterminal...
   else if ( tr.size()==1 ) {
     //// cerr<<"#U"<<getType(tr)<<" "<<getType(tr.front())<<endl;
-    //e = ( e!='N' ) ? e : getExtr ( tr );
-    e = e + getExtr( tr );
+    //e = ( e!='N' ) ? e : getUnaryOp ( tr );
+    e = e + getUnaryOp( tr );
     calcContext ( tr.front(), D, (getType(tr)==getType(tr.front())) ? U : U * getG(getType(tr),getType(tr.front()),"-") * arma::kron(mIdent,vOnes), s, d, e, l );
 //cout<<"unary at "<<L(tr)<<endl<<mtttmG[trip<T,T,T>(getType(tr),getType(tr.front()),"-")]<<endl;
   }
@@ -327,8 +328,8 @@ void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, 
 
     J j          = s;
     LeftChildSign aLchild ( q, f, eF.c_str(), aPretrm );
-//    e            = ( e!='N' ) ? e : getExtr ( tr ) ;
-    e            = e + getExtr( tr );
+//    e            = ( e!='N' ) ? e : getUnaryOp ( tr ) ;
+    e            = e + getUnaryOp( tr );
     O oL         = getOp ( L(tr.front()), L(tr.back()),  L(tr) );
     O oR         = getOp ( L(tr.back()),  L(tr.front()), L(tr) );
 
