@@ -91,7 +91,8 @@ export PYTHONPATH
 	cat $(word 1, $^) | awk -f $(word 2, $^) -v cols=fdur:fdurFP:fdurGP:time:subject:docid:sentid:word:correct:startofsentence:endofsentence:startofline:endofline:startofscreen:endofscreen:startoffile:endoffile:wdelta > $@
 
 %.filt.evmeasures: $$(DEP-DTSR) \
-$$(basename %).core.evmeasures scripts/$$(subst .,,$$(suffix $$*)).dtsrform \
+$$(basename $$(basename %)).core.evmeasures \
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).dtsrform \
 $(DTSR-SCRIPTS)/infer_dtsr_predictors.py \
 $(RT-SCRIPTS)/filter_cols.awk \
 $(RT-SCRIPTS)/accumulateMetrics.py \
@@ -102,8 +103,8 @@ $(RT-SCRIPTS)/parsePredictors.py \
 $(RT-SCRIPTS)/rm_na_items.py \
 $(CONFIGDIR)/user-dtsr-directory.txt \
 $(DTSRDIR)/dtsr/formula.py
-	$(eval CORECOLS := $(sort $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^)) | python $(word 9, $^))))
-	$(eval COLS := $(sort $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^)))))
+	$(eval CORECOLS := $(sort $(shell echo $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^))) $(shell echo $(subst +, ,$(subst _, ,$(subst .,,$(suffix $*))))) | python $(word 9, $^))))
+	$(eval COLS := $(sort $(shell echo $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^))) $(shell echo $(subst +, ,$(subst _, ,$(subst .,,$(suffix $*))))))))
 	@echo Extracting columns: $(CORECOLS)
 	@echo Computing columns: $(COLS)
 	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(CORECOLS))) $< | \
@@ -117,7 +118,7 @@ $(DTSRDIR)/dtsr/formula.py
 %.dtsr_outdir/finished.txt: $$(DEP-DTSR) \
 %.filt.evmeasures \
 $$(word 1,$$(subst ., ,%)).evmeasures \
-scripts/$$(subst .,,$$(suffix $$*)).dtsrform \
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).dtsrform \
 $(CONFIGDIR)/user-dtsr-directory.txt \
 $(DTSR-SCRIPTS)/generate_config.py \
 $(DTSR-SCRIPTS)/get_split_id_fields.py \
@@ -127,10 +128,19 @@ $(DTSRDIR)/dtsr/dtsr.py \
 $(DTSRDIR)/dtsr/dtsrbayes.py
 	mkdir -p $(dir $@)
 	python3 $(word 7, $^) $(word 2, $^) -m 4 -n 3 -f $(shell cat $(word 3, $^) | python $(word 6, $^))
-	cat $(word 3, $^) | python $(word 5, $^) $(word 1, $^) $(word 2, $^) $(dir $@)
+	cat $(word 3, $^) | python $(word 5, $^) $(word 1, $^) $(word 2, $^) $(dir $@) $(subst _, ,$(subst .,,$(suffix $*)))
 	python3 $(word 8, $^) $(dir $@)/config.ini
 	echo "" > $@
 
-.PHONY: %.dtsr
 %.dtsr: %.dtsr_outdir/finished.txt;
+
+%-ptsignif: $$(DEP-DTSR) \
+$$(basename $$(basename $$(basename %))).$$(subst .,,$$(suffix $$(basename $$*))).filt.evmeasures \
+$$(word 1,$$(subst ., ,%)).evmeasures \
+$$(basename $$(basename $$(basename %))).$$(subst .,,$$(suffix $$(basename $$*))).$$(subst .,,$$(suffix $$(basename $$(basename $$*)))) \
+$(DTSRDIR)/dtsr/bin/predict.py \
+$(DTSRDIR)/dtsr/bin/compare.py
+	python3 $(word 4, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -p $(subst .,,$(suffix $*))
+	python3 $(word 5, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -p $(subst .,,$(suffix $*))
+
 

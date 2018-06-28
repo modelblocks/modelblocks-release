@@ -45,9 +45,9 @@ wdelta = <= 4
 startofsentence = != 1
 endofsentence = != 1
 
-[model_DTSR_5gram]
-formula = log(fdurGP) ~ C(s.(sentpos), DiracDelta()) + C(rate + prevwasfix + s.(wdelta) + s.(wlen) + s.(unigram) + s.(fwprob5surp), ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2)) + (C(s.(sentpos), DiracDelta()) + C(rate + prevwasfix + s.(wdelta) + s.(wlen) + s.(unigram) + s.(fwprob5surp), ShiftedGammaShapeGT1()) | subject) + (1 | word)
+[impulse_to_irf]
+default = ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2, ran=T)
 
-[model_DTSR_5gram_baseline]
-formula = log(fdurGP) ~ C(s.(sentpos), DiracDelta()) + C(rate + prevwasfix + s.(wdelta) + s.(wlen) + s.(unigram), ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2)) + (C(s.(sentpos), DiracDelta()) + C(rate + prevwasfix + s.(wdelta) + s.(wlen) + s.(unigram) + s.(fwprob5surp), ShiftedGammaShapeGT1()) | subject) + (1 | word)
+[model_DTSR_template]
+formula = log(fdurGP) ~ C(s.(sentpos), DiracDelta()) + C(rate + prevwasfix + s.(wdelta) + s.(wlen) + s.(unigram) + s.(fwprob5surp), ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2)) + (C(s.(sentpos), DiracDelta()) + C(rate + prevwasfix + s.(wdelta) + s.(wlen) + s.(unigram) + s.(fwprob5surp), ShiftedGammaShapeGT1(ran=T)) | subject) + (1 | word)
 
