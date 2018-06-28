@@ -31,6 +31,7 @@ char psRBrack[] = "]";
 int getDir ( char cOp ) {
   return (cOp>='0' && cOp<='9') ? cOp-'0' :  // (numbered argument)
          (cOp=='M')             ? -1      :  // (modifier)
+         (cOp=='m')             ? -2      :  // (auxiliary w arity 2)
          (cOp=='I' || cOp=='V') ? 0       :  // (identity)
                                   -10;       // (will not map)
 }
@@ -89,7 +90,7 @@ class T : public DiscreteDomainRV<int,domT> {
       if ( l[i]=='}' ) depth--;
       if ( l[i]=='-' && l[i+1]>='a' && l[i+1]<='d' && depth==0 ) ctr++;
     }
-    return ('N'==l[0]) ? ctr+1 : ctr;
+    return ('N'==l[0] and not (strlen(l)>7 and '{'==l[3] and 'N'==l[4] and 'D'==l[7]) ) ? ctr+1 : ctr;
   }
   N getFirstNolo ( const char* l ) {
     int depth = 0;
