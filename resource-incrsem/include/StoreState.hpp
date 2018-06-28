@@ -281,7 +281,7 @@ class EVar : public DiscreteDomainRV<int,domE> {   // NOTE: can't be subclass of
     if(   meoTop.end()==  meoTop.find(*this) )                  { char& c=  meoTop[*this]; c=ps[0]; }
     if(   meoBot.end()==  meoBot.find(*this) )                  { char& c=  meoBot[*this]; c=ps[strlen(ps)-1]; }
     if( meeNoTop.end()==meeNoTop.find(*this) and strlen(ps)>1 ) { EVar& e=meeNoTop[*this]; e=ps+1; }
-    if( meeNoBot.end()==meeNoBot.find(*this) and strlen(ps)>1 ) { EVar& e=meeNoBot[*this]; e=string(ps,0,strlen(ps)-2).c_str(); }
+    if( meeNoBot.end()==meeNoBot.find(*this) and strlen(ps)>1 ) { EVar& e=meeNoBot[*this]; e=string(ps,0,strlen(ps)-1).c_str(); }
   }
  public:
   EVar ( )                : DiscreteDomainRV<int,domE> ( )    { }
@@ -528,8 +528,6 @@ class JResponse : public DiscreteDomainRV<int,domJResponse> {
     EVar e  = string(ps+3,uint(strchr(ps+3,'&')-(ps+3))).c_str();  //ps[3];
     O    oL = ps[4+e.getString().size()];
     O    oR = ps[6+e.getString().size()];
-cerr<<"i think "<<oL<<" is an O, from "<<ps<<" with e="<<e<<endl;
-cerr<<"i think "<<oR<<" is an O"<<endl;
     if( mjre.end() ==mjre.find(*this)  ) mjre[*this]=e;  //ps[3];
     if( mjroL.end()==mjroL.find(*this) ) mjroL[*this]=oL;  //ps[5];
     if( mjroR.end()==mjroR.find(*this) ) mjroR[*this]=oR;  //ps[7];
@@ -593,13 +591,13 @@ class KSet : public DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> {
     insert( end(), ks1.begin(), ks1.end() );
     insert( end(), ks2.begin(), ks2.end() );
   }
-  KSet ( const KSet& ks, int iProj, const KSet& ksUntransformed = ksDummy ) : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> ( ) {
-    reserve( ks.size() + ksUntransformed.size() );
+  KSet ( const KSet& ks, int iProj, const KSet& ksNoProject = ksDummy ) : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> ( ) {
+    reserve( ks.size() + ksNoProject.size() );
     for( const K& k : ks ) if( k.project(iProj)!=K::kBot ) push_back( k.project(iProj) );
-    insert( end(), ksUntransformed.begin(), ksUntransformed.end() );
+    insert( end(), ksNoProject.begin(), ksNoProject.end() );
   }
   // Constructor for nolos...
-  KSet ( const KSet& ks, int iProj, bool bUp, EVar e, const vector<int>& viCarriers, const StoreState& ss, const KSet& ksUntransformed );
+  KSet ( const KSet& ks, int iProj, bool bUp, EVar e, const vector<int>& viCarriers, const StoreState& ss, const KSet& ksNoProject );
   // Specification methods...
   void addBankedUnaryTransform ( EVar e ) { eBankedUnaryTransforms=e; }
   // Accessor methods...
@@ -620,6 +618,7 @@ class Sign : public DelimitedTrip<psX,KSet,psColon,T,psX,S,psX> {
     first().reserve( ks1.size() + ks2.size() );
     first().insert( first().end(), ks1.begin(), ks1.end() );
     first().insert( first().end(), ks2.begin(), ks2.end() );
+    first().addBankedUnaryTransform( ks1.getBankedUnaryTransform() );
     second() = t;
     third()  = s;
   }
@@ -874,40 +873,63 @@ const Sign StoreState::aTop( KSet(K::kTop), tTop, S_B );
 
 ////////////////////////////////////////////////////////////////////////////////
 
-KSet::KSet ( const KSet& ks, int iProj, bool bUp, EVar e, const vector<int>& viCarrierIndices, const StoreState& ss, const KSet& ksUntransformed ) {
-//cout<<"tomake "<<ks<<" iProj="<<iProj<<" bup="<<bUp<<" e="<<e<<" "<<viCarrierIndices.size()<<" "<<ss<<" "<<ksUntransformed<<endl;
+KSet::KSet ( const KSet& ksToProject, int iProj, bool bUp, EVar e, const vector<int>& viCarrierIndices, const StoreState& ss, const KSet& ksNoProject ) {
+//cout<<"tomake "<<ks<<" iProj="<<iProj<<" bup="<<bUp<<" e="<<e<<" "<<viCarrierIndices.size()<<" "<<ss<<" "<<ksNoProject<<endl;
   // Determine number of carrier contexts...
   int nCarrierContexts=0;  for( int iCarrierIndex : viCarrierIndices ) if( iCarrierIndex>=0 ) nCarrierContexts += ss.at(iCarrierIndex).getKSet().size();
   // Reserve size to avoid costly reallocation.
-  reserve( ks.size() + nCarrierContexts + ksUntransformed.size() );
-  // If swap op is banked, swap participants...
-  if( eBankedUnaryTransforms==EVar("O") and iProj==-1 ) iProj=-2;
-  if( eBankedUnaryTransforms==EVar("O") and iProj==-2 ) iProj=-1;
-  // Add projections of left child contexts...
-  for( const K& k : ks ) if( k.project(iProj)!=K::kBot ) push_back( k.project(iProj) );
-  // If going up...
-  if( bUp ) {
-    // Build parent/pretrm bottom to top...
-    for( int i=viCarrierIndices.size()-1; i>=0 && e!=EVar::eNil; e=e.withoutBot() ) if( viCarrierIndices[i]!=-1 ) {
-      if( e.bot()>='0' and e.bot()<='9' )     { for( const K& k : ss.at(viCarrierIndices[i--]).getKSet() ) if( k.project(-getDir(e.bot()))!=K::kBot ) push_back( k.project(-getDir(e.bot())) ); }  // For extractions.
-      else if( e.bot()=='O' or e.bot()=='V' ) { for(       K& k : *this                                  ) k = k.transform(bUp,e.bot());             // For reorderings.
-                                                if( eBankedUnaryTransforms!=EVar() ) cerr << "ERROR StoreState:859: " << eBankedUnaryTransforms << " piled with " << e.bot() << endl;
-                                                eBankedUnaryTransforms = "O"; // e.bot();
-                                              }
-    }
-  // If going down...
-  } else {
+  reserve( ksToProject.size() + nCarrierContexts + ksNoProject.size() );
+
+//cout<<"made kTo="<<ksToProject<<" with bank="<<ksToProject.eBankedUnaryTransforms<<" iProj="<<iProj<<" bUp="<<bUp<<" e="<<e<<" ksNo="<<ksNoProject;
+
+  // If going down (join)...
+  if( not bUp ) {
+    // Add untransformed (parent if up, nothing if down) contexts...
+    insert( end(), ksNoProject.begin(), ksNoProject.end() );
     // Build parent/pretrm top to bottom...
-    for( uint i=0; i<viCarrierIndices.size() && e!=EVar::eNil; e=e.withoutTop() ) if( viCarrierIndices[i]!=-1 ) {
-      if( e.top()>='0' and e.top()<='9' ) { for( const K& k : ss.at(viCarrierIndices[i++]).getKSet() ) if( k.project(-getDir(e.top()))!=K::kBot ) push_back( k.project(-getDir(e.top())) ); }  // For extractions.
-      else if( e.top()=='O' or e.top()=='V' ) { for(       K& k : *this                                  ) k = k.transform(bUp,e.bot());             // For reorderings.
-                                                if( eBankedUnaryTransforms!=EVar() ) cerr << "ERROR StoreState:869: " << eBankedUnaryTransforms << " piled with " << e.top() << endl;
-                                                eBankedUnaryTransforms = "O"; // e.top();
-                                              }
+    for( uint i=0; e!=EVar::eNil; e=e.withoutTop() ) {
+      // For extractions...
+      if( e.top()>='0' and e.top()<='9' and i<viCarrierIndices.size() and viCarrierIndices[i]!=-1 ) {
+        for( const K& k : ss.at(viCarrierIndices[i++]).getKSet() ) if( k.project(-getDir(e.top()))!=K::kBot ) push_back( k.project(-getDir(e.top())) );
+      }
+      // For reorderings...
+      else if( e.top()=='O' or e.top()=='V' ) {
+        for(       K& k : *this                                  ) k = k.transform(bUp,e.top());
+        //if( eBankedUnaryTransforms!=EVar() ) cerr << "ERROR StoreState:869: " << eBankedUnaryTransforms << " piled with " << e.top() << endl;
+        eBankedUnaryTransforms = "O"; // e.top();
+      }
     }
   }
-  // Add unprojected contexts...
-  insert( end(), ksUntransformed.begin(), ksUntransformed.end() );
+
+  // If swap op is banked, swap participants...
+  if     ( eBankedUnaryTransforms==EVar("O") and iProj==-1 ) iProj=-2;
+  else if( eBankedUnaryTransforms==EVar("O") and iProj==-2 ) iProj=-1;
+  // If projection source swap op is banked, swap participant label...
+  if     ( ksToProject.eBankedUnaryTransforms==EVar("O") and iProj==1 ) iProj=2;
+  else if( ksToProject.eBankedUnaryTransforms==EVar("O") and iProj==2 ) iProj=1;
+  // Add projected (child if up, parent if down) contexts...
+  for( const K& k : ksToProject ) if( k.project(iProj)!=K::kBot ) push_back( k.project(iProj) );
+
+  // If going up (no join)...
+  if( bUp ) {
+    // Build parent/pretrm bottom to top...
+    for( int i=viCarrierIndices.size()-1; e!=EVar::eNil; e=e.withoutBot() ) {
+      // For extractions...
+      if( e.bot()>='0' and e.bot()<='9' and i>=0 and viCarrierIndices[i]!=-1 ) {
+        for( const K& k : ss.at(viCarrierIndices[i--]).getKSet() ) if( k.project(-getDir(e.bot()))!=K::kBot ) push_back( k.project(-getDir(e.bot())) );
+      }
+      // For reorderings...
+      else if( e.bot()=='O' or e.bot()=='V' ) {
+        for(       K& k : *this                                  ) k = k.transform(bUp,e.bot());
+        //if( eBankedUnaryTransforms!=EVar() ) cerr << "ERROR StoreState:859: " << eBankedUnaryTransforms << " piled with " << e.bot() << endl;
+        eBankedUnaryTransforms = "O"; // e.bot();
+      }
+    }
+    // Add untransformed (parent if down/join, nothing if up/no-join) contexts...
+    insert( end(), ksNoProject.begin(), ksNoProject.end() );
+  }
+
+//cout<<" to get "<<*this<<" with iProj="<<iProj<<" banked="<<getBankedUnaryTransform()<<endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -936,6 +958,8 @@ LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign
           : (!aAncestorA.isDitto())                   ? aAncestorA                          // if no fork and stack exists and last apex context set is not ditto, return last apex.
           :                                             Sign( KSet(KSet(),0,true,eF,viCarrierB,qPrev,aAncestorB.getKSet()), aPretrm.getKSet(), aAncestorA.getType(), S_A );
                                                   //Sign( KSet(ksExtrtn,-getDir(eF),aAncestorB.getKSet()), aPretrm.getKSet(), aAncestorA.getType(), S_A );  // otherwise make new context set.
+  if( aPretrm.getType().getLastNonlocal()==N("-vN") and viCarrierB[0]==-1 ) setKSet().addBankedUnaryTransform( "O" );
+//cout<<"lchild created with banked "<<getKSet().getBankedUnaryTransform()<<endl;
 }
 
 
