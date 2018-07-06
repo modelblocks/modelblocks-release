@@ -777,11 +777,11 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
           N nL=tCurrL.getLastNonlocal(); if( i>-1 && nL!=N_NONE && tI==nL                                     ) { viCarrierL.push_back(i);  tCurrL=tCurrL.withoutLastNolo(); }
                                          if(         nL!=N_NONE && !tI.isCarrier() && !tI.containsCarrier(nL) ) { viCarrierL.push_back(-1); tCurrL=tCurrL.withoutLastNolo(); }
         }
-cout<<" viCarrierL=";
-for( int& i : viCarrierL ) cout<<" "<<i;
-cout<<endl;
+//cout<<" viCarrierL=";
+//for( int& i : viCarrierL ) cout<<" "<<i;
+//cout<<endl;
         if( viCarrierL[0]>iAncestorB )              *emplace( end() ) = Sign( at(viCarrierL[0]).getKSet(),                                                        ksRchild, tB, S_B );  // Add right child kset as B (H rule).
-        else cout<<"ERROR StoreState 781: should not happen."<<endl;
+        else cerr<<"ERROR StoreState 784: should not happen, on '"<<qPrev<<" "<<f<<" "<<j<<" "<<evF<<" "<<evJ<<" "<<opL<<" "<<opR<<" "<<tA<<" "<<tB<<" "<<aPretrm<<" "<<aLchild<<"'"<<endl;
     //    cerr << "            " << qPrev << "  " << aLchild << "  ==(f" << f << ",j" << j << "," << opL << "," << opR << ")=>  " << *this << endl;
       } else {  // If j==1...
         // If existing left carrier, integrate with sign...
