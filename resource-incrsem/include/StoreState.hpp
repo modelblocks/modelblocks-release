@@ -689,36 +689,14 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
 //for( int i : viCarrierB ) cout<<" "<<i;
 //cout<<endl;
 
-/*
-    // Find existing nonlocal carriers...
-    N nP = aPretrm.getType().getLastNonlocal();  N nA = tA.getLastNonlocal();  N nB = tB.getLastNonlocal();  N nL = aLchild.getType().getLastNonlocal();
-    int iCarrierP = -1;                          int iCarrierA = -1;           int iCarrierB = -1;           int iCarrierL = -1;
-    // Find preterm nonlocal carrier, traversing up from ancestorB through carriers or noncarriers containing preterminal nonlocal, until carrier found...
-    if( nP!=N_NONE ) for( int i=iAncestorB-1; i>=0 && (qPrev[i].getType().isCarrier() || qPrev[i].getType().containsCarrier(nP)); i-- ) if( qPrev[i].getType()==nP ) iCarrierP=i;
-    // Find apex nonlocal carrier, traversing up from ancestorB through carriers or noncarriers containing apex nonlocal, until carrier found...
-    if( nA!=N_NONE ) for( int i=iLowerA-1;    i>=0 && (qPrev[i].getType().isCarrier() || qPrev[i].getType().containsCarrier(nA)); i-- ) if( qPrev[i].getType()==nA ) iCarrierA=i;
-    // Find brink nonlocal carrier, traversing up from ancestorB through carriers or noncarriers containing brink nonlocal, until carrier found...
-    if( nB!=N_NONE ) for( int i=iAncestorB-1; i>=0 && (qPrev[i].getType().isCarrier() || qPrev[i].getType().containsCarrier(nB)); i-- ) if( qPrev[i].getType()==nB ) iCarrierB=i;
-    // Find lchild nonlocal carrier, traversing up from ancestorB through carriers or noncarriers containing lchild nonlocal, until carrier found...
-    if( nL!=N_NONE ) for( int i=iLowerA-1;    i>=0 && (qPrev[i].getType().isCarrier() || qPrev[i].getType().containsCarrier(nL)); i-- ) if( qPrev[i].getType()==nL ) iCarrierL=i;
-*/
-
     // Reserve store big enough for ancestorB + new A and B if no join + any needed carriers...
     reserve( iAncestorB + 1 + ((j==0) ? 2 : 0) + nNewCarriers ); 
-/*
-    // Reserve store big enough for ancestorB + new A and B if no join + any needed carriers...
-    reserve( iAncestorB + 1 + ((j==0) ? 2 : 0) + ((nP!=N_NONE && iCarrierP!=-1) ? 1 : 0) + ((nA!=N_NONE && iCarrierA==-1) ? 1 : 0) + ((nB!=N_NONE && iCarrierB==-1) ? 1 : 0) ); 
-*/
 
     ////// B. FILL IN NEW PARTS OF NEW STORE...
 
     //// B.1. Add existing nolo contexts to parent via extraction op...
     const KSet& ksLchild = aLchild.getKSet();
     const KSet  ksParent = KSet( aLchild.getKSet(), -getDir(opL), j==0, evJ, viCarrierA, qPrev, (j==0) ? KSet() : qPrev.at(iAncestorB).getKSet() );
-/*
-    const KSet  ksParent = (iCarrierA!=-1 && eJ!='N') ? KSet( aLchild.getKSet(), -getDir(opL), KSet( qPrev[iCarrierA].getKSet(), -getDir(eJ), (j==0) ? KSet() : qPrev.at(iAncestorB).getKSet() ) )
-                         :                              KSet( aLchild.getKSet(), -getDir(opL),                                                (j==0) ? KSet() : qPrev.at(iAncestorB).getKSet()   );
-*/
     const KSet  ksRchild( ksParent, getDir(opR) );
 
     //// B.2. Copy store state and add parent/preterm contexts to existing non-locals via extraction operation...
@@ -729,12 +707,6 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
       else if( viCarrierA.size()>0 and i==viCarrierA.back() and evJ.top()!='\0' ) { viCarrierA.pop_back(); s = Sign( KSet(ksParent,getDir(evJ.popTop()),qPrev[i].getKSet()), qPrev[i].getType(), qPrev[i].getSide() ); }
       else                                                                        { s = qPrev[i]; }
     }
-/*
-      *emplace( end() ) = ( i==iAncestorA && j==1 && qPrev[i].isDitto() && opR!='I' ) ? Sign( ksParent, qPrev[i].getType(), qPrev[i].getSide() )                                      // End of ditto.
-                        : ( i==iCarrierP && eF!='N' )                                 ? Sign( KSet(ksLchild,getDir(eF),qPrev[i].getKSet()), qPrev[i].getType(), qPrev[i].getSide() )  // Update to P carrier.
-                        : ( i==iCarrierA && eJ!='N' )                                 ? Sign( KSet(ksParent,getDir(eJ),qPrev[i].getKSet()), qPrev[i].getType(), qPrev[i].getSide() )  // Update to A carrier. 
-                        :                                                               qPrev[i];                                                                                     // Copy store element.
-*/
 
     //// B.3. Add new non-locals with contexts from parent/rchild via new extraction or G/H/V operations...
     // If no join, add A carriers followed by new lowest A...
@@ -745,12 +717,6 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
                                                *emplace( end() ) = Sign( KSet( aPretrm.getKSet(), getDir(evF.popTop()) ), tCurrP.getFirstNonlocal(), S_B ); tCurrP=tCurrP.withoutFirstNolo(); }
       for( int i : viCarrierA ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierA for "<<tCurrA.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
                                                *emplace( end() ) = Sign( KSet( ksParent,          getDir(evJ.popTop()) ), tCurrA.getFirstNonlocal(), S_B ); tCurrA=tCurrA.withoutFirstNolo(); }
-      /* 
-      if( j==0 && nP!=N_NONE && iCarrierP==-1 )          if( STORESTATE_CHATTY ) cout<<"(adding carrierP for "<<nP<<" bc none above "<<iAncestorB<<")"<<endl;
-      if( j==0 && nP!=N_NONE && iCarrierP==-1 )          *emplace( end() ) = Sign( KSet(aPretrm.getKSet(),getDir(eF)), nP, S_B );    // If no join and nonloc P with no existing carrier, add P carrier.
-      if( j==0 && nA!=N_NONE && iCarrierA==-1 )          if( STORESTATE_CHATTY ) cout<<"(adding carrierA for "<<nA<<" bc none above "<<iLowerA<<")"<<endl;
-      if( j==0 && nA!=N_NONE && iCarrierA==-1 )          *emplace( end() ) = Sign( KSet(ksParent,         getDir(eJ)), nA, S_B );    // If no join and nonloc A with no existing carrier, add A carrier.
-      */
       // Add lowest A...
       *emplace( end() ) = Sign( (opR=='I') ? KSet(K_DITTO) : ksParent, tA, S_A );
       if( tA.getLastNonlocal()==N("-vN") and viCarrierA[0]==-1 ) back().setKSet().addBankedUnaryTransform( "O" );
