@@ -23,6 +23,8 @@ def main():
     merged = pd.concat(frames)
     merged = merged * 1 # convert boolean to [1,0]
     merged.sort_values(['subject', 'item', 'zone'], inplace=True)
+    merged['startofsentence'] = (merged.sentpos == 1).astype('int')
+    merged['endofsentence'] = merged.startofsentence.shift(-1).fillna(1).astype('int')
     merged.to_csv(sys.stdout, ' ', index=False, na_rep='nan')
       
 main()   

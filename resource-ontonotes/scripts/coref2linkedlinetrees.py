@@ -33,11 +33,11 @@ treefile = open ( args[1] ) #sys.argv[1] )
 PrevMention = { }
 
 linenum = 0
-#pdb.set_trace()
+#pdb.set_trace() #
 coreffile = open (args[2] )
 
 #for line in sys.stdin: #coref file streamed from stdin
-for line in coreffile:
+for line in coreffile: #coref file passed as argument
 
   if line.startswith('<TEXT') or line.startswith('</TEXT') or line.startswith('</DOC'):
     continue
@@ -46,7 +46,7 @@ for line in coreffile:
   treestring = treefile.readline()
 
   if line.startswith('<DOC'):
-    if '!ARTICLE' not in treestring: sys.stderr.write ( 'ERROR: instead of "...!ARTICLE..." I got: ' + treestring )
+    if '!ARTICLE' not in treestring: sys.stderr.write ( 'ERROR: instead of "...!ARTICLE..." I got: ' + treestring + '\n')
     print '(U !ARTICLE)'
     linenum = 0
     PrevMention = { }

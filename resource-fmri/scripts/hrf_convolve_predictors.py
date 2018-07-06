@@ -3,14 +3,15 @@ from mvpa2.testing.datasets import double_gamma_hrf as hrf
 
 argparser = argparse.ArgumentParser(description='Convolve data table using HRF')
 argparser.add_argument('data', type=str, help='Path to data table')
-argparser.add_argument('--step', type=float, default=2.0, help='Step size (in seconds) between fMRI samples')
+argparser.add_argument('-s', '--step', type=float, default=2.0, help='Step size (in seconds) between fMRI samples')
+argparser.add_argument('-d', '--doc_names', nargs='+', default=['Boar', 'Aqua', 'MatchstickSeller', 'KingOfBirds', 'Elvis', 'MrSticky', 'HighSchool', 'Roswell', 'Tulips', 'Tourettes'], help='List of document names in input data')
 args, unknown = argparser.parse_known_args()
 
 step = float(args.step)
 
 convolve = np.vectorize(lambda x: hrf(time_cur + step - x))
 
-doc_names = ['Boar', 'Aqua', 'MatchstickSeller', 'KingOfBirds', 'Elvis', 'MrSticky', 'HighSchool', 'Roswell', 'Tulips', 'Tourettes']
+doc_names = args.doc_names
 
 def get_docid(timeseries):
     timeseries = np.array(timeseries)

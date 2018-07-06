@@ -19,9 +19,7 @@ print(' '.join(headers))
 
 for l in sys.stdin:
     row = l.strip().split()
-    doc_name = re.sub('_repeat.*$', '', row[docid_ix])
-    doc_number = name2ix.get(doc_name, 'nan')
-    row[docid_ix] = doc_number
+    doc_name = row[docid_ix]
     if doc_name != prev_doc:
         sample_number = 1
         prev_doc = doc_name

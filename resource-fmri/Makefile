@@ -169,6 +169,10 @@ endef
 $(RT-SCRIPTS)/merge_tables.py
 	cat $< | python $(word 3, $^) $< $(word 2, $^) sampleid > $@
 
+.PRECIOUS: %.tiled.core.evmeasures
+%.tiled.core.evmeasures: $(FMRI-SCRIPTS)/tile_stimuli.py %.itemmeasures $$(word 1,$$(subst ., ,%)).evmeasures
+	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+
 .PRECIOUS: %.bysent.core.evmeasures
 %.bysent.core.evmeasures : %.bysent.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
