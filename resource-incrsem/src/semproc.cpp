@@ -56,10 +56,10 @@ typedef Delimited<T> B;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class BeamElement : public DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX> {
+class BeamElement : public DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX> {
 public:
-  BeamElement ( )                                                                 : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>()             { }
-  BeamElement ( const Sign& a, F f, E e, K k, JResponse jr, const StoreState& q ) : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,E,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>(a,f,e,k,jr,q) { }
+  BeamElement ( )                                                                 : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>()             { }
+  BeamElement ( const Sign& a, F f, EVar e, K k, JResponse jr, const StoreState& q ) : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>(a,f,e,k,jr,q) { }
 };
 const BeamElement beStableDummy; //equivalent to "beStableDummy = BeamElement()"
 
@@ -77,19 +77,19 @@ public:
   Trellis ( ) : vector<Beam<ProbBack,BeamElement>>() { reserve(100); }
   Beam<ProbBack,BeamElement>& operator[] ( uint i ) { if ( i==size() ) emplace_back(BEAM_WIDTH); return vector<Beam<ProbBack,BeamElement>>::operator[](i); }
   void setMostLikelySequence ( DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX>& lbe ) {
-    static StoreState ssLongFail( StoreState(), 1, 0, 'N', 'N', 'N', 'I', "FAIL", "FAIL", Sign(ksBot,"FAIL",0), Sign(ksBot,"FAIL",0) );
+    static StoreState ssLongFail( StoreState(), 1, 0, EVar::eNil, EVar::eNil, 'N', 'I', "FAIL", "FAIL", Sign(ksBot,"FAIL",0), Sign(ksBot,"FAIL",0) );
     lbe.clear();  if( back().size()>0 ) lbe.push_front( pair<BeamElement,ProbBack>( back().begin()->second, back().begin()->first ) );
     if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( at(t).get(lbe.front().second.second) );
     if( lbe.size()>0 ) lbe.emplace_back( BeamElement(), ProbBack(0.0,BeamElement()) );
     // If parse fails...
     if( lbe.size()==0 ) {
       // Print a right branching structure...
-      for( int t=size()-2; t>=0; t-- ) lbe.push_front( pair<BeamElement,ProbBack>( BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(1,'N','N','I'), ssLongFail ), ProbBack(0.0,BeamElement()) ) );
-      lbe.front().first = BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(0,'N','N','I'), ssLongFail );                    // front: fork no-join
-      lbe.back( ).first = BeamElement( Sign(ksBot,"FAIL",0), 0, 'N', K::kBot, JResponse(1,'N','N','I'), StoreState() );                  // back: join no-fork
-      if( size()==2 ) lbe.front().first = BeamElement( Sign(ksBot,"FAIL",0), 1, 'N', K::kBot, JResponse(1,'N','N','I'), StoreState() );  // unary case: fork and join
+      for( int t=size()-2; t>=0; t-- ) lbe.push_front( pair<BeamElement,ProbBack>( BeamElement( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), ssLongFail ), ProbBack(0.0,BeamElement()) ) );
+      lbe.front().first = BeamElement( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(0,EVar::eNil,'N','I'), ssLongFail );                    // front: fork no-join
+      lbe.back( ).first = BeamElement( Sign(ksBot,"FAIL",0), 0, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), StoreState() );                  // back: join no-fork
+      if( size()==2 ) lbe.front().first = BeamElement( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), StoreState() );  // unary case: fork and join
       // Add dummy element (not sure why this is needed)...
-      lbe.push_front( pair<BeamElement,ProbBack>( BeamElement( Sign(ksBot,"FAIL",0), 0, 'N', K::kBot, JResponse(0,'N','N','I'), StoreState() ), ProbBack(0.0,BeamElement()) ) );
+      lbe.push_front( pair<BeamElement,ProbBack>( BeamElement( Sign(ksBot,"FAIL",0), 0, EVar::eNil, K::kBot, JResponse(0,EVar::eNil,'N','I'), StoreState() ), ProbBack(0.0,BeamElement()) ) );
       cerr<<"parse failed"<<endl;
     }
     // For each element of MLE after first dummy element...
@@ -114,6 +114,8 @@ public:
  };
  */
 
+vector<const char*> vpsInts = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+
 ////////////////////////////////////////////////////////////////////////////////
 
 int main ( int nArgs, char* argv[] ) {
@@ -136,8 +138,8 @@ int main ( int nArgs, char* argv[] ) {
     list<DelimitedTrip<psX,APredictor,psSpcColonSpc,A,psSpcEqualsSpc,Delimited<double>,psX>> lA;
     list<DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>> lB;
 
-    lA.emplace_back( DelimitedTrip<psX,APredictor,psSpcColonSpc,A,psSpcEqualsSpc,Delimited<double>,psX>(APredictor(1,0,1,'N','S',T("T"),T("-")),A("-"),1.0) );      // should be T("S")
-    lB.emplace_back( DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>(BPredictor(1,0,1,'N','S','1',T("-"),T("S")),B("T"),1.0) );
+    lA.emplace_back( DelimitedTrip<psX,APredictor,psSpcColonSpc,A,psSpcEqualsSpc,Delimited<double>,psX>(APredictor(1,0,1,EVar::eNil,'S',T("T"),T("-")),A("-"),1.0) );      // should be T("S")
+    lB.emplace_back( DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>(BPredictor(1,0,1,EVar::eNil,'S','1',T("-"),T("S")),B("T"),1.0) );
 
     // For each command-line flag or model file...
     for ( int a=1; a<nArgs; a++ ) {
@@ -276,14 +278,15 @@ int main ( int nArgs, char* argv[] ) {
 
           // For each possible lemma (context + label + prob) for preterminal of current word...
           if( lexW.end() == lexW.find(unkWord(w_t.getString().c_str())) ) cerr<<"ERROR: unable to find unk form: "<<unkWord(w_t.getString().c_str())<<endl;
-          for ( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW.find(w_t)->second : lexW.find(unkWord(w_t.getString().c_str()))->second ) {
-            if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(ktpr_p_t.second) > beams[t].rbegin()->first.first ) {
-              K k_p_t           = (FEATCONFIG & 8 && ktpr_p_t.first.first.getString()[2]!='y') ? K::kBot : ktpr_p_t.first.first;   // context of current preterminal
-              T t_p_t           = ktpr_p_t.first.second;                               // label of current preterminal
-              E e_p_t           = (t_p_t.getLastNonlocal()==N_NONE) ? 'N' : (t_p_t.getLastNonlocal()==N("-rN")) ? '0' : (t_p_t.getLastNonlocal().isArg()) ? t_p_t.getArity()+'1' : 'M';
-              double probwgivkl = ktpr_p_t.second;                                     // probability of current word given current preterminal
+          for ( auto& ektpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW.find(w_t)->second : lexW.find(unkWord(w_t.getString().c_str()))->second ) {
+            if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(ektpr_p_t.second) > beams[t].rbegin()->first.first ) {
+              EVar  e_p_t       = ektpr_p_t.first.first();
+              K     k_p_t       = (FEATCONFIG & 8 && ektpr_p_t.first.second().getString()[2]!='y') ? K::kBot : ektpr_p_t.first.second();   // context of current preterminal
+              T     t_p_t       = ektpr_p_t.first.third();                               // label of current preterminal
+//              EVar  e_p_t       = (t_p_t.getLastNonlocal()==N_NONE) ? EVar::eNil : (t_p_t.getLastNonlocal()==N("-rN")) ? "0" : (t_p_t.getLastNonlocal().isArg()) ? vpsInts[t_p_t.getArity()+1] : "M";
+              double probwgivkl = ektpr_p_t.second;                                     // probability of current word given current preterminal
 
-              if ( VERBOSE>1 ) cout << "     W " << k_p_t << " " << t_p_t << " : " << w_t << " = " << probwgivkl << endl;
+              if ( VERBOSE>1 ) cout << "     W " << e_p_t << " " << k_p_t << " " << t_p_t << " : " << w_t << " = " << probwgivkl << endl;
 
               // For each possible no-fork or fork decision...
               for ( auto& f : {0,1} ) {
@@ -294,7 +297,7 @@ int main ( int nArgs, char* argv[] ) {
                 if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
                   tpLastReport = chrono::high_resolution_clock::now();
                   lock_guard<mutex> guard( mutexMLSList );
-                  cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.second << " PRED " << ktpr_p_t << endl;
+                  cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.second << " PRED " << ektpr_p_t << endl;
                 }
 
                 // If preterminal prob is nonzero...
@@ -330,10 +333,10 @@ int main ( int nArgs, char* argv[] ) {
                   // For each possible no-join or join decision, and operator decisions...
                   for( JResponse jresponse; jresponse<JResponse::getDomain().getSize(); ++jresponse ) {
                     if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(jresponses[jresponse.toInt()]/jnorm) > beams[t].rbegin()->first.first ) {
-                      J j   = jresponse.getJoin();
-                      E e   = jresponse.getE();
-                      O opL = jresponse.getLOp();
-                      O opR = jresponse.getROp();
+                      J    j   = jresponse.getJoin();
+                      EVar e   = jresponse.getE();
+                      O    opL = jresponse.getLOp();
+                      O    opR = jresponse.getROp();
                       if( jresponse.toInt() >= int(jresponses.size()) ) cerr<<"ERROR: unknown jresponse: "<<jresponse<<endl;
                       double probJoin = jresponses[jresponse.toInt()] / jnorm;
                       if ( VERBOSE>1 ) cout << "       J ... " << " : " << jresponse << " = " << probJoin << endl;
@@ -359,7 +362,7 @@ int main ( int nArgs, char* argv[] ) {
                                   if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
                                     tpLastReport = chrono::high_resolution_clock::now();
                                     lock_guard<mutex> guard( mutexMLSList );
-                                    cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.second << " PRED " << ktpr_p_t << " JRESP " << jresponse << " A " << tpA.first << " B " << tpB.first << endl;
+                                    cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.second << " PRED " << ektpr_p_t << " JRESP " << jresponse << " A " << tpA.first << " B " << tpB.first << endl;
                                   }
 
                                   // Calculate probability and storestate and add to beam...
