@@ -109,7 +109,7 @@ while ( <> ) {
 
   if (!$opts{c}) {
      ## detected from morph project...
-     s/\(VBG preferred\)/VBN preferred\)/;       # line 4032
+     s/\(VBG preferred\)/\(VBN preferred\)/;     # line 4032
      s/\(VP=3 \(VBD positioned/\(VP=3 \(VBN positioned/; # line 7473
      s/diversifed/diversified/;                  # line 12564
      s/decribe/describe/;                        # line 12564
