@@ -355,29 +355,29 @@ while ( <> ) {
 
     ## conj scoping errors...
     # line 3911 (incl 01):
-    s/(<VB have>[^\(]*){VP *(<VP *\[VBN made\].*) *(<CC.*<VP *\[VB discard\].*)}/{VP \1\2\}\3/;
+    s/(<VB have>[^\(]*){VP *(<VP *\[VBN made\].*) +(<CC.*<VP *\[VB discard\].*)}/{VP \1\2\} \3/;
     # line 5940 (incl 01):
-    s/(<VB resume>[^\(]*){NP *(<NP *\[NN growth\].*) *(<CC.*)<NP *(\[VB service\].*)}/{VP \1\2\} \3<VP \4/;
+    s/(<VB resume>[^\(]*){NP *(<NP *\[NN growth\].*) +(<CC.*)<NP *(\[VB service\].*)}/{VP \1\2\} \3<VP \4/;
     # line 10683 (incl 01):
-    s/(<VBZ has>[^\(]*){VP *(<VP *\[VBN purchased\].*) *(<CC.*<VP *\[VBZ plans\].*)}/{VP \1\2\}\3/;
+    s/(<VBZ has>[^\(]*){VP *(<VP *\[VBN purchased\].*) +(<CC.*<VP *\[VBZ plans\].*)}/{VP \1\2\} \3/;
     # line 10860 (incl 01):
-    s/(<VBZ has>[^\(]*){VP *(<VP *\[VBN started\].*) *(<CC.*<VP *\[VBZ has\].*)}/{VP \1\2\}\3/;
+    s/(<VBZ has>[^\(]*){VP *(<VP *\[VBN started\].*) +(<CC.*<VP *\[VBZ has\].*)}/{VP \1\2\} \3/;
     # line 18311 (incl 01):
-    s/(<VBZ has>[^\(]*){VP *(<VP *\[VBN met\].*) *(<CC.*<VP *\[VBZ is\].*)}/{VP \1\2\}\3/;
+    s/(<VBZ has>[^\(]*){VP *(<VP *\[VBN met\].*) +(<CC.*<VP *\[VBZ is\].*)}/{VP \1\2\} \3/;
     # line 29504 (incl 01):
-    s/(<VBP have>[^\(]*){VP *(<VP *\[VBN plunged\].*) *(<CC.*<VP *\[PP[^>]*\[VBP are\].*)}/{VP \1\2\}\3/;
+    s/(<VBP have>[^\(]*){VP *(<VP *\[VBN plunged\].*) +(<CC.*<VP *\[PP[^>]*\[VBP are\].*)}/{VP \1\2\} \3/;
     # line 29706 (incl 01):
-    s/(<VBZ has>[^\(]*){VP *(<VP *\[VBN reacted\].*) *(<CC.*<VP *\[ADV[^>]*\[VBZ is\].*)}/{VP \1\2\}\3/;
+    s/(<VBZ has>[^\(]*){VP *(<VP *\[VBN reacted\].*) +(<CC.*<VP *\[ADV[^>]*\[VBZ is\].*)}/{VP \1\2\} \3/;
     # line 29951 (incl 01):
-    s/(<VBP have>[^\(]*){VP *(<VP *\[VBN outgrown\].*) *(<CC.*<VP *\[VBP have\].*)}/{VP \1\2\}\3/;
+    s/(<VBP have>[^\(]*){VP *(<VP *\[VBN outgrown\].*) +(<CC.*<VP *\[VBP have\].*)}/{VP \1\2\} \3/;
     # line 30304 (incl 01):
-    s/(<VBZ has>[^\(]*){VP *(<VP *\[VBN lost\].*) *(<CC.*<VP *\[VBZ has\].*)}/{VP \1\2\}\3/;
+    s/(<VBZ has>[^\(]*){VP *(<VP *\[VBN lost\].*) +(<CC.*<VP *\[VBZ has\].*)}/{VP \1\2\} \3/;
     # line 31705 (incl 01):
-    s/(<VBZ has>[^\(]*){VP *(<VP *\[VBN licensed\].*) *(<CC.*<VP *\[VBZ plans\].*)}/{VP \1\2\}\3/;
+    s/(<VBZ has>[^\(]*){VP *(<VP *\[VBN licensed\].*) +(<CC.*<VP *\[VBZ plans\].*)}/{VP \1\2\} \3/;
     # line 41333 (incl 01):
-    s/(<VBP have>[^\(]*){VP *(<VP *\[VBN read\].*) *(<CC.*<VP *\[VBP estimate\].*)}/{VP \1\2\}\3/;
+    s/(<VBP have>[^\(]*){VP *(<VP *\[VBN read\].*) +(<CC.*<VP *\[VBP estimate\].*)}/{VP \1\2\} \3/;
     # line 41381 (incl 01):
-    s/(<VBZ has>[^\(]*){VP *(.*<VP *\[VB hurt\].*) *(<CC.*<VP *\[VBZ has\].*)}/\(VP {VP \1\2\}\3\)/;
+    s/(<VBZ has>[^\(]*){VP *(.*<VP *\[VB hurt\].*) +(<CC.*<VP *\[VBZ has\].*)}/\(VP {VP \1\2\} \3\)/;
     # line 40563 (incl 01):
     s/{VP *(<VBD had> *<VP *\[VBN silted\][^>]*>)( *<CC.*<VP *\[ADV[^>]*\[VBD was\].*)}/\(VP {VP \1\}\2\)/;
 
