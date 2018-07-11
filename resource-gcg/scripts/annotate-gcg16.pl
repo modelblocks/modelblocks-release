@@ -227,6 +227,10 @@ debug("p-rule ", "$_");
         ######################################################################
         ## 1. UNARY REANNOTATIONS
 
+        #### U
+        # re-reannotate failed nodes as 'U'
+        (s/\^([^a-z]*) ([^\*0].*)\^/<U-f\1 \2>/ && ($j=0.9)) ||
+
         #### remove empty NP from S turned to [VIBLAR]P
         (s/\^([VIBLAR]-aN(?!-x)[^ ]*.*) <NP[^ ]*-SBJ[^ ]* \[-NONE- \*[^A-Z ]*\]>(.*)\^/<\1\2>/ && ($j=1)) ||
 
@@ -889,6 +893,18 @@ debug("p-rule ", "$_");
          s/ \([^ ]*-v[^ ]*[^ ]* \([^ ]*-NONE- \*(?:-[0-9]*)?\*?[^\)]*\)\)// ||
          # empty category deletion (single)
          s/ \([^ ]*-v[^ ]*[^ ]*-NONE- \*(?:-[0-9]*)?\*?[^\)]*\)// ||
+         0 ) {}
+
+  # delete all empty cats
+  while (
+         # empty category deletion (quad)
+         s/ \(U[^ ]* \([^ ]* \([^ ]* \([^ ]*-NONE- [\*0][^\)]*\)\)\)\)//g ||
+         # empty category deletion (triple)
+         s/ \(U[^ ]* \([^ ]* \([^ ]*-NONE- [\*0][^\)]*\)\)\)//g ||
+         # empty category deletion (double)
+         s/ \(U[^ ]* \([^ ]*-NONE- [\*0][^\)]*\)\)// ||
+         # empty category deletion (single)
+         s/ \(U[^ ]*-NONE- [\*0][^\)]*\)// ||
          0 ) {}
 
   # remove trace numbers from gaps

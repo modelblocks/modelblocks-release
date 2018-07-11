@@ -79,11 +79,11 @@ $(BIN)/%:  $(RESOURCE-LOGREG)/src/$$(notdir $$@).cpp  $(RESOURCE-LOGREG)/src/$$(
 
 #### obtain multinomial logistic regression (maxent/softmax) model from predictor-result training data
 .PRECIOUS: %mlrmodel
-%mlrmodel:  bin/mlr-lbfgs  $$(basename %).$$(lastword $$(subst _, ,$$*))mlrdecpars
-	cat $(word 2,$^)  |  $(word 1,$^)  `cat $(CONFIGDIR)/user-numthreads.txt`  $(subst _, ,$(subst .,,$(suffix $*)))  >  $@  2>  $@.log
+%mlrmodel:  bin/mlr-lbfgs  $$(basename %).$$(lastword $$(subst _, ,$$*))mlrdecpars  |  $(CONFIGDIR)/user-numthreads.txt
+	cat $(word 2,$^)  |  $(word 1,$^) $(shell cat $|) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@  2>  $@.log
 
 #### obtain multinomial logistic regression (maxent/softmax) model from predictor-result training data
 .PRECIOUS: %sgdmlrmodel
-%sgdmlrmodel:  bin/mlr-sgd  $$(basename %).$$(lastword $$(subst _, ,$$*))mlrdecpars
-	cat $(word 2,$^)  |  $(word 1,$^)  `cat $(CONFIGDIR)/user-numthreads.txt`  $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+%sgdmlrmodel:  bin/mlr-sgd  $$(basename %).$$(lastword $$(subst _, ,$$*))mlrdecpars  |  $(CONFIGDIR)/user-numthreads.txt
+	cat $(word 2,$^)  |  $(word 1,$^) $(shell cat $|) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 
