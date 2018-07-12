@@ -188,7 +188,7 @@ $(DTSRDIR)/dtsr/dtsrbayes.py
 $(DTSRDIR)/dtsr/bin/predict.py \
 $(DTSRDIR)/dtsr/bin/compare.py
 	python3 $(word 2, $^) $(basename $*)_outdir/config.ini -p $(subst .,,$(suffix $*))
-	python3 $(word 3, $^) $(basename $*)_outdir/config.ini -a -p $(subst .,,$(suffix $*)) > $@
+	python3 $(word 3, $^) $(basename $*)_outdir/config.ini -a -p $(subst .,,$(suffix $*))
 
 %-ptsignif: $$(DEP-DTSR) \
 $$(basename $$(basename $$(basename %))).$$(subst .,,$$(suffix $$(basename $$*))).filt.evmeasures \
@@ -197,6 +197,6 @@ $$(basename $$(basename $$(basename %))).$$(subst .,,$$(suffix $$(basename $$*))
 $(DTSRDIR)/dtsr/bin/predict.py \
 $(DTSRDIR)/dtsr/bin/compare.py
 	python3 $(word 4, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -p $(subst .,,$(suffix $*))
-	python3 $(word 5, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -a -p $(subst .,,$(suffix $*)) > $@
+	python3 $(word 5, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -a -p $(subst .,,$(suffix $*))
 
 
