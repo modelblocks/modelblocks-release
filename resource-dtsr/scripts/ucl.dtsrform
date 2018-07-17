@@ -51,6 +51,6 @@ endofsentence = != 1
 [impulse_to_irf]
 default = ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2, ran=T)
 
-[model_DTSR_template]
+[model_DTSR_full_BASELINE]
 formula = log(fdurGP) ~ C(s.(sentpos), DiracDelta()) + C(rate + prevwasfix + s.(wdelta) + s.(wlen) + s.(unigram) + s.(fwprob5surp), ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2)) + (C(s.(sentpos), DiracDelta()) + C(rate + prevwasfix + s.(wdelta) + s.(wlen) + s.(unigram) + s.(fwprob5surp), ShiftedGammaShapeGT1(ran=T)) | subject)
 
