@@ -126,16 +126,19 @@ endef
 #### NOTE: inline seds dispose of reannotation failures, then remove -f tags, then shift -l tags to end
 .PRECIOUS: %.linetrees
 %.linetrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).fixed.linetrees  $(LTREES-SCRIPTS)/killUnaries.pl
-	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  perl -pe 's/.*\([^a-z]+ .*//'  |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' | perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
+	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  perl -pe 's/.*\([^a-z]+ .*//'  |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' |  perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
 ## add morph tags...
 %morphed.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 ## remove morph tags for eval...
 %.nox.linetrees:  %.linetrees
 	cat $<  |  perl -pe 's/[-+]x[^-} ][^ |]*[|][^- ]*//g'  >  $@
-.PRECIOUS: %casp.linetrees
 ## casp currently set to gcg15 + long + morphed...
+.PRECIOUS: %casp.linetrees
 %casp.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).gcg15.long.linetrees
+	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+.PRECIOUS: %caspu.linetrees
+%caspu.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).gcg16.long.linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 
 #### remove entries with no reannotation

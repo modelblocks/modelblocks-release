@@ -7,12 +7,15 @@ modulus = 4
 network_type = bayes
 inference_name = KLqp
 conv_prior_sd = 1
-init_sd = .01
+init_sd = 0.001
 prior_sd_scaling_coefficient = 1
 y_scale_prior_sd_scaling_coefficient = 1
 ranef_to_fixef_prior_sd_ratio = 1
 posterior_to_prior_sd_ratio = 0.01
-declare_priors = False
+declare_priors_fixef = False
+declare_priors_ranef = False
+ranef_regularizer_name = l2_regularizer
+ranef_regularizer_scale = 1.
 
 n_iter = 2500
 optim = Nadam
@@ -49,7 +52,7 @@ endofsentence = != 1
 default = ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2, ran=T)
 
 
-[model_DTSR_template]
-formula = log(fdur) ~ C(s.(trial) + s.(sentpos), DiracDelta()) + C(rate + s.(wlen) + s.(unigram) + s.(fwprob5surp), ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2)) + (C(s.(trial) + s.(sentpos), DiracDelta()) + C(rate + s.(wlen) + s.(unigram) + s.(fwprob5surp), ShiftedGammaShapeGT1(ran=T)) | subject) + (1 | word)
+[model_DTSR_full_BASELINE]
+formula = log(fdur) ~ C(s.(trial) + s.(sentpos), DiracDelta()) + C(rate + s.(wlen) + s.(unigram) + s.(fwprob5surp), ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2)) + (C(s.(trial) + s.(sentpos), DiracDelta()) + C(rate + s.(wlen) + s.(unigram) + s.(fwprob5surp), ShiftedGammaShapeGT1(ran=T)) | subject)
 
 

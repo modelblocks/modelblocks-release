@@ -227,6 +227,10 @@ debug("p-rule ", "$_");
         ######################################################################
         ## 1. UNARY REANNOTATIONS
 
+        #### U
+        # re-reannotate failed nodes as 'U'
+        (s/\^([^a-z]*) ([^\*0].*)\^/<U-f\1 \2>/ && ($j=0.9)) ||
+
         #### remove empty NP from S turned to [VIBLAR]P
         (s/\^([VIBLAR]-aN(?!-x)[^ ]*.*) <NP[^ ]*-SBJ[^ ]* \[-NONE- \*[^A-Z ]*\]>(.*)\^/<\1\2>/ && ($j=1)) ||
 
@@ -790,6 +794,10 @@ debug("p-rule ", "$_");
         (s/\^(X-cX-dX)([^ ]*) <([^>]*)> (<.*)\^/\^\1\2 <\1-lM-f\3> <\1-lI-fNIL \4>\^/ && ($j=173)) ||
 #        (s/\^(X-cX-dX)([^ ]*) ([^<>]*)\^/\^X-cX-dX\2 \3\^/ && ($j=174)) ||
 
+        #### U
+        # branch failure
+        (s/\^([^ ]*)()($CODA) <([^a-z ]*) ([^<>]*)> (<.*<.*)\^/\^\1\2\3 <U-lI-f\4 \5> <U-lI-fNIL \6>\^/ && ($j=175)) ||
+
 		######################################################################
         ## 0. TURN {NS..<NP..>} TO {NS..<NS..>}     AND      {NS.. <DT..> <NN..>} TO {NS.. <DT..> <NP..>}  (this is to fix sent 2921)
 #        (s/\^NS([^ ]*) <NP([^>]*)>([ ]*)\^/\^NS\1 <NS\2>\3\^/ && ($j=0.5)) ||
@@ -889,6 +897,18 @@ debug("p-rule ", "$_");
          s/ \([^ ]*-v[^ ]*[^ ]* \([^ ]*-NONE- \*(?:-[0-9]*)?\*?[^\)]*\)\)// ||
          # empty category deletion (single)
          s/ \([^ ]*-v[^ ]*[^ ]*-NONE- \*(?:-[0-9]*)?\*?[^\)]*\)// ||
+         0 ) {}
+
+  # delete all empty cats
+  while (
+         # empty category deletion (quad)
+         s/ \([^ ]* \([^ ]* \([^ ]* \([^ ]*-NONE- [\*0][^\)]*\)\)\)\)//g ||
+         # empty category deletion (triple)
+         s/ \([^ ]* \([^ ]* \([^ ]*-NONE- [\*0][^\)]*\)\)\)//g ||
+         # empty category deletion (double)
+         s/ \([^ ]* \([^ ]*-NONE- [\*0][^\)]*\)\)// ||
+         # empty category deletion (single)
+         s/ \([^ ]*-NONE- [\*0][^\)]*\)// ||
          0 ) {}
 
   # remove trace numbers from gaps
