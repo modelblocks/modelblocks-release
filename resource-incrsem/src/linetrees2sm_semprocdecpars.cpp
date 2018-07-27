@@ -318,12 +318,17 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     pair<K,T> kt    = getPred ( L(tr), L(tr.front()) );
     K k             = (FEATCONFIG & 8 && kt.first.getString()[2]!='y') ? K::kBot : kt.first;
     aPretrm         = Sign( k, getType(l), S_A );
-
     bool validIntra = false;
-    std::string annotSentIdx = annot.substr(0,2); //substr throws outofbound for empty str, but shouldnt be empty since checked above
-    cerr << "extracted annot sentnum: " << annotSentIdx << " from full annot: " << annot << endl;
+
+    //cerr << "current sentnum: " << sentnum << endl;
+    //cerr << "annotation from tr.getLink(): " << annot << endl;
+    std::string annotSentIdx = annot.substr(0,annot.size()-2); //get all but last two...
+    //cerr << "extracted annot sentnum: " << annotSentIdx << " from full annot: " << annot << endl;
+    //cerr << "value of validIntra before annot vs sentnum check: " << validIntra << endl;
     if (annotSentIdx == std::to_string(sentnum)) validIntra = true;
+    //cerr << "value of validIntra after annot vs sentnum check: " << validIntra << endl;
     if (INTERSENTENTIAL == true) validIntra = true;
+    //cerr << "value of validIntra after global INTERSENTENTIAL check: " << validIntra << endl;
     const KSet& ksAnt = (validIntra == true) ? annot2kset[annot] : ksBot;
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
     if (annot != "")  {
