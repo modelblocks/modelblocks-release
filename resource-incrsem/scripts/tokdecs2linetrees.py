@@ -35,6 +35,7 @@ for s in sys.stdin:
           if eF!='' and bF=='f1' and IDENTIFY_EXTRACTIONS: p            += '-l' + eF
           if eF!='' and bF=='f0' and IDENTIFY_EXTRACTIONS: annotB( SS[-1], '-l' + eF )
 
+        ## apply fork decision...
         if f=='1' or f.startswith('f1'): SS.append( Tree(p,[Tree(w)]) )
         else:                            attachB( SS[-1], [ Tree(p,[Tree(w)]) ] )
 
@@ -57,9 +58,10 @@ for s in sys.stdin:
               bJ,eJ,oL,oR = j.split('&')
               if eJ!='' and bJ=='j1' and IDENTIFY_EXTRACTIONS: annotB( SS[-2], '-l' + eJ )
               if eJ!='' and bJ=='j0' and IDENTIFY_EXTRACTIONS: a            += '-l' + eJ
-              if oL!='I' and oL!='m' or oR=='m'              : SS[-1].c     += '-l' + ('A' if oL>='1' and oL<='9' else 'A' if oR=='m' else oL)
-              if oR!='I' and oR!='m' or oL=='m'              : b            += '-l' + ('A' if oR>='1' and oR<='9' else 'A' if oL=='m' else oR)
+              if oL!='I' and oL!='m' or oR=='m'              : SS[-1].c     += '-l' + ('A' if oL>='1' and oL<='9' else 'U' if oR=='m' else oL)
+              if oR!='I' and oR!='m' or oL=='m'              : b            += '-l' + ('A' if oR>='1' and oR<='9' else 'U' if oL=='m' else oR)
 
+            ## apply join decision...
             if j=='1' or j.startswith('j1'): SS = SS[:-2] + [ attachB( SS[-2], [ SS[-1], Tree(b) ] ) ]
             else:                            SS = SS[:-1] + [ Tree( a, [ SS[-1], Tree(b) ] ) ]
 
