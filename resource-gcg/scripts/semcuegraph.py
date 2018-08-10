@@ -260,7 +260,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('s',d), 's', G.result('A',e) )
       G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
     else:
-      sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + '.\n' )
+      if sC != sD != sE != 'FAIL':
+        sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + '.\n' )
 
 
   def convert( G, t, s=0, i=0 ):
