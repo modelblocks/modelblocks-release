@@ -48,8 +48,8 @@ def relabel( t ):
     if '-lA' in t.ch[1].c and re.match( '^(C-bV|E-bB|F-bI|O-bN|.-aN-b{.-aN}(-x.*)?$|N-b{N-aD})$', t.ch[0].c ) != None: t.ch[1].c = re.sub( '-lA', '-lU', t.ch[1].c )   ## U
     if '-lA' in t.ch[0].c and t.ch[1].c=='D-aN':                                                                     t.ch[0].c = re.sub( '-lA', '-lU', t.ch[0].c )
     ## fix gcg reannotation hacks ('said Kim' inversion, ':' as X-cX-dX, ':' as A-aN-bN)...
-    if   '-lA' in t.ch[1].c and len( deps(t.ch[0].c,'b') )==0 and t.ch[0].c==':': t.ch[0] = tree.Tree( 'A-aN-bN', [ t.ch[0] ] ) 
-    elif '-lA' in t.ch[1].c and len( deps(t.ch[0].c,'b') )==0: t.ch[0] = tree.Tree( re.sub('(V)-a('+deps(t.ch[0].c,'a')[-1][2:]+')','\\1-b\\2',t.ch[0].c), [ t.ch[0] ] )
+    if   '-lA' in t.ch[1].c and len( deps(t.ch[0].c,'b') )==0 and t.ch[0].c==':': t.ch[0] = tree.Tree( 'A-aN-bN', [ t.ch[0] ] )
+    elif '-lA' in t.ch[1].c and len( deps(t.ch[0].c,'b') )==0 and len(deps(t.ch[0].c,'a'))>0: t.ch[0] = tree.Tree( re.sub('(V)-a('+deps(t.ch[0].c,'a')[-1][2:]+')','\\1-b\\2',t.ch[0].c), [ t.ch[0] ] )
     if   '-lC' in t.ch[1].c and len( deps(t.ch[0].c,'d') )==0: t.ch[0] = tree.Tree( 'X-cX-dX', [ t.ch[0] ] )
     ## calc parent given child types and ops...
     lcpsi = ''.join( deps(t.ch[0].c,'ghirv') )
