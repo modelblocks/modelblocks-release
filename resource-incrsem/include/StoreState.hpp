@@ -30,8 +30,8 @@ char psRBrack[] = "]";
 
 int getDir ( char cOp ) {
   return (cOp>='0' && cOp<='9') ? cOp-'0' :  // (numbered argument)
-         (cOp=='M')             ? -1      :  // (modifier)
-         (cOp=='m')             ? -2      :  // (auxiliary w arity 2)
+         (cOp=='M' || cOp=='U') ? -1      :  // (modifier)
+         (cOp=='u')             ? -2      :  // (auxiliary w arity 2)
          (cOp=='I' || cOp=='V') ? 0       :  // (identity)
                                   -10;       // (will not map)
 }

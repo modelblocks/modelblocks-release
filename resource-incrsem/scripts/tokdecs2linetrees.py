@@ -58,8 +58,8 @@ for s in sys.stdin:
               bJ,eJ,oL,oR = j.split('&')
               if eJ!='' and bJ=='j1' and IDENTIFY_EXTRACTIONS: annotB( SS[-2], '-l' + eJ )
               if eJ!='' and bJ=='j0' and IDENTIFY_EXTRACTIONS: a            += '-l' + eJ
-              if oL!='I' and oL!='m' or oR=='m'              : SS[-1].c     += '-l' + ('A' if oL>='1' and oL<='9' else 'U' if oR=='m' else oL)
-              if oR!='I' and oR!='m' or oL=='m'              : b            += '-l' + ('A' if oR>='1' and oR<='9' else 'U' if oL=='m' else oR)
+              if oL!='I' and oL!='U' and oL!='u' or oR=='U' or oR=='u' : SS[-1].c     += '-l' + ('A' if oL>='1' and oL<='9' else 'U' if oR=='U' or oR=='u' else oL)
+              if oR!='I' and oR!='U' and oR!='u' or oL=='U' or oL=='u' : b            += '-l' + ('A' if oR>='1' and oR<='9' else 'U' if oL=='U' or oL=='u' else oR)
 
             ## apply join decision...
             if j=='1' or j.startswith('j1'): SS = SS[:-2] + [ attachB( SS[-2], [ SS[-1], Tree(b) ] ) ]
