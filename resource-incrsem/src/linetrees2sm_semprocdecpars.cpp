@@ -130,7 +130,8 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
   if( string::npos != l.find("-lN") or string::npos != l.find("-lG") or string::npos != l.find("-lH") or string::npos != l.find("-lR") ) return 'N';
   if( string::npos != l.find("-lV") ) return 'V';
   if( string::npos != lSibling.find("-lU") ) return ( getType(l).getArity()==1 ) ? 'U' : 'u';
-  if( string::npos == l.find("-l")  or string::npos != l.find("-lS") or string::npos != l.find("-lC") or string::npos != l.find("-lU") ) return 'I';
+  if( string::npos != l.find("-lC") ) return 'C';
+  if( string::npos == l.find("-l")  or string::npos != l.find("-lS") or string::npos != l.find("-lU") ) return 'I';
   if( string::npos != l.find("-lM") or string::npos != l.find("-lQ") ) return 'M';
   if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos != lParent.find("\\") ) return '0'+getType( string(lParent,lParent.find("\\")+1).c_str() ).getArity();
   if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos == lParent.find('\\') ) return '0'+getType( lSibling ).getArity();
