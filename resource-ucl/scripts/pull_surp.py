@@ -1,5 +1,4 @@
 #python pull_surp.py > output
-import numpy as np
 import scipy.io as io
 import sys
 

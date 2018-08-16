@@ -8,7 +8,6 @@
 
 import re
 import sys
-import numpy
 
 for line in sys.stdin:
         match = re.search('([^ ]+) ([^ ]+) \[(.*)\]', line)
