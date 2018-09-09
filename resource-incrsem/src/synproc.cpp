@@ -53,58 +53,60 @@ typedef T B;
 ////////////////////////////////////////////////////////////////////////////////
 
 /*
-class BeamElement : public DelimitedSext<psX,Delimited<double>,psSpace,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psSpace,Delimited<int>,psX> {
+class HiddState : public DelimitedSext<psX,Delimited<double>,psSpace,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psSpace,Delimited<int>,psX> {
  public:
-  BeamElement ( )                                                               : DelimitedSext<psX,Delimited<double>,psSpace,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psSpace,Delimited<int>,psX>()            { }
-  BeamElement ( double d, const Sign& a, F f, J j, const StoreState& q, int i ) : DelimitedSext<psX,Delimited<double>,psSpace,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psSpace,Delimited<int>,psX>(d,a,f,j,q,i) { }
+  HiddState ( )                                                               : DelimitedSext<psX,Delimited<double>,psSpace,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psSpace,Delimited<int>,psX>()            { }
+  HiddState ( double d, const Sign& a, F f, J j, const StoreState& q, int i ) : DelimitedSext<psX,Delimited<double>,psSpace,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psSpace,Delimited<int>,psX>(d,a,f,j,q,i) { }
 };
 
-class Beam : public DelimitedVector<psX,BeamElement,psLine,psX> {
+class Beam : public DelimitedVector<psX,HiddState,psLine,psX> {
  public:
-  Beam ( )        : DelimitedVector<psX,BeamElement,psLine,psX>() { }
-  //Beam ( uint i ) : priority_queue<BeamElement,DelimitedVector<psX,BeamElement,psLine,psX>,greater<BeamElement>>() { reserve(i); }
-  //iterator<BeamElement>& begin() { return c.begin(); }
-  //iterator<BeamElement>& end() { return c.end(); }
+  Beam ( )        : DelimitedVector<psX,HiddState,psLine,psX>() { }
+  //Beam ( uint i ) : priority_queue<HiddState,DelimitedVector<psX,HiddState,psLine,psX>,greater<HiddState>>() { reserve(i); }
+  //iterator<HiddState>& begin() { return c.begin(); }
+  //iterator<HiddState>& end() { return c.end(); }
 };
 */
 
-class BeamElement : public DelimitedQuad<psX,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psX> {
+class HiddState : public DelimitedQuad<psX,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psX> {
  public:
-  BeamElement ( )                                              : DelimitedQuad<psX,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psX>()        { }
-  BeamElement ( const Sign& a, F f, J j, const StoreState& q ) : DelimitedQuad<psX,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psX>(a,f,j,q) { }
+  HiddState ( )                                              : DelimitedQuad<psX,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psX>()        { }
+  HiddState ( const Sign& a, F f, J j, const StoreState& q ) : DelimitedQuad<psX,Sign,psSpace,F,psSpace,J,psSpace,StoreState,psX>(a,f,j,q) { }
 };
-const BeamElement beStableDummy; //equivalent to "beStableDummy = BeamElement()"
+const HiddState beStableDummy; //equivalent to "beStableDummy = HiddState()"
 
-//typedef pair<double,const BeamElement&> ProbBack;
-class ProbBack : public pair<double, const BeamElement&> {
+/*
+//typedef pair<double,const HiddState&> ProbBack;
+class ProbBack : public pair<double, const HiddState&> {
   public :
-    ProbBack ( )                                  : pair<double, const BeamElement&> ( 0.0, beStableDummy ) { }
-    ProbBack ( double d , const BeamElement& be ) : pair<double, const BeamElement&> ( d,   be            ) { }
+    ProbBack ( )                                  : pair<double, const HiddState&> ( 0.0, beStableDummy ) { }
+    ProbBack ( double d , const HiddState& be ) : pair<double, const HiddState&> ( d,   be            ) { }
 };
+*/
 
-class Trellis : public vector<Beam<ProbBack,BeamElement>> {
+class Trellis : public vector<Beam<HiddState>> {
 // private:
-//  DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX> lbe;
+//  DelimitedList<psX,pair<HiddState,ProbBack>,psLine,psX> lbe;
  public:
-  Trellis ( ) : vector<Beam<ProbBack,BeamElement>>() { reserve(100); }
-  Beam<ProbBack,BeamElement>& operator[] ( uint i ) { if ( i==size() ) emplace_back(BEAM_WIDTH); return vector<Beam<ProbBack,BeamElement>>::operator[](i); }
-//  const DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX>& getMostLikelySequence ( ) {
-  void setMostLikelySequence( DelimitedVector<psX,DelimitedTrip<psX,ObsWord,psSpace,BeamElement,psSpace,double,psX>,psLine,psX>& mls ) {
+  Trellis ( ) : vector<Beam<HiddState>>() { reserve(100); }
+  Beam<HiddState>& operator[] ( uint i ) { if ( i==size() ) emplace_back(BEAM_WIDTH); return vector<Beam<HiddState>>::operator[](i); }
+//  const DelimitedList<psX,pair<HiddState,ProbBack>,psLine,psX>& getMostLikelySequence ( ) {
+  void setMostLikelySequence( DelimitedVector<psX,DelimitedTrip<psX,ObsWord,psSpace,HiddState,psSpace,double,psX>,psLine,psX>& mls ) {
     //mls.clear( );
     //mls.reserve( size() );
-    auto last = pair<const BeamElement,ProbBack>( back().begin()->second, back().begin()->first );
+    auto last = *back().begin();  //pair<const HiddState,ProbBack>( back().begin()->second, back().begin()->first );
     int t = size()-1;
 //    if( back().size()>0 ) for( uint t = beams.size()-1; t>=0; t-- ) 
     if( back().size()>0 ) {
       // Add chain from best at end...
-      for( const auto* pbbe = &last; t>0; pbbe = &at(--t).get(pbbe->second.second) ) mls[t-1].second() = pbbe->first;
+      for( const auto* pbe = &last; t>0; pbe = &pbe->getBack() ) mls[--t].second() = pbe->getHidd();
       // Shift storestates bc of dateline issue...
       for( int t=0; t<size()-1; t++ ) mls[t-1].second().fourth() = mls[t].second().fourth();
       mls[size()-2].second().fourth() = StoreState();
     }
-//    lbe.clear();  if( back().size()>0 ) lbe.push_front( pair<BeamElement,ProbBack>( back().begin()->second, back().begin()->first ) );
+//    lbe.clear();  if( back().size()>0 ) lbe.push_front( pair<HiddState,ProbBack>( back().begin()->second, back().begin()->first ) );
 //    if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( at(t).get(lbe.front().second.second) );
-//    if( lbe.size()>0 ) lbe.emplace_back( BeamElement(), ProbBack(0.0,BeamElement()) );
+//    if( lbe.size()>0 ) lbe.emplace_back( HiddState(), ProbBack(0.0,HiddState()) );
 //    return lbe;
   }
 };
@@ -200,7 +202,7 @@ int main ( int nArgs, char* argv[] ) {
 
   cerr<<"Models ready."<<endl;
 
-  list<DelimitedVector<psX,DelimitedTrip<psX,ObsWord,psSpace,BeamElement,psSpace,double,psX>,psLine,psX>> MLSs;  // list of most-likely-sequence vectors
+  list<DelimitedVector<psX,DelimitedTrip<psX,ObsWord,psSpace,HiddState,psSpace,double,psX>,psLine,psX>> MLSs;  // list of most-likely-sequence vectors
   mutex          mutexMLSList;  // mutex for MLS list
   vector<thread> vtWorkers;     // vector of worker threads
   uint           linenum = 1;   // line number read
@@ -221,7 +223,7 @@ int main ( int nArgs, char* argv[] ) {
 
     // Create initial beam element...
     StoreState ssInit; ssInit.emplace_back(Sign("S"),Sign("."));    //Sign("S-lS^g_0"),Sign("."));
-    beams[0].tryAdd( BeamElement(Sign("."),0,1,ssInit), ProbBack(0.0,BeamElement()) );
+    beams[0].tryAdd( HiddState(Sign("."),0,1,ssInit), ProbBack<HiddState>() );
  
     // Lock...
     mutexMLSList.lock( );
@@ -259,32 +261,32 @@ int main ( int nArgs, char* argv[] ) {
 	// if( i++%numThreads==numt ){
         //for( auto& i=beams[t-1].begin()+numt; i<beams[t-1].end(); i+=numThreads ) {
         // auto&             be_tdec1   = *i; //beams[t-1][i];
-        double            lgpr_tdec1 = be_tdec1.first.first;     // prob of prev storestate
-        const Sign&       p_tdec1    = be_tdec1.second.first();  // prev P
-        F                 f_tdec1    = be_tdec1.second.second(); // prev F
-        J                 j_tdec1    = be_tdec1.second.third();  // prev J
-        const StoreState& q_tdec1    = be_tdec1.second.fourth(); // prev storestate
+        double            lgpr_tdec1 = be_tdec1.getProb();          // prob of prev storestate
+        const Sign&       p_tdec1    = be_tdec1.getHidd().first();  // prev P
+        F                 f_tdec1    = be_tdec1.getHidd().second(); // prev F
+        J                 j_tdec1    = be_tdec1.getHidd().third();  // prev J
+        const StoreState& q_tdec1    = be_tdec1.getHidd().fourth(); // prev storestate
 
-        if( VERBOSE>1 ) cout << "  from (" << be_tdec1.second << ")" << endl;
+        if( VERBOSE>1 ) cout << "  from (" << be_tdec1.getHidd() << ")" << endl;
 
         // For each possible apex category label...
         APredictor apredictor = q_tdec1.calcApexTypeCondition( f_tdec1, j_tdec1, p_tdec1 );  // save apredictor for use in prob calc
         if( VERBOSE>1 ) cout << "    A " << apredictor << "..." << endl;
-        for( auto& tpA : modA[apredictor] ) if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(tpA.second) > beams[t].rbegin()->first.first ) {
+        for( auto& tpA : modA[apredictor] ) if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(tpA.second) > beams[t].rbegin()->getProb() ) {
 
           if( VERBOSE>1 ) cout << "    A " << apredictor << " : " << tpA.first << " = " << tpA.second << endl;
 
           // For each possible brink category label...
           BPredictor bpredictor = q_tdec1.calcBrinkTypeCondition( f_tdec1, j_tdec1, tpA.first, p_tdec1 );  // bpredictor for prob calc
           if( VERBOSE>1 ) cout << "      B " << bpredictor << "..." << endl;
-          for( auto& tpB : modB[bpredictor] ) if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(tpA.second) + log(tpB.second) > beams[t].rbegin()->first.first ) {
+          for( auto& tpB : modB[bpredictor] ) if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(tpA.second) + log(tpB.second) > beams[t].rbegin()->getProb() ) {
 
             if( VERBOSE>1 ) cout << "      B " << bpredictor << " : " << tpB.first << " = " << tpB.second << endl;
 
             StoreState ss( q_tdec1, f_tdec1, j_tdec1, tpA.first, tpB.first, p_tdec1 );
             // For each possible lemma (context + label + prob) for preterminal of current word...
             for( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[ (BERKUNK) ? unkWordBerk(w_t.getString().c_str()) : unkWord(w_t.getString().c_str()) ] )
-             if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(tpA.second) + log(tpB.second) + log(ktpr_p_t.second) > beams[t].rbegin()->first.first ) {
+             if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(tpA.second) + log(tpB.second) + log(ktpr_p_t.second) > beams[t].rbegin()->getProb() ) {
               T t_p_t           = ktpr_p_t.first;  // label of current preterminal
               double probwgivkl = ktpr_p_t.second; // probability of current word given current preterminal
 
@@ -312,20 +314,20 @@ int main ( int nArgs, char* argv[] ) {
                   // For each possible no-join or join decision...
                   //for ( auto& j : {0,1} ) {
                   JPredictor jpredictor = ss.calcJoinTypeCondition(f,aPretrm);
-                  for( auto& tjp : modJ[jpredictor] ) if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(tjp.second) > beams[t].rbegin()->first.first ) {
+                  for( auto& tjp : modJ[jpredictor] ) if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(tjp.second) > beams[t].rbegin()->getProb() ) {
                     const J& j = tjp.first;
                     if( VERBOSE>1 ) cout << "              J " << jpredictor << " : " << tjp.first << " = " << tjp.second << endl;
 
                     // Calculate probability and storestate and add to beam...
                     //double probJoin = tjp.second * tpA.second * tpB.second;
 //                    { lock_guard<mutex> guard( mutexBeam );
-                      if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(tjp.second) > beams[t].rbegin()->first.first ) {
+                      if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(tjp.second) > beams[t].rbegin()->getProb() ) {
                         //StoreState ss( q_tdec1, f, j, tpA.first, tpB.first, aPretrm );
                         if( (t<lwSent.size() && ss.size()+f-j>0) || (t==lwSent.size() && ss.size()+f-j==0) ) {
-////                          if( beams[t].size()>=BEAM_WIDTH ) { pop_heap( beams[t].begin(), beams[t].end(), [] (const BeamElement& a, const BeamElement& b) { return b<a; } ); beams[t].pop_back(); }
-                          beams[t].tryAdd( BeamElement( aPretrm, f, j, ss ), ProbBack( lgpr_tdec1 + log(probFork) + log(tjp.second), be_tdec1.second ) );
-                          if( VERBOSE>1 ) cout << "                send (" << be_tdec1.second << ") to (" << ss << ") with " << (lgpr_tdec1 + log(probFork) + log(tjp.second)) << endl;
-////                          push_heap( beams[t].begin(), beams[t].end(), [] (const BeamElement& a, const BeamElement& b) { return b<a; } );
+////                          if( beams[t].size()>=BEAM_WIDTH ) { pop_heap( beams[t].begin(), beams[t].end(), [] (const HiddState& a, const HiddState& b) { return b<a; } ); beams[t].pop_back(); }
+                          beams[t].tryAdd( HiddState( aPretrm, f, j, ss ), ProbBack<HiddState>( lgpr_tdec1 + log(probFork) + log(tjp.second), be_tdec1 ) );
+                          if( VERBOSE>1 ) cout << "                send (" << be_tdec1.getHidd() << ") to (" << ss << ") with " << (lgpr_tdec1 + log(probFork) + log(tjp.second)) << endl;
+////                          push_heap( beams[t].begin(), beams[t].end(), [] (const HiddState& a, const HiddState& b) { return b<a; } );
                         }
                       }
 //                    }
@@ -341,7 +343,7 @@ int main ( int nArgs, char* argv[] ) {
 //      for( auto& w : vtWorkers ) w.join();
 
 ////      // Sort beam...
-////      std::sort( beams[t].begin(), beams[t].end(), [] (const BeamElement& a, const BeamElement& b) { return b<a; } );
+////      std::sort( beams[t].begin(), beams[t].end(), [] (const HiddState& a, const HiddState& b) { return b<a; } );
 
 //      // Write output...
 //      cerr << " (" << beams[t].size() << ")";
@@ -356,12 +358,12 @@ int main ( int nArgs, char* argv[] ) {
 //cerr<<"beams size="<<beams.size()<<endl;
 //cerr<<"lwSent size="<<lwSent.size()<<endl;
       // Add words and default fail elements to MLS...
-      for( auto& w : lwSent ) mls.emplace_back( w, BeamElement( "FAIL", 1, 1, ssLongFail ), 0.0/0.0 );
+      for( auto& w : lwSent ) mls.emplace_back( w, HiddState( "FAIL", 1, 1, ssLongFail ), 0.0/0.0 );
       if( mls.size()>1 ) {
-        mls.front().second() = BeamElement( "FAIL", 1, 0, ssLongFail );
-        mls.back( ).second() = BeamElement( "FAIL", 0, 1, StoreState() );
+        mls.front().second() = HiddState( "FAIL", 1, 0, ssLongFail );
+        mls.back( ).second() = HiddState( "FAIL", 0, 1, StoreState() );
       }
-      else mls.front().second() = BeamElement( "FAIL", 1, 1, StoreState() );
+      else mls.front().second() = HiddState( "FAIL", 1, 1, StoreState() );
       // Obtain MLS for current line...
       beams.setMostLikelySequence( mls );
       // Update measures...
@@ -369,9 +371,9 @@ int main ( int nArgs, char* argv[] ) {
         double probPrevTot = 0.0;
         double probCurrTot = 0.0;
         for( auto& be_tdec1 : beams[t-1] )
-          probPrevTot += exp(be_tdec1.first.first - beams[t-1].begin()->first.first);
+          probPrevTot += exp(be_tdec1.getProb() - beams[t-1].begin()->getProb());
         for( auto& be_t : beams[t] )
-          probCurrTot += exp(be_t.first.first     - beams[t-1].begin()->first.first);
+          probCurrTot += exp(be_t.getProb()     - beams[t-1].begin()->getProb());
         mls[t-1].third() = log2(probPrevTot) - log2(probCurrTot);
       }
       // Dump all consecuative lines that are finished...
@@ -381,7 +383,7 @@ int main ( int nArgs, char* argv[] ) {
 //    auto& mls = beams.getMostLikelySequence();
 //    if( mls.size()>0 ) {
 //      int u=1; auto ibe=next(mls.begin()); auto iw=lwSent.begin(); for( ; ibe!=mls.end() && iw!=lwSent.end(); ibe++, iw++, u++ ) {
-//        cout << *iw << " " << ibe->first.first() << " " << ibe->first.second() << " " << ibe->first.third() << " " << next(ibe)->first.fourth();
+//        cout << *iw << " " << ibe->getProb()() << " " << ibe->first.second() << " " << ibe->first.third() << " " << next(ibe)->first.fourth();
 //        if( OUTPUT_MEASURES ) cout << " " << vdSurp[u];
 //        cout << endl;
 //      }
