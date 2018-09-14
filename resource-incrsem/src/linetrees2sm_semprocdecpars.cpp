@@ -91,12 +91,13 @@ arma::mat mIdent;
 arma::vec vOnes;
 arma::vec vFirstHot;
 
-map<pair<vector<FPredictor>,FResponse>,arma::vec> mvfrv;
+map<pair<vector<FPredictor>,FResponse>,arma::vec> mvfrv; //map pair to vec.  pair is (vector<FPredictor>, FResponse). arma::vec is latent scores across different latent versions of the same category. first.first is the list of predictors.  second is the arma:vec, first.second is the FResponse.
 map<pair<PPredictor,T>,arma::mat> mpppmP;
 map<quad<EVar,K,T,W>,arma::vec> mektwvW;
 map<pair<vector<JPredictor>,JResponse>,arma::mat> mvjrm;
 map<pair<APredictor,T>,arma::mat> mapamA;
 map<pair<BPredictor,T>,arma::mat> mbpbmB;
+map<vector<NPredictor>,bool> mvnb; //Antecedent N model, where NPredictors are usually pair<K,K>, but can be others
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -355,6 +356,14 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     cout << "note: P " << q.calcPretrmTypeCondition(f,e.c_str(),k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
     cout << "note: W " << e << " " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
 
+    //TODO defined linked list of antecedents - William will work on?
+    for (auto& candidate: candidates) {
+      DelimitedList<psX,NPredictor,psComma,psX> npreds;  
+      q.calcNPreds(npreds, candidate); //populate npreds with kxk pairs for q vs. candidate q. TODO write calcNPreds in StoreState. probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
+      cout << "N "; for (auto& npred : npreds) {if (&npred!=&npred.front() ) cout << ","; cout << npred << "=1";} << " : " << ((candidate.swindex() == annot) ? 1 : 0) << endl;  //TODO copy/paste stream operators for NPredictor class
+      }
+    }
+
     arma::vec& vF = mvfrv[ pair<vector<FPredictor>,FResponse>( vector<FPredictor>( lfp.begin(), lfp.end() ), FResponse(f,e.c_str(),k) ) ];
     arma::mat& mP = mpppmP[ pair<PPredictor,T>(q.calcPretrmTypeCondition(f,e.c_str(),k),aPretrm.getType()) ];
     arma::vec& vW = mektwvW[ quad<EVar,K,T,W>(e.c_str(),k,aPretrm.getType(),L(tr.front()).c_str()) ];
@@ -511,5 +520,8 @@ int main ( int nArgs, char* argv[] ) {
     cout << "A " << apam.first.first.first() << " " << apam.first.first.second() << " " << apam.first.first.third() << " " << apam.first.first.fourth() << " " << apam.first.first.fifth() << " " << apam.first.first.sixth().addNum(j) << " " << apam.first.first.seventh().addNum(k) << " : " << apam.first.second.addNum(i) << " = " << apam.second(i,j*iMaxNums+k) << endl;
   for( auto& bpbm : mbpbmB ) for( int i=0; i<iMaxNums; i++ ) for( int j=0; j<iMaxNums; j++ ) for( int k=0; k<iMaxNums; k++ ) if( bpbm.second(i,j*iMaxNums+k) != 0.0 )
     cout << "B " << bpbm.first.first.first() << " " << bpbm.first.first.second() << " " << bpbm.first.first.third() << " " << bpbm.first.first.fourth() << " " << bpbm.first.first.fifth() << " " << bpbm.first.first.sixth() << " " << bpbm.first.first.seventh().addNum(i) << " " << bpbm.first.first.eighth().addNum(j) << " : " << bpbm.first.second.addNum(k) << " = " << bpbm.second(i,j*iMaxNums+k) << endl;
+  for (auto& antInstance : mapAntInstances) {
+   // cout << "N " << antInstance[1] << "=1"; for (uint n=2; n<antInstance.size();n++) cout << "," << antInstance[n] << "=1"; count << " : " << antInstance[0] << endl; //Antecedent N model: antInstance has label as first element, at least one predictor at [1], followed by rest of predictors after //TODO just print out actually training data at "note" locations
+  }
 }
 

@@ -274,7 +274,7 @@ int main ( int nArgs, char* argv[] ) {
             // Calc distrib over response for each fork predictor...
             arma::vec flogresponses = arma::zeros( matF.n_rows );            //distribution over f responses for a single antecedent features
             for ( auto& fpredr : lfpredictors ) if ( fpredr.toInt() < matF.n_cols ) flogresponses += matF.col( fpredr.toInt() ); // add logprob for all indicated features. over all FEK responses.
-            if ( VERBOSE>1 ) for ( auto& fpredr : lfpredictors ) cout<<"    fpredr:"<<fpredr<<endl;
+            //if ( VERBOSE>1 ) for ( auto& fpredr : lfpredictors ) cout<<"    fpredr:"<<fpredr<<endl;
             arma::vec fresponses = arma::exp( flogresponses );
 
 
@@ -334,7 +334,7 @@ int main ( int nArgs, char* argv[] ) {
               //if( VERBOSE>1 ) cerr << "lfpredictor found: " << fpredr << endl;
             }
             //if( VERBOSE>1 ) cerr << "passed fpredr loop" << endl;
-            if ( VERBOSE>1 ) { for ( auto& fpredr : lfpredictors ) { cerr <<"    fpredr:"<<fpredr<<endl; } }
+            if ( VERBOSE>1 ) { for ( auto& fpredr : lfpredictors ) { cout <<"    fpredr:"<<fpredr<<endl; } }
 
             //if( VERBOSE>1 ) cerr << "passed printout" << endl;
             arma::vec fresponses = arma::exp( flogresponses );

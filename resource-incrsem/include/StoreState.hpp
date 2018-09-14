@@ -335,7 +335,7 @@ class FPredictor {
 
  public:
 
-  // Construtors...
+  // Constructors...
   FPredictor ( ) : id(0) { }
   FPredictor ( D d, T t ) {
     const auto& it = mdti.find(pair<D,T>(d,t));
@@ -980,3 +980,39 @@ W unkWord ( const char* ps ) {
                                                              W("!unk!");
 }
 
+class NPredictor {
+  /*
+  Boolean predictors for antecedent model.  Generally KxK pairs or TxT pairs between anaphor and candidate antecedent. 
+  */
+  private:
+    uint id;
+
+  public:
+    static uint                nextid;
+    static map<pair<K,K>,uint> mkki; 
+    static map<pair<T,T>,uint> mtti;
+    static map<uint,K>         miantk;
+    static map<uint,K>         micurrk;
+    static map<unit,T>         miantt;
+    static map<uint,T>         micurrt;
+    //static mapsfromidtootherstuff;
+
+    //Constructors
+    NPredictor ( ) : id(0) { }
+
+    NPredictor (K antK, K currK) {
+      const auto& it = mkki.find(pair<K,K>(antK,currK));
+      if (it != mkki.end() ) id = it->second;
+      else { id = nextid++; miantk[id] = antK; micurrk[id] = currK; mkki[pair<K,K>(antK,currK)] = id; }
+    }
+    /*
+    FPredictor ( D d, T t ) {
+      const auto& it = mdti.find(pair<D,T>(d,t));
+      if ( it != mdti.end() ) id = it->second;
+      else { id = nextid++;  mid[id] = d;  mit[id] = t;  mdti[pair<D,T>(d,t)] = id; }
+      //cout<<"did id "<<id<<"/"<<nextid<<" as "<<*this<<endl;
+    }
+    */
+    //NPredictor ("distance", int) {
+        //TODO
+    }
