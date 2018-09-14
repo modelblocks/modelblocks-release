@@ -64,12 +64,12 @@ class LVU : public trip<L,arma::rowvec,arma::vec> { //label, vec, vec
   arma::rowvec&        v ( )       { return second(); }
   arma::vec&           u ( )       { return third(); }
   L              getLink ( ) const { 
-          if (string::npos != first().find("-n")) {
-            std::smatch sm;
-            std::regex re ("(.*)-n([0-9]+).*"); //get consecutive numbers after a "-n"
-            if (std::regex_search(first(), sm, re) && sm.size() > 2) { return(sm.str(2)); }
-          }
-          else return("");
+    if (string::npos != first().find("-n")) {
+      std::smatch sm;
+      std::regex re ("(.*)-n([0-9]+).*"); //get consecutive numbers after a "-n"
+      if (std::regex_search(first(), sm, re) && sm.size() > 2) { return(sm.str(2)); }
+    }
+    else return("");
   } 
   // Input / output methods  ---  NOTE: only reads and writes label, not vectors...
   friend pair<istream&,LVU&> operator>> ( istream&            is,  LVU& t              )                 { return pair<istream&,LVU&>(is,t); }

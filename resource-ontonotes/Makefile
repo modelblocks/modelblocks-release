@@ -109,12 +109,15 @@ $$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/fi
 #genmodel/ontowsj02to21.%.linked.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/ontowsj$(sect).%.linked.linetrees)
 #	cat $^  >  $@
 
+.PRECIOUS: genmodel/ontowsj02to21.%.linetrees
 genmodel/ontowsj02to21.%.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/ontowsj$(sect).%.linetrees)
 	cat $^  >  $@
 
+.PRECIOUS: genmodel/ontowsjdev.%.linetrees 
 genmodel/ontowsjdev.%.linetrees: $(foreach sect,01 22 24,genmodel/ontowsj$(sect).%.linetrees)
 	cat $^  >  $@
 
+.PRECIOUS: genmodel/conllwsjdev.%.linetrees
 genmodel/conllwsjdev.%.linetrees: $(foreach sect,00 01 22 24,genmodel/ontowsj$(sect).%.linetrees)
 	cat $^  >  $@
 
