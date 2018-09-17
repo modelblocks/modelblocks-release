@@ -122,7 +122,7 @@ naturalstoriesfmri%.itemmeasures: naturalstories%.itemmeasures
 
 %naturalstoriesfmri.evmeasures: $$(DEP-NATSTORIES) $$(DEP-NATSTORIESFMRI) $(NATSTORFMRIDIR)/naturalstoriesFMRI.evmeasures $(NATSTORIESFMRI-SCRIPTS)/preprocess_natstor_fmri.py \
 $(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(NATSTORIESFMRI-SCRIPTS)/filter_docs.py $(CONFIGDIR)/user-naturalstories-fmri-directory.txt $(NATSTORDIR)/audio/*.wav | %
-	cat $(word 1, $^) | python $(word 2, $^) $(NATSTOR-STORIES) sampleid | python $(word 3, $^) $(wordlist 6, $(words $^), $^) | python $(word 4, $^) > $@
+	cat $(word 1, $^) | python $(word 2, $^) $(NATSTOR-STORIES) sampleid | python $(word 3, $^) $(wordlist 6, $(words $^), $^) -c | python $(word 4, $^) > $@
 
 %.sp.itemmeasures: $$(DEP-NATSTORIES) %.itemmeasures $(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(CONFIGDIR)/user-naturalstories-directory.txt $(NATSTORDIR)/audio/*.wav
 	cat $(word 1, $^) | python $(word 2, $^) $(wordlist 4, $(words $^), $^) > $@
