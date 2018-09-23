@@ -4,7 +4,7 @@ from tree import Tree
 
 SS = [ ]   ## derivation fragments (partial trees) derived at each storestate
 
-IDENTIFY_EXTRACTIONS = False
+IDENTIFY_EXTRACTIONS = True #False
 
 def attachB(t,lu):
   if len(t.ch)>1: attachB(t.ch[1],lu)
@@ -29,15 +29,19 @@ for s in sys.stdin:
         ## remove berk stuff (not needed after berk removed)...
         p = re.sub( '_[0-9]+', '', p )
 
+        treeW = Tree(w)
+
         ## annotate operator tags if semproc...
         if len(f.split('&'))>1:
-          bF,eF,_ = f.split('&')
-          if eF!='' and bF=='f1' and IDENTIFY_EXTRACTIONS: p            += '-l' + eF
-          if eF!='' and bF=='f0' and IDENTIFY_EXTRACTIONS: annotB( SS[-1], '-l' + eF )
+          bF,eF,kF = f.split('&')
+          if eF=='O': eF = 'Q'   ## CODE REVIEW: SHOULD BE 'O'
+          if eF!='': treeW = Tree( re.sub(':.*','',kF) + '-l' + eF, [treeW] )
+          #if eF!='' and bF=='f1' and IDENTIFY_EXTRACTIONS: treeW = p            += '-l' + eF
+          #if eF!='' and bF=='f0' and IDENTIFY_EXTRACTIONS: treeW = annotB( SS[-1], '-l' + eF )
 
         ## apply fork decision...
-        if f=='1' or f.startswith('f1'): SS.append( Tree(p,[Tree(w)]) )
-        else:                            attachB( SS[-1], [ Tree(p,[Tree(w)]) ] )
+        if f=='1' or f.startswith('f1'): SS.append( Tree(p,[treeW]) ) #[Tree(w)]) )
+        else:                            attachB( SS[-1], [ Tree(p,[treeW]) ] ) #[Tree(w)]) ] )
 
         if q=='':
             if len(SS)==1: print( SS[0] )
