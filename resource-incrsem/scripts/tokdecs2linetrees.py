@@ -28,7 +28,7 @@ def unaryprojlist(e,c):
   for o in e:
     if o=='V':            c = re.sub( '^A-aN(.*)$', 'L-aN\\1-vN', c )
     if o=='O':            c = re.sub( '^([^-]*)(-[ab][^-{}]*|-[ab]\{[^{}]*\})(-[ab][^-{}]*|-[ab]\{[^{}]*\})(.*)$', '\\1\\3\\2\\4-lQ', c )
-    if o>='0' and o<='9': c = re.sub( '^(.*)-[gh](.*?)$', '\\1-a\\2-lE', c )
+    if o>='0' and o<='9': c = re.sub( '^(.*)-[gh](.*?)$', '\\1-b\\2-lE', c )  ## NOTE: ALWAYS -b BC CANNOT KNOW AND -a CAUSES -lQ TO WRONGLY ATTACH
     if o=='M':            c = re.sub( '^(.*)-[gh](.*?)$', '\\1-lE', c )
     l += [ c ]
   return l
@@ -80,8 +80,8 @@ for s in sys.stdin:
               ## calc op tags for left and right children...
               if oL!='I' and oL!='U' and oL!='u' or oR=='U' or oR=='u' : SS[-1].c     += '-l' + ('A' if oL>='1' and oL<='9' else 'U' if oR=='U' or oR=='u' else oL)
               if oR!='I' and oR!='U' and oR!='u' or oL=='U' or oL=='u' : b            += '-l' + ('A' if oR>='1' and oR<='9' else 'U' if oL=='U' or oL=='u' else oR)
-              sys.stderr.write( j + ' trying SS[-2]:' + ( str(SS[-2]) if len(SS)>1 else '')  + ' SS[-1]:' + (str(SS[-1]) if len(SS)>0 else '') + ' a:' + a + ' b:' + b + '\n' )
-              kids = [SS[-1], Tree(b) ]  # bc b updated
+              ####sys.stderr.write( j + ' trying SS[-2]:' + ( str(SS[-2]) if len(SS)>1 else '')  + ' SS[-1]:' + (str(SS[-1]) if len(SS)>0 else '') + ' a:' + a + ' b:' + b + '\n' )
+              kids = [ SS[-1], Tree(b) ]  # bc b updated
               for c in reversed( unaryprojlist( eJ, getB(SS[-2]) if j.startswith('j1') else a ) ):
                 kids = [ Tree( c, kids ) ]
 
