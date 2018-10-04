@@ -92,8 +92,8 @@ export PYTHONPATH
 
 ## TO SPEC
 %.filt-evmeasures: $$(DEP-DTSR) \
-$$(basename %).core-evmeasures \
-scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).dtsrform \
+$$(basename $$(basename %)).core-evmeasures \
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).dtsrform \
 $(DTSR-SCRIPTS)/infer_dtsr_predictors.py \
 $(RT-SCRIPTS)/filter_cols.awk \
 $(RT-SCRIPTS)/accumulateMetrics.py \
@@ -104,8 +104,8 @@ $(RT-SCRIPTS)/parsePredictors.py \
 $(RT-SCRIPTS)/rm_na_items.py \
 $(CONFIGDIR)/user-dtsr-directory.txt \
 $(DTSRDIR)/dtsr/formula.py
-	$(eval CORECOLS := $(sort $(shell echo $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^))) $(shell echo $(wordlist 2, $(words $(subst _, ,$(subst .,,$(suffix $*)))),$(subst _, ,$(subst .,,$(suffix $*)))) | python $(word 9, $^)))))
-	$(eval COLS := $(sort $(shell echo $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^))) $(shell echo $(wordlist 2, $(words $(subst _, ,$(subst .,,$(suffix $*)))),$(subst _, ,$(subst .,,$(suffix $*))))))))
+	$(eval CORECOLS := $(sort $(shell echo $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^))) $(shell echo $(subst +, ,$(subst _, ,$(subst .,,$(suffix $*))))) | python $(word 9, $^))))
+	$(eval COLS := $(sort $(shell echo $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^))) $(shell echo $(subst +, ,$(subst _, ,$(subst .,,$(suffix $*))))))))
 	@echo Extracting columns: $(CORECOLS)
 	@echo Computing columns: $(COLS)
 	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(CORECOLS))) $< | \
