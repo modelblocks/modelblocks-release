@@ -37,6 +37,8 @@
 .SUFFIXES:
 .SECONDEXPANSION:
 
+VPATH += $(RESOURCE-REGRESSION)
+
 ################################################################################
 #
 #  Recipes
