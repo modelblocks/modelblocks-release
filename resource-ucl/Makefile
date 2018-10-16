@@ -56,6 +56,9 @@ endef
 
 .SUFFIXES:
 .SECONDEXPANSION:
+.DELETE_ON_ERROR:
+
+VPATH += $(RESOURCE-UCL)
 
 UCL-BASENAME := genmodel/ucl.wsj02to21-GRAMMAR-nol-prtrm-3sm-synproc-+c_+u_+b5000.gcg15_nodashtags.merged.syn.5-kenlm.eyeGP
 UCL-LMEDEFAULT := -NSCFl

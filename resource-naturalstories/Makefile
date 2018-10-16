@@ -54,6 +54,9 @@ endef
 
 .SUFFIXES:
 .SECONDEXPANSION:
+.DELETE_ON_ERROR:
+
+VPATH += $(RESOURCE-NATSTORIES)
 
 NATSTORIES-BASENAME := genmodel/naturalstories.wsj02to21-GRAMMAR-nol-prtrm-3sm-synproc-+c_+u_+b5000.gcg15_nodashtags.merged.syn.5-kenlm.spr
 NATSTORIES-LMEDEFAULT := -NSCFl_-o_5_-B_100_-U_3000

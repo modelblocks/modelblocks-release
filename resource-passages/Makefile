@@ -61,6 +61,9 @@ endef
 
 .SUFFIXES:
 .SECONDEXPANSION:
+.DELETE_ON_ERROR:
+
+VPATH += $(RESOURCE-PASSAGES)
 
 PASSAGES-ROI := LPostTemp LAntTemp LAngG LIFG LMFG LIFGorb AllROI
 PASSAGES72-BASENAME := genmodel/passages72.wsj02to21-gcg15-nol-prtrm-3sm-synproc-+c_+u_+b5000.syn.5-kenlm.bysent
