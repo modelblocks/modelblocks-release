@@ -46,11 +46,5 @@
 %.cens.resmeasures: %.resmeasures $(REGRESSION-SCRIPTS)/censor.py $(subst .,,$(suffix %)).cens_params.ini
 	cat $< | python $(word 2, $^) $(word 3, $^) > $@
 
-%.train.resmeasures: %.resmeasures $(REGRESSION-SCRIPTS)/partition.py $(word 1, $(subst ., ,%)).part_params.ini
-	cat $< | python $(word 2, $^) -c $(word 3, $^) -p train > $@
-
-%.dev.resmeasures: %.resmeasures $(REGRESSION-SCRIPTS)/partition.py $(word 1, $(subst ., ,%)).part_params.ini
-	cat $< | python $(word 2, $^) -c $(word 3, $^) -p dev > $@
-
-%.test.resmeasures: %.resmeasures $(REGRESSION-SCRIPTS)/partition.py $(word 1, $(subst ., ,%)).part_params.ini
-	cat $< | python $(word 2, $^) -c $(word 3, $^) -p test > $@
+%.part.resmeasures: $(basename %).resmeasures $(REGRESSION-SCRIPTS)/partition.py $(word 1, $(subst ., ,%)).part_params.ini
+	cat $< | python $(word 2, $^) -c $(word 3, $^) -p $(subst +, ,$(subst .,,$(suffix $*))) > $@
