@@ -153,6 +153,10 @@ endif
 #
 ################################################################################
 
+## copy partition ini into project genmodel directory
+genmodel/%.ini: $(UCL-SCRIPTS)/%.ini
+	cp $< $@
+
 genmodel/ucl.merge_tables.params: | genmodel
 	echo 'word sentid sentpos' > $@
   

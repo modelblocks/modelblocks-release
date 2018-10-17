@@ -113,6 +113,10 @@ endif
 #
 ################################################################################
 
+## copy partition ini into project genmodel directory
+genmodel/%.ini: $(DUNDEE-SCRIPTS)/%.ini
+	cp $< $@
+
 #### obtain lexicon of terms that appear more than 5 times
 %.wordcounts: %.linetoks $(DUNDEE-SCRIPTS)/buildlexicon.py
 	python3 $(word 2,$^) $< -u5 > $@

@@ -428,9 +428,15 @@ endef
 
 ## TO SPEC
 .PRECIOUS: %.core-evmeasures
-%.core-evmeasures: %.all-itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
-$(RT-SCRIPTS)/merge_tables.py
-	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  > $@
+%.core-evmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
+	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  >  $@
+
+## PRD/RESMEASURES SPEC
+.PRECIOUS: %.prdmeasures
+%.prdmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
+	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  >  $@
+%.resmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
+	ln -s $(word 2,$^) $@
 
 ## TO SPEC
 %.filt-evmeasures: $$(basename %).core-evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \

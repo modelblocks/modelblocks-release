@@ -45,8 +45,43 @@ VPATH += $(RESOURCE-REGRESSION)
 #
 ################################################################################
 
-%.cens.resmeasures: %.resmeasures $(REGRESSION-SCRIPTS)/censor.py $(subst .,,$(suffix %)).cens_params.ini
-	cat $< | python $(word 2, $^) $(word 3, $^) > $@
 
-%.part.resmeasures: $(basename %).resmeasures $(REGRESSION-SCRIPTS)/partition.py $(word 1, $(subst ., ,%)).part_params.ini
-	cat $< | python $(word 2, $^) -c $(word 3, $^) -p $(subst +, ,$(subst .,,$(suffix $*))) > $@
+
+## apply consorship (e.g. remove end-of-sentence responses) (prdmeasures unaffected)
+%.prdmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/censor.py
+	ln -s $(word 2,$^) $@
+%.resmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/censor.py
+	cat $(word 2,$^)  |  python $(word 3,$^) $(word 1,$^)  >  $@
+
+
+## apply partitioning (prdmeasures unaffected)
+%-part.prdmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/partition.py 
+	ln -s $(word 2,$^) $@
+%-part.resmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/partition.py
+	cat $(word 2,$^)  |  python $(word 3, $^) -c $(word 1, $^) -p $(subst +, ,$(subst .,,$(suffix $*)))  >  $@
+
+
+## generic fit files: <data>.<baseline>_(<predr>_)*<regrmodel>.fitmodel
+%.fitmodel %.coeffs:  bin/regressor-$$(subst .,,$$(suffix $$(subst _,.,$$*)))  \
+                      bin/$$(subst .,,$$(word 1,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form  \
+                      $$(basename $$(basename %))$$(word 1,$$(subst +, ,$$(suffix $$(basename $$*))))-part.prdmeasures  \
+                      $$(basename $$(basename %))$$(word 1,$$(subst +, ,$$(suffix $$(basename $$*))))-part.resmeasures
+	$^ $(wordlist 2,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*)))))
+
+## generaic predicted resmeasures file: <data>.<baseline>_(<predr>_)*<regrmodel>_predicted.resmeasures
+%_predicted.resmeasures:  bin/predictor-$$(subst .,,$$(suffix $$(subst _,.,$$*)))  \
+                          %.fitmodel  \
+                          $$(basename $$(basename %)).$$(word 2,$$(subst +, ,$$(suffix $$(basename $$*))))-part.prdmeasures
+	$^  >  $@
+
+## generic errors file: <data>.<baseline>_(<predr>_)*<regrmodel>.errors
+%.errors:  bin/calc-errors  %_predicted.resmeasures  $$(basename $$(basename %)).$$(word 2,$$(subst +, ,$$(suffix $$(basename $$*))))-part.resmeasures
+	$^  >  $@
+
+## generic signif file
+%.signif:  bin/signif-$$(lastword $$(subst _, ,$$(suffix $$*)))  \
+           $$(basename $$(basename %)).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$*))))))_-a$$(subst .,_,$$(basename $$(subst _,.,$$(suffix $$*))))_$$(lastword $$(subst _, ,$$(basename $$*))).errors  \
+           $$(basename %).errors
+	$^  >  $@
+
+

@@ -105,6 +105,10 @@ endif
 #
 ################################################################################
 
+## copy partition ini into project genmodel directory
+genmodel/%.ini: $(NATSTORIES-SCRIPTS)/%.ini
+	cp $< $@
+
 genmodel/naturalstories.merge_tables.params: | genmodel
 	echo 'word sentid sentpos' > $@
 
