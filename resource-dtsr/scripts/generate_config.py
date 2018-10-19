@@ -40,7 +40,6 @@ for name in config:
     if name.startswith('model_DTSR') and name.endswith('_BASELINE'):
         baseline_found = True
         new_name = name[:-9]
-        sys.stderr.write(new_name + '\n')
         model_template = config[name]
         f = Formula(model_template['formula'])
 
@@ -55,7 +54,7 @@ for name in config:
             for t in reversed(transform):
                 effect_name = t + '(' + effect_name + ')'
            
-            f.insert_impulses(effect_name, irf_str)
+            f.insert_impulses(effect_name, irf_str, rangf=['subject'])
 
         config[new_name] = dict(config[name]).copy()
         config[new_name]['formula'] = str(f)

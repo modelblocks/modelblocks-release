@@ -1,5 +1,5 @@
 import sys, argparse, pandas as pd, numpy as np
-from mvpa2.testing.datasets import double_gamma_hrf as hrf
+from mvpa2.misc.data_generators import double_gamma_hrf as hrf
 
 argparser = argparse.ArgumentParser(description='Convolve data table using HRF')
 argparser.add_argument('data', type=str, help='Path to data table')

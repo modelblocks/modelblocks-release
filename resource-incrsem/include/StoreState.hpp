@@ -29,11 +29,11 @@ char psRBrack[] = "]";
 ////////////////////////////////////////////////////////////////////////////////
 
 int getDir ( char cOp ) {
-  return (cOp>='0' && cOp<='9') ? cOp-'0' :  // (numbered argument)
-         (cOp=='M')             ? -1      :  // (modifier)
-         (cOp=='m')             ? -2      :  // (auxiliary w arity 2)
-         (cOp=='I' || cOp=='V') ? 0       :  // (identity)
-                                  -10;       // (will not map)
+  return (cOp>='0' && cOp<='9')             ? cOp-'0' :  // (numbered argument)
+         (cOp=='M' || cOp=='U')             ? -1      :  // (modifier)
+         (cOp=='u')                         ? -2      :  // (auxiliary w arity 2)
+         (cOp=='I' || cOp=='C' || cOp=='V') ? 0       :  // (identity)
+                                              -10;       // (will not map)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -592,10 +592,17 @@ class KSet : public DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> {
     insert( end(), ks1.begin(), ks1.end() );
     insert( end(), ks2.begin(), ks2.end() );
   }
-  KSet ( const KSet& ks, int iProj, const KSet& ksNoProject = ksDummy ) : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> ( ) {
-    reserve( ks.size() + ksNoProject.size() );
-    for( const K& k : ks ) if( k.project(iProj)!=K::kBot ) push_back( k.project(iProj) );
+  KSet ( const KSet& ksToProject, int iProj, const KSet& ksNoProject = ksDummy ) : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> ( ) {
+    // If swap op is banked, swap participants...
+    if     ( eBankedUnaryTransforms==EVar("O") and iProj==-1 ) iProj=-2;
+    else if( eBankedUnaryTransforms==EVar("O") and iProj==-2 ) iProj=-1;
+    // If projection source swap op is banked, swap participant label...
+    if     ( ksToProject.eBankedUnaryTransforms==EVar("O") and iProj==1 ) iProj=2;
+    else if( ksToProject.eBankedUnaryTransforms==EVar("O") and iProj==2 ) iProj=1;
+    reserve( ksToProject.size() + ksNoProject.size() );
+    for( const K& k : ksToProject ) if( k.project(iProj)!=K::kBot ) push_back( k.project(iProj) );
     insert( end(), ksNoProject.begin(), ksNoProject.end() );
+    if( 0==iProj ) eBankedUnaryTransforms = ksToProject.eBankedUnaryTransforms;
   }
   // Constructor for nolos...
   KSet ( const KSet& ks, int iProj, bool bUp, EVar e, const vector<int>& viCarriers, const StoreState& ss, const KSet& ksNoProject );
@@ -841,11 +848,13 @@ const Sign StoreState::aTop( KSet(K::kTop), tTop, S_B );
 ////////////////////////////////////////////////////////////////////////////////
 
 KSet::KSet ( const KSet& ksToProject, int iProj, bool bUp, EVar e, const vector<int>& viCarrierIndices, const StoreState& ss, const KSet& ksNoProject ) {
-//cout<<"tomake "<<ks<<" iProj="<<iProj<<" bup="<<bUp<<" e="<<e<<" "<<viCarrierIndices.size()<<" "<<ss<<" "<<ksNoProject<<endl;
+//cout<<"tomake "<<ksToProject<<" with eBanked="<<ksToProject.eBankedUnaryTransforms<<" iProj="<<iProj<<" bup="<<bUp<<" e="<<e<<" "<<viCarrierIndices.size()<<" "<<ss<<" "<<ksNoProject<<endl;
   // Determine number of carrier contexts...
   int nCarrierContexts=0;  for( int iCarrierIndex : viCarrierIndices ) if( iCarrierIndex>=0 ) nCarrierContexts += ss.at(iCarrierIndex).getKSet().size();
-  // Reserve size to avoid costly reallocation.
+  // Reserve size to avoid costly reallocation...
   reserve( ksToProject.size() + nCarrierContexts + ksNoProject.size() );
+  // Propagate banked unary transforms...
+  if( 0==iProj ) eBankedUnaryTransforms = ksToProject.eBankedUnaryTransforms;
 
 //cout<<"made kTo="<<ksToProject<<" with bank="<<ksToProject.eBankedUnaryTransforms<<" iProj="<<iProj<<" bUp="<<bUp<<" e="<<e<<" ksNo="<<ksNoProject;
 

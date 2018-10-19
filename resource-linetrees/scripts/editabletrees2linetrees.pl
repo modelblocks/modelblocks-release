@@ -46,6 +46,10 @@ while(<STDIN>){
     ## Get rid of extra parentheses around the tree
     $tree =~ s/^\s*\((?:TOP)?\s*\((.*)\s*\)\s*\)\s*$/(\1)/;
 
+    ## Get rid of extra spaces
+    $tree =~ s/ *\)/\)/g;
+    $tree =~ s/ +/ /g;
+
     print "$tree\n";
     $tree = "";
   }

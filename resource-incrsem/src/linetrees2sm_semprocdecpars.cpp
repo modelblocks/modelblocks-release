@@ -129,8 +129,9 @@ T getType ( const L& l ) {
 O getOp ( const L& l, const L& lSibling, const L& lParent ) {
   if( string::npos != l.find("-lN") or string::npos != l.find("-lG") or string::npos != l.find("-lH") or string::npos != l.find("-lR") ) return 'N';
   if( string::npos != l.find("-lV") ) return 'V';
-  if( string::npos != lSibling.find("-lU") ) return ( getType(l).getArity()==1 ) ? 'M' : 'm';
-  if( string::npos == l.find("-l")  or string::npos != l.find("-lS") or string::npos != l.find("-lC") or string::npos != l.find("-lU") ) return 'I';
+  if( string::npos != lSibling.find("-lU") ) return ( getType(l).getArity()==1 ) ? 'U' : 'u';
+  if( string::npos != l.find("-lC") ) return 'C';
+  if( string::npos == l.find("-l")  or string::npos != l.find("-lS") or string::npos != l.find("-lU") ) return 'I';
   if( string::npos != l.find("-lM") or string::npos != l.find("-lQ") ) return 'M';
   if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos != lParent.find("\\") ) return '0'+getType( string(lParent,lParent.find("\\")+1).c_str() ).getArity();
   if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos == lParent.find('\\') ) return '0'+getType( lSibling ).getArity();
@@ -143,6 +144,7 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
 string getUnaryOp ( const Tree<LVU>& tr ) {
 //if( FEATCONFIG & 16 ) return 'N';
   if( string::npos != L(tr.front()).find("-lV") ) return "V";
+  if( string::npos != L(tr.front()).find("-lQ") ) return "O";
   N n =  T(L(tr).c_str()).getLastNonlocal();
   if( n == N_NONE ) return "";
   if( (tr.front().size()==0 || tr.front().front().size()==0) && n == N("-rN") ) return "0";

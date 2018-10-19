@@ -56,40 +56,34 @@ typedef Delimited<T> B;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class BeamElement : public DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX> {
+class HiddState : public DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX> {
 public:
-  BeamElement ( )                                                                 : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>()             { }
-  BeamElement ( const Sign& a, F f, EVar e, K k, JResponse jr, const StoreState& q ) : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>(a,f,e,k,jr,q) { }
-};
-const BeamElement beStableDummy; //equivalent to "beStableDummy = BeamElement()"
-
-//typedef pair<double,const BeamElement&> ProbBack;
-class ProbBack : public pair<double, const BeamElement&> {
- public :
-  ProbBack ( )                                  : pair<double, const BeamElement&> ( 0.0, beStableDummy ) { }
-  ProbBack ( double d , const BeamElement& be ) : pair<double, const BeamElement&> ( d,   be            ) { }
+  HiddState ( )                                                                    : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>()             { }
+  HiddState ( const Sign& a, F f, EVar e, K k, JResponse jr, const StoreState& q ) : DelimitedSext<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psX>(a,f,e,k,jr,q) { }
 };
 
-class Trellis : public vector<Beam<ProbBack,BeamElement>> {
+////////////////////////////////////////////////////////////////////////////////
+
+class Trellis : public vector<Beam<HiddState>> {
   // private:
-  //  DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX> lbe;
+  //  DelimitedList<psX,pair<HiddState,ProbBack>,psLine,psX> lbe;
 public:
-  Trellis ( ) : vector<Beam<ProbBack,BeamElement>>() { reserve(100); }
-  Beam<ProbBack,BeamElement>& operator[] ( uint i ) { if ( i==size() ) emplace_back(BEAM_WIDTH); return vector<Beam<ProbBack,BeamElement>>::operator[](i); }
-  void setMostLikelySequence ( DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX>& lbe ) {
+  Trellis ( ) : vector<Beam<HiddState>>() { reserve(100); }
+  Beam<HiddState>& operator[] ( uint i ) { if ( i==size() ) emplace_back(BEAM_WIDTH); return vector<Beam<HiddState>>::operator[](i); }
+  void setMostLikelySequence ( DelimitedList<psX,BeamElement<HiddState>,psLine,psX>& lbe ) {
     static StoreState ssLongFail( StoreState(), 1, 0, EVar::eNil, EVar::eNil, 'N', 'I', "FAIL", "FAIL", Sign(ksBot,"FAIL",0), Sign(ksBot,"FAIL",0) );
-    lbe.clear();  if( back().size()>0 ) lbe.push_front( pair<BeamElement,ProbBack>( back().begin()->second, back().begin()->first ) );
-    if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( at(t).get(lbe.front().second.second) );
-    if( lbe.size()>0 ) lbe.emplace_back( BeamElement(), ProbBack(0.0,BeamElement()) );
+    lbe.clear(); if( back().size()>0 ) lbe.push_front( *back().begin() );
+    if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( lbe.front().getBack() );
+    if( lbe.size()>0 ) lbe.emplace_back( BeamElement<HiddState>() );
     // If parse fails...
     if( lbe.size()==0 ) {
       // Print a right branching structure...
-      for( int t=size()-2; t>=0; t-- ) lbe.push_front( pair<BeamElement,ProbBack>( BeamElement( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), ssLongFail ), ProbBack(0.0,BeamElement()) ) );
-      lbe.front().first = BeamElement( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(0,EVar::eNil,'N','I'), ssLongFail );                    // front: fork no-join
-      lbe.back( ).first = BeamElement( Sign(ksBot,"FAIL",0), 0, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), StoreState() );                  // back: join no-fork
-      if( size()==2 ) lbe.front().first = BeamElement( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), StoreState() );  // unary case: fork and join
+      for( int t=size()-2; t>=0; t-- ) lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), ssLongFail ) ) );
+      lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(0,EVar::eNil,'N','I'), ssLongFail ) );                    // front: fork no-join
+      lbe.back( ) = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 0, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), StoreState() ) );                  // back: join no-fork
+      if( size()==2 ) lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), StoreState() ) );  // unary case: fork and join
       // Add dummy element (not sure why this is needed)...
-      lbe.push_front( pair<BeamElement,ProbBack>( BeamElement( Sign(ksBot,"FAIL",0), 0, EVar::eNil, K::kBot, JResponse(0,EVar::eNil,'N','I'), StoreState() ), ProbBack(0.0,BeamElement()) ) );
+      lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 0, EVar::eNil, K::kBot, JResponse(0,EVar::eNil,'N','I'), StoreState() ) ) );
       cerr<<"parse failed"<<endl;
     }
     // For each element of MLE after first dummy element...
@@ -97,9 +91,9 @@ public:
       // Calc surprisal as diff in exp of beam totals of successive elements, minus constant...
       double probPrevTot = 0.0;
       double probCurrTot = 0.0;
-      for( auto& beP : at(u-1) ) probPrevTot += exp( beP.first.first - at(u-1).begin()->first.first );
-      for( auto& beC : at(u  ) ) probCurrTot += exp( beC.first.first - at(u-1).begin()->first.first ); 
-      be.second.first = log2(probPrevTot) - log2(probCurrTot);     // store surp into prob field of beam item
+      for( auto& beP : at(u-1) ) probPrevTot += exp( beP.getProb() - at(u-1).begin()->getProb() );
+      for( auto& beC : at(u  ) ) probCurrTot += exp( beC.getProb() - at(u-1).begin()->getProb() ); 
+      be.setProb() = log2(probPrevTot) - log2(probCurrTot);     // store surp into prob field of beam item
     }
     //    return lbe;
   }
@@ -198,7 +192,7 @@ int main ( int nArgs, char* argv[] ) {
 
   cerr<<"Models ready."<<endl;
 
-  list<DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX>> MLSs;
+  list<DelimitedList<psX,BeamElement<HiddState>,psLine,psX>> MLSs;
   list<DelimitedList<psX,ObsWord,psSpace,psX>> sents;
   mutex mutexMLSList;
   vector<thread> vtWorkers;  vtWorkers.reserve( numThreads );
@@ -220,7 +214,7 @@ int main ( int nArgs, char* argv[] ) {
 
       // Allocate space in beams to avoid reallocation...
       // Create initial beam element...
-      beams[0].tryAdd( BeamElement(), ProbBack(0.0,BeamElement()) );
+      beams[0].tryAdd( HiddState(), ProbBack<HiddState>() );
 
       mutexMLSList.lock( );
       if( not ( cin && EOF!=cin.peek() ) ) { mutexMLSList.unlock(); break; }
@@ -252,10 +246,10 @@ int main ( int nArgs, char* argv[] ) {
         // For each hypothesized storestate at previous time step...
         uint i=0; for( auto& be_tdec1 : beams[t-1] ) {
           //         if( i++%numThreads==numt ){
-          double            lgpr_tdec1 = be_tdec1.first.first;      // prob of prev storestate
-          const StoreState& q_tdec1    = be_tdec1.second.sixth();  // prev storestate
+          double            lgpr_tdec1 = be_tdec1.getProb(); // prob of prev storestate
+          const StoreState& q_tdec1    = be_tdec1.getHidd().sixth();  // prev storestate
 
-          if( VERBOSE>1 ) cout << "  from (" << be_tdec1.second << ")" << endl;
+          if( VERBOSE>1 ) cout << "  from (" << be_tdec1.getHidd() << ")" << endl;
 
           // Calc distrib over response for each fork predictor...
           arma::vec flogresponses = arma::zeros( matF.n_rows );
@@ -279,7 +273,7 @@ int main ( int nArgs, char* argv[] ) {
           // For each possible lemma (context + label + prob) for preterminal of current word...
           if( lexW.end() == lexW.find(unkWord(w_t.getString().c_str())) ) cerr<<"ERROR: unable to find unk form: "<<unkWord(w_t.getString().c_str())<<endl;
           for ( auto& ektpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW.find(w_t)->second : lexW.find(unkWord(w_t.getString().c_str()))->second ) {
-            if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(ektpr_p_t.second) > beams[t].rbegin()->first.first ) {
+            if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(ektpr_p_t.second) > beams[t].rbegin()->getProb() ) {
               EVar  e_p_t       = ektpr_p_t.first.first();
               K     k_p_t       = (FEATCONFIG & 8 && ektpr_p_t.first.second().getString()[2]!='y') ? K::kBot : ektpr_p_t.first.second();   // context of current preterminal
               T     t_p_t       = ektpr_p_t.first.third();                               // label of current preterminal
@@ -297,7 +291,7 @@ int main ( int nArgs, char* argv[] ) {
                 if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
                   tpLastReport = chrono::high_resolution_clock::now();
                   lock_guard<mutex> guard( mutexMLSList );
-                  cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.second << " PRED " << ektpr_p_t << endl;
+                  cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << endl;
                 }
 
                 // If preterminal prob is nonzero...
@@ -332,7 +326,7 @@ int main ( int nArgs, char* argv[] ) {
 
                   // For each possible no-join or join decision, and operator decisions...
                   for( JResponse jresponse; jresponse<JResponse::getDomain().getSize(); ++jresponse ) {
-                    if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(jresponses[jresponse.toInt()]/jnorm) > beams[t].rbegin()->first.first ) {
+                    if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(jresponses[jresponse.toInt()]/jnorm) > beams[t].rbegin()->getProb() ) {
                       J    j   = jresponse.getJoin();
                       EVar e   = jresponse.getE();
                       O    opL = jresponse.getLOp();
@@ -346,7 +340,7 @@ int main ( int nArgs, char* argv[] ) {
                       if ( VERBOSE>1 ) cout << "         A " << apredictor << "..." << endl;
                       if ( modA.end()!=modA.find(apredictor) )
                         for ( auto& tpA : modA.find(apredictor)->second ) {
-                          if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) > beams[t].rbegin()->first.first ) {
+                          if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) > beams[t].rbegin()->getProb() ) {
 
                             if ( VERBOSE>1 ) cout << "         A " << apredictor << " : " << tpA.first << " = " << tpA.second << endl;
 
@@ -357,19 +351,19 @@ int main ( int nArgs, char* argv[] ) {
                               for ( auto& tpB : modB.find(bpredictor)->second ) {
                                 if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << tpB.first << " = " << tpB.second << endl;
                                 //                            lock_guard<mutex> guard( mutexBeam );
-                                if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second) > beams[t].rbegin()->first.first ) {
+                                if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second) > beams[t].rbegin()->getProb() ) {
 
                                   if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
                                     tpLastReport = chrono::high_resolution_clock::now();
                                     lock_guard<mutex> guard( mutexMLSList );
-                                    cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.second << " PRED " << ektpr_p_t << " JRESP " << jresponse << " A " << tpA.first << " B " << tpB.first << endl;
+                                    cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << " JRESP " << jresponse << " A " << tpA.first << " B " << tpB.first << endl;
                                   }
 
                                   // Calculate probability and storestate and add to beam...
                                   StoreState ss( q_tdec1, f, j, e_p_t, e, opL, opR, tpA.first, tpB.first, aPretrm, aLchild );
                                   if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
-                                    beams[t].tryAdd( BeamElement( aPretrm, f,e_p_t,k_p_t, jresponse, ss ), ProbBack( lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second), be_tdec1.second ) );
-                                    if( VERBOSE>1 ) cout << "                send (" << be_tdec1.second << ") to (" << ss << ") with "
+                                    beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss ), ProbBack<HiddState>( lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second), be_tdec1 ) );
+                                    if( VERBOSE>1 ) cout << "                send (" << be_tdec1.getHidd() << ") to (" << ss << ") with "
                                       << (lgpr_tdec1 + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second)) << endl;
                                   }
                                 }
@@ -393,7 +387,7 @@ int main ( int nArgs, char* argv[] ) {
       if ( numThreads == 1 ) cerr << endl;
       if ( VERBOSE ) cout << "MLS" << endl;
 
-      //DelimitedList<psX,pair<BeamElement,ProbBack>,psLine,psX> mls;
+      //DelimitedList<psX,pair<HiddState,ProbBack>,psLine,psX> mls;
       { lock_guard<mutex> guard( mutexMLSList );
         if( numThreads > 1 ) cerr << "Finished line " << currline << " (" << beams[t].size() << ")..." << endl;
         beams.setMostLikelySequence( mls );
@@ -422,7 +416,7 @@ int main ( int nArgs, char* argv[] ) {
         while( MLSs.size()>0 && MLSs.front().size()>0 ) {
           auto& mls = MLSs.front( );
           int u=1; auto ibe=next(mls.begin()); auto iw=sents.front().begin(); for( ; ibe!=mls.end() && iw!=sents.front().end(); ibe++, iw++, u++ ) {
-            cout << *iw << " " << ibe->first << " " << ibe->second.first;
+            cout << *iw << " " << ibe->getHidd() << " " << ibe->getProb();
             cout << endl;
           }
           MLSs.pop_front();

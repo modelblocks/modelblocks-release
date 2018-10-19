@@ -32,6 +32,7 @@ using namespace arma;
 bool STORESTATE_TYPE = true;
 bool STORESTATE_CHATTY = true;
 int FEATCONFIG = 0;
+bool INTERSENTENTIAL = false;
 #include <StoreStateCoref.hpp> //ej change for coref
 #include <BerkUnkWord.hpp>
 #include <Tree.hpp>
@@ -355,7 +356,28 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     aPretrm         = Sign( k, getType(l), S_A );
 
     // coref stuff
-    const KSet& ksAnt = (annot != "") ? annot2kset[annot] : ksBot ; //update annot2kset map with current k. 
+    //
+    
+    //
+    bool validIntra = false;
+    std::string annotSentIdx = annot.substr(0,2); //substr throws outofbound for empty str, but shouldnt be empty since checked above
+    cerr << "extracted annot sentnum: " << annotSentIdx << " from full annot: " << annot << endl;
+    if (annotSentIdx == std::to_string(sentnum)) validIntra = true;
+    if (INTERSENTENTIAL == true) validIntra = true;
+    const KSet& ksAnt = (validIntra == true) ? annot2kset[annot] : ksBot;
+    //ksAnt = (annot != "") ? annot2kset[annot] : ksBot ; //update annot2kset map with current k. 
+    //const KSet& ksAnt; //ERROR can't declare const reference and then assign/change later...
+    //if (annot == "") {
+    //  const KSet& ksAnt = ksBot;
+    //} else {
+    //  if (INTERSENTENTIAL == true) {
+    //    const KSet& ksAnt = annot2kset[annot];
+    //  } else { 
+    //  //test for intrasentential (annot sentnum == current sentnum) and add annot if it is
+    //  }
+   // }
+
+    
     //const KSet& ksAnt = (annot != "") ? annot2kset[annot] : KSet(); //update annot2kset map with current k. 
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
     if (annot != "")  {

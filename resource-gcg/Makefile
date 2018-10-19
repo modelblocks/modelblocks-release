@@ -204,7 +204,7 @@ endef
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
 .PRECIOUS: %.cuegraphs
 %.cuegraphs:  %.linetrees  $(GCG-SCRIPTS)/linetrees2cuegraphs.d  $(GCG-SCRIPTS)/linetrees2cuegraphs.py
-	cat $<  |  python $(word 3,$^)  >  $@
+	cat $<  |  sed 's/\^g//g' | python $(word 3,$^)  >  $@
 #%.cuegraphs:  %.protographs  $(GCG-SCRIPTS)/protographs2cuegraphs.pl
 #	cat $<  |  perl -p $(word 2,$^)  >  $@
 

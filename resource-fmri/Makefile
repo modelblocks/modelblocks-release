@@ -161,8 +161,8 @@ endef
 %.hrf.itemmeasures: %.t.itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py
 	python $(word 2, $^) $(word 1, $^) > $@
 
-%.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py $$(word 1, $$(subst ., , %)).glove.linemeasures
-	cat $(word 1, $^) | python $(word 2, $^) | paste -d' ' - <(cut -d' ' -f 2- $(word 3, $^)) > $@
+%.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py
+	cat $(word 1, $^) | python $(word 2, $^) > $@
 
 .PRECIOUS: %.hrf.core.evmeasures
 %.hrf.core.evmeasures : %.hrf.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \

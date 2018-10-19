@@ -144,6 +144,9 @@ PASSAGES-SCRIPTS := $(RESOURCE-PASSAGES)/scripts
 RESOURCE-ONTONOTES := $(abspath $(MBDIR)/resource-ontonotes)
 ONTONOTES-SCRIPTS := $(RESOURCE-ONTONOTES)/scripts
 
+RESOURCE-REGRESSION := $(abspath $(MBDIR)/resource-regression)
+REGRESSION-SCRIPTS := $(RESOURCE-REGRESSION)/scripts
+
 RESOURCE-RHACKS := $(abspath $(MBDIR)/resource-rhacks)
 RHACKS-SCRIPTS := $(RESOURCE-RHACKS)/scripts
 
@@ -190,10 +193,6 @@ XLSX2CSV-SCRIPTS := $(RESOURCE-XLSX2CSV)/scripts
 BIN      := bin
 GENMODEL := genmodel
 
-define TEST =
-this is a test
-endef
-
 define INCLUDE-ALL :=
 include $(RESOURCE-TOKENIZER)/Makefile
 include $(RESOURCE-LTREES)/Makefile
@@ -208,6 +207,7 @@ include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
 include $(RESOURCE-RT)/Makefile
+include $(RESOURCE-REGRESSION)/Makefile
 include $(RESOURCE-DTSR)/Makefile
 include $(RESOURCE-FEDECOG)/Makefile
 include $(RESOURCE-FMRI)/Makefile
