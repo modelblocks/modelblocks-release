@@ -315,6 +315,117 @@ const EVar EVar::eNil("");
 
 ////////////////////////////////////////////////////////////////////////////////
 
+class NPredictor {
+  /*
+  Boolean predictors for antecedent model.  Generally KxK pairs or TxT pairs between anaphor and candidate antecedent. 
+  */
+  private:
+    uint id;
+
+    static uint                nextid;
+    static map<pair<K,K>,uint> mkki; 
+    //static map<pair<T,T>,uint> mtti;
+    static map<uint,K>         miantk;
+    static map<uint,K>         miancestork;
+    //static map<unit,T>         miantt;
+    //static map<uint,T>         miancestort;
+    //static mapsfromidtootherstuff;
+    //
+  public:
+    //Constructors
+    NPredictor ( ) : id(0) { }
+
+    NPredictor (K antK, K ancestorK) {
+      const auto& it = mkki.find(pair<K,K>(antK,ancestorK));
+      if (it != mkki.end() ) id = it->second;
+      else { id = nextid++; miantk[id] = antK; miancestork[id] = ancestorK; mkki[pair<K,K>(antK,ancestorK)] = id; }
+    }
+  //NPredictor ("distance", int) {
+        //TODO - can't use existing XPredictor template, whose values are binary for categories
+        //
+  //Accessor Methods
+  uint toInt() const { return id; }
+  operator uint() const { return id; }
+  K getAncstrK()  const { return miancestork[id]; }
+  K getAntcdntK() const { return miantk[id]; } //ej change for coref
+  static uint getDomainSize() { return nextid; }
+
+  // Input / output methods...
+  friend pair<istream&,NPredictor&> operator>> ( istream& is, NPredictor& t ) {
+    return pair<istream&,NPredictor&>(is,t);
+  }
+  friend istream& operator>> ( pair<istream&,NPredictor&> ist, const char* psDelim ) {
+    if ( ist.first.peek()==psDelim[0] ) { auto& o =  ist.first >> psDelim;  ist.second = NPredictor();  return o; }
+    Delimited<K> kAntecedent, kAncestor;
+    auto& o = ist.first >> kAntecedent >> "&" >> kAncestor >> psDelim;  
+    ist.second = NPredictor(kAntecedent,kAncestor);
+    return o; 
+  }
+  friend bool operator>> ( pair<istream&,NPredictor&> ist, const vector<const char*>& vpsDelim ) {
+    Delimited<K> kAntecedent, kAncestor;
+    auto o = ist.first >> kAntecedent >> "&" >> kAncestor >> vpsDelim;  
+    ist.second = NPredictor(kAntecedent,kAncestor);  
+    return o; 
+  }
+  friend ostream& operator<< ( ostream& os, const NPredictor& t ) {
+    return os << miantk[t.id] << "&" << miancestork[t.id]; 
+  }
+  static bool exists ( K kAntecedent, K kAncestor )      { return( mkki.end()!=mkki.find(pair<K,K>(kAntecedent,kAncestor)) ); }
+};
+uint                NPredictor::nextid = 1;
+map<pair<K,K>,uint> NPredictor::mkki; 
+//map<pair<T,T>,uint> NPredictor::mtti;
+map<uint,K>         NPredictor::miantk;
+map<uint,K>         NPredictor::miancestork;
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//TODO adapt JResponse definition for NResponse. why do we need this for variable that represents 0,1? why not use bool?. William says use D depth type
+DiscreteDomain<int> domNResponse;
+//typedef Delimited<int>  NResponse;  // 
+typedef DiscreteDomainRV<int,domNResponse> NResponse;
+/*
+class NResponse : public DiscreteDomainRV<int,domNResponse> {
+ private:
+  static map<NResponse,N>                mnrn; //not sure even this makes sense since NResponses are 0,1 - won't map to specific NPredictor
+  //static map<NResponse,EVar>             mjre;
+  //static map<NResponse,O>                mjroL;
+  //static map<NResponse,O>                mjroR;
+  //static map<quad<N,EVar,O,O>,NResponse> mjeoojr;
+ 
+  void calcDetermModels ( const char* ps ) {
+    if( mnrn.end() ==mnrn.find(*this)  ) mnrn[*this]=ps[1]-'0';
+    EVar e  = string(ps+3,uint(strchr(ps+3,'&')-(ps+3))).c_str();  //ps[3];
+    O    oL = ps[4+e.getString().size()];
+    O    oR = ps[6+e.getString().size()];
+    if( mjre.end() ==mjre.find(*this)  ) mjre[*this]=e;  //ps[3];
+    if( mjroL.end()==mjroL.find(*this) ) mjroL[*this]=oL;  //ps[5];
+    if( mjroR.end()==mjroR.find(*this) ) mjroR[*this]=oR;  //ps[7];
+    if( mjeoojr.end()==mjeoojr.find(quad<N,EVar,O,O>(ps[1]-'0',e,oL,oR)) ) mjeoojr[quad<N,EVar,O,O>(ps[1]-'0',e,oL,oR)]=*this;
+  }
+  
+ public:
+  NResponse ( )                         : DiscreteDomainRV<int,domNResponse> ( )    { }
+  //NResponse ( const char* ps )          : DiscreteDomainRV<int,domNResponse> ( ps ) { calcDetermModels(ps); }
+  //NResponse ( N j, EVar e, O oL, O oR ) : DiscreteDomainRV<int,domNResponse> ( )    {
+  //  *this = ( mjeoojr.end()==mjeoojr.find(quad<N,EVar,O,O>(j,e,oL,oR)) ) ? ("j" + to_string(j) + "&" + e.getString() + "&" + string(1,oL) + "&" + string(1,oR)).c_str()
+  //                                                                       : mjeoojr[quad<N,EVar,O,O>(j,e,oL,oR)];
+  //}
+  N    getAnte ( ) const { return mnrn[*this]; }
+  //EVar getE    ( ) const { return mjre[*this]; }
+  //O    getLOp  ( ) const { return mjroL[*this]; }
+  //O    getROp  ( ) const { return mjroR[*this]; }
+  //static bool exists ( N j, EVar e, O oL, O oR ) { return( mjeoojr.end()!=mjeoojr.find(quad<N,EVar,O,O>(j,e,oL,oR)) ); }
+};
+map<NResponse,N>                NResponse::mnrn;
+//map<NResponse,EVar>             NResponse::mjre;
+//map<NResponse,O>                NResponse::mjroL;
+//map<NResponse,O>                NResponse::mjroR;
+//map<quad<N,EVar,O,O>,NResponse> NResponse::mjeoojr;
+*/
+
+////////////////////////////////////////////////////////////////////////////////
 class FPredictor {
  private:
 
@@ -867,6 +978,23 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     if( FEATCONFIG & 1 ) return  BPredictor( 0, 0, 0, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, tParent, aLchild.getType() );
     return          BPredictor( getDepth()+f-j, f, j, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, tParent, aLchild.getType() );
   }
+
+  list<NPredictor>& calcNPredictors (list<NPredictor>& npreds, const Sign& candidate ) {
+    //cerr << "entered calcNPredictors..." << endl;
+    //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
+    //TODO add category x category feat - just basic label, no semantics. actually, add this to P model.  P category should be informed by which antecedent was chosen here.
+    //cout << "calcNPredictors received candidate: " << candidate << endl;
+    //cout << "candidate kset: " << candidate.getKSet() << endl;
+    const KSet& ksB = at(size()-1).getKSet(); //contexts of lowest b (bdbar)
+    //cout << "ksb: " << ksB << endl;
+    for (auto& antk:candidate.getKSet()){ //add k x k feats
+      for (auto& currk:ksB) {
+        npreds.emplace_back(antk, currk);
+      }
+    }
+    npreds.emplace_front();
+    return npreds;
+  }
 };
 const Sign StoreState::aTop( KSet(K::kTop), tTop, S_B );
 
@@ -980,39 +1108,22 @@ W unkWord ( const char* ps ) {
                                                              W("!unk!");
 }
 
-class NPredictor {
-  /*
-  Boolean predictors for antecedent model.  Generally KxK pairs or TxT pairs between anaphor and candidate antecedent. 
-  */
-  private:
-    uint id;
+////////////////////////////////////////////////////////////////////////////////
 
-  public:
-    static uint                nextid;
-    static map<pair<K,K>,uint> mkki; 
-    static map<pair<T,T>,uint> mtti;
-    static map<uint,K>         miantk;
-    static map<uint,K>         micurrk;
-    static map<unit,T>         miantt;
-    static map<uint,T>         micurrt;
-    //static mapsfromidtootherstuff;
+char psSpaceF[]       = " f";
+char psAmpersand[]    = "&";
 
-    //Constructors
-    NPredictor ( ) : id(0) { }
+class HiddState : public DelimitedSept<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Delimited<int>,psX> {
+public:
+  HiddState ( )                                                                    : DelimitedSept<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Delimited<int>,psX>()             { }
+  HiddState ( const Sign& a, F f, EVar e, K k, JResponse jr, const StoreState& q , int i=0 ) : DelimitedSept<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Delimited<int>,psX>(a,f,e,k,jr,q,i) { }
+  const Sign& getPrtrm ()     { return first(); }
+  F getF ()                   { return second(); }
+  EVar getForkE ()            { return third(); }
+  K getForkK ()               { return fourth(); }
+  const JResponse& getJResp() { return fifth(); }
+  const StoreState& getStoreState() { return sixth(); }
+};
 
-    NPredictor (K antK, K currK) {
-      const auto& it = mkki.find(pair<K,K>(antK,currK));
-      if (it != mkki.end() ) id = it->second;
-      else { id = nextid++; miantk[id] = antK; micurrk[id] = currK; mkki[pair<K,K>(antK,currK)] = id; }
-    }
-    /*
-    FPredictor ( D d, T t ) {
-      const auto& it = mdti.find(pair<D,T>(d,t));
-      if ( it != mdti.end() ) id = it->second;
-      else { id = nextid++;  mid[id] = d;  mit[id] = t;  mdti[pair<D,T>(d,t)] = id; }
-      //cout<<"did id "<<id<<"/"<<nextid<<" as "<<*this<<endl;
-    }
-    */
-    //NPredictor ("distance", int) {
-        //TODO
-    }
+////////////////////////////////////////////////////////////////////////////////
+

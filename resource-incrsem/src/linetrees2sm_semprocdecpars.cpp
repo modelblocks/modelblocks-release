@@ -34,6 +34,7 @@ bool STORESTATE_CHATTY = true;
 int FEATCONFIG = 0;
 bool INTERSENTENTIAL = false;
 #include <StoreState.hpp>
+#include <Beam.hpp>
 #include <BerkUnkWord.hpp>
 #include <Tree.hpp>
 #include <ZeroPad.hpp>
@@ -97,7 +98,7 @@ map<quad<EVar,K,T,W>,arma::vec> mektwvW;
 map<pair<vector<JPredictor>,JResponse>,arma::mat> mvjrm;
 map<pair<APredictor,T>,arma::mat> mapamA;
 map<pair<BPredictor,T>,arma::mat> mbpbmB;
-map<vector<NPredictor>,bool> mvnb; //Antecedent N model, where NPredictors are usually pair<K,K>, but can be others
+//map<vector<NPredictor>,bool> mvnb; //Antecedent N model, where NPredictors are usually pair<K,K>, but can be others
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -300,7 +301,7 @@ void setForwardMessages ( Tree<LVU>& tr, const arma::rowvec v ) {
 ////////////////////////////////////////////////////////////////////////////////
 
 //void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, int s=1, int d=0, E e='N', L l=L() ) {
-void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const int sentnum, map<string,KSet>& annot2kset, int& wordnum, int s=1, int d=0, string e="", L l=L() ) {
+void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<string,int>& annot2tdisc, vector<Sign>& antecedentCandidates, int& tDisc, const int sentnum, map<string,KSet>& annot2kset, int& wordnum, int s=1, int d=0, string e="", L l=L() ) {
   static F          f;
   static string     eF;
   static Sign       aPretrm;
@@ -330,8 +331,13 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     //cerr << "value of validIntra after annot vs sentnum check: " << validIntra << endl;
     if (INTERSENTENTIAL == true) validIntra = true;
     //cerr << "value of validIntra after global INTERSENTENTIAL check: " << validIntra << endl;
-    const KSet& ksAnt = (validIntra == true) ? annot2kset[annot] : ksBot;
+    const KSet& ksAnt = (validIntra == true) ? annot2kset[annot] : KSet(K::kTop);
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
+    //if (currentloc == "526") {
+    //  cout << "current location is 526" << endl;
+    //  cout << "current k is: " << k << endl;
+    //  cout << "current tdisc is : " << tDisc << endl;
+    //}
     if (annot != "")  {
       annot2kset[currentloc] = ksAnt;
       //cerr << "found antecedent " << ksAnt << " from link: " << annot << endl;
@@ -340,9 +346,11 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     //cerr << "adding k " << k << " to annot2kset at loc: " << currentloc << endl;
     //cerr << "current annot2kset: " << annot2kset << endl; //can't print annot2kset - check friend operator << override
     for (auto& ant : ksAnt) {
-      aPretrm.first().emplace_back(ant); //add antecedent ks to aPretrm
+      if (ksAnt != ksTop) aPretrm.first().emplace_back(ant); //add antecedent ks to aPretrm
     }
-    wordnum++; //increment word index at terminal
+    annot2tdisc[currentloc] = tDisc; //map current sent,word index to discourse word counter
+    wordnum++; //increment word index at terminal (sentence-level)
+    tDisc++; //increment discourse-level word index
 
     // Print preterminal / fork-phase predictors...
     DelimitedList<psX,FPredictor,psComma,psX> lfp;  
@@ -356,13 +364,59 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     cout << "note: P " << q.calcPretrmTypeCondition(f,e.c_str(),k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
     cout << "note: W " << e << " " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
 
-    //TODO defined linked list of antecedents - William will work on?
-    for (auto& candidate: candidates) {
-      DelimitedList<psX,NPredictor,psComma,psX> npreds;  
-      q.calcNPreds(npreds, candidate); //populate npreds with kxk pairs for q vs. candidate q. TODO write calcNPreds in StoreState. probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
-      cout << "N "; for (auto& npred : npreds) {if (&npred!=&npred.front() ) cout << ","; cout << npred << "=1";} << " : " << ((candidate.swindex() == annot) ? 1 : 0) << endl;  //TODO copy/paste stream operators for NPredictor class
+    //use list of pretrms as antecedents during training. don't use beamElements.
+    //cout << "tDisc: " << tDisc << endl;
+    //cout <<"antecedentCandidates.size(): " << antecedentCandidates.size() << endl;
+    for ( int i = tDisc; i > 0 ; i--) {
+      //cout << "entered tDisc for loop" << endl;
+      Sign candidate;
+      int isCoref = 0;
+      //cout << "i: " << i << endl;
+      //cout << "tdisc: " << tDisc << endl;
+      //cout << "annot value: " << annot << endl;
+      if (i < tDisc) {
+        candidate = antecedentCandidates[i-1]; 
+        //cout << "using candidate: " << candidate << endl;
       }
+      else {
+        candidate = Sign(KSet(K::kTop), "NONE", "/"); //null antecedent generated at first iteration, where i=tDisc. Sign consists of: kset, type (syncat), side (A/B)
+        //cout << "using empty Sign for candidate" << endl;
+        
+        if (annot == "") isCoref = 1; //null antecedent is correct choice when no annotation TODO fix logic for filtering intra/inter?
+        //cout << "no annotation and setting true for coreference with null antecedent" << endl;
+      }
+      //cout << "candidate: " << candidate << endl;
+      DelimitedList<psX,NPredictor,psComma,psX> npreds;  
+      q.calcNPredictors(npreds, candidate); //populate npreds with kxk pairs for q vs. candidate q. 
+      //cout << "generated npreds: " << npreds << endl;
+      
+      if ((i-1 == annot2tdisc[annot]) and (annot != "")) {
+        //cout << "i-1: " << i-1 << endl;
+        //cout << "annot2tdisc[annot]: " << annot2tdisc[annot] << endl;
+        //cout << "found matching annotation, setting coref to true" << endl;
+        isCoref = 1;
+      }
+
+      cout << "N "; 
+      for (auto& npred : npreds) {
+        if (&npred!=&npreds.front() ) cout << ","; 
+        cout << npred << "=1";
+      } 
+      cout << " : " << isCoref << endl; //i-1 because that's candidate index 
+      //needed to confirm linked was at end of target
+      /*
+      if (annot != "") {
+        cout << "annot: " << annot << endl; 
+        cout << "anot2tdisc[annot]: " << annot2tdisc[annot] << endl;
+        cout << "i: " << i << endl;
+        cout << "tdisc: " << tDisc << endl;
+        cout << "size of antecedent candidates: " << antecedentCandidates.size() << endl;
+      }
+      */
     }
+    //cout << "adding aPretrm: " << aPretrm << " to list of antecedentCandidates" << endl;
+    antecedentCandidates.emplace_back(aPretrm); //append current prtrm to candidate list for future coref decisions 
+    //cout << "new size of antecedentCandidates: " << antecedentCandidates.size() << endl;
 
     arma::vec& vF = mvfrv[ pair<vector<FPredictor>,FResponse>( vector<FPredictor>( lfp.begin(), lfp.end() ), FResponse(f,e.c_str(),k) ) ];
     arma::mat& mP = mpppmP[ pair<PPredictor,T>(q.calcPretrmTypeCondition(f,e.c_str(),k),aPretrm.getType()) ];
@@ -376,7 +430,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
 
   // At unary identity nonpreterminal...
   else if ( tr.size()==1 and getType(tr)==getType(tr.front()) ) {
-    calcContext( tr.front(), D, U, sentnum, annot2kset, wordnum, s, d, e, l );
+    calcContext( tr.front(), D, U, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, s, d, e, l );
   }
 
   // At unary nonpreterminal...
@@ -384,7 +438,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     //// cerr<<"#U"<<getType(tr)<<" "<<getType(tr.front())<<endl;
     //e = ( e!='N' ) ? e : getUnaryOp ( tr );
     e = e + getUnaryOp( tr );
-    calcContext ( tr.front(), D, (getType(tr)==getType(tr.front())) ? U : U * getG(getType(tr),getType(tr.front()),"-") * arma::kron(mIdent,vOnes), sentnum, annot2kset, wordnum, s, d, e, l );
+    calcContext ( tr.front(), D, (getType(tr)==getType(tr.front())) ? U : U * getG(getType(tr),getType(tr.front()),"-") * arma::kron(mIdent,vOnes), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, s, d, e, l );
 //cout<<"unary at "<<L(tr)<<endl<<mtttmG[trip<T,T,T>(getType(tr),getType(tr.front()),"-")]<<endl;
   }
 
@@ -393,7 +447,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     //// cerr<<"#B "<<getType(tr)<<" "<<getType(tr.front())<<" "<<getType(tr.back())<<endl;
 
     // Traverse left child...
-    calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, sentnum, annot2kset, wordnum, 0, d+s );
+    calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, 0, d+s );
 
     J j          = s;
     LeftChildSign aLchild ( q, f, eF.c_str(), aPretrm );
@@ -419,7 +473,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, const 
     q = StoreState ( q, f, j, eF.c_str(), e.c_str(), oL, oR, getType(l), getType(tr.back()), aPretrm, aLchild );
 
     // Traverse right child...
-    calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, sentnum, annot2kset, wordnum, 1, d );
+    calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, 1, d );
 //    calcContext ( tr.back(), arma::diagmat( tr.v() * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( vOnes /*tr.front().u()*/, mIdent ) ), 1, d );
 
     arma::mat& mJ = mvjrm [ pair<vector<JPredictor>,JResponse>( vector<JPredictor>( ljp.begin(), ljp.end() ), JResponse(j,e.c_str(),oL,oR) ) ];
@@ -482,8 +536,11 @@ int main ( int nArgs, char* argv[] ) {
   vFirstHot = arma::zeros( iMaxNums );  vFirstHot(0)=1.0;
 
   int linenum = 0;
-  int discourselinenum = 0;
+  int discourselinenum = 0; //increments on sentence in discourse
   map<string,KSet> annot2kset;
+  int tDisc = 0; //increments on word in discourse
+  vector<Sign> antecedentCandidates; 
+  map<string,int> annot2tdisc;
   while ( cin && EOF!=cin.peek() ) {
     linenum++;
     discourselinenum++;
@@ -494,12 +551,19 @@ int main ( int nArgs, char* argv[] ) {
       cin >> t.front() >> "\n";
       cout.flush();
       cout << "TREE " << linenum << ": " << t << "\n";
-      if ( t.front().size() > 0 and L(t.front().front()) == "!ARTICLE") {cerr<<"resetting discourse info..."<<endl;discourselinenum=0;annot2kset.clear();} 
+      if ( t.front().size() > 0 and L(t.front().front()) == "!ARTICLE") {
+        cerr<<"resetting discourse info..."<<endl;
+        discourselinenum=0;
+        annot2kset.clear();
+        tDisc=0;
+        antecedentCandidates.clear();
+        annot2tdisc.clear();
+      } 
       else {
         setBackwardMessages( t );
         setForwardMessages( t, vFirstHot.t() );
         int wordnum = 1;
-        if( t.front().size() > 0 ) calcContext( t, arma::diagmat(vFirstHot), mIdent, discourselinenum, annot2kset, wordnum );
+        if( t.front().size() > 0 ) calcContext( t, arma::diagmat(vFirstHot), mIdent, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum );
       }
     }
     else {cin.get();}
@@ -520,8 +584,6 @@ int main ( int nArgs, char* argv[] ) {
     cout << "A " << apam.first.first.first() << " " << apam.first.first.second() << " " << apam.first.first.third() << " " << apam.first.first.fourth() << " " << apam.first.first.fifth() << " " << apam.first.first.sixth().addNum(j) << " " << apam.first.first.seventh().addNum(k) << " : " << apam.first.second.addNum(i) << " = " << apam.second(i,j*iMaxNums+k) << endl;
   for( auto& bpbm : mbpbmB ) for( int i=0; i<iMaxNums; i++ ) for( int j=0; j<iMaxNums; j++ ) for( int k=0; k<iMaxNums; k++ ) if( bpbm.second(i,j*iMaxNums+k) != 0.0 )
     cout << "B " << bpbm.first.first.first() << " " << bpbm.first.first.second() << " " << bpbm.first.first.third() << " " << bpbm.first.first.fourth() << " " << bpbm.first.first.fifth() << " " << bpbm.first.first.sixth() << " " << bpbm.first.first.seventh().addNum(i) << " " << bpbm.first.first.eighth().addNum(j) << " : " << bpbm.first.second.addNum(k) << " = " << bpbm.second(i,j*iMaxNums+k) << endl;
-  for (auto& antInstance : mapAntInstances) {
-   // cout << "N " << antInstance[1] << "=1"; for (uint n=2; n<antInstance.size();n++) cout << "," << antInstance[n] << "=1"; count << " : " << antInstance[0] << endl; //Antecedent N model: antInstance has label as first element, at least one predictor at [1], followed by rest of predictors after //TODO just print out actually training data at "note" locations
-  }
 }
+
 

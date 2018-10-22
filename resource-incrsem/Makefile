@@ -229,6 +229,8 @@ endef
 ################################################################################
 
 ## pull apart predictor/responses for training...
+%.nmlrdecpars:  %semprocdecpars
+	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
 %.fmlrdecpars:  %semprocdecpars
 	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
 %.jmlrdecpars:  %semprocdecpars
@@ -246,18 +248,20 @@ endef
 .PRECIOUS: %_semprocmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e4_1e-6_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e-1_1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
-%_semprocmodel: $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_$$(suffix $$(basename $$(subst _,.,$$*)))_100_fmlrmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_$$(suffix $$(subst _,.,$$*))_100_jmlrmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_.pcptmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_.acptmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_.bcptmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_.wcptmodel
-	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
-	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
-	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
-	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
-	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
-	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
+%_semprocmodel: $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(basename $$(basename $$(subst _,.,$$*))))_100_nmlrmodel \
+ 								$$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(basename $$(subst _,.,$$*)))_100_fmlrmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(subst _,.,$$*))_100_jmlrmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.pcptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.acptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.bcptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.wcptmodel 
+	cat $(word 1,$^)  |  sed 's/^/N /'   >  $@
+	cat $(word 2,$^)  |  sed 's/^/F /'  >>  $@
+	cat $(word 3,$^)  |  sed 's/^/J /'  >>  $@
+	cat $(word 4,$^)  |  sed 's/^/P /'  >>  $@
+	cat $(word 5,$^)  |  sed 's/^/A /'  >>  $@
+	cat $(word 6,$^)  |  sed 's/^/B /'  >>  $@
+	cat $(word 7,$^)  |  sed 's/^/W /'  >>  $@
 
 .PRECIOUS: %_corefsemprocmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e4_1e-6_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
@@ -275,22 +279,23 @@ endef
 	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
 	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
 
-.PRECIOUS: %.semproctorchmodel
-%.semproctorchmodel:  %.-batchsize_100_fmlrtorchmodel  %.jmlrtorchmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
-	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
-	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
-	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
-	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
-	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
-	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
-#.PRECIOUS: %.synprocmodel
-#%.synprocmodel:  %.1e-1_100_fmlrmodel  %.1e-1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+#.PRECIOUS: %.semproctorchmodel
+#%.semproctorchmodel:  %.-batchsize_100_fmlrtorchmodel  %.jmlrtorchmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 #	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
 #	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
 #	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
 #	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
 #	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
 #	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
+#
+##.PRECIOUS: %.synprocmodel
+##%.synprocmodel:  %.1e-1_100_fmlrmodel  %.1e-1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+##	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
+##	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
+##	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
+##	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
+##	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
+##	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
 
 ### Get training and test data
 
