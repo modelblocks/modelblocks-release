@@ -194,11 +194,15 @@ int main ( int nArgs, char* argv[] ) {
   uint linenum = 1;
 
   if( OUTPUT_MEASURES ) cout << "word pos f j store totsurp" << endl;
-
+  
   // For each line in stdin...
   //  for ( int linenum=1; cin && EOF!=cin.peek(); linenum++ ) {
-  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&MLSs,&sents,&mutexMLSList,&linenum,numThreads,matN,matF,modP,lexW,matJ,modA,modB] (uint numt) {
+  //for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&MLSs,&sents,&mutexMLSList,&linenum,numThreads,matN,matF,modP,lexW,matJ,modA,modB] (uint numt) {
+  //TODO define articleMLSs, articles
+  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&articleMLSs,&articles,&mutexMLSList,&linenum,numThreads,matN,matF,modP,lexW,matJ,modA,modB] (uint numt) {
     auto tpLastReport = chrono::high_resolution_clock::now();
+    
+    
 
     while( true ) {
       Trellis                                beams;  // sequence of beams
@@ -209,21 +213,36 @@ int main ( int nArgs, char* argv[] ) {
       // Create initial beam element...
       beams[0].tryAdd( HiddState(), ProbBack<HiddState>() );
 
+      // Read in your worker thread's article in this lock block
       mutexMLSList.lock( );
       if( not ( cin && EOF!=cin.peek() ) ) { mutexMLSList.unlock(); break; }
-      // Read sentence...
-      uint currline = linenum++;
-      cin >> lwSent >> "\n";
-      cerr << "Reading sentence " << currline << ": " << lwSent << " ..." << endl;
-      // Add mls to list...
-      MLSs.emplace_back( );
-      auto& mls = MLSs.back();
-      sents.emplace_back( lwSent );
+
+      uint origline = linenum++; //TODO increment origline within thread to get currline since using list of sents now
+
+      articles.emplace_back(); 
+      auto& sents = articles.back();
+      articleMLSs.emplace_back();
+      auto& MLSs = articleMLSs.back();
+       
+      //loop over sentences in an article
+      while (cin.peek() != '!') {
+        // Read sentence...
+        uint currline = linenum++;
+        cin >> lwSent >> "\n";
+        cerr << "Reading sentence " << currline << ": " << lwSent << " ..." << endl;
+        sents.emplace_back( lwSent );
+      }
       mutexMLSList.unlock();
 
       if ( numThreads == 1 ) cerr << "#" << currline;
 
-      // For each word...
+      //TODO for loop over sentences
+
+      // Add mls to list...
+      MLSs.emplace_back( );
+      auto& mls = MLSs.back();
+
+      // For each word... //TODO start indentation
       for ( auto& w_t : lwSent ) {
 
         if ( numThreads == 1 ) cerr << " " << w_t;
