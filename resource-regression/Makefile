@@ -48,6 +48,26 @@ VPATH += $(RESOURCE-REGRESSION)
 empty:=
 space:= $(empty) $(empty)
 
+
+## apply predictor modifications: <data>.<predr>_<offset>_spilled.prdmeasures
+%_spilled.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/spilloverMetrics.py
+	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+%_spilled.resmeasures:  $$(basename %).resmeasures
+	ln -s $< $@
+
+## apply predictor modifications: <data>.<predr>_cumued.prdmeasures
+%_cumued.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/accumulateMetrics.py
+	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+%_cumued.resmeasures:  $$(basename %).resmeasures
+	ln -s $< $@
+
+## apply predictor modifications: <data>.<predr>_<offset>_futured.prdmeasures
+%_futured.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/futureMetrics.py
+	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+%_futured.resmeasures:  $$(basename %).resmeasures
+	ln -s $< $@
+
+
 ## apply consorship (e.g. remove end-of-sentence responses) (prdmeasures unaffected)
 %.prdmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/censor.py
 	ln -s $(word 2,$^) $@
