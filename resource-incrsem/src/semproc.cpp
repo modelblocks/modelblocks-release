@@ -198,7 +198,7 @@ int main ( int nArgs, char* argv[] ) {
   // For each line in stdin...
   //  for ( int linenum=1; cin && EOF!=cin.peek(); linenum++ ) {
   //for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&MLSs,&sents,&mutexMLSList,&linenum,numThreads,matN,matF,modP,lexW,matJ,modA,modB] (uint numt) {
-  list<list<DelimitedList<psX,ObsWord,psSpace,psX>>> articles; //list of list of sents
+  list<list<DelimitedList<psX,ObsWord,psSpace,psX>>> articles; //list of list of sents. each list of sents is an article.
   list<list<DelimitedList<psX,BeamElement<HiddState>,psLine,psX>>> articleMLSs; //list of MLSs
 
   for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&articleMLSs,&articles,&mutexMLSList,&linenum,numThreads,matN,matF,modP,lexW,matJ,modA,modB] (uint numt) {
@@ -213,7 +213,7 @@ int main ( int nArgs, char* argv[] ) {
       cerr << "Worker: " << numt << " attempting to emplace back of articles..." << endl;
       articles.emplace_back(); 
       cerr << "Worker: " << numt << " attempting to assign sents as last article..." << endl;
-      auto sents = articles.back(); //a specific article becomes the thread's sents
+      auto& sents = articles.back(); //a specific article becomes the thread's sents //returns reference
       cerr << "Worker: " << numt << " attempting to emplace back of articleMLSs..." << endl;
       articleMLSs.emplace_back();
       cerr << "Worker: " << numt << " attempting to assign MLSs as last articleMLS..." << endl;
@@ -242,33 +242,29 @@ int main ( int nArgs, char* argv[] ) {
         currline++;
 
         // Add mls to list...
-        { lock_guard<mutex> guard( mutexMLSList );  cerr << "Worker: " << numt << " attempting to emplace_back of MLSs..." << endl;}
         MLSs.emplace_back( ); //establish placeholder for mls  for this specific sentence
-        { lock_guard<mutex> guard( mutexMLSList ); cerr << "Worker: " << numt << " attempting to assign mls as back of MLSs..." << endl;}
         auto& mls = MLSs.back();
-        { lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " attempting to assign mls as back of MLSs..." << endl;}
 
         Trellis   beams;  // sequence of beams
         uint      t=0;    // time step
 
         // Allocate space in beams to avoid reallocation...
         // Create initial beam element...
-        //
         beams[0].tryAdd( HiddState(), ProbBack<HiddState>() );
+
+        { lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " testing access to articles: " << articles.size() << " articles present" << endl;}
+        { lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " testing access to sents: " << sents.size() << " sents found" << endl;}
+        { lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " testing access to lwSent: " << lwSent << endl;}
 
         // For each word... //start indentation
         for ( auto& w_t : lwSent ) {
-
-          { lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " testing access to articles: " << articles.size() << " articles present" << endl;}
-          { lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " testing access to sents: " << sents.size() << " sents found" << endl;}
-          { lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " testing access to lwSent: " << lwSent << endl;}
+          //access to articles.size() works here within word loop
           { lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " beginning word loop with word: " << w_t << endl;}
           //DelimitedList<psX,ObsWord,psSpace,psX> lwSent; // input list
           if ( numThreads == 1 ) cerr << " " << w_t;
           if ( VERBOSE ) cout << "WORD:" << w_t << endl;
 
           // Create beam for current time step...
-          { lock_guard<mutex> guard( mutexMLSList ); cerr << "Worker: " << numt << " attempting to clear beam..." << endl;}
           beams[++t].clear();
 
           //      mutex mutexBeam;
@@ -277,11 +273,9 @@ int main ( int nArgs, char* argv[] ) {
 
           // For each hypothesized storestate at previous time step...
           //uint i=0; for( auto& be_tdec1 : beams[t-1] ) {
-          { lock_guard<mutex> guard( mutexMLSList ); cerr << "Worker: " << numt << " entering be_tdec1 loop..." << endl;}
           for( const BeamElement<HiddState>& be_tdec1 : beams[t-1] ) { //beams[t-1] is a Beam<ProbBack,BeamElement>, so be_tdec1 is a beam item, which is a pair<ProbBack,BeamElement>. first.first is the prob in the probback, and second is the beamelement, which is a sextuple of <sign, f, e, k, j, q>
             //         if( i++%numThreads==numt ){
 
-            { lock_guard<mutex> guard( mutexMLSList ); cerr << "Worker: " << numt << " entered be_tdec1 loop" << endl;}
             double            lgpr_tdec1 = be_tdec1.getProb(); // prob of prev storestate
             const StoreState& q_tdec1    = be_tdec1.getHidd().sixth();  // prev storestate
 
@@ -297,23 +291,20 @@ int main ( int nArgs, char* argv[] ) {
             //if( VERBOSE>1 ) cerr << "pbiAnt ptr to second second: " << pbiAnt->second.second << endl;
             //if( VERBOSE>1 ) cerr << "in main(): timestep t: " << t << endl;
             //
-            { lock_guard<mutex> guard( mutexMLSList ); cerr << "Worker: " << numt << " finished assigning betdec prob, prev storestate, coref dummies" << endl;}
             //calculate denominator / normalizing constant over all antecedent timesteps
             double fnorm = 0.0; 
             //for ( int tAnt = t; tAnt>0; tAnt--, pbiAnt=&beams[tAnt].get(pbiAnt->second.second) ) { 
             double ndenom = 0.0;
             //for ( int tAnt = t; tAnt>((USE_COREF) ? 0 : t-1); tAnt--, pbeAnt = &pbeAnt->getBack()) { //denominator
-            { lock_guard<mutex> guard( mutexMLSList ); cerr << "Worker: " << numt << " entering denom coref loop..." << endl;}
             for ( int tAnt = t; tAnt>0; tAnt--, pbeAnt = &pbeAnt->getBack()) { //denominator
 
-              { lock_guard<mutex> guard( mutexMLSList ); cerr << "Worker: " << numt << " entered denom coref loop" << endl;}
               //if (VERBOSE>1) cerr << "*pbiAnt: " << *pbiAnt << endl;
               //if (VERBOSE>1) cerr << "pbiAnt->first: " << pbiAnt->first << endl;
               //if (VERBOSE>1) cerr << "pbiAnt->second.second: " << pbiAnt->second.second << endl;
               //if (VERBOSE>1) cerr << "pbiAnt: " << pbiAnt << endl;
               //const KSet ksAnt (pbiAnt->first.fourth());
               const KSet ksAnt (pbeAnt->getHidd().getPrtrm().getKSet()); 
-              { lock_guard<mutex> guard( mutexMLSList ); cerr << "Worker: " << numt << " got ksAnt" << ksAnt << endl;}
+              //{ lock_guard<mutex> guard( mutexMLSList ); cerr << "Worker: " << numt << " got ksAnt" << ksAnt << endl;}
 
               list<NPredictor> lnpredictors; q_tdec1.calcNPredictors( lnpredictors, pbeAnt->getHidd().getPrtrm()); 
               arma::vec nlogresponses = arma::zeros( matN.n_rows ); //rows are n outcomes 1 or 0 (coreferent or not)
@@ -533,50 +524,63 @@ int main ( int nArgs, char* argv[] ) {
         if ( numThreads == 1 ) cerr << endl;
         if ( VERBOSE ) cout << "MLS" << endl;
 
-        { lock_guard<mutex> guard( mutexMLSList ); cerr << "Worker: " << numt << " attempting to enter print loop - need mutex" << endl;}
         //DelimitedList<psX,pair<HiddState,ProbBack>,psLine,psX> mls;
-        { lock_guard<mutex> guard( mutexMLSList );
-          cerr << "Worker: " << numt << " entered print loop" << endl;
-          if( numThreads > 1 ) cerr << "Finished line " << currline << " (" << beams[t].size() << ")..." << endl;
 
+        { lock_guard<mutex> guard( mutexMLSList );
+          if( numThreads > 1 ) cerr << "Finished line " << currline << " (" << beams[t].size() << ")..." << endl;
           cerr << "Worker: " << numt << " attempting to set mls on beams..." << endl;
           beams.setMostLikelySequence( mls );
-
-          cerr << "Worker: " << numt << " testing for read sentence..." << endl;
-          //finished sent, now looping over global data and see whether it's ready to print
-          //see if articles is not empty and first article is not empty and first sentence of first article is done, then print it.
-          while( articleMLSs.size()>0 && articleMLSs.front().size()>0 && articleMLSs.front().front().size()>0 ) { 
-            cerr << "Worker: " << numt << " assigning mls for printing... " << endl;
-            auto& mls = articleMLSs.front().front(); //mls for first sentence of first article
-            cerr << "Worker: " << numt << " assigning sent for printing... " << endl;
-            auto& sent = articles.front().front(); // wordlist for first sentence of first article
-            int u=1; 
-            cerr << "Worker: " << numt << " assigning iterator for beam element... " << endl;
-            auto ibe=next(mls.begin());  //iterator over beam elements?
-            cerr << "Worker: " << numt << " assigning iterator for words... " << endl;
-            auto iw=sent.begin() ; //iterator over words
-            cerr << "Worker: " << numt << " starting sentence loop... " << endl;
-            for( ; (ibe != mls.end()) && (iw != sent.end()); ibe++, iw++, u++ ) {
-              cout << *iw << " " << ibe->getHidd() << " " << ibe->getProb(); //tokdecs output is: WORD HIDDSTATE PROB
-              cout << endl;
-            } //closes for ibe!=mls.end
-            cerr << "Worker: " << numt << " starting articleMLSs pop... " << endl;
-            articleMLSs.front().pop_front(); //pop (mls of) first sentence of first article
-            cerr << "Worker: " << numt << " starting articles pop... " << endl;
-            cerr << "articles.front().size() before pop: " << articles.front().size() << endl;
-            articles.front().pop_front(); //pop first sentence of first article
-            cerr << "articles.front().size() after pop: " << articles.front().size() << endl;
-            cerr << "Worker: " << numt << " testing articles.front().size()... " << endl;
-            if (articles.front().size() == 0) {  //if article is empty then pop article
-              cerr << "Worker: " << numt << " first article is empty, attempting to pop articleMLSs... " << endl;
-              articleMLSs.pop_front(); 
-              cerr << "Worker: " << numt << " first article is empty, attempting to pop articles... " << endl;
-              articles.pop_front();
-              cerr << "popped front of articles" << endl;
-            } 
-          } //closes while articleMLSs 
-        }//closes lock guard for print loop  
+        }
       } //close loop lwSent over sents
+
+      { lock_guard<mutex> guard( mutexMLSList ); 
+        cerr << "WORKER " << numt << " processed all sents in an article, attempting to print..." << endl;
+        cerr << "Worker: " << numt << " articles().size(): " << articles.size() << endl;
+        cerr << "Worker: " << numt << " articles.front().size(): " << articles.front().size() << endl;
+      }
+
+      { lock_guard<mutex> guard( mutexMLSList );
+        //finished sent, now looping over global data and see whether it's ready to print
+        //see if articles is not empty and first article is not empty and first sentence of first article is done, then print it.
+        cerr << "Worker: " << numt << " entered print loop" << endl;
+        cerr << "Worker: " << numt << " articleMLSs.size(): " << articleMLSs.size() << endl;
+        cerr << "Worker: " << numt << " articleMLSs.front().size(): " << articleMLSs.front().size() << endl;
+        cerr << "Worker: " << numt << " articles.front().size(): " << articles.front().size() << endl;
+        while( articleMLSs.size()>0 && articleMLSs.front().size()>0 && articleMLSs.front().size()==articles.front().size() ) { 
+          cerr << "Worker: " << numt << " assigning mls for printing... " << endl;
+          //TODO try not aliasing mls or sent? just use articlesMLSs.front().front() and articles.front().front(), respectively?
+          //auto& mls = articleMLSs.front().front(); //mls for first sentence of first article
+          cerr << "Worker: " << numt << " assigning sent for printing... " << endl;
+          //auto& sent = articles.front().front(); // wordlist for first sentence of first article
+          int u=1; 
+          cerr << "Worker: " << numt << " assigning iterator for beam element... " << endl;
+          //auto ibe=next(mls.begin());  //iterator over beam elements?
+          auto ibe=next(articleMLSs.front().front().begin());  //iterator over beam elements?
+          cerr << "Worker: " << numt << " assigning iterator for words... " << endl;
+          //auto iw=sent.begin() ; //iterator over words
+          auto iw=articles.front().front().begin() ; //iterator over words
+          cerr << "Worker: " << numt << " starting sentence print loop... " << endl;
+          //for( ; (ibe != mls.end()) && (iw != sent.end()); ibe++, iw++, u++ ) {
+          for( ; (ibe != articleMLSs.front().front().end()) && (iw != articles.front().front().end()); ibe++, iw++, u++ ) {
+            cout << *iw << " " << ibe->getHidd() << " " << ibe->getProb(); //tokdecs output is: WORD HIDDSTATE PROB
+            cout << endl;
+          } //closes for ibe!=mls.end
+          cerr << "Worker: " << numt << " starting articleMLSs pop... " << endl;
+          articleMLSs.front().pop_front(); //pop (mls of) first sentence of first article
+          cerr << "Worker: " << numt << " starting articles pop... " << endl;
+          cerr << "articles.front().size() before pop: " << articles.front().size() << endl;
+          articles.front().pop_front(); //pop first sentence of first article
+          cerr << "articles.front().size() after pop: " << articles.front().size() << endl;
+          cerr << "Worker: " << numt << " testing articles.front().size()... " << endl;
+          if (articles.front().size() == 0) {  //if article is empty then pop article
+            cerr << "Worker: " << numt << " first article is empty, attempting to pop articleMLSs... " << endl;
+            articleMLSs.pop_front(); 
+            cerr << "Worker: " << numt << " first article is empty, attempting to pop articles... " << endl;
+            articles.pop_front();
+            cerr << "popped front of articles" << endl;
+          } 
+        } //closes while articleMLSs 
+      }//closes lock guard for print loop  
     } //closes while(True)
   }, numtglobal )); //brace closes for numtglobal
 
