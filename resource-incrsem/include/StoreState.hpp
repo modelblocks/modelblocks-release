@@ -47,6 +47,11 @@ typedef Delimited<char> S;  // side (A,B)
 const S S_A("/");
 const S S_B(";");
 
+DiscreteDomain<int> domAdHoc;
+typedef Delimited<DiscreteDomainRV<int,domAdHoc>> AdHocFeature;
+const AdHocFeature corefON("acorefON");
+const AdHocFeature bias("abias");
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef W__
@@ -325,8 +330,10 @@ class NPredictor {
     static uint                nextid;
     static map<pair<K,K>,uint> mkki; 
     //static map<pair<T,T>,uint> mtti;
+    static map<AdHocFeature,uint>    mstri;
     static map<uint,K>         miantk;
     static map<uint,K>         miancestork;
+    static map<uint,AdHocFeature>    mistr;
     //static map<unit,T>         miantt;
     //static map<uint,T>         miancestort;
     //static mapsfromidtootherstuff;
@@ -340,14 +347,22 @@ class NPredictor {
       if (it != mkki.end() ) id = it->second;
       else { id = nextid++; miantk[id] = antK; miancestork[id] = ancestorK; mkki[pair<K,K>(antK,ancestorK)] = id; }
     }
+
+    NPredictor (AdHocFeature mstring) {
+      const auto& it = mstri.find(mstring);
+      if (it != mstri.end() ) id = it->second;
+      else { id = nextid++; mistr[id] = mstring; mstri[mstring] = id; }
+    }
   //NPredictor ("distance", int) {
         //TODO - can't use existing XPredictor template, whose values are binary for categories
         //
+
   //Accessor Methods
   uint toInt() const { return id; }
   operator uint() const { return id; }
   K getAncstrK()  const { return miancestork[id]; }
-  K getAntcdntK() const { return miantk[id]; } //ej change for coref
+  K getAntcdntK() const { return miantk[id]; } 
+  AdHocFeature getfeatname() const { return mistr[id]; }
   static uint getDomainSize() { return nextid; }
 
   // Input / output methods...
@@ -356,25 +371,50 @@ class NPredictor {
   }
   friend istream& operator>> ( pair<istream&,NPredictor&> ist, const char* psDelim ) {
     if ( ist.first.peek()==psDelim[0] ) { auto& o =  ist.first >> psDelim;  ist.second = NPredictor();  return o; }
-    Delimited<K> kAntecedent, kAncestor;
-    auto& o = ist.first >> kAntecedent >> "&" >> kAncestor >> psDelim;  
-    ist.second = NPredictor(kAntecedent,kAncestor);
-    return o; 
+    if ( ist.first.peek()=='a' ) { 
+      AdHocFeature mstring;
+      auto& o = ist.first >> mstring >> psDelim;  
+      ist.second = NPredictor(mstring);     
+      return o; 
+    }
+    else                         { 
+      Delimited<K> kAntecedent, kAncestor;  
+      auto& o = ist.first >> kAntecedent >> "&" >> kAncestor >> "&" >> psDelim;  
+      ist.second = NPredictor(kAntecedent,kAncestor);  
+      return o; 
+    }
+    //Delimited<K> kAntecedent, kAncestor;
+    //auto& o = ist.first >> kAntecedent >> "&" >> kAncestor >> psDelim;  
+    //ist.second = NPredictor(kAntecedent,kAncestor);
+    //return o; 
   }
   friend bool operator>> ( pair<istream&,NPredictor&> ist, const vector<const char*>& vpsDelim ) {
-    Delimited<K> kAntecedent, kAncestor;
-    auto o = ist.first >> kAntecedent >> "&" >> kAncestor >> vpsDelim;  
-    ist.second = NPredictor(kAntecedent,kAncestor);  
-    return o; 
+    if ( ist.first.peek()=='a' ) { 
+      AdHocFeature mstring;
+      auto o = ist.first >> mstring >> vpsDelim;  
+      ist.second = NPredictor(mstring);     
+      return o; 
+    }
+    else                         { 
+      Delimited<K> kAntecedent, kAncestor;
+      auto o = ist.first >> kAntecedent >> "&" >> kAncestor >> vpsDelim;  
+      ist.second = NPredictor(kAntecedent,kAncestor);  
+      return o; 
+    }
   }
   friend ostream& operator<< ( ostream& os, const NPredictor& t ) {
-    return os << miantk[t.id] << "&" << miancestork[t.id]; 
+    //return os << miantk[t.id] << "&" << miancestork[t.id]; 
+    if (miantk.find(t.id)!=miantk.end()) { return os << miantk[t.id] << "&" << miancestork[t.id]; } //output either KxK
+    else { return os << mistr[t.id]; } //...or string
   }
   static bool exists ( K kAntecedent, K kAncestor )      { return( mkki.end()!=mkki.find(pair<K,K>(kAntecedent,kAncestor)) ); }
+  static bool exists ( AdHocFeature mstring )                  { return( mstri.end()!=mstri.find(mstring) ); }
 };
 uint                NPredictor::nextid = 1;
 map<pair<K,K>,uint> NPredictor::mkki; 
 //map<pair<T,T>,uint> NPredictor::mtti;
+map<AdHocFeature,uint>    NPredictor::mstri;
+map<uint,AdHocFeature>    NPredictor::mistr;
 map<uint,K>         NPredictor::miantk;
 map<uint,K>         NPredictor::miancestork;
 
@@ -620,12 +660,14 @@ class JPredictor {
   friend pair<istream&,JPredictor&> operator>> ( istream& is, JPredictor& t ) {
     return pair<istream&,JPredictor&>(is,t);
   }
+  //non loop-based input stream operator
   friend istream& operator>> ( pair<istream&,JPredictor&> ist, const char* psDelim ) {
     if ( ist.first.peek()==psDelim[0] ) { auto& o =  ist.first >> psDelim;  ist.second = JPredictor();  return o; }
     D d;  ist.first >> "d" >> d >> "&";
     if ( ist.first.peek()=='t' ) { Delimited<T>     tA, tL;  auto& o = ist.first >> "t"       >> tA >> "&" >> "t" >> tL >> psDelim;  ist.second = JPredictor(d,tA,tL);     return o; }
     else                         { Delimited<K> kF, kA, kL;  auto& o = ist.first >> kF >> "&" >> kA >> "&" >>        kL >> psDelim;  ist.second = JPredictor(d,kF,kA,kL);  return o; }
   }
+  //loop-based input stream operator
   friend bool operator>> ( pair<istream&,JPredictor&> ist, const vector<const char*>& vpsDelim ) {
     D d;  ist.first >> "d" >> d >> "&";
     if ( ist.first.peek()=='t' ) { Delimited<T>     tA, tL;  auto o = ist.first >> "t"       >> tA >> "&" >> "t" >> tL >> vpsDelim;  ist.second = JPredictor(d,tA,tL);     return o; }
@@ -979,10 +1021,12 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     return          BPredictor( getDepth()+f-j, f, j, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, tParent, aLchild.getType() );
   }
 
-  list<NPredictor>& calcNPredictors (list<NPredictor>& npreds, const Sign& candidate ) {
+  list<NPredictor>& calcNPredictors (list<NPredictor>& npreds, const Sign& candidate, bool bcorefON ) {
     //cerr << "entered calcNPredictors..." << endl;
     //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
-    //TODO add category x category feat - just basic label, no semantics. actually, add this to P model.  P category should be informed by which antecedent was chosen here.
+    //TODO add unary category feats for anaphor and antecedentt - just basic label, no semantics. 
+    //TODO add unary semantic feats for anaphor and antecedent - just predarg structure, no syntactic category.
+    //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here.
     //cout << "calcNPredictors received candidate: " << candidate << endl;
     //cout << "candidate kset: " << candidate.getKSet() << endl;
     const KSet& ksB = at(size()-1).getKSet(); //contexts of lowest b (bdbar)
@@ -992,7 +1036,16 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
         npreds.emplace_back(antk, currk);
       }
     }
-    npreds.emplace_front();
+    npreds.emplace_front(bias); //add bias term
+
+    //corefON feature
+    if (bcorefON == true) { 
+      npreds.emplace_back(corefON);
+      //cerr << "corefON added to npreds..." << endl;
+      //for (auto& npred : npreds) {cerr << npred << " ";}
+      //cerr << endl;
+    }
+
     return npreds;
   }
 };

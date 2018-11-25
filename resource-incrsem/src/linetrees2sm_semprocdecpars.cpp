@@ -386,8 +386,6 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
         //cout << "no annotation and setting true for coreference with null antecedent" << endl;
       }
       //cout << "candidate: " << candidate << endl;
-      DelimitedList<psX,NPredictor,psComma,psX> npreds;  
-      q.calcNPredictors(npreds, candidate); //populate npreds with kxk pairs for q vs. candidate q. 
       //cout << "generated npreds: " << npreds << endl;
       
       if ((i-1 == annot2tdisc[annot]) and (annot != "")) {
@@ -397,11 +395,21 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
         isCoref = 1;
       }
 
+
+      bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
+      DelimitedList<psX,NPredictor,psComma,psX> npreds;  
+      q.calcNPredictors(npreds, candidate, corefON); //populate npreds with kxk pairs for q vs. candidate q. 
+
       cout << "N "; 
       for (auto& npred : npreds) {
+        //if (&npred!=&npreds.front() ) cout << npred << "=1"; 
+        //if (&npred!=&npreds.back() and &npred!=&npreds.front()) cout << ","; 
         if (&npred!=&npreds.front() ) cout << ","; 
         cout << npred << "=1";
       } 
+
+      //corefON feature 1 for i=tDisc, else 0. can't be incorporated into calcNPredictors since NPredictors are currently KxK feats - would like to change this later to add versatility to what can predict coref
+
       cout << " : " << isCoref << endl; //i-1 because that's candidate index 
       //needed to confirm linked was at end of target
       /*
