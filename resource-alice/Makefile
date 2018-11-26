@@ -127,37 +127,44 @@ genmodel/alice.linetoks: $(ALICE-SCRIPTS)/tokmeasures2linetoks.py genmodel/alice
 	python $^ > $@
 
 genmodel/alice.sbj.evmeasures: | genmodel
-	echo 'subject sampleid docid' > $@
-	$(foreach s, $(ALICE-SUBJECTS), for i in {1..362}; do echo "$(s) $$i 1" >> $@; done;)
+	echo 'subject sampleid docid time' > $@
+	$(foreach s, $(ALICE-SUBJECTS), for i in {1..362}; do echo "$(s) $$i 1 $$((($$i-1)*2))" >> $@; done;)
 
 %/alice.pwr.evmeasures: $$(DEP-ALICE) $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/$(s)-sndpwr.txt) | %
 	echo 'sndpwr' > $@
 	cat $(wordlist 2, 1000, $^) >> $@
 
 %/alice.rate.evmeasures: $$(DEP-ALICE) $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/$(s)-rate.txt) | %
-	echo 'rate' > $@
+	echo 'Rate' > $@
 	cat $(wordlist 2, 1000, $^) >> $@
 
 %/alice.generic.evmeasures: $$(DEP-ALICE) $(CONFIGDIR)/user-alice-directory.txt $(ALICEDIR)/alice_data_shared/sept18-generic-predictors-under-hrf-with-logfrqhal.txt | %
-	echo 'rateConv frqConvOrth breakConvOrth tdpConvOrth tdxConvOrth bupConvOrth buxConvOrth cfgsurpConvOrth bigramlexConvOrth trigramlexConvOrth bigramposConvOrth trigramposConvOrth' > $@.tmp
+	echo 'RateConv frqConvOrth breakConvOrth tdpConvOrth tdxConvOrth bupConvOrth buxConvOrth cfgsurpConvOrth bigramlexConvOrth trigramlexConvOrth bigramposConvOrth trigramposConvOrth' > $@.tmp
 	tail -n+11 $(word 2, $^) | sed 's/\r//g;' | sed 's/\t/ /g;' >> $@.tmp
 	paste -d' ' $@.tmp <(echo 'sampleid'; for i in {1..362}; do echo "$$i"; done;) > $@
 	rm -f $@.tmp
 
 %/alice.mvmnt.evmeasures: $$(DEP-ALICE) $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(wildcard $(ALICEDIR)/alice_data_shared/$(s)-rp_*.txt)) | %
 	echo 'LATLmvmnt RATLmvmnt LPTLmvmnt LIPLmvmnt LPreMmvmnt LIFGmvmnt' > $@
-	$(foreach f, $(wordlist 2, 1000, $^), tail -n+11 $(f) | sed 's/\t/ /g' | sed -e '$$a\' >> $@;)
+	$(foreach f, $(wordlist 2, 1000, $^), tail -n+11 $(f) | sed 's/^ *//g' | sed 's/\t/ /g' | sed 's/ \+/ /g' | sed -e '$$a\' >> $@;)
 
 %/alice.BOLD6mm.evmeasures: $$(DEP-ALICE) $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/6mm/$(s)-timecourses.txt) | genmodel
 	echo 'boldLATL6mm boldRATL6mm boldLPTL6mm boldLIPL6mm boldLPreM6mm boldLIFG6mm' > $@
-	cat $(wordlist 2, 1000, $^) | sed 's/\t/ /g' >> $@
+	cat $(wordlist 2, 1000, $^) | sed 's/^ *//g' | sed 's/\t/ /g' | sed 's/ \+/ /g' >> $@
 
 %/alice.BOLD10mm.evmeasures: $$(DEP-ALICE) $(CONFIGDIR)/user-alice-directory.txt $(foreach s, $(ALICE-SUBJECTS), $(ALICEDIR)/alice_data_shared/10mm/$(s)-timecourses.txt) | genmodel
 	echo 'boldLATL10mm boldRATL10mm boldLPTL10mm boldLIPL10mm boldLPreM10mm boldLIFG10mm' > $@
-	cat $(wordlist 2, 1000, $^) | sed 's/\t/ /g' >> $@
+	cat $(wordlist 2, 1000, $^) | sed 's/^ *//g' | sed 's/\t/ /g' | sed 's/ \+/ /g' >> $@
 
 %/alice.evmeasures: %/alice.sbj.evmeasures %/alice.pwr.evmeasures %/alice.rate.evmeasures \
 %/alice.mvmnt.evmeasures %/alice.BOLD6mm.evmeasures %/alice.BOLD10mm.evmeasures %/alice.generic.evmeasures $(RESOURCE-RT)/scripts/merge_tables.py | %
 	paste -d' ' $(wordlist 1, 6, $^) > $@.tmp
 	python $(word 8, $^) $@.tmp $(word 7, $^) sampleid > $@
 	rm -f $@.tmp
+
+%/alice.docids.itemmeasures: %/alice.lineitems $(ALICE-SCRIPTS)/docids_by_item.py
+	cat $< | python $(word 2, $^) > $@
+
+alice.%.t.itemmeasures: genmodel/alice.time.tokmeasures alice.%.itemmeasures $(ALICE-SCRIPTS)/timestamps_by_item.py
+	cat $< | python $(word 3, $^) $(word 2, $^) > $@
+
