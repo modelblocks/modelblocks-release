@@ -54,7 +54,7 @@ while sentid < len(sents):
 
 assert x[0] == None
 
-print('word sentid timestamp')
+print('word sentid time')
 for r in out:
     print(' '.join([str(x) for x in r]))
              

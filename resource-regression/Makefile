@@ -45,6 +45,27 @@ VPATH += $(RESOURCE-REGRESSION)
 #
 ################################################################################
 
+empty:=
+space:= $(empty) $(empty)
+
+
+## apply predictor modifications: <data>.<predr>_<offset>_spilled.prdmeasures
+%_spilled.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/spilloverMetrics.py
+	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+%_spilled.resmeasures:  $$(basename %).resmeasures
+	ln -s $< $@
+
+## apply predictor modifications: <data>.<predr>_cumued.prdmeasures
+%_cumued.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/accumulateMetrics.py
+	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+%_cumued.resmeasures:  $$(basename %).resmeasures
+	ln -s $< $@
+
+## apply predictor modifications: <data>.<predr>_<offset>_futured.prdmeasures
+%_futured.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/futureMetrics.py
+	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+%_futured.resmeasures:  $$(basename %).resmeasures
+	ln -s $< $@
 
 
 ## apply consorship (e.g. remove end-of-sentence responses) (prdmeasures unaffected)
@@ -63,25 +84,28 @@ VPATH += $(RESOURCE-REGRESSION)
 
 ## generic fit files: <data>.<baseline>_(<predr>_)*<regrmodel>.fitmodel
 %.fitmodel %.coeffs:  bin/regressor-$$(subst .,,$$(suffix $$(subst _,.,$$*)))  \
-                      bin/$$(subst .,,$$(word 1,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form  \
-                      $$(basename $$(basename %))$$(word 1,$$(subst +, ,$$(suffix $$(basename $$*))))-part.prdmeasures  \
-                      $$(basename $$(basename %))$$(word 1,$$(subst +, ,$$(suffix $$(basename $$*))))-part.resmeasures
+                      $$(basename %)-part.prdmeasures  \
+                      $$(basename %)-part.resmeasures  \
+                      bin/$$(subst .,,$$(word 1,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form
 	$^ $(wordlist 2,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*)))))
 
-## generaic predicted resmeasures file: <data>.<baseline>_(<predr>_)*<regrmodel>_predicted.resmeasures
-%_predicted.resmeasures:  bin/predictor-$$(subst .,,$$(suffix $$(subst _,.,$$*)))  \
-                          %.fitmodel  \
-                          $$(basename $$(basename %)).$$(word 2,$$(subst +, ,$$(suffix $$(basename $$*))))-part.prdmeasures
+
+## generaic predicted errors file: <data>.<fit-part>_<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
+%_predicted.errors:  bin/predictor-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
+                     $$(basename $$(basename %))$$(word 1,$$(subst _, ,$$(suffix $$(basename $$*)))).$$(subst $$(space),_,$$(wordlist 2,100,$$(subst _, ,$$(suffix $$(basename $$*))))).fitmodel  \
+           	     $$(basename $$(basename %))$$(suffix $$*)-part.prdmeasures
 	$^  >  $@
 
-## generic errors file: <data>.<baseline>_(<predr>_)*<regrmodel>.errors
-%.errors:  bin/calc-errors  %_predicted.resmeasures  $$(basename $$(basename %)).$$(word 2,$$(subst +, ,$$(suffix $$(basename $$*))))-part.resmeasures
-	$^  >  $@
 
-## generic signif file
+# ## generic errors file: <data>.<baseline>_(<predr>_)*<regrmodel>.errors
+# %.errors:  bin/calc-errors  %_predicted.resmeasures  $$(basename $$(basename %)).$$(word 2,$$(subst +, ,$$(suffix $$(basename $$*))))-part.resmeasures
+# 	$^  >  $@
+
+
+## generic signif file: <data>.<fit-part>_<baseline>_(<predr>_)*<regrmodel>.<eval-part>.(<predr>_)*<signif-type>.signif
 %.signif:  bin/signif-$$(lastword $$(subst _, ,$$(suffix $$*)))  \
-           $$(basename $$(basename %)).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$*))))))_-a$$(subst .,_,$$(basename $$(subst _,.,$$(suffix $$*))))_$$(lastword $$(subst _, ,$$(basename $$*))).errors  \
-           $$(basename %).errors
+           $$(basename $$(basename $$(basename %))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))$$(subst .,_-,$$(basename $$(subst _,.,$$(suffix $$*))))_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors  \
+           $$(basename $$(basename $$(basename %))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))$$(subst .,_,$$(basename $$(subst _,.,$$(suffix $$*))))_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors
 	$^  >  $@
 
 
