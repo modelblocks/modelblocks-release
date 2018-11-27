@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-options(width=200) 
+options(width=200,digits=22) 
 
 ########################################################
 #
@@ -111,7 +111,7 @@ fit <- fitModel(data, output, params$bformfile, params$fitmode,
                      params$logmain, params$logdepvar, params$lambda,
                      params$addEffects, params$extraEffects, params$ablEffects,
                      params$groupingfactor, params$indicatorlevel, params$crossfactor,
-                     params$interact, params$corpus)
+                     params$interact, params$corpus, params$suppress_nlminb)
 
 if (fit$fitmode != 'bme') {
     m = fit$m
