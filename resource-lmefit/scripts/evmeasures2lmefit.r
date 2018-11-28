@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-options(width=200,digits=22) 
+options(width=200,digits=7)
 
 ########################################################
 #
