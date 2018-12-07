@@ -51,6 +51,7 @@ DiscreteDomain<int> domAdHoc;
 typedef Delimited<DiscreteDomainRV<int,domAdHoc>> AdHocFeature;
 const AdHocFeature corefON("acorefON");
 const AdHocFeature bias("abias");
+enum Referent { antecedent, anaphor };
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -327,17 +328,22 @@ class NPredictor {
   private:
     uint id;
 
-    static uint                nextid;
-    static map<pair<K,K>,uint> mkki; 
-    //static map<pair<T,T>,uint> mtti;
-    static map<AdHocFeature,uint>    mstri;
-    static map<uint,K>         miantk;
-    static map<uint,K>         miancestork;
-    static map<uint,AdHocFeature>    mistr;
-    //static map<unit,T>         miantt;
-    //static map<uint,T>         miancestort;
-    //static mapsfromidtootherstuff;
-    //
+    static uint                     nextid;
+    static map<pair<K,K>,uint>      mkki; 
+    //static map<pair<T,T>,uint>    mtti; //pairwise TT? probably too sparse...
+    static map<AdHocFeature,uint>   mstri;
+    static map<K,uint>              mantecedentkiu; //map antecedent k to uint, unary 
+    static map<K,uint>              mancestorkiu;   //map ancestor k to uint, unary
+    static map<T,uint>              mantecedenttiu; //map ancestor t to uint, unary
+    static map<T,uint>              mancestortiu;   //map ancestor t to uint, unary
+    static map<uint,K>              miantk;         //pairwise
+    static map<uint,K>              miancestork;    //pairwise
+    static map<uint,AdHocFeature>   mistr;
+    static map<uint,K>              miantecedentku; //map uint to antecedent k, unary
+    static map<uint,K>              miancestorku;   //map uint to ancestor k, unary
+    static map<uint,T>              miantecedenttu; //map uint to antecedent t, unary
+    static map<uint,T>              miancestortu;   //map uint to ancestor t, unary
+
   public:
     //Constructors
     NPredictor ( ) : id(0) { }
@@ -353,6 +359,44 @@ class NPredictor {
       if (it != mstri.end() ) id = it->second;
       else { id = nextid++; mistr[id] = mstring; mstri[mstring] = id; }
     }
+    /*
+    NPredictor (K mk, Referent ref) {
+      switch(ref) {
+        case antecedent: 
+          const auto& it = mantecedentkiu.find(mk);
+          if (it != mantecedentkiu.end() ) id = it->second;
+          else { id = nextid++; miantecedentku[id] = mk; mantecedentkiu[mk] = id; }
+          break;
+        case anaphor: 
+          const auto& it = mancestorkiu.find(mk);
+          if (it != mancestorkiu.end() ) id = it->second;
+          else { id = nextid++; miancestorku[id] = mk; mancestorkiu[mk] = id; }
+          break;
+        default: 
+          cerr << "ERROR: NPredictor constructure received unary k without proper antecedent vs. anaphor info" << endl;
+      }
+    }
+
+    NPredictor (T mtype, Referent ref) {
+      switch(ref) {
+        case antecedent: 
+          //fix copy paste error treating anaphor and antecedent same
+          //decalaring vars inside switch iffy - declare outside or use if/else instead of switch
+          const auto& it = mantecedenttiu.find(mtype);
+          if (it != mancestortiu.end() ) id = it->second;
+          else { id = nextid++; miancestortu[id] = mtype; mancestortiu[mtype] = id; }
+          break;
+        case anaphor: 
+          const auto& it = mancestortiu.find(mtype);
+          if (it != mancestortiu.end() ) id = it->second;
+          else { id = nextid++; miancestortu[id] = mtype; mancestortiu[mtype] = id; }
+          break;
+        default:
+          cerr << "ERROR: NPredictor constructor received unary t without proper antecedent vs. anaphor info" << endl;
+      }
+    }
+    */
+
   //NPredictor ("distance", int) {
         //TODO - can't use existing XPredictor template, whose values are binary for categories
         //
@@ -362,10 +406,15 @@ class NPredictor {
   operator uint() const { return id; }
   K getAncstrK()  const { return miancestork[id]; }
   K getAntcdntK() const { return miantk[id]; } 
+  K getAntecedentKUnary() const { return miantecedentku[id]; } 
+  K getAncestorKUnary() const { return miancestorku[id]; } 
+  T getAntecedentTUnary() const { return miantecedenttu[id]; }
+  T getAncestorTUnary() const { return miancestortu[id]; }
   AdHocFeature getfeatname() const { return mistr[id]; }
   static uint getDomainSize() { return nextid; }
 
   // Input / output methods...
+  // need to add handling of unary t and k features for IO...
   friend pair<istream&,NPredictor&> operator>> ( istream& is, NPredictor& t ) {
     return pair<istream&,NPredictor&>(is,t);
   }
@@ -377,16 +426,13 @@ class NPredictor {
       ist.second = NPredictor(mstring);     
       return o; 
     }
+    //TODO how to check ahead to see if unary k or t?
     else                         { 
       Delimited<K> kAntecedent, kAncestor;  
-      auto& o = ist.first >> kAntecedent >> "&" >> kAncestor >> "&" >> psDelim;  
+      auto& o = ist.first >> kAntecedent >> "&" >> kAncestor >> psDelim;  
       ist.second = NPredictor(kAntecedent,kAncestor);  
       return o; 
     }
-    //Delimited<K> kAntecedent, kAncestor;
-    //auto& o = ist.first >> kAntecedent >> "&" >> kAncestor >> psDelim;  
-    //ist.second = NPredictor(kAntecedent,kAncestor);
-    //return o; 
   }
   friend bool operator>> ( pair<istream&,NPredictor&> ist, const vector<const char*>& vpsDelim ) {
     if ( ist.first.peek()=='a' ) { 
@@ -395,6 +441,7 @@ class NPredictor {
       ist.second = NPredictor(mstring);     
       return o; 
     }
+    //TODO unary k and t for vectors
     else                         { 
       Delimited<K> kAntecedent, kAncestor;
       auto o = ist.first >> kAntecedent >> "&" >> kAncestor >> vpsDelim;  
@@ -405,20 +452,55 @@ class NPredictor {
   friend ostream& operator<< ( ostream& os, const NPredictor& t ) {
     //return os << miantk[t.id] << "&" << miancestork[t.id]; 
     if (miantk.find(t.id)!=miantk.end()) { return os << miantk[t.id] << "&" << miancestork[t.id]; } //output either KxK
+    if (miancestorku.find(t.id)!=miancestorku.end()) { return os << miancestork[t.id]; } //or unary k
+    if (miantecedentku.find(t.id)!=miantecedentku.end()) { return os << miantecedentku[t.id]; } // or other unary k
+    if (miantecedenttu.find(t.id)!=miantecedenttu.end()) { return os << miantecedenttu[t.id]; } // or unary t
+    if (miancestortu.find(t.id)!=miancestortu.end()) { return os << miancestortu[t.id]; } //or other unary t
     else { return os << mistr[t.id]; } //...or string
   }
   static bool exists ( K kAntecedent, K kAncestor )      { return( mkki.end()!=mkki.find(pair<K,K>(kAntecedent,kAncestor)) ); }
-  static bool exists ( AdHocFeature mstring )                  { return( mstri.end()!=mstri.find(mstring) ); }
+  static bool exists ( AdHocFeature mstring )            { return( mstri.end()!=mstri.find(mstring) ); }
+  static bool exists ( K mk, Referent ref)               {
+    switch(ref) {
+      case antecedent:
+        return( mantecedentkiu.end()!=mantecedentkiu.find(mk));
+        break;
+      case anaphor:
+        return( mancestorkiu.end()!=mancestorkiu.find(mk));
+        break;
+      default:
+        cerr << "ERROR: exists() called for k without specifying ref type (anaphor vs. antecedent)" << endl;
+    }
+  }
+  static bool exists ( T mt, Referent ref)               {
+      switch(ref) {
+        case antecedent:
+          return( mantecedenttiu.end()!=mantecedenttiu.find(mt));
+          break;
+        case anaphor:
+          return( mancestortiu.end()!=mancestortiu.find(mt));
+          break;
+        default:
+          cerr << "ERROR: exists() called for t without specifying ref type (anaphor vs. antecedent)" << endl;
+      }
+  }
+        
 };
-uint                NPredictor::nextid = 1;
-map<pair<K,K>,uint> NPredictor::mkki; 
+uint                    NPredictor::nextid = 1;
+map<pair<K,K>,uint>     NPredictor::mkki; 
 //map<pair<T,T>,uint> NPredictor::mtti;
-map<AdHocFeature,uint>    NPredictor::mstri;
-map<uint,AdHocFeature>    NPredictor::mistr;
-map<uint,K>         NPredictor::miantk;
-map<uint,K>         NPredictor::miancestork;
-
-
+map<AdHocFeature,uint>  NPredictor::mstri;
+map<uint,AdHocFeature>  NPredictor::mistr;
+map<uint,K>             NPredictor::miantk;
+map<uint,K>             NPredictor::miancestork;
+map<K,uint>             NPredictor::mantecedentkiu; //map antecedent k to uint, unary 
+map<K,uint>             NPredictor::mancestorkiu;   //map ancestor k to uint, unary
+map<T,uint>             NPredictor::mantecedenttiu; //map ancestor t to uint, unary
+map<T,uint>             NPredictor::mancestortiu;   //map ancestor t to uint, unary
+map<uint,K>             NPredictor::miantecedentku; //map uint to antecedent k, unary
+map<uint,K>             NPredictor::miancestorku;   //map uint to ancestor k, unary
+map<uint,T>             NPredictor::miantecedenttu; //map uint to antecedent t, unary
+map<uint,T>             NPredictor::miancestortu;   //map uint to ancestor t, unary
 ////////////////////////////////////////////////////////////////////////////////
 
 //TODO adapt JResponse definition for NResponse. why do we need this for variable that represents 0,1? why not use bool?. William says use D depth type
@@ -1024,18 +1106,27 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
   list<NPredictor>& calcNPredictors (list<NPredictor>& npreds, const Sign& candidate, bool bcorefON ) {
     //cerr << "entered calcNPredictors..." << endl;
     //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
-    //TODO add unary category feats for anaphor and antecedentt - just basic label, no semantics. 
-    //TODO add unary semantic feats for anaphor and antecedent - just predarg structure, no syntactic category.
-    //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here.
+    //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
     //cout << "calcNPredictors received candidate: " << candidate << endl;
     //cout << "candidate kset: " << candidate.getKSet() << endl;
     const KSet& ksB = at(size()-1).getKSet(); //contexts of lowest b (bdbar)
     //cout << "ksb: " << ksB << endl;
-    for (auto& antk:candidate.getKSet()){ //add k x k feats
-      for (auto& currk:ksB) {
-        npreds.emplace_back(antk, currk);
+    for (auto& antk : candidate.getKSet()){ //add k x k feats
+      //npreds.emplace_back(antk, 0); //add unary antecedent k feat.  0 means antk type feature
+      for (auto& currk : ksB) {
+        npreds.emplace_back(antk, currk); //pairwise kxk feat
+        //TODO add feature types 0-3 in StoreState npredictor class
+        
       }
     }
+    /*
+    //loop over curr k:ksB
+      npreds.emplace_back(currk, 1); //add unary anaphor (ancestor) k feat. 1 meants currk type feature
+    T antt = candidate.getType();
+    npreds.emplace_back(antt,2); //add unary antecedent T 
+    T currt = at(size()-1).getType(); //type of lowest b (bdbar)
+    npreds.emplace_back(currt,3); //add unary anaphor (ancestor) T
+    */
     npreds.emplace_front(bias); //add bias term
 
     //corefON feature

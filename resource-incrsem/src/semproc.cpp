@@ -307,7 +307,12 @@ int main ( int nArgs, char* argv[] ) {
               bool corefON = (tAnt==t) ? 0 : 1;
               list<NPredictor> lnpredictors; q_tdec1.calcNPredictors( lnpredictors, pbeAnt->getHidd().getPrtrm(), corefON); 
               arma::vec nlogresponses = arma::zeros( matN.n_rows ); //rows are n outcomes 1 or 0 (coreferent or not)
-              for ( auto& npredr : lnpredictors ) if ( npredr.toInt() < matN.n_cols ) nlogresponses += matN.col( npredr.toInt() );  //cols are predictors, where each col has values for 1 or 0
+              for ( auto& npredr : lnpredictors ) {
+                if ( npredr.toInt() < matN.n_cols ) {
+                  nlogresponses += matN.col( npredr.toInt() );  //cols are predictors, where each col has values for 1 or 0
+                  
+                }
+              }
 
               //arma::vec nresponses = arma::exp( nlogresponses );
               //double nnorm = arma::accu( nresponses );  // 0.0;                                           // join normalization term (denominator)
@@ -359,7 +364,13 @@ int main ( int nArgs, char* argv[] ) {
 
               if ( VERBOSE>1 ) { for ( auto& npredr : lnpredictors ) { cout <<"   npredr:"<<npredr<<endl; } }
               arma::vec nlogresponses = arma::zeros( matN.n_rows );
-              for ( auto& npredr : lnpredictors ) if ( npredr.toInt() < matN.n_cols ) nlogresponses += matN.col( npredr.toInt() ); 
+              for ( auto& npredr : lnpredictors ) {
+                  //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << endl; }
+                if ( npredr.toInt() < matN.n_cols ) { 
+                  nlogresponses += matN.col( npredr.toInt() ); 
+                  //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << " matN.n_cols:" << matN.n_cols << " logprob: " << matN.col( npredr.toInt())(NResponse("1").toInt()) << endl; }
+                }
+              }
               double numerator = exp(nlogresponses(NResponse("1").toInt()) - nlogresponses(NResponse("0").toInt()));
               double nprob = numerator / ndenom;
 
