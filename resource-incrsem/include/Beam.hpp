@@ -32,6 +32,7 @@ class ProbBack : private pair<double, const BeamElement<S>*> {
   double                getProb ( ) const;
   const BeamElement<S>& getBack ( ) const;
   double&               setProb ( );
+  void                  setBack ( const BeamElement<S>& );
   bool operator> ( const ProbBack<S>& ) const;
   bool operator< ( const ProbBack<S>& ) const;
 };
@@ -45,7 +46,9 @@ class BeamElement : private pair<ProbBack<S>,S> {
   double                getProb ( ) const;
   const BeamElement<S>& getBack ( ) const; 
   const S&              getHidd ( ) const { return pair<ProbBack<S>,S>::second; }
+  const ProbBack<S>&    getProbBack ( ) const { return pair<ProbBack<S>,S>::first; }
   double&               setProb ( );
+  void                  setBack ( const BeamElement<S>& );
   bool operator> ( const BeamElement<S>& ) const;
   bool operator< ( const BeamElement<S>& ) const;
   static const BeamElement<S> beStableDummy;
@@ -63,6 +66,8 @@ inline const BeamElement<S>& ProbBack<S>::getBack ( ) const { return *pair<doubl
 template<class S>
 inline double&               ProbBack<S>::setProb ( )       { return  pair<double, const BeamElement<S>*>::first;  }
 template<class S>
+void                        ProbBack<S>::setBack ( const BeamElement<S>& be ) { pair<double, const BeamElement<S>*>::second = &be; }
+template<class S>
 inline bool ProbBack<S>::operator> ( const ProbBack<S>& pb ) const { return pair<double, const BeamElement<S>*>( *this ) > pair<double, const BeamElement<S>*>( pb ); }
 template<class S>
 inline bool ProbBack<S>::operator< ( const ProbBack<S>& pb ) const { return pair<double, const BeamElement<S>*>( *this ) < pair<double, const BeamElement<S>*>( pb ); }
@@ -74,6 +79,8 @@ template<class S>
 const BeamElement<S>& BeamElement<S>::getBack ( ) const { return pair<ProbBack<S>,S>::first.getBack(); }
 template<class S>
 double&               BeamElement<S>::setProb ( )       { return pair<ProbBack<S>,S>::first.setProb(); }
+template<class S>
+void                  BeamElement<S>::setBack ( const BeamElement<S>& be ) { pair<ProbBack<S>,S>::first.setBack(be); }
 template<class S>
 inline bool BeamElement<S>::operator> ( const BeamElement<S>& be ) const { return pair<ProbBack<S>,S>( *this ) > pair<ProbBack<S>,S>( be ); }
 template<class S>

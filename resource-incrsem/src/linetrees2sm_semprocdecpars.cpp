@@ -32,7 +32,7 @@ using namespace arma;
 bool STORESTATE_TYPE = true;
 bool STORESTATE_CHATTY = true;
 int FEATCONFIG = 0;
-bool INTERSENTENTIAL = false;
+bool INTERSENTENTIAL = true;
 #include <StoreState.hpp>
 #include <Beam.hpp>
 #include <BerkUnkWord.hpp>

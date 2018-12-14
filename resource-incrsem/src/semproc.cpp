@@ -201,6 +201,7 @@ int main ( int nArgs, char* argv[] ) {
   list<list<DelimitedList<psX,ObsWord,psSpace,psX>>> articles; //list of list of sents. each list of sents is an article.
   list<list<DelimitedList<psX,BeamElement<HiddState>,psLine,psX>>> articleMLSs; //list of MLSs
 
+  // loop over threads (each thread gets an article)
   for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&articleMLSs,&articles,&mutexMLSList,&linenum,numThreads,matN,matF,modP,lexW,matJ,modA,modB] (uint numt) {
     auto tpLastReport = chrono::high_resolution_clock::now();
 
@@ -238,11 +239,14 @@ int main ( int nArgs, char* argv[] ) {
 
       if ( numThreads == 1 ) cerr << "#" << currline;
 
+      DelimitedList<psX,BeamElement<HiddState>,psLine,psX> lbeWholeArticle;
+      lbeWholeArticle.emplace_back(); //create null beamElement at start of article
+
       for (auto& lwSent : sents) {
         currline++;
 
         // Add mls to list...
-        MLSs.emplace_back( ); //establish placeholder for mls  for this specific sentence
+        MLSs.emplace_back( ); //establish placeholder for mls for this specific sentence
         auto& mls = MLSs.back();
 
         Trellis   beams;  // sequence of beams
@@ -250,7 +254,8 @@ int main ( int nArgs, char* argv[] ) {
 
         // Allocate space in beams to avoid reallocation...
         // Create initial beam element...
-        beams[0].tryAdd( HiddState(), ProbBack<HiddState>() );
+        //beams[0].tryAdd( HiddState(), ProbBack<HiddState>() );
+        beams[0].tryAdd( lbeWholeArticle.back().getHidd(), lbeWholeArticle.back().getProbBack() );
 
         //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " testing access to articles: " << articles.size() << " articles present" << endl;}
         //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " testing access to sents: " << sents.size() << " sents found" << endl;}
@@ -270,15 +275,16 @@ int main ( int nArgs, char* argv[] ) {
           //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " just cleared beam..." << w_t << endl;}
           // For each hypothesized storestate at previous time step...
           //uint i=0; for( auto& be_tdec1 : beams[t-1] ) {
+          
           for( const BeamElement<HiddState>& be_tdec1 : beams[t-1] ) { //beams[t-1] is a Beam<ProbBack,BeamElement>, so be_tdec1 is a beam item, which is a pair<ProbBack,BeamElement>. first.first is the prob in the probback, and second is the beamelement, which is a sextuple of <sign, f, e, k, j, q>
             //         if( i++%numThreads==numt ){
 
-            double            lgpr_tdec1 = be_tdec1.getProb(); // prob of prev storestate
+            double            lgpr_tdec1 = be_tdec1.getProb(); // logprob of prev storestate
             const StoreState& q_tdec1    = be_tdec1.getHidd().sixth();  // prev storestate
 
             if( VERBOSE>1 ) cout << "  from (" << be_tdec1.getHidd() << ")" << endl;
 
-            const ProbBack<HiddState> pbDummy = ProbBack<HiddState>(0.0, be_tdec1);
+            const ProbBack<HiddState> pbDummy = ProbBack<HiddState>(0.0, be_tdec1); //dummy element for most recent timestep
             const HiddState hsDummy = HiddState(Sign(ksTop,T(),S()),F(),EVar(),K(),JResponse(),StoreState(),0 ); //dummy hidden state with kTop semantics 
             const BeamElement<HiddState> beDummy = BeamElement<HiddState>(pbDummy, hsDummy); //at timestep t, represents null antecedent 
             //const ProbBack pbDummy = ProbBack(0.0, be_tdec1.first.second);
@@ -295,7 +301,9 @@ int main ( int nArgs, char* argv[] ) {
             //for ( int tAnt = t; tAnt>((USE_COREF) ? 0 : t-1); tAnt--, pbeAnt = &pbeAnt->getBack()) { //denominator
 
             //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " starting denom loop..." << w_t << endl;}
-            for ( int tAnt = t; tAnt>0; tAnt--, pbeAnt = &pbeAnt->getBack()) { //denominator
+            //for ( int tAnt = t; tAnt>0; tAnt--, pbeAnt = &pbeAnt->getBack()) { //denominator
+            for ( int tAnt = t; &pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy; tAnt--, pbeAnt = &pbeAnt->getBack()) { //denominator
+
 
               //if (VERBOSE>1) cerr << "*pbiAnt: " << *pbiAnt << endl;
               //if (VERBOSE>1) cerr << "pbiAnt->first: " << pbiAnt->first << endl;
@@ -543,6 +551,13 @@ int main ( int nArgs, char* argv[] ) {
           if( numThreads > 1 ) cerr << "Finished line " << currline << " (" << beams[t].size() << ")..." << endl;
           cerr << "Worker: " << numt << " attempting to set mls on beams..." << endl;
           beams.setMostLikelySequence( mls );
+          lbeWholeArticle.insert(lbeWholeArticle.end(),mls.begin(),mls.end());
+          //iterate over lbeWholeArticle, having each item backpoint to the previous
+          for (auto it = lbeWholeArticle.begin(); it != lbeWholeArticle.end(); it++) {
+            if ( it != lbeWholeArticle.begin() ) {
+              it->setBack(*prev(it));
+            }
+          }
         }
       } //close loop lwSent over sents
 
