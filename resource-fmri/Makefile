@@ -178,6 +178,9 @@ $(RT-SCRIPTS)/merge_tables.py
 $(RT-SCRIPTS)/merge_tables.py
 	cat $< | python $(word 3, $^) $< $(word 2, $^) sentid > $@
 
+%.nm1.evmeasures: %.evmeasures $(FMRI-SCRIPTS)/average_nm1.py
+	cat $< | python $(word 2, $^) - > $@
+
 %.corr.txt: %.evmeasures $(FMRI-SCRIPTS)/corrAnalysis.r
 	cat $(word 1, $^) | $(word 2, $^) > $@
 

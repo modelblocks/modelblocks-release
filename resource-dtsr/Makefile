@@ -102,8 +102,7 @@ $(RT-SCRIPTS)/futureMetrics.py \
 $(RT-SCRIPTS)/spilloverMetrics.py \
 $(RT-SCRIPTS)/parsePredictors.py \
 $(RT-SCRIPTS)/rm_na_items.py \
-$(CONFIGDIR)/user-dtsr-directory.txt \
-$(DTSRDIR)/dtsr/formula.py
+$(CONFIGDIR)/user-dtsr-directory.txt
 	$(eval CORECOLS := $(sort $(shell echo $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^))) $(shell echo $(subst +, ,$(subst _, ,$(subst .,,$(suffix $*))))) | python $(word 9, $^))))
 	$(eval COLS := $(sort $(shell echo $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^))) $(shell echo $(subst +, ,$(subst _, ,$(subst .,,$(suffix $*))))))))
 	@echo Extracting columns: $(CORECOLS)
@@ -127,8 +126,7 @@ $(RT-SCRIPTS)/futureMetrics.py \
 $(RT-SCRIPTS)/spilloverMetrics.py \
 $(RT-SCRIPTS)/parsePredictors.py \
 $(RT-SCRIPTS)/rm_na_items.py \
-$(CONFIGDIR)/user-dtsr-directory.txt \
-$(DTSRDIR)/dtsr/formula.py
+$(CONFIGDIR)/user-dtsr-directory.txt
 	$(eval CORECOLS := $(sort $(shell echo $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^))) $(shell echo $(subst +, ,$(subst _, ,$(subst .,,$(suffix $*))))) | python $(word 9, $^))))
 	$(eval COLS := $(sort $(shell echo $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^))) $(shell echo $(subst +, ,$(subst _, ,$(subst .,,$(suffix $*))))))))
 	@echo Extracting columns: $(CORECOLS)
