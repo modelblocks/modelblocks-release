@@ -42,12 +42,18 @@ processLMEArgs <- function() {
         make_option(c('-u', '--trainmse'), type='logical', action='store_true', default=FALSE, help='Generate error table for train partition.'),
         make_option(c('-v', '--devmse'), type='logical', action='store_true', default=FALSE, help='Generate error table for dev partition.'),
         make_option(c('-w', '--testmse'), type='logical', action='store_true', default=FALSE, help='Generate error table for test partition.'),
-        make_option(c('-T', '--totable'), type='logical', action='store_true', default=FALSE, help="Preprocess data and output table only (do not regress).")
+        make_option(c('-T', '--totable'), type='logical', action='store_true', default=FALSE, help="Preprocess data and output table only (do not regress)."),
+        make_option(c('--seed'), type='numeric', default=NULL, help='Set random seed.'),
+        make_option(c('--suppress_nlminb'), type='logical', action='store_true', default=FALSE, help='If BOBYQA fails, do not attempt to use NLMINB.')
     )
     opt_parser <- OptionParser(option_list=opt_list)
     opts <- parse_args(opt_parser, positional_arguments=2)
     params <- opts$options
 
+    if (!is.null(params$seed)) {
+        set.seed(params$seed)
+    }
+    
     if (is.null(params$corpus)) {
         filename = strsplit(opts$args[2], '/', fixed=T)[[1]]
         corpus = strsplit(filename[length(filename)], '.', fixed=T)[[1]][1]
@@ -517,7 +523,7 @@ minRelGrad <- function(reg1, reg2) {
 }
 
 # Fit a model formula with bobyqa, try again with nlminb on convergence failure
-regressLinearModel <- function(dataset, form) {
+regressLinearModel <- function(dataset, form, params) {
     library(optimx)
     library(lme4)
     bobyqa <- lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=50000))
@@ -532,7 +538,7 @@ regressLinearModel <- function(dataset, form) {
     printSummary(m)
     convWarn <- m@optinfo$conv$lme4$messages
     
-    if (!is.null(convWarn)) {
+    if (!is.null(convWarn) && !params$suppress_nlminb) {
         m1 <- m
         smartPrint('Fitting linear mixed-effects model with nlminb')
         smartPrint(paste(' ', date()))
@@ -687,7 +693,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
                    logmain=FALSE, logdepvar=FALSE, lambda=NULL,
                    addEffects=NULL, extraEffects=NULL, ablEffects=NULL, groupingfactor=NULL,
                    indicatorlevel=NULL, crossfactor=NULL, interact=TRUE,
-                   corpusname='corpus') {
+                   corpusname='corpus',suppress_nlminb=False) {
    
     if (fitmode == 'lm') {
         bform <- processForm(baseFormula(bformfile, logdepvar, lambda),
