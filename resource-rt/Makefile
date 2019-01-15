@@ -418,8 +418,13 @@ endef
 %.itemmeasures: %.lineitems
 	echo word  >  $@
 	cat $<  |  perl -pe 's/ /\n/g'  >>  $@
+
 %parsed.itemmeasures: %parsed.tokmeasures  $$(basename %).itemmeasures  $(RT-SCRIPTS)/roll_toks.py
 	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1  >  $@
+
+%.itemmeasures: %.tokmeasures $$(basename %).itemmeasures $(RT-SCRIPTS)/roll_toks.py
+	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 > $@ 
+
 %.all-itemmeasures:  $(RT-SCRIPTS)/evmeas2uniqcols.py  $(RT-SCRIPTS)/filter_cols.py  $(RT-SCRIPTS)/addCols.r  \
                          $$(patsubst $$(pc),$$(word 1,$$(subst ., ,$$*)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,$$*)),$$(subst ., ,%)))
 	paste -d ' ' $(wordlist 4,$(words $^),$^)  |  python $(word 1,$^)  |  python $(word 2,$^)  |  $(word 3,$^)  >  $@
@@ -436,7 +441,7 @@ endef
 %.prdmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
 	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  >  $@
 %.resmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
-	ln -s $(word 2,$^) $@
+	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
 
 ## TO SPEC
 %.filt-evmeasures: $$(basename %).core-evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \

@@ -38,7 +38,7 @@ if __name__ == '__main__':
         A utility that reads a dataset from stdin and partitions it given splitting criteria.
     ''')
     argparser.add_argument('-c', '--config_path', default=None, help='Path to config file with partitioning instructions. If not provided, default params will be used. Defaults are not necessarily reasonable for all use cases.')
-    argparser.add_argument('-p', '--partition', nargs='+', help='One or more space-delimited IDs of subsets of partition to send to stdout. If arity = 2, subset of ("train", "test"). If arity = 3, subset of {"train", "dev", "test"}. Otherwise, set of integers.')
+    argparser.add_argument('-p', '--partition', nargs='+', help='One or more space-delimited IDs of subsets of partition to send to stdout. If arity = 2, subset of ("fit", "evaluation"). If arity = 3, subset of {"fit", "exploratory", "evaluation"}. Otherwise, set of integers.')
     args, unknown = argparser.parse_known_args()
 
     if args.config_path is not None:
@@ -67,9 +67,9 @@ if __name__ == '__main__':
     select = compute_partition(df, mod, arity)
 
     if arity == 3:
-        names = ['train', 'dev', 'test']
+        names = ['fit', 'exploratory', 'evaluation']
     elif arity == 2:
-        names = ['train', 'test']
+        names = ['fit', 'evaluation']
     else:
         names = [str(x) for x in range(args.n)]
 

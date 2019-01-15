@@ -83,6 +83,12 @@ export PYTHONPATH
 #
 ################################################################################
 
+bin/regress-dtsr: $(DTSR-SCRIPTS)/regress-dtsr.sh
+	cp $< $@
+
+bin/predict-dtsr: $(DTSR-SCRIPTS)/predict-dtsr.sh
+	cp $< $@
+
 .PRECIOUS: %.t.core.evmeasures
 %.t.core.evmeasures: %.core.evmeasures $$(DTSR-SCRIPTS)/compute_timestamps_from_RT.py
 	cat $(word 1, $^) | python $(word 2, $^) > $@
