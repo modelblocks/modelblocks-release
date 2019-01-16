@@ -86,7 +86,8 @@ bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
 	cat $(word 2,$^)  |  python $(word 3, $^) -c $(word 1, $^) -p $(subst +, ,$(subst .,,$(suffix $*)))  >  $@
 
 
-## generic fit files: <data>.<baseline>_(<predr>_)*<regrmodel>.fitmodel
+## generic fit files: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.fitmodel
+.PRECIOUS: %.fitmodel %.coeffs
 %.fitmodel %.coeffs:  bin/regress-$$(subst .,,$$(suffix $$(subst _,.,$$*)))  \
                       $$(basename %)_part.prdmeasures  \
                       $$(basename %)_part.resmeasures  \
@@ -94,11 +95,11 @@ bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
 	$^ $(wordlist 2,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*)))))
 
 
-## generaic predicted errors file: <data>.<fit-part>_<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
+## generaic predicted errors file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
 %_predicted.errors:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
-                     $$(basename $$(basename %))$$(word 1,$$(subst _, ,$$(suffix $$(basename $$*)))).$$(subst $$(space),_,$$(wordlist 2,100,$$(subst _, ,$$(suffix $$(basename $$*))))).fitmodel  \
-           	     $$(basename $$(basename %))$$(suffix $$*)_part.prdmeasures \
-           	     $$(basename $$(basename %))$$(suffix $$*)_part.resmeasures
+                     $$(basename %).fitmodel  \
+           	     $$(basename $$(basename $$(basename %)))$$(suffix $$*)_part.prdmeasures \
+           	     $$(basename $$(basename $$(basename %)))$$(suffix $$*)_part.resmeasures
 	$^  >  $@
 
 
@@ -107,9 +108,9 @@ bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
 # 	$^  >  $@
 
 
-## generic signif file: <data>.<fit-part>_<baseline>_(<predr>_)*<regrmodel>.<eval-part>.(<predr>_)*<signif-type>.signif
+## generic signif file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>.(<predr>_)*<signif-type>.signif
 %.signif:  bin/signif-$$(lastword $$(subst _, ,$$(suffix $$*)))  \
-	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), $$(basename $$(basename $$(basename %))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)
+	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), $$(basename $$(basename $$(basename %))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)
 	$^  >  $@
 
 
