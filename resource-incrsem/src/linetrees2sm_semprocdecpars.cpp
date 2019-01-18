@@ -54,7 +54,8 @@ class LVU : public trip<L,arma::rowvec,arma::vec> {
       std::smatch sm;
       std::regex re ("(.*)-n([0-9]+).*"); //get consecutive numbers after a "-n"
       if (std::regex_search(first(), sm, re) && sm.size() > 2) { return(sm.str(1)); }
-    } else return(first());
+    } 
+    return(first());
   }
   // Accessor methods...
   operator       const L ( ) const { return removeLink(); }
@@ -64,14 +65,12 @@ class LVU : public trip<L,arma::rowvec,arma::vec> {
   arma::vec&           u ( )       { return third(); }
   L                    getL ( )    { return removeLink(); } //return unlinked label
   operator             L ( )       { return removeLink(); } 
-  L              getLink ( ) const { 
-          if (string::npos != first().find("-n")) {
-            std::smatch sm;
-            std::regex re ("(.*)-n([0-9]+).*"); //get consecutive numbers after a "-n"
-            if (std::regex_search(first(), sm, re) && sm.size() > 2) { return(sm.str(2)); }
-          }
-          else return("");
-  } 
+  L              getLink ( ) const { if (string::npos != first().find("-n")) {
+                                       std::smatch sm;
+                                       std::regex re ("(.*)-n([0-9]+).*"); //get consecutive numbers after a "-n"
+                                       if (std::regex_search(first(), sm, re) && sm.size() > 2) { return(sm.str(2)); }
+                                     }
+                                     return(""); } 
   // Input / output methods  ---  NOTE: only reads and writes label, not vectors...
   friend pair<istream&,LVU&> operator>> ( istream&            is,  LVU& t              )                 { return pair<istream&,LVU&>(is,t); }
   friend istream&            operator>> ( pair<istream&,LVU&> ist, const char* psDelim )                 { return pair<istream&,L&>(ist.first,ist.second.first())>>psDelim; }
@@ -178,6 +177,7 @@ string getCorefId ( Tree<LVU>& tr ) {
 
 string getUnaryOp ( const Tree<LVU>& tr ) {
 //if( FEATCONFIG & 16 ) return 'N';
+  //cerr << tr << endl;
   if( string::npos != L(tr.front()).find("-lV") ) return "V";
   N n =  T(L(tr).c_str()).getLastNonlocal();
   if( n == N_NONE ) return "";
