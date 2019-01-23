@@ -407,7 +407,7 @@ int main ( int nArgs, char* argv[] ) {
               //if( VERBOSE>1 ) cerr << "before flogresponses accum, pbiant: " << pbiAnt->second.second << endl; //ptr dEATH
               //
               list<FPredictor> lfpredictors;  
-              q_tdec1.calcForkPredictors( lfpredictors, ksAnt, false ); 
+              q_tdec1.calcForkPredictors( lfpredictors, ksAnt, !corefON, false ); 
               lfpredictors.emplace_back();  // add bias term
               // Calc distrib over response for each fork predictor...
               arma::vec flogresponses = arma::zeros( matF.n_rows );            //distribution over f responses for a single antecedent features

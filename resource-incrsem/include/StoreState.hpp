@@ -1105,7 +1105,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     return -1;
   } 
 
-  list<FPredictor>& calcForkPredictors ( list<FPredictor>& lfp, const KSet& ksAnt, bool bAdd=true ) const {
+  list<FPredictor>& calcForkPredictors ( list<FPredictor>& lfp, const KSet& ksAnt, bool nullAnt, bool bAdd=true ) const {
     int d = (FEATCONFIG & 1) ? 0 : getDepth(); // max used depth - (dbar)
     const KSet& ksB = at(size()-1).getKSet(); //contexts of lowest b (bdbar)
     int iCarrier = getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
@@ -1127,6 +1127,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
 //      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(kNil,kA) ) lfp.emplace_back( kNil, kA );
 //      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(kF,kNil) ) lfp.emplace_back( kF, kNil );
     }
+    if (nullAnt) { lfp.emplace_back("aNullAnt"); }
     return lfp;
   }
 

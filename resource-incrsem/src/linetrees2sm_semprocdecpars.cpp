@@ -331,7 +331,8 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     //cerr << "value of validIntra after annot vs sentnum check: " << validIntra << endl;
     if (INTERSENTENTIAL == true) validIntra = true;
     //cerr << "value of validIntra after global INTERSENTENTIAL check: " << validIntra << endl;
-    const KSet& ksAnt = (validIntra == true) ? annot2kset[annot] : KSet(K::kTop);
+    const KSet& ksAnt = validIntra == true ? annot2kset[annot] : KSet(K::kTop);
+    bool nullAnt = (ksAnt == KSet(K::kTop)) ? true : false;
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
     //if (currentloc == "526") {
     //  cout << "current location is 526" << endl;
@@ -354,7 +355,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
 
     // Print preterminal / fork-phase predictors...
     DelimitedList<psX,FPredictor,psComma,psX> lfp;  
-    q.calcForkPredictors(lfp, ksAnt);//add additional kset argument, should be set of all antecedents in referent cluster. requires global map from annotation to ksets, as in {"0204":Kset ["Lord_"], "0207": KSet ["Lord_", "he_"]}, etc.
+    q.calcForkPredictors(lfp, ksAnt, nullAnt);//additional kset argument is set of all antecedents in referent cluster. requires global map from annotation to ksets, as in {"0204":Kset ["Lord_"], "0207": KSet ["Lord_", "he_"]}, etc.
     auto fpCat = lfp.front( );
     lfp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first element is category.
     lfp.sort( );             // sort to shorten mlr input
@@ -544,9 +545,9 @@ int main ( int nArgs, char* argv[] ) {
   vFirstHot = arma::zeros( iMaxNums );  vFirstHot(0)=1.0;
 
   int linenum = 0;
-  int discourselinenum = 0; //increments on sentence in discourse
+  int discourselinenum = 0; //increments on sentence in discourse/article
   map<string,KSet> annot2kset;
-  int tDisc = 0; //increments on word in discourse
+  int tDisc = 0; //increments on word in discourse/article
   vector<Sign> antecedentCandidates; 
   map<string,int> annot2tdisc;
   while ( cin && EOF!=cin.peek() ) {
