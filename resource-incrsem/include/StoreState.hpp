@@ -419,15 +419,19 @@ class NPredictor {
     return pair<istream&,NPredictor&>(is,t);
   }
   friend istream& operator>> ( pair<istream&,NPredictor&> ist, const char* psDelim ) {
-    if ( ist.first.peek()==psDelim[0] ) { auto& o =  ist.first >> psDelim;  ist.second = NPredictor();  return o; }
-    if ( ist.first.peek()=='a' ) { 
+    if ( ist.first.peek()==psDelim[0] ) { 
+      auto& o =  ist.first >> psDelim;  
+      ist.second = NPredictor();  
+      return o; 
+    }
+    else if ( ist.first.peek()=='a' ) { 
       AdHocFeature mstring;
       auto& o = ist.first >> mstring >> psDelim;  
       ist.second = NPredictor(mstring);     
       return o; 
     }
     //TODO how to check ahead to see if unary k or t?
-    else                         { 
+    else  { 
       Delimited<K> kAntecedent, kAncestor;  
       auto& o = ist.first >> kAntecedent >> "&" >> kAncestor >> psDelim;  
       ist.second = NPredictor(kAntecedent,kAncestor);  
@@ -442,7 +446,7 @@ class NPredictor {
       return o; 
     }
     //TODO unary k and t for vectors
-    else                         { 
+    else { 
       Delimited<K> kAntecedent, kAncestor;
       auto o = ist.first >> kAntecedent >> "&" >> kAncestor >> vpsDelim;  
       ist.second = NPredictor(kAntecedent,kAncestor);  
@@ -451,12 +455,13 @@ class NPredictor {
   }
   friend ostream& operator<< ( ostream& os, const NPredictor& t ) {
     //return os << miantk[t.id] << "&" << miancestork[t.id]; 
-    if (miantk.find(t.id)!=miantk.end()) { return os << miantk[t.id] << "&" << miancestork[t.id]; } //output either KxK
-    if (miancestorku.find(t.id)!=miancestorku.end()) { return os << miancestork[t.id]; } //or unary k
-    if (miantecedentku.find(t.id)!=miantecedentku.end()) { return os << miantecedentku[t.id]; } // or other unary k
-    if (miantecedenttu.find(t.id)!=miantecedenttu.end()) { return os << miantecedenttu[t.id]; } // or unary t
-    if (miancestortu.find(t.id)!=miancestortu.end()) { return os << miancestortu[t.id]; } //or other unary t
-    else { return os << mistr[t.id]; } //...or string
+    if (miantk.find(t.id) != miantk.end()) { return os << miantk[t.id] << "&" << miancestork[t.id]; } //output either KxK
+    else if (miancestorku.find(t.id) != miancestorku.end()) { return os << miancestork[t.id]; } //or unary k
+    else if (miantecedentku.find(t.id) != miantecedentku.end()) { return os << miantecedentku[t.id]; } // or other unary k
+    else if (miantecedenttu.find(t.id) != miantecedenttu.end()) { return os << miantecedenttu[t.id]; } // or unary t
+    else if (miancestortu.find(t.id) != miancestortu.end()) { return os << miancestortu[t.id]; } //or other unary t
+    else if (mistr.find(t.id) != mistr.end()) { return os << mistr[t.id]; } //check for string
+    else { return os << "NON_STRING_ID_" << t.id; } 
   }
   static bool exists ( K kAntecedent, K kAncestor )      { return( mkki.end()!=mkki.find(pair<K,K>(kAntecedent,kAncestor)) ); }
   static bool exists ( AdHocFeature mstring )            { return( mstri.end()!=mstri.find(mstring) ); }
@@ -484,7 +489,6 @@ class NPredictor {
           cerr << "ERROR: exists() called for t without specifying ref type (anaphor vs. antecedent)" << endl;
       }
   }
-        
 };
 uint                    NPredictor::nextid = 1;
 map<pair<K,K>,uint>     NPredictor::mkki; 
@@ -503,7 +507,6 @@ map<uint,T>             NPredictor::miantecedenttu; //map uint to antecedent t, 
 map<uint,T>             NPredictor::miancestortu;   //map uint to ancestor t, unary
 ////////////////////////////////////////////////////////////////////////////////
 
-//TODO adapt JResponse definition for NResponse. why do we need this for variable that represents 0,1? why not use bool?. William says use D depth type
 DiscreteDomain<int> domNResponse;
 //typedef Delimited<int>  NResponse;  // 
 typedef DiscreteDomainRV<int,domNResponse> NResponse;
@@ -565,7 +568,8 @@ class FPredictor {
   static map<trip<D,K,K>,uint>   mdkki;
   static map<quad<D,K,K,K>,uint> mdkkki; //ej proposed change for coreference
   static map<pair<K,K>,uint>     mkki;
-
+  static map<AdHocFeature,uint>  mstri;
+  static map<uint,AdHocFeature>  mistr;
  public:
 
   // Constructors...
@@ -594,6 +598,11 @@ class FPredictor {
     else { id = nextid++;  mid[id] = d;  mikF[id] = kF;  mikA[id] = kA;  mikAnt[id] = kAntecedent; mdkkki[quad<D,K,K,K>(d,kF,kA,kAntecedent)] = id; }
     //cout<<"did id "<<id<<"/"<<nextid<<" as "<<*this<<endl;
   }
+  FPredictor (AdHocFeature mstring) {
+    const auto& it = mstri.find(mstring);
+    if (it != mstri.end() ) id = it->second;
+    else { id = nextid++; mistr[id] = mstring; mstri[mstring] = id; }
+  }
 
   // Accessor methods...
   uint toInt() const { return id; }
@@ -603,6 +612,7 @@ class FPredictor {
   K getFillerK()  const { return mikF[id]; }
   K getAncstrK()  const { return mikA[id]; }
   K getAntcdntK() const { return mikAnt[id]; } //ej change for coref
+  AdHocFeature getfeatname() const { return mistr[id]; }
   static uint getDomainSize() { return nextid; }
 
   // Ordering operator...
@@ -613,47 +623,95 @@ class FPredictor {
     return pair<istream&,FPredictor&>(is,t);
   }
   friend istream& operator>> ( pair<istream&,FPredictor&> ist, const char* psDelim ) {
-    if ( ist.first.peek()==psDelim[0] ) { auto& o = ist.first >> psDelim;  ist.second = FPredictor();  return o; }
-    if ( ist.first.peek()=='d' ) {
-      D d;  ist.first >> "d" >> d >> "&";
-      if ( ist.first.peek()=='t' ) { Delimited<T> t;       auto& o = ist.first >> "t" >> t        >> psDelim;  ist.second = FPredictor(d,t);      return o; }
-      else                         { Delimited<K> kF, kA, kAntecedent;  auto& o = ist.first >> kF >> "&" >> kA >> "&" >> kAntecedent >> psDelim;  ist.second = FPredictor(d,kF,kA,kAntecedent);  return o; }
-    } else { 
-                                     Delimited<K> kF, kA;  auto& o = ist.first >> kF >> "&" >> kA >> psDelim;  ist.second = FPredictor(kF,kA);    return o;
+    if ( ist.first.peek()==psDelim[0] ) { 
+      auto& o = ist.first >> psDelim;  
+      ist.second = FPredictor();  
+      return o; 
+    }
+    else if ( ist.first.peek()=='d' ) {
+      D d;  
+      ist.first >> "d" >> d >> "&";
+      if ( ist.first.peek()=='t' ) { 
+        Delimited<T> t;       
+        auto& o = ist.first >> "t" >> t        >> psDelim;  
+        ist.second = FPredictor(d,t);      
+        return o; 
+      }
+      else { 
+        Delimited<K> kF, kA, kAntecedent;  
+        auto& o = ist.first >> kF >> "&" >> kA >> "&" >> kAntecedent >> psDelim;  
+        ist.second = FPredictor(d,kF,kA,kAntecedent);  
+        return o; 
+      }
+    }
+    else if (ist.first.peek()=='a' ) {
+      AdHocFeature mstring;
+      auto& o = ist.first >> mstring >> psDelim;  
+      ist.second = FPredictor(mstring);     
+      return o; 
+    }
+    else { 
+      Delimited<K> kF, kA;  
+      auto& o = ist.first >> kF >> "&" >> kA >> psDelim;  
+      ist.second = FPredictor(kF,kA);    
+      return o;
     }
   }
   friend bool operator>> ( pair<istream&,FPredictor&> ist, const vector<const char*>& vpsDelim ) {
     D d;  ist.first >> "d" >> d >> "&"; 
-    if ( ist.first.peek()=='d' ) { 
-      if ( ist.first.peek()=='t' ) { Delimited<T> t;       auto o = ist.first >> "t" >> t        >> vpsDelim;  ist.second = FPredictor(d,t);      return o; }
-      else                         { Delimited<K> kF, kA, kAntecedent;  auto o = ist.first >> kF >> "&" >> kA >> "&" >> kAntecedent >> vpsDelim;  ist.second = FPredictor(d,kF,kA,kAntecedent);  return o; }
-    } else { 
-                                     Delimited<K> kF, kA;  auto o = ist.first >> kF >> "&" >> kA >> vpsDelim;  ist.second = FPredictor(kF,kA);    return o; 
+    if ( ist.first.peek()=='d' ) {  //'d' starts with depth...
+      if ( ist.first.peek()=='t' ) {  //...continues with 't'
+        Delimited<T> t; 
+        auto o = ist.first >> "t" >> t >> vpsDelim;  
+        ist.second = FPredictor(d,t);      
+        return o; 
+      }
+      else {  //...or else continues with F,A,Ante
+        Delimited<K> kF, kA, kAntecedent;  
+        auto o = ist.first >> kF >> "&" >> kA >> "&" >> kAntecedent >> vpsDelim;  
+        ist.second = FPredictor(d,kF,kA,kAntecedent);  
+        return o; 
+      }
+    } 
+    else if ( ist.first.peek() =='a') { //'a' for adhoc feature, string-based
+      AdHocFeature mstring;
+      auto o = ist.first >> mstring >> vpsDelim;  
+      ist.second = FPredictor(mstring);     
+      return o; 
+    }
+    else {  //if not 'd' or 'a', then it's an F,A FPred
+      Delimited<K> kF, kA;  
+      auto o = ist.first >> kF >> "&" >> kA >> vpsDelim;  
+      ist.second = FPredictor(kF,kA);    
+      return o; 
     }
   }
   friend ostream& operator<< ( ostream& os, const FPredictor& t ) {
-    if      ( mit.end()  != mit.find(t.id)  ) return os << "d" << mid[t.id] << "&" << "t" << mit[t.id];
-    else if ( mid.end()  != mid.find(t.id)  ) return os << "d" << mid[t.id] << "&" << mikF[t.id] << "&" << mikA[t.id] << "&" << mikAnt[t.id];
-    else if ( mikA.end() != mikA.find(t.id) ) return os << mikF[t.id] << "&" << mikA[t.id];
-    else                                      return os << "NON_STRING_ID_" << t.id;
+    if      ( mit.end()  != mit.find(t.id)  ) { return os << "d" << mid[t.id] << "&" << "t" << mit[t.id]; }
+    else if ( mid.end()  != mid.find(t.id)  ) { return os << "d" << mid[t.id] << "&" << mikF[t.id] << "&" << mikA[t.id] << "&" << mikAnt[t.id]; }
+    else if ( mikA.end() != mikA.find(t.id) ) { return os << mikF[t.id] << "&" << mikA[t.id]; }
+    else if ( mistr.find(t.id)!=mistr.end() ) { return os << mistr[t.id]; }
+    else                                      { return os << "NON_STRING_ID_" << t.id; }
   }
   static bool exists ( D d, T t )        { return( mdti.end()!=mdti.find(pair<D,T>(d,t)) ); }
   static bool exists ( D d, K kF, K kA ) { return( mdkki.end()!=mdkki.find(trip<D,K,K>(d,kF,kA)) ); }
   static bool exists ( K kF, K kA )      { return( mkki.end()!=mkki.find(pair<K,K>(kF,kA)) ); }
   static bool exists ( D d, K kF, K kA, K kAntecedent) { return( mdkkki.end()!=mdkkki.find(quad<D,K,K,K>(d,kF,kA,kAntecedent)) ); } //ej changes for coref
+  static bool exists ( AdHocFeature mstring )            { return( mstri.end()!=mstri.find(mstring) ); }
   FPredictor  addNum ( int i ) const     { return( FPredictor( mid[id], mit[id].addNum(i) ) ); }
 };
-uint                  FPredictor::nextid = 1;   // space for bias "" predictor
-map<uint,D>           FPredictor::mid;
-map<uint,T>           FPredictor::mit;
-map<uint,K>           FPredictor::mikF;
-map<uint,K>           FPredictor::mikA;
-map<uint,K>           FPredictor::mikAnt;
-map<pair<D,T>,uint>   FPredictor::mdti;
-map<trip<D,K,K>,uint> FPredictor::mdkki;
-map<pair<K,K>,uint>   FPredictor::mkki;
+uint                    FPredictor::nextid = 1;   // space for bias "" predictor
+map<uint,D>             FPredictor::mid;
+map<uint,T>             FPredictor::mit;
+map<uint,K>             FPredictor::mikF;
+map<uint,K>             FPredictor::mikA;
+map<uint,K>             FPredictor::mikAnt;
+map<pair<D,T>,uint>     FPredictor::mdti;
+map<trip<D,K,K>,uint>   FPredictor::mdkki;
+map<pair<K,K>,uint>     FPredictor::mkki;
 map<quad<D,K,K,K>,uint> FPredictor::mdkkki; 
-
+map<AdHocFeature,uint>  FPredictor::mstri;
+map<uint,AdHocFeature>  FPredictor::mistr;
 ////////////////////////////////////////////////////////////////////////////////
 
 DiscreteDomain<int> domFResponse;
@@ -1115,8 +1173,6 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
       //npreds.emplace_back(antk, 0); //add unary antecedent k feat.  0 means antk type feature
       for (auto& currk : ksB) {
         npreds.emplace_back(antk, currk); //pairwise kxk feat
-        //TODO add feature types 0-3 in StoreState npredictor class
-        
       }
     }
     /*

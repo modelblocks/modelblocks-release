@@ -138,7 +138,7 @@ class Beam : public set<BeamElement<S>,std::greater<BeamElement<S>>> {
 
   friend ostream& operator<< ( ostream& os, const Beam<S>& t ) {
     for( const auto& be : t )
-      os << be.getProb() << " " << be.getHidd() << endl;
+      os << be.getProb() << " " << be.getHidd() << " me: " << &be << " myback: " << &be.getBack() << endl;
     return os;
   }
 };
