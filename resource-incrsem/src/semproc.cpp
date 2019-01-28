@@ -303,14 +303,18 @@ int main ( int nArgs, char* argv[] ) {
             //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " starting denom loop..." << w_t << endl;}
             //for ( int tAnt = t; tAnt>0; tAnt--, pbeAnt = &pbeAnt->getBack()) { //denominator
             for ( int tAnt = t; &pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy; tAnt--, pbeAnt = &pbeAnt->getBack()) { //denominator
-
-
               //if (VERBOSE>1) cerr << "*pbiAnt: " << *pbiAnt << endl;
               //if (VERBOSE>1) cerr << "pbiAnt->first: " << pbiAnt->first << endl;
               //if (VERBOSE>1) cerr << "pbiAnt->second.second: " << pbiAnt->second.second << endl;
               //if (VERBOSE>1) cerr << "pbiAnt: " << pbiAnt << endl;
               //const KSet ksAnt (pbiAnt->first.fourth());
               const KSet ksAnt (pbeAnt->getHidd().getPrtrm().getKSet()); 
+              //if (t < 2) { 
+                //cerr << "t: " << t << ", tAnt: " << tAnt << ", neq test: " << (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) << endl;
+                //cerr << "pbeAnt ptr: " << pbeAnt << endl;
+                //cerr << "pbeAnt->getHidd(): " << pbeAnt->getHidd() << endl;
+                //cerr << "considering ksAnt: " << ksAnt << endl;
+              //}
               //{ lock_guard<mutex> guard( mutexMLSList ); cerr << "Worker: " << numt << " got ksAnt" << ksAnt << endl;}
               bool corefON = (tAnt==t) ? 0 : 1;
               list<NPredictor> lnpredictors; q_tdec1.calcNPredictors( lnpredictors, pbeAnt->getHidd().getPrtrm(), corefON); 
@@ -318,7 +322,6 @@ int main ( int nArgs, char* argv[] ) {
               for ( auto& npredr : lnpredictors ) {
                 if ( npredr.toInt() < matN.n_cols ) {
                   nlogresponses += matN.col( npredr.toInt() );  //cols are predictors, where each col has values for 1 or 0
-                  
                 }
               }
 
@@ -355,7 +358,7 @@ int main ( int nArgs, char* argv[] ) {
             //for ( int tAnt = t; tAnt>((USE_COREF) ? 0 : t-1); tAnt--, pbeAnt = &pbeAnt->getBack()) { //iterate over candidate antecedent ks, following trellis backpointers ej change for coref 
             //
             //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " starting numerator loop..." << w_t << endl;}
-            for ( int tAnt = t; tAnt>0; tAnt--, pbeAnt = &pbeAnt->getBack()) { //iterate over candidate antecedent ks, following trellis backpointers. numerator?
+            for ( int tAnt = t; &pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy; tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers. 
               //if( VERBOSE>1 ) cerr << "pbiAnt is biDummy: " << (pbiAnt == &biDummy) << endl;
               //if( VERBOSE>1 ) cerr << "in main(): tAnt: " << tAnt << endl;
               //if( VERBOSE>1 ) cerr << "in main(): beams[tAnt]: " << beams[tAnt] << endl;
@@ -551,13 +554,16 @@ int main ( int nArgs, char* argv[] ) {
           if( numThreads > 1 ) cerr << "Finished line " << currline << " (" << beams[t].size() << ")..." << endl;
           cerr << "Worker: " << numt << " attempting to set mls on beams..." << endl;
           beams.setMostLikelySequence( mls );
+          cerr << "length lbeWholeArticle: " << lbeWholeArticle.size() << endl;
           lbeWholeArticle.insert(lbeWholeArticle.end(),mls.begin(),mls.end());
+          cerr << "length lbeWholeArticle after insertion: " << lbeWholeArticle.size() << endl;
           //iterate over lbeWholeArticle, having each item backpoint to the previous
           for (auto it = lbeWholeArticle.begin(); it != lbeWholeArticle.end(); it++) {
             if ( it != lbeWholeArticle.begin() ) {
               it->setBack(*prev(it));
             }
           }
+          cerr << "lbeWholeArticle.back().getBack().getHidd(): " << lbeWholeArticle.back().getBack().getHidd() << endl;
         }
       } //close loop lwSent over sents
 

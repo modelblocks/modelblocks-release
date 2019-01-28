@@ -1127,7 +1127,8 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
 //      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(kNil,kA) ) lfp.emplace_back( kNil, kA );
 //      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(kF,kNil) ) lfp.emplace_back( kF, kNil );
     }
-    if (nullAnt) { lfp.emplace_back("aNullAnt"); }
+    if (nullAnt) { lfp.emplace_back("acorefOFF"); }
+    if (!nullAnt) { lfp.emplace_back("acorefON"); }
     return lfp;
   }
 

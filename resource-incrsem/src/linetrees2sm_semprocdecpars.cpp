@@ -81,7 +81,8 @@ class LVU : public trip<L,arma::rowvec,arma::vec> {
 ////////////////////////////////////////////////////////////////////////////////
 
 map<L,double> mldLemmaCounts;
-int MINCOUNTS = 100;
+//int MINCOUNTS = 100;
+int MINCOUNTS = 0;
 map<trip<T,T,T>,arma::mat> mtttmG;
 map<pair<T,W>,arma::vec> mtwvL;
 int iMaxNums = 0;
