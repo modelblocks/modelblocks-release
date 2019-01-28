@@ -249,7 +249,7 @@ int main ( int nArgs, char* argv[] ) {
         MLSs.emplace_back( ); //establish placeholder for mls for this specific sentence
         auto& mls = MLSs.back();
 
-        Trellis   beams;  // sequence of beams
+        Trellis   beams;  // sequence of beams - each beam is hypotheses at a given timestep
         uint      t=0;    // time step
 
         // Allocate space in beams to avoid reallocation...
@@ -555,7 +555,9 @@ int main ( int nArgs, char* argv[] ) {
           cerr << "Worker: " << numt << " attempting to set mls on beams..." << endl;
           beams.setMostLikelySequence( mls );
           cerr << "length lbeWholeArticle: " << lbeWholeArticle.size() << endl;
-          lbeWholeArticle.insert(lbeWholeArticle.end(),mls.begin(),mls.end());
+          //lbeWholeArticle.insert(lbeWholeArticle.end(),mls.begin(),mls.end());
+          mls.pop_back(); //remove dummy element before adding to lbe TODO - test this for intersentential indexing off-by-one issue
+          lbeWholeArticle.insert(lbeWholeArticle.end(),mls.begin(),mls.end()); //insert mls at end of lbe
           cerr << "length lbeWholeArticle after insertion: " << lbeWholeArticle.size() << endl;
           //iterate over lbeWholeArticle, having each item backpoint to the previous
           for (auto it = lbeWholeArticle.begin(); it != lbeWholeArticle.end(); it++) {
