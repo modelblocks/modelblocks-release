@@ -17,12 +17,15 @@ def main():
 
     for s in data1['subject'].unique():
         data1_s = data1.loc[data1['subject'] == s]
-        merged = pd.merge(data1_s, data2, how='outer', on=['item', 'zone', 'word'])
+        merged = pd.merge(data1_s, data2, how='inner', on=['item', 'zone', 'word'])
         merged['subject'] = s
         frames.append(merged)
     merged = pd.concat(frames)
     merged = merged * 1 # convert boolean to [1,0]
     merged.sort_values(['subject', 'item', 'zone'], inplace=True)
+    merged['startofsentence'] = (merged.sentpos == 1).astype('int')
+    merged['endofsentence'] = merged.startofsentence.shift(-1).fillna(1).astype('int')
+    merged['wlen'] = merged.word.str.len()
     merged.to_csv(sys.stdout, ' ', index=False, na_rep='nan')
       
 main()   

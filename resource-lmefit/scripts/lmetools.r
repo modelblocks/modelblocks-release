@@ -11,7 +11,7 @@ processLMEArgs <- function() {
     library(optparse)
     opt_list <- list(
         make_option(c('-b', '--bformfile'), type='character', default='../resource-rt/scripts/mem.lmeform', help='Path to LME formula specification file (<name>.lmeform'),
-        make_option(c('-a', '--abl'), type='character', default=NULL, help='Effect(s) to ablate, delimited by "+". Effects that are not already in the baseline specification will be ignored (to add new effects to the baseline formula in order to ablate them, use the -A (--all) option.'),
+        make_option(c('-a', '--abl'), type='character', default=NULL, help='Effect(s) to ablate, delimited by "+". Effects that are not already in the baseline specification will be added as a random slope.'),
         make_option(c('-A', '--all'), type='character', default=NULL, help='Effect(s) to add, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
         make_option(c('-x', '--extra'), type='character', default=NULL, help='Additional (non-main) effect(s) to add, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
         make_option(c('-c', '--corpus'), type='character', default=NULL, help='Name of corpus (for output labeling). If not specified, will try to infer from output filename.'),
@@ -21,13 +21,16 @@ processLMEArgs <- function() {
         make_option(c('-t', '--test'), type='logical', action='store_true', default=FALSE, help='Run evaluation on test dataset.'),
         make_option(c('-e', '--entire'), type='logical', action='store_true', default=FALSE, help='Run evaluation on entire dataset.'),
         make_option(c('-s', '--splitcols'), type='character', default='subject+sentid', help='"+"-delimited list of columns to intersect in order to create a single ID for splitting dev and test (default="subject+sentid")'),
-        make_option(c('-M', '--partitionmod'), type='numeric', default=3, help='Modulus to use in dev/test partition (default = 3).'),
-        make_option(c('-K', '--partitiondevindices'), type='character', default='0', help='Comma-delimited list of indices to retain in dev set (default = "0").'),
+        make_option(c('-M', '--partitionmod'), type='numeric', default=3, help='Modulus to use in dev/test partition (default = 4)'),
+        make_option(c('-K', '--partitiondevindices'), type='character', default=0, help='Comma-delimited list of indices to retain in dev set (default = "0,1")'),
         make_option(c('-N', '--filterlines'), type='logical', action='store_true', default=FALSE, help='Filter out events at line boundaries.'),
         make_option(c('-S', '--filtersents'), type='logical', action='store_true', default=FALSE, help='Filter out events at sentence boundaries.'),
         make_option(c('-C', '--filterscreens'), type='logical', action='store_true', default=FALSE, help='Filter out events at screen boundaries.'),
         make_option(c('-F', '--filterfiles'), type='logical', action='store_true', default=FALSE, help='Filter out events at file boundaries.'),
         make_option(c('-p', '--filterpunc'), type='logical', action='store_true', default=FALSE, help='Filter out events containing phrasal punctuation.'),
+        make_option(c('-U', '--upperbound'), type='numeric', default=NULL, help='Filter out events with response value >= n.'),
+        make_option(c('-B', '--lowerbound'), type='numeric', default=NULL, help='Filter out events with response value <= n.'),
+        make_option(c('-o', '--mincorrect'), type='numeric', default=NULL, help='Filter out events with number correct < n.'),
         make_option(c('-l', '--logdepvar'), type='logical', action='store_true', default=FALSE, help='Log transform fixation durations.'),
         make_option(c('-X', '--boxcox'), type='logical', action='store_true', default=FALSE, help='Use Box & Cox (1964) to find and apply the best power transform of the dependent variable.'),
         make_option(c('-L', '--logmain'), type='logical', action='store_true', default=FALSE, help='Log transform main effect.'),
@@ -36,12 +39,21 @@ processLMEArgs <- function() {
         make_option(c('-i', '--crossfactor'), type='character', default=NULL, help='An interaction term to cross with (and add to) the main effect (if numeric, remains numeric, otherwise identical to --groupingfactor).'),
         make_option(c('-r', '--restrict'), type='character', default=NULL, help='Restrict the data to a subset defined by <column>+<value>. Example usage: -r pos+N.'),
         make_option(c('-I', '--interact'), type='logical', action='store_false', default=TRUE, help="Do not include interaction term between random slopes and random intercepts."),
-        make_option(c('-T', '--totable'), type='logical', action='store_true', default=FALSE, help="Preprocess data and output table only (do not regress).")
+        make_option(c('-u', '--trainmse'), type='logical', action='store_true', default=FALSE, help='Generate error table for train partition.'),
+        make_option(c('-v', '--devmse'), type='logical', action='store_true', default=FALSE, help='Generate error table for dev partition.'),
+        make_option(c('-w', '--testmse'), type='logical', action='store_true', default=FALSE, help='Generate error table for test partition.'),
+        make_option(c('-T', '--totable'), type='logical', action='store_true', default=FALSE, help="Preprocess data and output table only (do not regress)."),
+        make_option(c('--seed'), type='numeric', default=NULL, help='Set random seed.'),
+        make_option(c('--suppress_nlminb'), type='logical', action='store_true', default=FALSE, help='If BOBYQA fails, do not attempt to use NLMINB.')
     )
     opt_parser <- OptionParser(option_list=opt_list)
     opts <- parse_args(opt_parser, positional_arguments=2)
     params <- opts$options
 
+    if (!is.null(params$seed)) {
+        set.seed(params$seed)
+    }
+    
     if (is.null(params$corpus)) {
         filename = strsplit(opts$args[2], '/', fixed=T)[[1]]
         corpus = strsplit(filename[length(filename)], '.', fixed=T)[[1]][1]
@@ -113,8 +125,18 @@ processLMEArgs <- function() {
     return(opts)
 }
 
+computeSplitIDs <- function(data, splitcols) {
+    ## Exploratory/confirmatory partition utility column
+    data$splitID <- 0
+    for (col in splitcols) {
+        ## Convert to factor and then zero-index for consistent handling of all forms of ID
+        x <- as.numeric(as.factor(data[[col]])) - 1
+        data$splitID <- data$splitID + x
+    }
+    return(data)
+}
 
-cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=FALSE, filterscreens=FALSE, filterpunc=FALSE, restrdomain=NULL) {
+cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=FALSE, filterscreens=FALSE, filterpunc=FALSE, restrdomain=NULL, upperbound=NULL, lowerbound=NULL, mincorrect=NULL) {
     smartPrint(paste('Number of data rows (raw):', nrow(data)))
     
     if (!is.null(data$wdelta)) {
@@ -171,6 +193,22 @@ cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=
         } else smartPrint('No phrasal punctuation field to filter')
     } else {
         smartPrint('Phrasal punctuation filtering off')
+    }
+    if (!is.null(upperbound)) {
+        smartPrint(paste0('Filtering out rows with response variable >= ', toString(upperbound)))
+        data <- data[data$fdur < upperbound,]
+        smartPrint(paste0('Number of data rows (fdur < ', upperbound, '): ', nrow(data)))
+    }
+    if (!is.null(lowerbound)) {
+        smartPrint(paste0('Filtering out rows with response variable <= ', toString(lowerbound)))
+        data <- data[data$fdur > lowerbound,]
+        smartPrint(paste0('Number of data rows (fdur > ', lowerbound, '): ', nrow(data)))
+    }
+
+    if (!is.null(mincorrect) & 'correct' %in% colnames(data)) {
+        smartPrint(paste0('Filtering out rows with correct < ', toString(mincorrect)))
+        data <- data[data$correct >= mincorrect,]
+        smartPrint(paste0('Number of data rows (min correct): ', nrow(data)))
     }
 
     # Remove any incomplete rows
@@ -236,9 +274,6 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
     for (x in colnames(data)[grepl('^sentid', colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
-    for (x in colnames(data)[grepl('^subject', colnames(data))]) {
-        data[[x]] <- as.numeric(as.factor(as.character(data[[x]])))
-    }
     for (x in colnames(data)[grepl('^sentpos', colnames(data))]) {
         data[[x]] <- as.integer(as.character(data[[x]]))
     }
@@ -292,11 +327,8 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
     for (x in colnames(data)[grepl('prob',colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
-
-    ## Exploratory/confirmatory partition utility column
-    data$splitID <- 0
-    for (col in splitcols) {
-        data$splitID <- data$splitID + as.numeric(data[[col]])
+    if ('correct' %in% colnames(data)) {
+        data$correct <- as.numeric(as.character(data$correct))
     }
 
     ## Columns if using categorical grouping variables
@@ -351,9 +383,9 @@ baseFormula <- function(bformfile, logdepvar=FALSE, lambda=NULL) {
         depvar <- paste0('((', depvar, '^', lambda, '-1)/', lambda, ')')
     }
     else if (logdepvar) {
-        depvar <- paste('log1p(', depvar,')', sep='')
+        depvar <- paste('log(', depvar,')', sep='')
     }
-    depvar <- paste('c.(', depvar, ')', sep='')
+    # depvar <- paste('c.(', depvar, ')', sep='')
     bform <- list(
         dep=depvar,
         fixed=flines[2],
@@ -491,7 +523,7 @@ minRelGrad <- function(reg1, reg2) {
 }
 
 # Fit a model formula with bobyqa, try again with nlminb on convergence failure
-regressLinearModel <- function(dataset, form) {
+regressLinearModel <- function(dataset, form, params) {
     library(optimx)
     library(lme4)
     bobyqa <- lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=50000))
@@ -506,7 +538,7 @@ regressLinearModel <- function(dataset, form) {
     printSummary(m)
     convWarn <- m@optinfo$conv$lme4$messages
     
-    if (!is.null(convWarn)) {
+    if (!is.null(convWarn) && !params$suppress_nlminb) {
         m1 <- m
         smartPrint('Fitting linear mixed-effects model with nlminb')
         smartPrint(paste(' ', date()))
@@ -540,6 +572,7 @@ regressSimpleLinearModel <- function(dataset, form) {
 
 regressBayesianModel <- function(dataset, form, nchains=4, algorithm='sampling') {
     library(rstanarm)
+    options(mc.cores = parallel::detectCores())
     attach(dataset)
     depVar <- eval(parse(text=as.character(form)[[2]]))
     detach(dataset)    
@@ -549,14 +582,14 @@ regressBayesianModel <- function(dataset, form, nchains=4, algorithm='sampling')
     smartPrint('Fitting (MCMC) with stan_lmer')
     smartPrint(paste(' ', date()))
 
-    if (algorithm == 'sampling') {
+    if (FALSE) {
         m <- stan_lmer(formula = form,
-                       prior_intercept = normal(mean(depVar), 0.001),
-                       prior = normal(0, 0.001),
+                       prior_intercept = normal(mean(depVar), 1),
+                       prior = normal(0, 1),
                        prior_covariance = decov(),
                        data = dataset,
                        algorithm = 'meanfield',
-                       QR = TRUE
+                       QR = FALSE
                        )
         cat('PRE-TRAINING SUMMARY:\n')
         printBayesSummary(m)
@@ -565,7 +598,7 @@ regressBayesianModel <- function(dataset, form, nchains=4, algorithm='sampling')
                     cores = nchains,
                     algorithm = algorithm,
                     iter = 2000,
-                    QR = TRUE,
+                    QR = FALSE,
                     refresh = 1
                     )
     } else {
@@ -575,7 +608,7 @@ regressBayesianModel <- function(dataset, form, nchains=4, algorithm='sampling')
                        prior_covariance = decov(),
                        data = dataset,
                        algorithm = algorithm,
-                       QR = TRUE
+                       QR = FALSE
                        )
     }
 
@@ -645,12 +678,22 @@ getCorrelations <- function(data, bform) {
     return(cor(data[,vars]))
 }
 
+getSDs <- function(data, bform) {
+    vars = all.vars(bform)
+    vars = vars[vars %ni% c('subject', 'word')]
+    sd_vals = list()
+    for (c in vars) {
+        sd_vals[[c]] = sd(data[[c]])
+    }
+    return(sd_vals)
+}
+
 # Fit mixed-effects regression
 fitModel <- function(dataset, output, bformfile, fitmode='lme',
                    logmain=FALSE, logdepvar=FALSE, lambda=NULL,
                    addEffects=NULL, extraEffects=NULL, ablEffects=NULL, groupingfactor=NULL,
                    indicatorlevel=NULL, crossfactor=NULL, interact=TRUE,
-                   corpusname='corpus') {
+                   corpusname='corpus',suppress_nlminb=False) {
    
     if (fitmode == 'lm') {
         bform <- processForm(baseFormula(bformfile, logdepvar, lambda),
@@ -669,6 +712,12 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
     cat('\n')
     cat('Correlation of numeric variables in model:\n')
     print(correlations) 
+    cat('\n\n')
+    sd_vals = getSDs(dataset, bform)
+    cat('Standard deviations of numeric variables in model:\n')
+    for (c in names(sd_vals)) {
+        cat(paste0(c, ': ', sd_vals[[c]], '\n'))
+    }
     cat('\n')
 
     smartPrint('Regressing model:')
@@ -686,12 +735,13 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         bc_inv_out = getBoxCoxInvBetas(dataset, bform, lambda, outputModel, mixed=mixed) 
         beta_ms = bc_inv_out$beta_ms 
         y_mu = bc_inv_out$y_mu 
-        printBoxCoxInvBetas(beta_ms, lambda, y_mu) 
+        printBoxCoxInvBetas(beta_ms, lambda, y_mu, sd_vals) 
     } else { 
         beta_ms = fixef(outputModel) 
         y_mu = NULL 
     } 
     fitOutput <- list(
+        fitmode = fitmode,
         abl = ablEffects,
         ablEffects = processEffects(ablEffects, data, logmain),
         corpus = corpusname,
@@ -701,9 +751,11 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         lambda = lambda,
         beta_ms = beta_ms,
         y_mu = y_mu,
-        correlations = correlations
+        correlations = correlations,
+        sd_vals = sd_vals
     )
     save(fitOutput, file=output)
+    return(list(m=outputModel, f=bform, fitmode=fitmode))
 }
 
 getBoxCoxInvBetas <- function(dataset, bform, lambda, outputModel, mixed=True) {
@@ -730,10 +782,17 @@ getBoxCoxInvBetas <- function(dataset, bform, lambda, outputModel, mixed=True) {
     return(list(beta_ms=beta_ms, y_mu=y_mu))
 }
 
-printBoxCoxInvBetas <- function(beta_ms, lambda, y_mu) {
+printBoxCoxInvBetas <- function(beta_ms, lambda, y_mu, sd_vals=NULL) {
     cat(paste0('\nInverse Box-Cox estimates (ms) using lambda = ', lambda, ' and mean y = ', y_mu, '\n'))
     for (f in names(beta_ms)) {
-        cat(paste0('Beta (ms) of effect ', f, ': ', beta_ms[[f]], '\n'))
+        name = f
+        beta = beta_ms[[f]]
+        cat(paste0('Beta (ms) of effect ', name, ': ', beta, '\n'))
+        if (!is.null(sd_vals) && substr(f, 1, 3) == 'z.(') {
+            name = substr(f, 4, nchar(f)-1)
+            beta = beta_ms[[f]] / sd_vals[[name]]
+            cat(paste0('Beta (ms) of effect ', name, ': ', beta, '\n'))
+        }
     }
 }
 
@@ -766,3 +825,42 @@ boxcox_inv <- function(lambda, beta, y_mu) {
     return((lambda*(y_mu + beta) + 1)^(1/lambda) - (lambda*y_mu + 1)^(1/lambda))
 }
 
+permutation_test <- function(err1, err2, n_iter=10000, n_tails=2) {
+    base_diff = mean(err1) - mean(err2)
+    err_matrix = matrix(c(err1, err2), length(err1), 2)
+    hits = 0
+    cat('Permutation testing...\n', file=stderr())
+    cat(paste0('base_diff: ', base_diff, '\n'))
+    for (i in 1:n_iter) {
+        cat(paste0('\r',i, '/', n_iter), file=stderr())
+        shuffle = runif(length(err1)) > 0.5
+        shuffle = as.numeric(shuffle)
+        m1 = err_matrix[cbind(seq_along(shuffle), shuffle+1)]
+        m2 = err_matrix[cbind(seq_along(shuffle), 2-shuffle)]
+        curr_diff = mean(m1) - mean(m2)
+        cat(paste0('curr_diff: ', curr_diff, '\n'))
+        if (n_tails == 1) {
+            if ((base_diff < 0) & (curr_diff <= base_diff)) {
+                hits = hits + 1
+	        cat(paste0('Hit! Count: ', hits, '\n'))
+            } else if ((base_diff > 0) & (curr_diff >= base_diff)) {
+                hits = hits + 1
+	        cat(paste0('Hit! Count: ', hits, '\n'))
+            } else if (base_diff == 0) {
+                hits = hits + 1
+	        cat(paste0('Hit! Count: ', hits, '\n'))
+            }    
+        } else if (n_tails == 2) {
+            if (abs(curr_diff) >= abs(base_diff)) {
+                hits = hits + 1
+	        cat(paste0('Hit! Count: ', hits, '\n'))
+            }
+        } else {
+            stop('Error: n_tails must be in {1,2}')
+        }
+    }
+    p = (hits + 1) / (n_iter + 1)
+    
+    cat(paste0('\np=',p,'\n'), file=stderr())
+    return(list(p=p, base_diff=base_diff))
+}

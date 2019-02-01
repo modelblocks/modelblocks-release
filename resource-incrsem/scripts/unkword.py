@@ -14,7 +14,7 @@ for line in sys.stdin:
   for word in wordlist:
     ## if word not in WordCount:
     ##   sys.stderr.write(line)
-    if word not in WordCount or WordCount[word] <= UNKCOUNT:
+    if '*' not in word and (word not in WordCount or WordCount[word] <= UNKCOUNT):
       line = re.sub('(?<= )'+re.escape(word)+'(?=[\(\) \n])',storestate.getUnkWord(word),line)
   sys.stdout.write( line )
 

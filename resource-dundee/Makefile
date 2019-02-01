@@ -59,24 +59,17 @@ endef
 
 .SUFFIXES:
 .SECONDEXPANSION:
+.DELETE_ON_ERROR:
+
+VPATH += $(RESOURCE-DUNDEE)
 
 DUNDEESECTS = 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20
 DUNDEESUBJS = sa sb sc sd se sf sg sh si sj
 DUNDEESUBJSFILT := sb sc se sf sg sh si sj
 
-MERGESURP = python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).tokmeasures --i totsurp | \
-sed '1s/.*/$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
-mv $@{.tmp,}; \
-python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).tokmeasures --i cumtotsurp | \
-sed '1s/.*/$(subst -,,$(grammar))cumtotsurp/' | paste -d' ' $@ - > $@.tmp; \
-mv $@{.tmp,};
-
-SPILL-DUNDEE := S1 S2 S3
-DLT-DUNDEE := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
-FJ-DUNDEE := fjprob endembd embdlen embdlendr embdlendrv noF noFlen noFlendr noFlendrv reinst reinstlen reinstlendr reinstlendrv
-ALL-MEM = $(DLT-DUNDEE) $(FJ-DUNDEE)
-ALL-MEM-SPILL = $(ALL-MEM) $(foreach var,$(ALL-MEM),$(foreach spill,$(SPILL-DUNDEE),$(var)$(spill)))
-
+DUNDEE-BASENAME := genmodel/dundee.wsj02to21-GRAMMAR-nol-prtrm-3sm-synproc-+c_+u_+b5000.gcg15_nodashtags.merged.syn.5-kenlm.eyeGP
+DUNDEE-LMEDEFAULT := -NSCFl
+$(eval $(call RT-EXPERIMENTS,dundee,$(DUNDEE-BASENAME),$(DUNDEE-LMEDEFAULT)))
 
 ################################################################################
 #
@@ -120,6 +113,10 @@ endif
 #
 ################################################################################
 
+## copy partition ini into project genmodel directory
+genmodel/%.ini: $(DUNDEE-SCRIPTS)/%.ini
+	cp $< $@
+
 #### obtain lexicon of terms that appear more than 5 times
 %.wordcounts: %.linetoks $(DUNDEE-SCRIPTS)/buildlexicon.py
 	python3 $(word 2,$^) $< -u5 > $@
@@ -159,9 +156,10 @@ genmodel/dundee.textdata $(RT-SCRIPTS)/sents2sentids.py genmodel/dundee.lineitem
 genmodel/dundee.%.evmeasures: $(RT-SCRIPTS)/concat_tables.py $(foreach subj, $(DUNDEESUBJS), genmodel/dundee.$(subj)_%.evmeasures) | genmodel
 	python $^ > $@
 
-genmodel/dundee.evmeasures: genmodel/dundee.fp.evmeasures genmodel/dundee.gp.evmeasures $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/filter_cols.awk
+genmodel/dundee.evmeasures: genmodel/dundee.fp.evmeasures genmodel/dundee.gp.evmeasures $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/filter_cols.awk $(DTSR-SCRIPTS)/compute_timestamps_from_RT.py \
+$(RT-SCRIPTS)/add_sentence_starts_and_ends.py
 	cat $< | python $(word 3, $^) fdur fdurFP | paste -d' ' - <(awk -f $(word 4, $^) -v cols=fdur:fileid $(word 2, $^) | \
-	python $(word 3, $^) fdur fdurGP fileid docid) > $@
+	python $(word 3, $^) fdur fdurGP fileid docid) | python $(word 5, $^) | python $(word 6, $^) > $@
 
 
 ################################################################################
@@ -193,27 +191,6 @@ genmodel/dundee.linetoks: $$(foreach sect,$$(DUNDEESECTS),genmodel/dundee$$(sect
 
 %dundee.lineitems: %dundee.linetoks $(RT-SCRIPTS)/toks2sents.py %dundee.textdata
 	cat <(echo word) <(cat $(word 3, $^) | awk '!/^WORD/') | python $(word 2, $^) $< > $@
-
-################################################################################
-#
-#  Param files for constructing experiment data table
-#
-################################################################################    
-
-genmodel/dundee.merge_tables.params: | genmodel
-	echo 'word sentid sentpos' > $@
-
-genmodel/dundee.accumulateMetrics.params: | genmodel
-	echo 'fwprob5 totsurp' $(ALL-MEM-SPILL) > $@
-
-genmodel/dundee.spilloverMetrics.params: | genmodel
-	echo '-n1 -p fwprob5 totsurp' > $@
-
-genmodel/dundee.futureMetrics.params: | genmodel
-	echo 'cumfwprob5 cumtotsurp' > $@
-
-genmodel/dundee.rm_unfix_items.params: | genmodel
-	echo '' > $@
 
 ################################################################################
 #

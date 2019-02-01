@@ -58,11 +58,11 @@ endif
 ################################################################################
 
 #### misc reannotation (there are multiple copies in case we want to do more than one w/o cycles)
+%.comparativized.linetrees:  $(GCG-SCRIPTS)/make-trees-comparativized.pl  %.linetrees
+	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.fixed.linetrees:  $(GCG-SCRIPTS)/make-trees-fixed.pl  %.linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.nommed.linetrees:  $(GCG-SCRIPTS)/make-trees-nommed.pl  %.linetrees
-	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
-%.morphed.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  %.linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.linetrees.validation:  %.linetrees  $(GCG-SCRIPTS)/validate-linetrees.py  $(GCG-SCRIPTS)/validate-linetrees.d
 	cat $<  |  python $(word 2,$^)  >  $@
@@ -118,16 +118,37 @@ Decoupled:
   blocktitle: Decoupled
   paramtype: Boolean
 endef
-%.decoupled.linetrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl $$(basename %).fixed.linetrees $(LTREES-SCRIPTS)/killUnaries.pl
-	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  perl -pe 's/.*\([-A-Z]+ .*//'  |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' | perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
+
+# obsolete, use nommed if desired
+# %.decoupled.linetrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl $$(basename %).fixed.linetrees $(LTREES-SCRIPTS)/killUnaries.pl
+# 	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  perl -pe 's/.*\([-A-Z]+ .*//'  |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' | perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
         
 #### NOTE: inline seds dispose of reannotation failures, then remove -f tags, then shift -l tags to end
-%.linetrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).fixed.nommed.linetrees  $(LTREES-SCRIPTS)/killUnaries.pl
-	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  perl -pe 's/.*\([-A-Z]+ .*//'  |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' | perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
+.PRECIOUS: %.linetrees
+%.linetrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).fixed.linetrees  $(LTREES-SCRIPTS)/killUnaries.pl
+	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  perl -pe 's/.*\([^a-z]+ .*//'  |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' |  perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
+## add morph tags...
+%morphed.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).linetrees
+	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+## remove morph tags for eval...
+%.nox.linetrees:  %.linetrees
+	cat $<  |  perl -pe 's/[-+]x[^-} ][^ |]*[|][^- ]*//g'  >  $@
+## casp currently set to gcg15 + long + morphed...
+.PRECIOUS: %casp.linetrees
+%casp.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).gcg15.long.linetrees
+	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+.PRECIOUS: %caspu.linetrees
+%caspu.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).gcg16.long.linetrees
+	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 
 #### remove entries with no reannotation
 %.nofail.linetrees:  %.linetrees
 	cat $<  |  grep -v '^$$'  >  $@
+
+%.noqp.linetrees:  %.linetrees  $(GCG-SCRIPTS)/remove-qps.pl
+	cat $<  |  perl $(word 2,$^)  >  $@
+%.fixdollar.linetrees:  %.linetrees
+	cat $<  |  perl -pe 's/\(N \$$\)/\(N-aD \$$\)/g'  >  $@
 
 #### annotate branch and depth
 %.bd.linetrees:  %.linetrees  $(GCG-SCRIPTS)/annotateDepth.py
@@ -150,6 +171,10 @@ endef
 #### apply semantic left-corner transform
 %.semlctrans.linetrees: %.linetrees ../incrsem/scripts/semlctrans.pl 
 	cat $< | perl $(word 2,$^) > $@
+
+#### lengthen trees to full gcg derivation...
+%.long.linetrees:  %.linetrees  $(GCG-SCRIPTS)/lengthentrees.py  $(GCG-SCRIPTS)/lengthentrees.d
+	cat $<  |  python $(word 2,$^)  >  $@
 
 #### Remove traces
 %.nt.linetrees: %.linetrees
@@ -178,8 +203,8 @@ endef
 
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
 .PRECIOUS: %.cuegraphs
-%.cuegraphs:  %.linetrees  $(GCG-SCRIPTS)/linetrees2cuegraphs.py
-	cat $<  |  python $(word 2,$^)  >  $@
+%.cuegraphs:  %.linetrees  $(GCG-SCRIPTS)/linetrees2cuegraphs.d  $(GCG-SCRIPTS)/linetrees2cuegraphs.py
+	cat $<  |  sed 's/\^g//g' | python $(word 3,$^)  >  $@
 #%.cuegraphs:  %.protographs  $(GCG-SCRIPTS)/protographs2cuegraphs.pl
 #	cat $<  |  perl -p $(word 2,$^)  >  $@
 

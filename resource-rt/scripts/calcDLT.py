@@ -34,7 +34,6 @@ cCosts = []
 cvCosts = []
 post = []
 postpost = []
-sentid = 0
 
 def terminal(T):
     return len(T.ch) == 1 and len(T.ch[0].ch) == 0
@@ -343,7 +342,7 @@ def cWeight(T, vMod):
     return weight
     
 def printToks(T):
-    global sentid, post, postpost
+    global post, postpost
     if terminal(T):
         terms.append(T)
         discCost = 0
@@ -385,7 +384,7 @@ def printToks(T):
                 cvCosts.append(cWeight(complete[-1], True))
                 coords.pop()
                 ends.pop()
-        print T.ch[0].c + ' ' + str(sentid) + ' ' + str(discCost) + ' ' + str(discCostV) + ' ' \
+        print T.ch[0].c + ' ' + str(discCost) + ' ' + str(discCostV) + ' ' \
               + str(dlt) + ' ' + str(dltc) + ' ' + str(dltcv) + ' ' + str(dltv) + ' ' \
 	      + str(dltm) + ' ' + str(dltcm) + ' ' + str(dltcvm) + ' ' + str(dltvm) + ' ' \
               + str(getPOS(T)) + ' ' + str(depdirSyn) + ' ' + str(depdirSem) + ' ' + str(depdirSynM) + ' ' + str(depdirSemM) + ' ' \
@@ -397,7 +396,7 @@ def printToks(T):
         for t in T.ch:
             printToks(t)
 
-print('word sentid dltdc dltdcv ' \
+print('word dltdc dltdcv ' \
     + 'dlt dltc dltcv dltv ' \
     + 'dltm dltcm dltcvm dltvm ' \
     + 'pos depdirSyn depdirSem depdirSynM depdirSemM' + ' ' \
@@ -418,4 +417,3 @@ for line in sys.stdin:
         T = tree.Tree()
         T.read(line)
         printToks(T)
-        sentid += 1

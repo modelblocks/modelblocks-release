@@ -59,7 +59,7 @@ $(RESOURCE-LOGREG)%.d:  $(RESOURCE-LOGREG)%.cpp  |  $(INCLUDE)
 #### c++ executables
 .PRECIOUS: $(BIN)/%
 $(BIN)/%:  $(RESOURCE-LOGREG)/src/$$(notdir $$@).cpp  $(RESOURCE-LOGREG)/src/$$(notdir $$@).d  $(CONFIGDIR)/user-cflags.txt  |  $(BIN)  $(INCLUDE)
-	g++ -I/usr/include/libxml2/ -I$(word 2,$|) -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 3,$^)` -fpermissive -std=c++11 -lm -larmadillo -lmlpack -lpthread $< -o $@
+	g++ -I/usr/include/libxml2/ -I$(word 2,$|) -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 3,$^)` -fpermissive -std=c++11 $< -lm -larmadillo -lmlpack -lpthread -o $@
 
 ################################################################################
 #
@@ -79,11 +79,11 @@ $(BIN)/%:  $(RESOURCE-LOGREG)/src/$$(notdir $$@).cpp  $(RESOURCE-LOGREG)/src/$$(
 
 #### obtain multinomial logistic regression (maxent/softmax) model from predictor-result training data
 .PRECIOUS: %mlrmodel
-%mlrmodel:  $(CONFIGDIR)/user-numthreads.txt  bin/mlr-lbfgs  $$(basename %).$$(lastword $$(subst _, ,$$*))mlrdecpars
-	cat $(word 3,$^)  |  $(word 2,$^)  `cat $(word 1,$^)`  $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+%mlrmodel:  bin/mlr-lbfgs  $$(basename %).$$(lastword $$(subst _, ,$$*))mlrdecpars  |  $(CONFIGDIR)/user-numthreads.txt
+	cat $(word 2,$^)  |  $(word 1,$^) $(shell cat $|) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@  2>  $@.log
 
 #### obtain multinomial logistic regression (maxent/softmax) model from predictor-result training data
 .PRECIOUS: %sgdmlrmodel
-%sgdmlrmodel:  $(CONFIGDIR)/user-numthreads.txt  bin/mlr-sgd  $$(basename %).$$(lastword $$(subst _, ,$$*))mlrdecpars
-	cat $(word 3,$^)  |  $(word 2,$^)  `cat $(word 1,$^)`  $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+%sgdmlrmodel:  bin/mlr-sgd  $$(basename %).$$(lastword $$(subst _, ,$$*))mlrdecpars  |  $(CONFIGDIR)/user-numthreads.txt
+	cat $(word 2,$^)  |  $(word 1,$^) $(shell cat $|) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 

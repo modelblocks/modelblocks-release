@@ -1,6 +1,7 @@
 import re
 import sys
 import codecs
+import numpy as np
 import argparse
  
 parser = argparse.ArgumentParser(description='''
@@ -26,7 +27,16 @@ def roll(r1, r2, skip, key):
             old = r1[i]
             new = r2[i]
             try:
-                r1[i] = str(float(r1[i]) + float(r2[i]))
+                old_float = float(r1[i])
+                new_float = float(r2[i])
+                if np.isfinite(old_float) and np.isfinite(new_float):
+                    r1[i] = str(old_float + new_float)
+                elif np.isfinite(old_float):
+                    r1[i] = str(old_float)
+                elif np.isfinite(new_float):
+                    r1[i] = str(new_float)
+                else:
+                    r1[i] = str(old_float + new_float)
             except ValueError:
                 if old in ['None', 'null']:
                     r1[i] = r2[i]

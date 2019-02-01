@@ -1,49 +1,93 @@
 import sys, argparse, pandas as pd, numpy as np
-from mvpa2.testing.datasets import double_gamma_hrf as hrf
+from mvpa2.misc.data_generators import double_gamma_hrf as hrf
 
 argparser = argparse.ArgumentParser(description='Convolve data table using HRF')
 argparser.add_argument('data', type=str, help='Path to data table')
-argparser.add_argument('predictors', type=str, nargs='+', default=[], help='List of predictors to convolve')
-argparser.add_argument('--step', type=float, default=2.0, help='Step size (in seconds) between fMRI samples')
-argparser.add_argument('--start', type=float, default=0.0, help='Time (in seconds) of first fMRI sample')
-argparser.add_argument('--debug', action='store_true', help='Print verbose output')
+argparser.add_argument('-s', '--step', type=float, default=2.0, help='Step size (in seconds) between fMRI samples')
+argparser.add_argument('-d', '--doc_names', nargs='+', default=['Boar', 'Aqua', 'MatchstickSeller', 'KingOfBirds', 'Elvis', 'MrSticky', 'HighSchool', 'Roswell', 'Tulips', 'Tourettes'], help='List of document names in input data')
 args, unknown = argparser.parse_known_args()
 
-def main():
-    data = pd.read_csv(args.data,sep=' ',skipinitialspace=True)
-    predictors = [x for x in args.predictors if x in data.columns.values]
-    assert len(predictors) > 0, 'ERROR: no predictors to convolve'
-    step = args.step
-    start = args.start
-    end = data['timestamp'].iat[-1]
-    n = int((end-start) / step) + 1
-    assert n > 0, 'Time interval contains no fMRI samples'
-    out = data[predictors].head(n)
-    out[predictors] = out[predictors].astype(np.float64)
-    time = lambda x: start + (step*i)
+step = float(args.step)
 
-    t_col = data[['timestamp']]
+convolve = np.vectorize(lambda x: hrf(time_cur + step - x))
 
-    for p in predictors:
-        for i in xrange(n):
-            t = time(i)
-            tmp = data.loc[data['timestamp'] < t]
-            n_prec = tmp.shape[0]
-            
-            if n_prec > 0:
-                t_conv = tmp['timestamp'].apply(lambda x: hrf(t - x))
-                p_conv = (t_conv*data.head(n_prec)[p]).sum()
+doc_names = args.doc_names
+
+def get_docid(timeseries):
+    timeseries = np.array(timeseries)
+    docid = [] 
+    docix = 0
+    for i in range(len(timeseries)):
+        if i > 0 and timeseries[i] < timeseries[i-1]:
+            docix += 1
+        docid.append(doc_names[docix])
+    return pd.Series(docid).astype('category')
+
+def convolve_column(df, col):
+    categorical = df[col].dtype.name == 'category'
+    arr = np.array(df[col])
+    time = np.array(df.timestamp)
+    time_cur = 0.
+    start = 0
+    out = [] 
+    for i in range(len(df)):
+        if i > 0 and time[i] < time[i-1]:
+            start = i
+            time_cur = 0.
+        if time[i] > time_cur:
+            time_cur += step
+            if categorical:
+                if i > start:
+                    out.append(arr[i-1])
+                else:
+                    ## Take the initial category value from the first row in the series
+                    out.append(arr[i])
             else:
-                p_conv = 0
-            out.at[i,p] = p_conv
+                convolve = np.vectorize(lambda x: hrf(time_cur - x))
+                if i > start:
+                    t_conv = convolve(time[start:i])
+                    p_conv = (t_conv*np.nan_to_num(arr[start:i])).sum()
+                else:
+                    p_conv = 0
+                out.append(p_conv)
+    if categorical:
+        out = pd.Series(out, dtype='category')
+    else:
+        out = pd.Series(np.array(out), dtype='float')
+    return out
+            
+         
+	
     
-    out['sampleid'] = range(1, n+1)
+
+def main():
+    df = pd.read_csv(args.data,sep=' ',skipinitialspace=True)
+    df['docid'] = get_docid(df.timestamp)
+    df['rate'] = 1.
+    
+    df.sentid = df.sentid.astype('category')
+    df.rolled = df.rolled.astype('category')
+    sys.stderr.write(df.sentid.dtype.name + '\n')
+
+    n = len(df.columns)
+    i = 1
+
+    out = pd.DataFrame()
+
+    for c in df.columns: 
+        sys.stderr.write('\rConvolving column %d/%d' %(i,n))
+        if df[c].dtype.name != 'category':
+            if df[c].dtype.name == 'object':
+                df[c] = df[c].astype('category')
+            else:
+                df[c] = df[c].astype('float')
+        out[c] = convolve_column(df, c)
+        i += 1
+
+    out['sampleid'] = 1
+    out.sampleid = out.groupby(['docid']).sampleid.cumsum()
+    sampleid_format = '{0:05d}'
+    out.sampleid = out.docid.astype('str').str.cat(out.sampleid.apply(sampleid_format.format), sep='-')
     out.to_csv(sys.stdout, ' ', index=False, na_rep='nan')
 
-
-
-
-
-    
-      
 main()   

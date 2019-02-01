@@ -84,8 +84,14 @@ CHILDES-SCRIPTS := $(RESOURCE-CHILDES)/scripts
 RESOURCE-DMV := $(abspath $(MBDIR)/resource-dmv)
 DMV-SCRIPTS := $(RESOURCE-DMV)/scripts
 
+RESOURCE-DTSR := $(abspath $(MBDIR)/resource-dtsr)
+DTSR-SCRIPTS := $(RESOURCE-DTSR)/scripts
+
 RESOURCE-DUNDEE := $(abspath $(MBDIR)/resource-dundee)
 DUNDEE-SCRIPTS := $(RESOURCE-DUNDEE)/scripts
+
+RESOURCE-FEDECOG := $(abspath $(MBDIR)/resource-fedorenkoetal16ecog)
+FEDECOG-SCRIPTS := $(RESOURCE-FEDECOG)/scripts
 
 RESOURCE-FMRI := $(abspath $(MBDIR)/resource-fmri)
 FMRI-SCRIPTS := $(RESOURCE-FMRI)/scripts
@@ -129,14 +135,23 @@ LVPCFG-SCRIPTS := $(RESOURCE-LVPCFG)/scripts
 RESOURCE-NATSTORIES := $(abspath $(MBDIR)/resource-naturalstories)
 NATSTORIES-SCRIPTS := $(RESOURCE-NATSTORIES)/scripts
 
+RESOURCE-NATSTORIESFMRI := $(abspath $(MBDIR)/resource-naturalstoriesfmri)
+NATSTORIESFMRI-SCRIPTS := $(RESOURCE-NATSTORIESFMRI)/scripts
+
 RESOURCE-PASSAGES := $(abspath $(MBDIR)/resource-passages)
 PASSAGES-SCRIPTS := $(RESOURCE-PASSAGES)/scripts
 
 RESOURCE-ONTONOTES := $(abspath $(MBDIR)/resource-ontonotes)
 ONTONOTES-SCRIPTS := $(RESOURCE-ONTONOTES)/scripts
 
+RESOURCE-REGRESSION := $(abspath $(MBDIR)/resource-regression)
+REGRESSION-SCRIPTS := $(RESOURCE-REGRESSION)/scripts
+
 RESOURCE-RHACKS := $(abspath $(MBDIR)/resource-rhacks)
 RHACKS-SCRIPTS := $(RESOURCE-RHACKS)/scripts
+
+RESOURCE-ROARK := $(abspath $(MBDIR)/resource-roark)
+ROARK-SCRIPTS := $(RESOURCE-ROARK)/scripts
 
 RESOURCE-RT := $(abspath $(MBDIR)/resource-rt)
 RT-SCRIPTS := $(RESOURCE-RT)/scripts
@@ -166,6 +181,9 @@ UHHMM-SCRIPTS := $(RESOURCE-UHHMM)/scripts
 RESOURCE-UPPARSE := $(abspath $(MBDIR)/resource-upparse)
 UPPARSE-SCRIPTS := $(RESOURCE-UPPARSE)/scripts
 
+RESOURCE-WORD2VEC := $(abspath $(MBDIR)/resource-word2vec)
+WORD2VEC-SCRIPTS := $(RESOURCE-WORD2VEC)/scripts
+
 RESOURCE-WORDNET := $(abspath $(MBDIR)/resource-wordnet)
 WORDNET-SCRIPTS := $(RESOURCE-WORDNET)/scripts
 
@@ -174,10 +192,6 @@ XLSX2CSV-SCRIPTS := $(RESOURCE-XLSX2CSV)/scripts
 
 BIN      := bin
 GENMODEL := genmodel
-
-define TEST =
-this is a test
-endef
 
 define INCLUDE-ALL :=
 include $(RESOURCE-TOKENIZER)/Makefile
@@ -193,8 +207,12 @@ include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
 include $(RESOURCE-RT)/Makefile
+include $(RESOURCE-REGRESSION)/Makefile
+include $(RESOURCE-DTSR)/Makefile
+include $(RESOURCE-FEDECOG)/Makefile
 include $(RESOURCE-FMRI)/Makefile
 include $(RESOURCE-LMEFIT)/Makefile
+include $(RESOURCE-LOGREG)/Makefile
 include $(RESOURCE-ALICE)/Makefile
 include $(RESOURCE-BMMM)/Makefile
 include $(RESOURCE-CCL)/Makefile
@@ -202,12 +220,14 @@ include $(RESOURCE-CHILDES)/Makefile
 include $(RESOURCE-DUNDEE)/Makefile
 include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
+include $(RESOURCE-NATSTORIESFMRI)/Makefile
 include $(RESOURCE-PASSAGES)/Makefile
 include $(RESOURCE-ONTONOTES)/Makefile
 include $(RESOURCE-RHACKS)/Makefile
 include $(RESOURCE-XLSX2CSV)/Makefile
 include $(RESOURCE-UCL)/Makefile
 include $(RESOURCE-UPPARSE)/Makefile
+include $(RESOURCE-WORD2VEC)/Makefile
 include $(RESOURCE-WORDNET)/Makefile
 endef
 

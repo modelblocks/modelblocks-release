@@ -77,12 +77,7 @@ for i in xrange(len(wrds)):
         wrds_out.append((wrd[0],str(sentid),str(sentpos),wrd[1]))
         sentpos += 1
 
-print('word timestamp')
+print('word time')
 for wrd in wrds_out:
     print('%s %s' %(wrd[0], wrd[3]))
 
-exit()
-
-print('word sentid sentpos timestamp')
-for wrd in wrds_out:
-    print(' '.join(wrd))

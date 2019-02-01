@@ -6,7 +6,7 @@
 \usepackage{times}
 \usepackage{helvet}
 \usepackage{txfonts}  %% WS: NEEDED TO KEEP SOME VERBATIM LINES FROM EXCEEDING PAGE WIDTH
-%\usepackage{natbib}
+\usepackage{natbib}
 %%\usepackage{epsfig}
 %%\usepackage{psfig}
 %\usepackage{array}
@@ -790,6 +790,7 @@ $\dtype{corpus-specification} \ \dcode{.linetrees}$
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{\blue\tt \%.morphed.linetrees}
+\label{sect:morph}
 
 `Morphed' trees are trees with morphological markup.
 %
@@ -870,35 +871,81 @@ $\dtype{corpus-specification} \ \dcode{.cg.linedeps}$
 {\tt RESOURCE-INCRSEM} contains methods for incrementally processing semantic annotations.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{{\blue\tt \%\_ymodel}}
+\section{{\blue\tt \%typed.linetrees}}
 
-Ymodels define clusters for contexts of referential states in cued-association graphs.
+There can be many different predicate types in a cued-association structure, which can make statistics over predicates very sparse.
 %
-Ymodel files conform to the following specification:
-
-$\dtype{row} \rightarrow \dcode{Y\ } \ \dtype{referent-identifier} \ \dcode{\ :\ } \ \dtype{cluster-number} \ \dcode{\ =\ } \ \dtype{probability}$
-
-for priors over clusters at each referent, and
-
-$\dtype{row} \rightarrow \dcode{K\ } \ \dtype{cluster-number} \ \dcode{\ :\ } \ \dtype{context} \ \dcode{\ =\ } \ \dtype{probability}$
-
-%\noindent
-for likelihoods of contexts given clusters, where contexts are defined as in Section~\ref{sect:refconts} above.
+Predicates in cued-association structures derived from \citet{nguyenetal12} GCG trees can therefore automatically be organized into latent-variable hypernym clusters.
+%
+These hypernym clusters are annotated as morphological rules on preterminal categories of GCG trees, which, together with other morphological rules which transform $\dtype{preterminal-category} \ \dcode{:} \ \dtype{inflected-form}$ pairs into $\dtype{lemma-category} \ \dcode{:} \ \dtype{lemma-form}$ pairs as described in Section~\ref{sect:morph}, then transform these $\dtype{lemma-category} \ \dcode{:} \ \dtype{lemma-form}$ pairs into $\dtype{hypernym-category} \ \dcode{:y} \ \dtype{hypernym-number}$ pairs (or vice versa if applied in reverse).
 
 %%%%%%%%%%%%%%%%%%%%
-\subsection{Recipe: {\blue\tt \%\_ymodel}}
+\subsection{Recipe: {\blue\tt \%typed.linetrees}}
 
-Making any ymodel that conforms to the naming convention:
+Making any file that conforms to the naming convention:
 
-$\dtype{corpus} \ \dcode{.} \ \dtype{\#-clusters} \ \dcode{\_} \ \dtype{\#-iterations} \ \dcode{\_} \ \dtype{alpha} \ \dcode{\_} \ \dtype{beta} \ \dcode{\_} \ \dtype{ref-start} \ \dcode{\_} \ \dtype{ref-end} \ \dcode{\_ymodel}$
+$\dtype{corpus} \ \dcode{.} \ \dtype{\#-clusters} \ \dcode{typed.linetrees}$
 
 will generate and then use the following files:
 
-$\dtype{corpus} \ \dcode{.refconts}$
-
-applying a Latent Dirichlet Allocation with $\dtype{\#-clusters}$ clusters, $\dtype{\#-iterations}$ iterations, priors $\dtype{alpha}$ and $\dtype{beta}$ over clusters and contexts respectively, to referential states with contexts of the form `$\dtype{ref-start}$ \dots $\dtype{ref-end}$' in the file $\dtype{corpus}\text{\blue\tt .refconts}$.
+$\dtype{corpus} \ \dcode{.linetrees}$
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{{\blue\tt \%\_semprocmodel}}
+
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Recipe: {\blue\tt \%\_semprocmodel}}
+
+Making any file that conforms to the naming convention:
+
+$\dtype{corpus} \ \dcode{.} \ \dtype{model-params} \ \dcode{\_} \ \dtype{\#-f-regularization} \ \dcode{\_} \ \dtype{\#-j-regularization} \ \dcode{\_semprocmodel}$
+
+will generate and then use the following files:
+
+$\dtype{corpus} \ \dcode{.} \ \dtype{model-params} \ \dcode{\_.} \ \dtype{\#-f-regularization} \ \dcode{\_100\_fmlrmodel}$
+
+$\dtype{corpus} \ \dcode{.} \ \dtype{model-params} \ \dcode{\_.} \ \dtype{\#-j-regularization} \ \dcode{\_100\_jmlrmodel}$
+
+$\dtype{corpus} \ \dcode{.} \ \dtype{model-params} \ \dcode{\_.pcptmodel}$
+
+$\dtype{corpus} \ \dcode{.} \ \dtype{model-params} \ \dcode{\_.wcptmodel}$
+
+$\dtype{corpus} \ \dcode{.} \ \dtype{model-params} \ \dcode{\_.acptmodel}$
+
+$\dtype{corpus} \ \dcode{.} \ \dtype{model-params} \ \dcode{\_.bcptmodel}$
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\section{{\blue\tt \%\_ymodel}}
+%
+%Ymodels define clusters for contexts of referential states in cued-association graphs.
+%%
+%Ymodel files conform to the following specification:
+%
+%$\dtype{row} \rightarrow \dcode{Y\ } \ \dtype{referent-identifier} \ \dcode{\ :\ } \ \dtype{cluster-number} \ \dcode{\ =\ } \ \dtype{probability}$
+%
+%for priors over clusters at each referent, and
+%
+%$\dtype{row} \rightarrow \dcode{K\ } \ \dtype{cluster-number} \ \dcode{\ :\ } \ \dtype{context} \ \dcode{\ =\ } \ \dtype{probability}$
+%
+%%\noindent
+%for likelihoods of contexts given clusters, where contexts are defined as in Section~\ref{sect:refconts} above.
+%
+%%%%%%%%%%%%%%%%%%%%%
+%\subsection{Recipe: {\blue\tt \%\_ymodel}}
+%
+%Making any ymodel that conforms to the naming convention:
+%
+%$\dtype{corpus} \ \dcode{.} \ \dtype{\#-clusters} \ \dcode{\_} \ \dtype{\#-iterations} \ \dcode{\_} \ \dtype{alpha} \ \dcode{\_} \ \dtype{beta} \ \dcode{\_} \ \dtype{ref-start} \ \dcode{\_} \ \dtype{ref-end} \ \dcode{\_ymodel}$
+%
+%will generate and then use the following files:
+%
+%$\dtype{corpus} \ \dcode{.refconts}$
+%
+%applying a Latent Dirichlet Allocation with $\dtype{\#-clusters}$ clusters, $\dtype{\#-iterations}$ iterations, priors $\dtype{alpha}$ and $\dtype{beta}$ over clusters and contexts respectively, to referential states with contexts of the form `$\dtype{ref-start}$ \dots $\dtype{ref-end}$' in the file $\dtype{corpus}\text{\blue\tt .refconts}$.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1023,7 +1070,7 @@ Multinomial logistic regression decpars.
 
 
 
-\section{{\blue\tt \%.parweights} files}
+\section{{\blue\tt \%.parweights} (formerly {\red\tt \%.model})}
 
 Generates list of estimated parameter weights of a model. There are separate formats for ordinary conditional probability and logistic regression parameters.
 
@@ -1071,7 +1118,7 @@ Multinomial logistic regression parweights.
             \item \textit{Note:} This ordering has the advantage that, when sorted, parameters are grouped by condition
       \end{itemize}
       \item \textbf{Stem template:}\\
-      $\dtype{training-set-specifications} \ \dcode{.} \ \dtype{L2-regularization-factor} \ \dcode{\_} \ \dtype{underflow-scaling-factor} \ \dcode{\_} \ \dtype{num-iterations} \ \dcode{\_mlr.parweights}$
+      $\dtype{training-set-specifications} \ \dcode{.} \ \dtype{L2-regularization-factor} \ \dcode{\_} \ \dtype{num-iterations} \ \dcode{\_mlr.parweights}$
       \item \textbf{Input(s):}
       \begin{itemize}
             \item $\dtype{training-set-specification} \ \dcode{.decpars}$
@@ -1098,8 +1145,8 @@ It also contains convenience recipes for a number of reading-time experiment typ
 Note that in order to set up a new experiment using the targets in {\tt RESOURCE-RT}, you must first supply recipes to create the following input files from your experiment data:
 
 \begin{itemize}
-\item {\tt\blue $\dtype{corpus} \dcode{.lineitems}$}: parser-tokenized sentences
-\item {\tt\blue $\dtype{corpus} \dcode{.linetoks}$}: experiment-tokenized sentences
+\item {\tt\blue $\dtype{corpus} \dcode{.linetoks}$}: parser-tokenized sentences
+\item {\tt\blue $\dtype{corpus} \dcode{.lineitems}$}: experiment-tokenized sentences
 \item {\tt\blue $\dtype{corpus} \dcode{.src.evmeasures}$}: space-delimited table of event data from the experiment source (IMPORTANT: this must contain {\tt\blue sentid} and {\tt\blue sentpos} columns)
 \item Parameter files:
 \begin{itemize}

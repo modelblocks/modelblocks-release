@@ -17,7 +17,7 @@
 ##                                                                           ##
 ###############################################################################
 
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 my $num_parens=0;
@@ -45,6 +45,10 @@ while(<STDIN>){
   if($num_parens == 0){
     ## Get rid of extra parentheses around the tree
     $tree =~ s/^\s*\((?:TOP)?\s*\((.*)\s*\)\s*\)\s*$/(\1)/;
+
+    ## Get rid of extra spaces
+    $tree =~ s/ *\)/\)/g;
+    $tree =~ s/ +/ /g;
 
     print "$tree\n";
     $tree = "";

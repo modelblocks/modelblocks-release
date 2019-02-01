@@ -61,21 +61,22 @@ endef
 
 .SUFFIXES:
 .SECONDEXPANSION:
+.DELETE_ON_ERROR:
 
 VPATH += $(RESOURCE-PASSAGES)
 
 PASSAGES-ROI := LPostTemp LAntTemp LAngG LIFG LMFG LIFGorb AllROI
-PASSAGES72-BASENAME := genmodel/passages72.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.bysent
-PASSAGES72-LMEDEFAULT := 
+PASSAGES72-BASENAME := genmodel/passages72.wsj02to21-gcg15-nol-prtrm-3sm-synproc-+c_+u_+b5000.syn.5-kenlm.bysent
+PASSAGES72-LMEDEFAULT := -vw 
 $(eval $(call FMRI-BYSENT-EXPERIMENTS,passages72,$(PASSAGES72-BASENAME),$(PASSAGES-ROI),passagesBasic,$(PASSAGES72-LMEDEFAULT)))
-PASSAGES96-BASENAME := genmodel/passages96.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.bysent
-PASSAGES96-LMEDEFAULT := 
+PASSAGES96-BASENAME := genmodel/passages96.wsj02to21-gcg15-nol-prtrm-3sm-synproc-+c_+u_+b5000.syn.5-kenlm.bysent
+PASSAGES96-LMEDEFAULT := -vw
 $(eval $(call FMRI-BYSENT-EXPERIMENTS,passages96,$(PASSAGES96-BASENAME),$(PASSAGES-ROI),passagesBasic,$(PASSAGES96-LMEDEFAULT)))
-PASSAGES-BASENAME := genmodel/passages.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm.bysent
-PASSAGES-LMEDEFAULT := 
-$(eval $(call FMRI-BYSENT-EXPERIMENTS,passages,$(PASSAGES-BASENAME),$(PASSAGES-ROI),passagesBasic,$(PASSAGES-LMEDEFAULT)))
-$(eval $(call FMRI-BYSENT-EXPERIMENTS,passages,$(PASSAGES-BASENAME),$(PASSAGES-ROI),passagesNwrds,$(PASSAGES-LMEDEFAULT)))
-$(eval $(call FMRI-BYSENT-EXPERIMENTS,passages,$(PASSAGES-BASENAME),$(PASSAGES-ROI),passagesNwrdsWlen,$(PASSAGES-LMEDEFAULT)))
+PASSAGES-BASENAME := genmodel/passages.wsj02to21-gcg15-nol-prtrm-3sm-synproc-+c_+u_+b5000.syn.5-kenlm.bysent
+PASSAGES-LMEDEFAULT := -vw
+$(eval $(call FMRI-BYSENT-EXPERIMENTS,passages,$(PASSAGES-BASENAME),$(PASSAGES-ROI),fmriEmpty,$(PASSAGES-LMEDEFAULT)))
+$(eval $(call FMRI-BYSENT-EXPERIMENTS,passages,$(PASSAGES-BASENAME),$(PASSAGES-ROI),nwrds,$(PASSAGES-LMEDEFAULT)))
+$(eval $(call FMRI-BYSENT-EXPERIMENTS,passages,$(PASSAGES-BASENAME),$(PASSAGES-ROI),nwrdswlen,$(PASSAGES-LMEDEFAULT)))
 
 ################################################################################
 #
@@ -119,33 +120,21 @@ endif
 #
 ################################################################################
 
-define PASSAGES-FORM = 
-scripts/$(1)%.lmeform: scripts/%.template.lmeform
-	mkdir -p scripts
-	cat $$< | sed 's/PASSAGESROI/$(1)/g;' > $$@
-endef
-
-define PASSAGES-FORMS 
-$(foreach ROI, $(PASSAGES-ROI), $(eval $(call PASSAGES-FORM,$(ROI))))
-endef
-
-$(eval $(PASSAGES-FORMS))
-
 genmodel/%.xlsx: $$(DEP-PASSAGES) $(PASSAGESDIR)/$$*.xlsx $(CONFIGDIR)/user-passages-directory.txt | genmodel
 	cp $(word 1, $^) $@
 
 %passages72.lineitems: genmodel/passages_eval.fromxlsx.csv | genmodel
 	head -n+73 $(word 1, $^) | tail -n+2 | \
-	awk '{for (i=3; i<7; i++) if ($$i != "") print $$i}' FPAT="([^ ]*)|(\"[^\"]+\")" | sed 's/^\"\|\"$$//g' > $@
+	awk '{for (i=3; i<7; i++) if ($$i != "") print $$i}' FPAT="([^ ]*)|(\"[^\"]+\")" | sed 's/^\"\|\"$$//g' | sed 's/ $$//g' > $@
 
 genmodel/passages72.linetoks: $$(DEP-TOKENIZER) genmodel/passages72.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | genmodel
-	cat $(word 1, $^) | $(word 2, $^) > $@
+	cat $(word 1, $^) | $(word 2, $^) | sed 's/ $$//g' > $@
 
 %passages96.lineitems: genmodel/passages_96concepts.fromxlsx.csv | genmodel
-	tail -n+2 $(word 1, $^) | awk '{print $$3}' FPAT="([^ ]+)|(\"[^\"]+\")" | sed 's/^\"\|\"$$//g' > $@
+	tail -n+2 $(word 1, $^) | awk '{print $$3}' FPAT="([^ ]+)|(\"[^\"]+\")" | sed 's/^\"\|\"$$//g' | sed 's/ $$//g' > $@
 
 genmodel/passages96.linetoks: $$(DEP-TOKENIZER) genmodel/passages96.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | genmodel
-	cat $(word 1, $^) | $(word 2, $^) > $@
+	cat $(word 1, $^) | $(word 2, $^) | sed 's/ $$//g' > $@
 
 passages%.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-PASSAGES)/srcmodel/passages$$*.stripped.linetrees passages%.linetoks
 	python $^ > $@

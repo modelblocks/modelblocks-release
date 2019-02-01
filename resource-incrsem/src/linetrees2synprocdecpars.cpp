@@ -66,7 +66,7 @@ T getType ( const L& l ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void calcContext ( const Tree& tr, int s=1, int d=0 ) {
+void calcContext ( const Tree<L>& tr, int s=1, int d=0 ) {
   static F          f;
   static Sign       aPretrm;
   static StoreState q;
@@ -141,7 +141,7 @@ int main ( int nArgs, char* argv[] ) {
 
   while ( cin && EOF!=cin.peek() ) {
     //Tree t;
-    Tree t("T"); t.emplace_back(); t.emplace_back("T");
+    Tree<L> t("T"); t.emplace_back(); t.emplace_back("T");
     cin >> t.front() >> "\n";
     cout << "TREE: " << t << "\n";
     if ( t.front().size() > 0 ) calcContext ( t );

@@ -77,8 +77,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 
     ## attach rel pro / interrog pro antecedent...
     for i,psi in enumerate( gcgtree.deps(sD) ):
-      if psi[1] in 'ir':
-        G.equate( G.result('s',G.findNolo(psi,id)), 'e', G.result('r',G.result('s',id)) )    ## restrictive relpro
+      if psi[1] in 'ir' and sD[0] in 'AR':
+        G.equate( G.result('s',G.findNolo(psi,id)), 'e', G.result('2',G.result('r',G.result('s',id))) )    ## adverbial relpro
+      elif psi[1] in 'ir':
+        G.equate( G.result('s',G.findNolo(psi,id)), 'e', G.result('r',G.result('s',id)) )                  ## restrictive nominal relpro
 
 
   def updateUna( G, s, sC, sD, id ):
@@ -91,7 +93,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     l,d = ('B',G.a) if s==0 else ('A',G.b)
     dUpper,dLower = (G.a+'u',G.a) if s==0 else (G.b,G.b+'u')  ## bottom-up on left child, top-down on right child
 
-    if '-lV' in sD:                               ## V
+    if '-lV' in sD:                                          ## V
       sN = re.findall('-v(?:[^-{}]|{[^{}]*})',sD)[-1]
       n = G.findNolo( sN, d )
       if n=='':
@@ -101,21 +103,21 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       else: G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',n), '1\'', G.result('s',dUpper) )
       G.equate( G.result('s',dUpper), 'e', G.result('r',G.result('s',dLower)) )
-    elif '-lQ' in sD:                             ## Q
+    elif '-lQ' in sD:                                        ## Q
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('1\'',G.result('s',d)), '2\'', G.result('s',d+'u') )  ## switch 1' & 2' arguments (same process top-down as bottom-up)
       G.equate( G.result('2\'',G.result('s',d)), '1\'', G.result('s',d+'u') )
       G.equate( G.result('s',dUpper), 'e', G.result('r',G.result('s',dLower)) )
-    elif '-lZ' in sD and sC.startswith('A-aN-x'): ## Zc
+    elif '-lZ' in sD and sC.startswith('A-aN-x'):            ## Zc
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',dLower),                 '2', G.result('r',G.result('s',dUpper)) )
       G.equate( G.result('1\'',G.result('s',dUpper)), '1', G.result('r',G.result('s',dUpper)) )
       G.equate( 'A-aN-bN:~',                          '0', G.result('r',G.result('s',dUpper)) )
-    elif '-lZ' in sD and sC.startswith('A-a'):    ## Za
+    elif '-lZ' in sD and sC.startswith('A-a'):               ## Za
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('r',G.result('r',G.result('s',dLower))), '1\'', G.result('s',dUpper) )
       G.equate( G.result('s',dUpper), 'h', G.result('s',dLower) )              ## hypothetical world inheritance -- should be implemented throughout
-    elif '-lZ' in sD and sC.startswith('R-a'):    ## Zb
+    elif '-lZ' in sD and sC.startswith('R-a'):               ## Zb
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('s',dLower),                 '2', G.result('r',G.result('s',dUpper)) )
       G.equate( G.result('1\'',G.result('s',dUpper)), '1', G.result('r',G.result('s',dUpper)) )
@@ -129,13 +131,16 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         G.equate( sN, '0', n )
         G.equate( G.result(l,d), l, n )
       else: G.equate( G.result(l,d), l, d+'u' )
-      if sN.endswith('-aN}'):                     ## Eb,Ed
+      if len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN.endswith('-rN}'):  ## Ee
+        G.equate( G.result('s',n), 'e', G.result('r',G.result('s',dLower)) )
+      elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ):  ## Eb,Ed
+#      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
         G.equate( G.result('r',G.result('s',dLower)), '1\'', id+'y' )
         G.equate( G.result('s',n), 'e', id+'y' )
-      else:                                       ## Ea,Ec
+      else:                                                  ## Ea,Ec
         G.equate( G.result('s',n), 'e', G.result( str(G.getArity(sD))+'\'', G.result('s',dLower) ) )
       G.equate( G.result('s',d), 's', d+'u' )
-    elif '-l' not in sD:                          ## T
+    elif '-l' not in sD:                                     ## T
       ## update category of every nonlocal sign on store that changes with type change...
       hideps = gcgtree.deps( sC )
       lodeps = gcgtree.deps( sD )
@@ -172,7 +177,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     G.equate( sE, '0', G.b )
     if j==0:
       c = id + 'a'
-      G.equate( c, 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE else G.b )
+      G.equate( c, 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or re.match('.*-[ri]N-lH$',sE)!=None else G.b )
       G.equate( sC, '0', c )
       ## add all nonlocal dependencies with no nolo on store...
       b = c
@@ -184,7 +189,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     if j==1:
       c = G.result( 'B', G.a )
       while (c,'B') in G: c = G[c,'B']            ## if there are non-local dependencies on B
-      G.equate( G.result('A',c), 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE else G.b )
+      G.equate( G.result('A',c), 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or re.match('.*-[ri]N-lH$',sE)!=None else G.b )
 
     d,e = G.a,G.b
     if   '-lA' in sD:                               ## Aa
@@ -225,8 +230,13 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     elif '-lH' in sE:                               ## H
       G.equate( G.result('s',d), 's', c )
       n = G.findNolo( gcgtree.lastdep(sD), d )
-      if n!='': G.equate( G.result('s',e), 's', n )
-      if n!='': G[n,'0']+='-closed'  ## close off nolo
+      if n!='':
+        if re.match('.*-[ri]N-lH$',sE)!=None:       ## Hb
+          G.equate( G.result('r',G.result('s',n)), 's', G.result('A',e) )
+          G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
+        else:                                       ## Ha
+          G.equate( G.result('s',e), 's', n )
+        G[n,'0']+='-closed'  ## close off nolo
     elif '-lI' in sE:                               ## I
       G.equate( G.result('s',d), 's', c )
       if sD.startswith('N-b{V-g') or sD.startswith('N-b{I-aN-g'):                                 ## nominal clause
@@ -240,12 +250,18 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('s',c), 's', e )
       G.equate( G.result('s',e), 's', G.result('B',d) )
       G.equate( gcgtree.lastdep(sD), '0', G.result('B',d) )
+    elif 'I-aN-g{R-aN}-lR' == sE:                   ## Rc (off-spec)
+      G.equate( G.result('s',d),     's', c )
+      G.equate( 'A-aN-bN:support',   '0', G.result('r',G.result('s',G.result('A',e))) )
+      G.equate( G.result('s',d),     '2', G.result('r',G.result('s',G.result('A',e))) )
+      G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
     elif '-lR' in sE:                               ## R
       G.equate( G.result('s',d), 's', c )
       G.equate( G.result('s',d), 's', G.result('A',e) )
       G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
     else:
-      sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + '.\n' )
+      if sC != sD != sE != 'FAIL':
+        sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + '.\n' )
 
 
   def convert( G, t, s=0, i=0 ):
@@ -302,6 +318,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         ## place pred in ##e or ##r node, depending on category...
         if s[0]=='N' and not s.startswith('N-b{N-aD}') and not s.startswith('N-b{V-g{R') and not s.startswith('N-b{I-aN-g{R'):
           G.equate( s, '0', x+'e' )
+          if (x+'s','h') in G: G.equate( G.result('h',x+'s'), 'h', x+'e' )      ## inherit possible/hypothetical world from s node.
           G.equate( G.result('r',G.result('s',x)), '1', x+'e' )
         else: G.equate( s, '0', G.result('r',G.result('s',x)) )
         ## coindex subject of raising construction with subject of direct object...
@@ -317,12 +334,19 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     ## for each syntactic dependency...
     for x,l in sorted(G):
       if l[-1]=='\'':
-        ## add semantic dependencies...
-        if   (x,'r') in G and (G[x,'r'],'0') in G:                                 G.equate( G[x,l], l[:-1], G.result('r',x) )         ## predicate
-        elif (x,'e') in G and (G[x,'e'],'r') in G and (G[G[x,'e'],'r'],'0') in G:  G.equate( G[x,l], l[:-1], x )                       ## extraction of predicate
-        elif (x[:-1]+'e','0') in G:                                                G.equate( G[x,l], str(int(l[:-1])+1), x[:-1]+'e' )  ## nominal
+        if VERBOSE:
+          sys.stderr.write( 'Creating semantic dependencies for ' + x + ',' + l + '...\n' )
+        try:
+          ## add semantic dependencies...
+          if   (x,'r') in G and (G[x,'r'],'0') in G:                                         G.equate( G[x,l], l[:-1], G.result('r',x) )        ## predicate
+          elif (x,'e') in G and (G[x,'e'],'r') in G and (G[G[x,'e'],'r'],'0') in G:          G.equate( G[x,l], l[:-1], x )                      ## extraction of predicate
+          elif (x,'e') in G and (G[x,'e'],'r') in G and (G[G[x,'e'],'r'][:-1]+'e','0') in G: G.equate( G[x,l], str(int(l[:-1])+1), x )          ## extraction of nominal
+          elif (x[:-1]+'e','0') in G:                                                        G.equate( G[x,l], str(int(l[:-1])+1), x[:-1]+'e' ) ## nominal
 #BAD;NON-PRED      elif (x,'e') in G and (G[x,'e'],'r') in G and (G[G[x,'e'],'r'][:-1]+'e','0') in G: G.equate( G[x,l], str(int(l[:-1])+1), x )           ## extraction of nominal
-
+          if VERBOSE:
+            sys.stderr.write( str(G) + '\n' )
+        except KeyError as e:
+          sys.stderr.write( 'KeyError ' + str(e) + ' in ' + str(t) + '\n' )
 
 ################################################################################
 
@@ -334,14 +358,14 @@ class SemCueGraph( cuegraph.CueGraph ):
       if l!='A' and l!='B' and l!='s' and l!='w' and (l!='0' or x[-1] in 'er') and l[-1]!='\'':
         H[x,l] = G[x,l]
 
-
 ################################################################################
 
 def last_inh( z, G ):
-  if (z,'r') in G and (z,'e') in G: print( 'ERROR MULTIPLE INHERITANCES', z, str(G) )
+  if (z,'r') in G and (z,'e') in G: sys.stderr.write( 'ERROR MULTIPLE INHERITANCES: ' + z + ' in ' + str(G) + '\n' )
 #' '.join( [ x+','+l+','+G[x,l] for x,l in sorted(G) ] ) )
   if (z,'r') in G: return last_inh( G[z,'r'], G )
   if (z,'e') in G: return last_inh( G[z,'e'], G )
+  if (z,'h') in G: return last_inh( G[z,'h'], G )
   return z
 
 
@@ -350,8 +374,13 @@ class SimpleCueGraph( cuegraph.CueGraph ):
   def __init__( H, G ):
     for x,l in G:
       if '0'<=l and l<='9':
-        H[ last_inh(x,G), l ] = last_inh( G[x,l], G )
-
+#        print( 'trying to add '+x+','+l+','+G[x,l] +' as ' + last_inh(x,G) + ',' + l + ',' + last_inh( G[x,l], G ) )
+        H.equate( last_inh(G[x,l],G), l, last_inh(x,G) )
+#        H[ last_inh(x,G), l ] = last_inh( G[x,l], G )
+#        print( 'adding '+x+','+l+','+G[x,l] +' to ' + last_inh(x,G) + ',' + l + ',' + last_inh( G[x,l], G ) )
+    for x,l in G:
+      if l=='0':
+        H.rename( x, last_inh(x,G) )
 
 
 

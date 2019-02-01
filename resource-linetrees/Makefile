@@ -112,8 +112,8 @@ Linetrees:
   blocktitle: Linetrees
   targetsuffix: .linetrees
 endef
-%.linetrees:  $(LTREES-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
-	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
+#%.linetrees:  $(LTREES-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
+#	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.lower.linetrees:  $(LTREES-SCRIPTS)/make-trees-lower.py  %.linetrees
 	cat $(word 2,$^)  |  python $(word 1,$^)  >  $@
 #### generate right-branching linetrees from linetoks
@@ -224,7 +224,7 @@ PTB:
   value: nodashtags
 endef
 %.nodashtags.linetrees:  %.linetrees
-	cat $<  |  perl -pe 's/([^\(])\-[^ \)]+ /\1 /g'  >  $@
+	cat $<  |  perl -pe 's/([^\(])[-=][^ \)]+ /\1 /g'  >  $@
 
 #### obtain tokenized input sentences from linetrees
 define TargetBlock
@@ -340,26 +340,48 @@ endef
 %.head.model: %.model $(LTREES-SCRIPTS)/rules2headmodel.py
 	cat $< | python3 $(word 2, $^) > $@
 
-#### syntactic evaluation           #genmodel/$$(subst -,.,$$(basename $$(basename $$(basename $$(notdir $$*))))).linetrees  %.linetrees
-.PRECIOUS: %.syneval
-#### <dashed-alpha-testset><dotted-beta-edits-to-gold><dashed-gamma-model>.syneval -> calls <alpha><beta>.linetrees gold, <alpha><gamma>.linetrees hypoth
-%.syneval:  bin/evalb \
-            $(RESOURCE-GENERAL)/srcmodel/new.prm \
-            genmodel/$$(subst -,.,$$(basename $$*)).linetrees \
-            $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).linetrees
+## TO SPEC
+.PRECIOUS: %syneval
+%syneval:  bin/evalb \
+           $(RESOURCE-GENERAL)/srcmodel/new.prm \
+           genmodel/$$(subst -,.,$$(basename $$(basename $$*)))$$(subst _,.,$$(suffix $$*))linetrees \
+           $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$(basename $$*))$$(subst _,.,$$(suffix $$*))linetrees
 	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
-.PRECIOUS: %.nounary_syneval
-%.nounary_syneval:  bin/evalb \
-            $(RESOURCE-GENERAL)/srcmodel/new.prm \
-            genmodel/$$(subst -,.,$$(basename $$*)).nounary.linetrees \
-            $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).nounary.linetrees
-	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
-.PRECIOUS: %.noberkstuff_nounary_syneval
-%.noberkstuff_nounary_syneval:  bin/evalb \
-            $(RESOURCE-GENERAL)/srcmodel/new.prm \
-            genmodel/$$(subst -,.,$$(basename $$*)).nounary.linetrees \
-            $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).noberkstuff.nounary.linetrees
-	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
+
+##### syntactic evaluation           #genmodel/$$(subst -,.,$$(basename $$(basename $$(basename $$(notdir $$*))))).linetrees  %.linetrees
+#.PRECIOUS: %.syneval
+##### <dashed-alpha-testset><dotted-beta-edits-to-gold><dashed-gamma-model>.syneval -> calls <alpha><beta>.linetrees gold, <alpha><gamma>.linetrees hypoth
+#%.syneval:  bin/evalb \
+#            $(RESOURCE-GENERAL)/srcmodel/new.prm \
+#            genmodel/$$(subst -,.,$$(basename $$*)).linetrees \
+#            $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).linetrees
+#	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
+#.PRECIOUS: %.nounary_syneval
+#%.nounary_syneval:  bin/evalb \
+#                    $(RESOURCE-GENERAL)/srcmodel/new.prm \
+#                    genmodel/$$(subst -,.,$$(basename $$*)).nounary.linetrees \
+#                    $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).nounary.linetrees
+#	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
+#.PRECIOUS: %.noberkstuff_nounary_syneval
+#%.noberkstuff_nounary_syneval:  bin/evalb \
+#                                $(RESOURCE-GENERAL)/srcmodel/new.prm \
+#                                genmodel/$$(subst -,.,$$(basename $$*)).nounary.linetrees \
+#                                $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).noberkstuff.nounary.linetrees
+#	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
+
+%.syneval.errs:  $(LTREES-SCRIPTS)/tree-compare.py \
+                 genmodel/$$(subst -,.,$$(basename $$*)).linetrees \
+                 $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).linetrees
+	python $^  >  $@
+%.nounary_syneval.errs:  $(LTREES-SCRIPTS)/tree-compare.py \
+                         genmodel/$$(subst -,.,$$(basename $$*)).nounary.linetrees \
+                         $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).nounary.linetrees
+	python $^  >  $@
+%.noberkstuff_nounary_syneval.errs:  $(LTREES-SCRIPTS)/tree-compare.py \
+                                     genmodel/$$(subst -,.,$$(basename $$*)).nounary.linetrees \
+                                     $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$*).noberkstuff.nounary.linetrees
+	python $^  >  $@
+
 #%.syneval:  bin/evalb \
 #            $(RESOURCE-GENERAL)/srcmodel/new.prm \
 #            genmodel/$$(subst -,.,$$(basename $$(basename $$(basename $$(notdir $$*))))).linetrees \
@@ -426,6 +448,10 @@ $$(subst ..,.,$$(subst -,.,$$(subst .,, $$(suffix $$(basename %))))$$(subst -,.,
 
 #### signif testing
 %.bootstrapsignif:  $(LTREES-SCRIPTS)/compare.pl \
-         $$(word 1,$$(subst .., ,%)).$$(word 2,$$(subst .., ,$$*)).$$(word 4,$$(subst .., ,$$*)) \
-         $$(word 1,$$(subst .., ,%)).$$(word 3,$$(subst .., ,$$*)).$$(word 4,$$(subst .., ,$$*))
+                    $$(basename $$(basename $$*))$$(suffix $$*) \
+                    $$(basename $$(basename $$(basename $$*)))$$(suffix $$(basename $$*))$$(suffix $$*)
 	perl $(word 1,$^) $(word 2,$^) $(word 3,$^)  >  $@
+
+#         $$(word 1,$$(subst .., ,%)).$$(word 2,$$(subst .., ,$$*)).$$(word 4,$$(subst .., ,$$*)) \
+#         $$(word 1,$$(subst .., ,%)).$$(word 3,$$(subst .., ,$$*)).$$(word 4,$$(subst .., ,$$*))
+

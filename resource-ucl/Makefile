@@ -56,12 +56,13 @@ endef
 
 .SUFFIXES:
 .SECONDEXPANSION:
+.DELETE_ON_ERROR:
 
-SPILL-DUNDEE := S1 S2 S3
-DLT-DUNDEE := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
-FJ-DUNDEE := fjprob endembd embdlen embdlendr embdlendrv noF noFlen noFlendr noFlendrv reinst reinstlen reinstlendr reinstlendrv
-ALL-MEM = $(DLT-DUNDEE) $(FJ-DUNDEE)
-ALL-MEM-SPILL = $(ALL-MEM) $(foreach var,$(ALL-MEM),$(foreach spill,$(SPILL-DUNDEE),$(var)$(spill)))
+VPATH += $(RESOURCE-UCL)
+
+UCL-BASENAME := genmodel/ucl.wsj02to21-GRAMMAR-nol-prtrm-3sm-synproc-+c_+u_+b5000.gcg15_nodashtags.merged.syn.5-kenlm.eyeGP
+UCL-LMEDEFAULT := -NSCFl
+$(eval $(call RT-EXPERIMENTS,ucl,$(UCL-BASENAME),$(UCL-LMEDEFAULT)))
 
 ################################################################################
 #
@@ -152,6 +153,10 @@ endif
 #
 ################################################################################
 
+## copy partition ini into project genmodel directory
+genmodel/%.ini: $(UCL-SCRIPTS)/%.ini
+	cp $< $@
+
 genmodel/ucl.merge_tables.params: | genmodel
 	echo 'word sentid sentpos' > $@
   
@@ -167,9 +172,9 @@ genmodel/ucl.spilloverMetrics.params: | genmodel
 genmodel/ucl.rm_unfix_items.params: | genmodel
 	echo '-f fdurFP' > $@
   
-genmodel/ucl.linetoks: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
-$(UCLDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | genmodel
-	cut -f 2 $(word 3,$^) | tail -n+2 | $(word 4,$^) > $@
+%/ucl.linetoks: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
+$(UCLDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | %
+	cut -f 2 $(word 3,$^) | tail -n+2 | $(word 4,$^) | sed 's/ $$//g' > $@
 
 %/ucl.lineitems: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
 $(UCLDIR)/eye_movement/stimuli.txt | %
@@ -183,9 +188,10 @@ $(CONFIGDIR)/user-ucl-directory.txt \
 $(UCL-SCRIPTS)/build_ucl_corpus.py \
 $(UCLDIR)/eye_movement/eyetracking.RT.txt \
 $(RT-SCRIPTS)/rename_cols.py \
-$(RT-SCRIPTS)/filter_cols.awk | %
+$(RT-SCRIPTS)/filter_cols.awk \
+$(DTSR-SCRIPTS)/compute_timestamps_from_RT.py | %
 	cat $(word 3, $^) | python $(word 2,$^) > $@.tmp
-	paste -d' ' $@.tmp <(awk -f $(word 5, $^) -v cols=sentid $@.tmp | python $(word 4, $^) sentid docid) > $@
+	paste -d' ' $@.tmp <(awk -f $(word 5, $^) -v cols=sentid $@.tmp | python $(word 4, $^) sentid docid) | python $(word 6, $^) > $@
 	rm $@.tmp
 
 .PRECIOUS: $(THISDIR)/esns

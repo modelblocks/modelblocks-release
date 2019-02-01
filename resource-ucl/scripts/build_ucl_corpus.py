@@ -1,7 +1,7 @@
 import pandas as pd
 import sys
 
-names = ['subject','word','sentid','sentpos','fdurFP','fdurGP','wdelta','wlen', 'prevwasfix']
+names = ['subject','word','sentid','sentpos','fdurFP','fdurGP','wdelta','wlen', 'prevwasfix', 'startofsentence', 'endofsentence']
 cumwdelta = 1
 def calccumwdelta(row):
     global cumwdelta
@@ -25,4 +25,6 @@ data['sentpos'] = data['sentpos']
 data['wdelta'] = data.apply(calccumwdelta, axis=1)
 data['wlen'] = data.apply(lambda x: len(x['word']), axis=1)
 data['prevwasfix'] = data.apply(lambda x: int(x['wdelta'] == 1), axis=1)
+data['startofsentence'] = (data.sentpos == 1).astype('int')
+data['endofsentence'] = data.startofsentence.shift(-1).fillna(1).astype('int')
 data.to_csv(sys.stdout, ' ', columns=names, index=False)

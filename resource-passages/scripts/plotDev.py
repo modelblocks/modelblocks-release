@@ -15,6 +15,7 @@ df['effect'] = df.effect.str.replace(r'Sum$|Max$|Mean$','')
 df['ROI'] = df.formname.str.replace(r'passages.*', '')
 df['formname'] = df.formname.str.replace(r'.*passages', '')
 
+df.link = df.link.astype('str')
 df.ix[df.link!='-L', 'link'] = ''
 df.ix[df.link=='-L', 'link'] = 'Log'
 
@@ -35,10 +36,10 @@ roi = sorted(list(df.ROI.unique()))
 for f in form:
     for i in range(len(value)):
         fig, ax = plt.subplots()
-        fig.patch.set_visible(False)
-        fig.set_size_inches(15, 20)
-        #df[df['formname'] == f][['effect', 'agg', 'link', 'ROI','effect_full','formname']].to_csv(sys.stdout)
         df_cur = df[df['formname'] == f].pivot(index='effect_full', columns='ROI', values=value[i])
+        if df_cur.shape[0] == 0:
+            continue
+        fig.set_size_inches(15, 0.25*df_cur.shape[0])
         sns.heatmap(df_cur, cmap=color[i], ax=ax, cbar=True, vmin=clip[i][0], vmax=clip[i][1])
         ax.xaxis.tick_top()
         ax.xaxis.set_label_position('top')
@@ -46,16 +47,17 @@ for f in form:
         ax.set_xlabel(value[i] + ' by ROI (' + f + ')')
         plt.yticks(rotation=0)
         plt.savefig('alleffects_' + f + '_' + value[i] + '.jpg')
+        plt.close(fig)
 
 for f in form:
     for i in range(len(value)):
         for a in agg:
             fig, ax = plt.subplots()
             fig.patch.set_visible(False)
-            fig.set_size_inches(15, 20)
             df_cur = df[(df['formname'] == f) & (df['agg'] == a)].pivot(index='effect_link', columns='ROI', values=value[i])
             if df_cur.shape[0] == 0:
                 continue
+            fig.set_size_inches(15, 0.25*df_cur.shape[0])
             sns.heatmap(df_cur, cmap=color[i], ax=ax, cbar=True, vmin=clip[i][0], vmax=clip[i][1])
             ax.xaxis.tick_top()
             ax.xaxis.set_label_position('top')
@@ -63,5 +65,6 @@ for f in form:
             ax.set_xlabel(value[i] + ' by ROI (' + f + ', ' + a + ')')
             plt.yticks(rotation=0)
             plt.savefig(a + '_' + f + '_' + value[i] + '.jpg')
+            plt.close(fig)
 
-
+plt.close()

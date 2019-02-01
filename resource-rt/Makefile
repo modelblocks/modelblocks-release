@@ -24,11 +24,11 @@
 #  
 #  1. %.pcfg.tokmeasures: Incremental pcfg parser output (parser-tokeniziation - 
 #     separate punctuation toks)
-#  2. %.syn.tokmeasures: PCFG praser output with center-embedding data 
+#  2. %.syn.tokmeasures: PCFG parser output with center-embedding data 
 #     calculated from gold trees (parser tokenization)
 #  3. %.itemmeasures: All syntactic predictors with ngram probabilities 
 #     (experiment tokenization, in which parser tokenization should be nested)
-#  4. %.full.evmeasures: itemmeasures data merged with reading event data 
+#  4. %.core.evmeasures: itemmeasures data merged with reading event data 
 #     (*.evmeasures), i.e. the complete data set
 #
 #  To generate these files, the experiment must have (or have recipes to 
@@ -78,19 +78,20 @@ COMMA :=,
 
 VPATH += $(RESOURCE-RT)
 
-MERGESURP = python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).full.evmeasures --i totsurp | \
-sed '1s/.*/$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
-mv $@{.tmp,}; \
-python $(word 1, $^) --input $(subst GRAMMAR,$(grammar),$(basename $*)).full.evmeasures --i cumtotsurp | \
-sed '1s/.*/cum$(subst -,,$(grammar))totsurp/' | paste -d' ' $@ - > $@.tmp; \
-mv $@{.tmp,};
+MERGESURP = paste -d' ' - <(cat $(subst GRAMMAR,$(grammar),$(basename $*))_parsed.tokmeasures | \
+awk -f $(word 1, $^) -v cols=totsurp | \
+sed 's/totsurp/$(subst -,,$(grammar))surp/g')
+
+MERGEPARSERSURP = paste -d' ' - <(cat $(subst PARSER,$(parser),$(basename $*))_parsed.tokmeasures | \
+awk -f $(word 1, $^) -v cols=totsurp | \
+sed 's/totsurp/$(subst +,,$(subst -,,$(parser)))surp/g')
 
 SPILLOVER := S1
-SURP := fwprob5surp synsurp lexsurp totsurp 
+SURP := fwprob5surp totsurp 
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
-FJ := noF yesJ embddepthAny embddepthMin endembdMin startembdMin noFlen noFdr noFdrv embdlen embddr embddrv 
-COREF := corefbin coreflenw coreflenr corefsize
-SEMDIST := incrSemCosDistMin incrSemCosDistMax incrSemCosDistMean incrSemCosDistSum incrSemDistMin incrSemDistMax incrSemDistMean incrSemDistSum incrSemNACosDistMin incrSemNACosDistMax incrSemNACosDistMean incrSemNACosDistSum incrSemNADistMin incrSemNADistMax incrSemNADistMean incrSemNADistSum
+FJ := noF yesJ embddepthMin endembdMin startembdMin noFlen noFdr noFdrv embdlen embddr embddrv 
+COREF := # corefbin coreflenw coreflenr corefsize
+SEMDIST := sdCosMeanW1 sdEuclMeanW1 sdNACosMeanW1 sdNAEuclMeanW1 sdCosMeanW2 sdEuclMeanW2 sdNACosMeanW2 sdNAEuclMeanW2 sdCosMeanW3 sdEuclMeanW3 sdNACosMeanW3 sdNAEuclMeanW3 sdCosMeanWinf sdEuclMeanWinf sdNACosMeanWinf sdNAEuclMeanWinf
 GCG-CATS := A B C D F G
 EMBDDEPTHS := 1 2 3 4 5
 
@@ -301,9 +302,21 @@ genmodel/rename_cols.params: | genmodel
 	cat $< | python $(word 2, $^) > $@
 
 # Pastes GloVe predictors to existing identically tokenized tokmeasures file
-%.glove.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).glove.tokmeasures
-	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g') > $@
+%.glove.tokmeasures: $$(basename $$(basename %)).tokmeasures $$(word 1, $$(subst ., ,%)).gigaword$$(suffix $$(basename $$*))$$(suffix $$*).glove.tokmeasures
+	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g'| cut -f 3- -d' ') > $@
 
+# Pastes Word2Vec predictors to existing identically tokenized tokmeasures file
+%.word2vec.tokmeasures: $$(basename $$(basename %)).tokmeasures $$(word 1, $$(subst ., ,%)).gigaword$$(suffix $$(basename $$*))$$(suffix $$*).word2vec.tokmeasures
+	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g' | cut -f 3- -d' ') > $@
+
+# Pastes word embedding predictors to existing identically tokenized tokmeasures file
+%.embeddings.tokmeasures: $$(basename $$(basename $$(basename %))).tokmeasures $$(word 1, $$(subst ., ,%))$$(suffix $$(basename $$(basename $$*)))$$(suffix $$(basename $$*))$$(suffix $$*).embeddings.tokmeasures
+	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g' | cut -f 3- -d' ') > $@
+
+%.embeddings.tokmeasures: $$(basename $$(basename %)).tokmeasures $$(word 1, $$(subst ., ,%)).gigaword$$(suffix $$(basename $$*))$$(suffix $$*).embeddings.tokmeasures
+	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g' | cut -f 3- -d' ') > $@
+
+# Pastes coreference predictors to existing identically tokenized tokmeasures file
 # Pastes coreference predictors to existing identically tokenized tokmeasures file
 %.coref.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).coref.tokmeasures
 	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g') > $@
@@ -319,37 +332,64 @@ $(RT-SCRIPTS)/filter_cols.py
 	cat $< | paste -d' ' - <(cat $(word 2, $^) | python $(word 3, $^) -x word sentid) > $@
 
 # Computes parser complexity predictors 
-%_parsed.tokmeasures: %_parsed.output $(LCPARSE-SCRIPTS)/spargeComplexity.py $(RT-SCRIPTS)/calcFJProb.py
-	cat $< | python3 $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;' | python $(word 3, $^) | \
-	sed 's/  */ /g;1s/F-/fm/g;1s/F+/fp/g;1s/L-/lm/g;1s/L+/lp/g;1s/B-/bm/g;1s/B+/bp/g;1s/Badd/ba/g;1s/Bcdr/bc/g;1s/BNil/bo/g;1s/Bsto/bsto/g;' > $@
+%_parsed.tokmeasures: %_parsed.tokdecs $(RT-SCRIPTS)/filter_cols.awk
+	cat $< | awk -f $(word 2, $^) -v cols=word:totsurp > $@
 
-# TODO: merges surprisal columns from multiple parses together
-%.merged.pcfg.tokmeasures: scripts/$$(subst .,,$$(suffix $$*)).PCFGmerge.txt 
-	@echo 'Merging PCFGs'
+# Merges surprisal columns from a parser trained on multiple grammars
+%.merged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*))_parsed.tokmeasures)
+	cat $(word 2, $^) | sed '1s/totsurp/$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))surp/' | $(foreach grammar,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))), $(MERGESURP)) > $@
+
+# Merges surprisal columns from multiple parsers trained on a grammar
+%.parsermerged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach parser,$$(subst -_+,-+,$$(subst +,_+,$$(subst _, ,$$(subst .,,$$(suffix $$*))))),genmodel/$$(subst PARSER,$$(parser),$$(basename $$*))_parsed.tokmeasures)
+	cat $(word 2, $^) | sed '1s/totsurp/$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))surp/' | $(foreach parser,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))), $(MERGEPARSERSURP)) > $@
 
 # %.tokmeasures with a time column, requires %.time.tokmeasures with timestamps for tokens in stimulus
 %.t.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., , %)).time.tokmeasures
 	cat $(word 1, $^) | paste -d' ' - <(cut -f 3- -d' ' $(word 2, $^)) > $@
 
 # Shortcut: With co-ref features
-%.syn.tokmeasures: %_parsed.dlt.lc.glove.coref.tokmeasures
+%.syn.tokmeasures: %_parsed.dlt.lc.100.1_2_3_inf.word2vec.coref.tokmeasures
 	mv $^ $@
 
 # Shortcut: Without co-ref features
-%.syn.tokmeasures: %_parsed.dlt.lc.glove.tokmeasures
+%.syn.tokmeasures: %_parsed.dlt.lc.100.1_2_3_inf.word2vec.tokmeasures
 	mv $^ $@
 
 %.itemmeasures: $$(DEP-RHACKS) $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
-	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
-	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
+	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
+	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
+        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
 %.t.itemmeasures: $$(basename %).t.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r
-	cat $< | python $(word 3, $^) <(cat $(word 2, $^) | sed 's/\[/!/g;s/\]/!/g;') sentid embddepthMin timestamp -e latin-1 | \
-	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | python $(word 4, $^) -d | \
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
+	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
+	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
+        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python $(word 4, $^) -d | \
 	$(word 5, $^) > $@
+
+%.t.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.t.itemmeasures \
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
+	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
+	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
+        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python $(word 4, $^) -d | \
+	$(word 5, $^) > $@
+
+%.r.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures $$(basename %).roark.itemmeasures \
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
+	cat $< | python $(word 4, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
+	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | paste -d' ' - $(word 3, $^) | \
+        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python $(word 5, $^) -d | \
+	$(word 6, $^) > $@
+
+%.docids.itemmeasures: %.itemmeasures $$(word 1,$$(subst ., ,%)).docids.itemmeasures $(RT-SCRIPTS)/merge_tables.py
+	python $(word 3, $^) $(word 1, $^) $(word 2, $^) word sentpos sentid > $@
+
 
 define CompositeBlock
 RTDataParams:
@@ -374,11 +414,66 @@ RTCoreEvmeasures:
     kwargs:
       innerdelim: .
 endef
+
+%.itemmeasures: %.lineitems
+	echo word  >  $@
+	cat $<  |  perl -pe 's/ /\n/g'  >>  $@
+
+%parsed.itemmeasures: %parsed.tokmeasures  $$(basename %).itemmeasures  $(RT-SCRIPTS)/roll_toks.py
+	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1  >  $@
+
+%.itemmeasures: %.tokmeasures $$(basename %).itemmeasures $(RT-SCRIPTS)/roll_toks.py
+	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 > $@ 
+
+%.all-itemmeasures:  $(RT-SCRIPTS)/evmeas2uniqcols.py  $(RT-SCRIPTS)/filter_cols.py  $(RT-SCRIPTS)/addCols.r  \
+                         $$(patsubst $$(pc),$$(word 1,$$(subst ., ,$$*)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,$$*)),$$(subst ., ,%)))
+	paste -d ' ' $(wordlist 4,$(words $^),$^)  |  python $(word 1,$^)  |  python $(word 2,$^)  |  $(word 3,$^)  >  $@
+#%.core-itemmeasures: $$(patsubst $$(pc),$$(word 1,$$(subst ., ,%)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,%)),$$(subst ., ,%))) 
+#	paste $^  >  $@
+
+## TO SPEC
+.PRECIOUS: %.core-evmeasures
+%.core-evmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
+	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  >  $@
+
+## PRD/RESMEASURES SPEC
+.PRECIOUS: %.prdmeasures
+%.prdmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
+	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  >  $@
+%.resmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
+	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
+
+## TO SPEC
+%.filt-evmeasures: $$(basename %).core-evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
+$(RT-SCRIPTS)/inferPredictors.py \
+$(RT-SCRIPTS)/filter_cols.awk \
+$(RT-SCRIPTS)/accumulateMetrics.py \
+$(RT-SCRIPTS)/rm_unfix_items.py \
+$(RT-SCRIPTS)/futureMetrics.py \
+$(RT-SCRIPTS)/spilloverMetrics.py \
+$(RT-SCRIPTS)/parsePredictors.py \
+$(RT-SCRIPTS)/rm_na_items.py
+	$(eval CORECOLS := $(sort $(shell cat $(word 2, $^) | python $(word 3, $^) 1 ) $(shell echo $(subst +, ,$(word 2, $(subst _, ,$(subst .,,$(suffix $*))))) | python $(word 9, $^))))
+	$(eval COLS := $(sort $(shell cat $(word 2, $^) | python $(word 3, $^)) $(subst +, ,$(word 2, $(subst _, ,$(subst .,,$(suffix $*)))))))
+	@echo Extracting columns: $(CORECOLS)
+	@echo Computing columns: $(COLS)
+	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(CORECOLS))) $< | \
+	python $(word 5, $^) -c $(shell echo $(COLS) | python $(word 9, $^) -a) | \
+	python $(word 6, $^) | \
+	python $(word 7, $^) -I -c $(shell echo $(COLS) | python $(word 9, $^) -f) | \
+	python $(word 8, $^) -I -C $(shell echo $(COLS) | python $(word 9, $^) -s) | \
+	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(COLS))) | \
+	python $(word 10, $^) > $@
+
+
+
+## change .itemmeasures to .core-itemmeasures
 .PRECIOUS: %.core.evmeasures
 %.core.evmeasures: %.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
 	python $(word 3, $^) $< $(word 2, $^) sentid sentpos > $@
 
+## identical except filt.,core. <-> filt-,core-
 %.filt.evmeasures: $$(basename %).core.evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
 $(RT-SCRIPTS)/inferPredictors.py \
 $(RT-SCRIPTS)/filter_cols.awk \
@@ -397,19 +492,17 @@ $(RT-SCRIPTS)/rm_na_items.py
 	python $(word 6, $^) | \
 	python $(word 7, $^) -I -c $(shell echo $(COLS) | python $(word 9, $^) -f) | \
 	python $(word 8, $^) -I -C $(shell echo $(COLS) | python $(word 9, $^) -s) | \
+	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(COLS))) | \
 	python $(word 10, $^) > $@
 
-# Generate and merge parser data from multiple grammars
-# Template: mydata.training-GRAMMAR-other-args.stuff.parser1_parser2_parser3.merged.full.evmeasures
-.PRECIOUS: %.merged.full.evmeasures
-.merged.full.evmeasures: $(GENERAL-SCRIPTS)/querydataframe.py \
-$$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*)).full.evmeasures)
-	@echo 'Newer than target: ' $?
-	cp $(word 2, $^) $@
-	cat $@ | sed 's/ cumtotsurp / cum$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))totsurp /' | \
-	sed 's/ totsurp / $(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))totsurp /' > $@.tmp
-	mv $@{.tmp,}
-	$(foreach grammar,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))),$(MERGESURP))
+%.train.evmeasures: %.evmeasures $(RT-SCRIPTS)/split.py
+	cat $(word 1, $^) | python $(word 2, $^) train > $@
+
+%.dev.evmeasures: %.evmeasures $(RT-SCRIPTS)/split.py
+	cat $(word 1, $^) | python $(word 2, $^) dev > $@
+
+%.test.evmeasures: %.evmeasures $(RT-SCRIPTS)/split.py
+	cat $(word 1, $^) | python $(word 2, $^) test > $@
 
 # Spillover evaluation for a baseline model, comparing all permutations of adjacent spillover values
 # Because the *.lmeform names are unpredictable this is a weird target that will not be able to clean
@@ -419,21 +512,19 @@ $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst G
 #
 # NOTE: this assumes you have not created any *.lmeform files of your own that end in *SP.lmeform.
 # If you have, it would be best to rename them before running this target.
-BASENAME-NB := genmodel/naturalstories.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm
+BASENAME-NB := genmodel/dundee.wsj02to21-gcg15-decoupled-fg-3sm-bd-x+efabp-+c_+b5000.syn.5-kenlm
 BASELINE-SPILL-EVAL-%: $(RT-SCRIPTS)/permuteSpillover.py $(RT-SCRIPTS)/$$(word 1, $$(subst _, ,%)).lmeform \
 $$(foreach b, \
 $$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
 $$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
-$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
-$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts), \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts), \
 $$(BASENAME-NB).$$(basename $$(notdir $$(b))).-$$(word 2, $$(subst _, ,$$*)).lm);
 
 BASELINE-SPILL-EVAL-%: $(RT-SCRIPTS)/permuteSpillover.py $(CURDIR)/scripts/$$(word 1, $$(subst _, ,%)).lmeform \
 $$(foreach b, \
 $$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m0 -M1 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
 $$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m1 -M2 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
-$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts) \
-$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m3 -M4 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts), \
+$$(shell python $$(RT-SCRIPTS)/permuteSpillover.py -m2 -M3 $$(RT-SCRIPTS)/$$(word 1, $$(subst _, ,$$*)).lmeform scripts), \
 $$(BASENAME-NB).$$(basename $$(notdir $$(b))).-$$(word 2, $$(subst _, ,$$*)).lm);
 
 ################################################################################

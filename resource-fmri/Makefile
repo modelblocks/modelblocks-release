@@ -49,8 +49,54 @@ ifndef SAMPLE-START
 SAMPLE-START := 0
 endif
 
-BYSENT-PRED-BASES := wlen $(SURP) $(DLT) $(FJ)
-BYSENT-PREDS := nwrds $(foreach pred,$(BYSENT-PRED-BASES),$(foreach agg,Mean Sum Max,$(pred)$(agg)))
+ROI := LPostTemp RPostTemp LPostTempZ RPostTempZ LAntTemp RAntTemp LAntTempZ RAntTempZ LIFG RIFG LIFGZ RIFGZ LIFGorb RIFGorb LIFGorbZ RIFGorbZ LMFG RMFG LMFGZ RMFGZ LAngG RAngG LAngGZ RAngGZ LHip RHip Hip LHipZ RHipZ HipZ LATL LIPL LPreM LPTL RATL AllROI 
+
+FMRI-PRED-CONTROLS := sentpos wlen rate soundPower unigram
+FMRI-PRED-BASES := wlen $(SURP) $(DLT) $(FJ) $(SEMDIST)
+BYSENT-PREDS := nwrds $(foreach pred,$(FMRI-PRED-BASES),$(foreach agg,Mean Sum Max,$(pred)$(agg)))
+BYSENT-PREDS += sdCosMean sdEuclMean
+
+define FMRI-FORM =
+scripts/$(1)%.lmeform: scripts/%.template.lmeform
+	mkdir -p scripts
+	cat $$< | sed 's/FMRI-ROI/$(1)/g;' > $$@
+endef
+
+define FMRI-FORMS
+$(foreach ROI, $(ROI), $(eval $(call FMRI-FORM,$(ROI))))
+endef
+
+$(eval $(FMRI-FORMS))
+
+# ARGS:
+#   1 = corpus name
+#   2 = basename string
+#   3 = ROI list
+#   4 = LME formula name
+#   5 = default LME args
+define FMRI-HRF-EXPERIMENTS
+$(foreach var, $(FMRI-PRED-BASES),$(1)-$(var)-$(4): $(foreach roi,$(3),$(2).$(roi)$(4).$(var).$(5)..lrt)
+)
+$(foreach var, $(FMRI-PRED-BASES),$(1)-$(var)-$(4)_%: $(foreach roi,$(3),$(2).$(roi)$(4).$(var).%..lrt);
+)
+$(1)-HRF-$(4): $(foreach var, $(FMRI-PRED-BASES), $(1)-$(var)-$(4))
+$(1)-HRF-$(4)_%: $(foreach var, $(FMRI-PRED-BASES), $(1)-$(var)-$(4)_%);
+endef
+
+# ARGS:
+#   1 = corpus name
+#   2 = basename string
+#   3 = ROI list
+#   4 = LME formula name
+#   5 = default LME args
+define FMRI-HRF-CONTROLS
+$(foreach var, $(FMRI-PRED-CONTROLS),$(1)-$(var)-$(4): $(foreach roi,$(3),$(2).$(roi)$(4).$(var).$(5)..lrt)
+)
+$(foreach var, $(FMRI-PRED-CONTROLS),$(1)-$(var)-$(4)_%: $(foreach roi,$(3),$(2).$(roi)$(4).$(var).%..lrt);
+)
+$(1)-HRFCONTROLS-$(4): $(foreach var, $(FMRI-PRED-CONTROLS), $(1)-$(var)-$(4))
+$(1)-HRFCONTROLS-$(4)_%: $(foreach var, $(FMRI-PRED-CONTROLS), $(1)-$(var)-$(4)_%);
+endef
 
 # ARGS:
 #   1 = corpus name
@@ -111,8 +157,9 @@ fMRICoreEvmeasures:
     kwargs:
       innerdelim: .
 endef
-%.hrf.itemmeasures: $$(basename %).t.itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py scripts/$$(subst .,,$$(suffix $$*)).pred_list.txt
-	python $(word 2, $^) $(word 1, $^) --start $(SAMPLE-START) --predictors $(shell cat $(word 3, $^)) > $@
+.PRECIOUS: %.hrf.itemmeasures
+%.hrf.itemmeasures: %.t.itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py
+	python $(word 2, $^) $(word 1, $^) > $@
 
 %.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py
 	cat $(word 1, $^) | python $(word 2, $^) > $@
@@ -122,10 +169,17 @@ endef
 $(RT-SCRIPTS)/merge_tables.py
 	cat $< | python $(word 3, $^) $< $(word 2, $^) sampleid > $@
 
+.PRECIOUS: %.tiled.core.evmeasures
+%.tiled.core.evmeasures: $(FMRI-SCRIPTS)/tile_stimuli.py %.itemmeasures $$(word 1,$$(subst ., ,%)).evmeasures
+	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+
 .PRECIOUS: %.bysent.core.evmeasures
 %.bysent.core.evmeasures : %.bysent.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
 	cat $< | python $(word 3, $^) $< $(word 2, $^) sentid > $@
+
+%.nm1.evmeasures: %.evmeasures $(FMRI-SCRIPTS)/average_nm1.py
+	cat $< | python $(word 2, $^) - > $@
 
 %.corr.txt: %.evmeasures $(FMRI-SCRIPTS)/corrAnalysis.r
 	cat $(word 1, $^) | $(word 2, $^) > $@
