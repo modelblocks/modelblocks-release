@@ -81,8 +81,8 @@ class LVU : public trip<L,arma::rowvec,arma::vec> {
 ////////////////////////////////////////////////////////////////////////////////
 
 map<L,double> mldLemmaCounts;
-//int MINCOUNTS = 100;
-int MINCOUNTS = 0;
+int MINCOUNTS = 100;
+//int MINCOUNTS = 0;
 map<trip<T,T,T>,arma::mat> mtttmG;
 map<pair<T,W>,arma::vec> mtwvL;
 int iMaxNums = 0;
@@ -302,7 +302,7 @@ void setForwardMessages ( Tree<LVU>& tr, const arma::rowvec v ) {
 ////////////////////////////////////////////////////////////////////////////////
 
 //void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, int s=1, int d=0, E e='N', L l=L() ) {
-void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<string,int>& annot2tdisc, vector<Sign>& antecedentCandidates, int& tDisc, const int sentnum, map<string,KSet>& annot2kset, int& wordnum, int s=1, int d=0, string e="", L l=L() ) {
+void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<string,int>& annot2tdisc, vector<Sign>& antecedentCandidates, int& tDisc, const int sentnum, map<string,KSet>& annot2kset, int& wordnum, bool failtree, int s=1, int d=0, string e="", L l=L() ) { 
   static F          f;
   static string     eF;
   static Sign       aPretrm;
@@ -320,7 +320,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     eF              = e + getUnaryOp( tr );
     pair<K,T> kt    = getPred ( L(tr), L(tr.front()) );
     K k             = (FEATCONFIG & 8 && kt.first.getString()[2]!='y') ? K::kBot : kt.first;
-    aPretrm         = Sign( k, getType(l), S_A );
+    aPretrm         = (not failtree) ? Sign( k, getType(l), S_A ) : Sign() ;
     bool validIntra = false;
 
     //cerr << "current sentnum: " << sentnum << endl;
@@ -354,93 +354,95 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     wordnum++; //increment word index at terminal (sentence-level)
     tDisc++; //increment discourse-level word index
 
-    // Print preterminal / fork-phase predictors...
-    DelimitedList<psX,FPredictor,psComma,psX> lfp;  
-    q.calcForkPredictors(lfp, ksAnt, nullAnt);//additional kset argument is set of all antecedents in referent cluster. requires global map from annotation to ksets, as in {"0204":Kset ["Lord_"], "0207": KSet ["Lord_", "he_"]}, etc.
-    auto fpCat = lfp.front( );
-    lfp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first element is category.
-    lfp.sort( );             // sort to shorten mlr input
-    lfp.push_front( fpCat );
-    cout<<"----"<<q<<endl;
-    cout << "note: F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e.c_str(),k) << endl;
-    cout << "note: P " << q.calcPretrmTypeCondition(f,e.c_str(),k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
-    cout << "note: W " << e << " " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
+    if (not failtree) {
+      // Print preterminal / fork-phase predictors...
+      DelimitedList<psX,FPredictor,psComma,psX> lfp;  
+      q.calcForkPredictors(lfp, ksAnt, nullAnt);//additional kset argument is set of all antecedents in referent cluster. requires global map from annotation to ksets, as in {"0204":Kset ["Lord_"], "0207": KSet ["Lord_", "he_"]}, etc.
+      auto fpCat = lfp.front( );
+      lfp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first element is category.
+      lfp.sort( );             // sort to shorten mlr input
+      lfp.push_front( fpCat );
+      cout<<"----"<<q<<endl;
+      cout << "note: F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e.c_str(),k) << endl;
+      cout << "note: P " << q.calcPretrmTypeCondition(f,e.c_str(),k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
+      cout << "note: W " << e << " " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
 
-    //use list of pretrms as antecedents during training. don't use beamElements.
-    //cout << "tDisc: " << tDisc << endl;
-    //cout <<"antecedentCandidates.size(): " << antecedentCandidates.size() << endl;
-    for ( int i = tDisc; i > 0 ; i--) {
-      //cout << "entered tDisc for loop" << endl;
-      Sign candidate;
-      int isCoref = 0;
-      //cout << "i: " << i << endl;
-      //cout << "tdisc: " << tDisc << endl;
-      //cout << "annot value: " << annot << endl;
-      if (i < tDisc) {
-        candidate = antecedentCandidates[i-1]; 
-        //cout << "using candidate: " << candidate << endl;
-      }
-      else {
-        candidate = Sign(KSet(K::kTop), "NONE", "/"); //null antecedent generated at first iteration, where i=tDisc. Sign consists of: kset, type (syncat), side (A/B)
-        //cout << "using empty Sign for candidate" << endl;
+      //use list of pretrms as antecedents during training. don't use beamElements.
+      //cout << "tDisc: " << tDisc << endl;
+      //cout <<"antecedentCandidates.size(): " << antecedentCandidates.size() << endl;
+      for ( int i = tDisc; i > 0 ; i--) {
+        //cout << "entered tDisc for loop" << endl;
+        Sign candidate;
+        int isCoref = 0;
+        //cout << "i: " << i << endl;
+        //cout << "tdisc: " << tDisc << endl;
+        //cout << "annot value: " << annot << endl;
+        if (i < tDisc) {
+          candidate = antecedentCandidates[i-1]; 
+          //cout << "using candidate: " << candidate << endl;
+        }
+        else {
+          candidate = Sign(KSet(K::kTop), "NONE", "/"); //null antecedent generated at first iteration, where i=tDisc. Sign consists of: kset, type (syncat), side (A/B)
+          //cout << "using empty Sign for candidate" << endl;
+          
+          if (annot == "") isCoref = 1; //null antecedent is correct choice when no annotation TODO fix logic for filtering intra/inter?
+          //cout << "no annotation and setting true for coreference with null antecedent" << endl;
+        }
+        //cout << "candidate: " << candidate << endl;
+        //cout << "generated npreds: " << npreds << endl;
         
-        if (annot == "") isCoref = 1; //null antecedent is correct choice when no annotation TODO fix logic for filtering intra/inter?
-        //cout << "no annotation and setting true for coreference with null antecedent" << endl;
+        if ((i-1 == annot2tdisc[annot]) and (annot != "")) {
+          //cout << "i-1: " << i-1 << endl;
+          //cout << "annot2tdisc[annot]: " << annot2tdisc[annot] << endl;
+          //cout << "found matching annotation, setting coref to true" << endl;
+          isCoref = 1;
+        }
+
+        bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
+        DelimitedList<psX,NPredictor,psComma,psX> npreds;  
+        q.calcNPredictors(npreds, candidate, corefON); //populate npreds with kxk pairs for q vs. candidate q. 
+
+        cout << "N "; 
+        for (auto& npred : npreds) {
+          //if (&npred!=&npreds.front() ) cout << npred << "=1"; 
+          //if (&npred!=&npreds.back() and &npred!=&npreds.front()) cout << ","; 
+          if (&npred!=&npreds.front() ) cout << ","; 
+          cout << npred << "=1";
+        } 
+
+        //corefON feature 1 for i=tDisc, else 0. can't be incorporated into calcNPredictors since NPredictors are currently KxK feats - would like to change this later to add versatility to what can predict coref
+
+        cout << " : " << isCoref << endl; //i-1 because that's candidate index 
+        //needed to confirm linked was at end of target
+        /*
+        if (annot != "") {
+          cout << "annot: " << annot << endl; 
+          cout << "anot2tdisc[annot]: " << annot2tdisc[annot] << endl;
+          cout << "i: " << i << endl;
+          cout << "tdisc: " << tDisc << endl;
+          cout << "size of antecedent candidates: " << antecedentCandidates.size() << endl;
+        }
+        */
       }
-      //cout << "candidate: " << candidate << endl;
-      //cout << "generated npreds: " << npreds << endl;
-      
-      if ((i-1 == annot2tdisc[annot]) and (annot != "")) {
-        //cout << "i-1: " << i-1 << endl;
-        //cout << "annot2tdisc[annot]: " << annot2tdisc[annot] << endl;
-        //cout << "found matching annotation, setting coref to true" << endl;
-        isCoref = 1;
-      }
 
-
-      bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
-      DelimitedList<psX,NPredictor,psComma,psX> npreds;  
-      q.calcNPredictors(npreds, candidate, corefON); //populate npreds with kxk pairs for q vs. candidate q. 
-
-      cout << "N "; 
-      for (auto& npred : npreds) {
-        //if (&npred!=&npreds.front() ) cout << npred << "=1"; 
-        //if (&npred!=&npreds.back() and &npred!=&npreds.front()) cout << ","; 
-        if (&npred!=&npreds.front() ) cout << ","; 
-        cout << npred << "=1";
-      } 
-
-      //corefON feature 1 for i=tDisc, else 0. can't be incorporated into calcNPredictors since NPredictors are currently KxK feats - would like to change this later to add versatility to what can predict coref
-
-      cout << " : " << isCoref << endl; //i-1 because that's candidate index 
-      //needed to confirm linked was at end of target
-      /*
-      if (annot != "") {
-        cout << "annot: " << annot << endl; 
-        cout << "anot2tdisc[annot]: " << annot2tdisc[annot] << endl;
-        cout << "i: " << i << endl;
-        cout << "tdisc: " << tDisc << endl;
-        cout << "size of antecedent candidates: " << antecedentCandidates.size() << endl;
-      }
-      */
+      arma::vec& vF = mvfrv[ pair<vector<FPredictor>,FResponse>( vector<FPredictor>( lfp.begin(), lfp.end() ), FResponse(f,e.c_str(),k) ) ];
+      arma::mat& mP = mpppmP[ pair<PPredictor,T>(q.calcPretrmTypeCondition(f,e.c_str(),k),aPretrm.getType()) ];
+      arma::vec& vW = mektwvW[ quad<EVar,K,T,W>(e.c_str(),k,aPretrm.getType(),L(tr.front()).c_str()) ];
+      vF = ((vF.n_elem) ? vF : arma::zeros(iMaxNums))          + normalize( D * U * tr.u(),                     1 );
+      mP = ((mP.n_elem) ? mP : arma::zeros(iMaxNums,iMaxNums)) + normalize( D * arma::diagmat(U * tr.u()),      1 );
+      vW = ((vW.n_elem) ? vW : arma::zeros(iMaxNums))          + normalize( (vOnes.t() * D).t() % (U * tr.u()), 1 );
+      //if( q.calcPretrmTypeCondition(f,e,k).fourth()==T("N-aD") and getType(tr)==T("R-aN") ) 
+      //cout<<"D for "<<tr<<" with b="<<q.calcPretrmTypeCondition(f,e,k).fourth()<<endl<<D<<endl<<tr.u()<<endl;
     }
+
     //cout << "adding aPretrm: " << aPretrm << " to list of antecedentCandidates" << endl;
     antecedentCandidates.emplace_back(aPretrm); //append current prtrm to candidate list for future coref decisions 
     //cout << "new size of antecedentCandidates: " << antecedentCandidates.size() << endl;
-
-    arma::vec& vF = mvfrv[ pair<vector<FPredictor>,FResponse>( vector<FPredictor>( lfp.begin(), lfp.end() ), FResponse(f,e.c_str(),k) ) ];
-    arma::mat& mP = mpppmP[ pair<PPredictor,T>(q.calcPretrmTypeCondition(f,e.c_str(),k),aPretrm.getType()) ];
-    arma::vec& vW = mektwvW[ quad<EVar,K,T,W>(e.c_str(),k,aPretrm.getType(),L(tr.front()).c_str()) ];
-    vF = ((vF.n_elem) ? vF : arma::zeros(iMaxNums))          + normalize( D * U * tr.u(),                     1 );
-    mP = ((mP.n_elem) ? mP : arma::zeros(iMaxNums,iMaxNums)) + normalize( D * arma::diagmat(U * tr.u()),      1 );
-    vW = ((vW.n_elem) ? vW : arma::zeros(iMaxNums))          + normalize( (vOnes.t() * D).t() % (U * tr.u()), 1 );
-//if( q.calcPretrmTypeCondition(f,e,k).fourth()==T("N-aD") and getType(tr)==T("R-aN") ) 
-//cout<<"D for "<<tr<<" with b="<<q.calcPretrmTypeCondition(f,e,k).fourth()<<endl<<D<<endl<<tr.u()<<endl;
   }
 
   // At unary identity nonpreterminal...
   else if ( tr.size()==1 and getType(tr)==getType(tr.front()) ) {
-    calcContext( tr.front(), D, U, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, s, d, e, l );
+    calcContext( tr.front(), D, U, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, s, d, e, l );
   }
 
   // At unary nonpreterminal...
@@ -448,7 +450,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     //// cerr<<"#U"<<getType(tr)<<" "<<getType(tr.front())<<endl;
     //e = ( e!='N' ) ? e : getUnaryOp ( tr );
     e = e + getUnaryOp( tr );
-    calcContext ( tr.front(), D, (getType(tr)==getType(tr.front())) ? U : U * getG(getType(tr),getType(tr.front()),"-") * arma::kron(mIdent,vOnes), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, s, d, e, l );
+    calcContext ( tr.front(), D, (getType(tr)==getType(tr.front())) ? U : U * getG(getType(tr),getType(tr.front()),"-") * arma::kron(mIdent,vOnes), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, s, d, e, l );
 //cout<<"unary at "<<L(tr)<<endl<<mtttmG[trip<T,T,T>(getType(tr),getType(tr.front()),"-")]<<endl;
   }
 
@@ -456,8 +458,14 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
   else if ( tr.size()==2 ) {
     //// cerr<<"#B "<<getType(tr)<<" "<<getType(tr.front())<<" "<<getType(tr.back())<<endl;
 
+    if (failtree) {
+      calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, 0, d+s );
+      calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, 1, d );
+      return;
+    }
+
     // Traverse left child...
-    calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, 0, d+s );
+    calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, 0, d+s );
 
     J j          = s;
     LeftChildSign aLchild ( q, f, eF.c_str(), aPretrm );
@@ -483,7 +491,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     q = StoreState ( q, f, j, eF.c_str(), e.c_str(), oL, oR, getType(l), getType(tr.back()), aPretrm, aLchild );
 
     // Traverse right child...
-    calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, 1, d );
+    calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, 1, d );
 //    calcContext ( tr.back(), arma::diagmat( tr.v() * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( vOnes /*tr.front().u()*/, mIdent ) ), 1, d );
 
     arma::mat& mJ = mvjrm [ pair<vector<JPredictor>,JResponse>( vector<JPredictor>( ljp.begin(), ljp.end() ), JResponse(j,e.c_str(),oL,oR) ) ];
@@ -573,7 +581,10 @@ int main ( int nArgs, char* argv[] ) {
         setBackwardMessages( t );
         setForwardMessages( t, vFirstHot.t() );
         int wordnum = 1;
-        if( t.front().size() > 0 ) calcContext( t, arma::diagmat(vFirstHot), mIdent, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum );
+        bool failtree = (L(t.front()) == "FAIL") ? true : false;
+        //cerr << "t.front: " << t.front() << "L(t.front()): " << L(t.front()) << endl;
+        if (failtree == true) { cerr << "found failtree: " << t << endl; }
+        if( t.front().size() > 0 ) calcContext( t, arma::diagmat(vFirstHot), mIdent, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, failtree);
       }
     }
     else {cin.get();}

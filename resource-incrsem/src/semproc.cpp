@@ -61,22 +61,40 @@ class Trellis : public vector<Beam<HiddState>> {
     Trellis ( ) : vector<Beam<HiddState>>() { reserve(100); }
     Beam<HiddState>& operator[] ( uint i ) { if ( i==size() ) emplace_back(BEAM_WIDTH); return vector<Beam<HiddState>>::operator[](i); }
     void setMostLikelySequence ( DelimitedList<psX,BeamElement<HiddState>,psLine,psX>& lbe ) {
-      static StoreState ssLongFail( StoreState(), 1, 0, EVar::eNil, EVar::eNil, 'N', 'I', "FAIL", "FAIL", Sign(ksBot,"FAIL",0), Sign(ksBot,"FAIL",0) );
+      static StoreState ssLongFail( StoreState(), 1, 0, EVar::eNil, EVar::eNil, 'N', 'I', "FAIL", "FAIL", Sign(ksBot,"FAIL",0), Sign(ksBot,"FAIL",0) ); //fork, nojoin
       lbe.clear(); if( back().size()>0 ) lbe.push_front( *back().begin() );
       if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( lbe.front().getBack() );
       if( lbe.size()>0 ) lbe.emplace_back( BeamElement<HiddState>() );
+      cerr << "lbe.size(): " << lbe.size() << endl;
       // If parse fails...
       if( lbe.size()==0 ) {
+        cerr << "parse failed (lbe.size() = 0) " << "size(): " << size() << endl;
         // Print a right branching structure...
-        for( int t=size()-2; t>=0; t-- ) lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), ssLongFail ) ) );
+        for( int t=size()-2; t>=0; t-- ) { 
+          lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), ssLongFail ) ) ); // fork and join
+        }
+        cerr << "size of lbe after push_fronts: " << lbe.size() << endl;
         lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(0,EVar::eNil,'N','I'), ssLongFail ) );                    // front: fork no-join
         lbe.back( ) = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 0, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), StoreState() ) );                  // back: join no-fork
-        if( size()==2 ) lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), StoreState() ) );  // unary case: fork and join
+        cerr << "size of lbe after front and back assignments: " << lbe.size() << endl;
+        if( size()==2 ) {  //special case if single word, fork and join
+          cerr << "assigning front of fail lbe" << endl;
+          lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), StoreState() ) );  // unary case: fork and join
+        }
         // Add dummy element (not sure why this is needed)...
-        lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 0, EVar::eNil, K::kBot, JResponse(0,EVar::eNil,'N','I'), StoreState() ) ) );
+        lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 0, EVar::eNil, K::kBot, JResponse(0,EVar::eNil,'N','I'), StoreState() ) ) ); // no-fork, no-join?
+        //start experiment - next two lines switch front element to nofork,join, add additional dummy at rear
+        //TODO to revert, comment out next two, comment in pushfront above
+        //lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), ssLongFail ) ) );
+        lbe.emplace_back( BeamElement<HiddState>() );
+        //end epxeriment
+
+        cerr << "size of lbe after dummy push_front: " << lbe.size() << endl;
         cerr<<"parse failed"<<endl;
+        // does lbe here consist of a single sentence or of the whole article?
       }
       // For each element of MLE after first dummy element...
+      for ( auto& be : lbe ) { cerr << "beam element hidd: " << be.getHidd() << endl; } //TODO confirm includes all words, count initial/final dummies
       int u=-1; for( auto& be : lbe ) if( ++u>0 and u<int(size()) ) {
         // Calc surprisal as diff in exp of beam totals of successive elements, minus constant...
         double probPrevTot = 0.0;
@@ -255,7 +273,10 @@ int main ( int nArgs, char* argv[] ) {
         // Allocate space in beams to avoid reallocation...
         // Create initial beam element...
         //beams[0].tryAdd( HiddState(), ProbBack<HiddState>() );
+        //TODO see if resetting each sentences to use zero prob instead of last prob avoids underflow
+        lbeWholeArticle.back().setProb() = 0.0;
         beams[0].tryAdd( lbeWholeArticle.back().getHidd(), lbeWholeArticle.back().getProbBack() );
+        //beams[0].tryAdd( lbeWholeArticle.back().getHidd(), 0 ); //nope, cant do int. maybe needs probback
 
         //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " testing access to articles: " << articles.size() << " articles present" << endl;}
         //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " testing access to sents: " << sents.size() << " sents found" << endl;}
@@ -490,7 +511,7 @@ int main ( int nArgs, char* argv[] ) {
                           EVar e   = jresponse.getE();
                           O    opL = jresponse.getLOp();
                           O    opR = jresponse.getROp();
-                          if( jresponse.toInt() >= int(jresponses.size()) ) cerr<<"ERROR: unknown jresponse: "<<jresponse<<endl;
+                          if( jresponse.toInt() >= int(jresponses.size()) ) cerr << "ERROR: unknown jresponse: " << jresponse << endl;
                           double probJoin = jresponses[jresponse.toInt()] / jnorm;
                           if ( VERBOSE>1 ) cout << "       J ... " << " : " << jresponse << " = " << probJoin << endl;
 
@@ -556,7 +577,7 @@ int main ( int nArgs, char* argv[] ) {
           beams.setMostLikelySequence( mls );
           cerr << "length lbeWholeArticle: " << lbeWholeArticle.size() << endl;
           //lbeWholeArticle.insert(lbeWholeArticle.end(),mls.begin(),mls.end());
-          mls.pop_back(); //remove dummy element before adding to lbe TODO - test this for intersentential indexing off-by-one issue
+          mls.pop_back(); //remove dummy element before adding to lbe 
           lbeWholeArticle.insert(lbeWholeArticle.end(),mls.begin(),mls.end()); //insert mls at end of lbe
           cerr << "length lbeWholeArticle after insertion: " << lbeWholeArticle.size() << endl;
           //iterate over lbeWholeArticle, having each item backpoint to the previous
