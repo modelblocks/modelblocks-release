@@ -430,7 +430,7 @@ class NPredictor {
       ist.second = NPredictor(mstring);     
       return o; 
     }
-    //TODO how to check ahead to see if unary k or t?
+    //TODO how to check ahead to see if unary k or t? don't worry - just give null_ant&anc or ant&null_anc
     else  { 
       Delimited<K> kAntecedent, kAncestor;  
       auto& o = ist.first >> kAntecedent >> "&" >> kAncestor >> psDelim;  
@@ -445,7 +445,6 @@ class NPredictor {
       ist.second = NPredictor(mstring);     
       return o; 
     }
-    //TODO unary k and t for vectors
     else { 
       Delimited<K> kAntecedent, kAncestor;
       auto o = ist.first >> kAntecedent >> "&" >> kAncestor >> vpsDelim;  

@@ -109,6 +109,16 @@ $$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/fi
 #genmodel/ontowsj02to21.%.linked.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/ontowsj$(sect).%.linked.linetrees)
 #	cat $^  >  $@
 
+genmodel/corontowsj%.coref: $$(DEP-ONTONOTES) $(ONTONOTES-SCRIPTS)/coref2shortcoref.pl $(CONFIGDIR)/user-ontonotes-directory.txt \
+$(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$* \
+$$(sort $$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*/*.coref))  |  genmodel
+	cat $(wordlist 4, $(words $^), $^)  |  perl -p  $<  >  $@
+
+genmodel/corontowsj%.editabletrees: $$(DEP-ONTONOTES) $(CONFIGDIR)/user-ontonotes-directory.txt \
+$(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$* \
+$$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*/*.coref)))  |  genmodel
+	tail -n +1 $(wordlist 3, $(words $^), $^)  |  perl -pe 's/==>.*<==/(U !ARTICLE)/'  >  $@
+
 .PRECIOUS: genmodel/ontowsj02to21.%.linetrees
 genmodel/ontowsj02to21.%.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/ontowsj$(sect).%.linetrees)
 	cat $^  >  $@
@@ -119,6 +129,18 @@ genmodel/ontowsjdev.%.linetrees: $(foreach sect,01 22 24,genmodel/ontowsj$(sect)
 
 .PRECIOUS: genmodel/conllwsjdev.%.linetrees
 genmodel/conllwsjdev.%.linetrees: $(foreach sect,00 01 22 24,genmodel/ontowsj$(sect).%.linetrees)
+	cat $^  >  $@
+
+.PRECIOUS: genmodel/corontowsj02to21.%.linetrees
+genmodel/corontowsj02to21.%.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/corontowsj$(sect).%.linetrees)
+	cat $^  >  $@
+
+.PRECIOUS: genmodel/corontowsjdev.%.linetrees 
+genmodel/corontowsjdev.%.linetrees: $(foreach sect,01 22 24,genmodel/corontowsj$(sect).%.linetrees)
+	cat $^  >  $@
+
+.PRECIOUS: genmodel/corconllwsjdev.%.linetrees
+genmodel/corconllwsjdev.%.linetrees: $(foreach sect,00 01 22 24,genmodel/corontowsj$(sect).%.linetrees)
 	cat $^  >  $@
 
 #genmodel/ontowsj%.linked.linetrees:  user-ontonotes-directory.txt  scripts/ments2linkedtrees.py  $$(shell cat user-ontonotes-directory.txt)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*
