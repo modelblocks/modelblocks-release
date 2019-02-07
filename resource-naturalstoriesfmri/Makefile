@@ -109,6 +109,8 @@ endif
 #
 ################################################################################
 
+# Link fMRI data to NatStor text preprocessing pipeline
+
 %naturalstoriesfmri.linetoks: %naturalstories.linetoks
 	cp $(word 1, $^) $@
 
@@ -124,6 +126,57 @@ naturalstoriesfmri%.itemmeasures: naturalstories%.itemmeasures
 %naturalstoriesfmri.evmeasures: $$(DEP-NATSTORIES) $$(DEP-NATSTORIESFMRI) $(NATSTORFMRIDIR)/naturalstoriesFMRI.evmeasures $(NATSTORIESFMRI-SCRIPTS)/preprocess_natstor_fmri.py \
 $(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(NATSTORIESFMRI-SCRIPTS)/filter_docs.py $(CONFIGDIR)/user-naturalstories-fmri-directory.txt $(NATSTORDIR)/audio/*.wav | %
 	cat $(word 1, $^) | python $(word 2, $^) $(NATSTOR-STORIES) sampleid | python $(word 3, $^) $(wordlist 6, $(words $^), $^) -c | python $(word 4, $^) > $@
+
+# Link fMRI data (melted and filtered to Lang only) to NatStor text preprocessing pipeline
+
+%naturalstoriesfmri_Lang.linetoks: %naturalstories.linetoks
+	cp $(word 1, $^) $@
+
+%naturalstoriesfmri_Lang.lineitems: %naturalstories.lineitems
+	cp $(word 1, $^) $@
+
+naturalstoriesfmri_Lang%.tokmeasures: naturalstories%.tokmeasures
+	cp $(word 1, $^) $@
+
+naturalstoriesfmri_Lang%.itemmeasures: naturalstories%.itemmeasures
+	cp $(word 1, $^) $@
+
+%naturalstoriesfmri_Lang.evmeasures: %naturalstoriesfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
+	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k LangL.* | python $(word 3, $^) - > $@
+
+# Link fMRI data (melted and filtered to Lang only) to NatStor text preprocessing pipeline
+
+%naturalstoriesfmri_MD.linetoks: %naturalstories.linetoks
+	cp $(word 1, $^) $@
+
+%naturalstoriesfmri_MD.lineitems: %naturalstories.lineitems
+	cp $(word 1, $^) $@
+
+naturalstoriesfmri_MD%.tokmeasures: naturalstories%.tokmeasures
+	cp $(word 1, $^) $@
+
+naturalstoriesfmri_MD%.itemmeasures: naturalstories%.itemmeasures
+	cp $(word 1, $^) $@
+
+%naturalstoriesfmri_MD.evmeasures: %naturalstoriesfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
+	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k MDlangloc.* | python $(word 3, $^) - > $@
+
+# Link fMRI data (melted and filtered to Lang and MDlangloc only) to NatStor text preprocessing pipeline
+
+%naturalstoriesfmri_Lang_MD.linetoks: %naturalstories.linetoks
+	cp $(word 1, $^) $@
+
+%naturalstoriesfmri_Lang_MD.lineitems: %naturalstories.lineitems
+	cp $(word 1, $^) $@
+
+naturalstoriesfmri_Lang_MD%.tokmeasures: naturalstories%.tokmeasures
+	cp $(word 1, $^) $@
+
+naturalstoriesfmri_Lang_MD%.itemmeasures: naturalstories%.itemmeasures
+	cp $(word 1, $^) $@
+
+%naturalstoriesfmri_Lang_MD.evmeasures: %naturalstoriesfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
+	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k MDlangloc.* LangL.* | python $(word 3, $^) - > $@
 
 %.sp.itemmeasures: $$(DEP-NATSTORIES) %.itemmeasures $(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(CONFIGDIR)/user-naturalstories-directory.txt $(NATSTORDIR)/audio/*.wav
 	cat $(word 1, $^) | python $(word 2, $^) $(wordlist 4, $(words $^), $^) > $@

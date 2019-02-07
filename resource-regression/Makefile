@@ -37,7 +37,7 @@
 .SUFFIXES:
 .SECONDEXPANSION:
 
-VPATH += $(RESOURCE-REGRESSION)
+VPATH += $(RESOURCE-REGRESSION) $(RESOURCE-LMEFIT) $(RESOURCE-DTSR)
 
 ################################################################################
 #
@@ -49,52 +49,58 @@ VPATH += $(RESOURCE-REGRESSION)
 empty:=
 space:= $(empty) $(empty)
 
+bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
+	cp $< $@
 
 ## apply predictor modifications: <data>.<predr>_<offset>_spilled.prdmeasures
 %_spilled.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/spilloverMetrics.py
 	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 %_spilled.resmeasures:  $$(basename %).resmeasures
-	ln -s $< $@
+	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_cumued.prdmeasures
 %_cumued.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/accumulateMetrics.py
 	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 %_cumued.resmeasures:  $$(basename %).resmeasures
-	ln -s $< $@
+	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_<offset>_futured.prdmeasures
 %_futured.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/futureMetrics.py
 	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 %_futured.resmeasures:  $$(basename %).resmeasures
-	ln -s $< $@
+	ln -sf $(abspath $<) $(abspath $@)
 
 
 ## apply consorship (e.g. remove end-of-sentence responses) (prdmeasures unaffected)
 %.prdmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/censor.py
-	ln -s $(word 2,$^) $@
+	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
+
 %.resmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/censor.py
-	cat $(word 2,$^)  |  python $(word 3,$^) $(word 1,$^)  >  $@
+	cat $(word 2,$^)  |  python $(word 3,$^) -c $(word 1,$^)  >  $@
 
 
 ## apply partitioning (prdmeasures unaffected)
-%-part.prdmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/partition.py 
-	ln -s $(word 2,$^) $@
-%-part.resmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/partition.py
+%_part.prdmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/partition.py 
+	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
+
+%_part.resmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/partition.py
 	cat $(word 2,$^)  |  python $(word 3, $^) -c $(word 1, $^) -p $(subst +, ,$(subst .,,$(suffix $*)))  >  $@
 
 
-## generic fit files: <data>.<baseline>_(<predr>_)*<regrmodel>.fitmodel
-%.fitmodel %.coeffs:  bin/regressor-$$(subst .,,$$(suffix $$(subst _,.,$$*)))  \
-                      $$(basename %)-part.prdmeasures  \
-                      $$(basename %)-part.resmeasures  \
-                      bin/$$(subst .,,$$(word 1,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form
+## generic fit files: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.fitmodel
+.PRECIOUS: %.fitmodel %.coeffs
+%.fitmodel %.coeffs:  bin/regress-$$(subst .,,$$(suffix $$(subst _,.,$$*)))  \
+                      $$(basename %)_part.prdmeasures  \
+                      $$(basename %)_part.resmeasures  \
+                      scripts/$$(subst .,,$$(word 1,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form
 	$^ $(wordlist 2,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*)))))
 
 
-## generaic predicted errors file: <data>.<fit-part>_<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
-%_predicted.errors:  bin/predictor-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
-                     $$(basename $$(basename %))$$(word 1,$$(subst _, ,$$(suffix $$(basename $$*)))).$$(subst $$(space),_,$$(wordlist 2,100,$$(subst _, ,$$(suffix $$(basename $$*))))).fitmodel  \
-           	     $$(basename $$(basename %))$$(suffix $$*)-part.prdmeasures
+## generaic predicted errors file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
+%_predicted.errors:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
+                     $$(basename %).fitmodel  \
+           	     $$(basename $$(basename $$(basename %)))$$(suffix $$*)_part.prdmeasures \
+           	     $$(basename $$(basename $$(basename %)))$$(suffix $$*)_part.resmeasures
 	$^  >  $@
 
 
@@ -103,10 +109,9 @@ space:= $(empty) $(empty)
 # 	$^  >  $@
 
 
-## generic signif file: <data>.<fit-part>_<baseline>_(<predr>_)*<regrmodel>.<eval-part>.(<predr>_)*<signif-type>.signif
+## generic signif file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>.(<predr>_)*<signif-type>.signif
 %.signif:  bin/signif-$$(lastword $$(subst _, ,$$(suffix $$*)))  \
-           $$(basename $$(basename $$(basename %))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))$$(subst .,_-,$$(basename $$(subst _,.,$$(suffix $$*))))_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors  \
-           $$(basename $$(basename $$(basename %))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))$$(subst .,_,$$(basename $$(subst _,.,$$(suffix $$*))))_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors
+	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), $$(basename $$(basename $$(basename %))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)
 	$^  >  $@
 
 
