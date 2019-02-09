@@ -49,11 +49,11 @@ for s in sys.stdin:
         treeW = Tree(w)
 
         ## annotate operator tags if semproc...
-        if '&' in f:
-          bF,eF,kF = f.split('&')
-          treeW = Tree( re.sub(':.*','',kF), [ re.sub('.*:(.*)_.*','\\1',kF) ] )
-          for c in reversed( unaryprojlist(eF,p) ):
-            treeW = Tree( c, [treeW] )
+        # if '&' in f:
+        #   bF,eF,kF = f.split('&')
+        #   treeW = Tree( re.sub(':.*','',kF), [ re.sub('.*:(.*)_.*','\\1',kF) ] )
+        #   for c in reversed( unaryprojlist(eF,p) ):
+        #     treeW = Tree( c, [treeW] )
 
         ## apply fork decision...
         if f=='1' or f.startswith('f1'): SS.append( Tree(p,[treeW]) ) #[Tree(w)]) )
