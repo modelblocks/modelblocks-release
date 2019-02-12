@@ -51,7 +51,6 @@ DiscreteDomain<int> domAdHoc;
 typedef Delimited<DiscreteDomainRV<int,domAdHoc>> AdHocFeature;
 const AdHocFeature corefON("acorefON");
 const AdHocFeature bias("abias");
-enum Referent { antecedent, anaphor };
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -330,19 +329,25 @@ class NPredictor {
 
     static uint                     nextid;
     static map<pair<K,K>,uint>      mkki; 
-    //static map<pair<T,T>,uint>    mtti; //pairwise TT? probably too sparse...
+    static map<pair<T,T>,uint>      mtti; //pairwise TT? probably too sparse...
+    static map<uint,AdHocFeature>   mistr;
     static map<AdHocFeature,uint>   mstri;
+    static map<uint,K>              miantk;         //pairwise
+    static map<uint,K>              miancestork;    //pairwise
+    static map<uint,T>              miantecedentt;
+    static map<uint,T>              miancestort;
+    static map<T,uint>              mantecedentti;
+    static map<T,uint>              mancestorti;
+    /*
     static map<K,uint>              mantecedentkiu; //map antecedent k to uint, unary 
     static map<K,uint>              mancestorkiu;   //map ancestor k to uint, unary
     static map<T,uint>              mantecedenttiu; //map ancestor t to uint, unary
     static map<T,uint>              mancestortiu;   //map ancestor t to uint, unary
-    static map<uint,K>              miantk;         //pairwise
-    static map<uint,K>              miancestork;    //pairwise
-    static map<uint,AdHocFeature>   mistr;
     static map<uint,K>              miantecedentku; //map uint to antecedent k, unary
     static map<uint,K>              miancestorku;   //map uint to ancestor k, unary
     static map<uint,T>              miantecedenttu; //map uint to antecedent t, unary
     static map<uint,T>              miancestortu;   //map uint to ancestor t, unary
+    */
 
   public:
     //Constructors
@@ -358,6 +363,12 @@ class NPredictor {
       const auto& it = mstri.find(mstring);
       if (it != mstri.end() ) id = it->second;
       else { id = nextid++; mistr[id] = mstring; mstri[mstring] = id; }
+    }
+
+    NPredictor (T antecedentT, T ancestorT) {
+      const auto& it = mtti.find(pair<T,T>(antecedentT, ancestorT));
+      if (it != mtti.end() ) id = it->second;
+      else { id = nextid++; miantecedentt[id] = antecedentT; miancestort[id] = ancestorT; mtti[pair<T,T>(antecedentT,ancestorT)] = id; }
     }
     /*
     NPredictor (K mk, Referent ref) {
@@ -397,19 +408,19 @@ class NPredictor {
     }
     */
 
-  //NPredictor ("distance", int) {
-        //TODO - can't use existing XPredictor template, whose values are binary for categories
-        //
-
   //Accessor Methods
   uint toInt() const { return id; }
   operator uint() const { return id; }
   K getAncstrK()  const { return miancestork[id]; }
   K getAntcdntK() const { return miantk[id]; } 
+  T getAntecedentT() const { return miantecedentt[id]; }
+  T getAncestorT() const { return miancestort[id]; }
+  /*
   K getAntecedentKUnary() const { return miantecedentku[id]; } 
   K getAncestorKUnary() const { return miancestorku[id]; } 
   T getAntecedentTUnary() const { return miantecedenttu[id]; }
   T getAncestorTUnary() const { return miancestortu[id]; }
+  */
   AdHocFeature getfeatname() const { return mistr[id]; }
   static uint getDomainSize() { return nextid; }
 
@@ -430,11 +441,16 @@ class NPredictor {
       ist.second = NPredictor(mstring);     
       return o; 
     }
-    //TODO how to check ahead to see if unary k or t? don't worry - just give null_ant&anc or ant&null_anc
+    else if (ist.first.peek()=='t') {
+      Delimited<T> antecedentt, ancestort;
+      auto& o = ist.first >> "t" >> antecedentt >> "&" >> ancestort >> psDelim;
+      ist.second = NPredictor(antecedentt, ancestort);
+      return o;
+    }
     else  { 
       Delimited<K> kAntecedent, kAncestor;  
       auto& o = ist.first >> kAntecedent >> "&" >> kAncestor >> psDelim;  
-      ist.second = NPredictor(kAntecedent,kAncestor);  
+      ist.second = NPredictor(kAntecedent, kAncestor);  
       return o; 
     }
   }
@@ -444,6 +460,12 @@ class NPredictor {
       auto o = ist.first >> mstring >> vpsDelim;  
       ist.second = NPredictor(mstring);     
       return o; 
+    }
+    else if (ist.first.peek()=='t') {
+      Delimited<T> antecedentt, ancestort;
+      auto o = ist.first >> "t" >> antecedentt >> "&" >> ancestort >> vpsDelim;
+      ist.second = NPredictor(antecedentt, ancestort);
+      return o;
     }
     else { 
       Delimited<K> kAntecedent, kAncestor;
@@ -455,15 +477,14 @@ class NPredictor {
   friend ostream& operator<< ( ostream& os, const NPredictor& t ) {
     //return os << miantk[t.id] << "&" << miancestork[t.id]; 
     if (miantk.find(t.id) != miantk.end()) { return os << miantk[t.id] << "&" << miancestork[t.id]; } //output either KxK
-    else if (miancestorku.find(t.id) != miancestorku.end()) { return os << miancestork[t.id]; } //or unary k
-    else if (miantecedentku.find(t.id) != miantecedentku.end()) { return os << miantecedentku[t.id]; } // or other unary k
-    else if (miantecedenttu.find(t.id) != miantecedenttu.end()) { return os << miantecedenttu[t.id]; } // or unary t
-    else if (miancestortu.find(t.id) != miancestortu.end()) { return os << miancestortu[t.id]; } //or other unary t
+    else if (miantecedentt.find(t.id) != miantecedentt.end()) { return os << "t" << miantecedentt[t.id] << "&" << miancestort[t.id]; } // or t x t
     else if (mistr.find(t.id) != mistr.end()) { return os << mistr[t.id]; } //check for string
     else { return os << "NON_STRING_ID_" << t.id; } 
   }
   static bool exists ( K kAntecedent, K kAncestor )      { return( mkki.end()!=mkki.find(pair<K,K>(kAntecedent,kAncestor)) ); }
   static bool exists ( AdHocFeature mstring )            { return( mstri.end()!=mstri.find(mstring) ); }
+  static bool exists ( T tAntecedent, T tAncestor)      { return( mtti.end()!=mtti.find(pair<T,T>(tAntecedent,tAncestor)) ); }
+  /*
   static bool exists ( K mk, Referent ref)               {
     switch(ref) {
       case antecedent:
@@ -488,14 +509,20 @@ class NPredictor {
           cerr << "ERROR: exists() called for t without specifying ref type (anaphor vs. antecedent)" << endl;
       }
   }
+  */
 };
 uint                    NPredictor::nextid = 1;
 map<pair<K,K>,uint>     NPredictor::mkki; 
-//map<pair<T,T>,uint> NPredictor::mtti;
+map<pair<T,T>,uint>     NPredictor::mtti;
 map<AdHocFeature,uint>  NPredictor::mstri;
 map<uint,AdHocFeature>  NPredictor::mistr;
 map<uint,K>             NPredictor::miantk;
 map<uint,K>             NPredictor::miancestork;
+map<uint,T>             NPredictor::miantecedentt;
+map<uint,T>             NPredictor::miancestort;
+map<T,uint>             NPredictor::mantecedentti;
+map<T,uint>             NPredictor::mancestorti;
+/*
 map<K,uint>             NPredictor::mantecedentkiu; //map antecedent k to uint, unary 
 map<K,uint>             NPredictor::mancestorkiu;   //map ancestor k to uint, unary
 map<T,uint>             NPredictor::mantecedenttiu; //map ancestor t to uint, unary
@@ -504,6 +531,50 @@ map<uint,K>             NPredictor::miantecedentku; //map uint to antecedent k, 
 map<uint,K>             NPredictor::miancestorku;   //map uint to ancestor k, unary
 map<uint,T>             NPredictor::miantecedenttu; //map uint to antecedent t, unary
 map<uint,T>             NPredictor::miancestortu;   //map uint to ancestor t, unary
+*/
+////////////////////////////////////////////////////////////////////////////////
+
+class NPredictorSet {
+//need to be able to output real-valued distance integers, NPreds
+//TODO maybe try quadratic distance
+  private:
+     int mdist;
+     DelimitedList<psX,NPredictor,psComma,psX> mnpreds;
+
+  public:
+    //constructor
+    NPredictorSet (int dist, DelimitedList<psX,NPredictor,psComma,psX>& npreds) {
+      //TODO optimize eventually - don't make copy
+      mdist = dist;
+      mnpreds = npreds;
+    }
+
+    void PrintOut ( ) {
+        cout << "N "; 
+        cout << "antdist=" << mdist;
+        for (auto& npred : mnpreds) {
+          //if (&npred!=&npreds.front() ) cout << npred << "=1"; 
+          //if (&npred!=&npreds.back() and &npred!=&npreds.front()) cout << ","; 
+          //if (&npred!=&mnpreds.front() ) 
+          cout << ","; 
+          cout << npred << "=1";
+        } 
+    }
+   
+    arma::vec NLogResponses ( arma::mat matN) {
+      arma::vec nlogresponses = arma::zeros( matN.n_rows );
+      nlogresponses += mdist * matN.col(NPredictor("antdist").toInt());
+      for ( auto& npredr : mnpreds) {
+          //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << endl; }
+        if ( npredr.toInt() < matN.n_cols ) { 
+          nlogresponses += matN.col( npredr.toInt() ); 
+          //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << " matN.n_cols:" << matN.n_cols << " logprob: " << matN.col( npredr.toInt())(NResponse("1").toInt()) << endl; }
+        }
+      }
+      return nlogresponses;
+    }
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 
 DiscreteDomain<int> domNResponse;
@@ -1170,12 +1241,19 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     //cout << "candidate kset: " << candidate.getKSet() << endl;
     const KSet& ksB = at(size()-1).getKSet(); //contexts of lowest b (bdbar)
     //cout << "ksb: " << ksB << endl;
-    for (auto& antk : candidate.getKSet()){ //add k x k feats
-      //npreds.emplace_back(antk, 0); //add unary antecedent k feat.  0 means antk type feature
+    for (auto& antk : candidate.getKSet()){ 
+      npreds.emplace_back(antk, kNil); //add unary antecedent k feat, using kxk template
       for (auto& currk : ksB) {
         npreds.emplace_back(antk, currk); //pairwise kxk feat
       }
     }
+    for (auto& currk : ksB) {
+      npreds.emplace_back(kNil, currk); //unary ancestor k feat
+    }
+
+    npreds.emplace_back(candidate.getType(), N_NONE);  // antecedent T
+    npreds.emplace_back(N_NONE, at(size()-1).getType()); //ancestor T
+    npreds.emplace_back(candidate.getType(), at(size()-1).getType()); //pairwise T
     /*
     //loop over curr k:ksB
       npreds.emplace_back(currk, 1); //add unary anaphor (ancestor) k feat. 1 meants currk type feature

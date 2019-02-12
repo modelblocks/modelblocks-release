@@ -338,14 +338,18 @@ int main ( int nArgs, char* argv[] ) {
               //}
               //{ lock_guard<mutex> guard( mutexMLSList ); cerr << "Worker: " << numt << " got ksAnt" << ksAnt << endl;}
               bool corefON = (tAnt==t) ? 0 : 1;
-              list<NPredictor> lnpredictors; q_tdec1.calcNPredictors( lnpredictors, pbeAnt->getHidd().getPrtrm(), corefON); 
+              DelimitedList<psX,NPredictor,psComma,psX> lnpredictors; 
+              q_tdec1.calcNPredictors( lnpredictors, pbeAnt->getHidd().getPrtrm(), corefON); 
+              NPredictorSet nps = NPredictorSet ( t - tAnt, lnpredictors);
+              arma::vec nlogresponses = nps.NLogResponses(matN);
+              /*
               arma::vec nlogresponses = arma::zeros( matN.n_rows ); //rows are n outcomes 1 or 0 (coreferent or not)
               for ( auto& npredr : lnpredictors ) {
                 if ( npredr.toInt() < matN.n_cols ) {
                   nlogresponses += matN.col( npredr.toInt() );  //cols are predictors, where each col has values for 1 or 0
                 }
               }
-
+              */
               //arma::vec nresponses = arma::exp( nlogresponses );
               //double nnorm = arma::accu( nresponses );  // 0.0;                                           // join normalization term (denominator)
               ndenom += exp(nlogresponses(NResponse("1").toInt())-nlogresponses(NResponse("0").toInt()));
@@ -391,170 +395,168 @@ int main ( int nArgs, char* argv[] ) {
 
               //Calculate antecedent N model predictors 
               bool corefON = (tAnt==t) ? 0 : 1;
-              list<NPredictor> lnpredictors; q_tdec1.calcNPredictors( lnpredictors, pbeAnt->getHidd().getPrtrm(), corefON); //calcNPredictors takes list of npreds (reference) and candidate Sign (reference)
+              DelimitedList<psX,NPredictor,psComma,psX> lnpredictors; 
+              q_tdec1.calcNPredictors( lnpredictors, pbeAnt->getHidd().getPrtrm(), corefON); //calcNPredictors takes list of npreds (reference) and candidate Sign (reference)
               //lnpredictors.emplace_back();                                             // add bias. don't need because included in StoreState calcNPredictors
+              NPredictorSet nps = NPredictorSet ( t - tAnt, lnpredictors);
 
               if ( VERBOSE>1 ) { for ( auto& npredr : lnpredictors ) { cout <<"   npredr:"<<npredr<<endl; } }
-              arma::vec nlogresponses = arma::zeros( matN.n_rows );
-              for ( auto& npredr : lnpredictors ) {
-                  //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << endl; }
-                if ( npredr.toInt() < matN.n_cols ) { 
-                  nlogresponses += matN.col( npredr.toInt() ); 
-                  //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << " matN.n_cols:" << matN.n_cols << " logprob: " << matN.col( npredr.toInt())(NResponse("1").toInt()) << endl; }
-                }
-              }
+              arma::vec nlogresponses = nps.NLogResponses(matN);
               double numerator = exp(nlogresponses(NResponse("1").toInt()) - nlogresponses(NResponse("0").toInt()));
               double nprob = numerator / ndenom;
 
               if ( VERBOSE>1 ) cout << "   N ... : 1 = " << numerator << "/" << ndenom << "=" << nprob << endl;
-              //arma::vec nresponses = arma::exp( nlogresponses );
-              //double nnorm = arma::accu( nresponses );  // 0.0;                                           // join normalization term (denominator)
 
-              // Calc distrib over response for each fork predictor...
-              //
-              //if( VERBOSE>1 ) cerr << "after ksAnt init, pbiant: " << pbiAnt->second.second << endl;
-              //if( VERBOSE>1 ) cerr << "ptr address: " << pbiAnt << endl;
-              //arma::vec flogresponses = arma::zeros( matF.n_rows );
+              if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
+                //arma::vec nresponses = arma::exp( nlogresponses );
+                //double nnorm = arma::accu( nresponses );  // 0.0;                                           // join normalization term (denominator)
 
-              //if( VERBOSE>1 ) cerr << "after flogresponses zero init, pbiant: " << pbiAnt->second.second << endl;
-              //cerr << "in main(): ksAnt: " << ksAnt << endl;
-              // pbiAnt.first is a const BeamElement
-              //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.fourth: " << pbiAnt->first.fourth() << endl; //" should be k
-              //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.third: " << pbiAnt->first.third() << endl;   // ^@ should be extraction
-              //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.second: " << pbiAnt->first.second() << endl; // 0 should be fork
-              //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.first: " << pbiAnt->first.first() << endl;   // []:T^@ should be a sign
-              //list<FPredictor> lfpredictors;  q_tdec1.calcForkPredictors( lfpredictors, ksAnt, false );  lfpredictors.emplace_back();  // add bias term //ej change
-              //if( VERBOSE>1 ) cerr << "lfpredictors  emplaced" << endl;
+                // Calc distrib over response for each fork predictor...
+                //
+                //if( VERBOSE>1 ) cerr << "after ksAnt init, pbiant: " << pbiAnt->second.second << endl;
+                //if( VERBOSE>1 ) cerr << "ptr address: " << pbiAnt << endl;
+                //arma::vec flogresponses = arma::zeros( matF.n_rows );
 
-              //if( VERBOSE>1 ) cerr << "pbi ptr address before break: " << pbiAnt << endl;
+                //if( VERBOSE>1 ) cerr << "after flogresponses zero init, pbiant: " << pbiAnt->second.second << endl;
+                //cerr << "in main(): ksAnt: " << ksAnt << endl;
+                // pbiAnt.first is a const BeamElement
+                //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.fourth: " << pbiAnt->first.fourth() << endl; //" should be k
+                //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.third: " << pbiAnt->first.third() << endl;   // ^@ should be extraction
+                //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.second: " << pbiAnt->first.second() << endl; // 0 should be fork
+                //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.first: " << pbiAnt->first.first() << endl;   // []:T^@ should be a sign
+                //list<FPredictor> lfpredictors;  q_tdec1.calcForkPredictors( lfpredictors, ksAnt, false );  lfpredictors.emplace_back();  // add bias term //ej change
+                //if( VERBOSE>1 ) cerr << "lfpredictors  emplaced" << endl;
 
-              //if( VERBOSE>1 ) cerr << "before flogresponses accum, pbiant: " << pbiAnt->second.second << endl; //ptr dEATH
-              //
-              list<FPredictor> lfpredictors;  
-              q_tdec1.calcForkPredictors( lfpredictors, ksAnt, !corefON, false ); 
-              lfpredictors.emplace_back();  // add bias term
-              // Calc distrib over response for each fork predictor...
-              arma::vec flogresponses = arma::zeros( matF.n_rows );            //distribution over f responses for a single antecedent features
-              for ( auto& fpredr : lfpredictors ) if ( fpredr.toInt() < matF.n_cols ) flogresponses += matF.col( fpredr.toInt() ); // add logprob for all indicated features. over all FEK responses.
-              //if ( VERBOSE>1 ) for ( auto& fpredr : lfpredictors ) cout<<"    fpredr:"<<fpredr<<endl;
-              arma::vec fresponses = arma::exp( flogresponses );
-              fnorm = arma::accu( fresponses );
-              //if( VERBOSE>1 ) cerr << "lfpredictor found: " << fpredr << endl;
-              //if( VERBOSE>1 ) cerr << "passed fpredr loop" << endl;
-              if ( VERBOSE>1 ) { for ( auto& fpredr : lfpredictors ) { cout <<"    fpredr:"<<fpredr<<endl; } }
+                //if( VERBOSE>1 ) cerr << "pbi ptr address before break: " << pbiAnt << endl;
 
-              //if( VERBOSE>1 ) cerr << "passed printout" << endl;
-              //arma::vec fresponses = arma::exp( flogresponses );
-              // Calc normalization term over responses...
-              //double fnorm = arma::accu( fresponses );
-  //if( VERBOSE>1 ) cerr << "before overflow norm, pbiant: " << pbiAnt->second.second << endl; // Rescale overflowing distribs by max...  if( fnorm == 1.0/0.0 ) { cerr << "WARNING: NaN for fnorm" << endl; } //} close for loop over antecedents here?
-              // For each possible lemma (context + label + prob) for preterminal of current word...
-              if( lexW.end() == lexW.find(unkWord(w_t.getString().c_str())) ) cerr<<"ERROR: unable to find unk form: "<<unkWord(w_t.getString().c_str())<<endl;
-              for ( auto& ektpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW.find(w_t)->second : lexW.find(unkWord(w_t.getString().c_str()))->second ) {
-                if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(ektpr_p_t.second) > beams[t].rbegin()->getProb() ) {
-                  EVar  e_p_t       = ektpr_p_t.first.first();
-                  K     k_p_t       = (FEATCONFIG & 8 && ektpr_p_t.first.second().getString()[2]!='y') ? K::kBot : ektpr_p_t.first.second();   // context of current preterminal
-                  T     t_p_t       = ektpr_p_t.first.third();                               // label of current preterminal
-                  //              EVar  e_p_t       = (t_p_t.getLastNonlocal()==N_NONE) ? EVar::eNil : (t_p_t.getLastNonlocal()==N("-rN")) ? "0" : (t_p_t.getLastNonlocal().isArg()) ? vpsInts[t_p_t.getArity()+1] : "M";
-                  double probwgivkl = ektpr_p_t.second;                                     // probability of current word given current preterminal
+                //if( VERBOSE>1 ) cerr << "before flogresponses accum, pbiant: " << pbiAnt->second.second << endl; //ptr dEATH
+                //
+                list<FPredictor> lfpredictors;  
+                q_tdec1.calcForkPredictors( lfpredictors, ksAnt, !corefON, false ); 
+                lfpredictors.emplace_back();  // add bias term
+                // Calc distrib over response for each fork predictor...
+                arma::vec flogresponses = arma::zeros( matF.n_rows );            //distribution over f responses for a single antecedent features
+                for ( auto& fpredr : lfpredictors ) if ( fpredr.toInt() < matF.n_cols ) flogresponses += matF.col( fpredr.toInt() ); // add logprob for all indicated features. over all FEK responses.
+                //if ( VERBOSE>1 ) for ( auto& fpredr : lfpredictors ) cout<<"    fpredr:"<<fpredr<<endl;
+                arma::vec fresponses = arma::exp( flogresponses );
+                fnorm = arma::accu( fresponses );
+                //if( VERBOSE>1 ) cerr << "lfpredictor found: " << fpredr << endl;
+                //if( VERBOSE>1 ) cerr << "passed fpredr loop" << endl;
+                if ( VERBOSE>1 ) { for ( auto& fpredr : lfpredictors ) { cout <<"    fpredr:"<<fpredr<<endl; } }
 
-                  if ( VERBOSE>1 ) cout << "     W " << e_p_t << " " << k_p_t << " " << t_p_t << " : " << w_t << " = " << probwgivkl << endl;
+                //if( VERBOSE>1 ) cerr << "passed printout" << endl;
+                //arma::vec fresponses = arma::exp( flogresponses );
+                // Calc normalization term over responses...
+                //double fnorm = arma::accu( fresponses );
+    //if( VERBOSE>1 ) cerr << "before overflow norm, pbiant: " << pbiAnt->second.second << endl; // Rescale overflowing distribs by max...  if( fnorm == 1.0/0.0 ) { cerr << "WARNING: NaN for fnorm" << endl; } //} close for loop over antecedents here?
+                // For each possible lemma (context + label + prob) for preterminal of current word...
+                if( lexW.end() == lexW.find(unkWord(w_t.getString().c_str())) ) cerr<<"ERROR: unable to find unk form: "<<unkWord(w_t.getString().c_str())<<endl;
+                for ( auto& ektpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW.find(w_t)->second : lexW.find(unkWord(w_t.getString().c_str()))->second ) {
+                  if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(ektpr_p_t.second) > beams[t].rbegin()->getProb() ) {
+                    EVar  e_p_t       = ektpr_p_t.first.first();
+                    K     k_p_t       = (FEATCONFIG & 8 && ektpr_p_t.first.second().getString()[2]!='y') ? K::kBot : ektpr_p_t.first.second();   // context of current preterminal
+                    T     t_p_t       = ektpr_p_t.first.third();                               // label of current preterminal
+                    //              EVar  e_p_t       = (t_p_t.getLastNonlocal()==N_NONE) ? EVar::eNil : (t_p_t.getLastNonlocal()==N("-rN")) ? "0" : (t_p_t.getLastNonlocal().isArg()) ? vpsInts[t_p_t.getArity()+1] : "M";
+                    double probwgivkl = ektpr_p_t.second;                                     // probability of current word given current preterminal
 
-                  // For each possible no-fork or fork decision...
-                  for ( auto& f : {0,1} ) {
-                    if( FResponse::exists(f,e_p_t,k_p_t) && FResponse(f,e_p_t,k_p_t).toInt() >= int(fresponses.size()) ) cerr<<"ERROR: unable to find fresponse "<<FResponse(f,e_p_t,k_p_t)<<endl;
-                    double scoreFork = ( FResponse::exists(f,e_p_t,k_p_t) ) ? fresponses(FResponse(f,e_p_t,k_p_t).toInt()) : 1.0 ;
-                    if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << (scoreFork / fnorm) << endl;
+                    if ( VERBOSE>1 ) cout << "     W " << e_p_t << " " << k_p_t << " " << t_p_t << " : " << w_t << " = " << probwgivkl << endl;
 
-                    if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
-                      tpLastReport = chrono::high_resolution_clock::now();
-                      lock_guard<mutex> guard( mutexMLSList );
-                      cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << endl;
-                    } //closes if chrono
+                    // For each possible no-fork or fork decision...
+                    for ( auto& f : {0,1} ) {
+                      if( FResponse::exists(f,e_p_t,k_p_t) && FResponse(f,e_p_t,k_p_t).toInt() >= int(fresponses.size()) ) cerr<<"ERROR: unable to find fresponse "<<FResponse(f,e_p_t,k_p_t)<<endl;
+                      double scoreFork = ( FResponse::exists(f,e_p_t,k_p_t) ) ? fresponses(FResponse(f,e_p_t,k_p_t).toInt()) : 1.0 ;
+                      if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << (scoreFork / fnorm) << endl;
 
-                    // If preterminal prob is nonzero...
-                    PPredictor ppredictor = q_tdec1.calcPretrmTypeCondition(f,e_p_t,k_p_t);
-                    if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << t_p_t << "...?" << endl;
-                    if ( modP.end()!=modP.find(ppredictor) && modP.find(ppredictor)->second.end()!=modP.find(ppredictor)->second.find(t_p_t) ) {
+                      if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
+                        tpLastReport = chrono::high_resolution_clock::now();
+                        lock_guard<mutex> guard( mutexMLSList );
+                        cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << endl;
+                      } //closes if chrono
 
-                      if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << t_p_t << " = " << modP.find(ppredictor)->second.find(t_p_t)->second << endl;
+                      // If preterminal prob is nonzero...
+                      PPredictor ppredictor = q_tdec1.calcPretrmTypeCondition(f,e_p_t,k_p_t);
+                      if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << t_p_t << "...?" << endl;
+                      if ( modP.end()!=modP.find(ppredictor) && modP.find(ppredictor)->second.end()!=modP.find(ppredictor)->second.find(t_p_t) ) {
 
-                      // Calc probability for fork phase...
-                      double probFork = (scoreFork / fnorm) * modP.find(ppredictor)->second.find(t_p_t)->second * probwgivkl;
-                      if ( VERBOSE>1 ) cout << "      f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << scoreFork << " / " << fnorm << " * " << modP.find(ppredictor)->second.find(t_p_t)->second << " * " << probwgivkl << " = " << probFork << endl;
+                        if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << t_p_t << " = " << modP.find(ppredictor)->second.find(t_p_t)->second << endl;
 
-                      Sign aPretrm;  aPretrm.first().emplace_back(k_p_t);  
-                      for (auto& k : ksAnt) if (k != K::kTop) aPretrm.first().emplace_back(k); // add antecedent contexts
-                      aPretrm.second() = t_p_t;  aPretrm.third() = S_A;          // aPretrm (pos tag)
-                      const LeftChildSign aLchild( q_tdec1, f, e_p_t, aPretrm );
-                      list<JPredictor> ljpredictors; q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
-                      ljpredictors.emplace_back();                                                                  // add bias
-                      arma::vec jlogresponses = arma::zeros( matJ.n_rows );
-                      for ( auto& jpredr : ljpredictors ) if ( jpredr.toInt() < matJ.n_cols ) jlogresponses += matJ.col( jpredr.toInt() );
-                      arma::vec jresponses = arma::exp( jlogresponses );
-                      double jnorm = arma::accu( jresponses );  // 0.0;                                           // join normalization term (denominator)
+                        // Calc probability for fork phase...
+                        double probFork = (scoreFork / fnorm) * modP.find(ppredictor)->second.find(t_p_t)->second * probwgivkl;
+                        if ( VERBOSE>1 ) cout << "      f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << scoreFork << " / " << fnorm << " * " << modP.find(ppredictor)->second.find(t_p_t)->second << " * " << probwgivkl << " = " << probFork << endl;
 
-                      // Replace overflowing distribs by max...
-                      if( jnorm == 1.0/0.0 ) {
-                        uint ind_max=0; for( int i=0; i<jlogresponses.size(); i++ ) if( jlogresponses(i)>jlogresponses(ind_max) ) ind_max=i;
-                        jlogresponses -= jlogresponses( ind_max );
-                        jresponses = arma::exp( jlogresponses );
-                        jnorm = arma::accu( jresponses ); //accumulate is sum over elements
-                        //                    jresponses.fill( 0.0 );  jresponses( ind_max ) = 1.0;
-                        //                    jnorm = 1.0;
-                      } //closes if jnorm
+                        Sign aPretrm;  aPretrm.first().emplace_back(k_p_t);  
+                        for (auto& k : ksAnt) if (k != K::kTop) aPretrm.first().emplace_back(k); // add antecedent contexts
+                        aPretrm.second() = t_p_t;  aPretrm.third() = S_A;          // aPretrm (pos tag)
+                        const LeftChildSign aLchild( q_tdec1, f, e_p_t, aPretrm );
+                        list<JPredictor> ljpredictors; q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
+                        ljpredictors.emplace_back();                                                                  // add bias
+                        arma::vec jlogresponses = arma::zeros( matJ.n_rows );
+                        for ( auto& jpredr : ljpredictors ) if ( jpredr.toInt() < matJ.n_cols ) jlogresponses += matJ.col( jpredr.toInt() );
+                        arma::vec jresponses = arma::exp( jlogresponses );
+                        double jnorm = arma::accu( jresponses );  // 0.0;                                           // join normalization term (denominator)
 
-                      // For each possible no-join or join decision, and operator decisions...
-                      for( JResponse jresponse; jresponse<JResponse::getDomain().getSize(); ++jresponse ) {
-                        if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFork) + log(jresponses[jresponse.toInt()]/jnorm) > beams[t].rbegin()->getProb() ) {
-                          J    j   = jresponse.getJoin();
-                          EVar e   = jresponse.getE();
-                          O    opL = jresponse.getLOp();
-                          O    opR = jresponse.getROp();
-                          if( jresponse.toInt() >= int(jresponses.size()) ) cerr << "ERROR: unknown jresponse: " << jresponse << endl;
-                          double probJoin = jresponses[jresponse.toInt()] / jnorm;
-                          if ( VERBOSE>1 ) cout << "       J ... " << " : " << jresponse << " = " << probJoin << endl;
+                        // Replace overflowing distribs by max...
+                        if( jnorm == 1.0/0.0 ) {
+                          uint ind_max=0; for( int i=0; i<jlogresponses.size(); i++ ) if( jlogresponses(i)>jlogresponses(ind_max) ) ind_max=i;
+                          jlogresponses -= jlogresponses( ind_max );
+                          jresponses = arma::exp( jlogresponses );
+                          jnorm = arma::accu( jresponses ); //accumulate is sum over elements
+                          //                    jresponses.fill( 0.0 );  jresponses( ind_max ) = 1.0;
+                          //                    jnorm = 1.0;
+                        } //closes if jnorm
 
-                          // For each possible apex category label...
-                          APredictor apredictor = q_tdec1.calcApexTypeCondition( f, j, e_p_t, e, opL, aLchild );  // save apredictor for use in prob calc
-                          if ( VERBOSE>1 ) cout << "         A " << apredictor << "..." << endl;
-                          if ( modA.end()!=modA.find(apredictor) )
-                            for ( auto& tpA : modA.find(apredictor)->second ) {
-                              if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(tpA.second) > beams[t].rbegin()->getProb() ) {
+                        // For each possible no-join or join decision, and operator decisions...
+                        for( JResponse jresponse; jresponse<JResponse::getDomain().getSize(); ++jresponse ) {
+                          if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFork) + log(jresponses[jresponse.toInt()]/jnorm) > beams[t].rbegin()->getProb() ) {
+                            J    j   = jresponse.getJoin();
+                            EVar e   = jresponse.getE();
+                            O    opL = jresponse.getLOp();
+                            O    opR = jresponse.getROp();
+                            if( jresponse.toInt() >= int(jresponses.size()) ) cerr << "ERROR: unknown jresponse: " << jresponse << endl;
+                            double probJoin = jresponses[jresponse.toInt()] / jnorm;
+                            if ( VERBOSE>1 ) cout << "       J ... " << " : " << jresponse << " = " << probJoin << endl;
 
-                                if ( VERBOSE>1 ) cout << "         A " << apredictor << " : " << tpA.first << " = " << tpA.second << endl;
+                            // For each possible apex category label...
+                            APredictor apredictor = q_tdec1.calcApexTypeCondition( f, j, e_p_t, e, opL, aLchild );  // save apredictor for use in prob calc
+                            if ( VERBOSE>1 ) cout << "         A " << apredictor << "..." << endl;
+                            if ( modA.end()!=modA.find(apredictor) )
+                              for ( auto& tpA : modA.find(apredictor)->second ) {
+                                if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(tpA.second) > beams[t].rbegin()->getProb() ) {
 
-                                // For each possible brink category label...
-                                BPredictor bpredictor = q_tdec1.calcBrinkTypeCondition( f, j, e_p_t, e, opL, opR, tpA.first, aLchild );  // bpredictor for prob calc
-                                if ( VERBOSE>1 ) cout << "          B " << bpredictor << "..." << endl;
-                                if ( modB.end()!=modB.find(bpredictor) )
-                                  for ( auto& tpB : modB.find(bpredictor)->second ) {
-                                    if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << tpB.first << " = " << tpB.second << endl;
-                                    //                            lock_guard<mutex> guard( mutexBeam );
-                                    if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second) > beams[t].rbegin()->getProb() ) {
+                                  if ( VERBOSE>1 ) cout << "         A " << apredictor << " : " << tpA.first << " = " << tpA.second << endl;
 
-                                      if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
-                                        tpLastReport = chrono::high_resolution_clock::now();
-                                        lock_guard<mutex> guard( mutexMLSList );
-                                        cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << " JRESP " << jresponse << " A " << tpA.first << " B " << tpB.first << endl;
-                                      } //closes if chrono
-                                      // Calculate probability and storestate and add to beam...
-                                      StoreState ss( q_tdec1, f, j, e_p_t, e, opL, opR, tpA.first, tpB.first, aPretrm, aLchild );
-                                      if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
-                                        beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second), be_tdec1 ) ); 
-                                        if( VERBOSE>1 ) cout << "                send (" << be_tdec1.getHidd() << ") to (" << ss << ") with "
-                                          << (lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second)) << endl;
-                                      } //closes if ( (t<lwSent
-                                    } //closes if beams[t]
-                                  } //closes for tpB
-                              } //closes if beams[t]
-                            } //closes for tpA
-                        } //closes if beams[t]
-                      } //closes for jresponse
-                    } //closes if modP.end()
-                  } //closes for f in {0,1}
-                } //closes if beams[t]
-              } //closes for ektpr_p_t
+                                  // For each possible brink category label...
+                                  BPredictor bpredictor = q_tdec1.calcBrinkTypeCondition( f, j, e_p_t, e, opL, opR, tpA.first, aLchild );  // bpredictor for prob calc
+                                  if ( VERBOSE>1 ) cout << "          B " << bpredictor << "..." << endl;
+                                  if ( modB.end()!=modB.find(bpredictor) )
+                                    for ( auto& tpB : modB.find(bpredictor)->second ) {
+                                      if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << tpB.first << " = " << tpB.second << endl;
+                                      //                            lock_guard<mutex> guard( mutexBeam );
+                                      if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second) > beams[t].rbegin()->getProb() ) {
+
+                                        if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
+                                          tpLastReport = chrono::high_resolution_clock::now();
+                                          lock_guard<mutex> guard( mutexMLSList );
+                                          cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << " JRESP " << jresponse << " A " << tpA.first << " B " << tpB.first << endl;
+                                        } //closes if chrono
+                                        // Calculate probability and storestate and add to beam...
+                                        StoreState ss( q_tdec1, f, j, e_p_t, e, opL, opR, tpA.first, tpB.first, aPretrm, aLchild );
+                                        if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
+                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second), be_tdec1 ) ); 
+                                          if( VERBOSE>1 ) cout << "                send (" << be_tdec1.getHidd() << ") to (" << ss << ") with "
+                                            << (lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second)) << endl;
+                                        } //closes if ( (t<lwSent
+                                      } //closes if beams[t]
+                                    } //closes for tpB
+                                } //closes if beams[t]
+                              } //closes for tpA
+                          } //closes if beams[t]
+                        } //closes for jresponse
+                      } //closes if modP.end()
+                    } //closes for f in {0,1}
+                  } //closes if beams[t]
+                } //closes for ektpr_p_t
+              } // short-circuit bad nprob
             } //closes for tAnt (second antecedent loop)
           } //closes be_tdec1
 
