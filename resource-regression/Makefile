@@ -45,6 +45,7 @@ VPATH += $(RESOURCE-REGRESSION) $(RESOURCE-LMEFIT) $(RESOURCE-DTSR)
 #
 ################################################################################
 
+## literal space character for string conversions
 empty:=
 space:= $(empty) $(empty)
 
