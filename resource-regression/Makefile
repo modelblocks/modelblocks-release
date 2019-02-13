@@ -51,6 +51,9 @@ space:= $(empty) $(empty)
 bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
 	cp $< $@
 
+%-avg.itemmeasures: $$(basename %).all-itemmeasures $(REGRESSION-SCRIPTS)/average_by_group.py
+	cat $< | python $(word 2, $^) $(subst .,,$(suffix $*)) > $@
+
 ## apply predictor modifications: <data>.<predr>_<offset>_spilled.prdmeasures
 %_spilled.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/spilloverMetrics.py
 	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
@@ -92,7 +95,7 @@ bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
                       $$(basename %)_part.prdmeasures  \
                       $$(basename %)_part.resmeasures  \
                       scripts/$$(subst .,,$$(word 1,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form
-	$^ $(wordlist 2,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*)))))
+	$^ $(wordlist 2,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*))))) > $@
 
 
 ## generaic predicted errors file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors

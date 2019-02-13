@@ -70,6 +70,9 @@
 #
 #.PRECIOUS: %.rdata ##Disabled for now because it fills the disk quickly. Re-enable for simulations
 
+bin/regress-lmer: $(LMEFIT-SCRIPTS)/regress-lmer
+	cp $< $@
+
 define ParamVal
 Partition:
   value: ''

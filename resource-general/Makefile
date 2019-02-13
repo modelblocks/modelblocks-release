@@ -165,6 +165,9 @@ SRILM-SCRIPTS := $(RESOURCE-SRILM)/scripts
 RESOURCE-TOKENIZER := $(abspath $(MBDIR)/resource-tokenizer)
 TOKENIZER-SCRIPTS := $(RESOURCE-TOKENIZER)/scripts
 
+RESOURCE-TOM := $(abspath $(MBDIR)/resource-tom)
+TOM-SCRIPTS := $(RESOURCE-TOM)/scripts
+
 RESOURCE-TREEBANK := $(abspath $(MBDIR)/resource-treebank)
 RESOURCE-TREEBANK-VADAS := $(abspath $(MBDIR)/resource-treebank-vadas)
 TREEBANK-SCRIPTS := $(RESOURCE-TREEBANK)/scripts
@@ -218,6 +221,7 @@ include $(RESOURCE-BMMM)/Makefile
 include $(RESOURCE-CCL)/Makefile
 include $(RESOURCE-CHILDES)/Makefile
 include $(RESOURCE-DUNDEE)/Makefile
+include $(RESOURCE-TOM)/Makefile
 include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
 include $(RESOURCE-NATSTORIESFMRI)/Makefile
