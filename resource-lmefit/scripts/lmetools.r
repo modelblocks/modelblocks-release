@@ -523,7 +523,7 @@ minRelGrad <- function(reg1, reg2) {
 }
 
 # Fit a model formula with bobyqa, try again with nlminb on convergence failure
-regressLinearModel <- function(dataset, form, params) {
+regressLinearModel <- function(dataset, form, params, suppress_nlminb=FALSE) {
     library(optimx)
     library(lme4)
     bobyqa <- lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=50000))
@@ -537,8 +537,9 @@ regressLinearModel <- function(dataset, form, params) {
     smartPrint('SUMMARY:')
     printSummary(m)
     convWarn <- m@optinfo$conv$lme4$messages
+    convWarnN <- NULL
     
-    if (!is.null(convWarn) && !params$suppress_nlminb) {
+    if (!is.null(convWarn) && suppress_nlminb) {
         m1 <- m
         smartPrint('Fitting linear mixed-effects model with nlminb')
         smartPrint(paste(' ', date()))
@@ -693,7 +694,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
                    logmain=FALSE, logdepvar=FALSE, lambda=NULL,
                    addEffects=NULL, extraEffects=NULL, ablEffects=NULL, groupingfactor=NULL,
                    indicatorlevel=NULL, crossfactor=NULL, interact=TRUE,
-                   corpusname='corpus',suppress_nlminb=False) {
+                   corpusname='corpus',suppress_nlminb=FALSE) {
    
     if (fitmode == 'lm') {
         bform <- processForm(baseFormula(bformfile, logdepvar, lambda),
@@ -728,7 +729,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
     } else if (fitmode=='lm') {
         outputModel <- regressSimpleLinearModel(dataset, bform)
     } else {
-        outputModel <- regressLinearModel(dataset, bform)
+        outputModel <- regressLinearModel(dataset, bform, suppress_nlminb=suppress_nlminb)
     }
     if (params$boxcox) {
         mixed = fitmode %in% c('lme', 'bme')
@@ -741,6 +742,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         y_mu = NULL 
     } 
     fitOutput <- list(
+        f = bform,
         fitmode = fitmode,
         abl = ablEffects,
         ablEffects = processEffects(ablEffects, data, logmain),

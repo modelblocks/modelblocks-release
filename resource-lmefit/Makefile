@@ -73,6 +73,9 @@
 bin/regress-lmer: $(LMEFIT-SCRIPTS)/regress-lmer
 	cp $< $@
 
+bin/predict-lmer: $(LMEFIT-SCRIPTS)/predict-lmer
+	cp $< $@
+
 define ParamVal
 Partition:
   value: ''
