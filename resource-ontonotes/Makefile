@@ -94,9 +94,9 @@ $$(sort $$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annota
 	cat $(wordlist 4, $(words $^), $^)  |  perl -p  $<  >  $@
 
 genmodel/ontowsj%.editabletrees: $$(DEP-ONTONOTES) $(CONFIGDIR)/user-ontonotes-directory.txt \
-$(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$* \
-$$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*/*.coref)))  |  genmodel
-	tail -n +1 $(wordlist 3, $(words $^), $^)  |  perl -pe 's/==>.*<==/(U !ARTICLE)/'  >  $@
+$(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$* $(ONTONOTES-SCRIPTS)/addArticleDelims.py  \
+$$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*/*.coref)))  |  genmodel 
+	tail -n +1 $(wordlist 4, $(words $^), $^)  |  python $(word 3,$^)  >  $@
 
 %.linked.linetrees:  $(ONTONOTES-SCRIPTS)/coref2linkedlinetrees.py  $$(dir %)$$(word 1,$$(subst ., ,$$*)).coref  %.linetrees
 	#cat $(word 2,$^)  |  python $(word 1,$^)  $(word 3,$^)  >  $@
@@ -115,10 +115,9 @@ $$(sort $$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annota
 	cat $(wordlist 4, $(words $^), $^)  |  perl -p  $<  >  $@
 
 genmodel/corontowsj%.editabletrees: $$(DEP-ONTONOTES) $(CONFIGDIR)/user-ontonotes-directory.txt \
-$(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$* \
-$$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*/*.coref)))  |  genmodel
-	tail -n +1 $(wordlist 3, $(words $^), $^)  |  perl -pe 's/==>.*<==/(U !ARTICLE)/'  >  $@
-
+$(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$* $(ONTONOTES-SCRIPTS)/addArticleDelims.py  \
+$$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*/*.coref)))  |  genmodel 
+	tail -n +1 $(wordlist 4, $(words $^), $^)  |  python $(word 3,$^)  >  $@
 .PRECIOUS: genmodel/ontowsj02to21.%.linetrees
 genmodel/ontowsj02to21.%.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/ontowsj$(sect).%.linetrees)
 	cat $^  >  $@
