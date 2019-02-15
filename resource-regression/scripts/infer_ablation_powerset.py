@@ -7,7 +7,7 @@ def powerset(iterable):
 
 preds = sys.argv[1:]
 if len(preds) == 1:
-    preds = preds.split('_')
+    preds = preds[0].split('_')
 pset = powerset(preds)
 
 out = []

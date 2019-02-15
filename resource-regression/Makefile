@@ -93,9 +93,9 @@ bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
 ## generic fit files: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.fitmodel
 .PRECIOUS: %.fitmodel %.coeffs
 %.fitmodel %.coeffs:  bin/regress-$$(subst .,,$$(suffix $$(subst _,.,$$*)))  \
-                      $$(basename %)_part.prdmeasures  \
-                      $$(basename %)_part.resmeasures  \
-                      scripts/$$(subst .,,$$(word 1,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form
+                      $$(basename %).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.prdmeasures  \
+                      $$(basename %).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.resmeasures  \
+                      scripts/$$(subst .,,$$(word 2,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form
 	$^ $(wordlist 2,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*))))) > $@
 
 
