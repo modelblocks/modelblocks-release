@@ -49,7 +49,7 @@ fi
 base_filename="$dname$(basename $prdmeasures .prdmeasures).$(basename $bform .lmerform)$predsSTR"
 outdir="${base_filename/_part\./\.}"
 outfile="${base_filename/_part\./\.}"
-outfile+="_lme.fitmodel.rdata";
+outfile+="_lmer.fitmodel.rdata";
 corpusname=$(cut -d'.' -f1 <<< "$(basename $prdmeasures)");
 
 ../resource-lmefit/scripts/evmeasures2lmefit.r <(python ../resource-rt/scripts/merge_tables.py $prdmeasures $resmeasures subject docid sentid sentpos word) $outfile -b $bform $preds_add_STR $preds_ablate_STR -c $corpusname -e
