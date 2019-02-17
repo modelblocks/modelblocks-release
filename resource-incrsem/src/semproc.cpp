@@ -323,7 +323,7 @@ int main ( int nArgs, char* argv[] ) {
 
             //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " starting denom loop..." << w_t << endl;}
             //for ( int tAnt = t; tAnt>0; tAnt--, pbeAnt = &pbeAnt->getBack()) { //denominator
-            for ( int tAnt = t; &pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy; tAnt--, pbeAnt = &pbeAnt->getBack()) { //denominator
+            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (t-tAnt<50); tAnt--, pbeAnt = &pbeAnt->getBack()) { //denominator
               //if (VERBOSE>1) cerr << "*pbiAnt: " << *pbiAnt << endl;
               //if (VERBOSE>1) cerr << "pbiAnt->first: " << pbiAnt->first << endl;
               //if (VERBOSE>1) cerr << "pbiAnt->second.second: " << pbiAnt->second.second << endl;
@@ -338,9 +338,9 @@ int main ( int nArgs, char* argv[] ) {
               //}
               //{ lock_guard<mutex> guard( mutexMLSList ); cerr << "Worker: " << numt << " got ksAnt" << ksAnt << endl;}
               bool corefON = (tAnt==t) ? 0 : 1;
-              DelimitedList<psX,NPredictor,psComma,psX> lnpredictors; 
-              q_tdec1.calcNPredictors( lnpredictors, pbeAnt->getHidd().getPrtrm(), corefON); 
-              NPredictorSet nps = NPredictorSet ( t - tAnt, lnpredictors);
+              //DelimitedList<psX,NPredictor,psComma,psX> lnpredictors; 
+              NPredictorSet nps;// = NPredictorSet ( t - tAnt, lnpredictors);
+              q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt); 
               arma::vec nlogresponses = nps.NLogResponses(matN);
               /*
               arma::vec nlogresponses = arma::zeros( matN.n_rows ); //rows are n outcomes 1 or 0 (coreferent or not)
@@ -349,7 +349,9 @@ int main ( int nArgs, char* argv[] ) {
                   nlogresponses += matN.col( npredr.toInt() );  //cols are predictors, where each col has values for 1 or 0
                 }
               }
+              //and nps cut above
               */
+             
               //arma::vec nresponses = arma::exp( nlogresponses );
               //double nnorm = arma::accu( nresponses );  // 0.0;                                           // join normalization term (denominator)
               ndenom += exp(nlogresponses(NResponse("1").toInt())-nlogresponses(NResponse("0").toInt()));
@@ -383,7 +385,7 @@ int main ( int nArgs, char* argv[] ) {
             //for ( int tAnt = t; tAnt>((USE_COREF) ? 0 : t-1); tAnt--, pbeAnt = &pbeAnt->getBack()) { //iterate over candidate antecedent ks, following trellis backpointers ej change for coref 
             //
             //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " starting numerator loop..." << w_t << endl;}
-            for ( int tAnt = t; &pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy; tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers. 
+            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (t-tAnt<50); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers. 
               //if( VERBOSE>1 ) cerr << "pbiAnt is biDummy: " << (pbiAnt == &biDummy) << endl;
               //if( VERBOSE>1 ) cerr << "in main(): tAnt: " << tAnt << endl;
               //if( VERBOSE>1 ) cerr << "in main(): beams[tAnt]: " << beams[tAnt] << endl;
@@ -395,13 +397,22 @@ int main ( int nArgs, char* argv[] ) {
 
               //Calculate antecedent N model predictors 
               bool corefON = (tAnt==t) ? 0 : 1;
-              DelimitedList<psX,NPredictor,psComma,psX> lnpredictors; 
-              q_tdec1.calcNPredictors( lnpredictors, pbeAnt->getHidd().getPrtrm(), corefON); //calcNPredictors takes list of npreds (reference) and candidate Sign (reference)
-              //lnpredictors.emplace_back();                                             // add bias. don't need because included in StoreState calcNPredictors
-              NPredictorSet nps = NPredictorSet ( t - tAnt, lnpredictors);
-
-              if ( VERBOSE>1 ) { for ( auto& npredr : lnpredictors ) { cout <<"   npredr:"<<npredr<<endl; } }
+              //DelimitedList<psX,NPredictor,psComma,psX> lnpredictors; 
+              NPredictorSet nps;// = NPredictorSet ( t - tAnt, lnpredictors);
+              //if ( VERBOSE>1 ) { for ( auto& npredr : lnpredictors ) { cout <<"   npredr:"<<npredr<<endl; } }
+              q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt); //calcNPredictors takes list of npreds (reference) and candidate Sign (reference)
               arma::vec nlogresponses = nps.NLogResponses(matN);
+              /* 
+              arma::vec nlogresponses = arma::zeros( matN.n_rows );
+              for ( auto& npredr : lnpredictors) {
+                  //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << endl; }
+                if ( npredr.toInt() < matN.n_cols ) { 
+                  nlogresponses += matN.col( npredr.toInt() ); 
+                  //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << " matN.n_cols:" << matN.n_cols << " logprob: " << matN.col( npredr.toInt())(NResponse("1").toInt()) << endl; }
+                }
+              }
+              */
+
               double numerator = exp(nlogresponses(NResponse("1").toInt()) - nlogresponses(NResponse("0").toInt()));
               double nprob = numerator / ndenom;
 

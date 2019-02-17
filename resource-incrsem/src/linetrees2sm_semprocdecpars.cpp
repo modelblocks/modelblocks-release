@@ -399,9 +399,9 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
         }
 
         bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
-        DelimitedList<psX,NPredictor,psComma,psX> npreds;  
-        q.calcNPredictors(npreds, candidate, corefON); //populate npreds with kxk pairs for q vs. candidate q. 
-        NPredictorSet nps = NPredictorSet( tDisc - i, npreds); //generate NPredictorSet with distance feature - just use "i"
+        //DelimitedList<psX,NPredictor,psComma,psX> npreds;  
+        NPredictorSet nps;// = NPredictorSet( tDisc - i, npreds); //generate NPredictorSet with distance feature - just use "i"
+        q.calcNPredictors(nps, candidate, corefON, tDisc - i); //populate npreds with kxk pairs for q vs. candidate q. 
         nps.PrintOut();
         //corefON feature 1 for i=tDisc, else 0. can't be incorporated into calcNPredictors since NPredictors are currently KxK feats - would like to change this later to add versatility to what can predict coref
         cout << " : " << isCoref << endl; //i-1 because that's candidate index 

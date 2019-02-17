@@ -13,9 +13,9 @@ for line in lines:
 
 if delims_exist == True:
     for line in lines: #sub (U !ARTICLE) for delim
-        sys.stdout.write(re.sub(r'==>.*<==', "U (!ARTICLE)", line)) #this outputs line if no match, right?
+        sys.stdout.write(re.sub(r'==>.*<==', "(U !ARTICLE)", line)) #this outputs line if no match, right?
 else:
-    sys.stdout.write("U (!ARTICLE)\n")
+    sys.stdout.write("(U !ARTICLE)\n")
     for line in lines:
         sys.stdout.write(line)
 

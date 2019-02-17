@@ -543,10 +543,18 @@ class NPredictorSet {
 
   public:
     //constructor
+    /*
     NPredictorSet (int dist, DelimitedList<psX,NPredictor,psComma,psX>& npreds) {
-      //TODO optimize eventually - don't make copy
       mdist = dist;
       mnpreds = npreds;
+    }
+    */
+    NPredictorSet ( ):mdist(0),mnpreds() { }
+    DelimitedList<psX,NPredictor,psComma,psX>& setList ( ) {
+      return mnpreds;
+    }
+    int& setAntDist ( ) {
+      return mdist;
     }
 
     void PrintOut ( ) {
@@ -561,7 +569,7 @@ class NPredictorSet {
         } 
     }
    
-    arma::vec NLogResponses ( arma::mat matN) {
+    arma::vec NLogResponses ( const arma::mat &matN) {
       arma::vec nlogresponses = arma::zeros( matN.n_rows );
       nlogresponses += mdist * matN.col(NPredictor("antdist").toInt());
       for ( auto& npredr : mnpreds) {
@@ -1233,7 +1241,8 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     return          BPredictor( getDepth()+f-j, f, j, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, tParent, aLchild.getType() );
   }
 
-  list<NPredictor>& calcNPredictors (list<NPredictor>& npreds, const Sign& candidate, bool bcorefON ) {
+  //list<NPredictor>& calcNPredictors (list<NPredictor>& npreds, const Sign& candidate, bool bcorefON, int antdist) {
+  void calcNPredictors (NPredictorSet& nps, const Sign& candidate, bool bcorefON, int antdist) {
     //cerr << "entered calcNPredictors..." << endl;
     //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
     //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
@@ -1242,18 +1251,20 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     const KSet& ksB = at(size()-1).getKSet(); //contexts of lowest b (bdbar)
     //cout << "ksb: " << ksB << endl;
     for (auto& antk : candidate.getKSet()){ 
-      npreds.emplace_back(antk, kNil); //add unary antecedent k feat, using kxk template
+      nps.setList().emplace_back(antk, kNil); //add unary antecedent k feat, using kxk template
       for (auto& currk : ksB) {
-        npreds.emplace_back(antk, currk); //pairwise kxk feat
+        nps.setList().emplace_back(antk, currk); //pairwise kxk feat
       }
     }
     for (auto& currk : ksB) {
-      npreds.emplace_back(kNil, currk); //unary ancestor k feat
+      nps.setList().emplace_back(kNil, currk); //unary ancestor k feat
     }
 
-    npreds.emplace_back(candidate.getType(), N_NONE);  // antecedent T
-    npreds.emplace_back(N_NONE, at(size()-1).getType()); //ancestor T
-    npreds.emplace_back(candidate.getType(), at(size()-1).getType()); //pairwise T
+    nps.setList().emplace_back(candidate.getType(), N_NONE);  // antecedent T
+    nps.setList().emplace_back(N_NONE, at(size()-1).getType()); //ancestor T
+    nps.setList().emplace_back(candidate.getType(), at(size()-1).getType()); //pairwise T
+
+    nps.setAntDist() = antdist;
     /*
     //loop over curr k:ksB
       npreds.emplace_back(currk, 1); //add unary anaphor (ancestor) k feat. 1 meants currk type feature
@@ -1262,17 +1273,15 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     T currt = at(size()-1).getType(); //type of lowest b (bdbar)
     npreds.emplace_back(currt,3); //add unary anaphor (ancestor) T
     */
-    npreds.emplace_front(bias); //add bias term
+    nps.setList().emplace_front(bias); //add bias term
 
     //corefON feature
     if (bcorefON == true) { 
-      npreds.emplace_back(corefON);
+      nps.setList().emplace_back(corefON);
       //cerr << "corefON added to npreds..." << endl;
       //for (auto& npred : npreds) {cerr << npred << " ";}
       //cerr << endl;
     }
-
-    return npreds;
   }
 };
 const Sign StoreState::aTop( KSet(K::kTop), tTop, S_B );
