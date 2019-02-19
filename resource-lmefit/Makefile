@@ -282,7 +282,7 @@ endef
 %.lme.rdata %.lmefit %.lme: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
 genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
 $$(subst .,,$$(suffix $$*))).filt.evmeasures \
-scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmerform \
 $(LMEFIT-SCRIPTS)/lmetools.r \
 $(RHACKS-SCRIPTS)/mer-utils.R \
 $(RHACKS-SCRIPTS)/regression-utils.R
@@ -292,7 +292,7 @@ $(RHACKS-SCRIPTS)/regression-utils.R
 %.bme.rdata %.bmefit %.bme: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
 genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
 $$(subst .,,$$(suffix $$*))).filt.evmeasures \
-scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmerform \
 $(LMEFIT-SCRIPTS)/lmetools.r \
 $(RHACKS-SCRIPTS)/mer-utils.R \
 $(RHACKS-SCRIPTS)/regression-utils.R
@@ -302,7 +302,7 @@ $(RHACKS-SCRIPTS)/regression-utils.R
 %.lm.rdata %.lmfit %.lm: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
 genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
 $$(subst .,,$$(suffix $$*))).filt.evmeasures \
-scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmerform \
 $(LMEFIT-SCRIPTS)/lmetools.r \
 $(RHACKS-SCRIPTS)/mer-utils.R \
 $(RHACKS-SCRIPTS)/regression-utils.R
@@ -317,7 +317,7 @@ pc := %
 %_lmer %_lmer.rdata: $$(DEP-RHACKS)  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
                      genmodel/$$(basename $$*).$$(subst $$(sp),_,$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*)))))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
                      $$(subst -a,-a_,$$(subst -A,-A_,$$(subst .,,$$(suffix $$*))))).filt-evmeasures \
-                     scripts/$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
+                     scripts/$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmerform \
                      $(LMEFIT-SCRIPTS)/lmetools.r \
                      $(RHACKS-SCRIPTS)/mer-utils.R \
                      $(RHACKS-SCRIPTS)/regression-utils.R
