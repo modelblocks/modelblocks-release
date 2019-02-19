@@ -216,7 +216,7 @@ NgramProbs:
 endef
 
 ## TO SPEC
-.PRECIOUS: %.kenlm.ngram.itemmeasures
+.PRECIOUS: %-kenlm.itemmeasures
 %-kenlm.itemmeasures: $$(DEP-KENLM) $(KENLMDIR)/bin/query \
 $$(basename %).lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
 $(KENLMMODDIR)/gigaword$$(suffix $$*).kenlm.bin \

@@ -79,7 +79,7 @@ bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
 	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
 
 %.resmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/censor.py
-	cat $(word 2,$^)  |  python $(word 3,$^) -c $(word 1,$^)  >  $@
+	cat $(word 2,$^)  |  python3 $(word 3,$^) -c $(word 1,$^)  >  $@
 
 
 ## apply partitioning (prdmeasures unaffected)
@@ -87,7 +87,7 @@ bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
 	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
 
 %_part.resmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/partition.py
-	cat $(word 2,$^)  |  python $(word 3, $^) -c $(word 1, $^) -p $(subst +, ,$(subst .,,$(suffix $*)))  >  $@
+	cat $(word 2,$^)  |  python3 $(word 3, $^) -c $(word 1, $^) -p $(subst +, ,$(subst .,,$(suffix $*)))  >  $@
 
 
 ## generic fit files: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.fitmodel
@@ -96,7 +96,7 @@ bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
                       $$(basename %).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.prdmeasures  \
                       $$(basename %).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.resmeasures  \
                       scripts/$$(subst .,,$$(word 2,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form
-	$^ $(wordlist 2,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*))))) > $@
+	$^ $(wordlist 3,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*))))) > $@
 
 
 ## generaic predicted errors file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
@@ -113,7 +113,7 @@ bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
 
 
 ## generic signif file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>.(<predr>_)*<signif-type>.signif
-%.signif:  bin/signif-$$(lastword $$(subst _, ,$$(suffix $$*)))  \
+%signif:  bin/signif-$$(lastword $$(subst _, ,$$(suffix $$*)))  \
 	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), $$(basename $$(basename $$(basename %))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)
 	$^  >  $@
 
