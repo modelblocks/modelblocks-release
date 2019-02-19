@@ -4,6 +4,7 @@ prdmeasures=$1;
 resmeasures=$2;
 bform=$3;
 preds=${*:4:$#};
+preds_STR="";
 
 if [ -z "$preds" ]; then
 	preds_add_STR="";
@@ -11,6 +12,7 @@ if [ -z "$preds" ]; then
 else
 	until [ -z "$4" ]
 	do
+		preds_STR+="$4"
 		if [[ $4 =~ ~.* ]]; then
 			new=${4:1};
 			if [ -z "$preds_ablate" ]; then
@@ -28,6 +30,7 @@ else
 		fi;
 		shift
 	done
+	preds_STR=$(IFS=_ ; echo "${preds_STR[*]}");
 	preds_add_STR=$(IFS=\+ ; echo "${preds_add[*]}");
 	preds_add_STR="-A $preds_add_STR";
 	if [ ! -z "$preds_ablate" ]; then
@@ -46,7 +49,7 @@ else
 	dname="";
 fi
 
-base_filename="$dname$(basename $prdmeasures .prdmeasures).$(basename $bform .lmerform)$predsSTR"
+base_filename="$dname$(basename $prdmeasures _part.prdmeasures)_$(basename $bform .lmerform)_$preds_STR"
 outdir="${base_filename/_part\./\.}"
 outfile="${base_filename/_part\./\.}"
 outfile+="_lmer.fitmodel.rdata";

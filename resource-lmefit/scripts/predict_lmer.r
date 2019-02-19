@@ -33,13 +33,13 @@ model <- model_data$model
 input <- file(args[2], open='rt', raw=TRUE)
 df <- read.table(input, header=TRUE, sep=' ', quote='', comment.char='') 
 close(input)
-df <- cleanupData(df)
-df <- recastEffects(df)
+df <- cleanupData(df, stdout=FALSE)
+df <- recastEffects(df, stdout=FALSE)
 
 f <- model_data$f
-y <- model.frame(f, data=data)[toString(f[2])]
+y <- model.frame(paste0(toString(f[2]), '~ 1'), data=df)
 colnames(y) = c('y')
-y_hat <- data.frame(list(y_hat=predict(m, newdata=data, type='response', allow.new.levels=TRUE)))
+y_hat <- data.frame(list(y_hat=predict(model, newdata=df, type='response', allow.new.levels=TRUE)))
 colnames(y_hat) = c('y_hat')
 err = y-y_hat
 colnames(err) = c('err')
@@ -47,7 +47,6 @@ ae = abs(err)
 colnames(ae) = c('ae')
 se = err^2
 colnames(se) = c('se')
-outfile = gsub('.rdata', '.dev.mse.txt', output)
 # write.table(cbind(y,y_hat,err,ae,se), file=outfile, quote=FALSE, row.names=FALSE)
-write.table(se, file=outfile, quote=FALSE, row.names=FALSE)
+write.table(se, file=stdout(), quote=FALSE, row.names=FALSE)
 

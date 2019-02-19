@@ -96,7 +96,7 @@ bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
                       $$(basename %).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.prdmeasures  \
                       $$(basename %).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.resmeasures  \
                       scripts/$$(subst .,,$$(word 2,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form
-	$^ $(wordlist 2,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*))))) > $@
+	$^ $(wordlist 3,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*))))) > $@
 
 
 ## generaic predicted errors file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
