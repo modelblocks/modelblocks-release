@@ -28,5 +28,5 @@ default = ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2, ran=T)
 rangf = subject
 
 [model_DTSR_BASELINE]
-formula = log(fdurGP) ~ s(sentpos) + C(rate + z(wdelta) + prevwasfix + z(wlen) + z(unigram) + z(fwprob5surp), ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2)) + (s(sentpos) + C(rate + z(wdelta) + prevwasfix + z(wlen) + z(unigram), ShiftedGammaShapeGT1(ran=T)) | subject)
+formula = log(fdurGP) ~ s(sentpos) + C(rate + z(wdelta) + prevwasfix + z(wlen) + z(unigram) + z(fwprob5surp), ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2)) + (s(sentpos) + C(rate + z(wdelta) + prevwasfix + z(wlen) + z(unigram) + z(fwprob5surp), ShiftedGammaShapeGT1(ran=T)) | subject)
 
