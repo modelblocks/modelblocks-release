@@ -49,7 +49,7 @@ VPATH += $(RESOURCE-REGRESSION) $(RESOURCE-LMEFIT) $(RESOURCE-DTSR)
 empty:=
 space:= $(empty) $(empty)
 
-bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
+bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh
 	cp $< $@
 
 %-avg.itemmeasures: $$(basename %).all-itemmeasures $(REGRESSION-SCRIPTS)/average_by_group.py
@@ -93,17 +93,17 @@ bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
 ## generic fit files: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.fitmodel
 .PRECIOUS: %.fitmodel %.coeffs
 %.fitmodel %.coeffs:  bin/regress-$$(subst .,,$$(suffix $$(subst _,.,$$*)))  \
-                      $$(basename %).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.prdmeasures  \
-                      $$(basename %).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.resmeasures  \
+                      genmodel/$$(basename $$*).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.prdmeasures  \
+                      genmodel/$$(basename $$*).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.resmeasures  \
                       scripts/$$(subst .,,$$(word 2,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form
 	$^ $(wordlist 3,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*))))) > $@
 
 
 ## generaic predicted errors file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
 %_predicted.errors:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
-                     $$(basename %).fitmodel  \
-           	     $$(basename $$(basename $$(basename %)))$$(suffix $$*)_part.prdmeasures \
-           	     $$(basename $$(basename $$(basename %)))$$(suffix $$*)_part.resmeasures
+                     genmodel/$$(basename $$*).fitmodel  \
+           	     genmodel/$$(basename $$(basename $$(basename $$*)))$$(suffix $$*)_part.prdmeasures \
+           	     genmodel/$$(basename $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures
 	$^  >  $@
 
 
@@ -114,7 +114,7 @@ bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
 
 ## generic signif file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>.(<predr>_)*<signif-type>.signif
 %signif:  bin/signif-$$(lastword $$(subst _, ,$$(suffix $$*)))  \
-	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), $$(basename $$(basename $$(basename %))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)
+	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(basename $$(basename $$(basename $$*))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)
 	$^  >  $@
 
 
