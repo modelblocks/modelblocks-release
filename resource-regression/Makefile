@@ -49,7 +49,7 @@ VPATH += $(RESOURCE-REGRESSION) $(RESOURCE-LMEFIT) $(RESOURCE-DTSR)
 empty:=
 space:= $(empty) $(empty)
 
-bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh
+bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 	cp $< $@
 
 %-avg.itemmeasures: $$(basename %).all-itemmeasures $(REGRESSION-SCRIPTS)/average_by_group.py
@@ -83,10 +83,10 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh
 
 
 ## apply partitioning (prdmeasures unaffected)
-%_part.prdmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/partition.py 
+%_part.prdmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/partition.py  |  genmodel
 	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
 
-%_part.resmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/partition.py
+%_part.resmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/partition.py  |  genmodel
 	cat $(word 2,$^)  |  python3 $(word 3, $^) -c $(word 1, $^) -p $(subst +, ,$(subst .,,$(suffix $*)))  >  $@
 
 
@@ -95,7 +95,7 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh
 %.fitmodel %.coeffs:  bin/regress-$$(subst .,,$$(suffix $$(subst _,.,$$*)))  \
                       genmodel/$$(basename $$*).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.prdmeasures  \
                       genmodel/$$(basename $$*).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.resmeasures  \
-                      scripts/$$(subst .,,$$(word 2,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form
+                      scripts/$$(subst .,,$$(word 2,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form  |  bin  genmodel
 	$^ $(wordlist 3,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*))))) > $@
 
 
@@ -103,7 +103,7 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh
 %_predicted.errors:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
                      genmodel/$$(basename $$*).fitmodel  \
            	     genmodel/$$(basename $$(basename $$(basename $$*)))$$(suffix $$*)_part.prdmeasures \
-           	     genmodel/$$(basename $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures
+           	     genmodel/$$(basename $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures  |  bin  genmodel
 	$^  >  $@
 
 
@@ -114,7 +114,7 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh
 
 ## generic signif file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>.(<predr>_)*<signif-type>.signif
 %signif:  bin/signif-$$(lastword $$(subst _, ,$$(suffix $$*)))  \
-	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(basename $$(basename $$(basename $$*))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)
+	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(basename $$(basename $$(basename $$*))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)  |  bin  genmodel
 	$^  >  $@
 
 
