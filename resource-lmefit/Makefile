@@ -70,10 +70,14 @@
 #
 #.PRECIOUS: %.rdata ##Disabled for now because it fills the disk quickly. Re-enable for simulations
 
-bin/regress-lmer: $(LMEFIT-SCRIPTS)/regress-lmer.sh
+bin/regress-lmer: $(LMEFIT-SCRIPTS)/regress-lmer.sh $(LMEFIT-SCRIPTS)/lmetools.r \
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	cp $< $@
 
-bin/predict-lmer: $(LMEFIT-SCRIPTS)/predict-lmer.sh
+bin/predict-lmer: $(LMEFIT-SCRIPTS)/predict-lmer.sh $(LMEFIT-SCRIPTS)/lmetools.r \
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	cp $< $@
 
 define ParamVal
