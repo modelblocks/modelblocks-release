@@ -80,6 +80,11 @@ $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
 $(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	cp $< $@
 
+bin/signif-lrt: $(LMEFIT-SCRIPTS)/signif-lrt.sh $(LMEFIT-SCRIPTS)/infer_lrt_modelnames.py \
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
+	cp $< $@
+
 define ParamVal
 Partition:
   value: ''
