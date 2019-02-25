@@ -102,8 +102,8 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 ## generaic predicted errors file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
 %_predicted.errors:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
                      genmodel/$$(basename $$*).fitmodel  \
-           	     genmodel/$$(basename $$(basename $$(basename $$*)))$$(suffix $$*)_part.prdmeasures \
-           	     genmodel/$$(basename $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures  |  bin  genmodel
+           	     genmodel/$$(basename $$(basename $$*))$$(suffix $$*)_part.prdmeasures \
+           	     genmodel/$$(basename $$(basename $$*))$$(suffix $$*)_part.resmeasures  |  bin  genmodel
 	$^  >  $@
 
 
