@@ -57,19 +57,19 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 
 ## apply predictor modifications: <data>.<predr>_<offset>_spilled.prdmeasures
 %_spilled.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/spilloverMetrics.py
-	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+	cat $(word 1,$^)  |  python $(word 2,$^) $(word 1, $(subst _, ,$(subst .,,$(suffix $*)))) -n $(word 2, $(subst _, ,$(subst .,,$(suffix $*)))) >  $@
 %_spilled.resmeasures:  $$(basename %).resmeasures
 	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_cumued.prdmeasures
 %_cumued.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/accumulateMetrics.py
-	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+	cat $(word 1,$^)  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 %_cumued.resmeasures:  $$(basename %).resmeasures
 	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_<offset>_futured.prdmeasures
 %_futured.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/futureMetrics.py
-	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+	cat $(word 1,$^)  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 %_futured.resmeasures:  $$(basename %).resmeasures
 	ln -sf $(abspath $<) $(abspath $@)
 
