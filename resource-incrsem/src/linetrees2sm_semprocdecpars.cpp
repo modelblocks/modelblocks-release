@@ -333,7 +333,9 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     if (INTERSENTENTIAL == true) validIntra = true;
     //cerr << "value of validIntra after global INTERSENTENTIAL check: " << validIntra << endl;
     const KSet& ksAnt = validIntra == true ? annot2kset[annot] : KSet(K::kTop);
-    bool nullAnt = (ksAnt == KSet(K::kTop)) ? true : false;
+    //bool nullAnt = (ksAnt == KSet(K::kTop)) ? true : false;
+    bool nullAnt = (ksAnt.empty()) ? true : false;
+    //cerr << "got annot: " << annot << " ksAnt: " << ksAnt << " nullAnt: " << nullAnt << endl;
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
     //if (currentloc == "526") {
     //  cout << "current location is 526" << endl;
@@ -575,7 +577,7 @@ int main ( int nArgs, char* argv[] ) {
         int wordnum = 1;
         bool failtree = (L(t.front()) == "FAIL") ? true : false;
         //cerr << "t.front: " << t.front() << "L(t.front()): " << L(t.front()) << endl;
-        if (failtree == true) { cerr << "found failtree: " << t << endl; }
+        //if (failtree == true) { cerr << "found failtree: " << t << endl; }
         if( t.front().size() > 0 ) calcContext( t, arma::diagmat(vFirstHot), mIdent, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, failtree);
       }
     }

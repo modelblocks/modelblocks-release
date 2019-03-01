@@ -329,7 +329,7 @@ int main ( int nArgs, char* argv[] ) {
               //if (VERBOSE>1) cerr << "pbiAnt->second.second: " << pbiAnt->second.second << endl;
               //if (VERBOSE>1) cerr << "pbiAnt: " << pbiAnt << endl;
               //const KSet ksAnt (pbiAnt->first.fourth());
-              const KSet ksAnt (pbeAnt->getHidd().getPrtrm().getKSet()); 
+              const KSet& ksAnt = pbeAnt->getHidd().getPrtrm().getKSet(); 
               //if (t < 2) { 
                 //cerr << "t: " << t << ", tAnt: " << tAnt << ", neq test: " << (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) << endl;
                 //cerr << "pbeAnt ptr: " << pbeAnt << endl;
@@ -392,7 +392,7 @@ int main ( int nArgs, char* argv[] ) {
               //cerr << "in main(): beams[tAnt].get(pbiAnt->second.second): " << beams[tAnt].get(pbiAnt->second.second) << endl;
 
               //if( VERBOSE>1 ) cerr << "before ksAnt init, pbiant: " << pbiAnt->second.second << endl;
-              const KSet ksAnt (pbeAnt->getHidd().getPrtrm().getKSet());
+              const KSet& ksAnt = pbeAnt->getHidd().getPrtrm().getKSet();
               //if( VERBOSE>1 ) cerr << "ksAnt: " << ksAnt << endl;
 
               //Calculate antecedent N model predictors 

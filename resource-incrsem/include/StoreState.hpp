@@ -50,6 +50,7 @@ const S S_B(";");
 DiscreteDomain<int> domAdHoc;
 typedef Delimited<DiscreteDomainRV<int,domAdHoc>> AdHocFeature;
 const AdHocFeature corefON("acorefON");
+const AdHocFeature corefOFF("acorefOFF");
 const AdHocFeature bias("abias");
 
 ////////////////////////////////////////////////////////////////////////////////
