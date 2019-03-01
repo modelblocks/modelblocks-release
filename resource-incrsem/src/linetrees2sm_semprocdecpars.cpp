@@ -180,6 +180,7 @@ string getUnaryOp ( const Tree<LVU>& tr ) {
 //if( FEATCONFIG & 16 ) return 'N';
   //cerr << tr << endl;
   if( string::npos != L(tr.front()).find("-lV") ) return "V";
+  if( string::npos != L(tr.front()).find("-lQ") ) return "O";
   N n =  T(L(tr).c_str()).getLastNonlocal();
   if( n == N_NONE ) return "";
   if( (tr.front().size()==0 || tr.front().front().size()==0) && n == N("-rN") ) return "0";

@@ -161,8 +161,8 @@ endef
 %.hrf.itemmeasures: %.t.itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py
 	python $(word 2, $^) $(word 1, $^) > $@
 
-%.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py $$(word 1, $$(subst ., , %)).glove.linemeasures
-	cat $(word 1, $^) | python $(word 2, $^) | paste -d' ' - <(cut -d' ' -f 2- $(word 3, $^)) > $@
+%.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py
+	cat $(word 1, $^) | python $(word 2, $^) > $@
 
 .PRECIOUS: %.hrf.core.evmeasures
 %.hrf.core.evmeasures : %.hrf.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
@@ -177,6 +177,9 @@ $(RT-SCRIPTS)/merge_tables.py
 %.bysent.core.evmeasures : %.bysent.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
 	cat $< | python $(word 3, $^) $< $(word 2, $^) sentid > $@
+
+%.nm1.evmeasures: %.evmeasures $(FMRI-SCRIPTS)/average_nm1.py
+	cat $< | python $(word 2, $^) - > $@
 
 %.corr.txt: %.evmeasures $(FMRI-SCRIPTS)/corrAnalysis.r
 	cat $(word 1, $^) | $(word 2, $^) > $@

@@ -65,6 +65,9 @@ printSignifSummary <- function(mainName, mainEffect, basemodel, testmodel, signi
         cat(paste0('MSE loss improvement over baseline model (', permutation_test_data, ' set): ', base_diff, '\n'))
     }
     cat(paste0('p value: ', signif), '\n')
+    cat(paste0('Baseline loglik: ', logLik(basemodel), '\n'))
+    cat(paste0('Full loglik: ', logLik(testmodel), '\n'))
+    cat(paste0('Log likelihood ratio: ', logLik(testmodel)-logLik(basemodel), '\n'))
     cat(paste0('Relative gradient (baseline): ',  max(abs(with(basemodel@optinfo$derivs,solve(Hessian,gradient)))), '\n'))
     convWarnBase <- is.null(basemodel@optinfo$conv$lme4$messages)
     cat(paste0('Converged (baseline): ', as.character(convWarnBase), '\n'))

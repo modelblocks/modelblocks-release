@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-options(width=200) 
+options(width=200,digits=7)
 
 ########################################################
 #
@@ -19,6 +19,7 @@ options(width=200)
 # Import packages
 # Relative path code from Suppressingfire on StackExchange
 initial.options <- commandArgs(trailingOnly = FALSE)
+print(initial.options)
 file.arg.name <- "--file="
 script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
 script.basename <- dirname(script.name)
@@ -39,14 +40,18 @@ options('warn'=1) #report non-convergences, etc
 opts <- processLMEArgs()
 params <- opts$options
 input <- opts$args[1] # positional arg, input file specification
+input <- file(input, open='rt', raw=TRUE)
 output <- opts$args[2] # positional arg, output file specification
 
 cat('Regression Modeling Log\n')
 cat('=======================\n\n')
 
 smartPrint('Reading data from file')
-data <- read.table(input, header=TRUE, quote='', comment.char='')
-data <- computeSplitIDs(data, params$splitcols)
+data <- read.table(input, header=TRUE, sep=' ', quote='', comment.char='')
+close(input)
+if (!params$entire) {
+    data <- computeSplitIDs(data, params$splitcols)
+}
 data <- cleanupData(data, params$filterfiles, params$filterlines, params$filtersents, params$filterscreens, params$filterpunc, params$restrdomain, params$upperbound, params$lowerbound, params$mincorrect)
 data <- recastEffects(data, params$splitcols, params$indicatorlevel, params$groupingfactor)
 data_full <- data
@@ -111,7 +116,7 @@ fit <- fitModel(data, output, params$bformfile, params$fitmode,
                      params$logmain, params$logdepvar, params$lambda,
                      params$addEffects, params$extraEffects, params$ablEffects,
                      params$groupingfactor, params$indicatorlevel, params$crossfactor,
-                     params$interact, params$corpus)
+                     params$interact, params$corpus, params$suppress_nlminb)
 
 if (fit$fitmode != 'bme') {
     m = fit$m

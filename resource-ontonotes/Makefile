@@ -47,6 +47,7 @@
 #
 ################################################################################
 
+
 ifndef MAKECONFIG
 CONFIG := $(CONFIGDIR)/user-ontonotes-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
@@ -74,7 +75,7 @@ endif
 
 
 %/user-ontonotes-directory.txt: | %   
-	echo '/home/corpora/original/various/ontonotes' > $@
+	echo '/home/corpora/original/english' > $@
 
 ################################################################################
 #
@@ -89,16 +90,34 @@ endif
 #	cat $(wordlist 3, $(words $^), $^)  |  python $<  >  $@
 
 genmodel/ontowsj%.coref: $$(DEP-ONTONOTES) $(ONTONOTES-SCRIPTS)/coref2shortcoref.pl $(CONFIGDIR)/user-ontonotes-directory.txt \
-$(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$* \
-$$(sort $$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*/*.coref))  |  genmodel
+$(ONTONOTESDIR)/ontonotes5/data/files/data/english/annotations/nw/wsj/$$* \
+$$(sort $$(wildcard $(ONTONOTESDIR)/ontonotes5/data/files/data/english/annotations/nw/wsj/$$*/*.coref))  |  genmodel
 	cat $(wordlist 4, $(words $^), $^)  |  perl -p  $<  >  $@
 
+# Currently fixed directory to /home/corpora/original/english/ontonotes5
+genmodel/ontowsj%.name: $$(DEP-ONTONOTES) $(ONTONOTES-SCRIPTS)/name2shortname.pl $(CONFIGDIR)/user-ontonotes-directory.txt \
+$(ONTONOTESDIR)/ontonotes5/data/files/data/english/annotations/nw/wsj/$$* \
+$$(sort $$(wildcard $(ONTONOTESDIR)/ontonotes5/data/files/data/english/annotations/nw/wsj/$$*/*.name))  |  genmodel
+	cat $(wordlist 4, $(words $^), $^)  |  perl -p  $<  >  $@
+
+# Currently fixed to concatenate .parse files that have corresponding .name files instead of .coref files
+# Change target from ontowsj -> namewsj
 genmodel/ontowsj%.editabletrees: $$(DEP-ONTONOTES) $(CONFIGDIR)/user-ontonotes-directory.txt \
-$(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$* $(ONTONOTES-SCRIPTS)/addArticleDelims.py  \
-$$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/ontonotes-4.0/data/files/data/english/annotations/nw/wsj/$$*/*.coref)))  |  genmodel 
+$(ONTONOTESDIR)/ontonotes5/data/files/data/english/annotations/nw/wsj/$$* $(ONTONOTES-SCRIPTS)/addArticleDelims.py  \
+$$(sort $$(subst .name,.parse,$$(wildcard $(ONTONOTESDIR)/ontonotes5/data/files/data/english/annotations/nw/wsj/$$*/*.name)))  |  genmodel
+	tail -n +1 $(wordlist 4, $(words $^), $^)  |  python $(word 3,$^)  >  $@
+
+genmodel/corontowsj%.editabletrees: $$(DEP-ONTONOTES) $(CONFIGDIR)/user-ontonotes-directory.txt \
+$(ONTONOTESDIR)/ontonotes5/data/files/data/english/annotations/nw/wsj/$$* $(ONTONOTES-SCRIPTS)/addArticleDelims.py  \
+$$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/ontonotes5/data/files/data/english/annotations/nw/wsj/$$*/*.coref)))  |  genmodel
 	tail -n +1 $(wordlist 4, $(words $^), $^)  |  python $(word 3,$^)  >  $@
 
 %.linked.linetrees:  $(ONTONOTES-SCRIPTS)/coref2linkedlinetrees.py  $$(dir %)$$(word 1,$$(subst ., ,$$*)).coref  %.linetrees
+	#cat $(word 2,$^)  |  python $(word 1,$^)  $(word 3,$^)  >  $@
+	python $(word 1,$^)  $(word 3,$^)  $(word 2,$^)  >  $@
+
+# editing...
+%.ner.linetrees:  $(ONTONOTES-SCRIPTS)/name2nerlinetrees.py  $$(dir %)$$(word 1,$$(subst ., ,$$*)).name  %.linetrees
 	#cat $(word 2,$^)  |  python $(word 1,$^)  $(word 3,$^)  >  $@
 	python $(word 1,$^)  $(word 3,$^)  $(word 2,$^)  >  $@
 

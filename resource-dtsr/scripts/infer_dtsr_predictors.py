@@ -16,8 +16,8 @@ if 'split_ids' in config['data']:
 for m in [x for x in config if x.startswith('model_DTSR')]:
     formula = Formula(config[m]['formula'])
     cols.append(formula.dv_term.id)
-    for t in formula.t.terminals():
-        cols.append(t.impulse.id)
+    for impulse in formula.t.impulses():
+        cols.append(impulse.id)
 
 cols = sorted(list(set(cols)))
 print(' '.join(cols))

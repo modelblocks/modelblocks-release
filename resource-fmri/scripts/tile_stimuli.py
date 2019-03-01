@@ -11,7 +11,13 @@ args = argparser.parse_args()
 
 stimuli = pd.read_csv(args.stimuli, sep=' ')
 responses = pd.read_csv(args.responses, sep=' ')
-subj_doc_pairs = responses[['subject', 'docid']].drop_duplicates()
+id_cols = ['subject', 'docid']
+melted = False
+if 'fROI' in responses.columns:
+    id_cols.append('fROI')
+    melted = True
+ids = responses[id_cols]
+subj_doc_pairs = ids.loc[(ids.shift() != ids).any(axis=1)]
 
 out = []
 
@@ -20,6 +26,9 @@ for i in range(len(subj_doc_pairs)):
     docid = subj_doc_pairs.docid.iloc[i]
     stimuli_cur = stimuli[stimuli.docid == docid]
     stimuli_cur['subject'] = subject
+    if melted:
+        fROI = subj_doc_pairs.fROI.iloc[i]
+        stimuli_cur['fROI'] = fROI
     out.append(stimuli_cur)
 
 out = pd.concat(out, axis=0)

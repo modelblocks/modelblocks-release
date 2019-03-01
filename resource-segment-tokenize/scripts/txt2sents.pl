@@ -1,6 +1,6 @@
 # break line at terminal punctuation mark (but not if next word is lower case)...
 ##s/([\.\!\?][\.\"\'\)]*) +(?![ a-z])/\1\n/g;
-s/([\.\!\?][\.\"\'\)]*) +(?=[\`\'\(\[]*[A-Z0-9])/\1\n/g;
+s/([\.\!\?][\.\"\'\)]*) +(?=[\`\'\"\(\[]*[A-Z0-9])/\1\n/g;
 
 # translate initial and final quotes...
 s/(?:\"|\'\')(?![ \t\n\.,!?])(?!\))/\`\`/g;

@@ -11,7 +11,7 @@ processLMEArgs <- function() {
     library(optparse)
     opt_list <- list(
         make_option(c('-b', '--bformfile'), type='character', default='../resource-rt/scripts/mem.lmeform', help='Path to LME formula specification file (<name>.lmeform'),
-        make_option(c('-a', '--abl'), type='character', default=NULL, help='Effect(s) to ablate, delimited by "+". Effects that are not already in the baseline specification will be ignored (to add new effects to the baseline formula in order to ablate them, use the -A (--all) option.'),
+        make_option(c('-a', '--abl'), type='character', default=NULL, help='Effect(s) to ablate, delimited by "+". Effects that are not already in the baseline specification will be added as a random slope.'),
         make_option(c('-A', '--all'), type='character', default=NULL, help='Effect(s) to add, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
         make_option(c('-x', '--extra'), type='character', default=NULL, help='Additional (non-main) effect(s) to add, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
         make_option(c('-c', '--corpus'), type='character', default=NULL, help='Name of corpus (for output labeling). If not specified, will try to infer from output filename.'),
@@ -42,12 +42,18 @@ processLMEArgs <- function() {
         make_option(c('-u', '--trainmse'), type='logical', action='store_true', default=FALSE, help='Generate error table for train partition.'),
         make_option(c('-v', '--devmse'), type='logical', action='store_true', default=FALSE, help='Generate error table for dev partition.'),
         make_option(c('-w', '--testmse'), type='logical', action='store_true', default=FALSE, help='Generate error table for test partition.'),
-        make_option(c('-T', '--totable'), type='logical', action='store_true', default=FALSE, help="Preprocess data and output table only (do not regress).")
+        make_option(c('-T', '--totable'), type='logical', action='store_true', default=FALSE, help="Preprocess data and output table only (do not regress)."),
+        make_option(c('--seed'), type='numeric', default=NULL, help='Set random seed.'),
+        make_option(c('--suppress_nlminb'), type='logical', action='store_true', default=FALSE, help='If BOBYQA fails, do not attempt to use NLMINB.')
     )
     opt_parser <- OptionParser(option_list=opt_list)
     opts <- parse_args(opt_parser, positional_arguments=2)
     params <- opts$options
 
+    if (!is.null(params$seed)) {
+        set.seed(params$seed)
+    }
+    
     if (is.null(params$corpus)) {
         filename = strsplit(opts$args[2], '/', fixed=T)[[1]]
         corpus = strsplit(filename[length(filename)], '.', fixed=T)[[1]][1]
@@ -517,7 +523,7 @@ minRelGrad <- function(reg1, reg2) {
 }
 
 # Fit a model formula with bobyqa, try again with nlminb on convergence failure
-regressLinearModel <- function(dataset, form) {
+regressLinearModel <- function(dataset, form, params, suppress_nlminb=FALSE) {
     library(optimx)
     library(lme4)
     bobyqa <- lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=50000))
@@ -531,8 +537,9 @@ regressLinearModel <- function(dataset, form) {
     smartPrint('SUMMARY:')
     printSummary(m)
     convWarn <- m@optinfo$conv$lme4$messages
+    convWarnN <- NULL
     
-    if (!is.null(convWarn)) {
+    if (!is.null(convWarn) && suppress_nlminb) {
         m1 <- m
         smartPrint('Fitting linear mixed-effects model with nlminb')
         smartPrint(paste(' ', date()))
@@ -687,7 +694,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
                    logmain=FALSE, logdepvar=FALSE, lambda=NULL,
                    addEffects=NULL, extraEffects=NULL, ablEffects=NULL, groupingfactor=NULL,
                    indicatorlevel=NULL, crossfactor=NULL, interact=TRUE,
-                   corpusname='corpus') {
+                   corpusname='corpus',suppress_nlminb=FALSE) {
    
     if (fitmode == 'lm') {
         bform <- processForm(baseFormula(bformfile, logdepvar, lambda),
@@ -722,7 +729,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
     } else if (fitmode=='lm') {
         outputModel <- regressSimpleLinearModel(dataset, bform)
     } else {
-        outputModel <- regressLinearModel(dataset, bform)
+        outputModel <- regressLinearModel(dataset, bform, suppress_nlminb=suppress_nlminb)
     }
     if (params$boxcox) {
         mixed = fitmode %in% c('lme', 'bme')
@@ -735,6 +742,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         y_mu = NULL 
     } 
     fitOutput <- list(
+        f = bform,
         fitmode = fitmode,
         abl = ablEffects,
         ablEffects = processEffects(ablEffects, data, logmain),
