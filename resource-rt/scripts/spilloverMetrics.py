@@ -51,14 +51,14 @@ for col in cols:
         for ix, col in enumerate(cols):
             i = spills[ix]
             s_name = col + 'S' + str(i)
-            if data[s_name].dtype == object:
+            if data[col].dtype == object:
                 data[s_name] = grouped[col].shift(i, fill_value='null')
             else:
                 data[s_name] = grouped[col].shift(i, fill_value=0)
     else:
         for i in range(1,args.n+1):
             s_name = col + 'S' + str(i)
-            if data[s_name].dtype == object:
+            if data[col].dtype == object:
                 data[s_name] = grouped[col].shift(i, fill_value='null')
             else:
                 data[s_name] = grouped[col].shift(i, fill_value=0)

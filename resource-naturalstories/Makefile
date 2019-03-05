@@ -139,7 +139,7 @@ $(CONFIGDIR)/user-naturalstories-directory.txt
 $(NATSTORDIR)/naturalstories_RTS/all_stories.tok $(CONFIGDIR)/user-naturalstories-directory.txt | %
 	cat $(word 3, $^) | sed 's/\t/ /g;s/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' | python $(word 2, $^) $(word 1, $^) > $@
  
-%/naturalstories.docids.itemmeasures: $$(DEP-NATSTORIES) %/naturalstories.lineitems $(NATSTORIES-SCRIPTS)/docids_by_item.py $(NATSTORDIR)/naturalstories_RTS/all_stories.tok
+%/naturalstories.itemmeasures: $$(DEP-NATSTORIES) %/naturalstories.lineitems $(NATSTORIES-SCRIPTS)/docids_by_item.py $(NATSTORDIR)/naturalstories_RTS/all_stories.tok
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) > $@
 
 %naturalstories.mfields.itemmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/all_stories.tok %naturalstories.lineitems \
