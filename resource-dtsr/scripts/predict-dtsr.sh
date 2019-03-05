@@ -14,7 +14,7 @@ config_path="$1_outdir/config.ini"
 pred_partition=$(get_base $2);
 pred_partition=$(get_suffix $pred_partition);
 pred_partition="${pred_partition/_part/}"
-pred_partition=$(echo $pred_partition | sed 's/fit/train/g' | sed 's/exploratory/dev/g' | sed 's/evaluation/dev/g')
+pred_partition=$(echo $pred_partition | sed 's/fit/train/g' | sed 's/expl/dev/g' | sed 's/held/text/g')
 
 dtsr_dir=$(cat ../config/user-dtsr-directory.txt)
 

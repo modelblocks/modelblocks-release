@@ -25,7 +25,10 @@ elif args.colspillpairs:
     spills = [int(x.split(',')[1]) for x in args.colspillpairs]
     colspillpairs = True
 elif args.cols:
-    cols = args.cols 
+    cols = args.cols
+    sys.stderr.write('%s' % cols)
+    if len(cols) == 1:
+        cols = cols[0].split('+')
 else:
     cols = []
 
@@ -48,15 +51,17 @@ for col in cols:
         for ix, col in enumerate(cols):
             i = spills[ix]
             s_name = col + 'S' + str(i)
-            data[s_name] = grouped[col].shift(i)
-            if data[s_name].dtype == object:
-                data[s_name].fillna('null', inplace=True)
+            if data[col].dtype == object:
+                data[s_name] = grouped[col].shift(i, fill_value='null')
+            else:
+                data[s_name] = grouped[col].shift(i, fill_value=0)
     else:
         for i in range(1,args.n+1):
             s_name = col + 'S' + str(i)
-            data[s_name] = grouped[col].shift(i)
-            if data[s_name].dtype == object:
-                data[s_name].fillna('null', inplace=True)
+            if data[col].dtype == object:
+                data[s_name] = grouped[col].shift(i, fill_value='null')
+            else:
+                data[s_name] = grouped[col].shift(i, fill_value=0)
 
 data.to_csv(sys.stdout, sep=' ', index=False, na_rep='nan')
             
