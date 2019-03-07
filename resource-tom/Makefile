@@ -91,7 +91,7 @@ endif
 #
 ################################################################################
 
-genmodel/tom.itemmeasures: $(DEP-TOM) $(TOMDIR)/tom.itemmeasures $(CONFIGDIR)/user-tom-directory.txt | genmodel
+%tom.itemmeasures: $$(DEP-TOM) $(TOMDIR)/tom.itemmeasures $(CONFIGDIR)/user-tom-directory.txt | %
 	cp $< $@
 
 genmodel/tom.lineitems: genmodel/tom.itemmeasures $(GENERAL-SCRIPTS)/itemmeasures2lineitems.py | genmodel
