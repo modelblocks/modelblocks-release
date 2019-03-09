@@ -67,10 +67,10 @@ DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 WILLIAMSDIR := $(shell cat $(CONFIG))
 ifeq (, $(firstword $(wildcard $(WILLIAMSDIR))))
-RESOURCE-NAME := The Grennan intracranial recordings corpus
+RESOURCE-NAME := The Williams intracranial recordings corpus
 define RESOURCE-DESCR =
 
-NAME: The Grennan intracranial recordings corpus
+NAME: The Williams intracranial recordings corpus
 MB POINTER FILE: config/user-williams-directory.txt
 AVAILABILITY: Unreleased
 DESCRIPTION: Materials used to stimulate neural responses to language in different conditions
@@ -91,7 +91,7 @@ endif
 #
 ################################################################################
 
-genmodel/williams.itemmeasures: $(DEP-WILLIAMS) $(WILLIAMSDIR)/williams.itemmeasures $(CONFIGDIR)/user-williams-directory.txt | genmodel
+%williams.itemmeasures: $$(DEP-WILLIAMS) $(WILLIAMSDIR)/williams.itemmeasures $(CONFIGDIR)/user-williams-directory.txt | %
 	cp $< $@
 
 genmodel/williams.lineitems: genmodel/williams.itemmeasures $(GENERAL-SCRIPTS)/itemmeasures2lineitems.py | genmodel
