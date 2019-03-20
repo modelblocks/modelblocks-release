@@ -76,7 +76,7 @@ AVAILABILITY: Unreleased
 DESCRIPTION: Materials used to stimulate neural responses to language in different conditions
 endef
 GRENNAN-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
-DEP-GRENNAN = $(error $(GRENNAN-ERROR))
+#DEP-GRENNAN = $(error $(GRENNAN-ERROR))
 endif
 endif
 

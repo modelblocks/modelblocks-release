@@ -373,52 +373,64 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
       //use list of pretrms as antecedents during training. don't use beamElements.
       //cout << "tDisc: " << tDisc << endl;
       //cout <<"antecedentCandidates.size(): " << antecedentCandidates.size() << endl;
-      for ( int i = tDisc; i > 0 ; i--) {
+      std::set<int> excludedIndices; //track indices to ignore for positive coreference chains.  that is, don't consider non most recent mentions as incorrect 
+      for ( int i = tDisc; i > 0 ; i--) { 
         //cout << "entered tDisc for loop" << endl;
-        Sign candidate;
-        int isCoref = 0;
-        //cout << "i: " << i << endl;
-        //cout << "tdisc: " << tDisc << endl;
-        //cout << "annot value: " << annot << endl;
-        if (i < tDisc) {
-          candidate = antecedentCandidates[i-1]; 
-          //cout << "using candidate: " << candidate << endl;
+        if (excludedIndices.find(i-1) != excludedIndices.end()) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs.
+          cerr << "encountered excluded index:" << i-1 << " skipping..." << endl;
+          continue; 
         }
         else {
-          candidate = Sign(KSet(K::kTop), "NONE", "/"); //null antecedent generated at first iteration, where i=tDisc. Sign consists of: kset, type (syncat), side (A/B)
-          //cout << "using empty Sign for candidate" << endl;
+          Sign candidate;
+          int isCoref = 0;
+          //cout << "i: " << i << endl;
+          //cout << "tdisc: " << tDisc << endl;
+          //cout << "annot value: " << annot << endl;
+          if (i < tDisc) {
+            candidate = antecedentCandidates[i-1]; //there are one fewer candidates than tDisc value.  e.g., second word only has one previous candidate.
+            //cout << "using candidate: " << candidate << endl;
+          }
+          else {
+            candidate = Sign(KSet(K::kTop), "NONE", "/"); //null antecedent generated at first iteration, where i=tDisc. Sign consists of: kset, type (syncat), side (A/B)
+            //cout << "using empty Sign for candidate" << endl;
+            
+            if (annot == "") isCoref = 1; //null antecedent is correct choice, "1" when no annotation TODO fix logic for filtering intra/inter?
+            //cout << "no annotation and setting true for coreference with null antecedent" << endl;
+          }
+          //cout << "candidate: " << candidate << endl;
+          //cout << "generated npreds: " << npreds << endl;
           
-          if (annot == "") isCoref = 1; //null antecedent is correct choice when no annotation TODO fix logic for filtering intra/inter?
-          //cout << "no annotation and setting true for coreference with null antecedent" << endl;
-        }
-        //cout << "candidate: " << candidate << endl;
-        //cout << "generated npreds: " << npreds << endl;
-        
-        if ((i-1 == annot2tdisc[annot]) and (annot != "")) {
-          //cout << "i-1: " << i-1 << endl;
-          //cout << "annot2tdisc[annot]: " << annot2tdisc[annot] << endl;
-          //cout << "found matching annotation, setting coref to true" << endl;
-          isCoref = 1;
-        }
+          //check for non-null coreference 
+          if ((i-1 == annot2tdisc[annot]) and (annot != "")) {
+            //cout << "i-1: " << i-1 << endl;
+            //cout << "annot2tdisc[annot]: " << annot2tdisc[annot] << endl;
+            isCoref = 1;
+            excludedIndices.insert(annot2tdisc[annot]); //add blocking index here once find true, annotated coref. e.g. word 10 is coref with word 5. add annot2tdisc[annot] (5) to list of excluded.
+            cerr << "found matching annotation, setting coref to true, adding index to excludedIndices..." << endl;
+            for (auto it=excludedIndices.begin(); it != excludedIndices.end(); ++it) 
+                      cerr << ' ' << *it;
+            cerr << endl;
+          }
 
-        bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
-        //DelimitedList<psX,NPredictor,psComma,psX> npreds;  
-        NPredictorSet nps;// = NPredictorSet( tDisc - i, npreds); //generate NPredictorSet with distance feature - just use "i"
-        q.calcNPredictors(nps, candidate, corefON, tDisc - i); //populate npreds with kxk pairs for q vs. candidate q. 
-        nps.PrintOut();
-        //corefON feature 1 for i=tDisc, else 0. can't be incorporated into calcNPredictors since NPredictors are currently KxK feats - would like to change this later to add versatility to what can predict coref
-        cout << " : " << isCoref << endl; //i-1 because that's candidate index 
-        //needed to confirm linked was at end of target
-        /*
-        if (annot != "") {
-          cout << "annot: " << annot << endl; 
-          cout << "anot2tdisc[annot]: " << annot2tdisc[annot] << endl;
-          cout << "i: " << i << endl;
-          cout << "tdisc: " << tDisc << endl;
-          cout << "size of antecedent candidates: " << antecedentCandidates.size() << endl;
-        }
-        */
-      }
+          bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
+          //DelimitedList<psX,NPredictor,psComma,psX> npreds;  
+          NPredictorSet nps;// = NPredictorSet( tDisc - i, npreds); //generate NPredictorSet with distance feature - just use "i"
+          q.calcNPredictors(nps, candidate, corefON, tDisc - i); //populate npreds with kxk pairs for q vs. candidate q. 
+          nps.PrintOut();
+          //corefON feature 1 for i=tDisc, else 0. can't be incorporated into calcNPredictors since NPredictors are currently KxK feats - would like to change this later to add versatility to what can predict coref
+          cout << " : " << isCoref << endl; //i-1 because that's candidate index 
+          //needed to confirm linked was at end of target
+          /*
+          if (annot != "") {
+            cout << "annot: " << annot << endl; 
+            cout << "anot2tdisc[annot]: " << annot2tdisc[annot] << endl;
+            cout << "i: " << i << endl;
+            cout << "tdisc: " << tDisc << endl;
+            cout << "size of antecedent candidates: " << antecedentCandidates.size() << endl;
+          }
+          */
+        } //single candidate output
+      } //all previous antecedent candidates output
 
       arma::vec& vF = mvfrv[ pair<vector<FPredictor>,FResponse>( vector<FPredictor>( lfp.begin(), lfp.end() ), FResponse(f,e.c_str(),k) ) ];
       arma::mat& mP = mpppmP[ pair<PPredictor,T>(q.calcPretrmTypeCondition(f,e.c_str(),k),aPretrm.getType()) ];
