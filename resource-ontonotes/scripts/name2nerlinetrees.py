@@ -64,6 +64,7 @@ for line in namefile: #name file passed as argument
     # print (toknum)
     if ('-d','') in optlist:
       print '|' + token + '|' + str(toknum) + '|'
+    # currently only uses PERSON and ORGANIZATION
     for necat in re.findall('<ENAMEXTYPE="(PERSON)">', token):
     #for necat in re.findall('<ENAMEXTYPE="([A-Z_]+)">', token):
       RefStack.append(toknum)
