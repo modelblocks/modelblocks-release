@@ -432,6 +432,9 @@ endef
 #%.core-itemmeasures: $$(patsubst $$(pc),$$(word 1,$$(subst ., ,%)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,%)),$$(subst ., ,%))) 
 #	paste $^  >  $@
 
+%.delim.lineitems: %.itemmeasures $(RT-SCRIPTS)/itemmeasures2delimlineitems.py
+	cat $< | python $(word 2, $^) > $@
+
 ## TO SPEC
 .PRECIOUS: %.core-evmeasures
 %.core-evmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py

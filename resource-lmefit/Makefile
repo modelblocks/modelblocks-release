@@ -80,7 +80,7 @@ $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
 $(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	cp $< $@
 
-bin/signif-lrt: $(LMEFIT-SCRIPTS)/signif-lrt.sh $(LMEFIT-SCRIPTS)/infer_lrt_modelnames.py \
+bin/signif-lrt: $(LMEFIT-SCRIPTS)/signif-lrt.sh $(LMEFIT-SCRIPTS)/run_lrt.py \
 $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
 $(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	cp $< $@
