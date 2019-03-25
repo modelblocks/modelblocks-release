@@ -60,30 +60,30 @@
 ################################################################################
 
 ifndef MAKECONFIG
-CONFIG := $(CONFIGDIR)/user-grennan-directory.txt
+CONFIG := $(CONFIGDIR)/user-williams-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
 $(info $(call CONFIGWARN,$(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
-GRENNANDIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(GRENNANDIR))))
-RESOURCE-NAME := The Grennan intracranial recordings corpus
+WILLIAMSDIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(WILLIAMSDIR))))
+RESOURCE-NAME := The Williams intracranial recordings corpus
 define RESOURCE-DESCR =
 
-NAME: The Grennan intracranial recordings corpus
-MB POINTER FILE: config/user-grennan-directory.txt
+NAME: The Williams intracranial recordings corpus
+MB POINTER FILE: config/user-williams-directory.txt
 AVAILABILITY: Unreleased
 DESCRIPTION: Materials used to stimulate neural responses to language in different conditions
 endef
-GRENNAN-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
-DEP-GRENNAN = $(error $(GRENNAN-ERROR))
+WILLIAMS-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-WILLIAMS = $(error $(WILLIAMS-ERROR))
 endif
 endif
 
 
 
-%/user-grennan-directory.txt: | %   
-	echo '/home/corpora/original/english/grennan' > $@
+%/user-williams-directory.txt: | %   
+	echo '/home/corpora/original/english/williams' > $@
 
 ################################################################################
 #
@@ -91,15 +91,15 @@ endif
 #
 ################################################################################
 
-genmodel/grennan.itemmeasures: $(DEP-GRENNAN) $(GRENNANDIR)/grennan.itemmeasures $(CONFIGDIR)/user-grennan-directory.txt | genmodel
+%williams.itemmeasures: $$(DEP-WILLIAMS) $(WILLIAMSDIR)/williams.itemmeasures $(CONFIGDIR)/user-williams-directory.txt | %
 	cp $< $@
 
-genmodel/grennan.lineitems: genmodel/grennan.itemmeasures $(GENERAL-SCRIPTS)/itemmeasures2lineitems.py | genmodel
+genmodel/williams.lineitems: genmodel/williams.itemmeasures $(GENERAL-SCRIPTS)/itemmeasures2lineitems.py | genmodel
 	cat $< | python $(word 2, $^) > $@
 
-genmodel/grennan.linetoks: $(DEP-TOKENIZER) genmodel/grennan.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | genmodel
+genmodel/williams.linetoks: $(DEP-TOKENIZER) genmodel/williams.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | genmodel
 	cat $< | $(word 2, $^) | sed 's/ $$//g'> $@
 
-genmodel/grennan.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-GRENNAN)/srcmodel/grennan.stripped.linetrees genmodel/grennan.linetoks
+genmodel/williams.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-WILLIAMS)/srcmodel/williams.stripped.linetrees genmodel/williams.linetoks
 	python $^ > $@
 

@@ -96,7 +96,7 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
                       genmodel/$$(basename $$*).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.prdmeasures  \
                       genmodel/$$(basename $$*).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.resmeasures  \
                       scripts/$$(subst .,,$$(word 2,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form  |  bin  genmodel
-	$^ $(wordlist 3,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*))))) > $@
+	$^ $(wordlist 3,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*)))))  >  $@  2>  $@.log
 
 
 ## generaic predicted errors file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
@@ -104,7 +104,7 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
                      genmodel/$$(basename $$*).fitmodel  \
            	     genmodel/$$(basename $$(basename $$*))$$(suffix $$*)_part.prdmeasures \
            	     genmodel/$$(basename $$(basename $$*))$$(suffix $$*)_part.resmeasures  |  bin  genmodel
-	$^  >  $@
+	$^  >  $@  2>  $@.log
 
 
 # ## generic errors file: <data>.<baseline>_(<predr>_)*<regrmodel>.errors
@@ -115,6 +115,6 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 ## generic signif file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>.(<predr>_)*<signif-type>.signif
 %signif:  bin/signif-$$(lastword $$(subst _, ,$$(suffix $$*)))  \
 	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(basename $$(basename $$(basename $$*))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)  |  bin  genmodel
-	$^  >  $@
+	$^  >  $@  2>  $@.log
 
 
