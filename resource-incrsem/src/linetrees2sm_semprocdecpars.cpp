@@ -301,9 +301,9 @@ void setForwardMessages ( Tree<LVU>& tr, const arma::rowvec v ) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
+//TODO test 3 coref chain to confirm earlier mentions are excluded and their features are inherited
 //void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, int s=1, int d=0, E e='N', L l=L() ) {
-void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<string,int>& annot2tdisc, vector<Sign>& antecedentCandidates, int& tDisc, const int sentnum, map<string,KSet>& annot2kset, int& wordnum, bool failtree, int s=1, int d=0, string e="", L l=L() ) { 
+void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<string,int>& annot2tdisc, vector<Sign>& antecedentCandidates, int& tDisc, const int sentnum, map<string,KSet>& annot2kset, int& wordnum, bool failtree, std::set<int>& excludedIndices, int s=1, int d=0, string e="", L l=L() ) { 
   static F          f;
   static string     eF;
   static Sign       aPretrm;
@@ -373,7 +373,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
       //use list of pretrms as antecedents during training. don't use beamElements.
       //cout << "tDisc: " << tDisc << endl;
       //cout <<"antecedentCandidates.size(): " << antecedentCandidates.size() << endl;
-      std::set<int> excludedIndices; //track indices to ignore for positive coreference chains.  that is, don't consider non most recent mentions as incorrect 
+      
       for ( int i = tDisc; i > 0 ; i--) { 
         //cout << "entered tDisc for loop" << endl;
         if (excludedIndices.find(i-1) != excludedIndices.end()) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs.
@@ -449,7 +449,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
 
   // At unary identity nonpreterminal...
   else if ( tr.size()==1 and getType(tr)==getType(tr.front()) ) {
-    calcContext( tr.front(), D, U, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, s, d, e, l );
+    calcContext( tr.front(), D, U, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, s, d, e, l );
   }
 
   // At unary nonpreterminal...
@@ -457,7 +457,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     //// cerr<<"#U"<<getType(tr)<<" "<<getType(tr.front())<<endl;
     //e = ( e!='N' ) ? e : getUnaryOp ( tr );
     e = e + getUnaryOp( tr );
-    calcContext ( tr.front(), D, (getType(tr)==getType(tr.front())) ? U : U * getG(getType(tr),getType(tr.front()),"-") * arma::kron(mIdent,vOnes), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, s, d, e, l );
+    calcContext ( tr.front(), D, (getType(tr)==getType(tr.front())) ? U : U * getG(getType(tr),getType(tr.front()),"-") * arma::kron(mIdent,vOnes), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, s, d, e, l );
 //cout<<"unary at "<<L(tr)<<endl<<mtttmG[trip<T,T,T>(getType(tr),getType(tr.front()),"-")]<<endl;
   }
 
@@ -466,13 +466,13 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     //// cerr<<"#B "<<getType(tr)<<" "<<getType(tr.front())<<" "<<getType(tr.back())<<endl;
 
     if (failtree) {
-      calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, 0, d+s );
-      calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, 1, d );
+      calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 0, d+s );
+      calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 1, d );
       return;
     }
 
     // Traverse left child...
-    calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, 0, d+s );
+    calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 0, d+s );
 
     J j          = s;
     LeftChildSign aLchild ( q, f, eF.c_str(), aPretrm );
@@ -498,7 +498,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     q = StoreState ( q, f, j, eF.c_str(), e.c_str(), oL, oR, getType(l), getType(tr.back()), aPretrm, aLchild );
 
     // Traverse right child...
-    calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, 1, d );
+    calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 1, d );
 //    calcContext ( tr.back(), arma::diagmat( tr.v() * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( vOnes /*tr.front().u()*/, mIdent ) ), 1, d );
 
     arma::mat& mJ = mvjrm [ pair<vector<JPredictor>,JResponse>( vector<JPredictor>( ljp.begin(), ljp.end() ), JResponse(j,e.c_str(),oL,oR) ) ];
@@ -566,6 +566,7 @@ int main ( int nArgs, char* argv[] ) {
   int tDisc = 0; //increments on word in discourse/article
   vector<Sign> antecedentCandidates; 
   map<string,int> annot2tdisc;
+  std::set<int> excludedIndices; //init indices of positive coreference to exclude.  prevents negative examples in training data when they're really positive coreference.
   while ( cin && EOF!=cin.peek() ) {
     linenum++;
     discourselinenum++;
@@ -583,6 +584,7 @@ int main ( int nArgs, char* argv[] ) {
         tDisc=0;
         antecedentCandidates.clear();
         annot2tdisc.clear();
+        excludedIndices.clear();      
       } 
       else {
         setBackwardMessages( t );
@@ -591,7 +593,7 @@ int main ( int nArgs, char* argv[] ) {
         bool failtree = (L(t.front()) == "FAIL") ? true : false;
         //cerr << "t.front: " << t.front() << "L(t.front()): " << L(t.front()) << endl;
         //if (failtree == true) { cerr << "found failtree: " << t << endl; }
-        if( t.front().size() > 0 ) calcContext( t, arma::diagmat(vFirstHot), mIdent, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, failtree);
+        if( t.front().size() > 0 ) calcContext( t, arma::diagmat(vFirstHot), mIdent, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, failtree, excludedIndices);
       }
     }
     else {cin.get();}
