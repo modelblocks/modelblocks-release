@@ -65,10 +65,18 @@ class LVU : public trip<L,arma::rowvec,arma::vec> {
   arma::vec&           u ( )       { return third(); }
   L                    getL ( )    { return removeLink(); } //return unlinked label
   operator             L ( )       { return removeLink(); } 
-  L              getLink ( ) const { if (string::npos != first().find("-n")) {
+  L              getLink ( ) const { cerr << "looking for -n in string: " << first() << endl;
+                                     if (string::npos != first().find("-n")) {
+                                       cerr << "found -n!" << endl;
                                        std::smatch sm;
-                                       std::regex re ("(.*)-n([0-9]+).*"); //get consecutive numbers after a "-n"
-                                       if (std::regex_search(first(), sm, re) && sm.size() > 2) { return(sm.str(2)); }
+                                       std::regex re("(.*)-n([0-9]+).*"); //get consecutive numbers after a "-n"
+                                       if (std::regex_search(first(), sm, re) && sm.size() > 2) { 
+                                         cerr << "regex_search(): " << std::regex_search(first(), sm,re) << endl;
+                                         cerr << "sm.size(): " << sm.size() << endl;
+                                         return(sm.str(2)); 
+                                       }
+                                       cerr << "sm.size(): " << sm.size() << endl;
+                                       cerr << "regex_search(): " << std::regex_search(first(), sm,re) << endl;
                                      }
                                      return(""); } 
   // Input / output methods  ---  NOTE: only reads and writes label, not vectors...
@@ -314,6 +322,8 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
 
   // At unary preterminal...
   if ( tr.size()==1 && tr.front().size()==0 ) {
+    wordnum++; //increment word index at terminal (sentence-level) one-indexing
+    tDisc++; //increment discourse-level word index. one-indexing
     //// cerr<<"#T "<<getType(tr)<<" "<<L(tr.front())<<endl;
     string annot = tr.getLink();
     f               = 1 - s;
@@ -336,7 +346,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     const KSet& ksAnt = validIntra == true ? annot2kset[annot] : KSet(K::kTop);
     //bool nullAnt = (ksAnt == KSet(K::kTop)) ? true : false;
     bool nullAnt = (ksAnt.empty()) ? true : false;
-    //cerr << "got annot: " << annot << " ksAnt: " << ksAnt << " nullAnt: " << nullAnt << endl;
+    cerr << "got annot: " << annot << " ksAnt: " << ksAnt << " nullAnt: " << nullAnt << endl;
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
     //if (currentloc == "526") {
     //  cout << "current location is 526" << endl;
@@ -353,10 +363,8 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     for (auto& ant : ksAnt) {
       if (ksAnt != ksTop) aPretrm.first().emplace_back(ant); //add antecedent ks to aPretrm
     }
+    cerr << "adding tDisc: " << tDisc << " as annot2tDisc for currentloc: " << currentloc << endl;
     annot2tdisc[currentloc] = tDisc; //map current sent,word index to discourse word counter
-    wordnum++; //increment word index at terminal (sentence-level)
-    tDisc++; //increment discourse-level word index
-
     if (not failtree) {
       // Print preterminal / fork-phase predictors...
       DelimitedList<psX,FPredictor,psComma,psX> lfp;  
@@ -376,8 +384,8 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
       
       for ( int i = tDisc; i > 0 ; i--) { 
         //cout << "entered tDisc for loop" << endl;
-        if (excludedIndices.find(i-1) != excludedIndices.end()) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs.
-          cerr << "encountered excluded index:" << i-1 << " skipping..." << endl;
+        if (excludedIndices.find(i) != excludedIndices.end()) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs.
+          cerr << "encountered excluded index i:" << i << " skipping..." << endl;
           continue; 
         }
         else {
@@ -401,9 +409,9 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
           //cout << "generated npreds: " << npreds << endl;
           
           //check for non-null coreference 
-          if ((i-1 == annot2tdisc[annot]) and (annot != "")) {
-            //cout << "i-1: " << i-1 << endl;
-            //cout << "annot2tdisc[annot]: " << annot2tdisc[annot] << endl;
+          cerr << "checking if annot: " << annot << " annot2tdisc[annot] " << annot2tdisc[annot] << " equals i: " << i << endl;
+          if ((i == annot2tdisc[annot]) and (annot != "")) {
+            //cerr << "i: " << i << " annot2tdisc[annot]: " << annot2tdisc[annot] << endl;
             isCoref = 1;
             excludedIndices.insert(annot2tdisc[annot]); //add blocking index here once find true, annotated coref. e.g. word 10 is coref with word 5. add annot2tdisc[annot] (5) to list of excluded.
             cerr << "found matching annotation, setting coref to true, adding index to excludedIndices..." << endl;
@@ -589,7 +597,7 @@ int main ( int nArgs, char* argv[] ) {
       else {
         setBackwardMessages( t );
         setForwardMessages( t, vFirstHot.t() );
-        int wordnum = 1;
+        int wordnum = 0;
         bool failtree = (L(t.front()) == "FAIL") ? true : false;
         //cerr << "t.front: " << t.front() << "L(t.front()): " << L(t.front()) << endl;
         //if (failtree == true) { cerr << "found failtree: " << t << endl; }
