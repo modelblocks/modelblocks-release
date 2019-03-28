@@ -65,18 +65,12 @@ class LVU : public trip<L,arma::rowvec,arma::vec> {
   arma::vec&           u ( )       { return third(); }
   L                    getL ( )    { return removeLink(); } //return unlinked label
   operator             L ( )       { return removeLink(); } 
-  L              getLink ( ) const { cerr << "looking for -n in string: " << first() << endl;
-                                     if (string::npos != first().find("-n")) {
-                                       cerr << "found -n!" << endl;
+  L              getLink ( ) const { if (string::npos != first().find("-n")) {
                                        std::smatch sm;
                                        std::regex re("(.*)-n([0-9]+).*"); //get consecutive numbers after a "-n"
                                        if (std::regex_search(first(), sm, re) && sm.size() > 2) { 
-                                         cerr << "regex_search(): " << std::regex_search(first(), sm,re) << endl;
-                                         cerr << "sm.size(): " << sm.size() << endl;
                                          return(sm.str(2)); 
                                        }
-                                       cerr << "sm.size(): " << sm.size() << endl;
-                                       cerr << "regex_search(): " << std::regex_search(first(), sm,re) << endl;
                                      }
                                      return(""); } 
   // Input / output methods  ---  NOTE: only reads and writes label, not vectors...
@@ -309,8 +303,6 @@ void setForwardMessages ( Tree<LVU>& tr, const arma::rowvec v ) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-//TODO test 3 coref chain to confirm earlier mentions are excluded and their features are inherited
-//void calcContext ( const Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, int s=1, int d=0, E e='N', L l=L() ) {
 void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<string,int>& annot2tdisc, vector<Sign>& antecedentCandidates, int& tDisc, const int sentnum, map<string,KSet>& annot2kset, int& wordnum, bool failtree, std::set<int>& excludedIndices, int s=1, int d=0, string e="", L l=L() ) { 
   static F          f;
   static string     eF;
@@ -324,7 +316,6 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
   if ( tr.size()==1 && tr.front().size()==0 ) {
     wordnum++; //increment word index at terminal (sentence-level) one-indexing
     tDisc++; //increment discourse-level word index. one-indexing
-    //// cerr<<"#T "<<getType(tr)<<" "<<L(tr.front())<<endl;
     string annot = tr.getLink();
     f               = 1 - s;
 //    eF = e = ( e!='N' ) ? e : getUnaryOp ( tr );
@@ -334,32 +325,18 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     aPretrm         = (not failtree) ? Sign( k, getType(l), S_A ) : Sign() ;
     bool validIntra = false;
 
-    //cerr << "current sentnum: " << sentnum << endl;
-    //cerr << "annotation from tr.getLink(): " << annot << endl;
     std::string annotSentIdx = annot.substr(0,annot.size()-2); //get all but last two...
-    //cerr << "extracted annot sentnum: " << annotSentIdx << " from full annot: " << annot << endl;
-    //cerr << "value of validIntra before annot vs sentnum check: " << validIntra << endl;
     if (annotSentIdx == std::to_string(sentnum)) validIntra = true;
-    //cerr << "value of validIntra after annot vs sentnum check: " << validIntra << endl;
     if (INTERSENTENTIAL == true) validIntra = true;
-    //cerr << "value of validIntra after global INTERSENTENTIAL check: " << validIntra << endl;
     const KSet& ksAnt = validIntra == true ? annot2kset[annot] : KSet(K::kTop);
-    //bool nullAnt = (ksAnt == KSet(K::kTop)) ? true : false;
     bool nullAnt = (ksAnt.empty()) ? true : false;
-    cerr << "got annot: " << annot << " ksAnt: " << ksAnt << " nullAnt: " << nullAnt << endl;
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
-    //if (currentloc == "526") {
-    //  cout << "current location is 526" << endl;
-    //  cout << "current k is: " << k << endl;
-    //  cout << "current tdisc is : " << tDisc << endl;
-    //}
     if (annot != "")  {
       annot2kset[currentloc] = ksAnt;
       //cerr << "found antecedent " << ksAnt << " from link: " << annot << endl;
     }
     annot2kset[currentloc].push_back(k); //add current k 
     //cerr << "adding k " << k << " to annot2kset at loc: " << currentloc << endl;
-    //cerr << "current annot2kset: " << annot2kset << endl; //can't print annot2kset - check friend operator << override
     for (auto& ant : ksAnt) {
       if (ksAnt != ksTop) aPretrm.first().emplace_back(ant); //add antecedent ks to aPretrm
     }
@@ -378,12 +355,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
       cout << "note: P " << q.calcPretrmTypeCondition(f,e.c_str(),k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
       cout << "note: W " << e << " " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
 
-      //use list of pretrms as antecedents during training. don't use beamElements.
-      //cout << "tDisc: " << tDisc << endl;
-      //cout <<"antecedentCandidates.size(): " << antecedentCandidates.size() << endl;
-      
       for ( int i = tDisc; i > 0 ; i--) { 
-        //cout << "entered tDisc for loop" << endl;
         if (excludedIndices.find(i) != excludedIndices.end()) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs.
           cerr << "encountered excluded index i:" << i << " skipping..." << endl;
           continue; 
@@ -391,30 +363,19 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
         else {
           Sign candidate;
           int isCoref = 0;
-          //cout << "i: " << i << endl;
-          //cout << "tdisc: " << tDisc << endl;
-          //cout << "annot value: " << annot << endl;
           if (i < tDisc) {
             candidate = antecedentCandidates[i-1]; //there are one fewer candidates than tDisc value.  e.g., second word only has one previous candidate.
-            //cout << "using candidate: " << candidate << endl;
           }
           else {
             candidate = Sign(KSet(K::kTop), "NONE", "/"); //null antecedent generated at first iteration, where i=tDisc. Sign consists of: kset, type (syncat), side (A/B)
-            //cout << "using empty Sign for candidate" << endl;
             
             if (annot == "") isCoref = 1; //null antecedent is correct choice, "1" when no annotation TODO fix logic for filtering intra/inter?
-            //cout << "no annotation and setting true for coreference with null antecedent" << endl;
           }
-          //cout << "candidate: " << candidate << endl;
-          //cout << "generated npreds: " << npreds << endl;
           
           //check for non-null coreference 
-          cerr << "checking if annot: " << annot << " annot2tdisc[annot] " << annot2tdisc[annot] << " equals i: " << i << endl;
           if ((i == annot2tdisc[annot]) and (annot != "")) {
-            //cerr << "i: " << i << " annot2tdisc[annot]: " << annot2tdisc[annot] << endl;
             isCoref = 1;
             excludedIndices.insert(annot2tdisc[annot]); //add blocking index here once find true, annotated coref. e.g. word 10 is coref with word 5. add annot2tdisc[annot] (5) to list of excluded.
-            cerr << "found matching annotation, setting coref to true, adding index to excludedIndices..." << endl;
             for (auto it=excludedIndices.begin(); it != excludedIndices.end(); ++it) 
                       cerr << ' ' << *it;
             cerr << endl;
@@ -425,18 +386,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
           NPredictorSet nps;// = NPredictorSet( tDisc - i, npreds); //generate NPredictorSet with distance feature - just use "i"
           q.calcNPredictors(nps, candidate, corefON, tDisc - i); //populate npreds with kxk pairs for q vs. candidate q. 
           nps.PrintOut();
-          //corefON feature 1 for i=tDisc, else 0. can't be incorporated into calcNPredictors since NPredictors are currently KxK feats - would like to change this later to add versatility to what can predict coref
           cout << " : " << isCoref << endl; //i-1 because that's candidate index 
-          //needed to confirm linked was at end of target
-          /*
-          if (annot != "") {
-            cout << "annot: " << annot << endl; 
-            cout << "anot2tdisc[annot]: " << annot2tdisc[annot] << endl;
-            cout << "i: " << i << endl;
-            cout << "tdisc: " << tDisc << endl;
-            cout << "size of antecedent candidates: " << antecedentCandidates.size() << endl;
-          }
-          */
         } //single candidate output
       } //all previous antecedent candidates output
 
@@ -600,7 +550,6 @@ int main ( int nArgs, char* argv[] ) {
         int wordnum = 0;
         bool failtree = (L(t.front()) == "FAIL") ? true : false;
         //cerr << "t.front: " << t.front() << "L(t.front()): " << L(t.front()) << endl;
-        //if (failtree == true) { cerr << "found failtree: " << t << endl; }
         if( t.front().size() > 0 ) calcContext( t, arma::diagmat(vFirstHot), mIdent, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, failtree, excludedIndices);
       }
     }
