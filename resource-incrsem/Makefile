@@ -237,8 +237,10 @@ endef
 ## pull apart predictor/responses for training...
 %.nmlrdecpars:  %semprocdecpars
 	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
-%.fmlrdecpars:  %semprocdecpars
-	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
+#%.fmlrdecpars:  %semprocdecpars
+%.fmlrdecpars:  %semprocdecpars $(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py 
+	#cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
+	cat $(word 1, $^)  |  grep '^F'  |  sed 's/^. //' | python $(word 2, $^) >  $@
 %.jmlrdecpars:  %semprocdecpars
 	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
 %.pcptdecpars:  %semprocdecpars

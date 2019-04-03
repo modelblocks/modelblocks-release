@@ -357,7 +357,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
 
       for ( int i = tDisc; i > 0 ; i--) { 
         if (excludedIndices.find(i) != excludedIndices.end()) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs.
-          cerr << "encountered excluded index i:" << i << " skipping..." << endl;
+          //cerr << "encountered excluded index i:" << i << " skipping..." << endl;
           continue; 
         }
         else {

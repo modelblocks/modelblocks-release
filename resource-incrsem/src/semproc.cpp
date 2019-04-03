@@ -229,15 +229,15 @@ int main ( int nArgs, char* argv[] ) {
       if( not ( cin && EOF!=cin.peek() ) ) { mutexMLSList.unlock(); break; }
 
       uint currline = linenum; 
-      cerr << "Worker: " << numt << " attempting to emplace back of articles..." << endl;
+      //cerr << "Worker: " << numt << " attempting to emplace back of articles..." << endl;
       articles.emplace_back(); 
-      cerr << "Worker: " << numt << " attempting to assign sents as last article..." << endl;
+      //cerr << "Worker: " << numt << " attempting to assign sents as last article..." << endl;
       auto& sents = articles.back(); //a specific article becomes the thread's sents //returns reference
-      cerr << "Worker: " << numt << " attempting to emplace back of articleMLSs..." << endl;
+      //cerr << "Worker: " << numt << " attempting to emplace back of articleMLSs..." << endl;
       articleMLSs.emplace_back();
-      cerr << "Worker: " << numt << " attempting to assign MLSs as last articleMLS..." << endl;
+      //cerr << "Worker: " << numt << " attempting to assign MLSs as last articleMLS..." << endl;
       auto& MLSs = articleMLSs.back();
-      cerr << "Worker: " << numt << " finished initial assignments" << endl;
+      //cerr << "Worker: " << numt << " finished initial assignments" << endl;
 
       DelimitedList<psX,ObsWord,psSpace,psX> articleDelim; // !article should be consumed between sentence reads
       //loop over sentences in an article
@@ -249,9 +249,8 @@ int main ( int nArgs, char* argv[] ) {
         //uint currline = linenum++; //calculate this as looping through articlesents
         DelimitedList<psX,ObsWord,psSpace,psX> lwSent; // init input list for each iteration - otherwise cin just keeps appending to existing lwSent
         cin >> lwSent >> "\n";
-        cerr << "Worker: " << numt << " Reading sentence " << linenum << ": " << lwSent << " EOS" << endl;
+        //cerr << "Worker: " << numt << " Reading sentence " << linenum << ": " << lwSent << " EOS" << endl;
         sents.emplace_back( lwSent );
-        cerr << "Worker: " << numt << " successfully read sentence " << linenum << endl;
       }
       mutexMLSList.unlock();
 
@@ -272,75 +271,45 @@ int main ( int nArgs, char* argv[] ) {
 
         // Allocate space in beams to avoid reallocation...
         // Create initial beam element...
-        //beams[0].tryAdd( HiddState(), ProbBack<HiddState>() );
         //TODO see if resetting each sentences to use zero prob instead of last prob avoids underflow
         lbeWholeArticle.back().setProb() = 0.0;
         beams[0].tryAdd( lbeWholeArticle.back().getHidd(), lbeWholeArticle.back().getProbBack() );
-        //beams[0].tryAdd( lbeWholeArticle.back().getHidd(), 0 ); //nope, cant do int. maybe needs probback
-
-        //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " testing access to articles: " << articles.size() << " articles present" << endl;}
-        //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " testing access to sents: " << sents.size() << " sents found" << endl;}
-        //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " testing access to lwSent: " << lwSent << endl;}
-        //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " starting sentence loop..." << endl;}
 
         // For each word... 
         for ( auto& w_t : lwSent ) {
-          //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " beginning word loop with word: " << w_t << endl;}
-          //DelimitedList<psX,ObsWord,psSpace,psX> lwSent; // input list
           if ( numThreads == 1 ) cerr << " " << w_t;
           if ( VERBOSE ) cout << "WORD:" << w_t << endl;
 
           // Create beam for current time step...
           beams[++t].clear();
 
-          //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " just cleared beam..." << w_t << endl;}
           // For each hypothesized storestate at previous time step...
-          //uint i=0; for( auto& be_tdec1 : beams[t-1] ) {
-          
           for( const BeamElement<HiddState>& be_tdec1 : beams[t-1] ) { //beams[t-1] is a Beam<ProbBack,BeamElement>, so be_tdec1 is a beam item, which is a pair<ProbBack,BeamElement>. first.first is the prob in the probback, and second is the beamelement, which is a sextuple of <sign, f, e, k, j, q>
-            //         if( i++%numThreads==numt ){
-
             double            lgpr_tdec1 = be_tdec1.getProb(); // logprob of prev storestate
             const StoreState& q_tdec1    = be_tdec1.getHidd().sixth();  // prev storestate
-
-            if( VERBOSE>1 ) cout << "  from (" << be_tdec1.getHidd() << ")" << endl;
-
+            //if( VERBOSE>1 ) cout << "  from (" << be_tdec1.getHidd() << ")" << endl;
             const ProbBack<HiddState> pbDummy = ProbBack<HiddState>(0.0, be_tdec1); //dummy element for most recent timestep
             const HiddState hsDummy = HiddState(Sign(ksTop,T(),S()),F(),EVar(),K(),JResponse(),StoreState(),0 ); //dummy hidden state with kTop semantics 
             const BeamElement<HiddState> beDummy = BeamElement<HiddState>(pbDummy, hsDummy); //at timestep t, represents null antecedent 
-            //const ProbBack pbDummy = ProbBack(0.0, be_tdec1.first.second);
-            //const BeamElement<HiddState> biDummy( beDummy, pbDummy);
-            //if( VERBOSE>1 ) cerr << "bidummy second second: " << biDummy.second.second << endl;
             const BeamElement<HiddState>* pbeAnt = &beDummy;
-            //if( VERBOSE>1 ) cerr << "pbiAnt ptr to second second: " << pbiAnt->second.second << endl;
-            //if( VERBOSE>1 ) cerr << "in main(): timestep t: " << t << endl;
-            //
             //calculate denominator / normalizing constant over all antecedent timesteps
             double fnorm = 0.0; 
-            //for ( int tAnt = t; tAnt>0; tAnt--, pbiAnt=&beams[tAnt].get(pbiAnt->second.second) ) { 
             double ndenom = 0.0;
-            //for ( int tAnt = t; tAnt>((USE_COREF) ? 0 : t-1); tAnt--, pbeAnt = &pbeAnt->getBack()) { //denominator
 
-            //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " starting denom loop..." << w_t << endl;}
-            //for ( int tAnt = t; tAnt>0; tAnt--, pbeAnt = &pbeAnt->getBack()) { //denominator
-            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (t-tAnt<50); tAnt--, pbeAnt = &pbeAnt->getBack()) { //denominator
-              //if (VERBOSE>1) cerr << "*pbiAnt: " << *pbiAnt << endl;
-              //if (VERBOSE>1) cerr << "pbiAnt->first: " << pbiAnt->first << endl;
-              //if (VERBOSE>1) cerr << "pbiAnt->second.second: " << pbiAnt->second.second << endl;
-              //if (VERBOSE>1) cerr << "pbiAnt: " << pbiAnt << endl;
-              //const KSet ksAnt (pbiAnt->first.fourth());
+            vector<int> excludedIndices; //initialize blocking list
+
+            //denominator loop over candidate antecedents
+            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (t-tAnt<50); tAnt--, pbeAnt = &pbeAnt->getBack()) { 
+              if ( pbeAnt->getHidd().getI() != 0 ) {
+                excludedIndices.push_back(tAnt-pbeAnt->getHidd().getI()); //add excluded index if there's a non-null coref decision
+              }
+              if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
+                continue; //skip excluded indices
+              }
               const KSet& ksAnt = pbeAnt->getHidd().getPrtrm().getKSet(); 
-              //if (t < 2) { 
-                //cerr << "t: " << t << ", tAnt: " << tAnt << ", neq test: " << (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) << endl;
-                //cerr << "pbeAnt ptr: " << pbeAnt << endl;
-                //cerr << "pbeAnt->getHidd(): " << pbeAnt->getHidd() << endl;
-                //cerr << "considering ksAnt: " << ksAnt << endl;
-              //}
-              //{ lock_guard<mutex> guard( mutexMLSList ); cerr << "Worker: " << numt << " got ksAnt" << ksAnt << endl;}
               bool corefON = (tAnt==t) ? 0 : 1;
-              //DelimitedList<psX,NPredictor,psComma,psX> lnpredictors; 
               NPredictorSet nps;// = NPredictorSet ( t - tAnt, lnpredictors);
-              q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt); 
+              q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt); //these are NPredictors for a specific antecedent candidate at tAnt, and a current word at timestep t.
               arma::vec nlogresponses = nps.NLogResponses(matN);
               /*
               arma::vec nlogresponses = arma::zeros( matN.n_rows ); //rows are n outcomes 1 or 0 (coreferent or not)
@@ -351,7 +320,6 @@ int main ( int nArgs, char* argv[] ) {
               }
               //and nps cut above
               */
-             
               //arma::vec nresponses = arma::exp( nlogresponses );
               //double nnorm = arma::accu( nresponses );  // 0.0;                                           // join normalization term (denominator)
               ndenom += exp(nlogresponses(NResponse("1").toInt())-nlogresponses(NResponse("0").toInt()));
@@ -385,21 +353,18 @@ int main ( int nArgs, char* argv[] ) {
             //for ( int tAnt = t; tAnt>((USE_COREF) ? 0 : t-1); tAnt--, pbeAnt = &pbeAnt->getBack()) { //iterate over candidate antecedent ks, following trellis backpointers ej change for coref 
             //
             //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " starting numerator loop..." << w_t << endl;}
+            //numerator loop over candidate antecedents. specific choice.
             for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (t-tAnt<50); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers. 
-              //if( VERBOSE>1 ) cerr << "pbiAnt is biDummy: " << (pbiAnt == &biDummy) << endl;
-              //if( VERBOSE>1 ) cerr << "in main(): tAnt: " << tAnt << endl;
-              //if( VERBOSE>1 ) cerr << "in main(): beams[tAnt]: " << beams[tAnt] << endl;
-              //cerr << "in main(): beams[tAnt].get(pbiAnt->second.second): " << beams[tAnt].get(pbiAnt->second.second) << endl;
-
-              //if( VERBOSE>1 ) cerr << "before ksAnt init, pbiant: " << pbiAnt->second.second << endl;
+              //block indices as read from previous storestate's excludedIndices
+              if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
+                continue;
+              }
+              
               const KSet& ksAnt = pbeAnt->getHidd().getPrtrm().getKSet();
-              //if( VERBOSE>1 ) cerr << "ksAnt: " << ksAnt << endl;
 
               //Calculate antecedent N model predictors 
               bool corefON = (tAnt==t) ? 0 : 1;
-              //DelimitedList<psX,NPredictor,psComma,psX> lnpredictors; 
               NPredictorSet nps;// = NPredictorSet ( t - tAnt, lnpredictors);
-              //if ( VERBOSE>1 ) { for ( auto& npredr : lnpredictors ) { cout <<"   npredr:"<<npredr<<endl; } }
               q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt); //calcNPredictors takes list of npreds (reference) and candidate Sign (reference)
               arma::vec nlogresponses = nps.NLogResponses(matN);
               /* 

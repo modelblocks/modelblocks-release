@@ -1051,6 +1051,8 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
 
   static const Sign aTop;
   static const Sign aBot;
+  // storestate records antecedent choices, excluding previous indices to force most recent mentions to be considered. closer to entity tracking
+  std::vector<int> excludedIndices;
 
   StoreState ( ) : DelimitedVector<psX,Sign,psX,psX> ( ) { }
   StoreState ( const StoreState& qPrev, F f, J j, EVar evF, EVar evJ, O opL, O opR, T tA, T tB, const Sign& aPretrm, const LeftChildSign& aLchild ) {
@@ -1415,12 +1417,13 @@ class HiddState : public DelimitedSept<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAm
 public:
   HiddState ( )                                                                    : DelimitedSept<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Delimited<int>,psX>()             { }
   HiddState ( const Sign& a, F f, EVar e, K k, JResponse jr, const StoreState& q , int i=0 ) : DelimitedSept<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Delimited<int>,psX>(a,f,e,k,jr,q,i) { }
-  const Sign& getPrtrm ()     { return first(); }
-  F getF ()                   { return second(); }
-  EVar getForkE ()            { return third(); }
-  K getForkK ()               { return fourth(); }
-  const JResponse& getJResp() { return fifth(); }
+  const Sign& getPrtrm ()           { return first(); }
+  F getF ()                         { return second(); }
+  EVar getForkE ()                  { return third(); }
+  K getForkK ()                     { return fourth(); }
+  const JResponse& getJResp()       { return fifth(); }
   const StoreState& getStoreState() { return sixth(); }
+  const Delimited<int>& getI()      { return seventh(); }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
