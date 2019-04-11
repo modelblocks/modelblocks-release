@@ -93,7 +93,7 @@ arma::mat mFail;
 arma::mat mIdent;
 arma::vec vOnes;
 arma::vec vFirstHot;
-
+/*
 map<pair<vector<FPredictor>,FResponse>,arma::vec> mvfrv; //map pair to vec.  pair is (vector<FPredictor>, FResponse). arma::vec is latent scores across different latent versions of the same category. first.first is the list of predictors.  second is the arma:vec, first.second is the FResponse.
 map<pair<PPredictor,T>,arma::mat> mpppmP;
 map<quad<EVar,K,T,W>,arma::vec> mektwvW;
@@ -101,6 +101,7 @@ map<pair<vector<JPredictor>,JResponse>,arma::mat> mvjrm;
 map<pair<APredictor,T>,arma::mat> mapamA;
 map<pair<BPredictor,T>,arma::mat> mbpbmB;
 //map<vector<NPredictor>,bool> mvnb; //Antecedent N model, where NPredictors are usually pair<K,K>, but can be others
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -340,7 +341,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     for (auto& ant : ksAnt) {
       if (ksAnt != ksTop) aPretrm.first().emplace_back(ant); //add antecedent ks to aPretrm
     }
-    cerr << "adding tDisc: " << tDisc << " as annot2tDisc for currentloc: " << currentloc << endl;
+    //cerr << "adding tDisc: " << tDisc << " as annot2tDisc for currentloc: " << currentloc << endl;
     annot2tdisc[currentloc] = tDisc; //map current sent,word index to discourse word counter
     if (not failtree) {
       // Print preterminal / fork-phase predictors...
@@ -351,9 +352,9 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
       lfp.sort( );             // sort to shorten mlr input
       lfp.push_front( fpCat );
       cout<<"----"<<q<<endl;
-      cout << "note: F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e.c_str(),k) << endl;
-      cout << "note: P " << q.calcPretrmTypeCondition(f,e.c_str(),k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
-      cout << "note: W " << e << " " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
+      cout << "F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e.c_str(),k) << endl;
+      cout << "P " << q.calcPretrmTypeCondition(f,e.c_str(),k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
+      cout << "W " << e << " " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
 
       for ( int i = tDisc; i > 0 ; i--) { 
         if (excludedIndices.find(i) != excludedIndices.end()) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs.
@@ -376,26 +377,26 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
           if ((i == annot2tdisc[annot]) and (annot != "")) {
             isCoref = 1;
             excludedIndices.insert(annot2tdisc[annot]); //add blocking index here once find true, annotated coref. e.g. word 10 is coref with word 5. add annot2tdisc[annot] (5) to list of excluded.
-            for (auto it=excludedIndices.begin(); it != excludedIndices.end(); ++it) 
-                      cerr << ' ' << *it;
-            cerr << endl;
+            //for (auto it=excludedIndices.begin(); it != excludedIndices.end(); ++it)
+            //          cerr << ' ' << *it;
+            //cerr << endl;
           }
 
           bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
           //DelimitedList<psX,NPredictor,psComma,psX> npreds;  
           NPredictorSet nps;// = NPredictorSet( tDisc - i, npreds); //generate NPredictorSet with distance feature - just use "i"
           q.calcNPredictors(nps, candidate, corefON, tDisc - i); //populate npreds with kxk pairs for q vs. candidate q. 
-          nps.PrintOut();
+          nps.printOut(cout);
           cout << " : " << isCoref << endl; //i-1 because that's candidate index 
         } //single candidate output
       } //all previous antecedent candidates output
 
-      arma::vec& vF = mvfrv[ pair<vector<FPredictor>,FResponse>( vector<FPredictor>( lfp.begin(), lfp.end() ), FResponse(f,e.c_str(),k) ) ];
-      arma::mat& mP = mpppmP[ pair<PPredictor,T>(q.calcPretrmTypeCondition(f,e.c_str(),k),aPretrm.getType()) ];
-      arma::vec& vW = mektwvW[ quad<EVar,K,T,W>(e.c_str(),k,aPretrm.getType(),L(tr.front()).c_str()) ];
-      vF = ((vF.n_elem) ? vF : arma::zeros(iMaxNums))          + normalize( D * U * tr.u(),                     1 );
-      mP = ((mP.n_elem) ? mP : arma::zeros(iMaxNums,iMaxNums)) + normalize( D * arma::diagmat(U * tr.u()),      1 );
-      vW = ((vW.n_elem) ? vW : arma::zeros(iMaxNums))          + normalize( (vOnes.t() * D).t() % (U * tr.u()), 1 );
+      //arma::vec& vF = mvfrv[ pair<vector<FPredictor>,FResponse>( vector<FPredictor>( lfp.begin(), lfp.end() ), FResponse(f,e.c_str(),k) ) ];
+      //arma::mat& mP = mpppmP[ pair<PPredictor,T>(q.calcPretrmTypeCondition(f,e.c_str(),k),aPretrm.getType()) ];
+      //arma::vec& vW = mektwvW[ quad<EVar,K,T,W>(e.c_str(),k,aPretrm.getType(),L(tr.front()).c_str()) ];
+      //vF = ((vF.n_elem) ? vF : arma::zeros(iMaxNums))          + normalize( D * U * tr.u(),                     1 );
+      //mP = ((mP.n_elem) ? mP : arma::zeros(iMaxNums,iMaxNums)) + normalize( D * arma::diagmat(U * tr.u()),      1 );
+      //vW = ((vW.n_elem) ? vW : arma::zeros(iMaxNums))          + normalize( (vOnes.t() * D).t() % (U * tr.u()), 1 );
       //if( q.calcPretrmTypeCondition(f,e,k).fourth()==T("N-aD") and getType(tr)==T("R-aN") ) 
       //cout<<"D for "<<tr<<" with b="<<q.calcPretrmTypeCondition(f,e,k).fourth()<<endl<<D<<endl<<tr.u()<<endl;
     }
@@ -446,11 +447,11 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     ljp.sort( );             // sort to shorten mlr input
     ljp.push_front( jpCat );
     cout << "==== " << aLchild << "   " << L(tr) << " -> " << L(tr.front()) << " " << L(tr.back()) << endl;
-    cout << "note: J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e.c_str(),oL,oR)  << endl;
-    cout << "note: A " << q.calcApexTypeCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild)                  << " : " << getType(l)          << endl;
-    cout << "note: B " << q.calcBrinkTypeCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getType(l),aLchild)   << " : " << getType(tr.back())  << endl;
-    APredictor apred = q.calcApexTypeCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild);
-    BPredictor bpred = q.calcBrinkTypeCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getType(l),aLchild);
+    cout << "J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e.c_str(),oL,oR)  << endl;
+    cout << "A " << q.calcApexTypeCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild)                  << " : " << getType(l)          << endl;
+    cout << "B " << q.calcBrinkTypeCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getType(l),aLchild)   << " : " << getType(tr.back())  << endl;
+    //APredictor apred = q.calcApexTypeCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild);
+    //BPredictor bpred = q.calcBrinkTypeCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getType(l),aLchild);
 
     // Update storestate...
     q = StoreState ( q, f, j, eF.c_str(), e.c_str(), oL, oR, getType(l), getType(tr.back()), aPretrm, aLchild );
@@ -458,7 +459,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     // Traverse right child...
     calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 1, d );
 //    calcContext ( tr.back(), arma::diagmat( tr.v() * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( vOnes /*tr.front().u()*/, mIdent ) ), 1, d );
-
+    /*
     arma::mat& mJ = mvjrm [ pair<vector<JPredictor>,JResponse>( vector<JPredictor>( ljp.begin(), ljp.end() ), JResponse(j,e.c_str(),oL,oR) ) ];
     arma::mat& mA = mapamA[ pair<APredictor,T>(apred,getType(l)) ];
     arma::mat& mB = mbpbmB[ pair<BPredictor,T>(bpred,getType(tr.back())) ];
@@ -467,6 +468,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     mA = ((mA.n_elem) ? mA : arma::zeros(iMaxNums,iMaxNums*iMaxNums)) + normalize( eye3 * arma::kron( D.t(), U * getG(getType(tr),getType(tr.front()),getType(tr.back())) * arma::kron(tmp,tr.back().u()) ),                              1 );
     mB = ((mB.n_elem) ? mB : arma::zeros(iMaxNums,iMaxNums*iMaxNums)) + normalize( arma::diagmat(vOnes.t() * D) * U * getG(getType(tr),getType(tr.front()),getType(tr.back())) * arma::diagmat(arma::kron(tr.front().u(),tr.back().u())), 1 );
 if( arma::accu(mJ) != arma::accu(mJ) ) { cerr<<"J failed at "<<tr<<endl; exit(0); }
+   */
   }
 
   // At abrupt terminal (e.g. 'T' discourse)...
@@ -559,6 +561,7 @@ int main ( int nArgs, char* argv[] ) {
   cerr << "F TOTALS: " << FPredictor::getDomainSize() << " predictors, " << FResponse::getDomain().getSize() << " responses." << endl;
   cerr << "J TOTALS: " << JPredictor::getDomainSize() << " predictors, " << JResponse::getDomain().getSize() << " responses." << endl;
 
+  /*
   for( auto& vfrv : mvfrv ) for( int i=0; i<iMaxNums; i++ ) if( vfrv.second(i) != 0.0 )
     { cout << "F " << vfrv.first.first[0].addNum(i) << "=1"; for( uint n=1; n<vfrv.first.first.size(); n++ ) cout << "," << vfrv.first.first[n] << "=1"; cout << " : " << vfrv.first.second << " = " << vfrv.second(i) << endl; }
   for( auto& pppm : mpppmP ) for( int i=0; i<iMaxNums; i++ ) for( int j=0; j<iMaxNums; j++ ) if( pppm.second(i,j) != 0.0 )
@@ -571,6 +574,8 @@ int main ( int nArgs, char* argv[] ) {
     cout << "A " << apam.first.first.first() << " " << apam.first.first.second() << " " << apam.first.first.third() << " " << apam.first.first.fourth() << " " << apam.first.first.fifth() << " " << apam.first.first.sixth().addNum(j) << " " << apam.first.first.seventh().addNum(k) << " : " << apam.first.second.addNum(i) << " = " << apam.second(i,j*iMaxNums+k) << endl;
   for( auto& bpbm : mbpbmB ) for( int i=0; i<iMaxNums; i++ ) for( int j=0; j<iMaxNums; j++ ) for( int k=0; k<iMaxNums; k++ ) if( bpbm.second(i,j*iMaxNums+k) != 0.0 )
     cout << "B " << bpbm.first.first.first() << " " << bpbm.first.first.second() << " " << bpbm.first.first.third() << " " << bpbm.first.first.fourth() << " " << bpbm.first.first.fifth() << " " << bpbm.first.first.sixth() << " " << bpbm.first.first.seventh().addNum(i) << " " << bpbm.first.first.eighth().addNum(j) << " : " << bpbm.first.second.addNum(k) << " = " << bpbm.second(i,j*iMaxNums+k) << endl;
+  */
 }
+
 
 

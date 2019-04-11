@@ -143,8 +143,11 @@ endef
 	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 
 #### remove entries with no reannotation
-%.nofail.linetrees:  %.linetrees
+%.noempty.linetrees:  %.linetrees
 	cat $<  |  grep -v '^$$'  >  $@
+
+%.nofail.linetrees: %.linetrees
+	cat $< | grep -v '(FAIL' > $@
 
 %.noqp.linetrees:  %.linetrees  $(GCG-SCRIPTS)/remove-qps.pl
 	cat $<  |  perl $(word 2,$^)  >  $@

@@ -558,15 +558,15 @@ class NPredictorSet {
       return mdist;
     }
 
-    void PrintOut ( ) {
-        cout << "N "; 
-        cout << "antdist=" << mdist;
+    void printOut ( ostream& os ) {
+        os << "N "; 
+        os << "antdist=" << mdist;
         for (auto& npred : mnpreds) {
           //if (&npred!=&npreds.front() ) cout << npred << "=1"; 
           //if (&npred!=&npreds.back() and &npred!=&npreds.front()) cout << ","; 
           //if (&npred!=&mnpreds.front() ) 
-          cout << ","; 
-          cout << npred << "=1";
+          os << ","; 
+          os << npred << "=1";
         } 
     }
    

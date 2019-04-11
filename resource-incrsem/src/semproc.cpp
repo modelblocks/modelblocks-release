@@ -366,6 +366,7 @@ int main ( int nArgs, char* argv[] ) {
               bool corefON = (tAnt==t) ? 0 : 1;
               NPredictorSet nps;// = NPredictorSet ( t - tAnt, lnpredictors);
               q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt); //calcNPredictors takes list of npreds (reference) and candidate Sign (reference)
+              if (VERBOSE>1) { nps.printOut(cout); }
               arma::vec nlogresponses = nps.NLogResponses(matN);
               /* 
               arma::vec nlogresponses = arma::zeros( matN.n_rows );
@@ -381,7 +382,7 @@ int main ( int nArgs, char* argv[] ) {
               double numerator = exp(nlogresponses(NResponse("1").toInt()) - nlogresponses(NResponse("0").toInt()));
               double nprob = numerator / ndenom;
 
-              if ( VERBOSE>1 ) cout << "   N ... : 1 = " << numerator << "/" << ndenom << "=" << nprob << endl;
+              if ( VERBOSE>1 ) cout << "   N ... : 1 = " << numerator << "/" << ndenom << "=" << nprob << "  tAnt: " << (t - tAnt) << endl;
 
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
                 //arma::vec nresponses = arma::exp( nlogresponses );
