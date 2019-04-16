@@ -68,7 +68,7 @@ class Trellis : public vector<Beam<HiddState>> {
       cerr << "lbe.size(): " << lbe.size() << endl;
       // If parse fails...
       if( lbe.size()==0 ) {
-        cerr << "parse failed (lbe.size() = 0) " << "size(): " << size() << endl;
+        cerr << "parse failed (lbe.size() = 0) " << "trellis size(): " << size() << endl;
         // Print a right branching structure...
         for( int t=size()-2; t>=0; t-- ) { 
           lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), ssLongFail ) ) ); // fork and join
@@ -301,7 +301,8 @@ int main ( int nArgs, char* argv[] ) {
             //denominator loop over candidate antecedents
             for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (t-tAnt<50); tAnt--, pbeAnt = &pbeAnt->getBack()) { 
               if ( pbeAnt->getHidd().getI() != 0 ) {
-                excludedIndices.push_back(tAnt-pbeAnt->getHidd().getI()); //add excluded index if there's a non-null coref decision
+                if (VERBOSE > 1) cout << "    adding index to exclude for blocking: " << tAnt+pbeAnt->getHidd().getI() << " pbeAnt...get(): " << pbeAnt->getHidd().getI() << endl;
+                excludedIndices.push_back(tAnt+pbeAnt->getHidd().getI()); //add excluded index if there's a non-null coref decision
               }
               if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
                 continue; //skip excluded indices
@@ -557,7 +558,9 @@ int main ( int nArgs, char* argv[] ) {
           cerr << "length lbeWholeArticle: " << lbeWholeArticle.size() << endl;
           //lbeWholeArticle.insert(lbeWholeArticle.end(),mls.begin(),mls.end());
           mls.pop_back(); //remove dummy element before adding to lbe 
-          lbeWholeArticle.insert(lbeWholeArticle.end(),mls.begin(),mls.end()); //insert mls at end of lbe
+          //cout << "lbeWholeArticle.end.() : " << *endl.begin() << endl;
+          //cout << "mls.begin()->getHidd() : " << mls.begin()->getHidd() << endl;
+          lbeWholeArticle.insert(lbeWholeArticle.end(), next(mls.begin()), mls.end()); //insert mls at end of lbe
           cerr << "length lbeWholeArticle after insertion: " << lbeWholeArticle.size() << endl;
           //iterate over lbeWholeArticle, having each item backpoint to the previous
           for (auto it = lbeWholeArticle.begin(); it != lbeWholeArticle.end(); it++) {
