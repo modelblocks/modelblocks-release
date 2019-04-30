@@ -356,7 +356,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
       cout << "P " << q.calcPretrmTypeCondition(f,e.c_str(),k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
       cout << "W " << e << " " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
 
-      for ( int i = tDisc; i > 0 ; i--) { 
+      for ( int i = tDisc; (i > 0 and tDisc - i <= 50); i--) {  //only look back 50 antecedents at max
         if (excludedIndices.find(i) != excludedIndices.end()) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs.
           //cerr << "encountered excluded index i:" << i << " skipping..." << endl;
           continue; 

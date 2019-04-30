@@ -262,9 +262,11 @@ int main ( int nArgs, char* argv[] ) {
       for (auto& lwSent : sents) {
         currline++;
 
+        mutexMLSList.lock();
         // Add mls to list...
         MLSs.emplace_back( ); //establish placeholder for mls for this specific sentence
         auto& mls = MLSs.back();
+        mutexMLSList.unlock(); 
 
         Trellis   beams;  // sequence of beams - each beam is hypotheses at a given timestep
         uint      t=0;    // time step
