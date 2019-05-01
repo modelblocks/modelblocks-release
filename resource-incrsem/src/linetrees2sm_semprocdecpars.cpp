@@ -44,6 +44,7 @@ char psSpcEqualsSpc[] = " = ";
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
 class LVU : public trip<L,arma::rowvec,arma::vec> {
  public:
   // Constructor methods...
@@ -79,6 +80,27 @@ class LVU : public trip<L,arma::rowvec,arma::vec> {
   friend bool                operator>> ( pair<istream&,LVU&> ist, const vector<const char*>& vpsDelim ) { return pair<istream&,L&>(ist.first,ist.second.first())>>vpsDelim; }
   friend ostream&            operator<< ( ostream&            os,  const LVU&  t       )                 { return os<<t.first(); }
 };
+*/
+
+L getLink( L l ) {
+  if( string::npos != l.find("-n") ) {
+    std::smatch sm;
+    std::regex re( "(.*)-n([0-9]+).*" ); //get consecutive numbers after a "-n"
+    if( std::regex_search( l, sm, re ) && sm.size() > 2 ) { 
+      return( sm.str(2) ); 
+    }
+  }
+  return( "" );
+} 
+
+L removeLink( L l ) {
+  if( string::npos != l.find("-n") ) {
+    std::smatch sm;
+    std::regex re ( "(.*)-n([0-9]+).*" ); //get consecutive numbers after a "-n"
+    if( std::regex_search( l, sm, re ) && sm.size() > 2 ) { return( sm.str(1) ); }
+  } 
+  return( l );
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -120,23 +142,6 @@ inline string regex_escape(const string& string_to_escape) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/*
-int getArityGivenLabel ( const L& l ) {
-  int depth = 0;
-  int arity = 0;
-  if ( l[0]=='N' ) arity++;
-  for ( uint i=0; i<l.size(); i++ ) {
-    if ( l[i]=='{' ) depth++;
-    if ( l[i]=='}' ) depth--;
-    if ( l[i]=='-' && l[i+1]>='a' && l[i+1]<='d' && depth==0 ) arity++;
-  }
-if( arity>7 ) cerr<<"i think that "<<l<<" has "<<arity<<" args."<<endl;
-  return arity;
-}
-*/
-
-////////////////////////////////////////////////////////////////////////////////
-
 //// T T_COLON ( "Pk" );                       // must be changed to avoid confusion with ":" delimiter in K's (where type occurs individually).
 //// T T_CONTAINS_COMMA ( "!containscomma!" ); // must be changed to avoid confusion with "," delimiter in F,J params.
 
@@ -165,9 +170,10 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-string getCorefId ( Tree<LVU>& tr ) { 
+string getCorefId ( Tree<L>& tr ) { 
   //given a tree, get the current "-n[0-9]+" coreference annotation. this id corresponds to a KSet that includes all K contexts up to and including that annotation. e.g., "The Lord said he-n0102 did wash his-n0104 shoes", "-n0102" includes "Lord_", "-n0104" includes "Lord_" and "he_".
-  L l = L(tr);
+  L l = removeLink( tr );
+  /*
   if (string::npos != l.find("-n")) {
           string target = string(l);
           std::smatch sm;
@@ -175,20 +181,22 @@ string getCorefId ( Tree<LVU>& tr ) {
           if (std::regex_search(target, sm, re) && sm.size() > 1) {return sm.str(1);} 
   }
   return "";
+  */
+  return l;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-string getUnaryOp ( const Tree<LVU>& tr ) {
+string getUnaryOp ( const Tree<L>& tr ) {
 //if( FEATCONFIG & 16 ) return 'N';
   //cerr << tr << endl;
   if( string::npos != L(tr.front()).find("-lV") ) return "V";
   if( string::npos != L(tr.front()).find("-lQ") ) return "O";
-  N n =  T(L(tr).c_str()).getLastNonlocal();
+  N n =  T( removeLink(tr).c_str() ).getLastNonlocal();
   if( n == N_NONE ) return "";
   if( (tr.front().size()==0 || tr.front().front().size()==0) && n == N("-rN") ) return "0";
   if( string::npos != L(tr.front()).find("-lE") )
-    return ( T(L(tr.front()).c_str()).getArity() > T(L(tr).c_str()).getArity() ) ? (string(1,'0'+T(L(tr.front()).c_str()).getArity())) : "M";
+    return ( T(removeLink(tr.front()).c_str()).getArity() > T(removeLink(tr).c_str()).getArity() ) ? (string(1,'0'+T(removeLink(tr.front()).c_str()).getArity())) : "M";
   else return "";
 /*
   N n =  T(L(tr).c_str()).getLastNonlocal();
@@ -252,6 +260,7 @@ const arma::mat& getG ( T t, T t0, T t1 ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
 arma::vec& setBackwardMessages ( Tree<LVU>& tr ) {
   // At abrupt terminal (e.g. 'T' discourse)...
   if ( tr.size()==0 ) tr.u() = vFirstHot;
@@ -302,26 +311,29 @@ void setForwardMessages ( Tree<LVU>& tr, const arma::rowvec v ) {
     setForwardMessages( tr.back(),  v * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * kron( tr.front().u(), mIdent ) );
   }
 }
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
-void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<string,int>& annot2tdisc, vector<Sign>& antecedentCandidates, int& tDisc, const int sentnum, map<string,KSet>& annot2kset, int& wordnum, bool failtree, std::set<int>& excludedIndices, int s=1, int d=0, string e="", L l=L() ) { 
+void calcContext ( Tree<L>& tr, 
+                   // const arma::mat& D, const arma::mat& U, 
+                   map<string,int>& annot2tdisc, vector<Sign>& antecedentCandidates, int& tDisc, const int sentnum, map<string,KSet>& annot2kset, int& wordnum, bool failtree, std::set<int>& excludedIndices, int s=1, int d=0, string e="", L l=L() ) { 
   static F          f;
   static string     eF;
   static Sign       aPretrm;
   static StoreState q;
   static arma::mat eye3( iMaxNums, iMaxNums*iMaxNums, arma::fill::zeros );  if( eye3(0,0)==0.0 ) for( int i=0; i<iMaxNums; i++ ) eye3(i,i*iMaxNums+i)=1.0;    // Init 3D diag.
 
-  if( l==L() ) l = L(tr);
+  if( l==L() ) l = removeLink(tr);
 
   // At unary preterminal...
   if ( tr.size()==1 && tr.front().size()==0 ) {
     wordnum++; //increment word index at terminal (sentence-level) one-indexing
     tDisc++; //increment discourse-level word index. one-indexing
-    string annot = tr.getLink();
+    string annot    = getLink( tr );
     f               = 1 - s;
 //    eF = e = ( e!='N' ) ? e : getUnaryOp ( tr );
     eF              = e + getUnaryOp( tr );
-    pair<K,T> kt    = getPred ( L(tr), L(tr.front()) );
+    pair<K,T> kt    = getPred ( removeLink(tr), removeLink(tr.front()) );
     K k             = (FEATCONFIG & 8 && kt.first.getString()[2]!='y') ? K::kBot : kt.first;
     aPretrm         = (not failtree) ? Sign( k, getType(l), S_A ) : Sign() ;
     bool validIntra = false;
@@ -354,7 +366,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
       cout<<"----"<<q<<endl;
       cout << "F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e.c_str(),k) << endl;
       cout << "P " << q.calcPretrmTypeCondition(f,e.c_str(),k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
-      cout << "W " << e << " " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << L(tr.front())  << endl;
+      cout << "W " << e << " " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << removeLink(tr.front())  << endl;
 
       for ( int i = tDisc; (i > 0 and tDisc - i <= 50); i--) {  //only look back 50 antecedents at max
         if (excludedIndices.find(i) != excludedIndices.end()) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs.
@@ -408,7 +420,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
 
   // At unary identity nonpreterminal...
   else if ( tr.size()==1 and getType(tr)==getType(tr.front()) ) {
-    calcContext( tr.front(), D, U, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, s, d, e, l );
+    calcContext( tr.front(), /*D, U,*/ annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, s, d, e, l );
   }
 
   // At unary nonpreterminal...
@@ -416,7 +428,7 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     //// cerr<<"#U"<<getType(tr)<<" "<<getType(tr.front())<<endl;
     //e = ( e!='N' ) ? e : getUnaryOp ( tr );
     e = e + getUnaryOp( tr );
-    calcContext ( tr.front(), D, (getType(tr)==getType(tr.front())) ? U : U * getG(getType(tr),getType(tr.front()),"-") * arma::kron(mIdent,vOnes), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, s, d, e, l );
+    calcContext ( tr.front(), /*D, (getType(tr)==getType(tr.front())) ? U : U * getG(getType(tr),getType(tr.front()),"-") * arma::kron(mIdent,vOnes),*/ annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, s, d, e, l );
 //cout<<"unary at "<<L(tr)<<endl<<mtttmG[trip<T,T,T>(getType(tr),getType(tr.front()),"-")]<<endl;
   }
 
@@ -425,20 +437,20 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     //// cerr<<"#B "<<getType(tr)<<" "<<getType(tr.front())<<" "<<getType(tr.back())<<endl;
 
     if (failtree) {
-      calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 0, d+s );
-      calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 1, d );
+      calcContext ( tr.front(), /*D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent,*/ annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 0, d+s );
+      calcContext ( tr.back(), /*arma::diagmat( tr.back().v() ), mIdent,*/ annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 1, d );
       return;
     }
 
     // Traverse left child...
-    calcContext ( tr.front(), D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 0, d+s );
+    calcContext ( tr.front(), /*D * U * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( mIdent, tr.back().u() ), mIdent,*/ annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 0, d+s );
 
     J j          = s;
     LeftChildSign aLchild ( q, f, eF.c_str(), aPretrm );
 //    e            = ( e!='N' ) ? e : getUnaryOp ( tr ) ;
     e            = e + getUnaryOp( tr );
-    O oL         = getOp ( L(tr.front()), L(tr.back()),  L(tr) );
-    O oR         = getOp ( L(tr.back()),  L(tr.front()), L(tr) );
+    O oL         = getOp ( removeLink(tr.front()), removeLink(tr.back()),  removeLink(tr) );
+    O oR         = getOp ( removeLink(tr.back()),  removeLink(tr.front()), removeLink(tr) );
 
     // Print binary / join-phase predictors...
     DelimitedList<psX,JPredictor,psComma,psX> ljp;  q.calcJoinPredictors(ljp,f,eF.c_str(),aLchild);
@@ -446,18 +458,18 @@ void calcContext ( Tree<LVU>& tr, const arma::mat& D, const arma::mat& U, map<st
     ljp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first elemenet is category.
     ljp.sort( );             // sort to shorten mlr input
     ljp.push_front( jpCat );
-    cout << "==== " << aLchild << "   " << L(tr) << " -> " << L(tr.front()) << " " << L(tr.back()) << endl;
+    cout << "==== " << aLchild << "   " << removeLink(tr) << " -> " << removeLink(tr.front()) << " " << removeLink(tr.back()) << endl;
     cout << "J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e.c_str(),oL,oR)  << endl;
-    cout << "A " << q.calcApexTypeCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild)                  << " : " << getType(l)          << endl;
-    cout << "B " << q.calcBrinkTypeCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getType(l),aLchild)   << " : " << getType(tr.back())  << endl;
+    cout << "A " << q.calcApexTypeCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild)                  << " : " << getType(l)                      << endl;
+    cout << "B " << q.calcBrinkTypeCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getType(l),aLchild)   << " : " << getType(removeLink(tr.back()))  << endl;
     //APredictor apred = q.calcApexTypeCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild);
     //BPredictor bpred = q.calcBrinkTypeCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getType(l),aLchild);
 
     // Update storestate...
-    q = StoreState ( q, f, j, eF.c_str(), e.c_str(), oL, oR, getType(l), getType(tr.back()), aPretrm, aLchild );
+    q = StoreState ( q, f, j, eF.c_str(), e.c_str(), oL, oR, getType(l), getType(removeLink(tr.back())), aPretrm, aLchild );
 
     // Traverse right child...
-    calcContext ( tr.back(), arma::diagmat( tr.back().v() ), mIdent, annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 1, d );
+    calcContext ( tr.back(), /*arma::diagmat( tr.back().v() ), mIdent,*/ annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 1, d );
 //    calcContext ( tr.back(), arma::diagmat( tr.v() * getG( getType(tr), getType(tr.front()), getType(tr.back()) ) * arma::kron( vOnes /*tr.front().u()*/, mIdent ) ), 1, d );
     /*
     arma::mat& mJ = mvjrm [ pair<vector<JPredictor>,JResponse>( vector<JPredictor>( ljp.begin(), ljp.end() ), JResponse(j,e.c_str(),oL,oR) ) ];
@@ -533,11 +545,11 @@ int main ( int nArgs, char* argv[] ) {
     if( linenum%1000==0 ) cerr<<"line "<<linenum<<"..."<<endl;
 
     if ( cin.peek() != '\n' ) {
-      Tree<LVU> t("T"); t.emplace_back(); t.emplace_back("T");
+      Tree<L> t("T"); t.emplace_back(); t.emplace_back("T");
       cin >> t.front() >> "\n";
       cout.flush();
       cout << "TREE " << linenum << ": " << t << "\n";
-      if ( t.front().size() > 0 and L(t.front().front()) == "!ARTICLE") {
+      if ( t.front().size() > 0 and removeLink(t.front().front()) == "!ARTICLE") {
         cerr<<"resetting discourse info..."<<endl;
         discourselinenum=0;
         annot2kset.clear();
@@ -547,12 +559,14 @@ int main ( int nArgs, char* argv[] ) {
         excludedIndices.clear();      
       } 
       else {
-        setBackwardMessages( t );
+        /*
+	setBackwardMessages( t );
         setForwardMessages( t, vFirstHot.t() );
-        int wordnum = 0;
-        bool failtree = (L(t.front()) == "FAIL") ? true : false;
+        */
+	int wordnum = 0;
+        bool failtree = (removeLink(t.front()) == "FAIL") ? true : false;
         //cerr << "t.front: " << t.front() << "L(t.front()): " << L(t.front()) << endl;
-        if( t.front().size() > 0 ) calcContext( t, arma::diagmat(vFirstHot), mIdent, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, failtree, excludedIndices);
+        if( t.front().size() > 0 ) calcContext( t, /*arma::diagmat(vFirstHot), mIdent,*/ annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, failtree, excludedIndices);
       }
     }
     else {cin.get();}
