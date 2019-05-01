@@ -214,8 +214,6 @@ int main ( int nArgs, char* argv[] ) {
   if( OUTPUT_MEASURES ) cout << "word pos f j store totsurp" << endl;
   
   // For each line in stdin...
-  //  for ( int linenum=1; cin && EOF!=cin.peek(); linenum++ ) {
-  //for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&MLSs,&sents,&mutexMLSList,&linenum,numThreads,matN,matF,modP,lexW,matJ,modA,modB] (uint numt) {
   list<list<DelimitedList<psX,ObsWord,psSpace,psX>>> articles; //list of list of sents. each list of sents is an article.
   list<list<DelimitedList<psX,BeamElement<HiddState>,psLine,psX>>> articleMLSs; //list of MLSs
 
@@ -229,15 +227,10 @@ int main ( int nArgs, char* argv[] ) {
       if( not ( cin && EOF!=cin.peek() ) ) { mutexMLSList.unlock(); break; }
 
       uint currline = linenum; 
-      //cerr << "Worker: " << numt << " attempting to emplace back of articles..." << endl;
       articles.emplace_back(); 
-      //cerr << "Worker: " << numt << " attempting to assign sents as last article..." << endl;
       auto& sents = articles.back(); //a specific article becomes the thread's sents //returns reference
-      //cerr << "Worker: " << numt << " attempting to emplace back of articleMLSs..." << endl;
       articleMLSs.emplace_back();
-      //cerr << "Worker: " << numt << " attempting to assign MLSs as last articleMLS..." << endl;
       auto& MLSs = articleMLSs.back();
-      //cerr << "Worker: " << numt << " finished initial assignments" << endl;
 
       DelimitedList<psX,ObsWord,psSpace,psX> articleDelim; // !article should be consumed between sentence reads
       //loop over sentences in an article
@@ -246,10 +239,8 @@ int main ( int nArgs, char* argv[] ) {
       while (cin.peek()!='!' and cin.peek()!=EOF) {
         // Read sentence...
         linenum++; //updates linenum for when handing off to other thread
-        //uint currline = linenum++; //calculate this as looping through articlesents
         DelimitedList<psX,ObsWord,psSpace,psX> lwSent; // init input list for each iteration - otherwise cin just keeps appending to existing lwSent
         cin >> lwSent >> "\n";
-        //cerr << "Worker: " << numt << " Reading sentence " << linenum << ": " << lwSent << " EOS" << endl;
         sents.emplace_back( lwSent );
       }
       mutexMLSList.unlock();
@@ -311,51 +302,13 @@ int main ( int nArgs, char* argv[] ) {
               }
               const KSet& ksAnt = pbeAnt->getHidd().getPrtrm().getKSet(); 
               bool corefON = (tAnt==t) ? 0 : 1;
-              NPredictorSet nps;// = NPredictorSet ( t - tAnt, lnpredictors);
+              NPredictorSet nps; // = NPredictorSet ( t - tAnt, lnpredictors);
               q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt); //these are NPredictors for a specific antecedent candidate at tAnt, and a current word at timestep t.
               arma::vec nlogresponses = nps.NLogResponses(matN);
-              /*
-              arma::vec nlogresponses = arma::zeros( matN.n_rows ); //rows are n outcomes 1 or 0 (coreferent or not)
-              for ( auto& npredr : lnpredictors ) {
-                if ( npredr.toInt() < matN.n_cols ) {
-                  nlogresponses += matN.col( npredr.toInt() );  //cols are predictors, where each col has values for 1 or 0
-                }
-              }
-              //and nps cut above
-              */
-              //arma::vec nresponses = arma::exp( nlogresponses );
-              //double nnorm = arma::accu( nresponses );  // 0.0;                                           // join normalization term (denominator)
               ndenom += exp(nlogresponses(NResponse("1").toInt())-nlogresponses(NResponse("0").toInt()));
-              //list<FPredictor> lfpredictors;  q_tdec1.calcForkPredictors( lfpredictors, ksAnt, false );  lfpredictors.emplace_back();  // add bias term //ej change
-              // Calc distrib over response for each fork predictor...
-              //arma::vec flogresponses = arma::zeros( matF.n_rows );            //distribution over f responses for a single antecedent features
-              //for ( auto& fpredr : lfpredictors ) if ( fpredr.toInt() < matF.n_cols ) flogresponses += matF.col( fpredr.toInt() ); // add logprob for all indicated features. over all FEK responses.
-              //if ( VERBOSE>1 ) for ( auto& fpredr : lfpredictors ) cout<<"    fpredr:"<<fpredr<<endl;
-              //arma::vec fresponses = arma::exp( flogresponses );
-              //double tempfnorm = arma::accu( fresponses );
-              // Calc normalization term over responses...
-              //double fnorm = arma::accu( fresponses );
 
-              /*
-              // Rescale overflowing distribs by max...
-              if( tempfnorm == 1.0/0.0 ) {
-                cerr << "WARNING: NaN for tempfnorm" << endl;
-                uint ind_max=0; for( uint i=0; i<fresponses.size(); i++ ) if( fresponses(i)>fresponses(ind_max) ) ind_max=i;
-                flogresponses -= flogresponses( ind_max );
-                fresponses = arma::exp( flogresponses );
-                tempfnorm = arma::accu( fresponses );
-                //            fresponses.fill( 0.0 );  fresponses( ind_max ) = 1.0;
-                //            fnorm = 1.0;
-              } //closes if tempfnorm
-              fnorm += tempfnorm;
-              */
             } //closes for tAnt
             pbeAnt = &beDummy; //reset pbiAnt pointer after calculating denominator
-
-            //for ( int tAnt = t; tAnt>0; tAnt--, pbiAnt=&beams[tAnt].get(pbiAnt->second.second) ) { //iterate over candidate antecedent ks, following trellis backpointers ej change for coref 
-            //for ( int tAnt = t; tAnt>((USE_COREF) ? 0 : t-1); tAnt--, pbeAnt = &pbeAnt->getBack()) { //iterate over candidate antecedent ks, following trellis backpointers ej change for coref 
-            //
-            //{ lock_guard<mutex> guard( mutexMLSList );   cerr << "Worker: " << numt << " starting numerator loop..." << w_t << endl;}
             //numerator loop over candidate antecedents. specific choice.
             for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (t-tAnt<50); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers. 
               //block indices as read from previous storestate's excludedIndices
@@ -371,16 +324,6 @@ int main ( int nArgs, char* argv[] ) {
               q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt); //calcNPredictors takes list of npreds (reference) and candidate Sign (reference)
               if (VERBOSE>1) { nps.printOut(cout); }
               arma::vec nlogresponses = nps.NLogResponses(matN);
-              /* 
-              arma::vec nlogresponses = arma::zeros( matN.n_rows );
-              for ( auto& npredr : lnpredictors) {
-                  //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << endl; }
-                if ( npredr.toInt() < matN.n_cols ) { 
-                  nlogresponses += matN.col( npredr.toInt() ); 
-                  //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << " matN.n_cols:" << matN.n_cols << " logprob: " << matN.col( npredr.toInt())(NResponse("1").toInt()) << endl; }
-                }
-              }
-              */
 
               double numerator = exp(nlogresponses(NResponse("1").toInt()) - nlogresponses(NResponse("0").toInt()));
               double nprob = numerator / ndenom;
@@ -388,47 +331,25 @@ int main ( int nArgs, char* argv[] ) {
               if ( VERBOSE>1 ) cout << "   N ... : 1 = " << numerator << "/" << ndenom << "=" << nprob << "  tAnt: " << (t - tAnt) << endl;
 
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
-                //arma::vec nresponses = arma::exp( nlogresponses );
-                //double nnorm = arma::accu( nresponses );  // 0.0;                                           // join normalization term (denominator)
 
                 // Calc distrib over response for each fork predictor...
-                //
-                //if( VERBOSE>1 ) cerr << "after ksAnt init, pbiant: " << pbiAnt->second.second << endl;
-                //if( VERBOSE>1 ) cerr << "ptr address: " << pbiAnt << endl;
                 //arma::vec flogresponses = arma::zeros( matF.n_rows );
 
-                //if( VERBOSE>1 ) cerr << "after flogresponses zero init, pbiant: " << pbiAnt->second.second << endl;
-                //cerr << "in main(): ksAnt: " << ksAnt << endl;
                 // pbiAnt.first is a const BeamElement
-                //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.fourth: " << pbiAnt->first.fourth() << endl; //" should be k
-                //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.third: " << pbiAnt->first.third() << endl;   // ^@ should be extraction
-                //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.second: " << pbiAnt->first.second() << endl; // 0 should be fork
-                //if( VERBOSE>1 ) cerr << "in main(): pbiAnt.first.first: " << pbiAnt->first.first() << endl;   // []:T^@ should be a sign
                 //list<FPredictor> lfpredictors;  q_tdec1.calcForkPredictors( lfpredictors, ksAnt, false );  lfpredictors.emplace_back();  // add bias term //ej change
-                //if( VERBOSE>1 ) cerr << "lfpredictors  emplaced" << endl;
-
-                //if( VERBOSE>1 ) cerr << "pbi ptr address before break: " << pbiAnt << endl;
-
-                //if( VERBOSE>1 ) cerr << "before flogresponses accum, pbiant: " << pbiAnt->second.second << endl; //ptr dEATH
-                //
                 list<FPredictor> lfpredictors;  
                 q_tdec1.calcForkPredictors( lfpredictors, ksAnt, !corefON, false ); 
                 lfpredictors.emplace_back();  // add bias term
                 // Calc distrib over response for each fork predictor...
                 arma::vec flogresponses = arma::zeros( matF.n_rows );            //distribution over f responses for a single antecedent features
                 for ( auto& fpredr : lfpredictors ) if ( fpredr.toInt() < matF.n_cols ) flogresponses += matF.col( fpredr.toInt() ); // add logprob for all indicated features. over all FEK responses.
-                //if ( VERBOSE>1 ) for ( auto& fpredr : lfpredictors ) cout<<"    fpredr:"<<fpredr<<endl;
                 arma::vec fresponses = arma::exp( flogresponses );
                 fnorm = arma::accu( fresponses );
-                //if( VERBOSE>1 ) cerr << "lfpredictor found: " << fpredr << endl;
-                //if( VERBOSE>1 ) cerr << "passed fpredr loop" << endl;
                 if ( VERBOSE>1 ) { for ( auto& fpredr : lfpredictors ) { cout <<"    fpredr:"<<fpredr<<endl; } }
 
-                //if( VERBOSE>1 ) cerr << "passed printout" << endl;
                 //arma::vec fresponses = arma::exp( flogresponses );
                 // Calc normalization term over responses...
                 //double fnorm = arma::accu( fresponses );
-    //if( VERBOSE>1 ) cerr << "before overflow norm, pbiant: " << pbiAnt->second.second << endl; // Rescale overflowing distribs by max...  if( fnorm == 1.0/0.0 ) { cerr << "WARNING: NaN for fnorm" << endl; } //} close for loop over antecedents here?
                 // For each possible lemma (context + label + prob) for preterminal of current word...
                 if( lexW.end() == lexW.find(unkWord(w_t.getString().c_str())) ) cerr<<"ERROR: unable to find unk form: "<<unkWord(w_t.getString().c_str())<<endl;
                 for ( auto& ektpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW.find(w_t)->second : lexW.find(unkWord(w_t.getString().c_str()))->second ) {
@@ -481,8 +402,6 @@ int main ( int nArgs, char* argv[] ) {
                           jlogresponses -= jlogresponses( ind_max );
                           jresponses = arma::exp( jlogresponses );
                           jnorm = arma::accu( jresponses ); //accumulate is sum over elements
-                          //                    jresponses.fill( 0.0 );  jresponses( ind_max ) = 1.0;
-                          //                    jnorm = 1.0;
                         } //closes if jnorm
 
                         // For each possible no-join or join decision, and operator decisions...
@@ -545,7 +464,6 @@ int main ( int nArgs, char* argv[] ) {
           if ( VERBOSE ) cout << beams[t] << endl;
           { lock_guard<mutex> guard( mutexMLSList ); 
             cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << endl;	
-            //cerr << "Worker" << numt << " reached end of word loop, going to next word..." << endl;
           } //closes lock_guard
         } //closes for w lwSent  
         if ( numThreads == 1 ) cerr << endl;
@@ -558,10 +476,7 @@ int main ( int nArgs, char* argv[] ) {
           cerr << "Worker: " << numt << " attempting to set mls on beams..." << endl;
           beams.setMostLikelySequence( mls );
           cerr << "length lbeWholeArticle: " << lbeWholeArticle.size() << endl;
-          //lbeWholeArticle.insert(lbeWholeArticle.end(),mls.begin(),mls.end());
           mls.pop_back(); //remove dummy element before adding to lbe 
-          //cout << "lbeWholeArticle.end.() : " << *endl.begin() << endl;
-          //cout << "mls.begin()->getHidd() : " << mls.begin()->getHidd() << endl;
           lbeWholeArticle.insert(lbeWholeArticle.end(), next(mls.begin()), mls.end()); //insert mls at end of lbe
           cerr << "length lbeWholeArticle after insertion: " << lbeWholeArticle.size() << endl;
           //iterate over lbeWholeArticle, having each item backpoint to the previous
@@ -574,50 +489,22 @@ int main ( int nArgs, char* argv[] ) {
         }
       } //close loop lwSent over sents
 
-      //{ lock_guard<mutex> guard( mutexMLSList ); 
-      //  cerr << "Worker:" << numt << " processed all sents in an article, attempting to print..." << endl;
-      //  cerr << "Worker: " << numt << " articles().size(): " << articles.size() << endl;
-      //  cerr << "Worker: " << numt << " articles.front().size(): " << articles.front().size() << endl;
-      //}
-
       { lock_guard<mutex> guard( mutexMLSList );
         //finished sent, now looping over global data and see whether it's ready to print
         //see if articles is not empty and first article is not empty and first sentence of first article is done, then print it.
-        //cerr << "Worker: " << numt << " entered print loop" << endl;
-        //cerr << "Worker: " << numt << " articleMLSs.size(): " << articleMLSs.size() << endl;
-        //cerr << "Worker: " << numt << " articleMLSs.front().size(): " << articleMLSs.front().size() << endl;
-        //cerr << "Worker: " << numt << " articles.front().size(): " << articles.front().size() << endl;
         while( articleMLSs.size()>0 && articleMLSs.front().size()>0 && articleMLSs.front().size()==articles.front().size() ) { 
-          //cerr << "Worker: " << numt << " assigning mls for printing... " << endl;
-          //auto& mls = articleMLSs.front().front(); //mls for first sentence of first article
-          //cerr << "Worker: " << numt << " assigning sent for printing... " << endl;
-          //auto& sent = articles.front().front(); // wordlist for first sentence of first article
           int u=1; 
-          //cerr << "Worker: " << numt << " assigning iterator for beam element... " << endl;
-          //auto ibe=next(mls.begin());  //iterator over beam elements?
           auto ibe=next(articleMLSs.front().front().begin());  //iterator over beam elements?
-          //cerr << "Worker: " << numt << " assigning iterator for words... " << endl;
-          //auto iw=sent.begin() ; //iterator over words
           auto iw=articles.front().front().begin() ; //iterator over words
-          //cerr << "Worker: " << numt << " starting sentence print loop... " << endl;
-          //for( ; (ibe != mls.end()) && (iw != sent.end()); ibe++, iw++, u++ ) {
           for( ; (ibe != articleMLSs.front().front().end()) && (iw != articles.front().front().end()); ibe++, iw++, u++ ) {
             cout << *iw << " " << ibe->getHidd() << " " << ibe->getProb(); //tokdecs output is: WORD HIDDSTATE PROB
             cout << endl;
           } //closes for ibe!=mls.end
-          //cerr << "Worker: " << numt << " starting articleMLSs pop... " << endl;
           articleMLSs.front().pop_front(); //pop (mls of) first sentence of first article
-          //cerr << "Worker: " << numt << " starting articles pop... " << endl;
-          //cerr << "articles.front().size() before pop: " << articles.front().size() << endl;
           articles.front().pop_front(); //pop first sentence of first article
-          //cerr << "articles.front().size() after pop: " << articles.front().size() << endl;
-          //cerr << "Worker: " << numt << " testing articles.front().size()... " << endl;
           if (articles.front().size() == 0) {  //if article is empty then pop article
-            //cerr << "Worker: " << numt << " first article is empty, attempting to pop articleMLSs... " << endl;
             articleMLSs.pop_front(); 
-            //cerr << "Worker: " << numt << " first article is empty, attempting to pop articles... " << endl;
             articles.pop_front();
-            //cerr << "popped front of articles" << endl;
           } 
         } //closes while articleMLSs 
       }//closes lock guard for print loop  
