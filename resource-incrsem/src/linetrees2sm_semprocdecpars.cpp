@@ -38,6 +38,7 @@ bool INTERSENTENTIAL = true;
 #include <BerkUnkWord.hpp>
 #include <Tree.hpp>
 #include <ZeroPad.hpp>
+int COREF_WINDOW = 50;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -194,8 +195,8 @@ void calcContext ( Tree<L>& tr,
       cout << "W " << e << " " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << removeLink(tr.front())  << endl;
 
       // Print antecedent list...
-      for ( int i = tDisc; (i > 0 and tDisc - i <= 50); i--) {  //only look back 50 antecedents at max
-        if (excludedIndices.find(i) != excludedIndices.end()) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs.
+      for( int i = tDisc; (i > 0 and tDisc-i <= COREF_WINDOW); i-- ) {  //only look back COREF_WINDOW antecedents at max
+        if( excludedIndices.find(i) != excludedIndices.end() ) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs.
           //cerr << "encountered excluded index i:" << i << " skipping..." << endl;
           continue; 
         }
@@ -299,8 +300,9 @@ int main ( int nArgs, char* argv[] ) {
 
   // For each command-line flag or model file...
   for ( int a=1; a<nArgs; a++ ) {
-    if(      '-'==argv[a][0] && 'f'==argv[a][1] ) FEATCONFIG = atoi( argv[a]+2 );
-    else if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS  = atoi( argv[a]+2 );
+    if(      '-'==argv[a][0] && 'f'==argv[a][1] ) FEATCONFIG   = atoi( argv[a]+2 );
+    else if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS    = atoi( argv[a]+2 );
+    else if( '-'==argv[a][0] && 'c'==argv[a][1] ) COREF_WINDOW = atoi( argv[a]+2 );
     else {
       cerr << "Loading model " << argv[a] << "..." << endl;
       // Open file...
