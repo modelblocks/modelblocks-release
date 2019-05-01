@@ -48,9 +48,9 @@ char psSpcEqualsSpc[] = " = ";
 
 ////////////////////////////////////////////////////////////////////////////////
 
-typedef Delimited<T> P;
-typedef Delimited<T> A;
-typedef Delimited<T> B;
+typedef Delimited<CVar> P;
+typedef Delimited<CVar> A;
+typedef Delimited<CVar> B;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -142,8 +142,8 @@ int main ( int nArgs, char* argv[] ) {
     list<DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>> lB;
     list<DelimitedTrip<psX,NPredictor,psSpcColonSpc,Delimited<NResponse>,psSpcEqualsSpc,Delimited<double>,psX>> lN;
 
-    lA.emplace_back( DelimitedTrip<psX,APredictor,psSpcColonSpc,A,psSpcEqualsSpc,Delimited<double>,psX>(APredictor(1,0,1,EVar::eNil,'S',T("T"),T("-")),A("-"),1.0) );      // should be T("S")
-    lB.emplace_back( DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>(BPredictor(1,0,1,EVar::eNil,'S','1',T("-"),T("S")),B("T"),1.0) );
+    lA.emplace_back( DelimitedTrip<psX,APredictor,psSpcColonSpc,A,psSpcEqualsSpc,Delimited<double>,psX>(APredictor(1,0,1,EVar::eNil,'S',CVar("T"),CVar("-")),A("-"),1.0) );      // should be CVar("S")
+    lB.emplace_back( DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>(BPredictor(1,0,1,EVar::eNil,'S','1',CVar("-"),CVar("S")),B("T"),1.0) );
 
     // For each command-line flag or model file...
     for ( int a=1; a<nArgs; a++ ) {
@@ -291,7 +291,7 @@ int main ( int nArgs, char* argv[] ) {
             const StoreState& q_tdec1    = be_tdec1.getHidd().sixth();  // prev storestate
             //if( VERBOSE>1 ) cout << "  from (" << be_tdec1.getHidd() << ")" << endl;
             const ProbBack<HiddState> pbDummy = ProbBack<HiddState>(0.0, be_tdec1); //dummy element for most recent timestep
-            const HiddState hsDummy = HiddState(Sign(ksTop,T(),S()),F(),EVar(),K(),JResponse(),StoreState(),0 ); //dummy hidden state with kTop semantics 
+            const HiddState hsDummy = HiddState(Sign(ksTop,CVar(),S()),F(),EVar(),K(),JResponse(),StoreState(),0 ); //dummy hidden state with kTop semantics 
             const BeamElement<HiddState> beDummy = BeamElement<HiddState>(pbDummy, hsDummy); //at timestep t, represents null antecedent 
             const BeamElement<HiddState>* pbeAnt = &beDummy;
             //calculate denominator / normalizing constant over all antecedent timesteps
@@ -435,11 +435,11 @@ int main ( int nArgs, char* argv[] ) {
                   if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(ektpr_p_t.second) > beams[t].rbegin()->getProb() ) {
                     EVar  e_p_t       = ektpr_p_t.first.first();
                     K     k_p_t       = (FEATCONFIG & 8 && ektpr_p_t.first.second().getString()[2]!='y') ? K::kBot : ektpr_p_t.first.second();   // context of current preterminal
-                    T     t_p_t       = ektpr_p_t.first.third();                               // label of current preterminal
-                    //              EVar  e_p_t       = (t_p_t.getLastNonlocal()==N_NONE) ? EVar::eNil : (t_p_t.getLastNonlocal()==N("-rN")) ? "0" : (t_p_t.getLastNonlocal().isArg()) ? vpsInts[t_p_t.getArity()+1] : "M";
+                    CVar  c_p_t       = ektpr_p_t.first.third();                               // label of current preterminal
+                    //              EVar  e_p_t       = (c_p_t.getLastNonlocal()==N_NONE) ? EVar::eNil : (c_p_t.getLastNonlocal()==N("-rN")) ? "0" : (c_p_t.getLastNonlocal().isArg()) ? vpsInts[c_p_t.getArity()+1] : "M";
                     double probwgivkl = ektpr_p_t.second;                                     // probability of current word given current preterminal
 
-                    if ( VERBOSE>1 ) cout << "     W " << e_p_t << " " << k_p_t << " " << t_p_t << " : " << w_t << " = " << probwgivkl << endl;
+                    if ( VERBOSE>1 ) cout << "     W " << e_p_t << " " << k_p_t << " " << c_p_t << " : " << w_t << " = " << probwgivkl << endl;
 
                     // For each possible no-fork or fork decision...
                     for ( auto& f : {0,1} ) {
@@ -454,19 +454,19 @@ int main ( int nArgs, char* argv[] ) {
                       } //closes if chrono
 
                       // If preterminal prob is nonzero...
-                      PPredictor ppredictor = q_tdec1.calcPretrmTypeCondition(f,e_p_t,k_p_t);
-                      if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << t_p_t << "...?" << endl;
-                      if ( modP.end()!=modP.find(ppredictor) && modP.find(ppredictor)->second.end()!=modP.find(ppredictor)->second.find(t_p_t) ) {
+                      PPredictor ppredictor = q_tdec1.calcPretrmCatCondition(f,e_p_t,k_p_t);
+                      if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << c_p_t << "...?" << endl;
+                      if ( modP.end()!=modP.find(ppredictor) && modP.find(ppredictor)->second.end()!=modP.find(ppredictor)->second.find(c_p_t) ) {
 
-                        if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << t_p_t << " = " << modP.find(ppredictor)->second.find(t_p_t)->second << endl;
+                        if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << c_p_t << " = " << modP.find(ppredictor)->second.find(c_p_t)->second << endl;
 
                         // Calc probability for fork phase...
-                        double probFork = (scoreFork / fnorm) * modP.find(ppredictor)->second.find(t_p_t)->second * probwgivkl;
-                        if ( VERBOSE>1 ) cout << "      f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << scoreFork << " / " << fnorm << " * " << modP.find(ppredictor)->second.find(t_p_t)->second << " * " << probwgivkl << " = " << probFork << endl;
+                        double probFork = (scoreFork / fnorm) * modP.find(ppredictor)->second.find(c_p_t)->second * probwgivkl;
+                        if ( VERBOSE>1 ) cout << "      f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << scoreFork << " / " << fnorm << " * " << modP.find(ppredictor)->second.find(c_p_t)->second << " * " << probwgivkl << " = " << probFork << endl;
 
                         Sign aPretrm;  aPretrm.first().emplace_back(k_p_t);  
                         for (auto& k : ksAnt) if (k != K::kTop) aPretrm.first().emplace_back(k); // add antecedent contexts
-                        aPretrm.second() = t_p_t;  aPretrm.third() = S_A;          // aPretrm (pos tag)
+                        aPretrm.second() = c_p_t;  aPretrm.third() = S_A;          // aPretrm (pos tag)
                         const LeftChildSign aLchild( q_tdec1, f, e_p_t, aPretrm );
                         list<JPredictor> ljpredictors; q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
                         ljpredictors.emplace_back();                                                                  // add bias
@@ -497,39 +497,39 @@ int main ( int nArgs, char* argv[] ) {
                             if ( VERBOSE>1 ) cout << "       J ... " << " : " << jresponse << " = " << probJoin << endl;
 
                             // For each possible apex category label...
-                            APredictor apredictor = q_tdec1.calcApexTypeCondition( f, j, e_p_t, e, opL, aLchild );  // save apredictor for use in prob calc
+                            APredictor apredictor = q_tdec1.calcApexCatCondition( f, j, e_p_t, e, opL, aLchild );  // save apredictor for use in prob calc
                             if ( VERBOSE>1 ) cout << "         A " << apredictor << "..." << endl;
                             if ( modA.end()!=modA.find(apredictor) )
-                              for ( auto& tpA : modA.find(apredictor)->second ) {
-                                if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(tpA.second) > beams[t].rbegin()->getProb() ) {
+                              for ( auto& cpA : modA.find(apredictor)->second ) {
+                                if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(cpA.second) > beams[t].rbegin()->getProb() ) {
 
-                                  if ( VERBOSE>1 ) cout << "         A " << apredictor << " : " << tpA.first << " = " << tpA.second << endl;
+                                  if ( VERBOSE>1 ) cout << "         A " << apredictor << " : " << cpA.first << " = " << cpA.second << endl;
 
                                   // For each possible brink category label...
-                                  BPredictor bpredictor = q_tdec1.calcBrinkTypeCondition( f, j, e_p_t, e, opL, opR, tpA.first, aLchild );  // bpredictor for prob calc
+                                  BPredictor bpredictor = q_tdec1.calcBrinkCatCondition( f, j, e_p_t, e, opL, opR, cpA.first, aLchild );  // bpredictor for prob calc
                                   if ( VERBOSE>1 ) cout << "          B " << bpredictor << "..." << endl;
                                   if ( modB.end()!=modB.find(bpredictor) )
-                                    for ( auto& tpB : modB.find(bpredictor)->second ) {
-                                      if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << tpB.first << " = " << tpB.second << endl;
+                                    for ( auto& cpB : modB.find(bpredictor)->second ) {
+                                      if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << cpB.first << " = " << cpB.second << endl;
                                       //                            lock_guard<mutex> guard( mutexBeam );
-                                      if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second) > beams[t].rbegin()->getProb() ) {
+                                      if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(cpA.second) + log(cpB.second) > beams[t].rbegin()->getProb() ) {
 
                                         if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
                                           tpLastReport = chrono::high_resolution_clock::now();
                                           lock_guard<mutex> guard( mutexMLSList );
-                                          cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << " JRESP " << jresponse << " A " << tpA.first << " B " << tpB.first << endl;
+                                          cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << " JRESP " << jresponse << " A " << cpA.first << " B " << cpB.first << endl;
                                         } //closes if chrono
                                         // Calculate probability and storestate and add to beam...
-                                        StoreState ss( q_tdec1, f, j, e_p_t, e, opL, opR, tpA.first, tpB.first, aPretrm, aLchild );
+                                        StoreState ss( q_tdec1, f, j, e_p_t, e, opL, opR, cpA.first, cpB.first, aPretrm, aLchild );
                                         if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
-                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second), be_tdec1 ) ); 
+                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(cpA.second) + log(cpB.second), be_tdec1 ) ); 
                                           if( VERBOSE>1 ) cout << "                send (" << be_tdec1.getHidd() << ") to (" << ss << ") with "
-                                            << (lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(tpA.second) + log(tpB.second)) << endl;
+                                            << (lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(cpA.second) + log(cpB.second)) << endl;
                                         } //closes if ( (t<lwSent
                                       } //closes if beams[t]
-                                    } //closes for tpB
+                                    } //closes for cpB
                                 } //closes if beams[t]
-                              } //closes for tpA
+                              } //closes for cpA
                           } //closes if beams[t]
                         } //closes for jresponse
                       } //closes if modP.end()

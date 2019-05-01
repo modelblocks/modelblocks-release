@@ -75,7 +75,7 @@ inline string regex_escape(const string& string_to_escape) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-T getType ( const L& l ) {
+CVar getCat ( const L& l ) {
   return regex_replace( regex_replace( l, regex("-x[^} ][^ |]*[|][^- ]*"), string("") ), regex("-l."), string("") ).c_str();
 }
 
@@ -84,12 +84,12 @@ T getType ( const L& l ) {
 O getOp ( const L& l, const L& lSibling, const L& lParent ) {
   if( string::npos != l.find("-lN") or string::npos != l.find("-lG") or string::npos != l.find("-lH") or string::npos != l.find("-lR") ) return 'N';
   if( string::npos != l.find("-lV") ) return 'V';
-  if( string::npos != lSibling.find("-lU") ) return ( getType(l).getArity()==1 ) ? 'U' : 'u';
+  if( string::npos != lSibling.find("-lU") ) return ( getCat(l).getArity()==1 ) ? 'U' : 'u';
   if( string::npos != l.find("-lC") ) return 'C';
   if( string::npos == l.find("-l")  or string::npos != l.find("-lS") or string::npos != l.find("-lU") ) return 'I';
   if( string::npos != l.find("-lM") or string::npos != l.find("-lQ") ) return 'M';
-  if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos != lParent.find("\\") ) return '0'+getType( string(lParent,lParent.find("\\")+1).c_str() ).getArity();
-  if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos == lParent.find('\\') ) return '0'+getType( lSibling ).getArity();
+  if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos != lParent.find("\\") ) return '0'+getCat( string(lParent,lParent.find("\\")+1).c_str() ).getArity();
+  if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos == lParent.find('\\') ) return '0'+getCat( lSibling ).getArity();
   cerr << "WARNING: unhandled -l tag in label \"" << l << "\"" << " -- assuming identity."<<endl;
   return 'I';
 }
@@ -99,27 +99,27 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
 string getUnaryOp ( const Tree<L>& tr ) {
   if( string::npos != L(tr.front()).find("-lV") ) return "V";
   if( string::npos != L(tr.front()).find("-lQ") ) return "O";
-  N n =  T( removeLink(tr).c_str() ).getLastNonlocal();
+  N n =  CVar( removeLink(tr).c_str() ).getLastNonlocal();
   if( n == N_NONE ) return "";
   if( (tr.front().size()==0 || tr.front().front().size()==0) && n == N("-rN") ) return "0";
   if( string::npos != L(tr.front()).find("-lE") )
-    return ( T(removeLink(tr.front()).c_str()).getArity() > T(removeLink(tr).c_str()).getArity() ) ? (string(1,'0'+T(removeLink(tr.front()).c_str()).getArity())) : "M";
+    return ( CVar(removeLink(tr.front()).c_str()).getArity() > CVar(removeLink(tr).c_str()).getArity() ) ? (string(1,'0'+CVar(removeLink(tr.front()).c_str()).getArity())) : "M";
   else return "";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-pair<K,T> getPred ( const L& lP, const L& lW ) {
-  T t = getType ( lP );
+pair<K,CVar> getPred ( const L& lP, const L& lW ) {
+  CVar c = getCat ( lP );
 
   // If punct, but not special !-delimited label...
-  if ( ispunct(lW[0]) && ('!'!=lW[0] || lW.size()==1) ) return pair<K,T>(K::kBot,t);
+  if ( ispunct(lW[0]) && ('!'!=lW[0] || lW.size()==1) ) return pair<K,CVar>(K::kBot,c);
 
-  cout<<"reducing "<<lP<<" now "<<t;
+  cout<<"reducing "<<lP<<" now "<<c;
   string sLemma = lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
-  string sType = t.getString();
-  string sPred = sType + ':' + sLemma;
-  cout<<" to "<<sType<<endl;
+  string sCat = c.getString();
+  string sPred = sCat + ':' + sLemma;
+  cout<<" to "<<sCat<<endl;
 
   smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^} ][^| ]*[|](?:(?!-[a-zA-Z])[^ }])*)(.*?)$")); s=m[3] ) {
     string sX = m[2];
@@ -133,12 +133,12 @@ pair<K,T> getPred ( const L& lP, const L& lW ) {
   }
 
   int iSplit = sPred.find( ":", 1 );
-  sType  = sPred.substr( 0, iSplit );
+  sCat  = sPred.substr( 0, iSplit );
   sLemma = sPred.substr( iSplit+1 );
   if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end() || mldLemmaCounts[sLemma]<MINCOUNTS ) sLemma = "!unk!";
   if ( isdigit(lW[0]) )                                                                        sLemma = "!num!";
 
-  return pair<K,T>( ( sType + ':' + sLemma + '_' + ((lP[0]=='N') ? '1' : '0') ).c_str(), t );
+  return pair<K,CVar>( ( sCat + ':' + sLemma + '_' + ((lP[0]=='N') ? '1' : '0') ).c_str(), c );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -162,9 +162,9 @@ void calcContext ( Tree<L>& tr,
     string annot    = getLink( tr );
     f               = 1 - s;
     eF              = e + getUnaryOp( tr );
-    pair<K,T> kt    = getPred ( removeLink(tr), removeLink(tr.front()) );
-    K k             = (FEATCONFIG & 8 && kt.first.getString()[2]!='y') ? K::kBot : kt.first;
-    aPretrm         = (not failtree) ? Sign( k, getType(l), S_A ) : Sign() ;
+    pair<K,CVar> kc = getPred ( removeLink(tr), removeLink(tr.front()) );
+    K k             = (FEATCONFIG & 8 && kc.first.getString()[2]!='y') ? K::kBot : kc.first;
+    aPretrm         = (not failtree) ? Sign( k, getCat(l), S_A ) : Sign() ;
     bool validIntra = false;
 
     std::string annotSentIdx = annot.substr(0,annot.size()-2); //get all but last two...
@@ -191,8 +191,8 @@ void calcContext ( Tree<L>& tr,
       lfp.push_front( fpCat );
       cout<<"----"<<q<<endl;
       cout << "F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e.c_str(),k) << endl;
-      cout << "P " << q.calcPretrmTypeCondition(f,e.c_str(),k) << " : " << aPretrm.getType() /*getType(l)*/     << endl;
-      cout << "W " << e << " " << k << " " << aPretrm.getType() /*getType(l)*/           << " : " << removeLink(tr.front())  << endl;
+      cout << "P " << q.calcPretrmCatCondition(f,e.c_str(),k) << " : " << aPretrm.getCat() /*getCat(l)*/     << endl;
+      cout << "W " << e << " " << k << " " << aPretrm.getCat() /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
 
       // Print antecedent list...
       for( int i = tDisc; (i > 0 and tDisc-i <= COREF_WINDOW); i-- ) {  //only look back COREF_WINDOW antecedents at max
@@ -237,21 +237,21 @@ void calcContext ( Tree<L>& tr,
   }
 
   // At unary identity nonpreterminal...
-  else if ( tr.size()==1 and getType(tr)==getType(tr.front()) ) {
+  else if ( tr.size()==1 and getCat(tr)==getCat(tr.front()) ) {
     calcContext( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, s, d, e, l );
   }
 
   // At unary nonpreterminal...
   else if ( tr.size()==1 ) {
-    //// cerr<<"#U"<<getType(tr)<<" "<<getType(tr.front())<<endl;
+    //// cerr<<"#U"<<getCat(tr)<<" "<<getCat(tr.front())<<endl;
     e = e + getUnaryOp( tr );
     calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, s, d, e, l );
-//cout<<"unary at "<<L(tr)<<endl<<mtttmG[trip<T,T,T>(getType(tr),getType(tr.front()),"-")]<<endl;
+//cout<<"unary at "<<L(tr)<<endl<<mtttmG[trip<T,T,T>(getCat(tr),getCat(tr.front()),"-")]<<endl;
   }
 
   // At binary nonterminal...
   else if ( tr.size()==2 ) {
-    //// cerr<<"#B "<<getType(tr)<<" "<<getType(tr.front())<<" "<<getType(tr.back())<<endl;
+    //// cerr<<"#B "<<getCat(tr)<<" "<<getCat(tr.front())<<" "<<getCat(tr.back())<<endl;
 
     if (failtree) {
       calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 0, d+s );
@@ -276,11 +276,11 @@ void calcContext ( Tree<L>& tr,
     ljp.push_front( jpCat );
     cout << "==== " << aLchild << "   " << removeLink(tr) << " -> " << removeLink(tr.front()) << " " << removeLink(tr.back()) << endl;
     cout << "J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e.c_str(),oL,oR)  << endl;
-    cout << "A " << q.calcApexTypeCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild)                  << " : " << getType(l)                      << endl;
-    cout << "B " << q.calcBrinkTypeCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getType(l),aLchild)   << " : " << getType(removeLink(tr.back()))  << endl;
+    cout << "A " << q.calcApexCatCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild)                  << " : " << getCat(l)                      << endl;
+    cout << "B " << q.calcBrinkCatCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getCat(l),aLchild)   << " : " << getCat(removeLink(tr.back()))  << endl;
 
     // Update storestate...
-    q = StoreState ( q, f, j, eF.c_str(), e.c_str(), oL, oR, getType(l), getType(removeLink(tr.back())), aPretrm, aLchild );
+    q = StoreState ( q, f, j, eF.c_str(), e.c_str(), oL, oR, getCat(l), getCat(removeLink(tr.back())), aPretrm, aLchild );
 
     // Traverse right child...
     calcContext ( tr.back(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 1, d );
