@@ -371,43 +371,6 @@ class NPredictor {
       if (it != mtti.end() ) id = it->second;
       else { id = nextid++; miantecedentt[id] = antecedentT; miancestort[id] = ancestorT; mtti[pair<T,T>(antecedentT,ancestorT)] = id; }
     }
-    /*
-    NPredictor (K mk, Referent ref) {
-      switch(ref) {
-        case antecedent: 
-          const auto& it = mantecedentkiu.find(mk);
-          if (it != mantecedentkiu.end() ) id = it->second;
-          else { id = nextid++; miantecedentku[id] = mk; mantecedentkiu[mk] = id; }
-          break;
-        case anaphor: 
-          const auto& it = mancestorkiu.find(mk);
-          if (it != mancestorkiu.end() ) id = it->second;
-          else { id = nextid++; miancestorku[id] = mk; mancestorkiu[mk] = id; }
-          break;
-        default: 
-          cerr << "ERROR: NPredictor constructure received unary k without proper antecedent vs. anaphor info" << endl;
-      }
-    }
-
-    NPredictor (T mtype, Referent ref) {
-      switch(ref) {
-        case antecedent: 
-          //fix copy paste error treating anaphor and antecedent same
-          //decalaring vars inside switch iffy - declare outside or use if/else instead of switch
-          const auto& it = mantecedenttiu.find(mtype);
-          if (it != mancestortiu.end() ) id = it->second;
-          else { id = nextid++; miancestortu[id] = mtype; mancestortiu[mtype] = id; }
-          break;
-        case anaphor: 
-          const auto& it = mancestortiu.find(mtype);
-          if (it != mancestortiu.end() ) id = it->second;
-          else { id = nextid++; miancestortu[id] = mtype; mancestortiu[mtype] = id; }
-          break;
-        default:
-          cerr << "ERROR: NPredictor constructor received unary t without proper antecedent vs. anaphor info" << endl;
-      }
-    }
-    */
 
   //Accessor Methods
   uint toInt() const { return id; }
@@ -416,12 +379,6 @@ class NPredictor {
   K getAntcdntK() const { return miantk[id]; } 
   T getAntecedentT() const { return miantecedentt[id]; }
   T getAncestorT() const { return miancestort[id]; }
-  /*
-  K getAntecedentKUnary() const { return miantecedentku[id]; } 
-  K getAncestorKUnary() const { return miancestorku[id]; } 
-  T getAntecedentTUnary() const { return miantecedenttu[id]; }
-  T getAncestorTUnary() const { return miancestortu[id]; }
-  */
   AdHocFeature getfeatname() const { return mistr[id]; }
   static uint getDomainSize() { return nextid; }
 
@@ -485,32 +442,6 @@ class NPredictor {
   static bool exists ( K kAntecedent, K kAncestor )      { return( mkki.end()!=mkki.find(pair<K,K>(kAntecedent,kAncestor)) ); }
   static bool exists ( AdHocFeature mstring )            { return( mstri.end()!=mstri.find(mstring) ); }
   static bool exists ( T tAntecedent, T tAncestor)      { return( mtti.end()!=mtti.find(pair<T,T>(tAntecedent,tAncestor)) ); }
-  /*
-  static bool exists ( K mk, Referent ref)               {
-    switch(ref) {
-      case antecedent:
-        return( mantecedentkiu.end()!=mantecedentkiu.find(mk));
-        break;
-      case anaphor:
-        return( mancestorkiu.end()!=mancestorkiu.find(mk));
-        break;
-      default:
-        cerr << "ERROR: exists() called for k without specifying ref type (anaphor vs. antecedent)" << endl;
-    }
-  }
-  static bool exists ( T mt, Referent ref)               {
-      switch(ref) {
-        case antecedent:
-          return( mantecedenttiu.end()!=mantecedenttiu.find(mt));
-          break;
-        case anaphor:
-          return( mancestortiu.end()!=mancestortiu.find(mt));
-          break;
-        default:
-          cerr << "ERROR: exists() called for t without specifying ref type (anaphor vs. antecedent)" << endl;
-      }
-  }
-  */
 };
 uint                    NPredictor::nextid = 1;
 map<pair<K,K>,uint>     NPredictor::mkki; 
@@ -523,16 +454,7 @@ map<uint,T>             NPredictor::miantecedentt;
 map<uint,T>             NPredictor::miancestort;
 map<T,uint>             NPredictor::mantecedentti;
 map<T,uint>             NPredictor::mancestorti;
-/*
-map<K,uint>             NPredictor::mantecedentkiu; //map antecedent k to uint, unary 
-map<K,uint>             NPredictor::mancestorkiu;   //map ancestor k to uint, unary
-map<T,uint>             NPredictor::mantecedenttiu; //map ancestor t to uint, unary
-map<T,uint>             NPredictor::mancestortiu;   //map ancestor t to uint, unary
-map<uint,K>             NPredictor::miantecedentku; //map uint to antecedent k, unary
-map<uint,K>             NPredictor::miancestorku;   //map uint to ancestor k, unary
-map<uint,T>             NPredictor::miantecedenttu; //map uint to antecedent t, unary
-map<uint,T>             NPredictor::miancestortu;   //map uint to ancestor t, unary
-*/
+
 ////////////////////////////////////////////////////////////////////////////////
 
 class NPredictorSet {
@@ -544,12 +466,6 @@ class NPredictorSet {
 
   public:
     //constructor
-    /*
-    NPredictorSet (int dist, DelimitedList<psX,NPredictor,psComma,psX>& npreds) {
-      mdist = dist;
-      mnpreds = npreds;
-    }
-    */
     NPredictorSet ( ):mdist(0),mnpreds() { }
     DelimitedList<psX,NPredictor,psComma,psX>& setList ( ) {
       return mnpreds;
@@ -562,9 +478,6 @@ class NPredictorSet {
         os << "N "; 
         os << "antdist=" << mdist;
         for (auto& npred : mnpreds) {
-          //if (&npred!=&npreds.front() ) cout << npred << "=1"; 
-          //if (&npred!=&npreds.back() and &npred!=&npreds.front()) cout << ","; 
-          //if (&npred!=&mnpreds.front() ) 
           os << ","; 
           os << npred << "=1";
         } 
@@ -587,49 +500,10 @@ class NPredictorSet {
 ////////////////////////////////////////////////////////////////////////////////
 
 DiscreteDomain<int> domNResponse;
-//typedef Delimited<int>  NResponse;  // 
 typedef DiscreteDomainRV<int,domNResponse> NResponse;
-/*
-class NResponse : public DiscreteDomainRV<int,domNResponse> {
- private:
-  static map<NResponse,N>                mnrn; //not sure even this makes sense since NResponses are 0,1 - won't map to specific NPredictor
-  //static map<NResponse,EVar>             mjre;
-  //static map<NResponse,O>                mjroL;
-  //static map<NResponse,O>                mjroR;
-  //static map<quad<N,EVar,O,O>,NResponse> mjeoojr;
- 
-  void calcDetermModels ( const char* ps ) {
-    if( mnrn.end() ==mnrn.find(*this)  ) mnrn[*this]=ps[1]-'0';
-    EVar e  = string(ps+3,uint(strchr(ps+3,'&')-(ps+3))).c_str();  //ps[3];
-    O    oL = ps[4+e.getString().size()];
-    O    oR = ps[6+e.getString().size()];
-    if( mjre.end() ==mjre.find(*this)  ) mjre[*this]=e;  //ps[3];
-    if( mjroL.end()==mjroL.find(*this) ) mjroL[*this]=oL;  //ps[5];
-    if( mjroR.end()==mjroR.find(*this) ) mjroR[*this]=oR;  //ps[7];
-    if( mjeoojr.end()==mjeoojr.find(quad<N,EVar,O,O>(ps[1]-'0',e,oL,oR)) ) mjeoojr[quad<N,EVar,O,O>(ps[1]-'0',e,oL,oR)]=*this;
-  }
-  
- public:
-  NResponse ( )                         : DiscreteDomainRV<int,domNResponse> ( )    { }
-  //NResponse ( const char* ps )          : DiscreteDomainRV<int,domNResponse> ( ps ) { calcDetermModels(ps); }
-  //NResponse ( N j, EVar e, O oL, O oR ) : DiscreteDomainRV<int,domNResponse> ( )    {
-  //  *this = ( mjeoojr.end()==mjeoojr.find(quad<N,EVar,O,O>(j,e,oL,oR)) ) ? ("j" + to_string(j) + "&" + e.getString() + "&" + string(1,oL) + "&" + string(1,oR)).c_str()
-  //                                                                       : mjeoojr[quad<N,EVar,O,O>(j,e,oL,oR)];
-  //}
-  N    getAnte ( ) const { return mnrn[*this]; }
-  //EVar getE    ( ) const { return mjre[*this]; }
-  //O    getLOp  ( ) const { return mjroL[*this]; }
-  //O    getROp  ( ) const { return mjroR[*this]; }
-  //static bool exists ( N j, EVar e, O oL, O oR ) { return( mjeoojr.end()!=mjeoojr.find(quad<N,EVar,O,O>(j,e,oL,oR)) ); }
-};
-map<NResponse,N>                NResponse::mnrn;
-//map<NResponse,EVar>             NResponse::mjre;
-//map<NResponse,O>                NResponse::mjroL;
-//map<NResponse,O>                NResponse::mjroR;
-//map<quad<N,EVar,O,O>,NResponse> NResponse::mjeoojr;
-*/
 
 ////////////////////////////////////////////////////////////////////////////////
+
 class FPredictor {
  private:
 
