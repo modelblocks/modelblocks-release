@@ -40,7 +40,7 @@ uint FEATCONFIG = 0;
 uint BEAM_WIDTH      = 1000;
 uint VERBOSE         = 0;
 uint OUTPUT_MEASURES = 0;
-// bool USE_COREF = true;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 char psSpcColonSpc[]  = " : ";
@@ -55,8 +55,6 @@ typedef Delimited<CVar> B;
 ////////////////////////////////////////////////////////////////////////////////
 
 class Trellis : public vector<Beam<HiddState>> {
-  // private:
-  //  DelimitedList<psX,pair<HiddState,ProbBack>,psLine,psX> lbe;
   public:
     Trellis ( ) : vector<Beam<HiddState>>() { reserve(100); }
     Beam<HiddState>& operator[] ( uint i ) { if ( i==size() ) emplace_back(BEAM_WIDTH); return vector<Beam<HiddState>>::operator[](i); }
@@ -85,7 +83,6 @@ class Trellis : public vector<Beam<HiddState>> {
         lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 0, EVar::eNil, K::kBot, JResponse(0,EVar::eNil,'N','I'), StoreState() ) ) ); // no-fork, no-join?
         //start experiment - next two lines switch front element to nofork,join, add additional dummy at rear
         //TODO to revert, comment out next two, comment in pushfront above
-        //lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, JResponse(1,EVar::eNil,'N','I'), ssLongFail ) ) );
         lbe.emplace_back( BeamElement<HiddState>() );
         //end epxeriment
 
@@ -205,8 +202,6 @@ int main ( int nArgs, char* argv[] ) {
 
   cerr<<"Models ready."<<endl;
 
-  //list<DelimitedList<psX,BeamElement<HiddState>,psLine,psX>> MLSs;
-  //list<DelimitedList<psX,ObsWord,psSpace,psX>> sents;
   mutex mutexMLSList;
   vector<thread> vtWorkers;  vtWorkers.reserve( numThreads );
   uint linenum = 0;
@@ -332,11 +327,7 @@ int main ( int nArgs, char* argv[] ) {
 
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
 
-                // Calc distrib over response for each fork predictor...
-                //arma::vec flogresponses = arma::zeros( matF.n_rows );
-
                 // pbiAnt.first is a const BeamElement
-                //list<FPredictor> lfpredictors;  q_tdec1.calcForkPredictors( lfpredictors, ksAnt, false );  lfpredictors.emplace_back();  // add bias term //ej change
                 list<FPredictor> lfpredictors;  
                 q_tdec1.calcForkPredictors( lfpredictors, ksAnt, !corefON, false ); 
                 lfpredictors.emplace_back();  // add bias term
@@ -347,9 +338,6 @@ int main ( int nArgs, char* argv[] ) {
                 fnorm = arma::accu( fresponses );
                 if ( VERBOSE>1 ) { for ( auto& fpredr : lfpredictors ) { cout <<"    fpredr:"<<fpredr<<endl; } }
 
-                //arma::vec fresponses = arma::exp( flogresponses );
-                // Calc normalization term over responses...
-                //double fnorm = arma::accu( fresponses );
                 // For each possible lemma (context + label + prob) for preterminal of current word...
                 if( lexW.end() == lexW.find(unkWord(w_t.getString().c_str())) ) cerr<<"ERROR: unable to find unk form: "<<unkWord(w_t.getString().c_str())<<endl;
                 for ( auto& ektpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW.find(w_t)->second : lexW.find(unkWord(w_t.getString().c_str()))->second ) {
@@ -357,7 +345,6 @@ int main ( int nArgs, char* argv[] ) {
                     EVar  e_p_t       = ektpr_p_t.first.first();
                     K     k_p_t       = (FEATCONFIG & 8 && ektpr_p_t.first.second().getString()[2]!='y') ? K::kBot : ektpr_p_t.first.second();   // context of current preterminal
                     CVar  c_p_t       = ektpr_p_t.first.third();                               // label of current preterminal
-                    //              EVar  e_p_t       = (c_p_t.getLastNonlocal()==N_NONE) ? EVar::eNil : (c_p_t.getLastNonlocal()==N("-rN")) ? "0" : (c_p_t.getLastNonlocal().isArg()) ? vpsInts[c_p_t.getArity()+1] : "M";
                     double probwgivkl = ektpr_p_t.second;                                     // probability of current word given current preterminal
 
                     if ( VERBOSE>1 ) cout << "     W " << e_p_t << " " << k_p_t << " " << c_p_t << " : " << w_t << " = " << probwgivkl << endl;
