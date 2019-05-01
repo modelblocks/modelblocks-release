@@ -113,8 +113,6 @@ class Trellis : public vector<Beam<HiddState>> {
    };
    */
 
-vector<const char*> vpsInts = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-
 ////////////////////////////////////////////////////////////////////////////////
 
 int main ( int nArgs, char* argv[] ) {
@@ -214,8 +212,10 @@ int main ( int nArgs, char* argv[] ) {
 
   // loop over threads (each thread gets an article)
   for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&articleMLSs,&articles,&mutexMLSList,&linenum,numThreads,matN,matF,modP,lexW,matJ,modA,modB] (uint numt) {
-    auto tpLastReport = chrono::high_resolution_clock::now();
 
+    auto tpLastReport = chrono::high_resolution_clock::now();  // clock for thread heartbeats
+
+    // Loop over articles...
     while( true ) {
       // Read in your worker thread's article in this lock block
       mutexMLSList.lock( );
@@ -355,6 +355,7 @@ int main ( int nArgs, char* argv[] ) {
                       double scoreFork = ( FResponse::exists(f,e_p_t,k_p_t) ) ? fresponses(FResponse(f,e_p_t,k_p_t).toInt()) : 1.0 ;
                       if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << (scoreFork / fnorm) << endl;
 
+                      // Thread heartbeat (to diagnose thread death)...
                       if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
                         tpLastReport = chrono::high_resolution_clock::now();
                         lock_guard<mutex> guard( mutexMLSList );
@@ -420,6 +421,7 @@ int main ( int nArgs, char* argv[] ) {
                                       //                            lock_guard<mutex> guard( mutexBeam );
                                       if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(cpA.second) + log(cpB.second) > beams[t].rbegin()->getProb() ) {
 
+                                        // Thread heartbeat (to diagnose thread death)...
                                         if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
                                           tpLastReport = chrono::high_resolution_clock::now();
                                           lock_guard<mutex> guard( mutexMLSList );
@@ -477,6 +479,7 @@ int main ( int nArgs, char* argv[] ) {
       } //close loop lwSent over sents
 
       { lock_guard<mutex> guard( mutexMLSList );
+        cerr << "concbug: checking to print..." << endl;
         //finished sent, now looping over global data and see whether it's ready to print
         //see if articles is not empty and first article is not empty and first sentence of first article is done, then print it.
         while( articleMLSs.size()>0 && articleMLSs.front().size()>0 && articleMLSs.front().size()==articles.front().size() ) { 
@@ -494,7 +497,8 @@ int main ( int nArgs, char* argv[] ) {
             articles.pop_front();
           } 
         } //closes while articleMLSs 
-      }//closes lock guard for print loop  
+        cerr << "concbug: done checking to print." << endl;
+      } //closes lock guard for print loop  
     } //closes while(True)
   }, numtglobal )); //brace closes for numtglobal
 
