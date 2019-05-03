@@ -45,6 +45,7 @@ uint OUTPUT_MEASURES = 0;
 
 char psSpcColonSpc[]  = " : ";
 char psSpcEqualsSpc[] = " = ";
+char psArt[]          = "!ARTICLE\n";
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -205,18 +206,43 @@ int main ( int nArgs, char* argv[] ) {
   uint linenum = 0;
 
   if( OUTPUT_MEASURES ) cout << "word pos f j store totsurp" << endl;
-  
+
   // For each line in stdin...
   list<list<DelimitedList<psX,ObsWord,psSpace,psX>>> articles; //list of list of sents. each list of sents is an article.
   list<list<DelimitedList<psX,BeamElement<HiddState>,psLine,psX>>> articleMLSs; //list of MLSs
 
+  /* UNFINISHED SIMPLER IO 
+  // List of articles, which are pairs of lists of lists of words and lists of lists of hidd states...
+  list< pair< DelimitedList<psX,DelimitedList<psX,ObsWord,psSpace,psX>,psLine,psX>, DelimitedList<psX,DelimitedList<psX,BeamElement<HiddState>,psLine,psX>,psLine,psX> > > corpus;
+  // Read in list of articles...
+//  while( cin.peek() != EOF ) { cin >> corpus.emplace( corpus.end() )->first >> "!ARTICLE\n";  cerr<<"i got: "<<corpus.back().first.size()<<endl;  }
+  while( cin.peek() != EOF ) { cin >> "!ARTICLE\n"; corpus.emplace_back(); while( cin.peek() != '!' && cin.peek() != EOF ) cin >> *corpus.back().first.emplace( corpus.back().first.end() ) >> "\n";  cerr<<"i got: "<<corpus.back().first.size()<<endl; }
+
+  // Pointers to 
+  auto iartNextToProc = corpus.begin();
+  auto iartNextToDump = corpus.begin();
+  */
+
   // loop over threads (each thread gets an article)
-  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&articleMLSs,&articles,&mutexMLSList,&linenum,numThreads,matN,matF,modP,lexW,matJ,modA,modB] (uint numt) {
+  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [/*&corpus,&iartNextToProc,&iartNextToDump,*/&articleMLSs,&articles,&mutexMLSList,&linenum,numThreads,matN,matF,modP,lexW,matJ,modA,modB] (uint numt) {
 
     auto tpLastReport = chrono::high_resolution_clock::now();  // clock for thread heartbeats
 
     // Loop over articles...
     while( true ) {
+
+      /* UNFINISHED SIMPLER IO 
+      decltype(corpus)::iterator iart;
+      { lock_guard<mutex> guard( mutexMLSList );
+        if( iartNextToProc == corpus.end() ) break;
+        iart = iartNextToProc++;
+      }
+      const auto& sents = iart->first;
+      auto&       MLSs  = iart->second;
+
+      int currline = 0;
+      */
+
       // Read in your worker thread's article in this lock block
       mutexMLSList.lock( );
       if( not ( cin && EOF!=cin.peek() ) ) { mutexMLSList.unlock(); break; }
@@ -248,11 +274,11 @@ int main ( int nArgs, char* argv[] ) {
       for (auto& lwSent : sents) {
         currline++;
 
-        mutexMLSList.lock();
+//        mutexMLSList.lock();
         // Add mls to list...
         MLSs.emplace_back( ); //establish placeholder for mls for this specific sentence
         auto& mls = MLSs.back();
-        mutexMLSList.unlock(); 
+//        mutexMLSList.unlock(); 
 
         Trellis   beams;  // sequence of beams - each beam is hypotheses at a given timestep
         uint      t=0;    // time step
@@ -262,6 +288,7 @@ int main ( int nArgs, char* argv[] ) {
         //TODO see if resetting each sentences to use zero prob instead of last prob avoids underflow
         lbeWholeArticle.back().setProb() = 0.0;
         beams[0].tryAdd( lbeWholeArticle.back().getHidd(), lbeWholeArticle.back().getProbBack() );
+        //beams[0].tryAdd( HiddState(), ProbBack<HiddState>() );
 
         // For each word... 
         for ( auto& w_t : lwSent ) {
@@ -298,7 +325,7 @@ int main ( int nArgs, char* argv[] ) {
               const KSet& ksAnt = pbeAnt->getHidd().getPrtrm().getKSet(); 
               bool corefON = (tAnt==t) ? 0 : 1;
               NPredictorSet nps; // = NPredictorSet ( t - tAnt, lnpredictors);
-              q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt); //these are NPredictors for a specific antecedent candidate at tAnt, and a current word at timestep t.
+              q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, false ); //these are NPredictors for a specific antecedent candidate at tAnt, and a current word at timestep t.
               arma::vec nlogresponses = nps.NLogResponses(matN);
               ndenom += exp(nlogresponses(NResponse("1").toInt())-nlogresponses(NResponse("0").toInt()));
 
@@ -316,7 +343,7 @@ int main ( int nArgs, char* argv[] ) {
               //Calculate antecedent N model predictors 
               bool corefON = (tAnt==t) ? 0 : 1;
               NPredictorSet nps;// = NPredictorSet ( t - tAnt, lnpredictors);
-              q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt); //calcNPredictors takes list of npreds (reference) and candidate Sign (reference)
+              q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, false ); //calcNPredictors takes list of npreds (reference) and candidate Sign (reference)
               if (VERBOSE>1) { nps.printOut(cout); }
               arma::vec nlogresponses = nps.NLogResponses(matN);
 
@@ -363,7 +390,7 @@ int main ( int nArgs, char* argv[] ) {
                       } //closes if chrono
 
                       // If preterminal prob is nonzero...
-                      PPredictor ppredictor = q_tdec1.calcPretrmCatCondition(f,e_p_t,k_p_t);
+                      PPredictor ppredictor = q_tdec1.calcPretrmCatCondition( f, e_p_t, k_p_t );
                       if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << c_p_t << "...?" << endl;
                       if ( modP.end()!=modP.find(ppredictor) && modP.find(ppredictor)->second.end()!=modP.find(ppredictor)->second.find(c_p_t) ) {
 
@@ -386,7 +413,7 @@ int main ( int nArgs, char* argv[] ) {
 
                         // Replace overflowing distribs by max...
                         if( jnorm == 1.0/0.0 ) {
-                          uint ind_max=0; for( int i=0; i<jlogresponses.size(); i++ ) if( jlogresponses(i)>jlogresponses(ind_max) ) ind_max=i;
+                          uint ind_max=0; for( uint i=0; i<jlogresponses.size(); i++ ) if( jlogresponses(i)>jlogresponses(ind_max) ) ind_max=i;
                           jlogresponses -= jlogresponses( ind_max );
                           jresponses = arma::exp( jlogresponses );
                           jnorm = arma::accu( jresponses ); //accumulate is sum over elements
@@ -413,7 +440,7 @@ int main ( int nArgs, char* argv[] ) {
                                   if ( VERBOSE>1 ) cout << "         A " << apredictor << " : " << cpA.first << " = " << cpA.second << endl;
 
                                   // For each possible brink category label...
-                                  BPredictor bpredictor = q_tdec1.calcBrinkCatCondition( f, j, e_p_t, e, opL, opR, cpA.first, aLchild );  // bpredictor for prob calc
+                                  BPredictor bpredictor = q_tdec1.calcBaseCatCondition( f, j, e_p_t, e, opL, opR, cpA.first, aLchild );  // bpredictor for prob calc
                                   if ( VERBOSE>1 ) cout << "          B " << bpredictor << "..." << endl;
                                   if ( modB.end()!=modB.find(bpredictor) )
                                     for ( auto& cpB : modB.find(bpredictor)->second ) {
@@ -461,6 +488,10 @@ int main ( int nArgs, char* argv[] ) {
         //DelimitedList<psX,pair<HiddState,ProbBack>,psLine,psX> mls;
 
         { lock_guard<mutex> guard( mutexMLSList );
+          /* UNFINISHED SIMPLER IO
+          auto& mls = *MLSs.emplace( MLSs.end() ); //establish placeholder for mls for this specific sentence
+          //auto& mls = MLSs.back();
+          */
           if( numThreads > 1 ) cerr << "Finished line " << currline << " (" << beams[t].size() << ")..." << endl;
           cerr << "Worker: " << numt << " attempting to set mls on beams..." << endl;
           beams.setMostLikelySequence( mls );
@@ -482,6 +513,13 @@ int main ( int nArgs, char* argv[] ) {
         cerr << "concbug: checking to print..." << endl;
         //finished sent, now looping over global data and see whether it's ready to print
         //see if articles is not empty and first article is not empty and first sentence of first article is done, then print it.
+        /* UNFINISHED SIMPLER IO 
+        while( iartNextToDump->first.size() == iartNextToDump->second.size() )
+          for( auto& mls : (iartNextToDump++)->second )
+            for( auto& be : mls )
+              cout << be.getHidd() << endl;
+//          cout << (iartNextToDump++)->second << endl;
+        */
         while( articleMLSs.size()>0 && articleMLSs.front().size()>0 && articleMLSs.front().size()==articles.front().size() ) { 
           int u=1; 
           auto ibe=next(articleMLSs.front().front().begin());  //iterator over beam elements?

@@ -193,17 +193,6 @@ class CVar : public DiscreteDomainRV<int,domCVar> {
   CVar getLets          ( )       const { const auto& x = mccLets.find(*this); return (x==mccLets.end()) ? *this : x->second; }
   int  getNums          ( )       const { const auto& x = mciNums.find(*this); return (x==mciNums.end()) ? 0 : x->second; }
   CVar addNum           ( int i ) const { const auto& x = mcicLetNum.find(pair<CVar,int>(*this,i)); return (x==mcicLetNum.end()) ? *this : x->second; }
-  CVar removeLink       ( ) { 
-    string mtype = this->getString();
-    if (string::npos != mtype.find("-n")) {
-      std::regex re ( "(.*)-n.*");
-      std::smatch sm;
-      if (std::regex_search(mtype,sm,re) && sm.size() > 1){
-        return CVar(sm.str(1).c_str());
-      }
-    }
-    return *this;
-  }
 };
 map<N,bool>               CVar::mnbArg;
 map<CVar,int>             CVar::mciArity;
@@ -427,21 +416,21 @@ class NPredictor {
     else if (mistr.find(t.id) != mistr.end()) { return os << mistr[t.id]; } //check for string
     else { return os << "NON_STRING_ID_" << t.id; } 
   }
-  static bool exists ( K kAntecedent, K kAncestor )      { return( mkki.end()!=mkki.find(pair<K,K>(kAntecedent,kAncestor)) ); }
-  static bool exists ( AdHocFeature mstring )            { return( mstri.end()!=mstri.find(mstring) ); }
-  static bool exists ( CVar cAntecedent, CVar cAncestor)      { return( mcci.end()!=mcci.find(pair<CVar,CVar>(cAntecedent,cAncestor)) ); }
+  static bool exists ( K kAntecedent, K kAncestor )       { return( mkki.end()!=mkki.find(pair<K,K>(kAntecedent,kAncestor)) ); }
+  static bool exists ( AdHocFeature mstring )             { return( mstri.end()!=mstri.find(mstring) ); }
+  static bool exists ( CVar cAntecedent, CVar cAncestor ) { return( mcci.end()!=mcci.find(pair<CVar,CVar>(cAntecedent,cAncestor)) ); }
 };
-uint                    NPredictor::nextid = 1;
-map<pair<K,K>,uint>     NPredictor::mkki; 
-map<pair<CVar,CVar>,uint>     NPredictor::mcci;
-map<AdHocFeature,uint>  NPredictor::mstri;
-map<uint,AdHocFeature>  NPredictor::mistr;
-map<uint,K>             NPredictor::miantk;
-map<uint,K>             NPredictor::miancestork;
-map<uint,CVar>             NPredictor::miantecedentc;
-map<uint,CVar>             NPredictor::miancestorc;
-map<CVar,uint>             NPredictor::mantecedentci;
-map<CVar,uint>             NPredictor::mancestorci;
+uint                      NPredictor::nextid = 1;
+map<pair<K,K>,uint>       NPredictor::mkki; 
+map<pair<CVar,CVar>,uint> NPredictor::mcci;
+map<AdHocFeature,uint>    NPredictor::mstri;
+map<uint,AdHocFeature>    NPredictor::mistr;
+map<uint,K>               NPredictor::miantk;
+map<uint,K>               NPredictor::miancestork;
+map<uint,CVar>            NPredictor::miantecedentc;
+map<uint,CVar>            NPredictor::miancestorc;
+map<CVar,uint>            NPredictor::mantecedentci;
+map<CVar,uint>            NPredictor::mancestorci;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -454,7 +443,7 @@ class NPredictorSet {
 
   public:
     //constructor
-    NPredictorSet ( ):mdist(0),mnpreds() { }
+    NPredictorSet ( ) : mdist(0), mnpreds() { }
     DelimitedList<psX,NPredictor,psComma,psX>& setList ( ) {
       return mnpreds;
     }
@@ -471,7 +460,7 @@ class NPredictorSet {
         } 
     }
    
-    arma::vec NLogResponses ( const arma::mat &matN) {
+    arma::vec NLogResponses ( const arma::mat& matN) {
       arma::vec nlogresponses = arma::zeros( matN.n_rows );
       nlogresponses += mdist * matN.col(NPredictor("antdist").toInt());
       for ( auto& npredr : mnpreds) {
@@ -890,10 +879,10 @@ class Sign : public DelimitedTrip<psX,KSet,psColon,CVar,psX,S,psX> {
     third()  = s;
   }
   KSet&       setKSet ( )       { return first();  }
-  CVar&       setCat ( )       { return second(); }
+  CVar&       setCat  ( )       { return second(); }
   S&          setSide ( )       { return third();  }
   const KSet& getKSet ( ) const { return first();  }
-  CVar        getCat ( ) const { return second().removeLink(); }
+  CVar        getCat  ( ) const { return second(); } //.removeLink(); }
   S           getSide ( ) const { return third();  }
   bool        isDitto ( ) const { return getKSet().isDitto(); }
 };
@@ -929,19 +918,19 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     //// A.2. Create vectors of carrier indices (one for each nonlocal in category, first to last)...
     CVar cCurrP=aPretrm.getCat();  vector<int> viCarrierP;  viCarrierP.reserve(4);
     CVar cCurrL=aLchild.getCat();  vector<int> viCarrierL;  viCarrierL.reserve(4);
-    CVar cCurrA=cA;                 vector<int> viCarrierA;  viCarrierA.reserve(4);
-    CVar cCurrB=cB;                 vector<int> viCarrierB;  viCarrierB.reserve(4);
+    CVar cCurrA=cA;                vector<int> viCarrierA;  viCarrierA.reserve(4);
+    CVar cCurrB=cB;                vector<int> viCarrierB;  viCarrierB.reserve(4);
     int nNewCarriers = 0;
     for( int i=qPrev.size()-1; i>=-1; i-- ) {
       CVar cI = (i>-1) ? qPrev[i].getCat() : cTop;
-      N nP=cCurrP.getLastNonlocal(); if( i>-1 and                 nP!=N_NONE && qPrev[i].getCat()==nP                     ) { viCarrierP.push_back(i);  cCurrP=cCurrP.withoutLastNolo(); }
-                                     if(                          nP!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nP) ) { viCarrierP.push_back(-1); cCurrP=cCurrP.withoutLastNolo(); nNewCarriers++; }
-      N nL=cCurrL.getLastNonlocal(); if( i>-1 and i<iLowerA    && nL!=N_NONE && qPrev[i].getCat()==nL                     ) { viCarrierL.push_back(i);  cCurrL=cCurrL.withoutLastNolo(); }
-                                     if(          i<iLowerA    && nL!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nL) ) { viCarrierL.push_back(-1); cCurrL=cCurrL.withoutLastNolo(); nNewCarriers++; }
-      N nA=cCurrA.getLastNonlocal(); if( i>-1 and i<iLowerA    && nA!=N_NONE && qPrev[i].getCat()==nA                     ) { viCarrierA.push_back(i);  cCurrA=cCurrA.withoutLastNolo(); }
-                                     if(          i<iLowerA    && nA!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nA) ) { viCarrierA.push_back(-1); cCurrA=cCurrA.withoutLastNolo(); nNewCarriers++; }
-      N nB=cCurrB.getLastNonlocal(); if( i>-1 and i<iAncestorB && nB!=N_NONE && qPrev[i].getCat()==nB                     ) { viCarrierB.push_back(i);  cCurrB=cCurrB.withoutLastNolo(); }
-                                     if(          i<iAncestorB && nB!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nB) ) { viCarrierB.push_back(-1); cCurrB=cCurrB.withoutLastNolo(); nNewCarriers++; }
+      N nP=cCurrP.getLastNonlocal(); if( i>-1 and                  nP!=N_NONE && qPrev[i].getCat()==nP                      ) { viCarrierP.push_back(i);  cCurrP=cCurrP.withoutLastNolo(); }
+                                     if(                           nP!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nP) ) { viCarrierP.push_back(-1); cCurrP=cCurrP.withoutLastNolo(); nNewCarriers++; }
+      N nL=cCurrL.getLastNonlocal(); if( i>-1 and i<iLowerA     && nL!=N_NONE && qPrev[i].getCat()==nL                      ) { viCarrierL.push_back(i);  cCurrL=cCurrL.withoutLastNolo(); }
+                                     if(          i<iLowerA     && nL!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nL) ) { viCarrierL.push_back(-1); cCurrL=cCurrL.withoutLastNolo(); nNewCarriers++; }
+      N nA=cCurrA.getLastNonlocal(); if( i>-1 and i<iLowerA     && nA!=N_NONE && qPrev[i].getCat()==nA                      ) { viCarrierA.push_back(i);  cCurrA=cCurrA.withoutLastNolo(); }
+                                     if(          i<iLowerA     && nA!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nA) ) { viCarrierA.push_back(-1); cCurrA=cCurrA.withoutLastNolo(); nNewCarriers++; }
+      N nB=cCurrB.getLastNonlocal(); if( i>-1 and i<iAncestorB  && nB!=N_NONE && qPrev[i].getCat()==nB                      ) { viCarrierB.push_back(i);  cCurrB=cCurrB.withoutLastNolo(); }
+                                     if(          i<=iAncestorB && nB!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nB) ) { viCarrierB.push_back(-1); cCurrB=cCurrB.withoutLastNolo(); nNewCarriers++; }
     }
 
 //cout<<" viCarrierP=";
@@ -992,8 +981,9 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     }
     // Add B carriers...
     N nA = cA.getLastNonlocal();  N nB = cB.getLastNonlocal();  N nL = aLchild.getCat().getLastNonlocal();
-    if( nB!=N_NONE && nB!=nA && viCarrierB[0]==-1 ) {  if( STORESTATE_CHATTY ) cout<<"(adding carrierB for "<<nB<<" bc none above "<<iAncestorB<<") (G/R rule)"<<endl;
-                                                       *emplace( end() ) = Sign( ksLchild, nB, S_A ); }                            // Add left child kset as A carrier (G rule).
+//    if( nB!=N_NONE and nB!=nA and viCarrierB[0]==-1 and viCarrierB.size()==0 ) cerr<<"WEIRD: "<<cB<<" got "<<nB<<" with iAncestorB="<<iAncestorB<<" in "<<qPrev<<" !"<<endl;
+    if( nB!=N_NONE and nB!=nA and viCarrierB[0]==-1 ) {  if( STORESTATE_CHATTY ) cout<<"(adding carrierB for "<<nB<<" bc none above "<<iAncestorB<<") (G/R rule)"<<endl;
+                                                         *emplace( end() ) = Sign( ksLchild, nB, S_A ); }                            // Add left child kset as A carrier (G rule).
     // WS: SUPPOSED TO BE FOR C-rN EXTRAPOSITION, BUT DOESN'T QUITE WORK...
     // if( nL!=N_NONE && iCarrierL>iAncestorB )    if( STORESTATE_CHATTY ) cout<<"(adding carrierL for "<<nL<<" bc none above "<<iLowerA<<" and below "<<iAncestorB<<")"<<endl;
     // if( nL!=N_NONE && iCarrierL>iAncestorB )    *emplace( end() ) = Sign( qPrev[iCarrierL].getKSet(), nL, S_A );            // Add right child kset as L carrier (H rule).
@@ -1015,7 +1005,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
 //for( int& i : viCarrierL ) cout<<" "<<i;
 //cout<<endl;
         if( viCarrierL[0]>iAncestorB )              *emplace( end() ) = Sign( at(viCarrierL[0]).getKSet(),                                                        ksRchild, cB, S_B );  // Add right child kset as B (H rule).
-        else cerr<<"ERROR StoreState 784: should not happen, on '"<<qPrev<<" "<<f<<" "<<j<<" "<<evF<<" "<<evJ<<" "<<opL<<" "<<opR<<" "<<cA<<" "<<cB<<" "<<aPretrm<<" "<<aLchild<<"'"<<endl;
+        else cerr<<"ERROR StoreState 1019: should not happen, on '"<<qPrev<<" "<<f<<" "<<j<<" "<<evF<<" "<<evJ<<" "<<opL<<" "<<opR<<" "<<cA<<" "<<cB<<" "<<aPretrm<<" "<<aLchild<<"'"<<endl;
     //    cerr << "            " << qPrev << "  " << aLchild << "  ==(f" << f << ",j" << j << "," << opL << "," << opR << ")=>  " << *this << endl;
       } else {  // If j==1...
         // If existing left carrier, integrate with sign...
@@ -1059,7 +1049,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     int d = (FEATCONFIG & 1) ? 0 : getDepth(); // max used depth - (dbar)
     const KSet& ksB = at(size()-1).getKSet(); //contexts of lowest b (bdbar)
     int iCarrier = getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
-    if( STORESTATE_TYPE ) lfp.emplace_back( d, at(size()-1).getCat().removeLink() ); // flag to add depth and category label as predictor, default is true
+    if( STORESTATE_TYPE ) lfp.emplace_back( d, at(size()-1).getCat() ); //.removeLink() ); // flag to add depth and category label as predictor, default is true
     if( !(FEATCONFIG & 2) ) {
       for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(d,kNil,kA,kNil) ) lfp.emplace_back( d, kNil, kA, kNil ); 
       //for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(d,kNil,kA,kNil) ) lfp.emplace_back( d, kNil, kA, kNil ); //ej proposed change to add coreference
@@ -1108,33 +1098,29 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     return         APredictor( getDepth()+f-j, f, j, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, at(getAncestorBIndex(f)).getCat(), (j==0) ? aLchild.getCat() : cBot );
   }
 
-  BPredictor calcBrinkCatCondition ( F f, J j, EVar eF, EVar eJ, O opL, O opR, CVar cParent, const LeftChildSign& aLchild ) const {
+  BPredictor calcBaseCatCondition ( F f, J j, EVar eF, EVar eJ, O opL, O opR, CVar cParent, const LeftChildSign& aLchild ) const {
     if( FEATCONFIG & 1 ) return  BPredictor( 0, 0, 0, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, cParent, aLchild.getCat() );
     return          BPredictor( getDepth()+f-j, f, j, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, cParent, aLchild.getCat() );
   }
 
-  //list<NPredictor>& calcNPredictors (list<NPredictor>& npreds, const Sign& candidate, bool bcorefON, int antdist) {
-  void calcNPredictors (NPredictorSet& nps, const Sign& candidate, bool bcorefON, int antdist) {
-    //cerr << "entered calcNPredictors..." << endl;
+  void calcNPredictors( NPredictorSet& nps, const Sign& candidate, bool bcorefON, int antdist, bool bAdd=true ) const {
     //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
     //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
-    //cout << "calcNPredictors received candidate: " << candidate << endl;
-    //cout << "candidate kset: " << candidate.getKSet() << endl;
+
     const KSet& ksB = at(size()-1).getKSet(); //contexts of lowest b (bdbar)
-    //cout << "ksb: " << ksB << endl;
-    for (auto& antk : candidate.getKSet()){ 
-      nps.setList().emplace_back(antk, kNil); //add unary antecedent k feat, using kxk template
-      for (auto& currk : ksB) {
-        nps.setList().emplace_back(antk, currk); //pairwise kxk feat
+    for( auto& antk : candidate.getKSet() ) { 
+      if( bAdd || NPredictor::exists(antk,kNil) ) nps.setList().emplace_back( antk, kNil ); //add unary antecedent k feat, using kxk template
+      for( auto& currk : ksB ) {
+        if( bAdd || NPredictor::exists(antk,currk) ) nps.setList().emplace_back( antk, currk ); //pairwise kxk feat
       }
     }
-    for (auto& currk : ksB) {
-      nps.setList().emplace_back(kNil, currk); //unary ancestor k feat
+    for( auto& currk : ksB ) {
+      if( bAdd || NPredictor::exists(kNil,currk) ) nps.setList().emplace_back( kNil, currk ); //unary ancestor k feat
     }
 
-    nps.setList().emplace_back(candidate.getCat(), N_NONE);  // antecedent CVar
-    nps.setList().emplace_back(N_NONE, at(size()-1).getCat()); //ancestor CVar
-    nps.setList().emplace_back(candidate.getCat(), at(size()-1).getCat()); //pairwise T
+    if( bAdd || NPredictor::exists(candidate.getCat(),N_NONE) )                nps.setList().emplace_back( candidate.getCat(), N_NONE                ); // antecedent CVar
+    if( bAdd || NPredictor::exists(N_NONE,at(size()-1).getCat()) )             nps.setList().emplace_back( N_NONE, at(size()-1).getCat()             ); // ancestor CVar
+    if( bAdd || NPredictor::exists(candidate.getCat(),at(size()-1).getCat()) ) nps.setList().emplace_back( candidate.getCat(), at(size()-1).getCat() ); // pairwise T
 
     nps.setAntDist() = antdist;
     /*
@@ -1150,9 +1136,6 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     //corefON feature
     if (bcorefON == true) { 
       nps.setList().emplace_back(corefON);
-      //cerr << "corefON added to npreds..." << endl;
-      //for (auto& npred : npreds) {cerr << npred << " ";}
-      //cerr << endl;
     }
   }
 };
@@ -1226,11 +1209,11 @@ KSet::KSet ( const KSet& ksToProject, int iProj, bool bUp, EVar e, const vector<
 LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm ) {
 //    int         iCarrierB  = qPrev.getAncestorBCarrierIndex( 1 );
     int         iAncestorB = qPrev.getAncestorBIndex(f);
-    CVar           cCurrB = qPrev.at(iAncestorB).getCat();
+    CVar        cCurrB     = qPrev.at(iAncestorB).getCat();
     vector<int> viCarrierB;  viCarrierB.reserve(4);
-    for( int i=qPrev.size(); i>=0; i-- ) {
-      N nB=cCurrB.getLastNonlocal(); if( i<iAncestorB && nB!=N_NONE && qPrev[i].getCat()==nB                  ) { viCarrierB.push_back(i);  cCurrB=cCurrB.withoutLastNolo(); }
-                                     if( i<iAncestorB && nB!=N_NONE && !qPrev[i].getCat().isCarrier() && !qPrev[i].getCat().containsCarrier(nB) ) { viCarrierB.push_back(-1); cCurrB=cCurrB.withoutLastNolo(); }
+    for( int i=qPrev.size(); i>=-1; i-- ) {
+      N nB=cCurrB.getLastNonlocal(); if( i>-1 && i<iAncestorB  && nB!=N_NONE && qPrev[i].getCat()==nB                  ) { viCarrierB.push_back(i);  cCurrB=cCurrB.withoutLastNolo(); }
+                                     if(         i<=iAncestorB && nB!=N_NONE && !qPrev[i].getCat().isCarrier() && !qPrev[i].getCat().containsCarrier(nB) ) { viCarrierB.push_back(-1); cCurrB=cCurrB.withoutLastNolo(); }
     }
 //cout<<" viCarrierB=";
 //for( int i : viCarrierB ) cout<<" "<<i;
@@ -1247,7 +1230,8 @@ LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign
           : (!aAncestorA.isDitto())                   ? aAncestorA                          // if no fork and stack exists and last apex context set is not ditto, return last apex.
           :                                             Sign( KSet(KSet(),0,true,eF,viCarrierB,qPrev,aAncestorB.getKSet()), aPretrm.getKSet(), aAncestorA.getCat(), S_A );
                                                   //Sign( KSet(ksExtrtn,-getDir(eF),aAncestorB.getKSet()), aPretrm.getKSet(), aAncestorA.getCat(), S_A );  // otherwise make new context set.
-  if( aPretrm.getCat().getLastNonlocal()==N("-vN") and viCarrierB[0]==-1 ) setKSet().addBankedUnaryTransform( "O" );
+//  if( aPretrm.getCat().getLastNonlocal()==N("-vN") and viCarrierB.size()==0 ) cerr<<"WEIRD2: "<<aPretrm.getCat().getLastNonlocal()<<" with iAncestorB="<<iAncestorB<<" in "<<qPrev<<" !"<<endl;
+  if( aPretrm.getCat().getLastNonlocal()==N("-vN") and (viCarrierB.size()==0 or viCarrierB[0]==-1) ) setKSet().addBankedUnaryTransform( "O" );
 //cout<<"lchild created with banked "<<getKSet().getBankedUnaryTransform()<<endl;
 }
 
@@ -1279,13 +1263,13 @@ class HiddState : public DelimitedSept<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAm
 public:
   HiddState ( )                                                                    : DelimitedSept<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Delimited<int>,psX>()             { }
   HiddState ( const Sign& a, F f, EVar e, K k, JResponse jr, const StoreState& q , int i=0 ) : DelimitedSept<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Delimited<int>,psX>(a,f,e,k,jr,q,i) { }
-  const Sign& getPrtrm ()           { return first(); }
-  F getF ()                         { return second(); }
-  EVar getForkE ()                  { return third(); }
-  K getForkK ()                     { return fourth(); }
-  const JResponse& getJResp()       { return fifth(); }
-  const StoreState& getStoreState() { return sixth(); }
-  const Delimited<int>& getI()      { return seventh(); }
+  const Sign& getPrtrm ()           const { return first(); }
+  F getF ()                         const { return second(); }
+  EVar getForkE ()                  const { return third(); }
+  K getForkK ()                     const { return fourth(); }
+  const JResponse& getJResp()       const { return fifth(); }
+  const StoreState& getStoreState() const { return sixth(); }
+  const Delimited<int>& getI()      const { return seventh(); }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -176,7 +176,11 @@ class DelimitedList : public list<T> {
   }
   friend bool operator>> ( pair<istream&,DelimitedList<psD1,T,psD2,psD3>&> ist, const vector<const char*>& vpsDelim ) {
     if (psX!=psD1) ist.first >> psD1;
-    if (psX==psD3) { cerr<<"ERROR: nested lists without final delimiters."<<endl; return false; }
+//    if (psX==psD3) { cerr<<"ERROR: nested lists without final delimiters."<<endl; return false; }
+    if (psX==psD3) {
+      vector<const char*> vpsJointDelim( vpsDelim );  vpsJointDelim.push_back( psD2 );
+      while ( ist.first >> *ist.second.emplace(ist.second.end()) >> vpsJointDelim );
+    }
     while ( ist.first >> *ist.second.emplace(ist.second.end()) >> vector<const char*>{psD2,psD3} );
     return ist.first >> vpsDelim;
   }

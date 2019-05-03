@@ -56,7 +56,7 @@ L getLink( L l ) {
 L removeLink( L l ) {
   if( string::npos != l.find("-n") ) {
     std::smatch sm;
-    std::regex re ( "(.*)-n([0-9]+).*" ); //get consecutive numbers after a "-n"
+    std::regex re ( "(.*?)-n([0-9]+).*" ); //get consecutive numbers after a "-n"
     if( std::regex_search( l, sm, re ) && sm.size() > 2 ) { return( sm.str(1) ); }
   } 
   return( l );
@@ -164,7 +164,7 @@ void calcContext ( Tree<L>& tr,
     eF              = e + getUnaryOp( tr );
     pair<K,CVar> kc = getPred ( removeLink(tr), removeLink(tr.front()) );
     K k             = (FEATCONFIG & 8 && kc.first.getString()[2]!='y') ? K::kBot : kc.first;
-    aPretrm         = (not failtree) ? Sign( k, getCat(l), S_A ) : Sign() ;
+    aPretrm         = (not failtree) ? Sign( k, getCat(removeLink(l)), S_A ) : Sign() ;
     bool validIntra = false;
 
     std::string annotSentIdx = annot.substr(0,annot.size()-2); //get all but last two...
@@ -276,11 +276,11 @@ void calcContext ( Tree<L>& tr,
     ljp.push_front( jpCat );
     cout << "==== " << aLchild << "   " << removeLink(tr) << " -> " << removeLink(tr.front()) << " " << removeLink(tr.back()) << endl;
     cout << "J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e.c_str(),oL,oR)  << endl;
-    cout << "A " << q.calcApexCatCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild)                  << " : " << getCat(l)                      << endl;
-    cout << "B " << q.calcBrinkCatCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getCat(l),aLchild)   << " : " << getCat(removeLink(tr.back()))  << endl;
+    cout << "A " << q.calcApexCatCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild)                << " : " << getCat(removeLink(l))          << endl;
+    cout << "B " << q.calcBaseCatCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getCat(l),aLchild)   << " : " << getCat(removeLink(tr.back()))  << endl;
 
     // Update storestate...
-    q = StoreState ( q, f, j, eF.c_str(), e.c_str(), oL, oR, getCat(l), getCat(removeLink(tr.back())), aPretrm, aLchild );
+    q = StoreState ( q, f, j, eF.c_str(), e.c_str(), oL, oR, getCat(removeLink(l)), getCat(removeLink(tr.back())), aPretrm, aLchild );
 
     // Traverse right child...
     calcContext ( tr.back(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 1, d );
