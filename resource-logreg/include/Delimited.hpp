@@ -133,7 +133,7 @@ inline bool operator>> ( pair<istream&,Delimited<T>&> isps, const vector<const c
 }
 
 inline istream& operator>> ( istream& is, const char* ps ) {
-  for ( uint i=0; i<strlen(ps); i++ ) is.get();
+  for ( uint i=0; i<strlen(ps); i++ ) { char c = is.get(); if( c!= ps[i]) cerr<<"ERROR: expected delimiter '"<<ps[i]<<"' encountered '"<<c<<"'"<<endl; assert( c == ps[i] ); }
   return is;
 }
 

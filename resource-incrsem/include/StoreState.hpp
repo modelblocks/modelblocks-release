@@ -563,7 +563,7 @@ class FPredictor {
       ist.first >> "d" >> d >> "&";
       if ( ist.first.peek()=='t' ) { 
         Delimited<CVar> c;       
-        auto& o = ist.first >> "c" >> c >> psDelim;  
+        auto& o = ist.first >> "t" >> c >> psDelim;  
         ist.second = FPredictor(d,c);      
         return o; 
       }
@@ -1298,13 +1298,13 @@ class JPredictorVec : public list<unsigned int> {
       const KSet& ksAncstr = ( aAncstr.getKSet().size()==0 ) ? ksBot : aAncstr.getKSet();
       const KSet& ksFiller = ( iCarrierB<0                 ) ? ksBot : ss.at( iCarrierB ).getKSet();
       const KSet& ksLchild = ( aLchild.getKSet().size()==0 ) ? ksBot : aLchild.getKSet() ;
+      emplace_back( jm.getPredictorIndex( "Bias" ) );  // add bias
       if( STORESTATE_TYPE ) emplace_back( jm.getPredictorIndex( d, aAncstr.getCat(), aLchild. getCat() ) );  //if( bAdd || JPredictor::exists(d,aAncstr.getCat(),aLchild.getCat()) ) ljp.emplace_back( d, aAncstr.getCat(), aLchild.getCat() );
       if( !(FEATCONFIG & 32) ) {
         for( auto& kA : ksAncstr ) for( auto& kL : ksLchild ) emplace_back( jm.getPredictorIndex( d, kNil, kA, kL ) );  //if( bAdd || JPredictor::exists(d,kNil,kA,kL) ) ljp.emplace_back( d, kNil, kA, kL );
         for( auto& kF : ksFiller ) for( auto& kA : ksAncstr ) emplace_back( jm.getPredictorIndex( d, kF, kA, kNil ) );  //if( bAdd || JPredictor::exists(d,kF,kA,kNil) ) ljp.emplace_back( d, kF, kA, kNil );
         for( auto& kF : ksFiller ) for( auto& kL : ksLchild ) emplace_back( jm.getPredictorIndex( d, kF, kNil, kL ) );  //if( bAdd || JPredictor::exists(d,kF,kNil,kL) ) ljp.emplace_back( d, kF, kNil, kL );
       }
-      emplace_back();  // add bias
     }
 };
 
@@ -1325,6 +1325,8 @@ class JModel {
     unsigned int iNextPredictor = 0;               // predictor and response next-pointers
     unsigned int iNextResponse  = 0;
 
+    map<string,unsigned int> msi;                  // predictor indices for ad-hoc feature
+    map<unsigned int,string> mis;
     map<quad<D,K,K,K>,unsigned int> mdkkki;        // predictor indices for k-context tuples
     map<unsigned int,quad<D,K,K,K>> midkkk;
     map<trip<D,CVar,CVar>,unsigned int> mdcci;     // predictor indices for category tuples
@@ -1337,7 +1339,7 @@ class JModel {
 
     JModel( ) { }
     JModel( istream& is ) {
-      list< trip< unsigned int, unsigned int, double > > l;
+      list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
       //list< DelimitedTrip<psX,JPredr,psSpcColonSpc,JResponse,psSpcEqualsSpc,Delimited<double>,psX> > l;
       //list<DelimitedTrip<psX,unsigned int,psSpcColonSpc,Delimited<JResponse>,psSpcEqualsSpc,Delimited<double>,psX>> l;
       while( is.peek()=='J' ) {
@@ -1346,18 +1348,29 @@ class JModel {
 //        else                                       associateDCC(  l.back().first(), 2, l.back().first.rfind("&") );
 
         auto& prw = *l.emplace( l.end() );
-        D d;                                          is >> "J d" >> d >> "&";
-//        cerr << "reading a depth " << d << endl;
-	if( is.peek()=='t' ) { Delimited<CVar> cA,cL; is >> "t" >> cA >> "&t" >> cL >>       " : ";                   prw.first()  = getPredictorIndex( d, cA, cL );     }
-        else                 { Delimited<K> kF,kA,kL; is >> kF >> "&" >> kA >> "&" >> kL >> " : ";                    prw.first()  = getPredictorIndex( d, kF, kA, kL ); }
-        J j; Delimited<EVar> e; O oL,oR;              is >> "j" >> j >> "&" >> e >> "&" >> oL >> "&" >> oR >> " = ";  prw.second() = getResponseIndex( j, e, oL, oR );
-        Delimited<double> w;                          is >> w >> "\n";                                                prw.third()  = w;
+	is >> "J ";
+	if( is.peek()=='a' )   { Delimited<string> s;   is >> "a" >> s >> " : ";                                        prw.first()  = getPredictorIndex( s );             }
+        else{
+          D d;                                          is >> "d" >> d >> "&";
+          if( is.peek()=='t' ) { Delimited<CVar> cA,cL; is >> "t" >> cA >> "&t" >> cL >> " : ";                         prw.first()  = getPredictorIndex( d, cA, cL );     }
+          else                 { Delimited<K> kF,kA,kL; is >> kF >> "&" >> kA >> "&" >> kL >> " : ";                    prw.first()  = getPredictorIndex( d, kF, kA, kL ); }
+        }
+        J j; Delimited<EVar> e; O oL,oR;                is >> "j" >> j >> "&" >> e >> "&" >> oL >> "&" >> oR >> " = ";  prw.second() = getResponseIndex( j, e, oL, oR );
+        Delimited<double> w;                            is >> w >> "\n";                                                prw.third()  = w;
       }
 
       if( l.size()==0 ) cerr << "ERROR: NO J ITEMS IN FILE" << endl;
 //      cerr << "alloc mat: " << mijeoo.size() << " " << iNextPredictor << endl;
       matJ.zeros ( mijeoo.size(), iNextPredictor );
       for( auto& prw : l ) { /*cerr<<prw.second()<<","<<prw.first()<<endl;*/ matJ( prw.second(), prw.first() ) = prw.third(); }
+    }
+
+    unsigned int getPredictorIndex( const string& s ) {
+      const auto& it = msi.find( s );  if( it != msi.end() ) return( it->second );
+      msi[ s ] = iNextPredictor;  mis[ iNextPredictor ] = s;  return( iNextPredictor++ );
+    }
+    unsigned int getPredictorIndex( const string& s ) const {                  // const version with closed predictor domain
+      const auto& it = msi.find( s );  return( ( it != msi.end() ) ? it->second : 0 );
     }
 
     unsigned int getPredictorIndex( D d, K kF, K kA, K kL ) {
@@ -1408,9 +1421,11 @@ class JModel {
       for( const auto& i : mv.second ) {
         if( &i != &mv.second.front() ) os << ",";
         const auto& itK = mv.first.midkkk.find(i);
-       	if( itK != mv.first.midkkk.end() ) os << "d" << itK->second.first() << "&" << itK->second.second() << "&" << itK->second.third() << "&" << itK->second.fourth() << "=1";
+       	if( itK != mv.first.midkkk.end() ) { os << "d" << itK->second.first() << "&" << itK->second.second() << "&" << itK->second.third() << "&" << itK->second.fourth() << "=1"; continue; }
         const auto& itC = mv.first.midcc.find(i);
-        if( itC != mv.first.midcc.end()  ) os << "d" << itC->second.first() << "&t" << itC->second.second() << "&t" << itC->second.third() << "=1";
+        if( itC != mv.first.midcc.end()  ) { os << "d" << itC->second.first() << "&t" << itC->second.second() << "&t" << itC->second.third() << "=1"; continue; }
+        const auto& itS = mv.first.mis.find(i);
+        if( itS != mv.first.mis.end()    ) { os << "a" << itS->second << "=1"; }
       }
       return os;
     }
