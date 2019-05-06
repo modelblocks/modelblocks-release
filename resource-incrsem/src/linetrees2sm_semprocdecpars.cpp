@@ -142,6 +142,10 @@ pair<K,CVar> getPred ( const L& lP, const L& lW ) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+JModel modJ;
+
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 void calcContext ( Tree<L>& tr, 
@@ -269,13 +273,15 @@ void calcContext ( Tree<L>& tr,
     O oR         = getOp ( removeLink(tr.back()),  removeLink(tr.front()), removeLink(tr) );
 
     // Print binary / join-phase predictors...
-    DelimitedList<psX,JPredictor,psComma,psX> ljp;  q.calcJoinPredictors(ljp,f,eF.c_str(),aLchild);
+    JPredictorVec ljp( modJ, f, eF.c_str(), aLchild, q );
+    //DelimitedList<psX,JPredictor,psComma,psX> ljp;  q.calcJoinPredictors(ljp,f,eF.c_str(),aLchild);
     auto jpCat = ljp.front( );
     ljp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first elemenet is category.
     ljp.sort( );             // sort to shorten mlr input
     ljp.push_front( jpCat );
     cout << "==== " << aLchild << "   " << removeLink(tr) << " -> " << removeLink(tr.front()) << " " << removeLink(tr.back()) << endl;
-    cout << "J ";  for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e.c_str(),oL,oR)  << endl;
+    cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : " << j << "&" << e << "&" << oL << "&" << oR << endl;;
+    //for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e.c_str(),oL,oR)  << endl;
     cout << "A " << q.calcApexCatCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild)                << " : " << getCat(removeLink(l))          << endl;
     cout << "B " << q.calcBaseCatCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getCat(l),aLchild)   << " : " << getCat(removeLink(tr.back()))  << endl;
 
@@ -354,7 +360,7 @@ int main ( int nArgs, char* argv[] ) {
   }
 
   cerr << "F TOTALS: " << FPredictor::getDomainSize() << " predictors, " << FResponse::getDomain().getSize() << " responses." << endl;
-  cerr << "J TOTALS: " << JPredictor::getDomainSize() << " predictors, " << JResponse::getDomain().getSize() << " responses." << endl;
+  cerr << "J TOTALS: " << modJ.getNumPredictors() << " predictors, " << modJ.getNumResponses() << " responses." << endl;
 }
 
 
