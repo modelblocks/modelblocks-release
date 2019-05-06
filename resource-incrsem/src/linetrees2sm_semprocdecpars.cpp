@@ -143,6 +143,7 @@ pair<K,CVar> getPred ( const L& lP, const L& lW ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+FModel modF;
 JModel modJ;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -187,14 +188,17 @@ void calcContext ( Tree<L>& tr,
     annot2tdisc[currentloc] = tDisc; //map current sent,word index to discourse word counter
     if (not failtree) {
       // Print preterminal / fork-phase predictors...
+      FPredictorVec lfp( modF, ksAnt, nullAnt, q );
+      /*
       DelimitedList<psX,FPredictor,psComma,psX> lfp;  
       q.calcForkPredictors(lfp, ksAnt, nullAnt);//additional kset argument is set of all antecedents in referent cluster. requires global map from annotation to ksets, as in {"0204":Kset ["Lord_"], "0207": KSet ["Lord_", "he_"]}, etc.
       auto fpCat = lfp.front( );
       lfp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first element is category.
       lfp.sort( );             // sort to shorten mlr input
       lfp.push_front( fpCat );
+      */
       cout<<"----"<<q<<endl;
-      cout << "F "; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e.c_str(),k) << endl;
+      cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : " << f << "&" << e << "&" << k << endl;//; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e.c_str(),k) << endl;
       cout << "P " << q.calcPretrmCatCondition(f,e.c_str(),k) << " : " << aPretrm.getCat() /*getCat(l)*/     << endl;
       cout << "W " << e << " " << k << " " << aPretrm.getCat() /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
 
@@ -275,10 +279,12 @@ void calcContext ( Tree<L>& tr,
     // Print binary / join-phase predictors...
     JPredictorVec ljp( modJ, f, eF.c_str(), aLchild, q );
     //DelimitedList<psX,JPredictor,psComma,psX> ljp;  q.calcJoinPredictors(ljp,f,eF.c_str(),aLchild);
+    /*
     auto jpCat = ljp.front( );
     ljp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first elemenet is category.
     ljp.sort( );             // sort to shorten mlr input
     ljp.push_front( jpCat );
+    */
     cout << "==== " << aLchild << "   " << removeLink(tr) << " -> " << removeLink(tr.front()) << " " << removeLink(tr.back()) << endl;
     cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;;
     //for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e.c_str(),oL,oR)  << endl;
@@ -359,7 +365,7 @@ int main ( int nArgs, char* argv[] ) {
     else {cin.get();}
   }
 
-  cerr << "F TOTALS: " << FPredictor::getDomainSize() << " predictors, " << FResponse::getDomain().getSize() << " responses." << endl;
+  cerr << "F TOTALS: " << modF.getNumPredictors() << " predictors, " << modF.getNumResponses() << " responses." << endl;
   cerr << "J TOTALS: " << modJ.getNumPredictors() << " predictors, " << modJ.getNumResponses() << " responses." << endl;
 }
 

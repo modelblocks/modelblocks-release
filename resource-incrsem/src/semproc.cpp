@@ -41,135 +41,6 @@ uint FEATCONFIG = 0;
 
 char psSpcColonSpc[]  = " : ";
 char psSpcEqualsSpc[] = " = ";
-//char psArt[]          = "!ARTICLE\n";
-
-////////////////////////////////////////////////////////////////////////////////
-
-/*
-class JPredictorVec : public list<unsigned int> {
-
-  public:
-
-    template<class JM>
-    JPredictorVec( JM& jm, F f, EVar eF, const LeftChildSign& aLchild, const StoreState& ss ) {
-      int d = (FEATCONFIG & 1) ? 0 : ss.getDepth()+f;
-      int iCarrierB = ss.getAncestorBCarrierIndex( f );
-      const Sign& aAncstr  = ss.at( ss.getAncestorBIndex(f) );
-      const KSet& ksAncstr = ( aAncstr.getKSet().size()==0 ) ? ksBot : aAncstr.getKSet();
-      const KSet& ksFiller = ( iCarrierB<0                 ) ? ksBot : ss.at( iCarrierB ).getKSet();
-      const KSet& ksLchild = ( aLchild.getKSet().size()==0 ) ? ksBot : aLchild.getKSet() ;
-      if( STORESTATE_TYPE ) emplace_back( jm.getPredictorIndex( d, aAncstr.getCat(), aLchild. getCat() ) );  //if( bAdd || JPredictor::exists(d,aAncstr.getCat(),aLchild.getCat()) ) ljp.emplace_back( d, aAncstr.getCat(), aLchild.getCat() );
-      if( !(FEATCONFIG & 32) ) {
-        for( auto& kA : ksAncstr ) for( auto& kL : ksLchild ) emplace_back( jm.getPredictorIndex( d, kNil, kA, kL ) );  //if( bAdd || JPredictor::exists(d,kNil,kA,kL) ) ljp.emplace_back( d, kNil, kA, kL );
-        for( auto& kF : ksFiller ) for( auto& kA : ksAncstr ) emplace_back( jm.getPredictorIndex( d, kF, kA, kNil ) );  //if( bAdd || JPredictor::exists(d,kF,kA,kNil) ) ljp.emplace_back( d, kF, kA, kNil );
-        for( auto& kF : ksFiller ) for( auto& kL : ksLchild ) emplace_back( jm.getPredictorIndex( d, kF, kNil, kL ) );  //if( bAdd || JPredictor::exists(d,kF,kNil,kL) ) ljp.emplace_back( d, kF, kNil, kL );
-      }
-      emplace_back();  // add bias
-    }
-};
-
-
-class JModel {
-
-  typedef DelimitedQuad<psX,J,psAmpersand,Delimited<EVar>,psAmpersand,O,psAmpersand,O,psX> JEOO;
-
-  private:
-
-    arma::mat matJ;                                // matrix itself
-
-    unsigned int iNextPredictor = 0;               // predictor and response next-pointers
-    unsigned int iNextResponse  = 0;
-
-    map<quad<D,K,K,K>,unsigned int> mdkkki;        // predictor indices for k-context tuples
-    map<unsigned int,quad<D,K,K,K>> midkkk;
-    map<trip<D,CVar,CVar>,unsigned int> mdcci;     // predictor indices for category tuples
-    map<unsigned int,trip<D,CVar,CVar>> midcc;
-
-    map<JEOO,unsigned int> mjeooi;     // response indices
-    map<unsigned int,JEOO> mijeoo;
-
-  public:
-
-    JModel( ) { }
-    JModel( istream& is ) {
-      list< trip< unsigned int, unsigned int, double > > l;
-      //list< DelimitedTrip<psX,JPredr,psSpcColonSpc,JResponse,psSpcEqualsSpc,Delimited<double>,psX> > l;
-      //list<DelimitedTrip<psX,unsigned int,psSpcColonSpc,Delimited<JResponse>,psSpcEqualsSpc,Delimited<double>,psX>> l;
-      while( is.peek()=='J' ) {
-//        is >> "J " >> l.emplace( l.end() ) >> "\n";
-//        if( l.back().first().getString()[3]=='t' ) associateDKKK( l.back().first(), 2, l.back().first().find("&",3), l.back().first().rfind("&") );
-//        else                                       associateDCC(  l.back().first(), 2, l.back().first.rfind("&") );
-
-        auto& prw = *l.emplace( l.end() );
-        D d;                                          is >> "J d" >> d >> "&";
-//        cerr << "reading a depth " << d << endl;
-	if( is.peek()=='t' ) { Delimited<CVar> cA,cL; is >> "t" >> cA >> "&" >> cL >>       " : ";                    prw.first()  = getPredictorIndex( d, cA, cL );     }
-        else                 { Delimited<K> kF,kA,kL; is >> kF >> "&" >> kA >> "&" >> kL >> " : ";                    prw.first()  = getPredictorIndex( d, kF, kA, kL ); }
-        J j; Delimited<EVar> e; O oL,oR;              is >> "j" >> j >> "&" >> e >> "&" >> oL >> "&" >> oR >> " = ";  prw.second() = getResponseIndex( j, e, oL, oR );
-        Delimited<double> w;                          is >> w >> "\n";                                                prw.third()  = w;
-      }
-
-      if( l.size()==0 ) cerr << "ERROR: NO J ITEMS IN FILE" << endl;
-//      cerr << "alloc mat: " << mijeoo.size() << " " << iNextPredictor << endl;
-      matJ.zeros ( mijeoo.size(), iNextPredictor );
-      for( auto& prw : l ) { matJ( prw.second(), prw.first() ) = prw.third(); }
-    }
-
-    unsigned int getPredictorIndex( D d, K kF, K kA, K kL ) {
-      const auto& it = mdkkki.find( quad<D,K,K,K>(d,kF,kA,kL) );  if( it != mdkkki.end() ) return( it->second );
-      mdkkki[ quad<D,K,K,K>(d,kF,kA,kL) ] = iNextPredictor;  midkkk[ iNextPredictor ] = quad<D,K,K,K>(d,kF,kA,kL);  return( iNextPredictor++ );
-    }
-    unsigned int getPredictorIndex( D d, K kF, K kA, K kL ) const {            // const version with closed predictor domain
-      const auto& it = mdkkki.find( quad<D,K,K,K>(d,kF,kA,kL) );  return( ( it != mdkkki.end() ) ? it->second : 0 );
-    }
-
-    unsigned int getPredictorIndex( D d, CVar cA, CVar cL ) {
-      const auto& it = mdcci.find( trip<D,CVar,CVar>(d,cA,cL) );  if( it != mdcci.end() ) return( it->second );
-      mdcci[ trip<D,CVar,CVar>(d,cA,cL) ] = iNextPredictor;  midcc[ iNextPredictor ] = trip<D,CVar,CVar>(d,cA,cL);  return( iNextPredictor++ );
-    }
-    unsigned int getPredictorIndex( D d, CVar cA, CVar cL ) const {            // const version with closed predictor domain
-      const auto& it = mdcci.find( trip<D,CVar,CVar>(d,cA,cL) );  return( ( it != mdcci.end() ) ? it->second : 0 );
-    }
-
-    unsigned int getResponseIndex( J j, EVar e, O oL, O oR ) {
-      const auto& it = mjeooi.find( JEOO(j,e,oL,oR) );  if( it != mjeooi.end() ) return( it->second );
-      mjeooi[ JEOO(j,e,oL,oR) ] = iNextResponse;  mijeoo[ iNextResponse ] = JEOO(j,e,oL,oR);  return( iNextResponse++ );
-    }
-    unsigned int getResponseIndex( J j, EVar e, O oL, O oR ) const {           // const version with closed predictor domain
-      const auto& it = mjeooi.find( JEOO(j,e,oL,oR) );  return( ( it != mjeooi.end() ) ? it->second : 0 );
-    }
-
-    const JEOO getJEOO( unsigned int i ) const {
-      return mijeoo[ i ];
-    }
-
-    arma::vec calcResponses( const JPredictorVec& ljpredictors ) const {
-      arma::vec jlogresponses = arma::zeros( matJ.n_rows );
-      for ( auto& jpredr : ljpredictors ) if ( jpredr < matJ.n_cols ) jlogresponses += matJ.col( jpredr );
-      arma::vec jresponses = arma::exp( jlogresponses );
-      double jnorm = arma::accu( jresponses );  // 0.0;                                           // join normalization term (denominator)
-
-      // Replace overflowing distribs by max...
-      if( jnorm == 1.0/0.0 ) {
-        uint ind_max=0; for( uint i=0; i<jlogresponses.size(); i++ ) if( jlogresponses(i)>jlogresponses(ind_max) ) ind_max=i;
-        jlogresponses -= jlogresponses( ind_max );
-        jresponses = arma::exp( jlogresponses );
-        jnorm = arma::accu( jresponses ); //accumulate is sum over elements
-      } //closes if jnorm
-      return jresponses / jnorm;
-    }
-
-    friend ostream& operator<<( ostream& os, const pair< const JModel&, const JPredictorVec& >& mv ) {
-      for( unsigned int i : mv.second ) {
-        if( i != mv.second.front() ) os << ",";
-        const auto& it = mv.first.midkkk.find(i);
-       	if( it != mv.first.midkkk.end() ) os << it->second.first() << "&" << it->second.second() << "&" << it->second.third() << "&" << it->second.fourth();
-        else                              os << it->second.first() << "&" << it->second.second() << "&" << it->second.third();
-      }
-      return os;
-    }
-};
-*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -251,9 +122,10 @@ int main ( int nArgs, char* argv[] ) {
   uint numThreads = 1;
 
   // Define model structures...
-  arma::mat matF;
+//  arma::mat matF;
 //  arma::mat matJ;
   arma::mat matN;
+  FModel                        modFmutable;
   map<PPredictor,map<P,double>> modP;
   map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> lexW;
   JModel                        modJmutable;
@@ -261,7 +133,7 @@ int main ( int nArgs, char* argv[] ) {
   map<BPredictor,map<B,double>> modB;
 
   { // Define model lists...
-    list<DelimitedTrip<psX,FPredictor,psSpcColonSpc,Delimited<FResponse>,psSpcEqualsSpc,Delimited<double>,psX>> lF;
+//    list<DelimitedTrip<psX,FPredictor,psSpcColonSpc,Delimited<FResponse>,psSpcEqualsSpc,Delimited<double>,psX>> lF;
     list<DelimitedTrip<psX,PPredictor,psSpcColonSpc,P,psSpcEqualsSpc,Delimited<double>,psX>> lP;
     list<DelimitedTrip<psX,WPredictor,psSpcColonSpc,W,psSpcEqualsSpc,Delimited<double>,psX>> lW;
 //    list<DelimitedTrip<psX,JPredictor,psSpcColonSpc,Delimited<JResponse>,psSpcEqualsSpc,Delimited<double>,psX>> lJ;
@@ -288,7 +160,7 @@ int main ( int nArgs, char* argv[] ) {
         // Read model lists...
         int linenum = 0;
         while ( fin && EOF!=fin.peek() ) {
-          if ( fin.peek()=='F' ) fin >> "F " >> *lF.emplace(lF.end()) >> "\n";
+          if ( fin.peek()=='F' ) modFmutable = FModel( fin );  // fin >> "F " >> *lF.emplace(lF.end()) >> "\n";
           if ( fin.peek()=='P' ) fin >> "P " >> *lP.emplace(lP.end()) >> "\n";
           if ( fin.peek()=='W' ) fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
           if ( fin.peek()=='J' ) modJmutable = JModel( fin );  // fin >> "J " >> *lJ.emplace(lJ.end()) >> "\n";
@@ -302,10 +174,10 @@ int main ( int nArgs, char* argv[] ) {
     } //closes for int a=1
 
     // Populate model structures...
-    matF = arma::zeros( FResponse::getDomain().getSize(), FPredictor::getDomainSize() );
+//    matF = arma::zeros( FResponse::getDomain().getSize(), FPredictor::getDomainSize() );
 //    matJ = arma::zeros( JResponse::getDomain().getSize(), JPredictor::getDomainSize() );
     matN = arma::zeros( NResponse::getDomain().getSize(), NPredictor::getDomainSize() );
-    for ( auto& prw : lF ) matF( prw.second().toInt(), prw.first().toInt() ) = prw.third();
+//    for ( auto& prw : lF ) matF( prw.second().toInt(), prw.first().toInt() ) = prw.third();
     for ( auto& prw : lP ) modP[prw.first()][prw.second()] = prw.third();
     for ( auto& prw : lW ) lexW[prw.second()].emplace_back(prw.first(),prw.third());
 //    for ( auto& prw : lJ ) matJ( prw.second().toInt(), prw.first().toInt() ) = prw.third();
@@ -314,6 +186,7 @@ int main ( int nArgs, char* argv[] ) {
     for ( auto& prw : lB ) modB[prw.first()][prw.second()] = prw.third();
   } //closes define model lists
 
+  const FModel& modF = modFmutable;
   const JModel& modJ = modJmutable;
 
   // Add unk...
@@ -357,7 +230,7 @@ int main ( int nArgs, char* argv[] ) {
   */
 
   // loop over threads (each thread gets an article)
-  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [/*&corpus,&iartNextToProc,&iartNextToDump,*/&articleMLSs,&articles,&mutexMLSList,&linenum,numThreads,matN,matF,modP,lexW,&modJ,modA,modB] (uint numt) {
+  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [/*&corpus,&iartNextToProc,&iartNextToDump,*/&articleMLSs,&articles,&mutexMLSList,&linenum,numThreads,matN,&modF,modP,lexW,&modJ,modA,modB] (uint numt) {
 
     auto tpLastReport = chrono::high_resolution_clock::now();  // clock for thread heartbeats
 
@@ -487,6 +360,7 @@ int main ( int nArgs, char* argv[] ) {
 
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
 
+                /*
                 // pbiAnt.first is a const BeamElement
                 list<FPredictor> lfpredictors;  
                 q_tdec1.calcForkPredictors( lfpredictors, ksAnt, !corefON, false ); 
@@ -497,6 +371,9 @@ int main ( int nArgs, char* argv[] ) {
                 arma::vec fresponses = arma::exp( flogresponses );
                 fnorm = arma::accu( fresponses );
                 if ( VERBOSE>1 ) { for ( auto& fpredr : lfpredictors ) { cout <<"    fpredr:"<<fpredr<<endl; } }
+                */
+                FPredictorVec lfpredictors( modF, ksAnt, not corefON, q_tdec1 );
+                arma::vec fresponses = modF.calcResponses( lfpredictors );
 
                 // For each possible lemma (context + label + prob) for preterminal of current word...
                 if( lexW.end() == lexW.find(unkWord(w_t.getString().c_str())) ) cerr<<"ERROR: unable to find unk form: "<<unkWord(w_t.getString().c_str())<<endl;
@@ -511,9 +388,13 @@ int main ( int nArgs, char* argv[] ) {
 
                     // For each possible no-fork or fork decision...
                     for ( auto& f : {0,1} ) {
+                      if( modF.getResponseIndex(f,e_p_t,k_p_t) ) cerr<<"ERROR: unable to find fresponse "<<f<<" "<<e_p_t<<" "<<k_p_t<<endl;
+                      double probFork = fresponses( modF.getResponseIndex(f,e_p_t,k_p_t) );
+                      /*
                       if( FResponse::exists(f,e_p_t,k_p_t) && FResponse(f,e_p_t,k_p_t).toInt() >= int(fresponses.size()) ) cerr<<"ERROR: unable to find fresponse "<<FResponse(f,e_p_t,k_p_t)<<endl;
                       double scoreFork = ( FResponse::exists(f,e_p_t,k_p_t) ) ? fresponses(FResponse(f,e_p_t,k_p_t).toInt()) : 1.0 ;
-                      if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << (scoreFork / fnorm) << endl;
+                      */
+                      if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << probFork << endl;
 
                       // Thread heartbeat (to diagnose thread death)...
                       if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
@@ -530,8 +411,8 @@ int main ( int nArgs, char* argv[] ) {
                         if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << c_p_t << " = " << modP.find(ppredictor)->second.find(c_p_t)->second << endl;
 
                         // Calc probability for fork phase...
-                        double probFork = (scoreFork / fnorm) * modP.find(ppredictor)->second.find(c_p_t)->second * probwgivkl;
-                        if ( VERBOSE>1 ) cout << "      f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << scoreFork << " / " << fnorm << " * " << modP.find(ppredictor)->second.find(c_p_t)->second << " * " << probwgivkl << " = " << probFork << endl;
+                        double probFPW = probFork * modP.find(ppredictor)->second.find(c_p_t)->second * probwgivkl;
+                        if ( VERBOSE>1 ) cout << "      f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << probFork << " * " << modP.find(ppredictor)->second.find(c_p_t)->second << " * " << probwgivkl << " = " << probFPW << endl;
 
                         Sign aPretrm;  aPretrm.first().emplace_back(k_p_t);  
                         for (auto& k : ksAnt) if (k != K::kTop) aPretrm.first().emplace_back(k); // add antecedent contexts
@@ -542,7 +423,7 @@ int main ( int nArgs, char* argv[] ) {
 
                         // For each possible no-join or join decision, and operator decisions...
                         for( unsigned int jresponse=0; jresponse<jresponses.size(); jresponse++ ) {  //JResponse jresponse; jresponse<JResponse::getDomain().getSize(); ++jresponse ) {
-                          if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFork) + log(jresponses[jresponse]/* /jnorm */) > beams[t].rbegin()->getProb() ) {
+                          if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFPW) + log(jresponses[jresponse]/* /jnorm */) > beams[t].rbegin()->getProb() ) {
                             J    j   = modJ.getJEOO( jresponse ).first();  //.getJoin();
                             EVar e   = modJ.getJEOO( jresponse ).second(); //.getE();
                             O    opL = modJ.getJEOO( jresponse ).third();  //.getLOp();
@@ -556,7 +437,7 @@ int main ( int nArgs, char* argv[] ) {
                             if ( VERBOSE>1 ) cout << "         A " << apredictor << "..." << endl;
                             if ( modA.end()!=modA.find(apredictor) )
                               for ( auto& cpA : modA.find(apredictor)->second ) {
-                                if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(cpA.second) > beams[t].rbegin()->getProb() ) {
+                                if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) > beams[t].rbegin()->getProb() ) {
 
                                   if ( VERBOSE>1 ) cout << "         A " << apredictor << " : " << cpA.first << " = " << cpA.second << endl;
 
@@ -567,7 +448,7 @@ int main ( int nArgs, char* argv[] ) {
                                     for ( auto& cpB : modB.find(bpredictor)->second ) {
                                       if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << cpB.first << " = " << cpB.second << endl;
                                       //                            lock_guard<mutex> guard( mutexBeam );
-                                      if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(cpA.second) + log(cpB.second) > beams[t].rbegin()->getProb() ) {
+                                      if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second) > beams[t].rbegin()->getProb() ) {
 
                                         // Thread heartbeat (to diagnose thread death)...
                                         if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
@@ -578,9 +459,9 @@ int main ( int nArgs, char* argv[] ) {
                                         // Calculate probability and storestate and add to beam...
                                         StoreState ss( q_tdec1, f, j, e_p_t, e, opL, opR, cpA.first, cpB.first, aPretrm, aLchild );
                                         if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
-                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(cpA.second) + log(cpB.second), be_tdec1 ) ); 
+                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second), be_tdec1 ) ); 
                                           if( VERBOSE>1 ) cout << "                send (" << be_tdec1.getHidd() << ") to (" << ss << ") with "
-                                            << (lgpr_tdec1 + log(nprob) + log(probFork) + log(probJoin) + log(cpA.second) + log(cpB.second)) << endl;
+                                            << (lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second)) << endl;
                                         } //closes if ( (t<lwSent
                                       } //closes if beams[t]
                                     } //closes for cpB
