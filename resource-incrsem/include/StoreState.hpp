@@ -481,333 +481,7 @@ typedef DiscreteDomainRV<int,domNResponse> NResponse;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/*
-class FPredictor {
- private:
-
-  // Data members...
-  uint id;
-
-  // Static data members...
-  static uint                    nextid;
-  static map<uint,D>             mid;
-  static map<uint,CVar>          mic;
-  static map<uint,K>             mikF;
-  static map<uint,K>             mikA;
-  static map<uint,K>             mikAnt;
-  static map<pair<D,CVar>,uint>  mdci;
-  static map<trip<D,K,K>,uint>   mdkki;
-  static map<quad<D,K,K,K>,uint> mdkkki; //ej proposed change for coreference
-  static map<pair<K,K>,uint>     mkki;
-  static map<AdHocFeature,uint>  mstri;
-  static map<uint,AdHocFeature>  mistr;
- public:
-
-  // Constructors...
-  FPredictor ( ) : id(0) { }
-  FPredictor ( D d, CVar t ) {
-    const auto& it = mdci.find(pair<D,CVar>(d,t));
-    if ( it != mdci.end() ) id = it->second;
-    else { id = nextid++;  mid[id] = d;  mic[id] = t;  mdci[pair<D,CVar>(d,t)] = id; }
-    //cout<<"did id "<<id<<"/"<<nextid<<" as "<<*this<<endl;
-  }
-  FPredictor ( D d, K kF, K kA ) {
-    const auto& it = mdkki.find(trip<D,K,K>(d,kF,kA));
-    if ( it != mdkki.end() ) id = it->second;
-    else { id = nextid++;  mid[id] = d;  mikF[id] = kF;  mikA[id] = kA;  mdkki[trip<D,K,K>(d,kF,kA)] = id; }
-    //cout<<"did id "<<id<<"/"<<nextid<<" as "<<*this<<endl;
-  }
-  FPredictor ( K kF, K kA ) {
-    const auto& it = mkki.find(pair<K,K>(kF,kA));
-    if ( it != mkki.end() ) id = it->second;
-    else { id = nextid++;  mikF[id] = kF;  mikA[id] = kA;  mkki[pair<K,K>(kF,kA)] = id; }
-    //cout<<"did id "<<id<<"/"<<nextid<<" as "<<*this<<endl;
-  }
-  FPredictor ( D d, K kF, K kA, K kAntecedent ) { //ej new constructor with antecedent 
-    const auto& it = mdkkki.find(quad<D,K,K,K>(d,kF,kA,kAntecedent));
-    if ( it != mdkkki.end() ) id = it->second;
-    else { id = nextid++;  mid[id] = d;  mikF[id] = kF;  mikA[id] = kA;  mikAnt[id] = kAntecedent; mdkkki[quad<D,K,K,K>(d,kF,kA,kAntecedent)] = id; }
-    //cout<<"did id "<<id<<"/"<<nextid<<" as "<<*this<<endl;
-  }
-  FPredictor (AdHocFeature mstring) {
-    const auto& it = mstri.find(mstring);
-    if (it != mstri.end() ) id = it->second;
-    else { id = nextid++; mistr[id] = mstring; mstri[mstring] = id; }
-  }
-
-  // Accessor methods...
-  uint         toInt()       const { return id; }
-  operator     uint()        const { return id; }
-  D            getDepth()    const { return mid[id]; }
-  CVar         getCVar()     const { return mic[id]; }
-  K            getFillerK()  const { return mikF[id]; }
-  K            getAncstrK()  const { return mikA[id]; }
-  K            getAntcdntK() const { return mikAnt[id]; } //ej change for coref
-  AdHocFeature getfeatname() const { return mistr[id]; }
-  static uint  getDomainSize()     { return nextid; }
-
-  // Ordering operator...
-  bool operator< ( FPredictor fp ) { return id<fp.id; }
-
-  // Input / output methods...
-  friend pair<istream&,FPredictor&> operator>> ( istream& is, FPredictor& t ) {
-    return pair<istream&,FPredictor&>(is,t);
-  }
-  friend istream& operator>> ( pair<istream&,FPredictor&> ist, const char* psDelim ) {
-    if ( ist.first.peek()==psDelim[0] ) { 
-      auto& o = ist.first >> psDelim;  
-      ist.second = FPredictor();  
-      return o; 
-    }
-    else if ( ist.first.peek()=='d' ) {
-      D d;  
-      ist.first >> "d" >> d >> "&";
-      if ( ist.first.peek()=='t' ) { 
-        Delimited<CVar> c;       
-        auto& o = ist.first >> "t" >> c >> psDelim;  
-        ist.second = FPredictor(d,c);      
-        return o; 
-      }
-      else { 
-        Delimited<K> kF, kA, kAntecedent;  
-        auto& o = ist.first >> kF >> "&" >> kA >> "&" >> kAntecedent >> psDelim;  
-        ist.second = FPredictor(d,kF,kA,kAntecedent);  
-        return o; 
-      }
-    }
-    else if (ist.first.peek()=='a' ) {
-      AdHocFeature mstring;
-      auto& o = ist.first >> mstring >> psDelim;  
-      ist.second = FPredictor(mstring);     
-      return o; 
-    }
-    else { 
-      Delimited<K> kF, kA;  
-      auto& o = ist.first >> kF >> "&" >> kA >> psDelim;  
-      ist.second = FPredictor(kF,kA);    
-      return o;
-    }
-  }
-  friend bool operator>> ( pair<istream&,FPredictor&> ist, const vector<const char*>& vpsDelim ) {
-    D d;  ist.first >> "d" >> d >> "&"; 
-    if ( ist.first.peek()=='d' ) {  //'d' starts with depth...
-      if ( ist.first.peek()=='t' ) {  //...continues with 't'
-        Delimited<CVar> c; 
-        auto o = ist.first >> "t" >> c >> vpsDelim;  
-        ist.second = FPredictor(d,c);      
-        return o; 
-      }
-      else {  //...or else continues with F,A,Ante
-        Delimited<K> kF, kA, kAntecedent;  
-        auto o = ist.first >> kF >> "&" >> kA >> "&" >> kAntecedent >> vpsDelim;  
-        ist.second = FPredictor(d,kF,kA,kAntecedent);  
-        return o; 
-      }
-    } 
-    else if ( ist.first.peek() =='a') { //'a' for adhoc feature, string-based
-      AdHocFeature mstring;
-      auto o = ist.first >> mstring >> vpsDelim;  
-      ist.second = FPredictor(mstring);     
-      return o; 
-    }
-    else {  //if not 'd' or 'a', then it's an F,A FPred
-      Delimited<K> kF, kA;  
-      auto o = ist.first >> kF >> "&" >> kA >> vpsDelim;  
-      ist.second = FPredictor(kF,kA);    
-      return o; 
-    }
-  }
-  friend ostream& operator<< ( ostream& os, const FPredictor& t ) {
-    if      ( mic.end()  != mic.find(t.id)  ) { return os << "d" << mid[t.id] << "&" << "t" << mic[t.id]; }
-    else if ( mid.end()  != mid.find(t.id)  ) { return os << "d" << mid[t.id] << "&" << mikF[t.id] << "&" << mikA[t.id] << "&" << mikAnt[t.id]; }
-    else if ( mikA.end() != mikA.find(t.id) ) { return os << mikF[t.id] << "&" << mikA[t.id]; }
-    else if ( mistr.find(t.id)!=mistr.end() ) { return os << mistr[t.id]; }
-    else                                      { return os << "NON_STRING_ID_" << t.id; }
-  }
-  static bool exists ( D d, CVar c )        { return( mdci.end()!=mdci.find(pair<D,CVar>(d,c)) ); }
-  static bool exists ( D d, K kF, K kA ) { return( mdkki.end()!=mdkki.find(trip<D,K,K>(d,kF,kA)) ); }
-  static bool exists ( K kF, K kA )      { return( mkki.end()!=mkki.find(pair<K,K>(kF,kA)) ); }
-  static bool exists ( D d, K kF, K kA, K kAntecedent) { return( mdkkki.end()!=mdkkki.find(quad<D,K,K,K>(d,kF,kA,kAntecedent)) ); } //ej changes for coref
-  static bool exists ( AdHocFeature mstring )            { return( mstri.end()!=mstri.find(mstring) ); }
-  FPredictor  addNum ( int i ) const     { return( FPredictor( mid[id], mic[id].addNum(i) ) ); }
-};
-uint                    FPredictor::nextid = 1;   // space for bias "" predictor
-map<uint,D>             FPredictor::mid;
-map<uint,CVar>          FPredictor::mic;
-map<uint,K>             FPredictor::mikF;
-map<uint,K>             FPredictor::mikA;
-map<uint,K>             FPredictor::mikAnt;
-map<pair<D,CVar>,uint>  FPredictor::mdci;
-map<trip<D,K,K>,uint>   FPredictor::mdkki;
-map<pair<K,K>,uint>     FPredictor::mkki;
-map<quad<D,K,K,K>,uint> FPredictor::mdkkki; 
-map<AdHocFeature,uint>  FPredictor::mstri;
-map<uint,AdHocFeature>  FPredictor::mistr;
-
-////////////////////////////////////////////////////////////////////////////////
-
-DiscreteDomain<int> domFResponse;
-class FResponse : public DiscreteDomainRV<int,domFResponse> {
- private:
-  static map<FResponse,F>              mfrf;
-  static map<FResponse,EVar>           mfre;
-  static map<FResponse,K>              mfrk;
-  static map<trip<F,EVar,K>,FResponse> mfekfr;
-  void calcDetermModels ( const char* ps ) {
-    F    f = ps[1]-'0';
-    EVar e = string(ps+3,uint(strchr(ps+3,'&')-(ps+3))).c_str();  //ps[3];
-    K    k = ps+4+e.getString().size();   //ps+5;
-    if( mfrf.end()==mfrf.find(*this) ) mfrf[*this]=f;
-    if( mfre.end()==mfre.find(*this) ) mfre[*this]=e;
-    if( mfrk.end()==mfrk.find(*this) ) mfrk[*this]=k;
-    if( mfekfr.end()==mfekfr.find(trip<F,EVar,K>(f,e,k)) ) mfekfr[trip<F,EVar,K>(f,e,k)]=*this;
-  }
- public:
-  FResponse ( )                   : DiscreteDomainRV<int,domFResponse> ( )    { }
-  FResponse ( const char* ps )    : DiscreteDomainRV<int,domFResponse> ( ps ) { calcDetermModels(ps); }
-  FResponse ( F f, EVar e, K k )  : DiscreteDomainRV<int,domFResponse> ( )    {
-    *this = ( mfekfr.end()==mfekfr.find(trip<F,EVar,K>(f,e,k)) ) ? ("f" + to_string(f) + "&" + e.getString() + "&" + k.getString()).c_str()
-                                                                 : mfekfr[trip<F,EVar,K>(f,e,k)];
-  }
-  static bool exists ( F f, EVar e, K k ) { return( mfekfr.end()!=mfekfr.find(trip<F,EVar,K>(f,e,k)) ); }
-
-  F    getFork ( ) const { return mfrf[*this]; }
-  EVar getE    ( ) const { return mfre[*this]; }
-  K    getK    ( ) const { return mfrk[*this]; }
-};
-map<FResponse,F>              FResponse::mfrf;
-map<FResponse,EVar>           FResponse::mfre;
-map<FResponse,K>              FResponse::mfrk;
-map<trip<F,EVar,K>,FResponse> FResponse::mfekfr;
-*/
-
 typedef unsigned int FResponse;
-
-////////////////////////////////////////////////////////////////////////////////
-
-/*
-class JPredictor {
- private:
-
-  // Data members...
-  uint id;
-
-  // Static data members...
-  static uint                          nextid;
-  static map<uint,D>                   mid;
-  static map<uint,CVar>                micA;
-  static map<uint,CVar>                micL;
-  static map<uint,K>                   mikF;
-  static map<uint,K>                   mikA;
-  static map<uint,K>                   mikL;
-  static map<trip<D,CVar,CVar>,uint>   mdcci;
-  static map<quad<D,K,K,K>,uint>       mdkkki;
-
- public:
-
-  // Constructors...
-  JPredictor ( ) : id(0) { }
-  JPredictor ( D d, CVar cA, CVar cL ) {
-    const auto& it = mdcci.find(trip<D,CVar,CVar>(d,cA,cL));
-    if ( it != mdcci.end() ) id = it->second;
-    else { id = nextid++;  mid[id] = d;  micA[id] = cA;  micL[id] = cL;  mdcci[trip<D,CVar,CVar>(d,cA,cL)] = id; }
-  }
-  JPredictor ( D d, K kF, K kA, K kL ) {
-    const auto& it = mdkkki.find(quad<D,K,K,K>(d,kF,kA,kL));
-    if ( it != mdkkki.end() ) id = it->second;
-    else { id = nextid++;  mid[id] = d;  mikF[id] = kF;  mikA[id] = kA;  mikL[id] = kL;  mdkkki[quad<D,K,K,K>(d,kF,kA,kL)] = id; }
-  }
-
-  // Accessor methods...
-  uint        toInt()         const { return id; }
-  operator    uint()          const { return id; }
-  D           getDepth()      const { return mid[id]; }
-  CVar        getAncstrCVar() const { return micA[id]; }
-  CVar        getLchildCVar() const { return micL[id]; }
-  K           getFillerK()    const { return mikF[id]; }
-  K           getAncstrK()    const { return mikA[id]; }
-  K           getLchildK()    const { return mikL[id]; }
-  static uint getDomainSize()       { return nextid; }
-
-  // Ordering operator...
-  bool operator< ( JPredictor jp ) { return id<jp.id; }
-
-  // Input / output methods...
-  friend pair<istream&,JPredictor&> operator>> ( istream& is, JPredictor& t ) {
-    return pair<istream&,JPredictor&>(is,t);
-  }
-  //non loop-based input stream operator
-  friend istream& operator>> ( pair<istream&,JPredictor&> ist, const char* psDelim ) {
-    if ( ist.first.peek()==psDelim[0] ) { auto& o =  ist.first >> psDelim;  ist.second = JPredictor();  return o; }
-    D d;  ist.first >> "d" >> d >> "&";
-    if ( ist.first.peek()=='t' ) { Delimited<CVar>  cA, cL;  auto& o = ist.first >> "t"       >> cA >> "&" >> "t" >> cL >> psDelim;  ist.second = JPredictor(d,cA,cL);     return o; }
-    else                         { Delimited<K> kF, kA, kL;  auto& o = ist.first >> kF >> "&" >> kA >> "&" >>        kL >> psDelim;  ist.second = JPredictor(d,kF,kA,kL);  return o; }
-  }
-  //loop-based input stream operator
-  friend bool operator>> ( pair<istream&,JPredictor&> ist, const vector<const char*>& vpsDelim ) {
-    D d;  ist.first >> "d" >> d >> "&";
-    if ( ist.first.peek()=='t' ) { Delimited<CVar>  cA, cL;  auto o = ist.first >> "t"       >> cA >> "&" >> "t" >> cL >> vpsDelim;  ist.second = JPredictor(d,cA,cL);     return o; }
-    else                         { Delimited<K> kF, kA, kL;  auto o = ist.first >> kF >> "&" >> kA >> "&"        >> kL >> vpsDelim;  ist.second = JPredictor(d,kF,kA,kL);  return o; }
-  }
-  friend ostream& operator<< ( ostream& os, const JPredictor& t ) {
-    if      ( micA.end() != micA.find(t.id) ) return os << "d" << mid[t.id] << "&" << "t"               << micA[t.id] << "&" << "t" << micL[t.id];
-    else if ( mikA.end() != mikA.find(t.id) ) return os << "d" << mid[t.id] << "&" << mikF[t.id] << "&" << mikA[t.id] << "&"        << mikL[t.id];
-    else                                      return os << "NON_STRING_ID_" << t.id;
-  }
-  static bool exists ( D d, CVar cA, CVar cL ) { return( mdcci.end()!=mdcci.find(trip<D,CVar,CVar>(d,cA,cL)) ); }
-  static bool exists ( D d, K kF, K kA, K kL ) { return( mdkkki.end()!=mdkkki.find(quad<D,K,K,K>(d,kF,kA,kL)) ); }
-  JPredictor addNums ( int i, int j ) const    { return( JPredictor( mid[id], micA[id].addNum(i), micL[id].addNum(j) ) ); }
-};
-uint                        JPredictor::nextid = 1;  // space for bias "" predictor
-map<uint,D>                 JPredictor::mid;
-map<uint,CVar>              JPredictor::micA;
-map<uint,CVar>              JPredictor::micL;
-map<uint,K>                 JPredictor::mikF;
-map<uint,K>                 JPredictor::mikA;
-map<uint,K>                 JPredictor::mikL;
-map<trip<D,CVar,CVar>,uint> JPredictor::mdcci;
-map<quad<D,K,K,K>,uint>     JPredictor::mdkkki;
-
-////////////////////////////////////////////////////////////////////////////////
-
-DiscreteDomain<int> domJResponse;
-class JResponse : public DiscreteDomainRV<int,domJResponse> {
- private:
-  static map<JResponse,J>                mjrj;
-  static map<JResponse,EVar>             mjre;
-  static map<JResponse,O>                mjroL;
-  static map<JResponse,O>                mjroR;
-  static map<quad<J,EVar,O,O>,JResponse> mjeoojr;
-  void calcDetermModels ( const char* ps ) {
-    if( mjrj.end() ==mjrj.find(*this)  ) mjrj[*this]=ps[1]-'0';
-    EVar e  = string(ps+3,uint(strchr(ps+3,'&')-(ps+3))).c_str();  //ps[3];
-    O    oL = ps[4+e.getString().size()];
-    O    oR = ps[6+e.getString().size()];
-    if( mjre.end() ==mjre.find(*this)  ) mjre[*this]=e;  //ps[3];
-    if( mjroL.end()==mjroL.find(*this) ) mjroL[*this]=oL;  //ps[5];
-    if( mjroR.end()==mjroR.find(*this) ) mjroR[*this]=oR;  //ps[7];
-    if( mjeoojr.end()==mjeoojr.find(quad<J,EVar,O,O>(ps[1]-'0',e,oL,oR)) ) mjeoojr[quad<J,EVar,O,O>(ps[1]-'0',e,oL,oR)]=*this;
-  }
- public:
-  JResponse ( )                         : DiscreteDomainRV<int,domJResponse> ( )    { }
-  JResponse ( const char* ps )          : DiscreteDomainRV<int,domJResponse> ( ps ) { calcDetermModels(ps); }
-  JResponse ( J j, EVar e, O oL, O oR ) : DiscreteDomainRV<int,domJResponse> ( )    {
-    *this = ( mjeoojr.end()==mjeoojr.find(quad<J,EVar,O,O>(j,e,oL,oR)) ) ? ("j" + to_string(j) + "&" + e.getString() + "&" + string(1,oL) + "&" + string(1,oR)).c_str()
-                                                                         : mjeoojr[quad<J,EVar,O,O>(j,e,oL,oR)];
-  }
-  J    getJoin ( ) const { return mjrj[*this]; }
-  EVar getE    ( ) const { return mjre[*this]; }
-  O    getLOp  ( ) const { return mjroL[*this]; }
-  O    getROp  ( ) const { return mjroR[*this]; }
-  static bool exists ( J j, EVar e, O oL, O oR ) { return( mjeoojr.end()!=mjeoojr.find(quad<J,EVar,O,O>(j,e,oL,oR)) ); }
-};
-map<JResponse,J>                JResponse::mjrj;
-map<JResponse,EVar>             JResponse::mjre;
-map<JResponse,O>                JResponse::mjroL;
-map<JResponse,O>                JResponse::mjroR;
-map<quad<J,EVar,O,O>,JResponse> JResponse::mjeoojr;
-*/
-
 typedef unsigned int JResponse;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1054,57 +728,10 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     return -1;
   } 
 
-  /*
-  list<FPredictor>& calcForkPredictors ( list<FPredictor>& lfp, const KSet& ksAnt, bool nullAnt, bool bAdd=true ) const {
-    int d = (FEATCONFIG & 1) ? 0 : getDepth(); // max used depth - (dbar)
-    const KSet& ksB = at(size()-1).getKSet(); //contexts of lowest b (bdbar)
-    int iCarrier = getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
-    if( STORESTATE_TYPE ) lfp.emplace_back( d, at(size()-1).getCat() ); //.removeLink() ); // flag to add depth and category label as predictor, default is true
-    if( !(FEATCONFIG & 2) ) {
-      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(d,kNil,kA,kNil) ) lfp.emplace_back( d, kNil, kA, kNil ); 
-      //for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(d,kNil,kA,kNil) ) lfp.emplace_back( d, kNil, kA, kNil ); //ej proposed change to add coreference
-      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(d,kF,kNil,kNil) ) lfp.emplace_back( d, kF, kNil, kNil ); 
-      //for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(d,kF,kNil,kNil) ) lfp.emplace_back( d, kF, kNil, kNil ); //ej proposed change to add coreference 
-      // for (auto& kAntecedent : ksetfrombackpointers) if ( bAdd || Fpredictor::exists(d,kNil,kNil,kAntecedent) ) lfp.emplace_back( d, kNil, kNil, kAntecedent); // ej proposed change to add coreference
-      for (auto& kAntecedent : ksAnt) {
-          //cerr << "cfp processing ksAnt: " << kAntecedent << endl;
-          if ( bAdd || FPredictor::exists(d,kNil,kNil,kAntecedent) ) {
-              //cerr << "cfp adding kAntecedent: " << kAntecedent << endl;
-              lfp.emplace_back( d, kNil, kNil, kAntecedent); // ej change to add coreference
-          }
-      }
-//    } else if( FEATCONFIG & 1 ) {
-//      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(kNil,kA) ) lfp.emplace_back( kNil, kA );
-//      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(kF,kNil) ) lfp.emplace_back( kF, kNil );
-    }
-    if (nullAnt) { lfp.emplace_back("acorefOFF"); }
-    if (!nullAnt) { lfp.emplace_back("acorefON"); }
-    return lfp;
-  }
-  */
-
   PPredictor calcPretrmCatCondition ( F f, EVar e, K k_p_t ) const {
     if( FEATCONFIG & 1 ) return PPredictor( 0, f, (FEATCONFIG & 4) ? EVar("-") : e, at(size()-1).getCat(), (FEATCONFIG & 16384) ? cBot : k_p_t.getCat() );
     return             PPredictor( getDepth(), f, (FEATCONFIG & 4) ? EVar("-") : e, at(size()-1).getCat(), (FEATCONFIG & 16384) ? cBot : k_p_t.getCat() );
   }
-
-  /*
-  list<JPredictor>& calcJoinPredictors ( list<JPredictor>& ljp, F f, EVar eF, const LeftChildSign& aLchild, bool bAdd=true ) const {
-    int d = (FEATCONFIG & 1) ? 0 : getDepth()+f;
-    int iCarrierB = getAncestorBCarrierIndex( f );
-    const Sign& aAncstr  = at( getAncestorBIndex(f) );
-    const KSet& ksAncstr = ( aAncstr.getKSet().size()==0 ) ? ksBot : aAncstr.getKSet();
-    const KSet& ksFiller = ( iCarrierB<0                 ) ? ksBot : at( iCarrierB ).getKSet();
-    const KSet& ksLchild = ( aLchild.getKSet().size()==0 ) ? ksBot : aLchild.getKSet() ;
-    if( STORESTATE_TYPE ) if( bAdd || JPredictor::exists(d,aAncstr.getCat(),aLchild.getCat()) ) ljp.emplace_back( d, aAncstr.getCat(), aLchild.getCat() );
-    if( !(FEATCONFIG & 32) ) {
-      for( auto& kA : ksAncstr ) for( auto& kL : ksLchild ) if( bAdd || JPredictor::exists(d,kNil,kA,kL) ) ljp.emplace_back( d, kNil, kA, kL );
-      for( auto& kF : ksFiller ) for( auto& kA : ksAncstr ) if( bAdd || JPredictor::exists(d,kF,kA,kNil) ) ljp.emplace_back( d, kF, kA, kNil );
-      for( auto& kF : ksFiller ) for( auto& kL : ksLchild ) if( bAdd || JPredictor::exists(d,kF,kNil,kL) ) ljp.emplace_back( d, kF, kNil, kL );
-    }
-    return ljp;
-  }
-  */
 
   APredictor calcApexCatCondition ( F f, J j, EVar eF, EVar eJ, O opL, const LeftChildSign& aLchild ) const {
     if( FEATCONFIG & 1 ) return APredictor( 0, 0, j, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, at(getAncestorBIndex(f)).getCat(), (j==0) ? aLchild.getCat() : cBot );
@@ -1297,22 +924,11 @@ class FPredictorVec : public list<unsigned int> {
       const KSet& ksB = ss.at(ss.size()-1).getKSet(); //contexts of lowest b (bdbar)
       int iCarrier = ss.getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
       emplace_back( fm.getPredictorIndex( "Bias" ) );  // add bias
-      if( STORESTATE_TYPE ) emplace_back( fm.getPredictorIndex( d, ss.at(ss.size()-1).getCat() ) ); //.removeLink() ); // flag to add depth and category label as predictor, default is true
+      if( STORESTATE_TYPE ) emplace_back( fm.getPredictorIndex( d, ss.at(ss.size()-1).getCat() ) ); 
       if( !(FEATCONFIG & 2) ) {
-        for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                       ) emplace_back( fm.getPredictorIndex( d, kNil, kA, kNil ) ); //if( bAdd || FPredictor::exists(d,kNil,kA,kNil) ) lfp.emplace_back( d, kNil, kA, kNil ); 
-        for( auto& kF : (iCarrier<0)    ? KSet() : ss.at(iCarrier).getKSet() ) emplace_back( fm.getPredictorIndex( d, kF, kNil, kNil ) ); //if( bAdd || FPredictor::exists(d,kF,kNil,kNil) ) lfp.emplace_back( d, kF, kNil, kNil ); 
+        for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                       ) emplace_back( fm.getPredictorIndex( d, kNil, kA, kNil ) );
+        for( auto& kF : (iCarrier<0)    ? KSet() : ss.at(iCarrier).getKSet() ) emplace_back( fm.getPredictorIndex( d, kF, kNil, kNil ) );
         for( auto& kAntecedent : ksAnt )                                       emplace_back( fm.getPredictorIndex( d, kNil, kNil, kAntecedent ) );
-      /*
-        //cerr << "cfp processing ksAnt: " << kAntecedent << endl;
-        if ( bAdd || FPredictor::exists(d,kNil,kNil,kAntecedent) ) {
-        //cerr << "cfp adding kAntecedent: " << kAntecedent << endl;
-        lfp.emplace_back( d, kNil, kNil, kAntecedent); // ej change to add coreference
-        }
-      }
-      */
-      //    } else if( FEATCONFIG & 1 ) {
-      //      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(kNil,kA) ) lfp.emplace_back( kNil, kA );
-      //      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(kF,kNil) ) lfp.emplace_back( kF, kNil );
       }
       if( nullAnt ) emplace_back( fm.getPredictorIndex( "corefOFF" ) );
       else          emplace_back( fm.getPredictorIndex( "corefON"  ) ); 
@@ -1346,7 +962,6 @@ class FModel {
 
     FModel( ) { }
     FModel( istream& is ) {
-//      getResponseIndex( F(), EVar(), K("BOGUS") );  // null outcome
       list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
       while( is.peek()=='F' ) {
         auto& prw = *l.emplace( l.end() );
@@ -1363,7 +978,7 @@ class FModel {
 
       if( l.size()==0 ) cerr << "ERROR: No F items found." << endl;
       matF.zeros ( mifek.size(), iNextPredictor );
-      for( auto& prw : l ) { /*cerr<<prw.second()<<","<<prw.first()<<endl;*/ matF( prw.second(), prw.first() ) = prw.third(); }
+      for( auto& prw : l ) { matF( prw.second(), prw.first() ) = prw.third(); }
     }
 
     unsigned int getPredictorIndex( const string& s ) {
@@ -1386,7 +1001,7 @@ class FModel {
       const auto& it = mdci.find( pair<D,CVar>(d,c) );  if( it != mdci.end() ) return( it->second );
       mdci[ pair<D,CVar>(d,c) ] = iNextPredictor;  midc[ iNextPredictor ] = pair<D,CVar>(d,c);  return( iNextPredictor++ );
     }
-    unsigned int getPredictorIndex( D d, CVar c ) const {            // const version with closed predictor domain
+    unsigned int getPredictorIndex( D d, CVar c ) const {                      // const version with closed predictor domain
       const auto& it = mdci.find( pair<D,CVar>(d,c) );  return( ( it != mdci.end() ) ? it->second : 0 );
     }
 
@@ -1394,7 +1009,7 @@ class FModel {
       const auto& it = mfeki.find( FEK(f,e,k) );  if( it != mfeki.end() ) return( it->second );
       mfeki[ FEK(f,e,k) ] = iNextResponse;  mifek[ iNextResponse ] = FEK(f,e,k);  return( iNextResponse++ );
     }
-    unsigned int getResponseIndex( F f, EVar e, K k ) const {           // const version with closed predictor domain
+    unsigned int getResponseIndex( F f, EVar e, K k ) const {                  // const version with closed predictor domain
       const auto& it = mfeki.find( FEK(f,e,k) );  return( ( it != mfeki.end() ) ? it->second : uint(-1) );
     }
 
@@ -1406,7 +1021,7 @@ class FModel {
       arma::vec flogresponses = arma::zeros( matF.n_rows );
       for ( auto& fpredr : lfpredictors ) if ( fpredr < matF.n_cols ) flogresponses += matF.col( fpredr );
       arma::vec fresponses = arma::exp( flogresponses );
-      double fnorm = arma::accu( fresponses );  // 0.0;                                           // join normalization term (denominator)
+      double fnorm = arma::accu( fresponses );                                 // fork normalization term (denominator)
 
       // Replace overflowing distribs by max...
       if( fnorm == 1.0/0.0 ) {
@@ -1450,11 +1065,11 @@ class JPredictorVec : public list<unsigned int> {
       const KSet& ksFiller = ( iCarrierB<0                 ) ? ksBot : ss.at( iCarrierB ).getKSet();
       const KSet& ksLchild = ( aLchild.getKSet().size()==0 ) ? ksBot : aLchild.getKSet() ;
       emplace_back( jm.getPredictorIndex( "Bias" ) );  // add bias
-      if( STORESTATE_TYPE ) emplace_back( jm.getPredictorIndex( d, aAncstr.getCat(), aLchild. getCat() ) );  //if( bAdd || JPredictor::exists(d,aAncstr.getCat(),aLchild.getCat()) ) ljp.emplace_back( d, aAncstr.getCat(), aLchild.getCat() );
+      if( STORESTATE_TYPE ) emplace_back( jm.getPredictorIndex( d, aAncstr.getCat(), aLchild. getCat() ) );
       if( !(FEATCONFIG & 32) ) {
-        for( auto& kA : ksAncstr ) for( auto& kL : ksLchild ) emplace_back( jm.getPredictorIndex( d, kNil, kA, kL ) );  //if( bAdd || JPredictor::exists(d,kNil,kA,kL) ) ljp.emplace_back( d, kNil, kA, kL );
-        for( auto& kF : ksFiller ) for( auto& kA : ksAncstr ) emplace_back( jm.getPredictorIndex( d, kF, kA, kNil ) );  //if( bAdd || JPredictor::exists(d,kF,kA,kNil) ) ljp.emplace_back( d, kF, kA, kNil );
-        for( auto& kF : ksFiller ) for( auto& kL : ksLchild ) emplace_back( jm.getPredictorIndex( d, kF, kNil, kL ) );  //if( bAdd || JPredictor::exists(d,kF,kNil,kL) ) ljp.emplace_back( d, kF, kNil, kL );
+        for( auto& kA : ksAncstr ) for( auto& kL : ksLchild ) emplace_back( jm.getPredictorIndex( d, kNil, kA, kL ) );
+        for( auto& kF : ksFiller ) for( auto& kA : ksAncstr ) emplace_back( jm.getPredictorIndex( d, kF, kA, kNil ) );
+        for( auto& kF : ksFiller ) for( auto& kL : ksLchild ) emplace_back( jm.getPredictorIndex( d, kF, kNil, kL ) );
       }
     }
 };
@@ -1486,7 +1101,6 @@ class JModel {
 
     JModel( ) { }
     JModel( istream& is ) {
-//      getResponseIndex( J(), EVar(), O(), O() );  // null outcome
       list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
       while( is.peek()=='J' ) {
         auto& prw = *l.emplace( l.end() );
@@ -1503,7 +1117,7 @@ class JModel {
 
       if( l.size()==0 ) cerr << "ERROR: No J items found." << endl;
       matJ.zeros ( mijeoo.size(), iNextPredictor );
-      for( auto& prw : l ) { /*cerr<<prw.second()<<","<<prw.first()<<endl;*/ matJ( prw.second(), prw.first() ) = prw.third(); }
+      for( auto& prw : l ) { matJ( prw.second(), prw.first() ) = prw.third(); }
     }
 
     unsigned int getPredictorIndex( const string& s ) {
@@ -1546,7 +1160,7 @@ class JModel {
       arma::vec jlogresponses = arma::zeros( matJ.n_rows );
       for ( auto& jpredr : ljpredictors ) if ( jpredr < matJ.n_cols ) jlogresponses += matJ.col( jpredr );
       arma::vec jresponses = arma::exp( jlogresponses );
-      double jnorm = arma::accu( jresponses );  // 0.0;                                           // join normalization term (denominator)
+      double jnorm = arma::accu( jresponses );                                 // join normalization term (denominator)
 
       // Replace overflowing distribs by max...
       if( jnorm == 1.0/0.0 ) {
