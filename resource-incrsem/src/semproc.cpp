@@ -122,8 +122,6 @@ int main ( int nArgs, char* argv[] ) {
   uint numThreads = 1;
 
   // Define model structures...
-//  arma::mat matF;
-//  arma::mat matJ;
   arma::mat matN;
   FModel                        modFmutable;
   map<PPredictor,map<P,double>> modP;
@@ -133,10 +131,8 @@ int main ( int nArgs, char* argv[] ) {
   map<BPredictor,map<B,double>> modB;
 
   { // Define model lists...
-//    list<DelimitedTrip<psX,FPredictor,psSpcColonSpc,Delimited<FResponse>,psSpcEqualsSpc,Delimited<double>,psX>> lF;
     list<DelimitedTrip<psX,PPredictor,psSpcColonSpc,P,psSpcEqualsSpc,Delimited<double>,psX>> lP;
     list<DelimitedTrip<psX,WPredictor,psSpcColonSpc,W,psSpcEqualsSpc,Delimited<double>,psX>> lW;
-//    list<DelimitedTrip<psX,JPredictor,psSpcColonSpc,Delimited<JResponse>,psSpcEqualsSpc,Delimited<double>,psX>> lJ;
     list<DelimitedTrip<psX,APredictor,psSpcColonSpc,A,psSpcEqualsSpc,Delimited<double>,psX>> lA;
     list<DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>> lB;
     list<DelimitedTrip<psX,NPredictor,psSpcColonSpc,Delimited<NResponse>,psSpcEqualsSpc,Delimited<double>,psX>> lN;
@@ -160,10 +156,10 @@ int main ( int nArgs, char* argv[] ) {
         // Read model lists...
         int linenum = 0;
         while ( fin && EOF!=fin.peek() ) {
-          if ( fin.peek()=='F' ) modFmutable = FModel( fin );  // fin >> "F " >> *lF.emplace(lF.end()) >> "\n";
+          if ( fin.peek()=='F' ) modFmutable = FModel( fin );
           if ( fin.peek()=='P' ) fin >> "P " >> *lP.emplace(lP.end()) >> "\n";
           if ( fin.peek()=='W' ) fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
-          if ( fin.peek()=='J' ) modJmutable = JModel( fin );  // fin >> "J " >> *lJ.emplace(lJ.end()) >> "\n";
+          if ( fin.peek()=='J' ) modJmutable = JModel( fin );
           if ( fin.peek()=='A' ) fin >> "A " >> *lA.emplace(lA.end()) >> "\n";
           if ( fin.peek()=='B' ) fin >> "B " >> *lB.emplace(lB.end()) >> "\n";
           if ( fin.peek()=='N' ) fin >> "N " >> *lN.emplace(lN.end()) >> "\n";
@@ -174,13 +170,9 @@ int main ( int nArgs, char* argv[] ) {
     } //closes for int a=1
 
     // Populate model structures...
-//    matF = arma::zeros( FResponse::getDomain().getSize(), FPredictor::getDomainSize() );
-//    matJ = arma::zeros( JResponse::getDomain().getSize(), JPredictor::getDomainSize() );
     matN = arma::zeros( NResponse::getDomain().getSize(), NPredictor::getDomainSize() );
-//    for ( auto& prw : lF ) matF( prw.second().toInt(), prw.first().toInt() ) = prw.third();
     for ( auto& prw : lP ) modP[prw.first()][prw.second()] = prw.third();
     for ( auto& prw : lW ) lexW[prw.second()].emplace_back(prw.first(),prw.third());
-//    for ( auto& prw : lJ ) matJ( prw.second().toInt(), prw.first().toInt() ) = prw.third();
     for ( auto& prn : lN ) matN( prn.second().toInt(), prn.first().toInt() ) = prn.third(); //i,jth cell of matrix gets populated with value
     for ( auto& prw : lA ) modA[prw.first()][prw.second()] = prw.third();
     for ( auto& prw : lB ) modB[prw.first()][prw.second()] = prw.third();
@@ -308,7 +300,7 @@ int main ( int nArgs, char* argv[] ) {
           for( const BeamElement<HiddState>& be_tdec1 : beams[t-1] ) { //beams[t-1] is a Beam<ProbBack,BeamElement>, so be_tdec1 is a beam item, which is a pair<ProbBack,BeamElement>. first.first is the prob in the probback, and second is the beamelement, which is a sextuple of <sign, f, e, k, j, q>
             double            lgpr_tdec1 = be_tdec1.getProb(); // logprob of prev storestate
             const StoreState& q_tdec1    = be_tdec1.getHidd().sixth();  // prev storestate
-            //if( VERBOSE>1 ) cout << "  from (" << be_tdec1.getHidd() << ")" << endl;
+            if( VERBOSE>1 ) cout << "  from (" << be_tdec1.getHidd() << ")" << endl;
             const ProbBack<HiddState> pbDummy = ProbBack<HiddState>(0.0, be_tdec1); //dummy element for most recent timestep
             const HiddState hsDummy = HiddState(Sign(ksTop,CVar(),S()),F(),EVar(),K(),JResponse(),StoreState(),0 ); //dummy hidden state with kTop semantics 
             const BeamElement<HiddState> beDummy = BeamElement<HiddState>(pbDummy, hsDummy); //at timestep t, represents null antecedent 
@@ -350,28 +342,16 @@ int main ( int nArgs, char* argv[] ) {
               bool corefON = (tAnt==t) ? 0 : 1;
               NPredictorSet nps;// = NPredictorSet ( t - tAnt, lnpredictors);
               q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, false ); //calcNPredictors takes list of npreds (reference) and candidate Sign (reference)
-              if (VERBOSE>1) { nps.printOut(cout); }
+              if (VERBOSE>1) { cout << "    "; nps.printOut(cout); }
               arma::vec nlogresponses = nps.NLogResponses(matN);
 
               double numerator = exp(nlogresponses(NResponse("1").toInt()) - nlogresponses(NResponse("0").toInt()));
               double nprob = numerator / ndenom;
 
-              if ( VERBOSE>1 ) cout << "   N ... : 1 = " << numerator << "/" << ndenom << "=" << nprob << "  tAnt: " << (t - tAnt) << endl;
+              if ( VERBOSE>1 ) cout << "    N ... : 1 = " << numerator << "/" << ndenom << "=" << nprob << "  tAnt: " << (t - tAnt) << endl;
 
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
 
-                /*
-                // pbiAnt.first is a const BeamElement
-                list<FPredictor> lfpredictors;  
-                q_tdec1.calcForkPredictors( lfpredictors, ksAnt, !corefON, false ); 
-                lfpredictors.emplace_back();  // add bias term
-                // Calc distrib over response for each fork predictor...
-                arma::vec flogresponses = arma::zeros( matF.n_rows );            //distribution over f responses for a single antecedent features
-                for ( auto& fpredr : lfpredictors ) if ( fpredr.toInt() < matF.n_cols ) flogresponses += matF.col( fpredr.toInt() ); // add logprob for all indicated features. over all FEK responses.
-                arma::vec fresponses = arma::exp( flogresponses );
-                fnorm = arma::accu( fresponses );
-                if ( VERBOSE>1 ) { for ( auto& fpredr : lfpredictors ) { cout <<"    fpredr:"<<fpredr<<endl; } }
-                */
                 FPredictorVec lfpredictors( modF, ksAnt, not corefON, q_tdec1 );
                 arma::vec fresponses = modF.calcResponses( lfpredictors );
 
@@ -391,10 +371,6 @@ int main ( int nArgs, char* argv[] ) {
 //                      if( modF.getResponseIndex(f,e_p_t,k_p_t)==0 ) cerr<<"ERROR: unable to find fresponse "<<f<<"&"<<e_p_t<<"&"<<k_p_t<<endl;
                       if( modF.getResponseIndex(f,e_p_t,k_p_t) == uint(-1) ) continue;
                       double probFork = fresponses( modF.getResponseIndex(f,e_p_t,k_p_t) );
-                      /*
-                      if( FResponse::exists(f,e_p_t,k_p_t) && FResponse(f,e_p_t,k_p_t).toInt() >= int(fresponses.size()) ) cerr<<"ERROR: unable to find fresponse "<<FResponse(f,e_p_t,k_p_t)<<endl;
-                      double scoreFork = ( FResponse::exists(f,e_p_t,k_p_t) ) ? fresponses(FResponse(f,e_p_t,k_p_t).toInt()) : 1.0 ;
-                      */
                       if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << probFork << endl;
 
                       // Thread heartbeat (to diagnose thread death)...
@@ -419,6 +395,7 @@ int main ( int nArgs, char* argv[] ) {
                         for (auto& k : ksAnt) if (k != K::kTop) aPretrm.first().emplace_back(k); // add antecedent contexts
                         aPretrm.second() = c_p_t;  aPretrm.third() = S_A;          // aPretrm (pos tag)
                         const LeftChildSign aLchild( q_tdec1, f, e_p_t, aPretrm );
+
                         JPredictorVec ljpredictors( modJ, f, e_p_t, aLchild, q_tdec1 );  // q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
                         arma::vec jresponses = modJ.calcResponses( ljpredictors );
 
