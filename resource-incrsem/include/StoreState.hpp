@@ -1294,9 +1294,10 @@ class FPredictorVec : public list<unsigned int> {
     template<class FM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
     FPredictorVec( FM& fm, const KSet& ksAnt, bool nullAnt, const StoreState& ss ) {
       int d = (FEATCONFIG & 1) ? 0 : ss.getDepth(); // max used depth - (dbar)
-      const KSet& ksB = ss.at(size()-1).getKSet(); //contexts of lowest b (bdbar)
+      const KSet& ksB = ss.at(ss.size()-1).getKSet(); //contexts of lowest b (bdbar)
       int iCarrier = ss.getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
-      if( STORESTATE_TYPE ) emplace_back( fm.getPredictorIndex( d, ss.at(size()-1).getCat() ) ); //.removeLink() ); // flag to add depth and category label as predictor, default is true
+      emplace_back( fm.getPredictorIndex( "Bias" ) );  // add bias
+      if( STORESTATE_TYPE ) emplace_back( fm.getPredictorIndex( d, ss.at(ss.size()-1).getCat() ) ); //.removeLink() ); // flag to add depth and category label as predictor, default is true
       if( !(FEATCONFIG & 2) ) {
         for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                       ) emplace_back( fm.getPredictorIndex( d, kNil, kA, kNil ) ); //if( bAdd || FPredictor::exists(d,kNil,kA,kNil) ) lfp.emplace_back( d, kNil, kA, kNil ); 
         for( auto& kF : (iCarrier<0)    ? KSet() : ss.at(iCarrier).getKSet() ) emplace_back( fm.getPredictorIndex( d, kF, kNil, kNil ) ); //if( bAdd || FPredictor::exists(d,kF,kNil,kNil) ) lfp.emplace_back( d, kF, kNil, kNil ); 
@@ -1313,8 +1314,8 @@ class FPredictorVec : public list<unsigned int> {
       //      for( auto& kA : (ksB.size()==0) ? ksBot  : ksB                    ) if( bAdd || FPredictor::exists(kNil,kA) ) lfp.emplace_back( kNil, kA );
       //      for( auto& kF : (iCarrier<0)    ? KSet() : at(iCarrier).getKSet() ) if( bAdd || FPredictor::exists(kF,kNil) ) lfp.emplace_back( kF, kNil );
       }
-      if( nullAnt ) emplace_back( fm.getPredictorIndex( "acorefOFF" ) );
-      else          emplace_back( fm.getPredictorIndex( "acorefON"  ) ); 
+      if( nullAnt ) emplace_back( fm.getPredictorIndex( "corefOFF" ) );
+      else          emplace_back( fm.getPredictorIndex( "corefON"  ) ); 
     }
 };
 
@@ -1322,7 +1323,7 @@ class FPredictorVec : public list<unsigned int> {
 
 class FModel {
 
-  typedef DelimitedTrip<psX,F,psAmpersand,Delimited<EVar>,psAmpersand,K,psX> FEK;
+  typedef DelimitedTrip<psX,F,psAmpersand,Delimited<EVar>,psAmpersand,Delimited<K>,psX> FEK;
 
   private:
 
@@ -1345,11 +1346,12 @@ class FModel {
 
     FModel( ) { }
     FModel( istream& is ) {
+//      getResponseIndex( F(), EVar(), K("BOGUS") );  // null outcome
       list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
       while( is.peek()=='F' ) {
         auto& prw = *l.emplace( l.end() );
-	is >> "F ";
-	if( is.peek()=='a' )   { Delimited<string> s;   is >> "a" >> s >> " : ";                          prw.first()  = getPredictorIndex( s );             }
+        is >> "F ";
+        if( is.peek()=='a' )   { Delimited<string> s;   is >> "a" >> s >> " : ";                          prw.first()  = getPredictorIndex( s );             }
         else{
           D d;                                          is >> "d" >> d >> "&";
           if( is.peek()=='t' ) { Delimited<CVar> c;     is >> "t" >> c >> " : ";                          prw.first()  = getPredictorIndex( d, c );          }
@@ -1393,7 +1395,7 @@ class FModel {
       mfeki[ FEK(f,e,k) ] = iNextResponse;  mifek[ iNextResponse ] = FEK(f,e,k);  return( iNextResponse++ );
     }
     unsigned int getResponseIndex( F f, EVar e, K k ) const {           // const version with closed predictor domain
-      const auto& it = mfeki.find( FEK(f,e,k) );  return( ( it != mfeki.end() ) ? it->second : 0 );
+      const auto& it = mfeki.find( FEK(f,e,k) );  return( ( it != mfeki.end() ) ? it->second : uint(-1) );
     }
 
     const FEK& getFEK( unsigned int i ) const {
@@ -1484,6 +1486,7 @@ class JModel {
 
     JModel( ) { }
     JModel( istream& is ) {
+//      getResponseIndex( J(), EVar(), O(), O() );  // null outcome
       list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
       while( is.peek()=='J' ) {
         auto& prw = *l.emplace( l.end() );
@@ -1532,7 +1535,7 @@ class JModel {
       mjeooi[ JEOO(j,e,oL,oR) ] = iNextResponse;  mijeoo[ iNextResponse ] = JEOO(j,e,oL,oR);  return( iNextResponse++ );
     }
     unsigned int getResponseIndex( J j, EVar e, O oL, O oR ) const {           // const version with closed predictor domain
-      const auto& it = mjeooi.find( JEOO(j,e,oL,oR) );  return( ( it != mjeooi.end() ) ? it->second : 0 );
+      const auto& it = mjeooi.find( JEOO(j,e,oL,oR) );  return( ( it != mjeooi.end() ) ? it->second : uint(-1) );
     }
 
     const JEOO& getJEOO( unsigned int i ) const {

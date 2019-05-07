@@ -388,7 +388,8 @@ int main ( int nArgs, char* argv[] ) {
 
                     // For each possible no-fork or fork decision...
                     for ( auto& f : {0,1} ) {
-                      if( modF.getResponseIndex(f,e_p_t,k_p_t) ) cerr<<"ERROR: unable to find fresponse "<<f<<" "<<e_p_t<<" "<<k_p_t<<endl;
+//                      if( modF.getResponseIndex(f,e_p_t,k_p_t)==0 ) cerr<<"ERROR: unable to find fresponse "<<f<<"&"<<e_p_t<<"&"<<k_p_t<<endl;
+                      if( modF.getResponseIndex(f,e_p_t,k_p_t) == uint(-1) ) continue;
                       double probFork = fresponses( modF.getResponseIndex(f,e_p_t,k_p_t) );
                       /*
                       if( FResponse::exists(f,e_p_t,k_p_t) && FResponse(f,e_p_t,k_p_t).toInt() >= int(fresponses.size()) ) cerr<<"ERROR: unable to find fresponse "<<FResponse(f,e_p_t,k_p_t)<<endl;

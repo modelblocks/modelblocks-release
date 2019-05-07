@@ -198,7 +198,7 @@ void calcContext ( Tree<L>& tr,
       lfp.push_front( fpCat );
       */
       cout<<"----"<<q<<endl;
-      cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : " << f << "&" << e << "&" << k << endl;//; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e.c_str(),k) << endl;
+      cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : f" << f << "&" << e << "&" << k << endl;//; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e.c_str(),k) << endl;
       cout << "P " << q.calcPretrmCatCondition(f,e.c_str(),k) << " : " << aPretrm.getCat() /*getCat(l)*/     << endl;
       cout << "W " << e << " " << k << " " << aPretrm.getCat() /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
 
