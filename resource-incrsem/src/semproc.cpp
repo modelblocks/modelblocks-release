@@ -36,6 +36,7 @@ bool STORESTATE_CHATTY = false;
 uint FEATCONFIG = 0;
 #include <StoreState.hpp>
 #include <Beam.hpp>
+int COREF_WINDOW = 50;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -46,7 +47,7 @@ char psSpcEqualsSpc[] = " = ";
 
 uint BEAM_WIDTH      = 1000;
 uint VERBOSE         = 0;
-uint OUTPUT_MEASURES = 0;
+uint OUTPUT_MEASURES = true;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -146,8 +147,9 @@ int main ( int nArgs, char* argv[] ) {
       else if ( 0==strcmp(argv[a],"-V") ) VERBOSE = 2;
       else if ( 0==strncmp(argv[a],"-p",2) ) numThreads = atoi(argv[a]+2);
       else if ( 0==strncmp(argv[a],"-b",2) ) BEAM_WIDTH = atoi(argv[a]+2);
-      else if ( 0==strcmp(argv[a],"-c") ) OUTPUT_MEASURES = 1;
+//      else if ( 0==strcmp(argv[a],"-c") ) OUTPUT_MEASURES = 1;
       else if ( 0==strncmp(argv[a],"-f",2) ) FEATCONFIG = atoi(argv[a]+2);
+      else if( '-'==argv[a][0] && 'c'==argv[a][1] && '\0'!=argv[a][2] ) COREF_WINDOW = atoi( argv[a]+2 );
       //else if ( string(argv[a]) == "t" ) STORESTATE_TYPE = true;
       else {
         cerr << "Loading model " << argv[a] << "..." << endl;
@@ -306,13 +308,12 @@ int main ( int nArgs, char* argv[] ) {
             const BeamElement<HiddState> beDummy = BeamElement<HiddState>(pbDummy, hsDummy); //at timestep t, represents null antecedent 
             const BeamElement<HiddState>* pbeAnt = &beDummy;
             //calculate denominator / normalizing constant over all antecedent timesteps
-            double fnorm = 0.0; 
             double ndenom = 0.0;
 
             vector<int> excludedIndices; //initialize blocking list
 
             //denominator loop over candidate antecedents
-            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (t-tAnt<50); tAnt--, pbeAnt = &pbeAnt->getBack()) { 
+            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (t-tAnt<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { 
               if ( pbeAnt->getHidd().getI() != 0 ) {
                 if (VERBOSE > 1) cout << "    adding index to exclude for blocking: " << tAnt+pbeAnt->getHidd().getI() << " pbeAnt...get(): " << pbeAnt->getHidd().getI() << endl;
                 excludedIndices.push_back(tAnt+pbeAnt->getHidd().getI()); //add excluded index if there's a non-null coref decision
@@ -330,7 +331,7 @@ int main ( int nArgs, char* argv[] ) {
             } //closes for tAnt
             pbeAnt = &beDummy; //reset pbiAnt pointer after calculating denominator
             //numerator loop over candidate antecedents. specific choice.
-            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (t-tAnt<50); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers. 
+            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (t-tAnt<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers. 
               //block indices as read from previous storestate's excludedIndices
               if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
                 continue;
@@ -505,7 +506,7 @@ int main ( int nArgs, char* argv[] ) {
           auto ibe=next(articleMLSs.front().front().begin());  //iterator over beam elements?
           auto iw=articles.front().front().begin() ; //iterator over words
           for( ; (ibe != articleMLSs.front().front().end()) && (iw != articles.front().front().end()); ibe++, iw++, u++ ) {
-            cout << *iw << " " << ibe->getHidd() << " " << ibe->getProb(); //tokdecs output is: WORD HIDDSTATE PROB
+            cout << *iw << " " << ibe->getHidd().first() << " f" << ibe->getHidd().second() << "&" << ibe->getHidd().third() << "&" << ibe->getHidd().fourth() << " j" << modJ.getJEOO(ibe->getHidd().fifth()) << " " << ibe->getHidd().sixth() << " " << ibe->getHidd().seventh() << " " << ibe->getProb(); //tokdecs output is: WORD HIDDSTATE PROB
             cout << endl;
           } //closes for ibe!=mls.end
           articleMLSs.front().pop_front(); //pop (mls of) first sentence of first article

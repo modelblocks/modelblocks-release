@@ -201,6 +201,8 @@ int main ( int nArgs, char* argv[] ) {
   }
   cerr << "Data read: x=" << domXFeat.getSize() << " y=" << domYVal.getSize() << ".\n";
 
+  if( 0 == domXFeat.getSize() or 0 == domYVal.getSize() ) exit( 0 );   // Empty model is easy.
+
   // Populate predictor matrix and result vector...
   SpMatLogisticRegressionFunction f ( domXFeat.getSize(), domYVal.getSize(), nArgs>1 ? atoi(argv[1]) : 1, nArgs>2 ? atof(argv[2]) : 0.0 );
   sp_mat& DbyFX = f.Predictors();
