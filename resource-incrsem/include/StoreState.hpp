@@ -563,24 +563,26 @@ class Redirect : public pair<int,const HVec&> {
 class HVec : public DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX> {
  public:
   // Constructors...
-  HVec ( )     : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>() { }
-  HVec ( K k ) : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>() {
-    for( unsigned int arg=0; arg<k.getCat().getArity(); arg++ ) at(arg).emplace_back( k.project(arg) );
+  HVec ( )       : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>() { }
+  HVec ( int i ) : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>( i ) { }
+  HVec ( K k )   : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>( k.getCat().getArity()+1 ) {
+    for( unsigned int arg=0; arg<k.getCat().getArity()+1; arg++ ) at(arg).emplace_back( k.project(arg) );
   }
 //  HVec& operator+= ( const HVec& hv ) {
   HVec& add( const HVec& hv ) {
-    for( unsigned int arg=0; arg<hv.size(); arg++ ) at(arg).insert( at(arg).end(), hv.at(arg).begin(), hv.at(arg).end() );
+    for( unsigned int arg=0; arg<size() and arg<hv.size(); arg++ ) at(arg).insert( at(arg).end(), hv.at(arg).begin(), hv.at(arg).end() );
     return *this;
   }
 //  HVec& operator+= ( const Redirect& r ) {
   HVec& addSynArg( int iDir, const HVec& hv ) {
-    if(      iDir == 0 ) add( hv );
-    else if( iDir >  0 ) at(iDir).insert( at(iDir).end(), hv.at( 0   ).begin(), hv.at( 0   ).end() );
-    else                 at( 0  ).insert( at( 0  ).end(), hv.at(-iDir).begin(), hv.at(-iDir).end() );
+    if     ( iDir == 0                ) add( hv );
+    else if( iDir > 0 and iDir<size() ) at(iDir).insert( at(iDir).end(), hv.at( 0   ).begin(), hv.at( 0   ).end() );
+    else if( -iDir<hv.size()          ) at( 0  ).insert( at( 0  ).end(), hv.at(-iDir).begin(), hv.at(-iDir).end() );
     return *this;
   }
   HVec& swap( int i, int j ) {
-    auto kv = at(i);  at(i) = at(j);  at(j) = kv;
+    if     ( size() >= 3 ) { auto kv = at(i);  at(i) = at(j);  at(j) = kv; }
+    else if( size() >= 2 ) at(i).clear();
     return *this;
   }
   HVec& applyUnariesTopDn( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
@@ -676,7 +678,8 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     const KSet  ksRchild( ksParent, getDir(opR) );
     */
 
-    HVec hvParent, hvRchild;
+    HVec hvParent( cA.getArity()+1 );
+    HVec hvRchild( cB.getArity()+1 );
     // If join, apply unaries going down from ancestor, then merge redirect of left child...
     if( j ) {
       hvParent.add( qPrev.at(iAncestorB).getHVec() ).applyUnariesTopDn( evJ, viCarrierA, qPrev ).addSynArg( -getDir(opL), aLchild.getHVec() );
@@ -684,6 +687,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     }
     // If not join, merge redirect of left child...
     else {
+//if(aLchild.getHVec().size()>cA.getArity()) cerr<<"OMG! cA="<<cA<<" cA.arity="<<cA.getArity()<<" lchild.arity="<<aLchild.getHVec().size()<<endl;
       hvParent.addSynArg( -getDir(opL), aLchild.getHVec() );
       hvRchild.addSynArg( getDir(opR), hvParent ); 
       hvParent.applyUnariesBotUp( evJ, viCarrierA, qPrev );
@@ -694,9 +698,11 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
       Sign& s = *emplace( end() ) = qPrev[i];
       if( i==iAncestorA and j==1 and qPrev[i].isDitto() and opR!='I' )            { s.setHVec() = hvParent; }  //s = Sign( ksParent, qPrev[i].getCat(), qPrev[i].getSide() ); }
       else if( viCarrierP.size()>0 and i==viCarrierP.back() and evF.top()!='\0' ) { viCarrierP.pop_back();
+                                                                                    s.setHVec() = HVec( s.getCat().getArity()+1 );
                                                                                     s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() ); }
                                                                                     //s = Sign( KSet(aPretrm.getKSet(),getDir(evF.popTop()),qPrev[i].getKSet()), qPrev[i].getCat(), qPrev[i].getSide() ); }
       else if( viCarrierA.size()>0 and i==viCarrierA.back() and evJ.top()!='\0' ) { viCarrierA.pop_back();
+                                                                                    s.setHVec() = HVec( s.getCat().getArity()+1 );
                                                                                     s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent ); }
                                                                                     //s = Sign( KSet(ksParent,getDir(evJ.popTop()),qPrev[i].getKSet()), qPrev[i].getCat(), qPrev[i].getSide() ); }
       else                                                                        { s = qPrev[i]; }
@@ -814,13 +820,13 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
 
     const HVec& hvB = at(size()-1).getHVec(); //contexts of lowest b (bdbar)
-    for( int iA=0; iA<candidate.getHVec().size(); iA++ )  for( auto& antk : candidate.getHVec()[iA] ) { 
+    for( unsigned int iA=0; iA<candidate.getHVec().size(); iA++ )  for( auto& antk : candidate.getHVec()[iA] ) { 
       if( bAdd || NPredictor::exists(antk.project(-iA),kNil) ) nps.setList().emplace_back( antk.project(-iA), kNil ); //add unary antecedent k feat, using kxk template
-      for( int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
+      for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
         if( bAdd || NPredictor::exists(antk.project(-iA),currk.project(-iB)) ) nps.setList().emplace_back( antk.project(-iA), currk.project(-iB) ); //pairwise kxk feat
       }
     }
-    for( int iB=0; iB<hvB.size(); iB++ )  for( auto& currk : hvB[iB] ) {
+    for( unsigned int iB=0; iB<hvB.size(); iB++ )  for( auto& currk : hvB[iB] ) {
       if( bAdd || NPredictor::exists(kNil,currk.project(-iB)) ) nps.setList().emplace_back( kNil, currk.project(-iB) ); //unary ancestor k feat
     }
 
@@ -850,16 +856,16 @@ const Sign StoreState::aTop( HVec(K::kTop), cTop, S_B );
 ////////////////////////////////////////////////////////////////////////////////
 
 HVec& HVec::applyUnariesTopDn( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss ) {
-  for( uint i=0; e!=EVar::eNil; e=e.withoutTop() ) {
-    if( e.top()>='0' and e.top()<='9' and i<viCarrierIndices.size() and viCarrierIndices[i++]!=-1 )  addSynArg( -getDir(e.top()), ss.at(viCarrierIndices[i]).getHVec() );
+  for( int i=0; e!=EVar::eNil; e=e.withoutTop() ) {
+    if( e.top()>='0' and e.top()<='9' and i<viCarrierIndices.size() and viCarrierIndices[i++]!=-1 )  addSynArg( -getDir(e.top()), ss.at(viCarrierIndices[i-1]).getHVec() );
     else if( e.top()=='O' or e.top()=='V' )  swap(1,2);
   }
   return *this;
 }
 
 HVec& HVec::applyUnariesBotUp( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss ) {
-  for( uint i=viCarrierIndices.size()-1; e!=EVar::eNil; e=e.withoutBot() ) {
-    if( e.bot()>='0' and e.bot()<='9' and i>=0 and viCarrierIndices[i--]!=-1 )  addSynArg( -getDir(e.bot()), ss.at(viCarrierIndices[i]).getHVec() );
+  for( int i=viCarrierIndices.size()-1; e!=EVar::eNil; e=e.withoutBot() ) {
+    if( e.bot()>='0' and e.bot()<='9' and i>=0 and viCarrierIndices[i--]!=-1 )  addSynArg( -getDir(e.bot()), ss.at(viCarrierIndices[i+1]).getHVec() );
     else if( e.bot()=='O' or e.bot()=='V' )  swap(1,2);
   }
   return *this;
@@ -944,10 +950,10 @@ LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign
     const Sign& aAncestorB = qPrev.at( qPrev.getAncestorBIndex(1) );
 //    const KSet& ksExtrtn   = (iCarrierB<0) ? KSet() : qPrev.at(iCarrierB).getKSet();
     setSide() = S_A;
-    if( f==1 )                          { setCat() = aPretrm.getCat();  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
+    if( f==1 )                          { setCat() = aPretrm.getCat();     setHVec() = HVec(getCat().getArity()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
     else if( qPrev.size()<=0 )          { *this = StoreState::aTop; }
-    else if( not aAncestorA.isDitto() ) { setCat() = aAncestorA.getCat();  setHVec().add( aAncestorA.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
-    else                                { setCat() = aAncestorA.getCat();  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ).add( aAncestorB.getHVec() ); }
+    else if( not aAncestorA.isDitto() ) { setCat() = aAncestorA.getCat();  setHVec() = HVec(getCat().getArity()+1);  setHVec().add( aAncestorA.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
+    else                                { setCat() = aAncestorA.getCat();  setHVec() = HVec(getCat().getArity()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ).add( aAncestorB.getHVec() ); }
 
     /*
     *this = (f==1 && eF!=EVar::eNil)                  ? Sign( KSet(KSet(),0,true,eF,viCarrierB,qPrev,aPretrm.getKSet()), aPretrm.getCat(), S_A )

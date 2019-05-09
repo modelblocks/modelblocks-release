@@ -181,7 +181,7 @@ void calcContext ( Tree<L>& tr,
     if (annot != "")  {
       annot2kset[currentloc] = hvAnt;
     }
-    annot2kset[currentloc][0].push_back(k); //add current k 
+    annot2kset[currentloc] = HVec(k); //add current k 
     for (auto& ant : hvAnt) {
       if (hvAnt != hvTop) aPretrm.first().emplace_back(ant); //add antecedent ks to aPretrm
     }
