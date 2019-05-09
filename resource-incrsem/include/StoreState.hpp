@@ -575,9 +575,9 @@ class HVec : public DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,ps
   }
 //  HVec& operator+= ( const Redirect& r ) {
   HVec& addSynArg( int iDir, const HVec& hv ) {
-    if     ( iDir == 0                ) add( hv );
-    else if( iDir > 0 and iDir<size() ) at(iDir).insert( at(iDir).end(), hv.at( 0   ).begin(), hv.at( 0   ).end() );
-    else if( -iDir<hv.size()          ) at( 0  ).insert( at( 0  ).end(), hv.at(-iDir).begin(), hv.at(-iDir).end() );
+    if     ( iDir == 0                 ) add( hv );
+    else if( iDir < 0 and -iDir<size() ) at(-iDir).insert( at(-iDir).end(), hv.at( 0  ).begin(), hv.at( 0  ).end() );
+    else if( iDir<hv.size()            ) at( 0   ).insert( at( 0   ).end(), hv.at(iDir).begin(), hv.at(iDir).end() );
     return *this;
   }
   HVec& swap( int i, int j ) {
@@ -678,7 +678,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     const KSet  ksRchild( ksParent, getDir(opR) );
     */
 
-    HVec hvParent( cA.getArity()+1 );
+    HVec hvParent( cA.getArity()+( (opL>='1' and opL<='9' or opR>='1' and opR<='9') ? 2 : 1 ) );
     HVec hvRchild( cB.getArity()+1 );
     // If join, apply unaries going down from ancestor, then merge redirect of left child...
     if( j ) {
@@ -687,7 +687,6 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     }
     // If not join, merge redirect of left child...
     else {
-//if(aLchild.getHVec().size()>cA.getArity()) cerr<<"OMG! cA="<<cA<<" cA.arity="<<cA.getArity()<<" lchild.arity="<<aLchild.getHVec().size()<<endl;
       hvParent.addSynArg( -getDir(opL), aLchild.getHVec() );
       hvRchild.addSynArg( getDir(opR), hvParent ); 
       hvParent.applyUnariesBotUp( evJ, viCarrierA, qPrev );
@@ -715,12 +714,12 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
       cCurrP = aPretrm.getCat();  cCurrA = cA;
       for( int i : viCarrierP ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierP for "<<cCurrP.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
                                               //*emplace( end() ) = Sign( KSet( aPretrm.getKSet(), getDir(evF.popTop()) ), cCurrP.getFirstNonlocal(), S_B );
-                                              Sign& s = *emplace( end() ) = Sign( HVec(), cCurrP.getFirstNonlocal(), S_B );
+                                              Sign& s = *emplace( end() ) = Sign( HVec(1), cCurrP.getFirstNonlocal(), S_B );
                                               s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() );
                                               cCurrP=cCurrP.withoutFirstNolo(); }
       for( int i : viCarrierA ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierA for "<<cCurrA.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
                                               //*emplace( end() ) = Sign( KSet( ksParent,          getDir(evJ.popTop()) ), cCurrA.getFirstNonlocal(), S_B );
-                                              Sign& s = *emplace( end() ) = Sign( HVec(), cCurrA.getFirstNonlocal(), S_B );
+                                              Sign& s = *emplace( end() ) = Sign( HVec(1), cCurrA.getFirstNonlocal(), S_B );
                                               s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent );
                                               cCurrA=cCurrA.withoutFirstNolo(); }
       // Add lowest A...
