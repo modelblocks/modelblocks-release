@@ -62,7 +62,7 @@ class Trellis : public vector<Beam<HiddState>> {
     Trellis ( ) : vector<Beam<HiddState>>() { reserve(100); }
     Beam<HiddState>& operator[] ( uint i ) { if ( i==size() ) emplace_back(BEAM_WIDTH); return vector<Beam<HiddState>>::operator[](i); }
     void setMostLikelySequence ( DelimitedList<psX,BeamElement<HiddState>,psLine,psX>& lbe, const JModel& jm ) {
-      static StoreState ssLongFail( StoreState(), 1, 0, EVar::eNil, EVar::eNil, 'N', 'I', "FAIL", "FAIL", Sign(ksBot,"FAIL",0), Sign(ksBot,"FAIL",0) ); //fork, nojoin
+      static StoreState ssLongFail( StoreState(), 1, 0, EVar::eNil, EVar::eNil, 'N', 'I', "FAIL", "FAIL", Sign(hvBot,"FAIL",0), Sign(hvBot,"FAIL",0) ); //fork, nojoin
       lbe.clear(); if( back().size()>0 ) lbe.push_front( *back().begin() );
       if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( lbe.front().getBack() );
       if( lbe.size()>0 ) lbe.emplace_back( BeamElement<HiddState>() );
@@ -72,18 +72,18 @@ class Trellis : public vector<Beam<HiddState>> {
         cerr << "parse failed (lbe.size() = 0) " << "trellis size(): " << size() << endl;
         // Print a right branching structure...
         for( int t=size()-2; t>=0; t-- ) { 
-          lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, jm.getResponseIndex(1,EVar::eNil,'N','I'), ssLongFail ) ) ); // fork and join
+          lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,"FAIL",0), 1, EVar::eNil, K::kBot, jm.getResponseIndex(1,EVar::eNil,'N','I'), ssLongFail ) ) ); // fork and join
         }
         cerr << "size of lbe after push_fronts: " << lbe.size() << endl;
-        lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, jm.getResponseIndex(0,EVar::eNil,'N','I'), ssLongFail ) );                    // front: fork no-join
-        lbe.back( ) = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 0, EVar::eNil, K::kBot, jm.getResponseIndex(1,EVar::eNil,'N','I'), StoreState() ) );                  // back: join no-fork
+        lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,"FAIL",0), 1, EVar::eNil, K::kBot, jm.getResponseIndex(0,EVar::eNil,'N','I'), ssLongFail ) );                    // front: fork no-join
+        lbe.back( ) = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,"FAIL",0), 0, EVar::eNil, K::kBot, jm.getResponseIndex(1,EVar::eNil,'N','I'), StoreState() ) );                  // back: join no-fork
         cerr << "size of lbe after front and back assignments: " << lbe.size() << endl;
         if( size()==2 ) {  //special case if single word, fork and join
           cerr << "assigning front of fail lbe" << endl;
-          lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 1, EVar::eNil, K::kBot, jm.getResponseIndex(1,EVar::eNil,'N','I'), StoreState() ) );  // unary case: fork and join
+          lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,"FAIL",0), 1, EVar::eNil, K::kBot, jm.getResponseIndex(1,EVar::eNil,'N','I'), StoreState() ) );  // unary case: fork and join
         }
         // Add dummy element (not sure why this is needed)...
-        lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(ksBot,"FAIL",0), 0, EVar::eNil, K::kBot, jm.getResponseIndex(0,EVar::eNil,'N','I'), StoreState() ) ) ); // no-fork, no-join?
+        lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,"FAIL",0), 0, EVar::eNil, K::kBot, jm.getResponseIndex(0,EVar::eNil,'N','I'), StoreState() ) ) ); // no-fork, no-join?
         //start experiment - next two lines switch front element to nofork,join, add additional dummy at rear
         //TODO to revert, comment out next two, comment in pushfront above
         lbe.emplace_back( BeamElement<HiddState>() );
@@ -304,7 +304,7 @@ int main ( int nArgs, char* argv[] ) {
             const StoreState& q_tdec1    = be_tdec1.getHidd().sixth();  // prev storestate
             if( VERBOSE>1 ) cout << "  from (" << be_tdec1.getHidd() << ")" << endl;
             const ProbBack<HiddState> pbDummy = ProbBack<HiddState>(0.0, be_tdec1); //dummy element for most recent timestep
-            const HiddState hsDummy = HiddState(Sign(ksTop,CVar(),S()),F(),EVar(),K(),JResponse(),StoreState(),0 ); //dummy hidden state with kTop semantics 
+            const HiddState hsDummy = HiddState(Sign(hvTop,CVar(),S()),F(),EVar(),K(),JResponse(),StoreState(),0 ); //dummy hidden state with kTop semantics 
             const BeamElement<HiddState> beDummy = BeamElement<HiddState>(pbDummy, hsDummy); //at timestep t, represents null antecedent 
             const BeamElement<HiddState>* pbeAnt = &beDummy;
             //calculate denominator / normalizing constant over all antecedent timesteps
@@ -321,7 +321,7 @@ int main ( int nArgs, char* argv[] ) {
               if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
                 continue; //skip excluded indices
               }
-              const KSet& ksAnt = pbeAnt->getHidd().getPrtrm().getKSet(); 
+              const HVec& hvAnt = pbeAnt->getHidd().getPrtrm().getHVec(); 
               bool corefON = (tAnt==t) ? 0 : 1;
               NPredictorSet nps; // = NPredictorSet ( t - tAnt, lnpredictors);
               q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, false ); //these are NPredictors for a specific antecedent candidate at tAnt, and a current word at timestep t.
@@ -337,7 +337,7 @@ int main ( int nArgs, char* argv[] ) {
                 continue;
               }
               
-              const KSet& ksAnt = pbeAnt->getHidd().getPrtrm().getKSet();
+              const HVec& hvAnt = pbeAnt->getHidd().getPrtrm().getHVec();
 
               //Calculate antecedent N model predictors 
               bool corefON = (tAnt==t) ? 0 : 1;
@@ -353,7 +353,7 @@ int main ( int nArgs, char* argv[] ) {
 
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
 
-                FPredictorVec lfpredictors( modF, ksAnt, not corefON, q_tdec1 );
+                FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );
                 arma::vec fresponses = modF.calcResponses( lfpredictors );
 
                 // For each possible lemma (context + label + prob) for preterminal of current word...
@@ -392,8 +392,8 @@ int main ( int nArgs, char* argv[] ) {
                         double probFPW = probFork * modP.find(ppredictor)->second.find(c_p_t)->second * probwgivkl;
                         if ( VERBOSE>1 ) cout << "      f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << probFork << " * " << modP.find(ppredictor)->second.find(c_p_t)->second << " * " << probwgivkl << " = " << probFPW << endl;
 
-                        Sign aPretrm;  aPretrm.first().emplace_back(k_p_t);  
-                        for (auto& k : ksAnt) if (k != K::kTop) aPretrm.first().emplace_back(k); // add antecedent contexts
+                        Sign aPretrm;  aPretrm.getHVec()[0].emplace_back(k_p_t);  
+                        for (auto& k : hvAnt[0]) if (k != K::kTop) aPretrm.getHVec()[0].emplace_back(k); // add antecedent contexts
                         aPretrm.second() = c_p_t;  aPretrm.third() = S_A;          // aPretrm (pos tag)
                         const LeftChildSign aLchild( q_tdec1, f, e_p_t, aPretrm );
 

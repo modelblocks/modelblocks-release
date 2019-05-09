@@ -150,7 +150,7 @@ JModel modJ;
 ////////////////////////////////////////////////////////////////////////////////
 
 void calcContext ( Tree<L>& tr, 
-                   map<string,int>& annot2tdisc, vector<Sign>& antecedentCandidates, int& tDisc, const int sentnum, map<string,KSet>& annot2kset,
+                   map<string,int>& annot2tdisc, vector<Sign>& antecedentCandidates, int& tDisc, const int sentnum, map<string,HVec>& annot2kset,
 		   int& wordnum, bool failtree, std::set<int>& excludedIndices,   // coref related: 
 		   int s=1, int d=0, string e="", L l=L() ) {                     // side, depth, unary (e.g. extraction) operators, ancestor label.
   static F          f;
@@ -175,23 +175,23 @@ void calcContext ( Tree<L>& tr,
     std::string annotSentIdx = annot.substr(0,annot.size()-2); //get all but last two...
     if (annotSentIdx == std::to_string(sentnum)) validIntra = true;
     if (INTERSENTENTIAL == true) validIntra = true;
-    const KSet& ksAnt = validIntra == true ? annot2kset[annot] : KSet(K::kTop);
-    bool nullAnt = (ksAnt.empty()) ? true : false;
+    const HVec& hvAnt = validIntra == true ? annot2kset[annot] : HVec(K::kTop);
+    bool nullAnt = (hvAnt.empty()) ? true : false;
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
     if (annot != "")  {
-      annot2kset[currentloc] = ksAnt;
+      annot2kset[currentloc] = hvAnt;
     }
-    annot2kset[currentloc].push_back(k); //add current k 
-    for (auto& ant : ksAnt) {
-      if (ksAnt != ksTop) aPretrm.first().emplace_back(ant); //add antecedent ks to aPretrm
+    annot2kset[currentloc][0].push_back(k); //add current k 
+    for (auto& ant : hvAnt) {
+      if (hvAnt != hvTop) aPretrm.first().emplace_back(ant); //add antecedent ks to aPretrm
     }
     annot2tdisc[currentloc] = tDisc; //map current sent,word index to discourse word counter
     if (not failtree) {
       // Print preterminal / fork-phase predictors...
-      FPredictorVec lfp( modF, ksAnt, nullAnt, q );
+      FPredictorVec lfp( modF, hvAnt, nullAnt, q );
       /*
       DelimitedList<psX,FPredictor,psComma,psX> lfp;  
-      q.calcForkPredictors(lfp, ksAnt, nullAnt);//additional kset argument is set of all antecedents in referent cluster. requires global map from annotation to ksets, as in {"0204":Kset ["Lord_"], "0207": KSet ["Lord_", "he_"]}, etc.
+      q.calcForkPredictors(lfp, hvAnt, nullAnt);//additional kset argument is set of all antecedents in referent cluster. requires global map from annotation to ksets, as in {"0204":Kset ["Lord_"], "0207": HVec ["Lord_", "he_"]}, etc.
       auto fpCat = lfp.front( );
       lfp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first element is category.
       lfp.sort( );             // sort to shorten mlr input
@@ -215,7 +215,7 @@ void calcContext ( Tree<L>& tr,
             candidate = antecedentCandidates[i-1]; //there are one fewer candidates than tDisc value.  e.g., second word only has one previous candidate.
           }
           else {
-            candidate = Sign(KSet(K::kTop), "NONE", "/"); //null antecedent generated at first iteration, where i=tDisc. Sign consists of: kset, type (syncat), side (A/B)
+            candidate = Sign(HVec(K::kTop), "NONE", "/"); //null antecedent generated at first iteration, where i=tDisc. Sign consists of: kset, type (syncat), side (A/B)
             
             if (annot == "") isCoref = 1; //null antecedent is correct choice, "1" when no annotation TODO fix logic for filtering intra/inter?
           }
@@ -332,7 +332,7 @@ int main ( int nArgs, char* argv[] ) {
 
   int linenum = 0;
   int discourselinenum = 0; //increments on sentence in discourse/article
-  map<string,KSet> annot2kset;
+  map<string,HVec> annot2kset;
   int tDisc = 0; //increments on word in discourse/article
   vector<Sign> antecedentCandidates; 
   map<string,int> annot2tdisc;
