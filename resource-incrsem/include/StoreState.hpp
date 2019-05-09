@@ -183,7 +183,7 @@ class CVar : public DiscreteDomainRV<int,domCVar> {
   CVar ( )                : DiscreteDomainRV<int,domCVar> ( )    { }
   CVar ( const char* ps ) : DiscreteDomainRV<int,domCVar> ( ps ) { calcDetermModels(ps); }
   bool isArg            ( )       const { return mnbArg[*this]; }
-  int  getArity         ( )       const { return mciArity  [*this]; }
+  int  getArity         ( )       const { return mciArity[*this]; }
   bool isCarrier        ( )       const { return mcbIsCarry[*this]; }
   N    getFirstNonlocal ( )       const { return mcnFirstNol[*this]; }
   CVar withoutFirstNolo ( )       const { return mccNoFirstNol[*this]; }
@@ -564,7 +564,9 @@ class HVec : public DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,ps
  public:
   // Constructors...
   HVec ( )     : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>() { }
-  HVec ( K k ) : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>() { emplace( end() )->emplace_back(k); }
+  HVec ( K k ) : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>() {
+    for( unsigned int arg=0; arg<k.getCat().getArity(); arg++ ) at(arg).emplace_back( k.project(arg) );
+  }
 //  HVec& operator+= ( const HVec& hv ) {
   HVec& add( const HVec& hv ) {
     for( unsigned int arg=0; arg<hv.size(); arg++ ) at(arg).insert( at(arg).end(), hv.at(arg).begin(), hv.at(arg).end() );
@@ -581,8 +583,8 @@ class HVec : public DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,ps
     auto kv = at(i);  at(i) = at(j);  at(j) = kv;
     return *this;
   }
-  HVec& applyUnariesTopDown( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
-  HVec& applyUnariesBottomUp( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
+  HVec& applyUnariesTopDn( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
+  HVec& applyUnariesBotUp( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
   bool isDitto ( ) const { return ( size()>0 and front().size()>0 and front().front()==K_DITTO ); }
 };
 const HVec hvTop = HVec( K::kTop );
@@ -677,14 +679,14 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     HVec hvParent, hvRchild;
     // If join, apply unaries going down from ancestor, then merge redirect of left child...
     if( j ) {
-      hvParent.add( qPrev.at(iAncestorB).getHVec() ).applyUnariesTopDown( evJ, viCarrierA, qPrev ).addSynArg( -getDir(opL), aLchild.getHVec() );
-      hvRchild.addSynArg(  getDir(opR), hvParent );
+      hvParent.add( qPrev.at(iAncestorB).getHVec() ).applyUnariesTopDn( evJ, viCarrierA, qPrev ).addSynArg( -getDir(opL), aLchild.getHVec() );
+      hvRchild.addSynArg( getDir(opR), hvParent );
     }
     // If not join, merge redirect of left child...
     else {
       hvParent.addSynArg( -getDir(opL), aLchild.getHVec() );
-      hvRchild.addSynArg(  getDir(opR), hvParent ); 
-      hvParent.applyUnariesBottomUp( evJ, viCarrierA, qPrev );
+      hvRchild.addSynArg( getDir(opR), hvParent ); 
+      hvParent.applyUnariesBotUp( evJ, viCarrierA, qPrev );
     }
 
     //// B.2. Copy store state and add parent/preterm contexts to existing non-locals via extraction operation...
@@ -847,7 +849,7 @@ const Sign StoreState::aTop( HVec(K::kTop), cTop, S_B );
 
 ////////////////////////////////////////////////////////////////////////////////
 
-HVec& HVec::applyUnariesTopDown( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss ) {
+HVec& HVec::applyUnariesTopDn( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss ) {
   for( uint i=0; e!=EVar::eNil; e=e.withoutTop() ) {
     if( e.top()>='0' and e.top()<='9' and i<viCarrierIndices.size() and viCarrierIndices[i++]!=-1 )  addSynArg( -getDir(e.top()), ss.at(viCarrierIndices[i]).getHVec() );
     else if( e.top()=='O' or e.top()=='V' )  swap(1,2);
@@ -855,7 +857,7 @@ HVec& HVec::applyUnariesTopDown( EVar e, const vector<int>& viCarrierIndices, co
   return *this;
 }
 
-HVec& HVec::applyUnariesBottomUp( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss ) {
+HVec& HVec::applyUnariesBotUp( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss ) {
   for( uint i=viCarrierIndices.size()-1; e!=EVar::eNil; e=e.withoutBot() ) {
     if( e.bot()>='0' and e.bot()<='9' and i>=0 and viCarrierIndices[i--]!=-1 )  addSynArg( -getDir(e.bot()), ss.at(viCarrierIndices[i]).getHVec() );
     else if( e.bot()=='O' or e.bot()=='V' )  swap(1,2);
@@ -942,10 +944,10 @@ LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign
     const Sign& aAncestorB = qPrev.at( qPrev.getAncestorBIndex(1) );
 //    const KSet& ksExtrtn   = (iCarrierB<0) ? KSet() : qPrev.at(iCarrierB).getKSet();
     setSide() = S_A;
-    if( f==1 )                          { setCat() = aPretrm.getCat();  setHVec().add( aPretrm.getHVec() ).applyUnariesBottomUp( eF, viCarrierB, qPrev ); }
+    if( f==1 )                          { setCat() = aPretrm.getCat();  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
     else if( qPrev.size()<=0 )          { *this = StoreState::aTop; }
-    else if( not aAncestorA.isDitto() ) { setCat() = aAncestorA.getCat();  setHVec().add( aAncestorA.getHVec() ).applyUnariesBottomUp( eF, viCarrierB, qPrev ); }
-    else                                { setCat() = aAncestorA.getCat();  setHVec().add( aPretrm.getHVec() ).applyUnariesBottomUp( eF, viCarrierB, qPrev ).add( aAncestorB.getHVec() ); }
+    else if( not aAncestorA.isDitto() ) { setCat() = aAncestorA.getCat();  setHVec().add( aAncestorA.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
+    else                                { setCat() = aAncestorA.getCat();  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ).add( aAncestorB.getHVec() ); }
 
     /*
     *this = (f==1 && eF!=EVar::eNil)                  ? Sign( KSet(KSet(),0,true,eF,viCarrierB,qPrev,aPretrm.getKSet()), aPretrm.getCat(), S_A )
