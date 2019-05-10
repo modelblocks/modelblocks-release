@@ -525,55 +525,6 @@ class BPredictor : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimit
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/*
-class KSet : public DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> {
- private:
-  EVar eBankedUnaryTransforms;
- public:
-  static const KSet ksDummy;
-  KSet ( )                                                      : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> ( ) { }
-  KSet ( const K& k )                                           : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> ( ) { emplace_back(k); }
-  KSet ( const KSet& ks1, const KSet& ks2 )                     : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> ( ) {
-    reserve( ks1.size() + ks2.size() );
-    insert( end(), ks1.begin(), ks1.end() );
-    insert( end(), ks2.begin(), ks2.end() );
-  }
-  KSet ( const KSet& ksToProject, int iProj, const KSet& ksNoProject = ksDummy ) : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> ( ) {
-    // If swap op is banked, swap participants...
-    if     ( eBankedUnaryTransforms==EVar("O") and iProj==-1 ) iProj=-2;
-    else if( eBankedUnaryTransforms==EVar("O") and iProj==-2 ) iProj=-1;
-    // If projection source swap op is banked, swap participant label...
-    if     ( ksToProject.eBankedUnaryTransforms==EVar("O") and iProj==1 ) iProj=2;
-    else if( ksToProject.eBankedUnaryTransforms==EVar("O") and iProj==2 ) iProj=1;
-    reserve( ksToProject.size() + ksNoProject.size() );
-    for( const K& k : ksToProject ) if( k.project(iProj)!=K::kBot ) push_back( k.project(iProj) );
-    insert( end(), ksNoProject.begin(), ksNoProject.end() );
-    if( 0==iProj ) eBankedUnaryTransforms = ksToProject.eBankedUnaryTransforms;
-  }
-  // Constructor for nolos...
-  KSet ( const KSet& ks, int iProj, bool bUp, EVar e, const vector<int>& viCarriers, const StoreState& ss, const KSet& ksNoProject );
-  // Specification methods...
-  void addBankedUnaryTransform ( EVar e ) { eBankedUnaryTransforms=e; }
-  // Accessor methods...
-  EVar getBankedUnaryTransform ( ) const { return eBankedUnaryTransforms; }
-  bool isDitto                 ( ) const { return ( size()>0 and front()==K_DITTO ); }
-};
-const KSet KSet::ksDummy;
-const KSet ksTop = KSet( K::kTop );
-const KSet ksBot = KSet( K::kBot );
-*/
-
-////////////////////////////////////////////////////////////////////////////////
-
-/*
-class HVec;
-
-class Redirect : public pair<int,const HVec&> {
- public:
-  Redirect( int dir, const HVec& hv ) : pair<int,const HVec&>(dir,hv) { }
-};
-*/
-
 class HVec : public DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX> {
  public:
   // Constructors...
@@ -616,7 +567,6 @@ class Sign : public DelimitedTrip<psX,HVec,psColon,CVar,psX,S,psX> {
     first().reserve( hv1.size() + hv2.size() );
     first().insert( first().end(), hv1.begin(), hv1.end() );
     first().insert( first().end(), hv2.begin(), hv2.end() );
-//    first().addBankedUnaryTransform( hv1.getBankedUnaryTransform() );
     second() = c;
     third()  = s;
   }
@@ -686,12 +636,6 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     ////// B. FILL IN NEW PARTS OF NEW STORE...
 
     //// B.1. Add existing nolo contexts to parent via extraction op...
-    /*
-    const KSet& ksLchild = aLchild.getKSet();
-    const KSet  ksParent = KSet( aLchild.getKSet(), -getDir(opL), j==0, evJ, viCarrierA, qPrev, (j==0) ? KSet() : qPrev.at(iAncestorB).getKSet() );
-    const KSet  ksRchild( ksParent, getDir(opR) );
-    */
-
     HVec hvParent( cA.getSynArgs()+( (opL>='1' and opL<='9' or opR>='1' and opR<='9') ? 2 : 1 ) );
     HVec hvRchild( cB.getSynArgs()+1 );
     // If join, apply unaries going down from ancestor, then merge redirect of left child...
@@ -709,15 +653,13 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     //// B.2. Copy store state and add parent/preterm contexts to existing non-locals via extraction operation...
     for( int i=0; i<((f==0&&j==1)?iAncestorB:(f==0&&j==0)?iLowerA:(f==1&&j==1)?iAncestorB:iAncestorB+1); i++ ) {
       Sign& s = *emplace( end() ) = qPrev[i];
-      if( i==iAncestorA and j==1 and qPrev[i].isDitto() and opR!='I' )            { s.setHVec() = hvParent; }  //s = Sign( ksParent, qPrev[i].getCat(), qPrev[i].getSide() ); }
+      if( i==iAncestorA and j==1 and qPrev[i].isDitto() and opR!='I' )            { s.setHVec() = hvParent; } 
       else if( viCarrierP.size()>0 and i==viCarrierP.back() and evF.top()!='\0' ) { viCarrierP.pop_back();
                                                                                     s.setHVec() = HVec( s.getCat().getSynArgs()+1 );
                                                                                     s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() ); }
-                                                                                    //s = Sign( KSet(aPretrm.getKSet(),getDir(evF.popTop()),qPrev[i].getKSet()), qPrev[i].getCat(), qPrev[i].getSide() ); }
       else if( viCarrierA.size()>0 and i==viCarrierA.back() and evJ.top()!='\0' ) { viCarrierA.pop_back();
                                                                                     s.setHVec() = HVec( s.getCat().getSynArgs()+1 );
                                                                                     s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent ); }
-                                                                                    //s = Sign( KSet(ksParent,getDir(evJ.popTop()),qPrev[i].getKSet()), qPrev[i].getCat(), qPrev[i].getSide() ); }
       else                                                                        { s = qPrev[i]; }
     }
 
@@ -727,23 +669,19 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
       // Add A carriers...
       cCurrP = aPretrm.getCat();  cCurrA = cA;
       for( int i : viCarrierP ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierP for "<<cCurrP.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
-                                              //*emplace( end() ) = Sign( KSet( aPretrm.getKSet(), getDir(evF.popTop()) ), cCurrP.getFirstNonlocal(), S_B );
                                               Sign& s = *emplace( end() ) = Sign( HVec(1), cCurrP.getFirstNonlocal(), S_B );
                                               s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() );
                                               cCurrP=cCurrP.withoutFirstNolo(); }
       for( int i : viCarrierA ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierA for "<<cCurrA.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
-                                              //*emplace( end() ) = Sign( KSet( ksParent,          getDir(evJ.popTop()) ), cCurrA.getFirstNonlocal(), S_B );
                                               Sign& s = *emplace( end() ) = Sign( HVec(1), cCurrA.getFirstNonlocal(), S_B );
                                               s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent );
                                               cCurrA=cCurrA.withoutFirstNolo(); }
       // Add lowest A...
       *emplace( end() ) = Sign( (opR=='I') ? HVec(K_DITTO) : hvParent, cA, S_A );
-//      if( cA.getLastNonlocal()==N("-vN") and viCarrierA[0]==-1 ) back().setHVec().addBankedUnaryTransform( "O" );
       iLowerA = size()-1;
     }
     // Add B carriers...
     N nA = cA.getLastNonlocal();  N nB = cB.getLastNonlocal();  N nL = aLchild.getCat().getLastNonlocal();
-//    if( nB!=N_NONE and nB!=nA and viCarrierB[0]==-1 and viCarrierB.size()==0 ) cerr<<"WEIRD: "<<cB<<" got "<<nB<<" with iAncestorB="<<iAncestorB<<" in "<<qPrev<<" !"<<endl;
     if( nB!=N_NONE and nB!=nA and viCarrierB[0]==-1 ) {  if( STORESTATE_CHATTY ) cout<<"(adding carrierB for "<<nB<<" bc none above "<<iAncestorB<<") (G/R rule)"<<endl;
                                                          *emplace( end() ) = Sign( aLchild.getHVec(), nB, S_A ); }                            // Add left child kset as A carrier (G rule).
     // WS: SUPPOSED TO BE FOR C-rN EXTRAPOSITION, BUT DOESN'T QUITE WORK...
@@ -765,23 +703,13 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
         }
         //cout<<" viCarrierL="; for( int& i : viCarrierL ) cout<<" "<<i; cout<<endl;
         if( viCarrierL[0]>iAncestorB ) { Sign& s = *emplace( end() ) = Sign( hvRchild, cB, S_B );  s.setHVec().add( at(viCarrierL[0]).getHVec() ); }  // Add right child kset as B (H rule).
-//        if( viCarrierL[0]>iAncestorB )              *emplace( end() ) = Sign( at(viCarrierL[0]).getHVec(),                                                        hvRchild, cB, S_B );  // Add right child kset as B (H rule).
         else cerr<<"ERROR StoreState 1019: should not happen, on '"<<qPrev<<" "<<f<<" "<<j<<" "<<evF<<" "<<evJ<<" "<<opL<<" "<<opR<<" "<<cA<<" "<<cB<<" "<<aPretrm<<" "<<aLchild<<"'"<<endl;
-    //    cerr << "            " << qPrev << "  " << aLchild << "  ==(f" << f << ",j" << j << "," << opL << "," << opR << ")=>  " << *this << endl;
       } else {  // If j==1...
         Sign& s = *emplace( end() ) = Sign( hvRchild, cB, S_B );
         // If existing left carrier, integrate with sign...
         if( viCarrierL[0]!=-1 ) s.setHVec().add( qPrev.at(viCarrierL[0]).getHVec() );
         // If extraction...
         if( evF.top()!='\0' )   s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() );
-        /*
-        // If existing left carrier, integrate with sign...
-        if( evF.top()!='\0' and viCarrierL[0]!=-1 ) *emplace( end() ) = Sign( KSet( aPretrm.getKSet(), getDir(evF.popTop()), qPrev.at(viCarrierL[0]).getKSet() ), ksRchild, cB, S_B );
-        // If new left carrier...
-        else if(evF.top()!='\0' )                   *emplace( end() ) = Sign( KSet( aPretrm.getKSet(), getDir(evF.popTop()) ),                                    ksRchild, cB, S_B );
-        // If no extraction...
-        else                                        *emplace( end() ) = Sign( qPrev.at(viCarrierL[0]).getKSet(),                                                  ksRchild, cB, S_B );
-        */
       }
     }
     // Add lowest B...
@@ -848,14 +776,6 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     if( bAdd || NPredictor::exists(candidate.getCat(),at(size()-1).getCat()) ) nps.setList().emplace_back( candidate.getCat(), at(size()-1).getCat() ); // pairwise T
 
     nps.setAntDist() = antdist;
-    /*
-    //loop over curr k:ksB
-      npreds.emplace_back(currk, 1); //add unary anaphor (ancestor) k feat. 1 meants currk type feature
-    CVar antt = candidate.getCat();
-    npreds.emplace_back(antt,2); //add unary antecedent T 
-    CVar currt = at(size()-1).getCat(); //type of lowest b (bdbar)
-    npreds.emplace_back(currt,3); //add unary anaphor (ancestor) CVar
-    */
     nps.setList().emplace_front(bias); //add bias term
 
     //corefON feature
@@ -884,69 +804,6 @@ HVec& HVec::applyUnariesBotUp( EVar e, const vector<int>& viCarrierIndices, cons
   return *this;
 }
 
-/*
-KSet::KSet ( const KSet& ksToProject, int iProj, bool bUp, EVar e, const vector<int>& viCarrierIndices, const StoreState& ss, const KSet& ksNoProject ) {
-//cout<<"tomake "<<ksToProject<<" with eBanked="<<ksToProject.eBankedUnaryTransforms<<" iProj="<<iProj<<" bup="<<bUp<<" e="<<e<<" "<<viCarrierIndices.size()<<" "<<ss<<" "<<ksNoProject<<endl;
-  // Determine number of carrier contexts...
-  int nCarrierContexts=0;  for( int iCarrierIndex : viCarrierIndices ) if( iCarrierIndex>=0 ) nCarrierContexts += ss.at(iCarrierIndex).getKSet().size();
-  // Reserve size to avoid costly reallocation...
-  reserve( ksToProject.size() + nCarrierContexts + ksNoProject.size() );
-  // Propagate banked unary transforms...
-  if( 0==iProj ) eBankedUnaryTransforms = ksToProject.eBankedUnaryTransforms;
-
-//cout<<"made kTo="<<ksToProject<<" with bank="<<ksToProject.eBankedUnaryTransforms<<" iProj="<<iProj<<" bUp="<<bUp<<" e="<<e<<" ksNo="<<ksNoProject;
-
-  // If going down (join)...
-  if( not bUp ) {
-    // Add untransformed (parent if up, nothing if down) contexts...
-    insert( end(), ksNoProject.begin(), ksNoProject.end() );
-    // Build parent/pretrm top to bottom...
-    for( uint i=0; e!=EVar::eNil; e=e.withoutTop() ) {
-      // For extractions...
-      if( e.top()>='0' and e.top()<='9' and i<viCarrierIndices.size() and viCarrierIndices[i]!=-1 ) {
-        for( const K& k : ss.at(viCarrierIndices[i++]).getKSet() ) if( k.project(-getDir(e.top()))!=K::kBot ) push_back( k.project(-getDir(e.top())) );
-      }
-      // For reorderings...
-      else if( e.top()=='O' or e.top()=='V' ) {
-        for(       K& k : *this                                  ) k = k.transform(bUp,e.top());
-        //if( eBankedUnaryTransforms!=EVar() ) cerr << "ERROR StoreState:869: " << eBankedUnaryTransforms << " piled with " << e.top() << endl;
-        eBankedUnaryTransforms = "O"; // e.top();
-      }
-    }
-  }
-
-  // If swap op is banked, swap participants...
-  if     ( eBankedUnaryTransforms==EVar("O") and iProj==-1 ) iProj=-2;
-  else if( eBankedUnaryTransforms==EVar("O") and iProj==-2 ) iProj=-1;
-  // If projection source swap op is banked, swap participant label...
-  if     ( ksToProject.eBankedUnaryTransforms==EVar("O") and iProj==1 ) iProj=2;
-  else if( ksToProject.eBankedUnaryTransforms==EVar("O") and iProj==2 ) iProj=1;
-  // Add projected (child if up, parent if down) contexts...
-  for( const K& k : ksToProject ) if( k.project(iProj)!=K::kBot ) push_back( k.project(iProj) );
-
-  // If going up (no join)...
-  if( bUp ) {
-    // Build parent/pretrm bottom to top...
-    for( int i=viCarrierIndices.size()-1; e!=EVar::eNil; e=e.withoutBot() ) {
-      // For extractions...
-      if( e.bot()>='0' and e.bot()<='9' and i>=0 and viCarrierIndices[i]!=-1 ) {
-        for( const K& k : ss.at(viCarrierIndices[i--]).getKSet() ) if( k.project(-getDir(e.bot()))!=K::kBot ) push_back( k.project(-getDir(e.bot())) );
-      }
-      // For reorderings...
-      else if( e.bot()=='O' or e.bot()=='V' ) {
-        for(       K& k : *this                                  ) k = k.transform(bUp,e.bot());
-        //if( eBankedUnaryTransforms!=EVar() ) cerr << "ERROR StoreState:859: " << eBankedUnaryTransforms << " piled with " << e.bot() << endl;
-        eBankedUnaryTransforms = "O"; // e.bot();
-      }
-    }
-    // Add untransformed (parent if down/join, nothing if up/no-join) contexts...
-    insert( end(), ksNoProject.begin(), ksNoProject.end() );
-  }
-
-//cout<<" to get "<<*this<<" with iProj="<<iProj<<" banked="<<getBankedUnaryTransform()<<endl;
-}
-*/
-
 ////////////////////////////////////////////////////////////////////////////////
 
 LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm ) {
@@ -967,23 +824,7 @@ LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign
     else if( qPrev.size()<=0 )          { *this = StoreState::aTop; }
     else if( not aAncestorA.isDitto() ) { setCat() = aAncestorA.getCat();  setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aAncestorA.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
     else                                { setCat() = aAncestorA.getCat();  setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ).add( aAncestorB.getHVec() ); }
-
-    /*
-    *this = (f==1 && eF!=EVar::eNil)                  ? Sign( KSet(KSet(),0,true,eF,viCarrierB,qPrev,aPretrm.getKSet()), aPretrm.getCat(), S_A )
-                                                  //Sign( KSet(ksExtrtn,-getDir(eF),aPretrm.getKSet()), aPretrm.getCat(), S_A )
-          : (f==1)                                    ? aPretrm                             // if fork, lchild is preterm.
-          : (qPrev.size()<=0)                         ? StoreState::aTop                    // if no fork and stack empty, lchild is T (NOTE: should not happen).
-          : (!aAncestorA.isDitto() && eF!=EVar::eNil) ? Sign( KSet(KSet(),0,true,eF,viCarrierB,qPrev,aAncestorA.getKSet()), aAncestorA.getCat(), S_A )
-                                                  //Sign( KSet(ksExtrtn,-getDir(eF),aAncestorA.getKSet()), aAncestorA.getCat(), S_A )
-          : (!aAncestorA.isDitto())                   ? aAncestorA                          // if no fork and stack exists and last apex context set is not ditto, return last apex.
-          :                                             Sign( KSet(KSet(),0,true,eF,viCarrierB,qPrev,aAncestorB.getKSet()), aPretrm.getKSet(), aAncestorA.getCat(), S_A );
-                                                  //Sign( KSet(ksExtrtn,-getDir(eF),aAncestorB.getKSet()), aPretrm.getKSet(), aAncestorA.getCat(), S_A );  // otherwise make new context set.
-//  if( aPretrm.getCat().getLastNonlocal()==N("-vN") and viCarrierB.size()==0 ) cerr<<"WEIRD2: "<<aPretrm.getCat().getLastNonlocal()<<" with iAncestorB="<<iAncestorB<<" in "<<qPrev<<" !"<<endl;
-  if( aPretrm.getCat().getLastNonlocal()==N("-vN") and (viCarrierB.size()==0 or viCarrierB[0]==-1) ) setKSet().addBankedUnaryTransform( "O" );
-//cout<<"lchild created with banked "<<getKSet().getBankedUnaryTransform()<<endl;
-  */
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 

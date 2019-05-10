@@ -189,23 +189,15 @@ void calcContext ( Tree<L>& tr,
     if (not failtree) {
       // Print preterminal / fork-phase predictors...
       FPredictorVec lfp( modF, hvAnt, nullAnt, q );
-      /*
-      DelimitedList<psX,FPredictor,psComma,psX> lfp;  
-      q.calcForkPredictors(lfp, hvAnt, nullAnt);//additional kset argument is set of all antecedents in referent cluster. requires global map from annotation to ksets, as in {"0204":Kset ["Lord_"], "0207": HVec ["Lord_", "he_"]}, etc.
-      auto fpCat = lfp.front( );
-      lfp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first element is category.
-      lfp.sort( );             // sort to shorten mlr input
-      lfp.push_front( fpCat );
-      */
+
       cout<<"----"<<q<<endl;
-      cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : f" << f << "&" << e << "&" << k << endl;//; for ( auto& fp : lfp ) { if ( &fp!=&lfp.front() ) cout<<","; cout<<fp<<"=1"; }  cout << " : " << FResponse(f,e.c_str(),k) << endl;
+      cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : f" << f << "&" << e << "&" << k << endl;
       cout << "P " << q.calcPretrmCatCondition(f,e.c_str(),k) << " : " << aPretrm.getCat() /*getCat(l)*/     << endl;
       cout << "W " << e << " " << k << " " << aPretrm.getCat() /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
 
       // Print antecedent list...
       for( int i = tDisc; (i > 0 and tDisc-i <= COREF_WINDOW); i-- ) {  //only look back COREF_WINDOW antecedents at max
         if( excludedIndices.find(i) != excludedIndices.end() ) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs.
-          //cerr << "encountered excluded index i:" << i << " skipping..." << endl;
           continue; 
         }
         else {
@@ -224,9 +216,6 @@ void calcContext ( Tree<L>& tr,
           if ((i == annot2tdisc[annot]) and (annot != "")) {
             isCoref = 1;
             excludedIndices.insert(annot2tdisc[annot]); //add blocking index here once find true, annotated coref. e.g. word 10 is coref with word 5. add annot2tdisc[annot] (5) to list of excluded.
-            //for (auto it=excludedIndices.begin(); it != excludedIndices.end(); ++it)
-            //          cerr << ' ' << *it;
-            //cerr << endl;
           }
 
           bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
@@ -239,9 +228,7 @@ void calcContext ( Tree<L>& tr,
       } //all previous antecedent candidates output
     }
 
-    //cout << "adding aPretrm: " << aPretrm << " to list of antecedentCandidates" << endl;
     antecedentCandidates.emplace_back(aPretrm); //append current prtrm to candidate list for future coref decisions 
-    //cout << "new size of antecedentCandidates: " << antecedentCandidates.size() << endl;
   }
 
   // At unary identity nonpreterminal...
@@ -254,7 +241,6 @@ void calcContext ( Tree<L>& tr,
     //// cerr<<"#U"<<getCat(tr)<<" "<<getCat(tr.front())<<endl;
     e = e + getUnaryOp( tr );
     calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, s, d, e, l );
-//cout<<"unary at "<<L(tr)<<endl<<mtttmG[trip<T,T,T>(getCat(tr),getCat(tr.front()),"-")]<<endl;
   }
 
   // At binary nonterminal...
@@ -278,16 +264,8 @@ void calcContext ( Tree<L>& tr,
 
     // Print binary / join-phase predictors...
     JPredictorVec ljp( modJ, f, eF.c_str(), aLchild, q );
-    //DelimitedList<psX,JPredictor,psComma,psX> ljp;  q.calcJoinPredictors(ljp,f,eF.c_str(),aLchild);
-    /*
-    auto jpCat = ljp.front( );
-    ljp.pop_front( );        // remove first element before sorting, then add back, bc later code assumes first elemenet is category.
-    ljp.sort( );             // sort to shorten mlr input
-    ljp.push_front( jpCat );
-    */
     cout << "==== " << aLchild << "   " << removeLink(tr) << " -> " << removeLink(tr.front()) << " " << removeLink(tr.back()) << endl;
     cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;;
-    //for ( auto& jp : ljp ) { if ( &jp!=&ljp.front() ) cout<<","; cout<<jp<<"=1"; }  cout << " : " << JResponse(j,e.c_str(),oL,oR)  << endl;
     cout << "A " << q.calcApexCatCondition(f,j,eF.c_str(),e.c_str(),oL,aLchild)                << " : " << getCat(removeLink(l))          << endl;
     cout << "B " << q.calcBaseCatCondition(f,j,eF.c_str(),e.c_str(),oL,oR,getCat(l),aLchild)   << " : " << getCat(removeLink(tr.back()))  << endl;
 
