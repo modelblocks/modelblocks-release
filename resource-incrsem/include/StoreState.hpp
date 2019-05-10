@@ -78,6 +78,7 @@ DiscreteDomain<int> domCVar;
 class CVar : public DiscreteDomainRV<int,domCVar> {
  private:
   static map<N,bool>               mnbArg;
+  static map<CVar,uint>            mciSynArgs;
   static map<CVar,int>             mciArity;
   static map<CVar,bool>            mcbIsCarry;
   static map<CVar,N>               mcnFirstNol;
@@ -88,6 +89,16 @@ class CVar : public DiscreteDomainRV<int,domCVar> {
   static map<CVar,CVar>            mccLets;
   static map<CVar,int>             mciNums;
   static map<pair<CVar,int>,CVar>  mcicLetNum;
+  uint getSynArgs ( const char* l ) {
+    int depth = 0;
+    int ctr   = 0;
+    for ( uint i=0; i<strlen(l); i++ ) {
+      if ( l[i]=='{' ) depth++;
+      if ( l[i]=='}' ) depth--;
+      if ( l[i]=='-' && l[i+1]>='a' && l[i+1]<='d' && depth==0 ) ctr++;
+    }
+    return ctr;
+  }
   int getArity ( const char* l ) {
     int depth = 0;
     int ctr   = 0;
@@ -156,6 +167,7 @@ class CVar : public DiscreteDomainRV<int,domCVar> {
   }
   void calcDetermModels ( const char* ps ) {
     if( mnbArg.end()==mnbArg.find(*this) ) { mnbArg[*this]=( strlen(ps)<=4 ); }
+    if( mciSynArgs.end()==mciSynArgs.find(*this) ) { mciSynArgs[*this]=getSynArgs(ps); }
     if( mciArity.end()==mciArity.find(*this) ) { mciArity[*this]=getArity(ps); }
     if( mcbIsCarry.end()==mcbIsCarry.find(*this) ) { mcbIsCarry[*this]=( ps[0]=='-' && ps[1]>='a' && ps[1]<='z' ); }  //( ps[strlen(ps)-1]=='^' ); }
     if( mcnFirstNol.end()==mcnFirstNol.find(*this) && strlen(ps)>0 && !(ps[0]=='-'&&ps[1]>='a'&&ps[1]<='z') ) { N& n=mcnFirstNol[*this]; n=getFirstNolo(ps); }
@@ -183,6 +195,7 @@ class CVar : public DiscreteDomainRV<int,domCVar> {
   CVar ( )                : DiscreteDomainRV<int,domCVar> ( )    { }
   CVar ( const char* ps ) : DiscreteDomainRV<int,domCVar> ( ps ) { calcDetermModels(ps); }
   bool isArg            ( )       const { return mnbArg[*this]; }
+  uint getSynArgs       ( )       const { return mciSynArgs[*this]; }
   int  getArity         ( )       const { return mciArity[*this]; }
   bool isCarrier        ( )       const { return mcbIsCarry[*this]; }
   N    getFirstNonlocal ( )       const { return mcnFirstNol[*this]; }
@@ -195,6 +208,7 @@ class CVar : public DiscreteDomainRV<int,domCVar> {
   CVar addNum           ( int i ) const { const auto& x = mcicLetNum.find(pair<CVar,int>(*this,i)); return (x==mcicLetNum.end()) ? *this : x->second; }
 };
 map<N,bool>               CVar::mnbArg;
+map<CVar,uint>            CVar::mciSynArgs;
 map<CVar,int>             CVar::mciArity;
 map<CVar,bool>            CVar::mcbIsCarry;
 map<CVar,N>               CVar::mcnLastNol;
@@ -565,8 +579,8 @@ class HVec : public DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,ps
   // Constructors...
   HVec ( )       : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>() { }
   HVec ( int i ) : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>( i ) { }
-  HVec ( K k )   : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>( k.getCat().getArity()+1 ) {
-    for( unsigned int arg=0; arg<k.getCat().getArity()+1; arg++ ) at(arg).emplace_back( k.project(arg) );
+  HVec ( K k )   : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>( k.getCat().getSynArgs()+1 ) {
+    at(0).emplace_back( k );  for( unsigned int arg=1; arg<k.getCat().getSynArgs()+1; arg++ ) at(arg).emplace_back( k.project(arg) );
   }
 //  HVec& operator+= ( const HVec& hv ) {
   HVec& add( const HVec& hv ) {
@@ -678,8 +692,8 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     const KSet  ksRchild( ksParent, getDir(opR) );
     */
 
-    HVec hvParent( cA.getArity()+( (opL>='1' and opL<='9' or opR>='1' and opR<='9') ? 2 : 1 ) );
-    HVec hvRchild( cB.getArity()+1 );
+    HVec hvParent( cA.getSynArgs()+( (opL>='1' and opL<='9' or opR>='1' and opR<='9') ? 2 : 1 ) );
+    HVec hvRchild( cB.getSynArgs()+1 );
     // If join, apply unaries going down from ancestor, then merge redirect of left child...
     if( j ) {
       hvParent.add( qPrev.at(iAncestorB).getHVec() ).applyUnariesTopDn( evJ, viCarrierA, qPrev ).addSynArg( -getDir(opL), aLchild.getHVec() );
@@ -697,11 +711,11 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
       Sign& s = *emplace( end() ) = qPrev[i];
       if( i==iAncestorA and j==1 and qPrev[i].isDitto() and opR!='I' )            { s.setHVec() = hvParent; }  //s = Sign( ksParent, qPrev[i].getCat(), qPrev[i].getSide() ); }
       else if( viCarrierP.size()>0 and i==viCarrierP.back() and evF.top()!='\0' ) { viCarrierP.pop_back();
-                                                                                    s.setHVec() = HVec( s.getCat().getArity()+1 );
+                                                                                    s.setHVec() = HVec( s.getCat().getSynArgs()+1 );
                                                                                     s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() ); }
                                                                                     //s = Sign( KSet(aPretrm.getKSet(),getDir(evF.popTop()),qPrev[i].getKSet()), qPrev[i].getCat(), qPrev[i].getSide() ); }
       else if( viCarrierA.size()>0 and i==viCarrierA.back() and evJ.top()!='\0' ) { viCarrierA.pop_back();
-                                                                                    s.setHVec() = HVec( s.getCat().getArity()+1 );
+                                                                                    s.setHVec() = HVec( s.getCat().getSynArgs()+1 );
                                                                                     s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent ); }
                                                                                     //s = Sign( KSet(ksParent,getDir(evJ.popTop()),qPrev[i].getKSet()), qPrev[i].getCat(), qPrev[i].getSide() ); }
       else                                                                        { s = qPrev[i]; }
@@ -725,6 +739,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
       // Add lowest A...
       *emplace( end() ) = Sign( (opR=='I') ? HVec(K_DITTO) : hvParent, cA, S_A );
 //      if( cA.getLastNonlocal()==N("-vN") and viCarrierA[0]==-1 ) back().setHVec().addBankedUnaryTransform( "O" );
+      if( opR=='I' ) cout<<"i think i'm making a ditto: "<<*this<<endl;
       iLowerA = size()-1;
     }
     // Add B carriers...
@@ -949,10 +964,10 @@ LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign
     const Sign& aAncestorB = qPrev.at( qPrev.getAncestorBIndex(1) );
 //    const KSet& ksExtrtn   = (iCarrierB<0) ? KSet() : qPrev.at(iCarrierB).getKSet();
     setSide() = S_A;
-    if( f==1 )                          { setCat() = aPretrm.getCat();     setHVec() = HVec(getCat().getArity()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
+    if( f==1 )                          { setCat() = aPretrm.getCat();     setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
     else if( qPrev.size()<=0 )          { *this = StoreState::aTop; }
-    else if( not aAncestorA.isDitto() ) { setCat() = aAncestorA.getCat();  setHVec() = HVec(getCat().getArity()+1);  setHVec().add( aAncestorA.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
-    else                                { setCat() = aAncestorA.getCat();  setHVec() = HVec(getCat().getArity()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ).add( aAncestorB.getHVec() ); }
+    else if( not aAncestorA.isDitto() ) { setCat() = aAncestorA.getCat();  setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aAncestorA.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
+    else                                { setCat() = aAncestorA.getCat();  setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ).add( aAncestorB.getHVec() ); }
 
     /*
     *this = (f==1 && eF!=EVar::eNil)                  ? Sign( KSet(KSet(),0,true,eF,viCarrierB,qPrev,aPretrm.getKSet()), aPretrm.getCat(), S_A )
