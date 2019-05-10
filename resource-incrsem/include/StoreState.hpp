@@ -739,7 +739,6 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
       // Add lowest A...
       *emplace( end() ) = Sign( (opR=='I') ? HVec(K_DITTO) : hvParent, cA, S_A );
 //      if( cA.getLastNonlocal()==N("-vN") and viCarrierA[0]==-1 ) back().setHVec().addBankedUnaryTransform( "O" );
-      if( opR=='I' ) cout<<"i think i'm making a ditto: "<<*this<<endl;
       iLowerA = size()-1;
     }
     // Add B carriers...

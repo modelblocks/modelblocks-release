@@ -392,7 +392,7 @@ int main ( int nArgs, char* argv[] ) {
                         double probFPW = probFork * modP.find(ppredictor)->second.find(c_p_t)->second * probwgivkl;
                         if ( VERBOSE>1 ) cout << "      f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << probFork << " * " << modP.find(ppredictor)->second.find(c_p_t)->second << " * " << probwgivkl << " = " << probFPW << endl;
 
-                        Sign aPretrm;  aPretrm.getHVec()[0].emplace_back(k_p_t);  
+                        Sign aPretrm;  aPretrm.getHVec() = HVec(k_p_t);  
                         for (auto& k : hvAnt[0]) if (k != K::kTop) aPretrm.getHVec()[0].emplace_back(k); // add antecedent contexts
                         aPretrm.second() = c_p_t;  aPretrm.third() = S_A;          // aPretrm (pos tag)
                         const LeftChildSign aLchild( q_tdec1, f, e_p_t, aPretrm );
