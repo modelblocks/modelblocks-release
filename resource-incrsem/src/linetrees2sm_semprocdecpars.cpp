@@ -143,10 +143,12 @@ pair<K,CVar> getPred ( const L& lP, const L& lW ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+EMat matE;
+OFunc funcO;
+
 FModel modF;
 JModel modJ;
 
-////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 void calcContext ( Tree<L>& tr, 
@@ -169,19 +171,19 @@ void calcContext ( Tree<L>& tr,
     eF              = e + getUnaryOp( tr );
     pair<K,CVar> kc = getPred ( removeLink(tr), removeLink(tr.front()) );
     K k             = (FEATCONFIG & 8 && kc.first.getString()[2]!='y') ? K::kBot : kc.first;
-    aPretrm         = (not failtree) ? Sign( k, getCat(removeLink(l)), S_A ) : Sign() ;
+    aPretrm         = (not failtree) ? Sign( HVec(k, matE, funcO), getCat(removeLink(l)), S_A ) : Sign() ;
     bool validIntra = false;
 
     std::string annotSentIdx = annot.substr(0,annot.size()-2); //get all but last two...
     if (annotSentIdx == std::to_string(sentnum)) validIntra = true;
     if (INTERSENTENTIAL == true) validIntra = true;
-    const HVec& hvAnt = validIntra == true ? annot2kset[annot] : HVec(K::kTop);
+    const HVec& hvAnt = validIntra == true ? annot2kset[annot] : hvTop;
     bool nullAnt = (hvAnt.empty()) ? true : false;
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
     if (annot != "")  {
       annot2kset[currentloc] = hvAnt;
     }
-    annot2kset[currentloc] = HVec(k); //add current k 
+    annot2kset[currentloc] = HVec(k, matE, funcO); //add current k
     for (auto& ant : hvAnt) {
       if (hvAnt != hvTop) aPretrm.first().emplace_back(ant); //add antecedent ks to aPretrm
     }
@@ -207,7 +209,7 @@ void calcContext ( Tree<L>& tr,
             candidate = antecedentCandidates[i-1]; //there are one fewer candidates than tDisc value.  e.g., second word only has one previous candidate.
           }
           else {
-            candidate = Sign(HVec(K::kTop), "NONE", "/"); //null antecedent generated at first iteration, where i=tDisc. Sign consists of: kset, type (syncat), side (A/B)
+            candidate = Sign(hvTop, "NONE", "/"); //null antecedent generated at first iteration, where i=tDisc. Sign consists of: kset, type (syncat), side (A/B)
             
             if (annot == "") isCoref = 1; //null antecedent is correct choice, "1" when no annotation TODO fix logic for filtering intra/inter?
           }
@@ -300,7 +302,10 @@ int main ( int nArgs, char* argv[] ) {
       // Read model lists...
       int linenum = 0;
       while ( fin && EOF!=fin.peek() ) {
-        fin >> *lLC.emplace(lLC.end()) >> "\n";
+//      new changes
+        if ( fin.peek()=='E' ) matE = EMat( fin );
+        if ( fin.peek()=='O' ) funcO = OFunc( fin );
+        else fin >> *lLC.emplace(lLC.end()) >> "\n";
         if ( ++linenum%1000000==0 ) cerr << "  " << linenum << " items loaded..." << endl;
       }
       cerr << "Model " << argv[a] << " loaded." << endl;
@@ -312,7 +317,7 @@ int main ( int nArgs, char* argv[] ) {
   int discourselinenum = 0; //increments on sentence in discourse/article
   map<string,HVec> annot2kset;
   int tDisc = 0; //increments on word in discourse/article
-  vector<Sign> antecedentCandidates; 
+  vector<Sign> antecedentCandidates;
   map<string,int> annot2tdisc;
   std::set<int> excludedIndices; //init indices of positive coreference to exclude.  prevents negative examples in training data when they're really positive coreference.
   while ( cin && EOF!=cin.peek() ) {
@@ -332,8 +337,8 @@ int main ( int nArgs, char* argv[] ) {
         tDisc=0;
         antecedentCandidates.clear();
         annot2tdisc.clear();
-        excludedIndices.clear();      
-      } 
+        excludedIndices.clear();
+      }
       else {
 	int wordnum = 0;
         bool failtree = (removeLink(t.front()) == "FAIL") ? true : false;
