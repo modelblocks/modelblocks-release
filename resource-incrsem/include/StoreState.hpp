@@ -843,8 +843,8 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     //corefON feature
     if (bcorefON == true) {
       nps.setList().emplace_back(corefON);
-#endif
     }
+#endif
   }
 };
 const Sign StoreState::aTop( hvTop, cTop, S_B );
