@@ -21,10 +21,10 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
 class NPredictor {
-  /*
-  Boolean predictors for antecedent model.  Generally KxK pairs or CVarxCVar pairs between anaphor and candidate antecedent. 
-  */
+  // Boolean predictors for antecedent model.  Generally KxK pairs or CVarxCVar pairs between anaphor and candidate antecedent. 
+
   private:
     uint id;
 
@@ -216,7 +216,7 @@ class NPredictorSet {
       nps.setList().emplace_back(corefON);
     }
   }
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 

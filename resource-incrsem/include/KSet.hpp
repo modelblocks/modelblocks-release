@@ -21,6 +21,8 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
+
 DiscreteDomain<int> domK;
 class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of Delimited<...> or string-argument constructor of this class won't get called!
  public:
@@ -78,14 +80,36 @@ const K kNil("");
 const K K_DITTO("\"");
 const K K::kTop("Top");
 
+*/
+
 ////////////////////////////////////////////////////////////////////////////////
 
-class HVec : public DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX> {
+typedef DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> KVec;
+
+class EMat {
  public:
+  EMat( )             { }
+  EMat( istream& is ) { }
+//  KVec operator() ( K k ) { KVec kv; kv.push_back(k); return kv; }
+};
+
+class OFunc {
+ public:
+  OFunc( )             { }
+  OFunc( istream& is ) { }
+//  KVec operator() ( int iDir, const KVec& kv ) { KVec kvOut; for( auto& k : kv ) kvOut.push_back( k.project(iDir) ); }
+};
+
+class HVec : public DelimitedVector<psX,KVec,psX,psX> {
+
+ public:
+
+  static const HVec hvDitto;
+
   // Constructors...
-  HVec ( )       : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>() { }
-  HVec ( int i ) : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>( i ) { }
-  HVec ( K k )   : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>( k.getCat().getSynArgs()+1 ) {
+  HVec ( )       : DelimitedVector<psX,KVec,psX,psX>() { }
+  HVec ( int i ) : DelimitedVector<psX,KVec,psX,psX>( i ) { }
+  HVec ( K k, const EMat& em = EMat(), const OFunc& of = OFunc() )   : DelimitedVector<psX,KVec,psX,psX>( k.getCat().getSynArgs()+1 ) {
     at(0).emplace_back( k );  for( unsigned int arg=1; arg<k.getCat().getSynArgs()+1; arg++ ) at(arg).emplace_back( k.project(arg) );
   }
 //  HVec& operator+= ( const HVec& hv ) {
@@ -111,6 +135,7 @@ class HVec : public DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,ps
 };
 const HVec hvTop = HVec( K::kTop );
 const HVec hvBot = HVec( K::kBot );
+const HVec HVec::hvDitto( K_DITTO );
 
 ////////////////////////////////////////////////////////////////////////////////
 

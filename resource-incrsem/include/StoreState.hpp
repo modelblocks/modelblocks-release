@@ -283,7 +283,6 @@ const K kNil("");
 const K K_DITTO("\"");
 const K K::kTop("Top");
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
 class StoreState;
@@ -525,6 +524,8 @@ class BPredictor : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimit
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DENSE_VECTORS
+
 typedef DelimitedCol<psLBrack, double, psComma, 20, psRBrack> KVec;
 
 class EMat {
@@ -571,6 +572,9 @@ class OFunc {
 
 class HVec : public DelimitedVector<psX,KVec,psX,psX> {
  public:
+
+  static const HVec hvDitto;
+
   // Constructors...
   HVec ( )       : DelimitedVector<psX,KVec,psX,psX>() { }
   HVec ( int i ) : DelimitedVector<psX,KVec,psX,psX>( i ) { }
@@ -601,11 +605,18 @@ class HVec : public DelimitedVector<psX,KVec,psX,psX> {
   }
   HVec& applyUnariesTopDn( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
   HVec& applyUnariesBotUp( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
-  bool isDitto ( ) const { return ( *this == HVec(KVec(arma::ones<Col<double>>(20))) ); }
+  bool isDitto ( ) const { return ( *this == hvDitto /*HVec(KVec(arma::ones<Col<double>>(20)))*/ ); }
 };
 
-const HVec hvTop = HVec(KVec(arma::ones<Col<double>>(20)));
-const HVec hvBot = HVec(KVec(arma::zeros<Col<double>>(20)));
+const HVec hvTop   = HVec(KVec(arma::ones<Col<double>>(20)));
+const HVec hvBot   = HVec(KVec(arma::zeros<Col<double>>(20)));
+const HVec HVec::hvDitto( KVec(arma::randn<Col<double>>(20)) );
+
+#else
+
+#include<KSet.hpp>
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -727,7 +738,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
                                               s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent );
                                               cCurrA=cCurrA.withoutFirstNolo(); }
       // Add lowest A...
-      *emplace( end() ) = Sign( (opR=='I') ? HVec(KVec(arma::ones(20))) : hvParent, cA, S_A );
+      *emplace( end() ) = Sign( (opR=='I') ? HVec::hvDitto /*HVec(KVec(arma::ones(20)))*/ : hvParent, cA, S_A );
       iLowerA = size()-1;
     }
     // Add B carriers...
@@ -810,28 +821,30 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
     //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
 
-//    const HVec& hvB = at(size()-1).getHVec(); //contexts of lowest b (bdbar)
-//    for( unsigned int iA=0; iA<candidate.getHVec().size(); iA++ )  for( auto& antk : candidate.getHVec()[iA] ) {
-//      if( bAdd || NPredictor::exists(antk.project(-iA),kNil) ) nps.setList().emplace_back( antk.project(-iA), kNil ); //add unary antecedent k feat, using kxk template
-//      for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
-//        if( bAdd || NPredictor::exists(antk.project(-iA),currk.project(-iB)) ) nps.setList().emplace_back( antk.project(-iA), currk.project(-iB) ); //pairwise kxk feat
-//      }
-//    }
-//    for( unsigned int iB=0; iB<hvB.size(); iB++ )  for( auto& currk : hvB[iB] ) {
-//      if( bAdd || NPredictor::exists(kNil,currk.project(-iB)) ) nps.setList().emplace_back( kNil, currk.project(-iB) ); //unary ancestor k feat
-//    }
-//
-//    if( bAdd || NPredictor::exists(candidate.getCat(),N_NONE) )                nps.setList().emplace_back( candidate.getCat(), N_NONE                ); // antecedent CVar
-//    if( bAdd || NPredictor::exists(N_NONE,at(size()-1).getCat()) )             nps.setList().emplace_back( N_NONE, at(size()-1).getCat()             ); // ancestor CVar
-//    if( bAdd || NPredictor::exists(candidate.getCat(),at(size()-1).getCat()) ) nps.setList().emplace_back( candidate.getCat(), at(size()-1).getCat() ); // pairwise T
-//
-//    nps.setAntDist() = antdist;
-//    nps.setList().emplace_front(bias); //add bias term
-//
-//    //corefON feature
-//    if (bcorefON == true) {
-//      nps.setList().emplace_back(corefON);
-//    }
+#ifndef DENSE_VECTORS
+    const HVec& hvB = at(size()-1).getHVec(); //contexts of lowest b (bdbar)
+    for( unsigned int iA=0; iA<candidate.getHVec().size(); iA++ )  for( auto& antk : candidate.getHVec()[iA] ) {
+      if( bAdd || NPredictor::exists(antk.project(-iA),kNil) ) nps.setList().emplace_back( antk.project(-iA), kNil ); //add unary antecedent k feat, using kxk template
+      for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
+        if( bAdd || NPredictor::exists(antk.project(-iA),currk.project(-iB)) ) nps.setList().emplace_back( antk.project(-iA), currk.project(-iB) ); //pairwise kxk feat
+      }
+    }
+    for( unsigned int iB=0; iB<hvB.size(); iB++ )  for( auto& currk : hvB[iB] ) {
+      if( bAdd || NPredictor::exists(kNil,currk.project(-iB)) ) nps.setList().emplace_back( kNil, currk.project(-iB) ); //unary ancestor k feat
+    }
+
+    if( bAdd || NPredictor::exists(candidate.getCat(),N_NONE) )                nps.setList().emplace_back( candidate.getCat(), N_NONE                ); // antecedent CVar
+    if( bAdd || NPredictor::exists(N_NONE,at(size()-1).getCat()) )             nps.setList().emplace_back( N_NONE, at(size()-1).getCat()             ); // ancestor CVar
+    if( bAdd || NPredictor::exists(candidate.getCat(),at(size()-1).getCat()) ) nps.setList().emplace_back( candidate.getCat(), at(size()-1).getCat() ); // pairwise T
+
+    nps.setAntDist() = antdist;
+    nps.setList().emplace_front(bias); //add bias term
+
+    //corefON feature
+    if (bcorefON == true) {
+      nps.setList().emplace_back(corefON);
+#endif
+    }
   }
 };
 const Sign StoreState::aTop( hvTop, cTop, S_B );
@@ -913,6 +926,8 @@ class HiddState : public DelimitedSept<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAm
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+
+#ifdef DENSE_VECTORS
 
 class FPredictorVec : public list<unsigned int> {
 
@@ -1192,6 +1207,12 @@ class JModel {
     unsigned int getNumPredictors( ) { return iNextPredictor; }
     unsigned int getNumResponses(  ) { return iNextResponse;  }
 };
+
+#else
+
+#include<KSetModels.hpp>
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
