@@ -525,37 +525,87 @@ class BPredictor : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimit
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class HVec : public DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX> {
+typedef DelimitedCol<psLBrack, double, psComma, 20, psRBrack> KVec;
+
+class EMat {
+  map<K,KVec> mkh;
+  public:
+    EMat() {}
+    EMat(istream& is) {
+      while ( is.peek()=='E' ) {
+        Delimited<K> k;
+        is >> "E " >> k >> " ";
+        is >> mkh[k] >> "\n";
+      }
+    }
+    KVec operator() ( K k ) const {return mkh[k];}
+// should return the vectors that underwent the -0 relationship function
+// need to have stopping criterion for reading input files?
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class OFunc {
+//  arma::mat(20, 40, fill::none) matPoneF;
+//  arma::mat(40, 20, fill::none) matPoneS;
+  map<int,DelimitedMat<psX, double, psComma, 40, psLine, 20, psX>> mrwf;
+  map<int,DelimitedMat<psX, double, psComma, 20, psLine, 40, psX>> mrws;
+  public:
+    OFunc() {}
+    OFunc(istream& is) {
+      while ( is.peek()=='O' ) {
+        Delimited<int> k;
+        Delimited<char> c;
+        is >> "O " >> k >> " " >> c >> " ";
+        if (c == 'F') is >> mrwf[k] >> "\n";
+        if (c == 'S') is >> mrws[k] >> "\n";
+      }
+    }
+    KVec operator() ( int rel, KVec& kv ) const {return KVec();}
+
+// read in weights for different models similarly to EMat
+// need to have stopping criterion for reading input files
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class HVec : public DelimitedVector<psX,KVec,psX,psX> {
  public:
   // Constructors...
-  HVec ( )       : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>() { }
-  HVec ( int i ) : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>( i ) { }
-  HVec ( K k )   : DelimitedVector<psX,DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>,psX,psX>( k.getCat().getSynArgs()+1 ) {
-    at(0).emplace_back( k );  for( unsigned int arg=1; arg<k.getCat().getSynArgs()+1; arg++ ) at(arg).emplace_back( k.project(arg) );
+  HVec ( )       : DelimitedVector<psX,KVec,psX,psX>() { }
+  HVec ( int i ) : DelimitedVector<psX,KVec,psX,psX>( i ) { }
+  HVec ( const KVec& kv ) : DelimitedVector<psX,KVec,psX,psX>( 1 ) {
+    at(0) = kv;
+  }
+  HVec ( K k, const EMat& matE, const OFunc& funcO )   : DelimitedVector<psX,KVec,psX,psX>( k.getCat().getSynArgs()+1 ) {
+    at(0) = matE( k );
+    for( unsigned int arg=1; arg<k.getCat().getSynArgs()+1; arg++ )
+      at(arg) = funcO(arg, at(0));
   }
 //  HVec& operator+= ( const HVec& hv ) {
   HVec& add( const HVec& hv ) {
-    for( unsigned int arg=0; arg<size() and arg<hv.size(); arg++ ) at(arg).insert( at(arg).end(), hv.at(arg).begin(), hv.at(arg).end() );
+    for( unsigned int arg=0; arg<size() and arg<hv.size(); arg++ ) at(arg) += hv.at(arg);
     return *this;
   }
 //  HVec& operator+= ( const Redirect& r ) {
   HVec& addSynArg( int iDir, const HVec& hv ) {
     if     ( iDir == 0                 ) add( hv );
-    else if( iDir < 0 and -iDir<size() ) at(-iDir).insert( at(-iDir).end(), hv.at( 0  ).begin(), hv.at( 0  ).end() );
-    else if( iDir<hv.size()            ) at( 0   ).insert( at( 0   ).end(), hv.at(iDir).begin(), hv.at(iDir).end() );
+    else if( iDir < 0 and -iDir<size() ) at(-iDir) += hv.at(0);
+    else if( iDir<hv.size()            ) at( 0   ) += hv.at(iDir);
     return *this;
   }
   HVec& swap( int i, int j ) {
     if     ( size() >= 3 ) { auto kv = at(i);  at(i) = at(j);  at(j) = kv; }
-    else if( size() >= 2 ) at(i).clear();
+    else if( size() >= 2 ) at(i) = KVec();
     return *this;
   }
   HVec& applyUnariesTopDn( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
   HVec& applyUnariesBotUp( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
-  bool isDitto ( ) const { return ( size()>0 and front().size()>0 and front().front()==K_DITTO ); }
+  bool isDitto ( ) const { return ( *this == HVec(KVec(arma::ones<Col<double>>(20))) ); }
 };
-const HVec hvTop = HVec( K::kTop );
-const HVec hvBot = HVec( K::kBot );
+
+const HVec hvTop = HVec(KVec(arma::ones<Col<double>>(20)));
+const HVec hvBot = HVec(KVec(arma::zeros<Col<double>>(20)));
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -677,7 +727,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
                                               s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent );
                                               cCurrA=cCurrA.withoutFirstNolo(); }
       // Add lowest A...
-      *emplace( end() ) = Sign( (opR=='I') ? HVec(K_DITTO) : hvParent, cA, S_A );
+      *emplace( end() ) = Sign( (opR=='I') ? HVec(KVec(arma::ones(20))) : hvParent, cA, S_A );
       iLowerA = size()-1;
     }
     // Add B carriers...
@@ -760,31 +810,31 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
     //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
 
-    const HVec& hvB = at(size()-1).getHVec(); //contexts of lowest b (bdbar)
-    for( unsigned int iA=0; iA<candidate.getHVec().size(); iA++ )  for( auto& antk : candidate.getHVec()[iA] ) { 
-      if( bAdd || NPredictor::exists(antk.project(-iA),kNil) ) nps.setList().emplace_back( antk.project(-iA), kNil ); //add unary antecedent k feat, using kxk template
-      for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
-        if( bAdd || NPredictor::exists(antk.project(-iA),currk.project(-iB)) ) nps.setList().emplace_back( antk.project(-iA), currk.project(-iB) ); //pairwise kxk feat
-      }
-    }
-    for( unsigned int iB=0; iB<hvB.size(); iB++ )  for( auto& currk : hvB[iB] ) {
-      if( bAdd || NPredictor::exists(kNil,currk.project(-iB)) ) nps.setList().emplace_back( kNil, currk.project(-iB) ); //unary ancestor k feat
-    }
-
-    if( bAdd || NPredictor::exists(candidate.getCat(),N_NONE) )                nps.setList().emplace_back( candidate.getCat(), N_NONE                ); // antecedent CVar
-    if( bAdd || NPredictor::exists(N_NONE,at(size()-1).getCat()) )             nps.setList().emplace_back( N_NONE, at(size()-1).getCat()             ); // ancestor CVar
-    if( bAdd || NPredictor::exists(candidate.getCat(),at(size()-1).getCat()) ) nps.setList().emplace_back( candidate.getCat(), at(size()-1).getCat() ); // pairwise T
-
-    nps.setAntDist() = antdist;
-    nps.setList().emplace_front(bias); //add bias term
-
-    //corefON feature
-    if (bcorefON == true) { 
-      nps.setList().emplace_back(corefON);
-    }
+//    const HVec& hvB = at(size()-1).getHVec(); //contexts of lowest b (bdbar)
+//    for( unsigned int iA=0; iA<candidate.getHVec().size(); iA++ )  for( auto& antk : candidate.getHVec()[iA] ) {
+//      if( bAdd || NPredictor::exists(antk.project(-iA),kNil) ) nps.setList().emplace_back( antk.project(-iA), kNil ); //add unary antecedent k feat, using kxk template
+//      for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
+//        if( bAdd || NPredictor::exists(antk.project(-iA),currk.project(-iB)) ) nps.setList().emplace_back( antk.project(-iA), currk.project(-iB) ); //pairwise kxk feat
+//      }
+//    }
+//    for( unsigned int iB=0; iB<hvB.size(); iB++ )  for( auto& currk : hvB[iB] ) {
+//      if( bAdd || NPredictor::exists(kNil,currk.project(-iB)) ) nps.setList().emplace_back( kNil, currk.project(-iB) ); //unary ancestor k feat
+//    }
+//
+//    if( bAdd || NPredictor::exists(candidate.getCat(),N_NONE) )                nps.setList().emplace_back( candidate.getCat(), N_NONE                ); // antecedent CVar
+//    if( bAdd || NPredictor::exists(N_NONE,at(size()-1).getCat()) )             nps.setList().emplace_back( N_NONE, at(size()-1).getCat()             ); // ancestor CVar
+//    if( bAdd || NPredictor::exists(candidate.getCat(),at(size()-1).getCat()) ) nps.setList().emplace_back( candidate.getCat(), at(size()-1).getCat() ); // pairwise T
+//
+//    nps.setAntDist() = antdist;
+//    nps.setList().emplace_front(bias); //add bias term
+//
+//    //corefON feature
+//    if (bcorefON == true) {
+//      nps.setList().emplace_back(corefON);
+//    }
   }
 };
-const Sign StoreState::aTop( HVec(K::kTop), cTop, S_B );
+const Sign StoreState::aTop( hvTop, cTop, S_B );
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -870,19 +920,19 @@ class FPredictorVec : public list<unsigned int> {
 
     template<class FM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
     FPredictorVec( FM& fm, const HVec& hvAnt, bool nullAnt, const StoreState& ss ) {
-      int d = (FEATCONFIG & 1) ? 0 : ss.getDepth(); // max used depth - (dbar)
-      const HVec& hvB = ( ss.at(ss.size()-1).getHVec().size() > 0 ) ? ss.at(ss.size()-1).getHVec() : hvBot; //contexts of lowest b (bdbar)
-      int iCarrier = ss.getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
-      const HVec& hvF = ( iCarrier >= 0 ) ? ss.at(iCarrier).getHVec() : HVec();
-      emplace_back( fm.getPredictorIndex( "Bias" ) );  // add bias
-      if( STORESTATE_TYPE ) emplace_back( fm.getPredictorIndex( d, ss.at(ss.size()-1).getCat() ) ); 
-      if( !(FEATCONFIG & 2) ) {
-        for( uint iB=0; iB<hvB.size();   iB++ )  for( auto& kB : hvB[iB] )   emplace_back( fm.getPredictorIndex( d, kNil,            kB.project(-iB), kNil ) );
-        for( uint iF=0; iF<hvF.size();   iF++ )  for( auto& kF : hvF[iF] )   emplace_back( fm.getPredictorIndex( d, kF.project(-iF), kNil,            kNil ) );
-        for( uint iA=0; iA<hvAnt.size(); iA++ )  for( auto& kA : hvAnt[iA] ) emplace_back( fm.getPredictorIndex( d, kNil,            kNil,            kA.project(-iA) ) );
-      }
-      if( nullAnt ) emplace_back( fm.getPredictorIndex( "corefOFF" ) );
-      else          emplace_back( fm.getPredictorIndex( "corefON"  ) ); 
+//      int d = (FEATCONFIG & 1) ? 0 : ss.getDepth(); // max used depth - (dbar)
+//      const HVec& hvB = ( ss.at(ss.size()-1).getHVec().size() > 0 ) ? ss.at(ss.size()-1).getHVec() : hvBot; //contexts of lowest b (bdbar)
+//      int iCarrier = ss.getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
+//      const HVec& hvF = ( iCarrier >= 0 ) ? ss.at(iCarrier).getHVec() : HVec();
+//      emplace_back( fm.getPredictorIndex( "Bias" ) );  // add bias
+//      if( STORESTATE_TYPE ) emplace_back( fm.getPredictorIndex( d, ss.at(ss.size()-1).getCat() ) );
+//      if( !(FEATCONFIG & 2) ) {
+//        for( uint iB=0; iB<hvB.size();   iB++ )  for( auto& kB : hvB[iB] )   emplace_back( fm.getPredictorIndex( d, kNil,            kB.project(-iB), kNil ) );
+//        for( uint iF=0; iF<hvF.size();   iF++ )  for( auto& kF : hvF[iF] )   emplace_back( fm.getPredictorIndex( d, kF.project(-iF), kNil,            kNil ) );
+//        for( uint iA=0; iA<hvAnt.size(); iA++ )  for( auto& kA : hvAnt[iA] ) emplace_back( fm.getPredictorIndex( d, kNil,            kNil,            kA.project(-iA) ) );
+//      }
+//      if( nullAnt ) emplace_back( fm.getPredictorIndex( "corefOFF" ) );
+//      else          emplace_back( fm.getPredictorIndex( "corefON"  ) );
     }
 };
 
@@ -1009,22 +1059,22 @@ class JPredictorVec : public list<unsigned int> {
 
     template<class JM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
     JPredictorVec( JM& jm, F f, EVar eF, const LeftChildSign& aLchild, const StoreState& ss ) {
-      int d = (FEATCONFIG & 1) ? 0 : ss.getDepth()+f;
-      int iCarrierB = ss.getAncestorBCarrierIndex( f );
-      const Sign& aAncstr  = ss.at( ss.getAncestorBIndex(f) );
-      const HVec& hvAncstr = ( aAncstr.getHVec().size()==0 ) ? hvBot : aAncstr.getHVec();
-      const HVec& hvFiller = ( iCarrierB<0                 ) ? hvBot : ss.at( iCarrierB ).getHVec();
-      const HVec& hvLchild = ( aLchild.getHVec().size()==0 ) ? hvBot : aLchild.getHVec() ;
-      emplace_back( jm.getPredictorIndex( "Bias" ) );  // add bias
-      if( STORESTATE_TYPE ) emplace_back( jm.getPredictorIndex( d, aAncstr.getCat(), aLchild. getCat() ) );
-      if( !(FEATCONFIG & 32) ) {
-        for( uint iA=0; iA<hvAncstr.size(); iA++ ) for( auto& kA : hvAncstr[iA] )
-          for( uint iL=0; iL<hvLchild.size(); iL++ ) for( auto& kL : hvLchild[iL] ) emplace_back( jm.getPredictorIndex( d, kNil, kA.project(-iA), kL.project(-iL) ) );
-        for( uint iF=0; iF<hvFiller.size(); iF++ ) for( auto& kF : hvFiller[iF] )
-          for( uint iA=0; iA<hvAncstr.size(); iA++ ) for( auto& kA : hvAncstr[iA] ) emplace_back( jm.getPredictorIndex( d, kF.project(-iF), kA.project(-iA), kNil ) );
-        for( uint iF=0; iF<hvFiller.size(); iF++ ) for( auto& kF : hvFiller[iF] )
-          for( uint iL=0; iL<hvLchild.size(); iL++ ) for( auto& kL : hvLchild[iL] ) emplace_back( jm.getPredictorIndex( d, kF.project(-iF), kNil, kL.project(-iL) ) );
-      }
+//      int d = (FEATCONFIG & 1) ? 0 : ss.getDepth()+f;
+//      int iCarrierB = ss.getAncestorBCarrierIndex( f );
+//      const Sign& aAncstr  = ss.at( ss.getAncestorBIndex(f) );
+//      const HVec& hvAncstr = ( aAncstr.getHVec().size()==0 ) ? hvBot : aAncstr.getHVec();
+//      const HVec& hvFiller = ( iCarrierB<0                 ) ? hvBot : ss.at( iCarrierB ).getHVec();
+//      const HVec& hvLchild = ( aLchild.getHVec().size()==0 ) ? hvBot : aLchild.getHVec() ;
+//      emplace_back( jm.getPredictorIndex( "Bias" ) );  // add bias
+//      if( STORESTATE_TYPE ) emplace_back( jm.getPredictorIndex( d, aAncstr.getCat(), aLchild. getCat() ) );
+//      if( !(FEATCONFIG & 32) ) {
+//        for( uint iA=0; iA<hvAncstr.size(); iA++ ) for( auto& kA : hvAncstr[iA] )
+//          for( uint iL=0; iL<hvLchild.size(); iL++ ) for( auto& kL : hvLchild[iL] ) emplace_back( jm.getPredictorIndex( d, kNil, kA.project(-iA), kL.project(-iL) ) );
+//        for( uint iF=0; iF<hvFiller.size(); iF++ ) for( auto& kF : hvFiller[iF] )
+//          for( uint iA=0; iA<hvAncstr.size(); iA++ ) for( auto& kA : hvAncstr[iA] ) emplace_back( jm.getPredictorIndex( d, kF.project(-iF), kA.project(-iA), kNil ) );
+//        for( uint iF=0; iF<hvFiller.size(); iF++ ) for( auto& kF : hvFiller[iF] )
+//          for( uint iL=0; iL<hvLchild.size(); iL++ ) for( auto& kL : hvLchild[iL] ) emplace_back( jm.getPredictorIndex( d, kF.project(-iF), kNil, kL.project(-iL) ) );
+//      }
     }
 };
 
