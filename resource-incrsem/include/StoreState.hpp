@@ -226,6 +226,9 @@ const N N_NONE("");
 
 ////////////////////////////////////////////////////////////////////////////////
 
+DiscreteDomain<int> domX;
+typedef DiscreteDomainRV<int,domX> XVar;
+
 DiscreteDomain<int> domK;
 class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of Delimited<...> or string-argument constructor of this class won't get called!
  public:
@@ -234,6 +237,8 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
   private:
   static map<K,CVar> mkc;
   static map<pair<K,int>,K> mkik;
+  static map<K,XVar> mkx;
+  static map<K,int> mkdir;
 //  static map<K,K> mkkVU;
 //  static map<K,K> mkkVD;
   static map<K,K> mkkO;
@@ -252,6 +257,7 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
       if( mkik.end()==mkik.find(pair<K,int>(*this,3)) && ps[strlen(ps)-2]!='-' && ps[strlen(ps)-1]==cSelf ) { K& k=mkik[pair<K,int>(*this,3)]; k=string(ps,strlen(ps)-1).append("3").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,4)) && ps[strlen(ps)-2]!='-' && ps[strlen(ps)-1]==cSelf ) { K& k=mkik[pair<K,int>(*this,4)]; k=string(ps,strlen(ps)-1).append("4").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,1)) && ps[strlen(ps)-2]=='-' && ps[strlen(ps)-1]=='1' ) { K& k=mkik[pair<K,int>(*this,1)]; k=string(ps,strlen(ps)-2).c_str(); }
+      if( mkx.end()==mkx.find(*this) ) { const char* psU=strchr(ps,'_'); mkx[*this]=(psU)?string(ps,psU-ps).c_str():ps; mkdir[*this]=(psU-ps==strlen(ps)-2)?stoi(psU+1):0; }
 //     if( mkkVU.end()==mkkVU.find(*this) && ps[strlen(ps)-2]=='-' && ps[strlen(ps)-1]=='1' ) { K& k=mkkVU[*this]; k=string(ps,strlen(ps)-2).append("-2").c_str(); }
 //     else if( mkkVU.end()==mkkVU.find(*this) )                                              { K& k=mkkO[*this]; k=ps; }
 //     if( mkkVD.end()==mkkVD.find(*this) && ps[strlen(ps)-2]=='-' && ps[strlen(ps)-1]=='2' ) { K& k=mkkVU[*this]; k=string(ps,strlen(ps)-2).append("-1").c_str(); }
@@ -268,6 +274,8 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
   K ( )                : DiscreteDomainRV<int,domK> ( )    { }
   K ( const char* ps ) : DiscreteDomainRV<int,domK> ( ps ) { calcDetermModels(ps); }
   CVar getCat    ( )                  const { auto it = mkc.find(*this); return (it==mkc.end()) ? cBot : it->second; }
+  XVar getXVar   ( )                  const { auto it = mkx.find(*this); return (it==mkx.end()) ? XVar() : it->second; }
+  int  getDir    ( )                  const { auto it = mkdir.find(*this); return (it==mkdir.end()) ? 0 : it->second; }
   K    project   ( int n )            const { auto it = mkik.find(pair<K,int>(*this,n)); return (it==mkik.end()) ? kBot : it->second; }
   K    transform ( bool bUp, char c ) const { return mkkO[*this]; }
 //  K transform ( bool bUp, char c ) const { return (bUp and c=='V') ? mkkVU[*this] :
@@ -275,6 +283,8 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
 };
 map<K,CVar>        K::mkc;
 map<pair<K,int>,K> K::mkik;
+map<K,XVar>        K::mkx;
+map<K,int>         K::mkdir;
 //map<K,K> K::mkkVU;
 //map<K,K> K::mkkVD;
 map<K,K> K::mkkO;
@@ -529,17 +539,17 @@ class BPredictor : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimit
 typedef DelimitedCol<psLBrack, double, psComma, 20, psRBrack> KVec;
 
 class EMat {
-  map<K,KVec> mkh;
+  map<XVar,KVec> mxv;
   public:
     EMat() {}
     EMat(istream& is) {
       while ( is.peek()=='E' ) {
-        Delimited<K> k;
-        is >> "E " >> k >> " ";
-        is >> mkh[k] >> "\n";
+        Delimited<XVar> x;
+        is >> "E " >> x >> " ";
+        is >> mxv[x] >> "\n";
       }
     }
-    KVec operator() ( K k ) const {return mkh[k];}
+    KVec operator() ( XVar x ) const { return mxv[x]; }
 // should return the vectors that underwent the -0 relationship function
 // need to have stopping criterion for reading input files?
 };
@@ -562,7 +572,7 @@ class OFunc {
         if (c == 'S') is >> mrws[k] >> "\n";
       }
     }
-    KVec operator() ( int rel, KVec& kv ) const {return KVec();}
+    KVec operator() ( int rel, const KVec& kv ) const { return KVec(); }
 
 // read in weights for different models similarly to EMat
 // need to have stopping criterion for reading input files
@@ -582,7 +592,8 @@ class HVec : public DelimitedVector<psX,KVec,psX,psX> {
     at(0) = kv;
   }
   HVec ( K k, const EMat& matE, const OFunc& funcO )   : DelimitedVector<psX,KVec,psX,psX>( k.getCat().getSynArgs()+1 ) {
-    at(0) = matE( k );
+    int dir = k.getDir();
+    at(0) = (dir) ? funcO( dir, matE( k.getXVar() ) ) : matE( k.getXVar() );
     for( unsigned int arg=1; arg<k.getCat().getSynArgs()+1; arg++ )
       at(arg) = funcO(arg, at(0));
   }

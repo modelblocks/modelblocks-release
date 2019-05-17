@@ -219,7 +219,7 @@ class DelimitedCol : public Col<T> {
   DelimitedCol<psD1,T,psD2,iSize,psD3> ( const Col<T>& ct ) : Col<T>(ct) { }
   //operator Col<T>() { return *this; }
   bool operator==(const DelimitedCol<psD1,T,psD2,iSize,psD3>& c1) const {
-    for( size_t i=0; i<iSize; i++ ) if( at(i)!=c1 ) return false;
+    for( size_t i=0; i<iSize; i++ ) if( this->at(i)!=c1.at(i) ) return false;
     return true;
 //    return approx_equal(*this, c1, "absdiff", 0.002);
 //    return Col<T>(*this)==Col<T>(c1);
