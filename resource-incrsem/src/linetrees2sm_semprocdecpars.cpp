@@ -166,7 +166,7 @@ void calcContext ( Tree<L>& tr,
   if ( tr.size()==1 && tr.front().size()==0 ) {
     wordnum++;  // increment word index at terminal (sentence-level) one-indexing
     tDisc++;    // increment discourse-level word index. one-indexing
-    string annot    = getLink( tr );
+    string annot    = getLink( tr );  //if( annot == currentloc ) annot = "";
     f               = 1 - s;
     eF              = e + getUnaryOp( tr );
     pair<K,CVar> kc = getPred ( removeLink(tr), removeLink(tr.front()) );

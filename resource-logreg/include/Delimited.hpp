@@ -219,7 +219,9 @@ class DelimitedCol : public Col<T> {
   DelimitedCol<psD1,T,psD2,iSize,psD3> ( const Col<T>& ct ) : Col<T>(ct) { }
   //operator Col<T>() { return *this; }
   bool operator==(const DelimitedCol<psD1,T,psD2,iSize,psD3>& c1) const {
-    return approx_equal(*this, c1, "absdiff", 0.002);
+    for( size_t i=0; i<iSize; i++ ) if( at(i)!=c1 ) return false;
+    return true;
+//    return approx_equal(*this, c1, "absdiff", 0.002);
 //    return Col<T>(*this)==Col<T>(c1);
 //    return (*this).Col<T>::operator==(c1);
   }
