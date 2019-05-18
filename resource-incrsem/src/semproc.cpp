@@ -123,7 +123,10 @@ int main ( int nArgs, char* argv[] ) {
   uint numThreads = 1;
 
   // Define model structures...
-  arma::mat matN;
+  EMat                          matEmutable;
+  OFunc                         funcOmutable;
+//  arma::mat matN;
+  NModel                        modNmutable;
   FModel                        modFmutable;
   map<PPredictor,map<P,double>> modP;
   map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> lexW;
@@ -136,7 +139,7 @@ int main ( int nArgs, char* argv[] ) {
     list<DelimitedTrip<psX,WPredictor,psSpcColonSpc,W,psSpcEqualsSpc,Delimited<double>,psX>> lW;
     list<DelimitedTrip<psX,APredictor,psSpcColonSpc,A,psSpcEqualsSpc,Delimited<double>,psX>> lA;
     list<DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>> lB;
-    list<DelimitedTrip<psX,NPredictor,psSpcColonSpc,Delimited<NResponse>,psSpcEqualsSpc,Delimited<double>,psX>> lN;
+//    list<DelimitedTrip<psX,NPredictor,psSpcColonSpc,Delimited<NResponse>,psSpcEqualsSpc,Delimited<double>,psX>> lN;
 
     lA.emplace_back( DelimitedTrip<psX,APredictor,psSpcColonSpc,A,psSpcEqualsSpc,Delimited<double>,psX>(APredictor(1,0,1,EVar::eNil,'S',CVar("T"),CVar("-")),A("-"),1.0) );      // should be CVar("S")
     lB.emplace_back( DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>(BPredictor(1,0,1,EVar::eNil,'S','1',CVar("-"),CVar("S")),B("T"),1.0) );
@@ -158,13 +161,15 @@ int main ( int nArgs, char* argv[] ) {
         // Read model lists...
         int linenum = 0;
         while ( fin && EOF!=fin.peek() ) {
+          if ( fin.peek()=='E' ) matEmutable = EMat( fin );
+          if ( fin.peek()=='O' ) funcOmutable = OFunc( fin );
           if ( fin.peek()=='F' ) modFmutable = FModel( fin );
           if ( fin.peek()=='P' ) fin >> "P " >> *lP.emplace(lP.end()) >> "\n";
           if ( fin.peek()=='W' ) fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
           if ( fin.peek()=='J' ) modJmutable = JModel( fin );
           if ( fin.peek()=='A' ) fin >> "A " >> *lA.emplace(lA.end()) >> "\n";
           if ( fin.peek()=='B' ) fin >> "B " >> *lB.emplace(lB.end()) >> "\n";
-          if ( fin.peek()=='N' ) fin >> "N " >> *lN.emplace(lN.end()) >> "\n";
+          if ( fin.peek()=='N' ) modNmutable = NModel( fin ); //fin >> "N " >> *lN.emplace(lN.end()) >> "\n";
           if ( ++linenum%1000000==0 ) cerr << "  " << linenum << " items loaded..." << endl;
         }
         cerr << "Model " << argv[a] << " loaded." << endl;
@@ -172,16 +177,19 @@ int main ( int nArgs, char* argv[] ) {
     } //closes for int a=1
 
     // Populate model structures...
-    matN = arma::zeros( NResponse::getDomain().getSize(), NPredictor::getDomainSize() );
+//    matN = arma::zeros( NResponse::getDomain().getSize(), NPredictor::getDomainSize() );
     for ( auto& prw : lP ) modP[prw.first()][prw.second()] = prw.third();
     for ( auto& prw : lW ) lexW[prw.second()].emplace_back(prw.first(),prw.third());
-    for ( auto& prn : lN ) matN( prn.second().toInt(), prn.first().toInt() ) = prn.third(); //i,jth cell of matrix gets populated with value
+//    for ( auto& prn : lN ) matN( prn.second().toInt(), prn.first().toInt() ) = prn.third(); //i,jth cell of matrix gets populated with value
     for ( auto& prw : lA ) modA[prw.first()][prw.second()] = prw.third();
     for ( auto& prw : lB ) modB[prw.first()][prw.second()] = prw.third();
   } //closes define model lists
 
-  const FModel& modF = modFmutable;
-  const JModel& modJ = modJmutable;
+  const EMat&   matE  = matEmutable;
+  const OFunc&  funcO = funcOmutable;
+  const NModel& modN  = modNmutable;
+  const FModel& modF  = modFmutable;
+  const JModel& modJ  = modJmutable;
 
   // Add unk...
   for( auto& entry : lexW ) {
@@ -224,7 +232,7 @@ int main ( int nArgs, char* argv[] ) {
   */
 
   // loop over threads (each thread gets an article)
-  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [/*&corpus,&iartNextToProc,&iartNextToDump,*/&articleMLSs,&articles,&mutexMLSList,&linenum,numThreads,matN,&modF,modP,lexW,&modJ,modA,modB] (uint numt) {
+  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [/*&corpus,&iartNextToProc,&iartNextToDump,*/&articleMLSs,&articles,&mutexMLSList,&linenum,numThreads,&matE,&funcO,&modN,&modF,modP,lexW,&modJ,modA,modB] (uint numt) {
 
     auto tpLastReport = chrono::high_resolution_clock::now();  // clock for thread heartbeats
 
@@ -313,7 +321,7 @@ int main ( int nArgs, char* argv[] ) {
             vector<int> excludedIndices; //initialize blocking list
 
             //denominator loop over candidate antecedents
-            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (t-tAnt<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { 
+            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { 
               if ( pbeAnt->getHidd().getI() != 0 ) {
                 if (VERBOSE > 1) cout << "    adding index to exclude for blocking: " << tAnt+pbeAnt->getHidd().getI() << " pbeAnt...get(): " << pbeAnt->getHidd().getI() << endl;
                 excludedIndices.push_back(tAnt+pbeAnt->getHidd().getI()); //add excluded index if there's a non-null coref decision
@@ -321,17 +329,19 @@ int main ( int nArgs, char* argv[] ) {
               if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
                 continue; //skip excluded indices
               }
-              const HVec& hvAnt = pbeAnt->getHidd().getPrtrm().getHVec(); 
-              bool corefON = (tAnt==t) ? 0 : 1;
-              NPredictorSet nps; // = NPredictorSet ( t - tAnt, lnpredictors);
-              q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, false ); //these are NPredictors for a specific antecedent candidate at tAnt, and a current word at timestep t.
-              arma::vec nlogresponses = nps.NLogResponses(matN);
-              ndenom += exp(nlogresponses(NResponse("1").toInt())-nlogresponses(NResponse("0").toInt()));
+//              const HVec& hvAnt = pbeAnt->getHidd().getPrtrm().getHVec(); 
+              bool corefON = (tAnt==int(t)) ? 0 : 1;
+              NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1 );
+//              NPredictorSet nps; // = NPredictorSet ( t - tAnt, lnpredictors);
+//              q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, false ); //these are NPredictors for a specific antecedent candidate at tAnt, and a current word at timestep t.
+              arma::vec nlogresponses = modN.calcResponses( npv ); //nps.NLogResponses(matN);
+//              ndenom += exp(nlogresponses(NResponse("1").toInt())-nlogresponses(NResponse("0").toInt()));
+              ndenom += exp( nlogresponses(1) - nlogresponses(0) );
 
             } //closes for tAnt
             pbeAnt = &beDummy; //reset pbiAnt pointer after calculating denominator
             //numerator loop over candidate antecedents. specific choice.
-            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (t-tAnt<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers. 
+            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers. 
               //block indices as read from previous storestate's excludedIndices
               if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
                 continue;
@@ -340,13 +350,16 @@ int main ( int nArgs, char* argv[] ) {
               const HVec& hvAnt = pbeAnt->getHidd().getPrtrm().getHVec();
 
               //Calculate antecedent N model predictors 
-              bool corefON = (tAnt==t) ? 0 : 1;
-              NPredictorSet nps;// = NPredictorSet ( t - tAnt, lnpredictors);
-              q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, false ); //calcNPredictors takes list of npreds (reference) and candidate Sign (reference)
-              if (VERBOSE>1) { cout << "    "; nps.printOut(cout); }
-              arma::vec nlogresponses = nps.NLogResponses(matN);
+              bool corefON = (tAnt==int(t)) ? 0 : 1;
+              NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1 );
+//              NPredictorSet nps;// = NPredictorSet ( t - tAnt, lnpredictors);
+//              q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, false ); //calcNPredictors takes list of npreds (reference) and candidate Sign (reference)
+              if (VERBOSE>1) { cout << "    " << pair<const NModel&, const NPredictorVec&>(modN,npv) << endl; } //npv.printOut(cout); }
+              arma::vec nlogresponses = modN.calcResponses( npv );
+//              arma::vec nlogresponses = nps.NLogResponses(matN);
 
-              double numerator = exp(nlogresponses(NResponse("1").toInt()) - nlogresponses(NResponse("0").toInt()));
+//              double numerator = exp(nlogresponses(NResponse("1").toInt()) - nlogresponses(NResponse("0").toInt()));
+              double numerator = exp( nlogresponses(1) - nlogresponses(0) );
               double nprob = numerator / ndenom;
 
               if ( VERBOSE>1 ) cout << "    N ... : 1 = " << numerator << "/" << ndenom << "=" << nprob << "  tAnt: " << (t - tAnt) << endl;
@@ -392,8 +405,12 @@ int main ( int nArgs, char* argv[] ) {
                         double probFPW = probFork * modP.find(ppredictor)->second.find(c_p_t)->second * probwgivkl;
                         if ( VERBOSE>1 ) cout << "      f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << probFork << " * " << modP.find(ppredictor)->second.find(c_p_t)->second << " * " << probwgivkl << " = " << probFPW << endl;
 
-                        Sign aPretrm;  aPretrm.getHVec() = HVec(k_p_t);  
-                        for (auto& k : hvAnt[0]) if (k != K::kTop) aPretrm.getHVec()[0].emplace_back(k); // add antecedent contexts
+                        Sign aPretrm;  aPretrm.setHVec() = HVec( k_p_t, matE, funcO );
+#ifdef DENSE_VECTORS
+                        aPretrm.setHVec().add( hvAnt ); 
+#else
+                        for (auto& k : hvAnt[0]) if (k != K::kTop) aPretrm.setHVec()[0].emplace_back(k); // add antecedent contexts
+#endif
                         aPretrm.second() = c_p_t;  aPretrm.third() = S_A;          // aPretrm (pos tag)
                         const LeftChildSign aLchild( q_tdec1, f, e_p_t, aPretrm );
 

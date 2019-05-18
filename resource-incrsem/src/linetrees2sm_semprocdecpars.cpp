@@ -146,6 +146,7 @@ pair<K,CVar> getPred ( const L& lP, const L& lW ) {
 EMat matE;
 OFunc funcO;
 
+NModel modN;
 FModel modF;
 JModel modJ;
 
@@ -222,10 +223,11 @@ void calcContext ( Tree<L>& tr,
 
           bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
           //DelimitedList<psX,NPredictor,psComma,psX> npreds;  
-          NPredictorSet nps;// = NPredictorSet( tDisc - i, npreds); //generate NPredictorSet with distance feature - just use "i"
-          q.calcNPredictors(nps, candidate, corefON, tDisc - i); //populate npreds with kxk pairs for q vs. candidate q. 
-          nps.printOut(cout);
-          cout << " : " << isCoref << endl; //i-1 because that's candidate index 
+//          NPredictorSet nps;// = NPredictorSet( tDisc - i, npreds); //generate NPredictorSet with distance feature - just use "i"
+//          q.calcNPredictors(nps, candidate, corefON, tDisc - i); //populate npreds with kxk pairs for q vs. candidate q. 
+          NPredictorVec npv( modN, candidate, corefON, tDisc - i, q );
+//          npv.printOut(cout);
+          cout << "N " << pair<const NModel&,const NPredictorVec&>(modN,npv) << " : " << isCoref << endl; //i-1 because that's candidate index 
         } //single candidate output
       } //all previous antecedent candidates output
     }

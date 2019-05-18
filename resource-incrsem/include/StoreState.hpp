@@ -229,6 +229,8 @@ const N N_NONE("");
 DiscreteDomain<int> domX;
 typedef DiscreteDomainRV<int,domX> XVar;
 
+////////////////////////////////////////////////////////////////////////////////
+
 DiscreteDomain<int> domK;
 class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of Delimited<...> or string-argument constructor of this class won't get called!
  public:
@@ -257,7 +259,7 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
       if( mkik.end()==mkik.find(pair<K,int>(*this,3)) && ps[strlen(ps)-2]!='-' && ps[strlen(ps)-1]==cSelf ) { K& k=mkik[pair<K,int>(*this,3)]; k=string(ps,strlen(ps)-1).append("3").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,4)) && ps[strlen(ps)-2]!='-' && ps[strlen(ps)-1]==cSelf ) { K& k=mkik[pair<K,int>(*this,4)]; k=string(ps,strlen(ps)-1).append("4").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,1)) && ps[strlen(ps)-2]=='-' && ps[strlen(ps)-1]=='1' ) { K& k=mkik[pair<K,int>(*this,1)]; k=string(ps,strlen(ps)-2).c_str(); }
-      if( mkx.end()==mkx.find(*this) ) { const char* psU=strchr(ps,'_'); mkx[*this]=(psU)?string(ps,psU-ps).c_str():ps; mkdir[*this]=(psU-ps==strlen(ps)-2)?stoi(psU+1):0; }
+      if( mkx.end()==mkx.find(*this) ) { const char* psU=strchr(ps,'_'); mkx[*this]=(psU)?string(ps,psU-ps).c_str():ps; mkdir[*this]=(psU-ps==uint(strlen(ps)-2))?stoi(psU+1):0; }
 //     if( mkkVU.end()==mkkVU.find(*this) && ps[strlen(ps)-2]=='-' && ps[strlen(ps)-1]=='1' ) { K& k=mkkVU[*this]; k=string(ps,strlen(ps)-2).append("-2").c_str(); }
 //     else if( mkkVU.end()==mkkVU.find(*this) )                                              { K& k=mkkO[*this]; k=ps; }
 //     if( mkkVD.end()==mkkVD.find(*this) && ps[strlen(ps)-2]=='-' && ps[strlen(ps)-1]=='2' ) { K& k=mkkVU[*this]; k=string(ps,strlen(ps)-2).append("-1").c_str(); }
@@ -331,10 +333,9 @@ const EVar EVar::eNil("");
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
 class NPredictor {
-  /*
-  Boolean predictors for antecedent model.  Generally KxK pairs or CVarxCVar pairs between anaphor and candidate antecedent. 
-  */
+  // Boolean predictors for antecedent model.  Generally KxK pairs or CVarxCVar pairs between anaphor and candidate antecedent. 
   private:
     uint id;
 
@@ -457,53 +458,13 @@ map<CVar,uint>            NPredictor::mancestorci;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class NPredictorSet {
-//need to be able to output real-valued distance integers, NPreds
-//TODO maybe try quadratic distance
-  private:
-     int mdist;
-     DelimitedList<psX,NPredictor,psComma,psX> mnpreds;
-
-  public:
-    //constructor
-    NPredictorSet ( ) : mdist(0), mnpreds() { }
-    DelimitedList<psX,NPredictor,psComma,psX>& setList ( ) {
-      return mnpreds;
-    }
-    int& setAntDist ( ) {
-      return mdist;
-    }
-
-    void printOut ( ostream& os ) {
-        os << "N "; 
-        os << "antdist=" << mdist;
-        for (auto& npred : mnpreds) {
-          os << ","; 
-          os << npred << "=1";
-        } 
-    }
-   
-    arma::vec NLogResponses ( const arma::mat& matN) {
-      arma::vec nlogresponses = arma::zeros( matN.n_rows );
-      nlogresponses += mdist * matN.col(NPredictor("antdist").toInt());
-      for ( auto& npredr : mnpreds) {
-          //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << endl; }
-        if ( npredr.toInt() < matN.n_cols ) { 
-          nlogresponses += matN.col( npredr.toInt() ); 
-          //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << " matN.n_cols:" << matN.n_cols << " logprob: " << matN.col( npredr.toInt())(NResponse("1").toInt()) << endl; }
-        }
-      }
-      return nlogresponses;
-    }
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
 DiscreteDomain<int> domNResponse;
 typedef DiscreteDomainRV<int,domNResponse> NResponse;
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
+typedef unsigned int NResponse;
 typedef unsigned int FResponse;
 typedef unsigned int JResponse;
 
@@ -549,7 +510,7 @@ class EMat {
         is >> mxv[x] >> "\n";
       }
     }
-    KVec operator() ( XVar x ) const { return mxv[x]; }
+    KVec operator() ( XVar x ) const { const auto& it = mxv.find( x ); return ( it == mxv.end() ) ? KVec() : it->second; }   // return mxv[x]; }
 // should return the vectors that underwent the -0 relationship function
 // need to have stopping criterion for reading input files?
 };
@@ -604,9 +565,11 @@ class HVec : public DelimitedVector<psX,KVec,psX,psX> {
   }
 //  HVec& operator+= ( const Redirect& r ) {
   HVec& addSynArg( int iDir, const HVec& hv ) {
-    if     ( iDir == 0                 ) add( hv );
-    else if( iDir < 0 and -iDir<size() ) at(-iDir) += hv.at(0);
-    else if( iDir<hv.size()            ) at( 0   ) += hv.at(iDir);
+    if     ( iDir == 0                ) add( hv );
+    else if( iDir < 0 and 0<hv.size() ) { if( -iDir>=int(size()) ) resize( -iDir + 1 );
+                                          at(-iDir) += hv.at( 0  ); }
+    else if( iDir<int(hv.size())      ) { if( 0>=size() ) resize( 1 );
+                                          at( 0   ) += hv.at(iDir); }
     return *this;
   }
   HVec& swap( int i, int j ) {
@@ -708,7 +671,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     ////// B. FILL IN NEW PARTS OF NEW STORE...
 
     //// B.1. Add existing nolo contexts to parent via extraction op...
-    HVec hvParent( cA.getSynArgs()+( (opL>='1' and opL<='9' or opR>='1' and opR<='9') ? 2 : 1 ) );
+    HVec hvParent( cA.getSynArgs()+( ( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) ? 2 : 1 ) );
     HVec hvRchild( cB.getSynArgs()+1 );
     // If join, apply unaries going down from ancestor, then merge redirect of left child...
     if( j ) {
@@ -827,36 +790,6 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     if( FEATCONFIG & 1 ) return  BPredictor( 0, 0, 0, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, cParent, aLchild.getCat() );
     return          BPredictor( getDepth()+f-j, f, j, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, cParent, aLchild.getCat() );
   }
-
-  void calcNPredictors( NPredictorSet& nps, const Sign& candidate, bool bcorefON, int antdist, bool bAdd=true ) const {
-    //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
-    //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
-
-#ifndef DENSE_VECTORS
-    const HVec& hvB = at(size()-1).getHVec(); //contexts of lowest b (bdbar)
-    for( unsigned int iA=0; iA<candidate.getHVec().size(); iA++ )  for( auto& antk : candidate.getHVec()[iA] ) {
-      if( bAdd || NPredictor::exists(antk.project(-iA),kNil) ) nps.setList().emplace_back( antk.project(-iA), kNil ); //add unary antecedent k feat, using kxk template
-      for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
-        if( bAdd || NPredictor::exists(antk.project(-iA),currk.project(-iB)) ) nps.setList().emplace_back( antk.project(-iA), currk.project(-iB) ); //pairwise kxk feat
-      }
-    }
-    for( unsigned int iB=0; iB<hvB.size(); iB++ )  for( auto& currk : hvB[iB] ) {
-      if( bAdd || NPredictor::exists(kNil,currk.project(-iB)) ) nps.setList().emplace_back( kNil, currk.project(-iB) ); //unary ancestor k feat
-    }
-
-    if( bAdd || NPredictor::exists(candidate.getCat(),N_NONE) )                nps.setList().emplace_back( candidate.getCat(), N_NONE                ); // antecedent CVar
-    if( bAdd || NPredictor::exists(N_NONE,at(size()-1).getCat()) )             nps.setList().emplace_back( N_NONE, at(size()-1).getCat()             ); // ancestor CVar
-    if( bAdd || NPredictor::exists(candidate.getCat(),at(size()-1).getCat()) ) nps.setList().emplace_back( candidate.getCat(), at(size()-1).getCat() ); // pairwise T
-
-    nps.setAntDist() = antdist;
-    nps.setList().emplace_front(bias); //add bias term
-
-    //corefON feature
-    if (bcorefON == true) {
-      nps.setList().emplace_back(corefON);
-    }
-#endif
-  }
 };
 const Sign StoreState::aTop( hvTop, cTop, S_B );
 
@@ -864,7 +797,7 @@ const Sign StoreState::aTop( hvTop, cTop, S_B );
 
 HVec& HVec::applyUnariesTopDn( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss ) {
   for( int i=0; e!=EVar::eNil; e=e.withoutTop() ) {
-    if( e.top()>='0' and e.top()<='9' and i<viCarrierIndices.size() and viCarrierIndices[i++]!=-1 )  addSynArg( -getDir(e.top()), ss.at(viCarrierIndices[i-1]).getHVec() );
+    if( e.top()>='0' and e.top()<='9' and i<int(viCarrierIndices.size()) and viCarrierIndices[i++]!=-1 )  addSynArg( -getDir(e.top()), ss.at(viCarrierIndices[i-1]).getHVec() );
     else if( e.top()=='O' or e.top()=='V' )  swap(1,2);
   }
   return *this;
@@ -934,6 +867,192 @@ class HiddState : public DelimitedSept<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAm
     const JResponse& getJResp()       const { return fifth(); }
     const StoreState& getStoreState() const { return sixth(); }
     const Delimited<int>& getI()      const { return seventh(); }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class NPredictorVec {
+//need to be able to output real-valued distance integers, NPreds
+//TODO maybe try quadratic distance
+  private:
+     int mdist;
+     list<unsigned int> mnpreds;
+
+  public:
+    //constructor
+    template<class LM>
+    NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss ) {
+      //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
+      //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
+
+#ifndef DENSE_VECTORS
+      mdist = antdist;
+      mnpreds.emplace_back( lm.getPredictorIndex( "bias" ) ); //add bias term
+
+      const HVec& hvB = ss.at(ss.size()-1).getHVec(); //contexts of lowest b (bdbar)
+      for( unsigned int iA=0; iA<candidate.getHVec().size(); iA++ )  for( auto& antk : candidate.getHVec()[iA] ) {
+        mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), kNil ) ); //add unary antecedent k feat, using kxk template
+        for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
+          mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), currk.project(-iB) ) ); //pairwise kxk feat
+        }
+      }
+      for( unsigned int iB=0; iB<hvB.size(); iB++ )  for( auto& currk : hvB[iB] ) {
+        mnpreds.emplace_back( lm.getPredictorIndex( kNil, currk.project(-iB) ) ); //unary ancestor k feat
+      }
+
+      mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), N_NONE                      ) ); // antecedent CVar
+      mnpreds.emplace_back( lm.getPredictorIndex( N_NONE,             ss.at(ss.size()-1).getCat() ) ); // ancestor CVar
+      mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), ss.at(ss.size()-1).getCat() ) ); // pairwise T
+
+      //corefON feature
+      if (bcorefON == true) {
+        mnpreds.emplace_back( lm.getPredictorIndex( "corefON" ) );
+      }
+#endif
+    }
+/*
+    NPredictorSet ( ) : mdist(0), mnpreds() { }
+*/
+    const list<unsigned int>& getList ( ) const {
+      return mnpreds;
+    }
+    int getAntDist ( ) const {
+      return mdist;
+    }
+/*
+    void printOut ( ostream& os ) {
+        os << "N "; 
+        os << "aAntdist=" << mdist;
+        for (auto& npred : mnpreds) {
+          os << ","; 
+          os << npred << "=1";
+        } 
+    }
+    arma::vec NLogResponses ( const arma::mat& matN) {
+      arma::vec nlogresponses = arma::zeros( matN.n_rows );
+      nlogresponses += mdist * matN.col(NPredictor("antdist").toInt());
+      for ( auto& npredr : mnpreds) {
+          //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << endl; }
+        if ( npredr.toInt() < matN.n_cols ) { 
+          nlogresponses += matN.col( npredr.toInt() ); 
+          //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << " matN.n_cols:" << matN.n_cols << " logprob: " << matN.col( npredr.toInt())(NResponse("1").toInt()) << endl; }
+        }
+      }
+      return nlogresponses;
+    }
+*/
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class NModel {
+
+  private:
+
+    arma::mat matN;                              // matrix itself
+
+    unsigned int iNextPredictor = 0;             // predictor and response next-pointers
+    unsigned int iNextResponse  = 0;
+
+    map<unsigned int,string>    mis;
+    map<string,unsigned int>    msi;
+
+    map<pair<K,K>,unsigned int>       mkki; 
+    map<unsigned int,pair<K,K>>       mikk;
+//    map<unsigned int,K>               miantk;         //pairwise
+//    map<unsigned int,K>               miancestork;    //pairwise
+
+    map<pair<CVar,CVar>,unsigned int> mcci; //pairwise CVarCVar? probably too sparse...
+    map<unsigned int,pair<CVar,CVar>> micc;
+//    map<unsigned int,CVar>            miantecedentc;
+//    map<unsigned int,CVar>            miancestorc;
+//    map<CVar,unsigned int>            mantecedentci;
+//    map<CVar,unsigned int>            mancestorci;
+
+//    map<bool,unsigned int> mbi;                 // response indices
+//    map<unsigned int,bool> mib;
+
+  public:
+
+    NModel( ) { }
+    NModel( istream& is ) {
+      list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
+      while( is.peek()=='N' ) {
+        auto& prw = *l.emplace( l.end() );
+        is >> "N ";
+        if( is.peek()=='a' )   { Delimited<string> s;   is >> "a" >> s >> " : ";                 prw.first()  = getPredictorIndex( s );      }
+        else{
+          if( is.peek()=='t' ) { Delimited<CVar> cA,cB; is >> "t" >> cA >> "&t" >> cB >> " : ";  prw.first()  = getPredictorIndex( cA, cB ); }
+          else                 { Delimited<K>    kA,kB; is >> kA >> "&" >> kB >> " : ";          prw.first()  = getPredictorIndex( kA, kB ); }
+        }
+        Delimited<int> n;                               is >> n >> " = ";                        prw.second() = n;
+        Delimited<double> w;                            is >> w >> "\n";                         prw.third()  = w;
+cerr<<"read in ... " << n << " " << w << endl;
+      }
+
+      if( l.size()==0 ) cerr << "ERROR: No N items found." << endl;
+      matN.zeros ( 2, iNextPredictor );
+      for( auto& prw : l ) { matN( prw.second(), prw.first() ) = prw.third(); }
+    }
+
+    unsigned int getPredictorIndex( const string& s ) {
+      const auto& it = msi.find( s );  if( it != msi.end() ) return( it->second );
+      msi[ s ] = iNextPredictor;  mis[ iNextPredictor ] = s;  return( iNextPredictor++ );
+    }
+    unsigned int getPredictorIndex( const string& s ) const {                  // const version with closed predictor domain
+      const auto& it = msi.find( s );  return( ( it != msi.end() ) ? it->second : 0 );
+    }
+
+    unsigned int getPredictorIndex( K kA, K kB ) {
+      const auto& it = mkki.find( pair<K,K>(kA,kB) );  if( it != mkki.end() ) return( it->second );
+      mkki[ pair<K,K>(kA,kB) ] = iNextPredictor;  mikk[ iNextPredictor ] = pair<K,K>(kA,kB);  return( iNextPredictor++ );
+    }
+    unsigned int getPredictorIndex( K kA, K kB ) const {            // const version with closed predictor domain
+      const auto& it = mkki.find( pair<K,K>(kA,kB) );  return( ( it != mkki.end() ) ? it->second : 0 );
+    }
+
+    unsigned int getPredictorIndex( CVar cA, CVar cB ) {
+      const auto& it = mcci.find( pair<CVar,CVar>(cA,cB) );  if( it != mcci.end() ) return( it->second );
+      mcci[ pair<CVar,CVar>(cA,cB) ] = iNextPredictor;  micc[ iNextPredictor ] = pair<CVar,CVar>(cA,cB);  return( iNextPredictor++ );
+    }
+    unsigned int getPredictorIndex( CVar cA, CVar cB ) const {            // const version with closed predictor domain
+      const auto& it = mcci.find( pair<CVar,CVar>(cA,cB) );  return( ( it != mcci.end() ) ? it->second : 0 );
+    }
+
+//    const FEK& getFEK( unsigned int i ) const {
+//      return mifek.find( i )->second;
+//    }
+
+    arma::vec calcResponses( const NPredictorVec& npv ) const {
+      arma::vec nlogresponses = arma::zeros( matN.n_rows );
+      nlogresponses += npv.getAntDist() * matN.col(getPredictorIndex("ntdist"));
+      for ( auto& npredr : npv.getList() ) {
+          //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << endl; }
+        if ( npredr < matN.n_cols ) { 
+          nlogresponses += matN.col( npredr ); 
+          //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << " matN.n_cols:" << matN.n_cols << " logprob: " << matN.col( npredr.toInt())(NResponse("1").toInt()) << endl; }
+        }
+      }
+      return nlogresponses;
+    }
+
+    friend ostream& operator<<( ostream& os, const pair< const NModel&, const NPredictorVec& >& mv ) {
+      os << "antdist=" << mv.second.getAntDist();
+      for( const auto& i : mv.second.getList() ) {
+//        if( &i != &mv.second.getList().front() )
+        os << ",";
+        const auto& itK = mv.first.mikk.find(i);
+       	if( itK != mv.first.mikk.end() ) { os << itK->second.first << "&" << itK->second.second << "=1"; continue; }
+        const auto& itC = mv.first.micc.find(i);
+        if( itC != mv.first.micc.end() ) { os << "t" << itC->second.first << "&t" << itC->second.second << "=1"; continue; }
+        const auto& itS = mv.first.mis.find(i);
+        if( itS != mv.first.mis.end()  ) { os << "a" << itS->second << "=1"; }
+      }
+      return os;
+    }
+
+    unsigned int getNumPredictors( ) { return iNextPredictor; }
+    unsigned int getNumResponses(  ) { return iNextResponse;  }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1134,8 +1253,8 @@ class JModel {
       list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
       while( is.peek()=='J' ) {
         auto& prw = *l.emplace( l.end() );
-	is >> "J ";
-	if( is.peek()=='a' )   { Delimited<string> s;   is >> "a" >> s >> " : ";                                        prw.first()  = getPredictorIndex( s );             }
+        is >> "J ";
+        if( is.peek()=='a' )   { Delimited<string> s;   is >> "a" >> s >> " : ";                                        prw.first()  = getPredictorIndex( s );             }
         else{
           D d;                                          is >> "d" >> d >> "&";
           if( is.peek()=='t' ) { Delimited<CVar> cA,cL; is >> "t" >> cA >> "&t" >> cL >> " : ";                         prw.first()  = getPredictorIndex( d, cA, cL );     }

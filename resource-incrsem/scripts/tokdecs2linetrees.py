@@ -39,6 +39,7 @@ for s in sys.stdin:
     s = re.sub( '/ ', ' ', s )                  ## remove trailing /
     s = re.sub( '/([^; ]*)/', '/', s )          ## remove A carriers
     s = re.sub( ';([^/ ]*);', ';', s )          ## remove B carriers
+    s = re.sub( '\]\[', '', s )                 ## remove synarg divisions in context lists
     m = re.search('^([^ ]*) (?!pos)(?:\[[^\]]*\]:)?([^ ]*) ([^ ]*) ([^ ]*) (?:.*;)?([^ ;\n]*)[ \n]',s)
     if m is not None:
         w,p,f,j,q = m.groups()

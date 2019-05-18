@@ -119,9 +119,11 @@ class HVec : public DelimitedVector<psX,KVec,psX,psX> {
   }
 //  HVec& operator+= ( const Redirect& r ) {
   HVec& addSynArg( int iDir, const HVec& hv ) {
-    if     ( iDir == 0                 ) add( hv );
-    else if( iDir < 0 and -iDir<size() ) at(-iDir).insert( at(-iDir).end(), hv.at( 0  ).begin(), hv.at( 0  ).end() );
-    else if( iDir<hv.size()            ) at( 0   ).insert( at( 0   ).end(), hv.at(iDir).begin(), hv.at(iDir).end() );
+    if     ( iDir == 0                  ) add( hv );
+    else if( iDir < 0 and 0 < hv.size() ) { if( -iDir >= int(size()) ) resize( -iDir + 1 );
+                                            at(-iDir).insert( at(-iDir).end(), hv.at( 0  ).begin(), hv.at( 0  ).end() ); }
+    else if( iDir < int(hv.size())      ) { if( 0 >= int(size()) ) resize( 1 );
+                                            at( 0   ).insert( at( 0   ).end(), hv.at(iDir).begin(), hv.at(iDir).end() ); }
     return *this;
   }
   HVec& swap( int i, int j ) {
