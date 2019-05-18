@@ -380,16 +380,13 @@ class EMat {
     }
     KVec operator() ( XVar x ) const { const auto& it = mxv.find( x ); return ( it == mxv.end() ) ? KVec() : it->second; }   // return mxv[x]; }
 // should return the vectors that underwent the -0 relationship function
-// need to have stopping criterion for reading input files?
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
 class OFunc {
-//  arma::mat(20, 40, fill::none) matPoneF;
-//  arma::mat(40, 20, fill::none) matPoneS;
-  map<int,DelimitedMat<psX, double, psComma, 40, psLine, 20, psX>> mrwf;
-  map<int,DelimitedMat<psX, double, psComma, 20, psLine, 40, psX>> mrws;
+  map<int,DelimitedMat<psX, double, psComma, 40, 20, psX>> mrwf;
+  map<int,DelimitedMat<psX, double, psComma, 20, 40, psX>> mrws;
   public:
     OFunc() {}
     OFunc(istream& is) {
@@ -401,10 +398,22 @@ class OFunc {
         if (c == 'S') is >> mrws[k] >> "\n";
       }
     }
-    KVec operator() ( int rel, const KVec& kv ) const { return KVec(); }
 
-// read in weights for different models similarly to EMat
-// need to have stopping criterion for reading input files
+//  implementation of ReLU
+    arma::mat relu( const arma::mat& km ) {
+      arma::mat A(km.n_rows, 1);
+      for ( int c = 0; c<km.n_rows; c++ ) {
+        if ( km(c,0) <= 0 ) {A(c,0)=(0.0);}
+        else A(c,0) = (km(c));
+      }
+      return A;
+    }
+
+//  implementation of MLP; apply appropriate weights via matmul
+    arma::vec operator() ( int rel, const Col<double>& kv ) const {
+//                          (1x20) * (20x40) * (40x20) = (1x20)
+      return Mat<double>(mrws[rel]) * relu(Mat<double>(mrwf[rel])*kv);
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
