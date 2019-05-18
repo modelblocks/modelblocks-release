@@ -340,6 +340,7 @@ typedef unsigned int JResponse;
 
 typedef Delimited<int> D;
 
+/*
 class PPredictor : public DelimitedQuint<psX,D,psSpace,F,psSpace,Delimited<EVar>,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX> {
  public:
   PPredictor ( )                                    : DelimitedQuint<psX,D,psSpace,F,psSpace,Delimited<EVar>,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX> ( )                 { }
@@ -360,6 +361,7 @@ class BPredictor : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimit
   BPredictor ( )                                                     : DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX> ( )                         { }
   BPredictor ( D d, F f, J j, EVar e, O oL, O oR, CVar tP, CVar tL ) : DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX> ( d, f, j, e, oL, oR, tP, tL ) { }
 };
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -650,6 +652,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     return -1;
   } 
 
+/*
   PPredictor calcPretrmCatCondition ( F f, EVar e, K k_p_t ) const {
     if( FEATCONFIG & 1 ) return PPredictor( 0, f, (FEATCONFIG & 4) ? EVar("-") : e, at(size()-1).getCat(), (FEATCONFIG & 16384) ? cBot : k_p_t.getCat() );
     return             PPredictor( getDepth(), f, (FEATCONFIG & 4) ? EVar("-") : e, at(size()-1).getCat(), (FEATCONFIG & 16384) ? cBot : k_p_t.getCat() );
@@ -664,6 +667,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     if( FEATCONFIG & 1 ) return  BPredictor( 0, 0, 0, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, cParent, aLchild.getCat() );
     return          BPredictor( getDepth()+f-j, f, j, (FEATCONFIG & 64) ? EVar("-") : eJ, (FEATCONFIG & 128) ? O('-') : opL, (FEATCONFIG & 128) ? O('-') : opR, cParent, aLchild.getCat() );
   }
+*/
 };
 const Sign StoreState::aTop( hvTop, cTop, S_B );
 
@@ -741,6 +745,90 @@ class HiddState : public DelimitedSept<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAm
     const JResponse& getJResp()       const { return fifth(); }
     const StoreState& getStoreState() const { return sixth(); }
     const Delimited<int>& getI()      const { return seventh(); }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+typedef Delimited<CVar> P;
+typedef Delimited<CVar> A;
+typedef Delimited<CVar> B;
+
+////////////////////////////////////////////////////////////////////////////////
+
+class PPredictorVec : public DelimitedQuint<psX,D,psSpace,F,psSpace,Delimited<EVar>,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX> {
+ public:
+  PPredictorVec ( ) { }
+  PPredictorVec ( F f, EVar e, K k_p_t, const StoreState& ss ) :
+    DelimitedQuint<psX,D,psSpace,F,psSpace,Delimited<EVar>,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth(), f, e, ss.at(ss.size()-1).getCat(), k_p_t.getCat() ) { }
+};
+
+class PModel : public map<PPredictorVec,map<P,double>> {
+ public:
+  PModel ( ) { }
+  PModel ( istream& is ) {
+    // Process P lines in stream...
+    while( is.peek()=='P' ) {
+      PPredictorVec ppv;  P p;
+      is >> "P " >> ppv >> " : " >> p >> " = ";
+      is >> (*this)[ppv][p] >> "\n"; 
+    }
+  }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class WPredictor : public DelimitedTrip<psX,Delimited<EVar>,psSpace,Delimited<K>,psSpace,Delimited<CVar>,psX> { };
+
+////////////////////////////////////////////////////////////////////////////////
+
+class APredictorVec : public DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX> {
+ public:
+  APredictorVec ( ) { }
+  APredictorVec ( D d, F f, J j, EVar e, O o, CVar cP, CVar cL ) :
+    DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( d, f, j, e, o, cP, cL ) { }
+  APredictorVec ( F f, J j, EVar eF, EVar eJ, O opL, const LeftChildSign& aLchild, const StoreState& ss ) :
+    DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()+f-j, f, j, eJ, opL, ss.at(ss.getAncestorBIndex(f)).getCat(), (j==0) ? aLchild.getCat() : cBot ) { } 
+};
+
+class AModel : public map<APredictorVec,map<A,double>> {
+ public:
+  AModel ( ) { }
+  AModel ( istream& is ) {
+    // Add top-level rule...
+    (*this)[ APredictorVec(1,0,1,EVar::eNil,'S',CVar("T"),CVar("-")) ][ A("-") ] = 1.0;      // should be CVar("S")
+    // Process A lines in stream...
+    while( is.peek()=='A' ) {
+      APredictorVec apv;  A a;
+      is >> "P " >> apv >> " : " >> a >> " = ";
+      is >> (*this)[apv][a] >> "\n"; 
+    }
+  }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class BPredictorVec : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX> {
+ public:
+  BPredictorVec ( ) { }
+  BPredictorVec ( D d, F f, J j, EVar e, O oL, O oR, CVar cP, CVar cL ) :
+    DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( d, f, j, e, oL, oR, cP, cL ) { }
+  BPredictorVec ( F f, J j, EVar eF, EVar eJ, O opL, O opR, CVar cParent, const LeftChildSign& aLchild, const StoreState& ss ) :
+    DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()+f-j, f, j, eJ, opL, opR, cParent, aLchild.getCat() ) { }
+};
+
+class BModel : public map<BPredictorVec,map<B,double>> {
+ public:
+  BModel ( ) { }
+  BModel ( istream& is ) {
+    // Add top-level rule...
+    (*this)[ BPredictorVec(1,0,1,EVar::eNil,'S','1',CVar("-"),CVar("S")) ][ B("T") ] = 1.0;
+    // Process B lines in stream...
+    while( is.peek()=='B' ) {
+      BPredictorVec bpv;  B b;
+      is >> "B " >> bpv >> " : " >> b >> " = ";
+      is >> (*this)[bpv][b] >> "\n"; 
+    }
+  }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

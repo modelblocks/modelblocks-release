@@ -51,12 +51,6 @@ uint OUTPUT_MEASURES = true;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-typedef Delimited<CVar> P;
-typedef Delimited<CVar> A;
-typedef Delimited<CVar> B;
-
-////////////////////////////////////////////////////////////////////////////////
-
 class Trellis : public vector<Beam<HiddState>> {
   public:
     Trellis ( ) : vector<Beam<HiddState>>() { reserve(100); }
@@ -128,20 +122,20 @@ int main ( int nArgs, char* argv[] ) {
 //  arma::mat matN;
   NModel                        modNmutable;
   FModel                        modFmutable;
-  map<PPredictor,map<P,double>> modP;
+  PModel                        modPmutable;
+//  map<PPredictor,map<P,double>> modP;
   map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> lexW;
   JModel                        modJmutable;
-  map<APredictor,map<A,double>> modA;
-  map<BPredictor,map<B,double>> modB;
+  AModel                        modAmutable;
+  BModel                        modBmutable;
+//  map<APredictor,map<A,double>> modA;
+//  map<BPredictor,map<B,double>> modB;
 
   { // Define model lists...
-    list<DelimitedTrip<psX,PPredictor,psSpcColonSpc,P,psSpcEqualsSpc,Delimited<double>,psX>> lP;
+//    list<DelimitedTrip<psX,PPredictor,psSpcColonSpc,P,psSpcEqualsSpc,Delimited<double>,psX>> lP;
     list<DelimitedTrip<psX,WPredictor,psSpcColonSpc,W,psSpcEqualsSpc,Delimited<double>,psX>> lW;
-    list<DelimitedTrip<psX,APredictor,psSpcColonSpc,A,psSpcEqualsSpc,Delimited<double>,psX>> lA;
-    list<DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>> lB;
-
-    lA.emplace_back( DelimitedTrip<psX,APredictor,psSpcColonSpc,A,psSpcEqualsSpc,Delimited<double>,psX>(APredictor(1,0,1,EVar::eNil,'S',CVar("T"),CVar("-")),A("-"),1.0) );      // should be CVar("S")
-    lB.emplace_back( DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>(BPredictor(1,0,1,EVar::eNil,'S','1',CVar("-"),CVar("S")),B("T"),1.0) );
+//    list<DelimitedTrip<psX,APredictor,psSpcColonSpc,A,psSpcEqualsSpc,Delimited<double>,psX>> lA;
+//    list<DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>> lB;
 
     // For each command-line flag or model file...
     for ( int a=1; a<nArgs; a++ ) {
@@ -162,13 +156,13 @@ int main ( int nArgs, char* argv[] ) {
         while ( fin && EOF!=fin.peek() ) {
           if ( fin.peek()=='E' ) matEmutable = EMat( fin );
           if ( fin.peek()=='O' ) funcOmutable = OFunc( fin );
+          if ( fin.peek()=='N' ) modNmutable = NModel( fin ); //fin >> "N " >> *lN.emplace(lN.end()) >> "\n";
           if ( fin.peek()=='F' ) modFmutable = FModel( fin );
-          if ( fin.peek()=='P' ) fin >> "P " >> *lP.emplace(lP.end()) >> "\n";
+          if ( fin.peek()=='P' ) modPmutable = PModel( fin );  //fin >> "P " >> *lP.emplace(lP.end()) >> "\n";
           if ( fin.peek()=='W' ) fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
           if ( fin.peek()=='J' ) modJmutable = JModel( fin );
-          if ( fin.peek()=='A' ) fin >> "A " >> *lA.emplace(lA.end()) >> "\n";
-          if ( fin.peek()=='B' ) fin >> "B " >> *lB.emplace(lB.end()) >> "\n";
-          if ( fin.peek()=='N' ) modNmutable = NModel( fin ); //fin >> "N " >> *lN.emplace(lN.end()) >> "\n";
+          if ( fin.peek()=='A' ) modAmutable = AModel( fin ); // fin >> "A " >> *lA.emplace(lA.end()) >> "\n";
+          if ( fin.peek()=='B' ) modBmutable = BModel( fin ); // fin >> "B " >> *lB.emplace(lB.end()) >> "\n";
           if ( ++linenum%1000000==0 ) cerr << "  " << linenum << " items loaded..." << endl;
         }
         cerr << "Model " << argv[a] << " loaded." << endl;
@@ -176,17 +170,20 @@ int main ( int nArgs, char* argv[] ) {
     } //closes for int a=1
 
     // Populate model structures...
-    for ( auto& prw : lP ) modP[prw.first()][prw.second()] = prw.third();
+//    for ( auto& prw : lP ) modP[prw.first()][prw.second()] = prw.third();
     for ( auto& prw : lW ) lexW[prw.second()].emplace_back(prw.first(),prw.third());
-    for ( auto& prw : lA ) modA[prw.first()][prw.second()] = prw.third();
-    for ( auto& prw : lB ) modB[prw.first()][prw.second()] = prw.third();
+//    for ( auto& prw : lA ) modA[prw.first()][prw.second()] = prw.third();
+//    for ( auto& prw : lB ) modB[prw.first()][prw.second()] = prw.third();
   } //closes define model lists
 
   const EMat&   matE  = matEmutable;
   const OFunc&  funcO = funcOmutable;
   const NModel& modN  = modNmutable;
   const FModel& modF  = modFmutable;
+  const PModel& modP  = modPmutable;
   const JModel& modJ  = modJmutable;
+  const AModel& modA  = modAmutable;
+  const BModel& modB  = modBmutable;
 
   // Add unk...
   for( auto& entry : lexW ) {
@@ -386,7 +383,7 @@ int main ( int nArgs, char* argv[] ) {
                       } //closes if chrono
 
                       // If preterminal prob is nonzero...
-                      PPredictor ppredictor = q_tdec1.calcPretrmCatCondition( f, e_p_t, k_p_t );
+                      PPredictorVec ppredictor( f, e_p_t, k_p_t, q_tdec1 );
                       if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << c_p_t << "...?" << endl;
                       if ( modP.end()!=modP.find(ppredictor) && modP.find(ppredictor)->second.end()!=modP.find(ppredictor)->second.find(c_p_t) ) {
 
@@ -420,7 +417,7 @@ int main ( int nArgs, char* argv[] ) {
                             if ( VERBOSE>1 ) cout << "       J ... " << " : " << modJ.getJEOO(jresponse) << " = " << probJoin << endl;
 
                             // For each possible apex category label...
-                            APredictor apredictor = q_tdec1.calcApexCatCondition( f, j, e_p_t, e, opL, aLchild );  // save apredictor for use in prob calc
+                            APredictorVec apredictor( f, j, e_p_t, e, opL, aLchild, q_tdec1 );  // save apredictor for use in prob calc
                             if ( VERBOSE>1 ) cout << "         A " << apredictor << "..." << endl;
                             if ( modA.end()!=modA.find(apredictor) )
                               for ( auto& cpA : modA.find(apredictor)->second ) {
@@ -429,7 +426,7 @@ int main ( int nArgs, char* argv[] ) {
                                   if ( VERBOSE>1 ) cout << "         A " << apredictor << " : " << cpA.first << " = " << cpA.second << endl;
 
                                   // For each possible brink category label...
-                                  BPredictor bpredictor = q_tdec1.calcBaseCatCondition( f, j, e_p_t, e, opL, opR, cpA.first, aLchild );  // bpredictor for prob calc
+                                  BPredictorVec bpredictor( f, j, e_p_t, e, opL, opR, cpA.first, aLchild, q_tdec1 );  // bpredictor for prob calc
                                   if ( VERBOSE>1 ) cout << "          B " << bpredictor << "..." << endl;
                                   if ( modB.end()!=modB.find(bpredictor) )
                                     for ( auto& cpB : modB.find(bpredictor)->second ) {
