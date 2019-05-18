@@ -119,17 +119,13 @@ int main ( int nArgs, char* argv[] ) {
   // Define model structures...
   EMat                          matEmutable;
   OFunc                         funcOmutable;
-//  arma::mat matN;
   NModel                        modNmutable;
   FModel                        modFmutable;
   PModel                        modPmutable;
-//  map<PPredictor,map<P,double>> modP;
   map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> lexW;
   JModel                        modJmutable;
   AModel                        modAmutable;
   BModel                        modBmutable;
-//  map<APredictor,map<A,double>> modA;
-//  map<BPredictor,map<B,double>> modB;
 
   { // Define model lists...
 //    list<DelimitedTrip<psX,PPredictor,psSpcColonSpc,P,psSpcEqualsSpc,Delimited<double>,psX>> lP;
@@ -156,13 +152,13 @@ int main ( int nArgs, char* argv[] ) {
         while ( fin && EOF!=fin.peek() ) {
           if ( fin.peek()=='E' ) matEmutable = EMat( fin );
           if ( fin.peek()=='O' ) funcOmutable = OFunc( fin );
-          if ( fin.peek()=='N' ) modNmutable = NModel( fin ); //fin >> "N " >> *lN.emplace(lN.end()) >> "\n";
+          if ( fin.peek()=='N' ) modNmutable = NModel( fin );
           if ( fin.peek()=='F' ) modFmutable = FModel( fin );
-          if ( fin.peek()=='P' ) modPmutable = PModel( fin );  //fin >> "P " >> *lP.emplace(lP.end()) >> "\n";
+          if ( fin.peek()=='P' ) modPmutable = PModel( fin );
           if ( fin.peek()=='W' ) fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
           if ( fin.peek()=='J' ) modJmutable = JModel( fin );
-          if ( fin.peek()=='A' ) modAmutable = AModel( fin ); // fin >> "A " >> *lA.emplace(lA.end()) >> "\n";
-          if ( fin.peek()=='B' ) modBmutable = BModel( fin ); // fin >> "B " >> *lB.emplace(lB.end()) >> "\n";
+          if ( fin.peek()=='A' ) modAmutable = AModel( fin );
+          if ( fin.peek()=='B' ) modBmutable = BModel( fin );
           if ( ++linenum%1000000==0 ) cerr << "  " << linenum << " items loaded..." << endl;
         }
         cerr << "Model " << argv[a] << " loaded." << endl;
