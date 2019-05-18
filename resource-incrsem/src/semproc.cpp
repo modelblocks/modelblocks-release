@@ -139,7 +139,6 @@ int main ( int nArgs, char* argv[] ) {
     list<DelimitedTrip<psX,WPredictor,psSpcColonSpc,W,psSpcEqualsSpc,Delimited<double>,psX>> lW;
     list<DelimitedTrip<psX,APredictor,psSpcColonSpc,A,psSpcEqualsSpc,Delimited<double>,psX>> lA;
     list<DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>> lB;
-//    list<DelimitedTrip<psX,NPredictor,psSpcColonSpc,Delimited<NResponse>,psSpcEqualsSpc,Delimited<double>,psX>> lN;
 
     lA.emplace_back( DelimitedTrip<psX,APredictor,psSpcColonSpc,A,psSpcEqualsSpc,Delimited<double>,psX>(APredictor(1,0,1,EVar::eNil,'S',CVar("T"),CVar("-")),A("-"),1.0) );      // should be CVar("S")
     lB.emplace_back( DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>(BPredictor(1,0,1,EVar::eNil,'S','1',CVar("-"),CVar("S")),B("T"),1.0) );
@@ -177,10 +176,8 @@ int main ( int nArgs, char* argv[] ) {
     } //closes for int a=1
 
     // Populate model structures...
-//    matN = arma::zeros( NResponse::getDomain().getSize(), NPredictor::getDomainSize() );
     for ( auto& prw : lP ) modP[prw.first()][prw.second()] = prw.third();
     for ( auto& prw : lW ) lexW[prw.second()].emplace_back(prw.first(),prw.third());
-//    for ( auto& prn : lN ) matN( prn.second().toInt(), prn.first().toInt() ) = prn.third(); //i,jth cell of matrix gets populated with value
     for ( auto& prw : lA ) modA[prw.first()][prw.second()] = prw.third();
     for ( auto& prw : lB ) modB[prw.first()][prw.second()] = prw.third();
   } //closes define model lists
@@ -329,17 +326,15 @@ int main ( int nArgs, char* argv[] ) {
               if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
                 continue; //skip excluded indices
               }
-//              const HVec& hvAnt = pbeAnt->getHidd().getPrtrm().getHVec(); 
               bool corefON = (tAnt==int(t)) ? 0 : 1;
               NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1 );
-//              NPredictorSet nps; // = NPredictorSet ( t - tAnt, lnpredictors);
-//              q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, false ); //these are NPredictors for a specific antecedent candidate at tAnt, and a current word at timestep t.
-              arma::vec nlogresponses = modN.calcResponses( npv ); //nps.NLogResponses(matN);
-//              ndenom += exp(nlogresponses(NResponse("1").toInt())-nlogresponses(NResponse("0").toInt()));
+              arma::vec nlogresponses = modN.calcLogResponses( npv ); //nps.NLogResponses(matN);
               ndenom += exp( nlogresponses(1) - nlogresponses(0) );
 
             } //closes for tAnt
+
             pbeAnt = &beDummy; //reset pbiAnt pointer after calculating denominator
+
             //numerator loop over candidate antecedents. specific choice.
             for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers. 
               //block indices as read from previous storestate's excludedIndices
@@ -352,13 +347,9 @@ int main ( int nArgs, char* argv[] ) {
               //Calculate antecedent N model predictors 
               bool corefON = (tAnt==int(t)) ? 0 : 1;
               NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1 );
-//              NPredictorSet nps;// = NPredictorSet ( t - tAnt, lnpredictors);
-//              q_tdec1.calcNPredictors( nps, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, false ); //calcNPredictors takes list of npreds (reference) and candidate Sign (reference)
               if (VERBOSE>1) { cout << "    " << pair<const NModel&, const NPredictorVec&>(modN,npv) << endl; } //npv.printOut(cout); }
-              arma::vec nlogresponses = modN.calcResponses( npv );
-//              arma::vec nlogresponses = nps.NLogResponses(matN);
+              arma::vec nlogresponses = modN.calcLogResponses( npv );
 
-//              double numerator = exp(nlogresponses(NResponse("1").toInt()) - nlogresponses(NResponse("0").toInt()));
               double numerator = exp( nlogresponses(1) - nlogresponses(0) );
               double nprob = numerator / ndenom;
 

@@ -42,7 +42,6 @@ typedef Delimited<int>  D;  // depth
 typedef Delimited<int>  F;  // fork decision
 typedef Delimited<int>  J;  // join decision
 typedef Delimited<char> O;  // composition operation
-//typedef Delimited<char> E;  // extraction operation
 typedef Delimited<char> S;  // side (A,B)
 const S S_A("/");
 const S S_B(";");
@@ -330,137 +329,6 @@ map<EVar,char> EVar::meoBot;
 map<EVar,EVar> EVar::meeNoTop;
 map<EVar,EVar> EVar::meeNoBot;
 const EVar EVar::eNil("");
-
-////////////////////////////////////////////////////////////////////////////////
-
-/*
-class NPredictor {
-  // Boolean predictors for antecedent model.  Generally KxK pairs or CVarxCVar pairs between anaphor and candidate antecedent. 
-  private:
-    uint id;
-
-    static uint                      nextid;
-    static map<pair<K,K>,uint>       mkki; 
-    static map<pair<CVar,CVar>,uint> mcci; //pairwise CVarCVar? probably too sparse...
-    static map<uint,AdHocFeature>    mistr;
-    static map<AdHocFeature,uint>    mstri;
-    static map<uint,K>               miantk;         //pairwise
-    static map<uint,K>               miancestork;    //pairwise
-    static map<uint,CVar>            miantecedentc;
-    static map<uint,CVar>            miancestorc;
-    static map<CVar,uint>            mantecedentci;
-    static map<CVar,uint>            mancestorci;
-
-  public:
-    //Constructors
-    NPredictor ( ) : id(0) { }
-
-    NPredictor (K antK, K ancestorK) {
-      const auto& it = mkki.find(pair<K,K>(antK,ancestorK));
-      if (it != mkki.end() ) id = it->second;
-      else { id = nextid++; miantk[id] = antK; miancestork[id] = ancestorK; mkki[pair<K,K>(antK,ancestorK)] = id; }
-    }
-
-    NPredictor (AdHocFeature mstring) {
-      const auto& it = mstri.find(mstring);
-      if (it != mstri.end() ) id = it->second;
-      else { id = nextid++; mistr[id] = mstring; mstri[mstring] = id; }
-    }
-
-    NPredictor (CVar antecedentCVar, CVar ancestorCVar) {
-      const auto& it = mcci.find(pair<CVar,CVar>(antecedentCVar, ancestorCVar));
-      if (it != mcci.end() ) id = it->second;
-      else { id = nextid++; miantecedentc[id] = antecedentCVar; miancestorc[id] = ancestorCVar; mcci[pair<CVar,CVar>(antecedentCVar,ancestorCVar)] = id; }
-    }
-
-  //Accessor Methods
-  uint toInt() const { return id; }
-  operator uint() const { return id; }
-  K getAncstrK()  const { return miancestork[id]; }
-  K getAntcdntK() const { return miantk[id]; } 
-  CVar getAntecedentCVar() const { return miantecedentc[id]; }
-  CVar getAncestorCVar() const { return miancestorc[id]; }
-  AdHocFeature getfeatname() const { return mistr[id]; }
-  static uint getDomainSize() { return nextid; }
-
-  // Input / output methods...
-  // need to add handling of unary t and k features for IO...
-  friend pair<istream&,NPredictor&> operator>> ( istream& is, NPredictor& t ) {
-    return pair<istream&,NPredictor&>(is,t);
-  }
-  friend istream& operator>> ( pair<istream&,NPredictor&> ist, const char* psDelim ) {
-    if ( ist.first.peek()==psDelim[0] ) { 
-      auto& o =  ist.first >> psDelim;  
-      ist.second = NPredictor();  
-      return o; 
-    }
-    else if ( ist.first.peek()=='a' ) { 
-      AdHocFeature mstring;
-      auto& o = ist.first >> mstring >> psDelim;  
-      ist.second = NPredictor(mstring);     
-      return o; 
-    }
-    else if (ist.first.peek()=='t') {
-      Delimited<CVar> antecedentc, ancestorc;
-      auto& o = ist.first >> "t" >> antecedentc >> "&" >> ancestorc >> psDelim;
-      ist.second = NPredictor(antecedentc, ancestorc);
-      return o;
-    }
-    else  { 
-      Delimited<K> kAntecedent, kAncestor;  
-      auto& o = ist.first >> kAntecedent >> "&" >> kAncestor >> psDelim;  
-      ist.second = NPredictor(kAntecedent, kAncestor);  
-      return o; 
-    }
-  }
-  friend bool operator>> ( pair<istream&,NPredictor&> ist, const vector<const char*>& vpsDelim ) {
-    if ( ist.first.peek()=='a' ) { 
-      AdHocFeature mstring;
-      auto o = ist.first >> mstring >> vpsDelim;  
-      ist.second = NPredictor(mstring);     
-      return o; 
-    }
-    else if (ist.first.peek()=='t') {
-      Delimited<CVar> antecedentc, ancestorc;
-      auto o = ist.first >> "t" >> antecedentc >> "&" >> ancestorc >> vpsDelim;
-      ist.second = NPredictor(antecedentc, ancestorc);
-      return o;
-    }
-    else { 
-      Delimited<K> kAntecedent, kAncestor;
-      auto o = ist.first >> kAntecedent >> "&" >> kAncestor >> vpsDelim;  
-      ist.second = NPredictor(kAntecedent,kAncestor);  
-      return o; 
-    }
-  }
-  friend ostream& operator<< ( ostream& os, const NPredictor& t ) {
-    //return os << miantk[t.id] << "&" << miancestork[t.id]; 
-    if (miantk.find(t.id) != miantk.end()) { return os << miantk[t.id] << "&" << miancestork[t.id]; } //output either KxK
-    else if (miantecedentc.find(t.id) != miantecedentc.end()) { return os << "t" << miantecedentc[t.id] << "&" << miancestorc[t.id]; } // or t x t
-    else if (mistr.find(t.id) != mistr.end()) { return os << mistr[t.id]; } //check for string
-    else { return os << "NON_STRING_ID_" << t.id; } 
-  }
-  static bool exists ( K kAntecedent, K kAncestor )       { return( mkki.end()!=mkki.find(pair<K,K>(kAntecedent,kAncestor)) ); }
-  static bool exists ( AdHocFeature mstring )             { return( mstri.end()!=mstri.find(mstring) ); }
-  static bool exists ( CVar cAntecedent, CVar cAncestor ) { return( mcci.end()!=mcci.find(pair<CVar,CVar>(cAntecedent,cAncestor)) ); }
-};
-uint                      NPredictor::nextid = 1;
-map<pair<K,K>,uint>       NPredictor::mkki; 
-map<pair<CVar,CVar>,uint> NPredictor::mcci;
-map<AdHocFeature,uint>    NPredictor::mstri;
-map<uint,AdHocFeature>    NPredictor::mistr;
-map<uint,K>               NPredictor::miantk;
-map<uint,K>               NPredictor::miancestork;
-map<uint,CVar>            NPredictor::miantecedentc;
-map<uint,CVar>            NPredictor::miancestorc;
-map<CVar,uint>            NPredictor::mantecedentci;
-map<CVar,uint>            NPredictor::mancestorci;
-
-////////////////////////////////////////////////////////////////////////////////
-
-DiscreteDomain<int> domNResponse;
-typedef DiscreteDomainRV<int,domNResponse> NResponse;
-*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -871,76 +739,50 @@ class HiddState : public DelimitedSept<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAm
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifdef DENSE_VECTORS
+
 class NPredictorVec {
 //need to be able to output real-valued distance integers, NPreds
 //TODO maybe try quadratic distance
   private:
+
      int mdist;
      list<unsigned int> mnpreds;
 
   public:
+
     //constructor
     template<class LM>
     NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss ) {
-      //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
-      //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
+//      //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
+//      //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
+//
+//      mdist = antdist;
+//      mnpreds.emplace_back( lm.getPredictorIndex( "bias" ) ); //add bias term
+//
+//      const HVec& hvB = ss.at(ss.size()-1).getHVec(); //contexts of lowest b (bdbar)
+//      for( unsigned int iA=0; iA<candidate.getHVec().size(); iA++ )  for( auto& antk : candidate.getHVec()[iA] ) {
+//        mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), kNil ) ); //add unary antecedent k feat, using kxk template
+//        for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
+//          mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), currk.project(-iB) ) ); //pairwise kxk feat
+//        }
+//      }
+//      for( unsigned int iB=0; iB<hvB.size(); iB++ )  for( auto& currk : hvB[iB] ) {
+//        mnpreds.emplace_back( lm.getPredictorIndex( kNil, currk.project(-iB) ) ); //unary ancestor k feat
+//      }
+//
+//      mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), N_NONE                      ) ); // antecedent CVar
+//      mnpreds.emplace_back( lm.getPredictorIndex( N_NONE,             ss.at(ss.size()-1).getCat() ) ); // ancestor CVar
+//      mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), ss.at(ss.size()-1).getCat() ) ); // pairwise T
+//
+//      //corefON feature
+//      if (bcorefON == true) {
+//        mnpreds.emplace_back( lm.getPredictorIndex( "corefON" ) );
+//      }
+    }
 
-#ifndef DENSE_VECTORS
-      mdist = antdist;
-      mnpreds.emplace_back( lm.getPredictorIndex( "bias" ) ); //add bias term
-
-      const HVec& hvB = ss.at(ss.size()-1).getHVec(); //contexts of lowest b (bdbar)
-      for( unsigned int iA=0; iA<candidate.getHVec().size(); iA++ )  for( auto& antk : candidate.getHVec()[iA] ) {
-        mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), kNil ) ); //add unary antecedent k feat, using kxk template
-        for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
-          mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), currk.project(-iB) ) ); //pairwise kxk feat
-        }
-      }
-      for( unsigned int iB=0; iB<hvB.size(); iB++ )  for( auto& currk : hvB[iB] ) {
-        mnpreds.emplace_back( lm.getPredictorIndex( kNil, currk.project(-iB) ) ); //unary ancestor k feat
-      }
-
-      mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), N_NONE                      ) ); // antecedent CVar
-      mnpreds.emplace_back( lm.getPredictorIndex( N_NONE,             ss.at(ss.size()-1).getCat() ) ); // ancestor CVar
-      mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), ss.at(ss.size()-1).getCat() ) ); // pairwise T
-
-      //corefON feature
-      if (bcorefON == true) {
-        mnpreds.emplace_back( lm.getPredictorIndex( "corefON" ) );
-      }
-#endif
-    }
-/*
-    NPredictorSet ( ) : mdist(0), mnpreds() { }
-*/
-    const list<unsigned int>& getList ( ) const {
-      return mnpreds;
-    }
-    int getAntDist ( ) const {
-      return mdist;
-    }
-/*
-    void printOut ( ostream& os ) {
-        os << "N "; 
-        os << "aAntdist=" << mdist;
-        for (auto& npred : mnpreds) {
-          os << ","; 
-          os << npred << "=1";
-        } 
-    }
-    arma::vec NLogResponses ( const arma::mat& matN) {
-      arma::vec nlogresponses = arma::zeros( matN.n_rows );
-      nlogresponses += mdist * matN.col(NPredictor("antdist").toInt());
-      for ( auto& npredr : mnpreds) {
-          //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << endl; }
-        if ( npredr.toInt() < matN.n_cols ) { 
-          nlogresponses += matN.col( npredr.toInt() ); 
-          //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << " matN.n_cols:" << matN.n_cols << " logprob: " << matN.col( npredr.toInt())(NResponse("1").toInt()) << endl; }
-        }
-      }
-      return nlogresponses;
-    }
-*/
+    const list<unsigned int>& getList    ( ) const { return mnpreds; }
+    int                       getAntDist ( ) const { return mdist;   }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -959,18 +801,9 @@ class NModel {
 
     map<pair<K,K>,unsigned int>       mkki; 
     map<unsigned int,pair<K,K>>       mikk;
-//    map<unsigned int,K>               miantk;         //pairwise
-//    map<unsigned int,K>               miancestork;    //pairwise
 
     map<pair<CVar,CVar>,unsigned int> mcci; //pairwise CVarCVar? probably too sparse...
     map<unsigned int,pair<CVar,CVar>> micc;
-//    map<unsigned int,CVar>            miantecedentc;
-//    map<unsigned int,CVar>            miancestorc;
-//    map<CVar,unsigned int>            mantecedentci;
-//    map<CVar,unsigned int>            mancestorci;
-
-//    map<bool,unsigned int> mbi;                 // response indices
-//    map<unsigned int,bool> mib;
 
   public:
 
@@ -987,7 +820,6 @@ class NModel {
         }
         Delimited<int> n;                               is >> n >> " = ";                        prw.second() = n;
         Delimited<double> w;                            is >> w >> "\n";                         prw.third()  = w;
-cerr<<"read in ... " << n << " " << w << endl;
       }
 
       if( l.size()==0 ) cerr << "ERROR: No N items found." << endl;
@@ -1007,7 +839,7 @@ cerr<<"read in ... " << n << " " << w << endl;
       const auto& it = mkki.find( pair<K,K>(kA,kB) );  if( it != mkki.end() ) return( it->second );
       mkki[ pair<K,K>(kA,kB) ] = iNextPredictor;  mikk[ iNextPredictor ] = pair<K,K>(kA,kB);  return( iNextPredictor++ );
     }
-    unsigned int getPredictorIndex( K kA, K kB ) const {            // const version with closed predictor domain
+    unsigned int getPredictorIndex( K kA, K kB ) const {                       // const version with closed predictor domain
       const auto& it = mkki.find( pair<K,K>(kA,kB) );  return( ( it != mkki.end() ) ? it->second : 0 );
     }
 
@@ -1015,22 +847,16 @@ cerr<<"read in ... " << n << " " << w << endl;
       const auto& it = mcci.find( pair<CVar,CVar>(cA,cB) );  if( it != mcci.end() ) return( it->second );
       mcci[ pair<CVar,CVar>(cA,cB) ] = iNextPredictor;  micc[ iNextPredictor ] = pair<CVar,CVar>(cA,cB);  return( iNextPredictor++ );
     }
-    unsigned int getPredictorIndex( CVar cA, CVar cB ) const {            // const version with closed predictor domain
+    unsigned int getPredictorIndex( CVar cA, CVar cB ) const {                 // const version with closed predictor domain
       const auto& it = mcci.find( pair<CVar,CVar>(cA,cB) );  return( ( it != mcci.end() ) ? it->second : 0 );
     }
 
-//    const FEK& getFEK( unsigned int i ) const {
-//      return mifek.find( i )->second;
-//    }
-
-    arma::vec calcResponses( const NPredictorVec& npv ) const {
+    arma::vec calcLogResponses( const NPredictorVec& npv ) const {
       arma::vec nlogresponses = arma::zeros( matN.n_rows );
       nlogresponses += npv.getAntDist() * matN.col(getPredictorIndex("ntdist"));
       for ( auto& npredr : npv.getList() ) {
-          //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << endl; }
         if ( npredr < matN.n_cols ) { 
           nlogresponses += matN.col( npredr ); 
-          //if (VERBOSE>1) { cout << npredr << " " << npredr.toInt() << " matN.n_cols:" << matN.n_cols << " logprob: " << matN.col( npredr.toInt())(NResponse("1").toInt()) << endl; }
         }
       }
       return nlogresponses;
@@ -1039,7 +865,7 @@ cerr<<"read in ... " << n << " " << w << endl;
     friend ostream& operator<<( ostream& os, const pair< const NModel&, const NPredictorVec& >& mv ) {
       os << "antdist=" << mv.second.getAntDist();
       for( const auto& i : mv.second.getList() ) {
-//        if( &i != &mv.second.getList().front() )
+        // if( &i != &mv.second.getList().front() )
         os << ",";
         const auto& itK = mv.first.mikk.find(i);
        	if( itK != mv.first.mikk.end() ) { os << itK->second.first << "&" << itK->second.second << "=1"; continue; }
@@ -1056,8 +882,6 @@ cerr<<"read in ... " << n << " " << w << endl;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-
-#ifdef DENSE_VECTORS
 
 class FPredictorVec : public list<unsigned int> {
 
