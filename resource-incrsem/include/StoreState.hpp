@@ -505,9 +505,6 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
  public:
 
   static const Sign aTop;
-  static const Sign aBot;
-  // storestate records antecedent choices, excluding previous indices to force most recent mentions to be considered. closer to entity tracking
-  std::vector<int> excludedIndices;
 
   StoreState ( ) : DelimitedVector<psX,Sign,psX,psX> ( ) { }
   StoreState ( const StoreState& qPrev, F f, J j, EVar evF, EVar evJ, O opL, O opR, CVar cA, CVar cB, const Sign& aPretrm, const LeftChildSign& aLchild ) {
