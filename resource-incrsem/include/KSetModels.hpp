@@ -33,11 +33,11 @@ class NPredictorVec {
 
     //constructor
     template<class LM>
-    NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss ) {
+    NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss ) : mdist(antdist), mnpreds() {
       //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
       //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
 
-      mdist = antdist;
+//      mdist = antdist;
       mnpreds.emplace_back( lm.getPredictorIndex( "bias" ) ); //add bias term
 
       const HVec& hvB = ss.at(ss.size()-1).getHVec(); //contexts of lowest b (bdbar)
@@ -210,7 +210,7 @@ class FModel {
 
   public:
 
-    FModel( ) { }
+    FModel( )             { }
     FModel( istream& is ) {
       list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
       while( is.peek()=='F' ) {
@@ -264,7 +264,9 @@ class FModel {
     }
 
     const FEK& getFEK( unsigned int i ) const {
-      return mifek.find( i )->second;
+      auto it = mifek.find( i );
+      assert( it != mifek.end() );
+      return it->second;
     }
 
     arma::vec calcResponses( const FPredictorVec& lfpredictors ) const {
@@ -350,10 +352,13 @@ class JModel {
     map<JEOO,unsigned int> mjeooi;               // response indices
     map<unsigned int,JEOO> mijeoo;
 
+    unsigned int jr0;
+    unsigned int jr1;
+
   public:
 
-    JModel( ) { }
-    JModel( istream& is ) {
+    JModel( )             : jr0(getResponseIndex(0,EVar::eNil,O_N,O_I)), jr1(getResponseIndex(1,EVar::eNil,O_N,O_I)) { }
+    JModel( istream& is ) : jr0(getResponseIndex(0,EVar::eNil,O_N,O_I)), jr1(getResponseIndex(1,EVar::eNil,O_N,O_I)) {
       list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
       while( is.peek()=='J' ) {
         auto& prw = *l.emplace( l.end() );
@@ -371,7 +376,14 @@ class JModel {
       if( l.size()==0 ) cerr << "ERROR: No J items found." << endl;
       matJ.zeros ( mijeoo.size(), iNextPredictor );
       for( auto& prw : l ) { matJ( prw.second(), prw.first() ) = prw.third(); }
+
+      // Ensure JResponses exist...
+      jr0 = getResponseIndex( 0, EVar::eNil, 'N', 'I' ); 
+      jr1 = getResponseIndex( 1, EVar::eNil, 'N', 'I' ); 
     }
+
+    unsigned int getResponse0( ) { return jr0; }
+    unsigned int getResponse1( ) { return jr1; }
 
     unsigned int getPredictorIndex( const string& s ) {
       const auto& it = msi.find( s );  if( it != msi.end() ) return( it->second );
@@ -402,11 +414,13 @@ class JModel {
       mjeooi[ JEOO(j,e,oL,oR) ] = iNextResponse;  mijeoo[ iNextResponse ] = JEOO(j,e,oL,oR);  return( iNextResponse++ );
     }
     unsigned int getResponseIndex( J j, EVar e, O oL, O oR ) const {           // const version with closed predictor domain
-      const auto& it = mjeooi.find( JEOO(j,e,oL,oR) );  return( ( it != mjeooi.end() ) ? it->second : uint(-1) );
+      const auto& it = mjeooi.find( JEOO(j,e,oL,oR) );  assert( it != mjeooi.end() );  return( ( it != mjeooi.end() ) ? it->second : uint(-1) );
     }
 
     const JEOO& getJEOO( unsigned int i ) const {
-      return mijeoo.find( i )->second;
+      auto it = mijeoo.find( i );
+      assert( it != mijeoo.end() );
+      return it->second;
     }
 
     arma::vec calcResponses( const JPredictorVec& ljpredictors ) const {

@@ -60,8 +60,8 @@ class Delimited<double> {
  private:
   double val;
  public:
-  Delimited<double> ( )                 : val()   { }
-  Delimited<double> ( const double& t ) : val(t)  { }
+  Delimited<double> ( )                 : val()         { }
+  Delimited<double> ( const double& t ) : val(t)        { }
   Delimited<double> ( const char* ps )  : val(stod(ps)) { }
   operator double() const { return val; }
 };
@@ -71,8 +71,8 @@ class Delimited<int> {
  private:
   int val;
  public:
-  Delimited<int> ( )                : val()   { }
-  Delimited<int> ( const int& t )   : val(t)  { }
+  Delimited<int> ( )                : val()         { }
+  Delimited<int> ( const int& t )   : val(t)        { }
   Delimited<int> ( const char* ps ) : val(stoi(ps)) { }
   operator int() const { return val; }
   //bool operator< ( const Delimited<int>& i ) { return int(*this)<int(i); }
@@ -83,8 +83,9 @@ class Delimited<char> {
  private:
   int val;
  public:
-  Delimited<char> ( )                : val()   { }
-  Delimited<char> ( const int& t )   : val(t)  { }
+  Delimited<char> ( )                : val()      { }
+  Delimited<char> ( char c )         : val(c)     { }
+//  Delimited<char> ( const int& t )   : val(t)  { }
   Delimited<char> ( const char* ps ) : val(ps[0]) { }
   operator char() const { return val; }
 };
@@ -195,8 +196,9 @@ class DelimitedList : public list<T> {
 template<const char* psD1,class T,const char* psD2,const char* psD3>
 class DelimitedVector : public vector<T> {
  public:
-  DelimitedVector<psD1,T,psD2,psD3> ( )       : vector<T> ( )   { }
-  DelimitedVector<psD1,T,psD2,psD3> ( int i ) : vector<T> ( i ) { }
+  DelimitedVector<psD1,T,psD2,psD3> ( )                                             : vector<T> ( )    { }
+  DelimitedVector<psD1,T,psD2,psD3> ( int i )                                       : vector<T> ( i )  { }
+  DelimitedVector<psD1,T,psD2,psD3> ( const DelimitedVector<psD1,T,psD2,psD3>& vt ) : vector<T> ( vt ) { }
   friend pair<istream&,DelimitedVector<psD1,T,psD2,psD3>&> operator>> ( istream& is, DelimitedVector<psD1,T,psD2,psD3>& t ) {
     return pair<istream&,DelimitedVector<psD1,T,psD2,psD3>&>(is,t);
   }

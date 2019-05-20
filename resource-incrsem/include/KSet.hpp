@@ -84,21 +84,34 @@ const K K::kTop("Top");
 
 ////////////////////////////////////////////////////////////////////////////////
 
-typedef DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> KVec;
+//typedef DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> KVec;
+
+class KVec : public DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack> {
+ public:
+  KVec ( )                : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>()   {               }
+  KVec ( K k )            : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>()   { push_back(k); }
+  KVec ( const KVec& kv ) : DelimitedVector<psLBrack,Delimited<K>,psComma,psRBrack>(kv) {               }
+  KVec& add( const KVec& kv ) { insert( end(), kv.begin(), kv.end() ); return *this; }
+};
+const KVec kvTop( K::kTop );
+const KVec kvBot( K::kBot );
+const KVec kvDitto( K_DITTO );
 
 class EMat {
  public:
   EMat( )             { }
   EMat( istream& is ) { }
-//  KVec operator() ( K k ) { KVec kv; kv.push_back(k); return kv; }
+  KVec operator() ( XVar x ) const { KVec kv; kv.push_back( K(x) ); return kv; }
 };
 
 class OFunc {
  public:
   OFunc( )             { }
   OFunc( istream& is ) { }
-//  KVec operator() ( int iDir, const KVec& kv ) { KVec kvOut; for( auto& k : kv ) kvOut.push_back( k.project(iDir) ); }
+  KVec operator() ( int iDir, const KVec& kv ) const { KVec kvOut; for( auto& k : kv ) kvOut.push_back( k.project(iDir) ); return kvOut; }
 };
+
+/*
 
 class HVec : public DelimitedVector<psX,KVec,psX,psX> {
 
@@ -138,6 +151,8 @@ class HVec : public DelimitedVector<psX,KVec,psX,psX> {
 const HVec hvTop = HVec( K::kTop );
 const HVec hvBot = HVec( K::kBot );
 const HVec HVec::hvDitto( K_DITTO );
+
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 

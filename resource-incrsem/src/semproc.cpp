@@ -56,7 +56,7 @@ class Trellis : public vector<Beam<HiddState>> {
     Trellis ( ) : vector<Beam<HiddState>>() { reserve(100); }
     Beam<HiddState>& operator[] ( uint i ) { if ( i==size() ) emplace_back(BEAM_WIDTH); return vector<Beam<HiddState>>::operator[](i); }
     void setMostLikelySequence ( DelimitedList<psX,BeamElement<HiddState>,psLine,psX>& lbe, const JModel& jm ) {
-      static StoreState ssLongFail( StoreState(), 1, 0, EVar::eNil, EVar::eNil, 'N', 'I', "FAIL", "FAIL", Sign(hvBot,"FAIL",0), Sign(hvBot,"FAIL",0) ); //fork, nojoin
+      static StoreState ssLongFail( StoreState(), 1, 0, EVar::eNil, EVar::eNil, O_N, O_I, cFail, cFail, Sign(hvBot,cFail,S_A), Sign(hvBot,cFail,S_A) ); //fork, nojoin
       lbe.clear(); if( back().size()>0 ) lbe.push_front( *back().begin() );
       if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( lbe.front().getBack() );
       if( lbe.size()>0 ) lbe.emplace_back( BeamElement<HiddState>() );
@@ -66,24 +66,24 @@ class Trellis : public vector<Beam<HiddState>> {
         cerr << "parse failed (lbe.size() = 0) " << "trellis size(): " << size() << endl;
         // Print a right branching structure...
         for( int t=size()-2; t>=0; t-- ) { 
-          lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,"FAIL",0), 1, EVar::eNil, K::kBot, jm.getResponseIndex(1,EVar::eNil,'N','I'), ssLongFail ) ) ); // fork and join
+          lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 1, EVar::eNil, K::kBot, jm.getResponse1(), ssLongFail ) ) ); // fork and join
         }
-        cerr << "size of lbe after push_fronts: " << lbe.size() << endl;
-        lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,"FAIL",0), 1, EVar::eNil, K::kBot, jm.getResponseIndex(0,EVar::eNil,'N','I'), ssLongFail ) );                    // front: fork no-join
-        lbe.back( ) = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,"FAIL",0), 0, EVar::eNil, K::kBot, jm.getResponseIndex(1,EVar::eNil,'N','I'), StoreState() ) );                  // back: join no-fork
-        cerr << "size of lbe after front and back assignments: " << lbe.size() << endl;
+//        cerr << "size of lbe after push_fronts: " << lbe.size() << endl;
+        lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 1, EVar::eNil, K::kBot, jm.getResponse0(), ssLongFail ) );       // front: fork no-join
+        lbe.back( ) = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 0, EVar::eNil, K::kBot, jm.getResponse1(), StoreState() ) );     // back: join no-fork
+//        cerr << "size of lbe after front and back assignments: " << lbe.size() << endl;
         if( size()==2 ) {  //special case if single word, fork and join
-          cerr << "assigning front of fail lbe" << endl;
-          lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,"FAIL",0), 1, EVar::eNil, K::kBot, jm.getResponseIndex(1,EVar::eNil,'N','I'), StoreState() ) );  // unary case: fork and join
+//          cerr << "assigning front of fail lbe" << endl;
+          lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 1, EVar::eNil, K::kBot, jm.getResponse1(), StoreState() ) );   // unary case: fork and join
         }
         // Add dummy element (not sure why this is needed)...
-        lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,"FAIL",0), 0, EVar::eNil, K::kBot, jm.getResponseIndex(0,EVar::eNil,'N','I'), StoreState() ) ) ); // no-fork, no-join?
+        lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 0, EVar::eNil, K::kBot, jm.getResponse0(), StoreState() ) ) ); // no-fork, no-join?
         //start experiment - next two lines switch front element to nofork,join, add additional dummy at rear
         //TODO to revert, comment out next two, comment in pushfront above
         lbe.emplace_back( BeamElement<HiddState>() );
         //end epxeriment
 
-        cerr << "size of lbe after dummy push_front: " << lbe.size() << endl;
+//        cerr << "size of lbe after dummy push_front: " << lbe.size() << endl;
         cerr<<"parse failed"<<endl;
         // does lbe here consist of a single sentence or of the whole article?
       }
@@ -128,10 +128,7 @@ int main ( int nArgs, char* argv[] ) {
   BModel                        modBmutable;
 
   { // Define model lists...
-//    list<DelimitedTrip<psX,PPredictor,psSpcColonSpc,P,psSpcEqualsSpc,Delimited<double>,psX>> lP;
     list<DelimitedTrip<psX,WPredictor,psSpcColonSpc,W,psSpcEqualsSpc,Delimited<double>,psX>> lW;
-//    list<DelimitedTrip<psX,APredictor,psSpcColonSpc,A,psSpcEqualsSpc,Delimited<double>,psX>> lA;
-//    list<DelimitedTrip<psX,BPredictor,psSpcColonSpc,B,psSpcEqualsSpc,Delimited<double>,psX>> lB;
 
     // For each command-line flag or model file...
     for ( int a=1; a<nArgs; a++ ) {
@@ -166,11 +163,11 @@ int main ( int nArgs, char* argv[] ) {
     } //closes for int a=1
 
     // Populate model structures...
-//    for ( auto& prw : lP ) modP[prw.first()][prw.second()] = prw.third();
     for ( auto& prw : lW ) lexW[prw.second()].emplace_back(prw.first(),prw.third());
-//    for ( auto& prw : lA ) modA[prw.first()][prw.second()] = prw.third();
-//    for ( auto& prw : lB ) modB[prw.first()][prw.second()] = prw.third();
   } //closes define model lists
+
+//  modJmutable.getResponseIndex( 0, EVar::eNil, O_N, O_I );
+//  modJmutable.getResponseIndex( 1, EVar::eNil, O_N, O_I );
 
   const EMat&   matE  = matEmutable;
   const OFunc&  funcO = funcOmutable;
@@ -507,6 +504,7 @@ int main ( int nArgs, char* argv[] ) {
           auto ibe=next(articleMLSs.front().front().begin());  //iterator over beam elements?
           auto iw=articles.front().front().begin() ; //iterator over words
           for( ; (ibe != articleMLSs.front().front().end()) && (iw != articles.front().front().end()); ibe++, iw++, u++ ) {
+//            cerr << "trying to dump id=" << ibe->getHidd().fifth() << " EVar=" << modJ.getJEOO(ibe->getHidd().fifth()).second().toInt() << endl;
             cout << *iw << " " << ibe->getHidd().first() << " f" << ibe->getHidd().second() << "&" << ibe->getHidd().third() << "&" << ibe->getHidd().fourth() << " j" << modJ.getJEOO(ibe->getHidd().fifth()) << " " << ibe->getHidd().sixth() << " " << ibe->getHidd().seventh() << " " << ibe->getProb(); //tokdecs output is: WORD HIDDSTATE PROB
             cout << endl;
           } //closes for ibe!=mls.end

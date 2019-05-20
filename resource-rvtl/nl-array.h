@@ -76,7 +76,8 @@ class Array {
 
   // Specification methods...
   Array<T>& operator= ( const Array<T>& at ) { delete[] pt; pt=new T[at.iCapacity]; iNextOpen=at.iNextOpen; iCapacity=at.iCapacity;
-                                               for(unsigned int i=0; i<iNextOpen; i++) pt[i]=at.pt[i]; return *this; }
+                                               for(unsigned int i=0; i<iNextOpen; i++) pt[i]=at.pt[i];
+                                               return *this; }
   void clear          ( )                { iNextOpen=0; }
   void clearEnd       ( unsigned int i ) { iNextOpen=i; }
   T&   add            ( )                { return operator[](iNextOpen); }

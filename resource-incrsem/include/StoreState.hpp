@@ -42,6 +42,8 @@ typedef Delimited<int>  D;  // depth
 typedef Delimited<int>  F;  // fork decision
 typedef Delimited<int>  J;  // join decision
 typedef Delimited<char> O;  // composition operation
+const O O_N("N");
+const O O_I("I");
 typedef Delimited<char> S;  // side (A,B)
 const S S_A("/");
 const S S_B(";");
@@ -221,12 +223,14 @@ map<pair<CVar,int>,CVar>  CVar::mcicLetNum;
 const CVar cTop("T");
 const CVar cBot("-");
 const CVar cBOT("bot");  // not sure if this really needs to be distinct from cBot
+const CVar cFail("FAIL");
 const N N_NONE("");
 
 ////////////////////////////////////////////////////////////////////////////////
 
 DiscreteDomain<int> domX;
 typedef DiscreteDomainRV<int,domX> XVar;
+const XVar xBot("Bot");
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -239,6 +243,7 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
   static map<K,CVar> mkc;
   static map<pair<K,int>,K> mkik;
   static map<K,XVar> mkx;
+  static map<XVar,K> mxk;
   static map<K,int> mkdir;
 //  static map<K,K> mkkVU;
 //  static map<K,K> mkkVD;
@@ -252,13 +257,15 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
       if( mkik.end()==mkik.find(pair<K,int>(*this,-3)) && strlen(ps)>2 && ps[strlen(ps)-2]!='-' ) { K& k=mkik[pair<K,int>(*this,-3)]; k=string(ps).append("-3").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,-2)) && strlen(ps)>2 && ps[strlen(ps)-2]!='-' ) { K& k=mkik[pair<K,int>(*this,-2)]; k=string(ps).append("-2").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,-1)) && strlen(ps)>2 && ps[strlen(ps)-2]!='-' ) { K& k=mkik[pair<K,int>(*this,-1)]; k=string(ps).append("-1").c_str(); }
-      if( mkik.end()==mkik.find(pair<K,int>(*this,0))                            ) { K& k=mkik[pair<K,int>(*this,0)]; k=ps; }
+      if( mkik.end()==mkik.find(pair<K,int>(*this,0))                                                     ) { K& k=mkik[pair<K,int>(*this,0)]; k=ps; }
       if( mkik.end()==mkik.find(pair<K,int>(*this,1)) && ps[strlen(ps)-2]!='-' && ps[strlen(ps)-1]==cSelf ) { K& k=mkik[pair<K,int>(*this,1)]; k=string(ps,strlen(ps)-1).append("1").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,2)) && ps[strlen(ps)-2]!='-' && ps[strlen(ps)-1]==cSelf ) { K& k=mkik[pair<K,int>(*this,2)]; k=string(ps,strlen(ps)-1).append("2").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,3)) && ps[strlen(ps)-2]!='-' && ps[strlen(ps)-1]==cSelf ) { K& k=mkik[pair<K,int>(*this,3)]; k=string(ps,strlen(ps)-1).append("3").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,4)) && ps[strlen(ps)-2]!='-' && ps[strlen(ps)-1]==cSelf ) { K& k=mkik[pair<K,int>(*this,4)]; k=string(ps,strlen(ps)-1).append("4").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,1)) && ps[strlen(ps)-2]=='-' && ps[strlen(ps)-1]=='1' ) { K& k=mkik[pair<K,int>(*this,1)]; k=string(ps,strlen(ps)-2).c_str(); }
-      if( mkx.end()==mkx.find(*this) ) { const char* psU=strchr(ps,'_'); mkx[*this]=(psU)?string(ps,psU-ps).c_str():ps; mkdir[*this]=(psU-ps==uint(strlen(ps)-2))?stoi(psU+1):0; }
+      if( mkx.end()==mkx.find(*this) ) { const char* psU=strchr(ps,'_'); XVar x=(psU)?string(ps,psU-ps).c_str():ps; mkx[*this]=x; mkdir[*this]=(psU-ps==uint(strlen(ps)-2))?stoi(psU+1):0; if(mxk.end()==mxk.find(x)) { mxk[x]=(ps[strlen(ps)-1]=='0'||!psU)?*this:(string(ps,psU-ps)+"_0").c_str(); } }
+      if( ps[strlen(ps)-1]=='0' ) { K& k=mkik[pair<K,int>(*this,1)]; k=string(ps,strlen(ps)-1).append("1").c_str(); }
+
 //     if( mkkVU.end()==mkkVU.find(*this) && ps[strlen(ps)-2]=='-' && ps[strlen(ps)-1]=='1' ) { K& k=mkkVU[*this]; k=string(ps,strlen(ps)-2).append("-2").c_str(); }
 //     else if( mkkVU.end()==mkkVU.find(*this) )                                              { K& k=mkkO[*this]; k=ps; }
 //     if( mkkVD.end()==mkkVD.find(*this) && ps[strlen(ps)-2]=='-' && ps[strlen(ps)-1]=='2' ) { K& k=mkkVU[*this]; k=string(ps,strlen(ps)-2).append("-1").c_str(); }
@@ -274,6 +281,7 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
  public:
   K ( )                : DiscreteDomainRV<int,domK> ( )    { }
   K ( const char* ps ) : DiscreteDomainRV<int,domK> ( ps ) { calcDetermModels(ps); }
+  K ( XVar x )         : DiscreteDomainRV<int,domK> ( )    { auto it = mxk.find(x); *this = (it==mxk.end()) ? kBot : it->second; }
   CVar getCat    ( )                  const { auto it = mkc.find(*this); return (it==mkc.end()) ? cBot : it->second; }
   XVar getXVar   ( )                  const { auto it = mkx.find(*this); return (it==mkx.end()) ? XVar() : it->second; }
   int  getDir    ( )                  const { auto it = mkdir.find(*this); return (it==mkdir.end()) ? 0 : it->second; }
@@ -285,6 +293,7 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
 map<K,CVar>        K::mkc;
 map<pair<K,int>,K> K::mkik;
 map<K,XVar>        K::mkx;
+map<XVar,K>        K::mxk;
 map<K,int>         K::mkdir;
 //map<K,K> K::mkkVU;
 //map<K,K> K::mkkVD;
@@ -310,19 +319,19 @@ class EVar : public DiscreteDomainRV<int,domE> {   // NOTE: can't be subclass of
   static map<EVar,EVar> meeNoTop;
   static map<EVar,EVar> meeNoBot;
   void calcDetermModels ( const char* ps ) {       // NOTE: top is front, bot is back...
-    if(   meoTop.end()==  meoTop.find(*this) )                  { char& c=  meoTop[*this]; c=ps[0]; }
-    if(   meoBot.end()==  meoBot.find(*this) )                  { char& c=  meoBot[*this]; c=ps[strlen(ps)-1]; }
-    if( meeNoTop.end()==meeNoTop.find(*this) and strlen(ps)>1 ) { EVar& e=meeNoTop[*this]; e=ps+1; }
-    if( meeNoBot.end()==meeNoBot.find(*this) and strlen(ps)>1 ) { EVar& e=meeNoBot[*this]; e=string(ps,0,strlen(ps)-1).c_str(); }
+    if(   meoTop.end()==  meoTop.find(*this) and strlen(ps)>0 ) { char& c=  meoTop[*this]; c=ps[0]; }
+    if(   meoBot.end()==  meoBot.find(*this) and strlen(ps)>0 ) { char& c=  meoBot[*this]; c=ps[strlen(ps)-1]; }
+    if( meeNoTop.end()==meeNoTop.find(*this) and strlen(ps)>0 ) { EVar& e=meeNoTop[*this]; e=ps+1; }
+    if( meeNoBot.end()==meeNoBot.find(*this) and strlen(ps)>0 ) { EVar& e=meeNoBot[*this]; e=string(ps,0,strlen(ps)-1).c_str(); }
   }
  public:
   EVar ( )                : DiscreteDomainRV<int,domE> ( )    { }
   EVar ( const char* ps ) : DiscreteDomainRV<int,domE> ( ps ) { calcDetermModels(ps); }
-  char top        ( ) const { return   meoTop[*this]; }
-  char bot        ( ) const { return   meoBot[*this]; }
-  EVar withoutTop ( ) const { return meeNoTop[*this]; }
-  EVar withoutBot ( ) const { return meeNoBot[*this]; }
-  char popTop     ( )       { char c = meoTop[*this]; *this = meeNoTop[*this]; return c; }
+  char top        ( ) const { auto it =   meoTop.find( *this ); assert( it != meoTop.end() ); return ( it!=meoTop.end() ) ? it->second : '?'; }
+  char bot        ( ) const { auto it =   meoBot.find( *this ); assert( it != meoBot.end() ); return ( it!=meoBot.end() ) ? it->second : '?'; }
+  EVar withoutTop ( ) const { auto it = meeNoTop.find( *this ); assert( it != meeNoTop.end() ); return ( it!=meeNoTop.end() ) ? it->second : eNil; }
+  EVar withoutBot ( ) const { auto it = meeNoBot.find( *this ); assert( it != meeNoBot.end() ); return ( it!=meeNoBot.end() ) ? it->second : eNil; }
+  char popTop     ( )       { auto it =   meoTop.find( *this ); assert( it != meoTop.end() ); *this = meeNoTop[*this]; return ( it!=meoTop.end() ) ? it->second : '?'; }
 };
 map<EVar,char> EVar::meoTop;
 map<EVar,char> EVar::meoBot;
@@ -344,7 +353,17 @@ typedef Delimited<int> D;
 
 #ifdef DENSE_VECTORS
 
-typedef DelimitedCol<psLBrack, double, psComma, 20, psRBrack> KVec;
+class KVec : public DelimitedCol<psLBrack, double, psComma, 20, psRBrack> {
+  public:
+    KVec ( ) { }
+    KVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, 20, psRBrack>(kv) { }
+    KVec& add( const KVec& kv ) { *this += kv; return *this; }
+};
+const KVec kvTop   ( arma::ones<Col<double>>(20)  );
+const KVec kvBot   ( arma::zeros<Col<double>>(20) );
+const KVec kvDitto ( arma::randn<Col<double>>(20) );
+
+////////////////////////////////////////////////////////////////////////////////
 
 class EMat {
   map<XVar,KVec> mxv;
@@ -395,6 +414,12 @@ class OFunc {
     }
 };
 
+#else
+
+#include<KSet.hpp>
+
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 
 class HVec : public DelimitedVector<psX,KVec,psX,psX> {
@@ -403,29 +428,25 @@ class HVec : public DelimitedVector<psX,KVec,psX,psX> {
   static const HVec hvDitto;
 
   // Constructors...
-  HVec ( )       : DelimitedVector<psX,KVec,psX,psX>() { }
-  HVec ( int i ) : DelimitedVector<psX,KVec,psX,psX>( i ) { }
-  HVec ( const KVec& kv ) : DelimitedVector<psX,KVec,psX,psX>( 1 ) {
-    at(0) = kv;
-  }
+  HVec ( )                                             : DelimitedVector<psX,KVec,psX,psX>()                            {             }
+  HVec ( int i )                                       : DelimitedVector<psX,KVec,psX,psX>( i )                         {             }
+  HVec ( const KVec& kv )                              : DelimitedVector<psX,KVec,psX,psX>( 1 )                         { at(0) = kv; }
   HVec ( K k, const EMat& matE, const OFunc& funcO )   : DelimitedVector<psX,KVec,psX,psX>( k.getCat().getSynArgs()+1 ) {
     int dir = k.getDir();
     at(0) = (dir) ? funcO( dir, matE( k.getXVar() ) ) : matE( k.getXVar() );
     for( unsigned int arg=1; arg<k.getCat().getSynArgs()+1; arg++ )
       at(arg) = funcO(arg, at(0));
   }
-//  HVec& operator+= ( const HVec& hv ) {
   HVec& add( const HVec& hv ) {
-    for( unsigned int arg=0; arg<size() and arg<hv.size(); arg++ ) at(arg) += hv.at(arg);
+    for( unsigned int arg=0; arg<size() and arg<hv.size(); arg++ ) at(arg).add( hv.at(arg) );
     return *this;
   }
-//  HVec& operator+= ( const Redirect& r ) {
   HVec& addSynArg( int iDir, const HVec& hv ) {
     if     ( iDir == 0                ) add( hv );
     else if( iDir < 0 and 0<hv.size() ) { if( -iDir>=int(size()) ) resize( -iDir + 1 );
-                                          at(-iDir) += hv.at( 0  ); }
+                                          at(-iDir).add( hv.at( 0  ) ); }
     else if( iDir<int(hv.size())      ) { if( 0>=size() ) resize( 1 );
-                                          at( 0   ) += hv.at(iDir); }
+                                          at( 0   ).add( hv.at(iDir) ); }
     return *this;
   }
   HVec& swap( int i, int j ) {
@@ -435,18 +456,12 @@ class HVec : public DelimitedVector<psX,KVec,psX,psX> {
   }
   HVec& applyUnariesTopDn( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
   HVec& applyUnariesBotUp( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
-  bool isDitto ( ) const { return ( *this == hvDitto /*HVec(KVec(arma::ones<Col<double>>(20)))*/ ); }
+  bool isDitto ( ) const { return ( *this == hvDitto ); }
 };
 
-const HVec hvTop   = HVec(KVec(arma::ones<Col<double>>(20)));
-const HVec hvBot   = HVec(KVec(arma::zeros<Col<double>>(20)));
-const HVec HVec::hvDitto( KVec(arma::randn<Col<double>>(20)) );
-
-#else
-
-#include<KSet.hpp>
-
-#endif
+const HVec hvTop( kvTop );
+const HVec hvBot( kvBot );
+const HVec HVec::hvDitto( kvDitto );
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -503,14 +518,18 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     int nNewCarriers = 0;
     for( int i=qPrev.size()-1; i>=-1; i-- ) {
       CVar cI = (i>-1) ? qPrev[i].getCat() : cTop;
-      N nP=cCurrP.getLastNonlocal(); if( i>-1 and                  nP!=N_NONE && qPrev[i].getCat()==nP                      ) { viCarrierP.push_back(i);  cCurrP=cCurrP.withoutLastNolo(); }
-                                     if(                           nP!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nP) ) { viCarrierP.push_back(-1); cCurrP=cCurrP.withoutLastNolo(); nNewCarriers++; }
-      N nL=cCurrL.getLastNonlocal(); if( i>-1 and i<iLowerA     && nL!=N_NONE && qPrev[i].getCat()==nL                      ) { viCarrierL.push_back(i);  cCurrL=cCurrL.withoutLastNolo(); }
-                                     if(          i<iLowerA     && nL!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nL) ) { viCarrierL.push_back(-1); cCurrL=cCurrL.withoutLastNolo(); nNewCarriers++; }
-      N nA=cCurrA.getLastNonlocal(); if( i>-1 and i<iLowerA     && nA!=N_NONE && qPrev[i].getCat()==nA                      ) { viCarrierA.push_back(i);  cCurrA=cCurrA.withoutLastNolo(); }
-                                     if(          i<iLowerA     && nA!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nA) ) { viCarrierA.push_back(-1); cCurrA=cCurrA.withoutLastNolo(); nNewCarriers++; }
-      N nB=cCurrB.getLastNonlocal(); if( i>-1 and i<iAncestorB  && nB!=N_NONE && qPrev[i].getCat()==nB                      ) { viCarrierB.push_back(i);  cCurrB=cCurrB.withoutLastNolo(); }
-                                     if(          i<=iAncestorB && nB!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nB) ) { viCarrierB.push_back(-1); cCurrB=cCurrB.withoutLastNolo(); nNewCarriers++; }
+      N nP=cCurrP.getLastNonlocal();
+      if( i>-1 and                  nP!=N_NONE && qPrev[i].getCat()==nP                      ) { viCarrierP.push_back(i);  cCurrP=cCurrP.withoutLastNolo(); }
+      if(                           nP!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nP) ) { viCarrierP.push_back(-1); cCurrP=cCurrP.withoutLastNolo(); nNewCarriers++; }
+      N nL=cCurrL.getLastNonlocal();
+      if( i>-1 and i<iLowerA     && nL!=N_NONE && qPrev[i].getCat()==nL                      ) { viCarrierL.push_back(i);  cCurrL=cCurrL.withoutLastNolo(); }
+      if(          i<iLowerA     && nL!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nL) ) { viCarrierL.push_back(-1); cCurrL=cCurrL.withoutLastNolo(); nNewCarriers++; }
+      N nA=cCurrA.getLastNonlocal();
+      if( i>-1 and i<iLowerA     && nA!=N_NONE && qPrev[i].getCat()==nA                      ) { viCarrierA.push_back(i);  cCurrA=cCurrA.withoutLastNolo(); }
+      if(          i<iLowerA     && nA!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nA) ) { viCarrierA.push_back(-1); cCurrA=cCurrA.withoutLastNolo(); nNewCarriers++; }
+      N nB=cCurrB.getLastNonlocal();
+      if( i>-1 and i<iAncestorB  && nB!=N_NONE && qPrev[i].getCat()==nB                      ) { viCarrierB.push_back(i);  cCurrB=cCurrB.withoutLastNolo(); }
+      if(          i<=iAncestorB && nB!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nB) ) { viCarrierB.push_back(-1); cCurrB=cCurrB.withoutLastNolo(); nNewCarriers++; }
     }
 
     //cout<<" viCarrierP="; for( int i : viCarrierP ) cout<<" "<<i; cout<<endl;
@@ -542,10 +561,10 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     for( int i=0; i<((f==0&&j==1)?iAncestorB:(f==0&&j==0)?iLowerA:(f==1&&j==1)?iAncestorB:iAncestorB+1); i++ ) {
       Sign& s = *emplace( end() ) = qPrev[i];
       if( i==iAncestorA and j==1 and qPrev[i].isDitto() and opR!='I' )            { s.setHVec() = hvParent; } 
-      else if( viCarrierP.size()>0 and i==viCarrierP.back() and evF.top()!='\0' ) { viCarrierP.pop_back();
+      else if( viCarrierP.size()>0 and i==viCarrierP.back() and evF!=EVar::eNil ) { viCarrierP.pop_back();
                                                                                     s.setHVec() = HVec( s.getCat().getSynArgs()+1 );
                                                                                     s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() ); }
-      else if( viCarrierA.size()>0 and i==viCarrierA.back() and evJ.top()!='\0' ) { viCarrierA.pop_back();
+      else if( viCarrierA.size()>0 and i==viCarrierA.back() and evJ!=EVar::eNil ) { viCarrierA.pop_back();
                                                                                     s.setHVec() = HVec( s.getCat().getSynArgs()+1 );
                                                                                     s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent ); }
       else                                                                        { s = qPrev[i]; }
@@ -556,14 +575,14 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     if( j==0 ) {
       // Add A carriers...
       cCurrP = aPretrm.getCat();  cCurrA = cA;
-      for( int i : viCarrierP ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierP for "<<cCurrP.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
-                                              Sign& s = *emplace( end() ) = Sign( HVec(1), cCurrP.getFirstNonlocal(), S_B );
-                                              s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() );
-                                              cCurrP=cCurrP.withoutFirstNolo(); }
-      for( int i : viCarrierA ) if( i==-1 ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierA for "<<cCurrA.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
-                                              Sign& s = *emplace( end() ) = Sign( HVec(1), cCurrA.getFirstNonlocal(), S_B );
-                                              s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent );
-                                              cCurrA=cCurrA.withoutFirstNolo(); }
+      for( int i : viCarrierP ) if( i==-1 and evF!=EVar::eNil ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierP for "<<cCurrP.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
+                                                                  Sign& s = *emplace( end() ) = Sign( HVec(1), cCurrP.getFirstNonlocal(), S_B );
+                                                                  s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() );
+                                                                  cCurrP=cCurrP.withoutFirstNolo(); }
+      for( int i : viCarrierA ) if( i==-1 and evJ!=EVar::eNil ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierA for "<<cCurrA.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
+                                                                  Sign& s = *emplace( end() ) = Sign( HVec(1), cCurrA.getFirstNonlocal(), S_B );
+                                                                  s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent );
+                                                                  cCurrA=cCurrA.withoutFirstNolo(); }
       // Add lowest A...
       *emplace( end() ) = Sign( (opR=='I') ? HVec::hvDitto /*HVec(KVec(arma::ones(20)))*/ : hvParent, cA, S_A );
       iLowerA = size()-1;
@@ -597,7 +616,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
         // If existing left carrier, integrate with sign...
         if( viCarrierL[0]!=-1 ) s.setHVec().add( qPrev.at(viCarrierL[0]).getHVec() );
         // If extraction...
-        if( evF.top()!='\0' )   s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() );
+        if( evF!=EVar::eNil )   s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() );
       }
     }
     // Add lowest B...
@@ -656,19 +675,23 @@ LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign
     int         iAncestorB = qPrev.getAncestorBIndex(f);
     CVar        cCurrB     = qPrev.at(iAncestorB).getCat();
     vector<int> viCarrierB;  viCarrierB.reserve(4);
-    for( int i=qPrev.size(); i>=-1; i-- ) {
-      N nB=cCurrB.getLastNonlocal(); if( i>-1 && i<iAncestorB  && nB!=N_NONE && qPrev[i].getCat()==nB                  ) { viCarrierB.push_back(i);  cCurrB=cCurrB.withoutLastNolo(); }
-                                     if(         i<=iAncestorB && nB!=N_NONE && !qPrev[i].getCat().isCarrier() && !qPrev[i].getCat().containsCarrier(nB) ) { viCarrierB.push_back(-1); cCurrB=cCurrB.withoutLastNolo(); }
+    for( int i=qPrev.size()-1; i>=-1; i-- ) {
+      N nB=cCurrB.getLastNonlocal();
+      if( i>-1 && i<iAncestorB  && nB!=N_NONE && qPrev[i].getCat()==nB                                                               ) { viCarrierB.push_back(i);  cCurrB=cCurrB.withoutLastNolo(); }
+      if(         i<=iAncestorB && nB!=N_NONE && (i<0 || (!qPrev[i].getCat().isCarrier() && !qPrev[i].getCat().containsCarrier(nB))) ) { viCarrierB.push_back(-1); cCurrB=cCurrB.withoutLastNolo(); }
     }
     //cout<<" viCarrierB="; for( int i : viCarrierB ) cout<<" "<<i; cout<<endl;
     const Sign& aAncestorA = qPrev.at( qPrev.getAncestorAIndex(1) );
     const Sign& aAncestorB = qPrev.at( qPrev.getAncestorBIndex(1) );
 //    const KSet& ksExtrtn   = (iCarrierB<0) ? KSet() : qPrev.at(iCarrierB).getKSet();
     setSide() = S_A;
-    if( f==1 )                          { setCat() = aPretrm.getCat();     setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
-    else if( qPrev.size()<=0 )          { *this = StoreState::aTop; }
-    else if( not aAncestorA.isDitto() ) { setCat() = aAncestorA.getCat();  setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aAncestorA.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
-    else                                { setCat() = aAncestorA.getCat();  setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ).add( aAncestorB.getHVec() ); }
+    if( f==1 )                       { setCat()  = aPretrm.getCat();
+                                       setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
+    else if( qPrev.size()<=0 )       { *this = StoreState::aTop; }
+    else if( !aAncestorA.isDitto() ) { setCat()  = aAncestorA.getCat();
+                                       setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aAncestorA.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
+    else                             { setCat()  = aAncestorA.getCat();
+                                       setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ).add( aAncestorB.getHVec() ); }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -759,7 +782,7 @@ class AModel : public map<APredictorVec,map<A,double>> {
     // Process A lines in stream...
     while( is.peek()=='A' ) {
       APredictorVec apv;  A a;
-      is >> "P " >> apv >> " : " >> a >> " = ";
+      is >> "A " >> apv >> " : " >> a >> " = ";
       is >> (*this)[apv][a] >> "\n"; 
     }
   }
@@ -807,11 +830,11 @@ class NPredictorVec {
 
     //constructor
     template<class LM>
-    NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss ) {
+    NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss ) : mdist(antdist), mnpreds() {
 //      //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
 //      //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
 //
-//      mdist = antdist;
+// //     mdist = antdist;
 //      mnpreds.emplace_back( lm.getPredictorIndex( "bias" ) ); //add bias term
 //
 //      const HVec& hvB = ss.at(ss.size()-1).getHVec(); //contexts of lowest b (bdbar)
@@ -999,7 +1022,6 @@ class FModel {
         F f; Delimited<EVar> e; Delimited<K> k;         is >> "f" >> f >> "&" >> e >> "&" >> k >> " = ";  prw.second() = getResponseIndex( f, e, k );
         Delimited<double> w;                            is >> w >> "\n";                                  prw.third()  = w;
       }
-
       if( l.size()==0 ) cerr << "ERROR: No F items found." << endl;
       matF.zeros ( mifek.size(), iNextPredictor );
       for( auto& prw : l ) { matF( prw.second(), prw.first() ) = prw.third(); }
@@ -1038,6 +1060,8 @@ class FModel {
     }
 
     const FEK& getFEK( unsigned int i ) const {
+      auto it = mifek.find( i );
+      assert( it != mifek.end() );
       return mifek.find( i )->second;
     }
 
@@ -1124,10 +1148,13 @@ class JModel {
     map<JEOO,unsigned int> mjeooi;               // response indices
     map<unsigned int,JEOO> mijeoo;
 
+    unsigned int jr0;
+    unsigned int jr1;
+
   public:
 
-    JModel( ) { }
-    JModel( istream& is ) {
+    JModel( )             : jr0(getResponseIndex(0,EVar::eNil,O_N,O_I)), jr1(getResponseIndex(1,EVar::eNil,O_N,O_I)) { }
+    JModel( istream& is ) : jr0(getResponseIndex(0,EVar::eNil,O_N,O_I)), jr1(getResponseIndex(1,EVar::eNil,O_N,O_I)) {
       list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
       while( is.peek()=='J' ) {
         auto& prw = *l.emplace( l.end() );
@@ -1141,11 +1168,13 @@ class JModel {
         J j; Delimited<EVar> e; O oL,oR;                is >> "j" >> j >> "&" >> e >> "&" >> oL >> "&" >> oR >> " = ";  prw.second() = getResponseIndex( j, e, oL, oR );
         Delimited<double> w;                            is >> w >> "\n";                                                prw.third()  = w;
       }
-
       if( l.size()==0 ) cerr << "ERROR: No J items found." << endl;
       matJ.zeros ( mijeoo.size(), iNextPredictor );
       for( auto& prw : l ) { matJ( prw.second(), prw.first() ) = prw.third(); }
     }
+
+    unsigned int getResponse0( ) const { return jr0; }
+    unsigned int getResponse1( ) const { return jr1; }
 
     unsigned int getPredictorIndex( const string& s ) {
       const auto& it = msi.find( s );  if( it != msi.end() ) return( it->second );
@@ -1176,11 +1205,13 @@ class JModel {
       mjeooi[ JEOO(j,e,oL,oR) ] = iNextResponse;  mijeoo[ iNextResponse ] = JEOO(j,e,oL,oR);  return( iNextResponse++ );
     }
     unsigned int getResponseIndex( J j, EVar e, O oL, O oR ) const {           // const version with closed predictor domain
-      const auto& it = mjeooi.find( JEOO(j,e,oL,oR) );  return( ( it != mjeooi.end() ) ? it->second : uint(-1) );
+      const auto& it = mjeooi.find( JEOO(j,e,oL,oR) );  assert( it != mjeooi.end() );  return( ( it != mjeooi.end() ) ? it->second : uint(-1) );
     }
 
     const JEOO& getJEOO( unsigned int i ) const {
-      return mijeoo.find( i )->second;
+      auto it = mijeoo.find( i );
+      assert( it != mijeoo.end() );
+      return it->second;
     }
 
     arma::vec calcResponses( const JPredictorVec& ljpredictors ) const {
