@@ -111,6 +111,9 @@ GIGAWORD-SCRIPTS := $(RESOURCE-GIGAWORD)/scripts
 RESOURCE-GLOVE := $(abspath $(MBDIR)/resource-glove)
 GLOVE-SCRIPTS := $(RESOURCE-GLOVE)/scripts
 
+RESOURCE-HUTH := $(abspath $(MBDIR)/resource-huth)
+HUTH-SCRIPTS := $(RESOURCE-HUTH)/scripts
+
 RESOURCE-WILLIAMS := $(abspath $(MBDIR)/resource-williams)
 WILLIAMS-SCRIPTS := $(RESOURCE-WILLIAMS)/scripts
 
@@ -209,6 +212,7 @@ include $(RESOURCE-BNC)/Makefile
 include $(RESOURCE-TREEBANK)/Makefile
 include $(RESOURCE-GIGAWORD)/Makefile
 include $(RESOURCE-GLOVE)/Makefile
+include $(RESOURCE-HUTH)/Makefile
 include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
