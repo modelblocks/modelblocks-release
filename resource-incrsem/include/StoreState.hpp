@@ -571,6 +571,8 @@ class DerivationFragment : public DelimitedPair<psX,ApexWithCarriers,psX,BaseWit
 class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
  public:
 
+  static const Sign aTop;
+
   StoreState ( ) : DelimitedVector<psX,DerivationFragment,psX,psX> ( ) { } 
   StoreState ( const StoreState& qPrev, F f, J j, EVar evF, EVar evJ, O opL, O opR, CVar cA, CVar cB, const Sign& aPretrm, const LeftChildSign& aLchild ) {
     // Terminal match and nonterminal match...
@@ -637,6 +639,8 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
     }
   }
 
+  unsigned int getDepth( ) const { return size(); }
+
   DerivationFragment&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
   const DerivationFragment& back ( unsigned int i = 0 ) const { return at( size() - 1 - i ); }
 
@@ -645,21 +649,30 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
   const Sign& getBase (        unsigned int iDepthBack = 0                     ) const {  return back( iDepthBack ).base().back();            }
   const Sign& getBaseCarrier ( unsigned int iDepthBack, unsigned int iCarrBack ) const {  return back( iDepthBack ).base().back( iCarrBack ); }
 
-  Sign& setNoloBack ( unsigned int iCarrBack ) {                     // NOTE: getNoloBack(0) is most recent nonlocal dep; i.e. furthest left.
+  Sign& setNoloBack ( unsigned int iCarrBack = 0 ) {                 // NOTE: getNoloBack(0) is most recent nonlocal dep; i.e. furthest left.
     // Count down from bottom...         // Count back from end...                 // Decrement counter and if finished, report...
     for( unsigned int d=size(); --d; ) { for( unsigned int i=at(d).base().size(); --i; )  if( iCarrBack-- == 0 ) return( at(d).base().at(i) );
                                          for( unsigned int i=at(d).apex().size(); --i; )  if( iCarrBack-- == 0 ) return( at(d).apex().at(i) ); }
+    assert( false );
+    return( aTop );
   }
-  const Sign& getNoloBack ( unsigned int iCarrBack ) const {         // NOTE: getNoloBack(0) is most recent nonlocal dep; i.e. furthest left.
+  const Sign& getNoloBack ( unsigned int iCarrBack = 0 ) const {     // NOTE: getNoloBack(0) is most recent nonlocal dep; i.e. furthest left.
     // Count down from bottom...         // Count back from end...                 // Decrement counter and if finished, report...
     for( unsigned int d=size(); --d; ) { for( unsigned int i=at(d).base().size(); --i; )  if( iCarrBack-- == 0 ) return( at(d).base().at(i) );
                                          for( unsigned int i=at(d).apex().size(); --i; )  if( iCarrBack-- == 0 ) return( at(d).apex().at(i) ); }
+    return( aTop );
   }
 
   void applyUnariesTopDn( HVec& hv, EVar e ) {
     for( unsigned int iBack = 0; e != EVar::eNil; e = e.withoutTop() ) {       // From top down, extract most recent nolos first...
       if( e.top() == 'O' or e.top() == 'V' ) hv.swap( 1, 2 );
       else { hv.addSynArg( getDir(e.top()), getNoloBack(iBack).getHVec() ); setNoloBack(iBack++).setHVec().addSynArg( -getDir(e.top()), hv ); }
+    }
+  }
+  void applyUnariesBotUp( HVec& hv, EVar e ) const {                           // From bottom up, extract least recent nolos first...
+    for( unsigned int iBack = e.getNoloArity(); e != EVar::eNil; e = e.withoutBot() ) {
+      if( e.bot() == 'O' or e.bot() == 'V' ) hv.swap( 1, 2 );
+      else                                   hv.addSynArg( getDir(e.bot()), getNoloBack(iBack).getHVec() );
     }
   }
   void applyUnariesBotUp( HVec& hv, EVar e ) {                                 // From bottom up, extract least recent nolos first...
@@ -669,6 +682,38 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
     }
   }
 };
+const Sign StoreState::aTop( hvTop, cTop, S_B );
+
+////////////////////////////////////////////////////////////////////////////////
+
+LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm ) {
+/*
+//    int         iCarrierB  = qPrev.getAncestorBCarrierIndex( 1 );
+    int         iAncestorB = qPrev.getAncestorBIndex(f);
+    CVar        cCurrB     = qPrev.at(iAncestorB).getCat();
+    vector<int> viCarrierB;  viCarrierB.reserve(4);
+    for( int i=qPrev.size()-1; i>=-1; i-- ) {
+      N nB=cCurrB.getLastNonlocal();
+      if( i>-1 && i<iAncestorB  && nB!=N_NONE && qPrev[i].getCat()==nB                                                               ) { viCarrierB.push_back(i);  cCurrB=cCurrB.withoutLastNolo(); }
+      if(         i<=iAncestorB && nB!=N_NONE && (i<0 || (!qPrev[i].getCat().isCarrier() && !qPrev[i].getCat().containsCarrier(nB))) ) { viCarrierB.push_back(-1); cCurrB=cCurrB.withoutLastNolo(); }
+    }
+    //cout<<" viCarrierB="; for( int i : viCarrierB ) cout<<" "<<i; cout<<endl;
+    const Sign& aAncestorA = qPrev.at( qPrev.getAncestorAIndex(1) );
+    const Sign& aAncestorB = qPrev.at( qPrev.getAncestorBIndex(1) );
+//    const KSet& ksExtrtn   = (iCarrierB<0) ? KSet() : qPrev.at(iCarrierB).getKSet();
+*/
+
+    setSide() = S_A;
+    if( f==1 )                             { setCat()  = aPretrm.getCat();
+                                             setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ); qPrev.applyUnariesBotUp( setHVec(), eF ); }
+    else if( qPrev.size()<=0 )             { *this = StoreState::aTop; }
+    else if( !qPrev.getApex(1).isDitto() ) { setCat()  = qPrev.getApex(1).getCat();
+                                             setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( qPrev.getApex(1).getHVec() ); qPrev.applyUnariesBotUp( setHVec(), eF ); }
+    else                                   { setCat()  = qPrev.getApex(1).getCat();
+                                             setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ); qPrev.applyUnariesBotUp( setHVec(), eF ); setHVec().add( qPrev.getBase(1).getHVec() ); }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 void ApexWithCarriers::set ( const StoreState& ss, const ApexWithCarriers& awc, EVar evJ, O opL, O opR, CVar cA, const LeftChildSign& aLchild ) {
 //    unsigned int iBack = ;
@@ -702,7 +747,10 @@ void BaseWithCarriers::set ( const StoreState& ss, const BaseWithCarriers& bwc, 
     *emplace( end() ) = Sign( HVec(), cB, S_B );
     //    b.setHVec().addSynArg( getDir(opR), aParent.getHVec() );
 }
+
 #else
+
+////////////////////////////////////////////////////////////////////////////////
 
 class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format can't be read in bc of internal psX delimicer, but we don't need to.
  public:
@@ -886,8 +934,6 @@ HVec& HVec::applyUnariesBotUp( EVar e, const vector<int>& viCarrierIndices, cons
   return *this;
 }
 
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
 
 LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm ) {
@@ -913,6 +959,8 @@ LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign
     else                             { setCat()  = aAncestorA.getCat();
                                        setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ).add( aAncestorB.getHVec() ); }
 }
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -962,7 +1010,11 @@ class PPredictorVec : public DelimitedQuint<psX,D,psSpace,F,psSpace,Delimited<EV
  public:
   PPredictorVec ( ) { }
   PPredictorVec ( F f, EVar e, K k_p_t, const StoreState& ss ) :
+#ifdef SIMPLE_STORE
+    DelimitedQuint<psX,D,psSpace,F,psSpace,Delimited<EVar>,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth(), f, e, ss.getBase().getCat(), k_p_t.getCat() ) { }
+#else
     DelimitedQuint<psX,D,psSpace,F,psSpace,Delimited<EVar>,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth(), f, e, ss.at(ss.size()-1).getCat(), k_p_t.getCat() ) { }
+#endif
 };
 
 class PModel : public map<PPredictorVec,map<P,double>> {
@@ -990,7 +1042,11 @@ class APredictorVec : public DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Del
   APredictorVec ( D d, F f, J j, EVar e, O o, CVar cP, CVar cL ) :
     DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( d, f, j, e, o, cP, cL ) { }
   APredictorVec ( F f, J j, EVar eF, EVar eJ, O opL, const LeftChildSign& aLchild, const StoreState& ss ) :
+#ifdef SIMPLE_STORE
+    DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()+f-j, f, j, eJ, opL, ss.getBase(f).getCat(), (j==0) ? aLchild.getCat() : cBot ) { } 
+#else
     DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()+f-j, f, j, eJ, opL, ss.at(ss.getAncestorBIndex(f)).getCat(), (j==0) ? aLchild.getCat() : cBot ) { } 
+#endif
 };
 
 class AModel : public map<APredictorVec,map<A,double>> {

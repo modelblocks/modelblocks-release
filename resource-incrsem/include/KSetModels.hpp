@@ -40,7 +40,11 @@ class NPredictorVec {
 //      mdist = antdist;
       mnpreds.emplace_back( lm.getPredictorIndex( "bias" ) ); //add bias term
 
+#ifdef SIMPLE_STORE
+      const HVec& hvB = ss.getBase().getHVec(); //contexts of lowest b (bdbar)
+#else
       const HVec& hvB = ss.at(ss.size()-1).getHVec(); //contexts of lowest b (bdbar)
+#endif
       for( unsigned int iA=0; iA<candidate.getHVec().size(); iA++ )  for( auto& antk : candidate.getHVec()[iA] ) {
         mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), kNil ) ); //add unary antecedent k feat, using kxk template
         for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
@@ -52,8 +56,13 @@ class NPredictorVec {
       }
 
       mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), N_NONE                      ) ); // antecedent CVar
+#ifdef SIMPLE_STORE
+      mnpreds.emplace_back( lm.getPredictorIndex( N_NONE,             ss.getBase().getCat() ) ); // ancestor CVar
+      mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), ss.getBase().getCat() ) ); // pairwise T
+#else
       mnpreds.emplace_back( lm.getPredictorIndex( N_NONE,             ss.at(ss.size()-1).getCat() ) ); // ancestor CVar
       mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), ss.at(ss.size()-1).getCat() ) ); // pairwise T
+#endif
 
       //corefON feature
       if (bcorefON == true) {
@@ -170,11 +179,20 @@ class FPredictorVec : public list<unsigned int> {
     template<class FM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
     FPredictorVec( FM& fm, const HVec& hvAnt, bool nullAnt, const StoreState& ss ) {
       int d = (FEATCONFIG & 1) ? 0 : ss.getDepth(); // max used depth - (dbar)
+#ifdef SIMPLE_STORE
+      const HVec& hvB = ( ss.getBase().getHVec().size() > 0 ) ? ss.getBase().getHVec() : hvBot; //contexts of lowest b (bdbar)
+      const HVec& hvF = ss.getNoloBack().getHVec();
+#else
       const HVec& hvB = ( ss.at(ss.size()-1).getHVec().size() > 0 ) ? ss.at(ss.size()-1).getHVec() : hvBot; //contexts of lowest b (bdbar)
       int iCarrier = ss.getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
       const HVec& hvF = ( iCarrier >= 0 ) ? ss.at(iCarrier).getHVec() : HVec();
+#endif
       emplace_back( fm.getPredictorIndex( "Bias" ) );  // add bias
+#ifdef SIMPLE_STORE
+      if( STORESTATE_TYPE ) emplace_back( fm.getPredictorIndex( d, ss.getBase().getCat() ) ); 
+#else
       if( STORESTATE_TYPE ) emplace_back( fm.getPredictorIndex( d, ss.at(ss.size()-1).getCat() ) ); 
+#endif
       if( !(FEATCONFIG & 2) ) {
         for( uint iB=0; iB<hvB.size();   iB++ )  for( auto& kB : hvB[iB] )   emplace_back( fm.getPredictorIndex( d, kNil,            kB.project(-iB), kNil ) );
         for( uint iF=0; iF<hvF.size();   iF++ )  for( auto& kF : hvF[iF] )   emplace_back( fm.getPredictorIndex( d, kF.project(-iF), kNil,            kNil ) );
@@ -311,10 +329,18 @@ class JPredictorVec : public list<unsigned int> {
     template<class JM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
     JPredictorVec( JM& jm, F f, EVar eF, const LeftChildSign& aLchild, const StoreState& ss ) {
       int d = (FEATCONFIG & 1) ? 0 : ss.getDepth()+f;
-      int iCarrierB = ss.getAncestorBCarrierIndex( f );
+#ifdef SIMPLE_STORE
+      const Sign& aAncstr  = ss.getBase(f);
+#else
       const Sign& aAncstr  = ss.at( ss.getAncestorBIndex(f) );
+#endif
       const HVec& hvAncstr = ( aAncstr.getHVec().size()==0 ) ? hvBot : aAncstr.getHVec();
+#ifdef SIMPLE_STORE
+      const HVec& hvFiller = ss.getNoloBack().getHVec();
+#else
+      int iCarrierB = ss.getAncestorBCarrierIndex( f );
       const HVec& hvFiller = ( iCarrierB<0                 ) ? hvBot : ss.at( iCarrierB ).getHVec();
+#endif
       const HVec& hvLchild = ( aLchild.getHVec().size()==0 ) ? hvBot : aLchild.getHVec() ;
       emplace_back( jm.getPredictorIndex( "Bias" ) );  // add bias
       if( STORESTATE_TYPE ) emplace_back( jm.getPredictorIndex( d, aAncstr.getCat(), aLchild. getCat() ) );
