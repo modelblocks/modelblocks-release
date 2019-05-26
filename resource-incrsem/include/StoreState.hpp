@@ -572,11 +572,12 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
  public:
 
   static const Sign aTop;
+  static       Sign aDummy;  // for set, to compile
 
   StoreState ( ) : DelimitedVector<psX,DerivationFragment,psX,psX> ( ) { } 
   StoreState ( const StoreState& qPrev, F f, J j, EVar evF, EVar evJ, O opL, O opR, CVar cA, CVar cB, const Sign& aPretrm, const LeftChildSign& aLchild ) {
     // Terminal match and nonterminal match...
-    if( not f and j ) {
+    if( f==0 and j==1 ) {
       reserve( qPrev.size()-1 );
       insert( end(), qPrev.begin(), qPrev.end()-2 );                                     // Copy fragments to d-2
       emplace( end() )->apex() = qPrev.back(1).apex();                                   // Copy apex at d-1.
@@ -588,9 +589,10 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       back().base().back().setHVec().addSynArg( getDir(opR), hvParent );                                               // Calc base contexts.
       if( opL=='G' or opR=='R' ) back().base().back(1).setHVec().add( aLchild.getHVec() );
       if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( back().base().back(1).getHVec() );
+      if( getApex().isDitto() and opR!='I' ) setApex().setHVec() = qPrev.getBase().getHVec();                            // If base != apex, end ditto.
     }
     // Terminal match and nonterminal non-match...
-    else if( not f and not j ) {
+    else if( f==0 and j==0 ) {
       reserve( qPrev.size() );
       insert( end(), qPrev.begin(), qPrev.end()-1 );                                     // Copy fragments to d-1.
       emplace( end() );                                                                  // Add depth level d.
@@ -605,9 +607,10 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       back().base().back().setHVec().addSynArg( getDir(opR), hvParent );                                               // Calc base contexts.
       if( opL=='G' or opR=='R' ) back().base().back(1).setHVec().add( aLchild.getHVec() );
       if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( back().base().back(1).getHVec() );
+      if( opR=='I' ) setApex().setHVec() = HVec::hvDitto;                                                              // Init ditto.
     }
     // Terminal non-match and nonterminal match...
-    else if( f and j ) {
+    else if( f==1 and j==1 ) {
       reserve( qPrev.size() );
       insert( end(), qPrev.begin(), qPrev.end()-1 );                                     // Copy fragments to d-1
       emplace( end() )->apex() = qPrev.back().apex();                                    // Copy apex at d.
@@ -619,9 +622,10 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       back().base().back().setHVec().addSynArg( getDir(opR), hvParent );                                               // Calc base contexts.
       if( opL=='G' or opR=='R' ) back().base().back(1).setHVec().add( aLchild.getHVec() );
       if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( back().base().back(1).getHVec() );
+      if( getApex().isDitto() and opR!='I' ) setApex().setHVec() = qPrev.getBase().getHVec();                            // If base != apex, end ditto.
     }
     // Terminal non-match and nonterminal non-match...
-    else if( f and not j ) {
+    else if( f==1 and j==0 ) {
       reserve( qPrev.size()+1 );
       insert( end(), qPrev.begin(), qPrev.end() );                                       // Copy fragments to d.
       emplace( end() );                                                                  // Add depth level d+1.
@@ -636,6 +640,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       back().base().back().setHVec().addSynArg( getDir(opR), hvParent );                                               // Calc base contexts.
       if( opL=='G' or opR=='R' ) back().base().back(1).setHVec().add( aLchild.getHVec() );
       if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( back().base().back(1).getHVec() );
+      if( opR=='I' ) setApex().setHVec() = HVec::hvDitto;                                                              // Init ditto.
     }
   }
 
@@ -644,6 +649,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
   DerivationFragment&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
   const DerivationFragment& back ( unsigned int i = 0 ) const { return at( size() - 1 - i ); }
 
+  Sign&       setApex (        unsigned int iDepthBack = 0                     )       {  return back( iDepthBack ).apex().back();            }
   const Sign& getApex (        unsigned int iDepthBack = 0                     ) const {  return back( iDepthBack ).apex().back();            }
   const Sign& getApexCarrier ( unsigned int iDepthBack, unsigned int iCarrBack ) const {  return back( iDepthBack ).apex().back( iCarrBack ); }
   const Sign& getBase (        unsigned int iDepthBack = 0                     ) const {  return back( iDepthBack ).base().back();            }
@@ -654,7 +660,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
     for( unsigned int d=size(); --d; ) { for( unsigned int i=at(d).base().size(); --i; )  if( iCarrBack-- == 0 ) return( at(d).base().at(i) );
                                          for( unsigned int i=at(d).apex().size(); --i; )  if( iCarrBack-- == 0 ) return( at(d).apex().at(i) ); }
     assert( false );
-    return( aTop );
+    return( aDummy );
   }
   const Sign& getNoloBack ( unsigned int iCarrBack = 0 ) const {     // NOTE: getNoloBack(0) is most recent nonlocal dep; i.e. furthest left.
     // Count down from bottom...         // Count back from end...                 // Decrement counter and if finished, report...
@@ -683,6 +689,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
   }
 };
 const Sign StoreState::aTop( hvTop, cTop, S_B );
+Sign       StoreState::aDummy( hvTop, cTop, S_B );
 
 ////////////////////////////////////////////////////////////////////////////////
 
