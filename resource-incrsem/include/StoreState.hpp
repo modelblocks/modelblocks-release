@@ -28,22 +28,12 @@ char psRBrack[] = "]";
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int getDir ( char cOp ) {
-  return (cOp>='0' && cOp<='9')             ? cOp-'0' :  // (numbered argument)
-         (cOp=='M' || cOp=='U')             ? -1      :  // (modifier)
-         (cOp=='u')                         ? -2      :  // (auxiliary w arity 2)
-         (cOp=='I' || cOp=='C' || cOp=='V') ? 0       :  // (identity)
-                                              -10;       // (will not map)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 typedef Delimited<int>  D;  // depth
 typedef Delimited<int>  F;  // fork decision
 typedef Delimited<int>  J;  // join decision
 typedef Delimited<char> O;  // composition operation
 const O O_N("N");
-const O O_I("I");
+const O O_I(".");
 typedef Delimited<char> S;  // side (A,B)
 const S S_A("/");
 const S S_B(";");
@@ -53,6 +43,16 @@ typedef Delimited<DiscreteDomainRV<int,domAdHoc>> AdHocFeature;
 const AdHocFeature corefON("acorefON");
 const AdHocFeature corefOFF("acorefOFF");
 const AdHocFeature bias("abias");
+
+////////////////////////////////////////////////////////////////////////////////
+
+int getDir ( O cOp ) {
+  return (cOp>='0' && cOp<='9')             ? cOp-'0' :  // (numbered argument)
+         (cOp=='M' || cOp=='U')             ? -1      :  // (modifier)
+         (cOp=='u')                         ? -2      :  // (auxiliary w arity 2)
+         (cOp==O_I || cOp=='C' || cOp=='V') ? 0       :  // (identity)
+                                              -10;       // (will not map)
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -602,17 +602,17 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       BaseWithCarriers bwcParent = qPrev.back(1).base();  applyUnariesTopDn( bwcParent, evJ );
 //      HVec hvParent( qPrev.back(1).base().back().getCat().getSynArgs() + ( ( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) ? 2 : 1 ) );    hvParent.add( qPrev.getBase(1).getHVec() );
       if( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) bwcParent.back().setHVec().emplace_back();  // Add space for satisfied argument. 
-      if( opL!='G' and opL!='H' and opL!='R' and opL!='N' ) bwcParent.back().setHVec().addSynArg( -getDir(opL), aLchild.getHVec() );
+      if( getDir(opL)!=-10 ) bwcParent.back().setHVec().addSynArg( -getDir(opL), aLchild.getHVec() );
 //      back().base().set( *this, bwcParent, evJ, opL, opR, qPrev.back().base().back().getCat(), aLchild );  bwcParent.back().setHVec()=hvParent;
 //      applyUnariesTopDn( back().base(), evJ );      // Calc parent contexts (below unaries).
 
 //      back().base().set( *this, bwcParent, evJ, opL, opR, cB, qPrev.getBase() );      // Fill in base at d-1. 
       back().base() = bwcParent;  back().base().back() = Sign( HVec(), cB, S_B );  back().base().back().setHVec() = HVec( cB.getSynArgs()+1 );
 //      *back().base().back().emplace( end() ) = Sign( HVec(), cB, S_B );
-      if( opR!='G' and opR!='H' and opR!='R' and opR!='N' ) back().base().back().setHVec().addSynArg( getDir(opR), bwcParent.back().getHVec() );                                               // Calc base contexts.
+      if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), bwcParent.back().getHVec() );                                               // Calc base contexts.
       if( opL=='G' or opR=='R' ) back().base().back(1).setHVec().add( aLchild.getHVec() );
       if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( back().base().back(1).getHVec() );
-      if( getApex().isDitto() and opR!='I' ) setApex().setHVec() = bwcParent.back().getHVec(); //qPrev.getBase(1-f).getHVec();                            // If base != apex, end ditto.
+      if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec(); //qPrev.getBase(1-f).getHVec();                            // If base != apex, end ditto.
     }
     // Terminal match and nonterminal non-match...
     else if( f==0 and j==0 ) {
@@ -627,10 +627,10 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
       back().base().set( *this, qPrev.back().base(), evJ, opL, opR, cB, getApex() );       // Fill in base at d.
 //      *back().base().back().emplace( end() ) = Sign( HVec(), cB, S_B );
-      if( opR!='G' and opR!='H' and opR!='R' and opR!='N' ) back().base().back().setHVec().addSynArg( getDir(opR), hvParent );                                               // Calc base contexts.
+      if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), hvParent );                                               // Calc base contexts.
       if( opL=='G' or opR=='R' ) back().base().back(1).setHVec().add( aLchild.getHVec() );
       if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( back().base().back(1).getHVec() );
-      if( opR=='I' ) setApex().setHVec() = HVec::hvDitto;                                                              // Init ditto.
+      if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                              // Init ditto.
     }
     // Terminal non-match and nonterminal match...
     else if( f==1 and j==1 ) {
@@ -638,7 +638,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       if( qPrev.size() >= 1 ) insert( end(), qPrev.begin(), qPrev.end()-1 );                                     // Copy fragments to d-1
       emplace( end() )->apex() = qPrev.back().apex();                                    // Copy apex at d.
 
-      ApexWithCarriers awcPretrm;  awcPretrm.set( *this, ApexWithCarriers(), evF, 'I', 'I', aLchild.getCat(), LeftChildSign() );  awcPretrm.back()=aLchild;
+      ApexWithCarriers awcPretrm;  awcPretrm.set( *this, ApexWithCarriers(), evF, O_I, O_I, aLchild.getCat(), LeftChildSign() );  awcPretrm.back()=aLchild;
 //      cout << "awcPretrm = " << awcPretrm << endl;
 //      cout << *this << endl;
       applyUnariesBotUp( awcPretrm, evF );
@@ -651,17 +651,17 @@ cout<<"bwcPar=" << bwcParent << endl;
 //      HVec hvParent( cA.getSynArgs() + ( ( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) ? 2 : 1 ) );  hvParent.add( qPrev.getBase().getHVec() );
 //      if( opL!='G' and opL!='H' and opL!='R' and opL!='N' ) hvParent.addSynArg( -getDir(opL), awcPretrm.back().getHVec() );
       if( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) bwcParent.back().setHVec().emplace_back();  // Add space for satisfied argument. 
-      if( opL!='G' and opL!='H' and opL!='R' and opL!='N' ) bwcParent.back().setHVec().addSynArg( -getDir(opL), awcPretrm.back().getHVec() );
+      if( getDir(opL)!=-10 ) bwcParent.back().setHVec().addSynArg( -getDir(opL), awcPretrm.back().getHVec() );
 //      applyUnariesTopDn( hvParent, evJ );      // Calc parent contexts (below unaries).
 
 //      back().base().set( *this, bwcParent, evJ, opL, opR, cB, qPrev.getBase() );       // Fill in base at d. 
       back().base() = bwcParent;  back().base().back() = Sign( HVec(), cB, S_B );  back().base().back().setHVec() = HVec( cB.getSynArgs()+1 );
 //      *back().base().back().emplace( end() ) = Sign( HVec(), cB, S_B );
-      if( opR!='G' and opR!='H' and opR!='R' and opR!='N' ) back().base().back().setHVec().addSynArg( getDir(opR), bwcParent.back().getHVec() );                                               // Calc base contexts.
+      if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), bwcParent.back().getHVec() );                                               // Calc base contexts.
 //cout << "i made " << *this << endl;
       if( opL=='G' or opR=='R' ) back().base().back(1).setHVec().add( awcPretrm.back().getHVec() );
       if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( awcPretrm.back(1).getHVec() );
-      if( getApex().isDitto() and opR!='I' ) setApex().setHVec() = bwcParent.back().getHVec(); //qPrev.getBase(1-f).getHVec();                            // If base != apex, end ditto.
+      if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec(); //qPrev.getBase(1-f).getHVec();                            // If base != apex, end ditto.
     }
     // Terminal non-match and nonterminal non-match...
     else if( f==1 and j==0 ) {
@@ -669,7 +669,7 @@ cout<<"bwcPar=" << bwcParent << endl;
       insert( end(), qPrev.begin(), qPrev.end() );                                       // Copy fragments to d.
       emplace( end() );                                                                  // Add depth level d+1.
 
-      ApexWithCarriers awcPretrm;  awcPretrm.set( *this, ApexWithCarriers(), evF, 'I', 'I', aLchild.getCat(), LeftChildSign() );  awcPretrm.back()=aPretrm;  applyUnariesBotUp( awcPretrm, evF );
+      ApexWithCarriers awcPretrm;  awcPretrm.set( *this, ApexWithCarriers(), evF, O_I, O_I, aLchild.getCat(), LeftChildSign() );  awcPretrm.back()=aPretrm;  applyUnariesBotUp( awcPretrm, evF );
 
       back().apex().set( *this, awcPretrm, evJ, opL, opR, cA, awcPretrm.back() ); //aLchild );       // Fill in apex at d+1.
 //      back().apex().set( *this, qPrev.back().apex(), evJ, opL, opR, cA, aLchild );       // Fill in apex at d+1.
@@ -682,11 +682,11 @@ cout<<"bwcPar=" << bwcParent << endl;
 
       back().base().set( *this, qPrev.back().base(), evJ, opL, opR, cB, getApex() );       // Fill in base at d+1.
 //      *back().base().back().emplace( end() ) = Sign( HVec(), cB, S_B );
-      if( opR!='G' and opR!='H' and opR!='R' and opR!='N' ) back().base().back().setHVec().addSynArg( getDir(opR), hvParent );                                               // Calc base contexts.
+      if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), hvParent );                                               // Calc base contexts.
 //cout << "i made B " << *this << endl;
       if( opL=='G' or opR=='R' ) back().base().back(1).setHVec().add( awcPretrm.back().getHVec() );
       if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( awcPretrm.back(1).getHVec() );
-      if( opR=='I' ) setApex().setHVec() = HVec::hvDitto;                                                              // Init ditto.
+      if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                              // Init ditto.
     }
   }
 
@@ -894,7 +894,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     //// B.2. Copy store state and add parent/preterm contexts to existing non-locals via extraction operation...
     for( int i=0; i<((f==0&&j==1)?iAncestorB:(f==0&&j==0)?iLowerA:(f==1&&j==1)?iAncestorB:iAncestorB+1); i++ ) {
       Sign& s = *emplace( end() ) = qPrev[i];
-      if( i==iAncestorA and j==1 and qPrev[i].isDitto() and opR!='I' )            { s.setHVec() = hvParent; } 
+      if( i==iAncestorA and j==1 and qPrev[i].isDitto() and opR!=O_I )            { s.setHVec() = hvParent; } 
       else if( viCarrierP.size()>0 and i==viCarrierP.back() and evF!=EVar::eNil ) { viCarrierP.pop_back();
                                                                                     s.setHVec() = HVec( s.getCat().getSynArgs()+1 );
                                                                                     s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() ); }
@@ -918,7 +918,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
                                                                   s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent );
                                                                   cCurrA=cCurrA.withoutFirstNolo(); }
       // Add lowest A...
-      *emplace( end() ) = Sign( (opR=='I') ? HVec::hvDitto /*HVec(KVec(arma::ones(20)))*/ : hvParent, cA, S_A );
+      *emplace( end() ) = Sign( (opR==O_I) ? HVec::hvDitto /*HVec(KVec(arma::ones(20)))*/ : hvParent, cA, S_A );
       iLowerA = size()-1;
     }
     // Add B carriers...

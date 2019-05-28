@@ -90,12 +90,12 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
 //  if( string::npos != l.find("-lN") ) return 'N';
   if( string::npos != lSibling.find("-lU") ) return ( getCat(l).getSynArgs()==1 ) ? 'U' : 'u';
   if( string::npos != l.find("-lC") ) return 'C';
-  if( string::npos == l.find("-l")  or string::npos != l.find("-lS") or string::npos != l.find("-lU") ) return 'I';
+  if( string::npos == l.find("-l")  or string::npos != l.find("-lS") or string::npos != l.find("-lU") ) return O_I;
   if( string::npos != l.find("-lM") or string::npos != l.find("-lQ") ) return 'M';
   if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos != lParent.find("\\") ) return '0'+getCat( string(lParent,lParent.find("\\")+1).c_str() ).getSynArgs();
-  if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos == lParent.find('\\') ) return '0'+getCat( lSibling ).getSynArgs();
+  if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos == lParent.find('\\') ) return /*'I'; */ '0'+getCat( lSibling ).getSynArgs();
   cerr << "WARNING: unhandled -l tag in label \"" << l << "\"" << " -- assuming identity."<<endl;
-  return 'I';
+  return O_I;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
