@@ -592,6 +592,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
   StoreState ( ) : DelimitedVector<psX,DerivationFragment,psX,psX> ( ) { } 
   StoreState ( const StoreState& qPrev, F f, J j, EVar evF, EVar evJ, O opL, O opR, CVar cA, CVar cB, const Sign& aPretrm, const LeftChildSign& aLchild ) {
+cout<<"evF="<<evF<<"!!!"<<endl;
     // Terminal match and nonterminal match...
     if( f==0 and j==1 and qPrev.getDepth()>1 ) {
       reserve( qPrev.size()-1 );
@@ -610,8 +611,9 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       back().base() = bwcParent;  back().base().back() = Sign( HVec(), cB, S_B );  back().base().back().setHVec() = HVec( cB.getSynArgs()+1 );
 //      *back().base().back().emplace( end() ) = Sign( HVec(), cB, S_B );
       if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), bwcParent.back().getHVec() );                                               // Calc base contexts.
-      if( opL=='G' or opR=='R' ) back().base().back(1).setHVec().add( aLchild.getHVec() );
-      if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( back().base().back(1).getHVec() );
+      if( opL=='G' or opR=='R' ) { back().base().insert( back().base().end()-1, Sign() ); setNoloBack( 0, back().base() ).setHVec() = HVec( aLchild.getCat().getSynArgs() ); setNoloBack( 0, back().base() ).setHVec().add( aLchild.getHVec() ); }
+      if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( getNoloBack( 0, back().base() ).getHVec() );
+      if(             opR=='I' ) { back().base().insert( back().base().end()-1, Sign() ); back().base().back(1).setHVec() = HVec(1); back().base().back(1).setHVec().addSynArg( aLchild.getCat().getSynArgs(), aLchild.getHVec() ); }
       if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec(); //qPrev.getBase(1-f).getHVec();                            // If base != apex, end ditto.
     }
     // Terminal match and nonterminal non-match...
@@ -628,8 +630,9 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       back().base().set( *this, qPrev.back().base(), evJ, opL, opR, cB, getApex() );       // Fill in base at d.
 //      *back().base().back().emplace( end() ) = Sign( HVec(), cB, S_B );
       if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), hvParent );                                               // Calc base contexts.
-      if( opL=='G' or opR=='R' ) back().base().back(1).setHVec().add( aLchild.getHVec() );
-      if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( back().base().back(1).getHVec() );
+      if( opL=='G' or opR=='R' ) { back().base().insert( back().base().end()-1, Sign() ); setNoloBack( 0, back().base() ).setHVec() = HVec( aLchild.getCat().getSynArgs() ); setNoloBack( 0, back().base() ).setHVec().add( aLchild.getHVec() ); }
+      if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( getNoloBack( 0, back().base() ).getHVec() );
+      if(             opR=='I' ) { back().base().insert( back().base().end()-1, Sign() ); back().base().back(1).setHVec() = HVec(1); back().base().back(1).setHVec().addSynArg( aLchild.getCat().getSynArgs(), aLchild.getHVec() ); }
       if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                              // Init ditto.
     }
     // Terminal non-match and nonterminal match...
@@ -659,8 +662,9 @@ cout<<"bwcPar=" << bwcParent << endl;
 //      *back().base().back().emplace( end() ) = Sign( HVec(), cB, S_B );
       if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), bwcParent.back().getHVec() );                                               // Calc base contexts.
 //cout << "i made " << *this << endl;
-      if( opL=='G' or opR=='R' ) back().base().back(1).setHVec().add( awcPretrm.back().getHVec() );
-      if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( awcPretrm.back(1).getHVec() );
+      if( opL=='G' or opR=='R' ) { back().base().insert( back().base().end()-1, Sign() ); setNoloBack( 0, back().base() ).setHVec() = HVec( awcPretrm.back().getCat().getSynArgs() ); setNoloBack( 0, back().base() ).setHVec().add( awcPretrm.back().getHVec() ); }
+      if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( getNoloBack( 0, awcPretrm ).getHVec() );
+      if(             opR=='I' ) { back().base().insert( back().base().end()-1, Sign() ); back().base().back(1).setHVec() = HVec(1); back().base().back(1).setHVec().addSynArg( aLchild.getCat().getSynArgs(), aLchild.getHVec() ); }
       if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec(); //qPrev.getBase(1-f).getHVec();                            // If base != apex, end ditto.
     }
     // Terminal non-match and nonterminal non-match...
@@ -684,8 +688,9 @@ cout<<"bwcPar=" << bwcParent << endl;
 //      *back().base().back().emplace( end() ) = Sign( HVec(), cB, S_B );
       if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), hvParent );                                               // Calc base contexts.
 //cout << "i made B " << *this << endl;
-      if( opL=='G' or opR=='R' ) back().base().back(1).setHVec().add( awcPretrm.back().getHVec() );
-      if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( awcPretrm.back(1).getHVec() );
+      if( opL=='G' or opR=='R' ) { back().base().insert( back().base().end()-1, Sign() ); setNoloBack( 0, back().base() ).setHVec() = HVec( awcPretrm.back().getCat().getSynArgs() ); setNoloBack( 0, back().base() ).setHVec().add( awcPretrm.back().getHVec() ); }
+      if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( getNoloBack( 0, awcPretrm ).getHVec() );
+      if(             opR=='I' ) { back().base().insert( back().base().end()-1, Sign() ); back().base().back(1).setHVec() = HVec(1); back().base().back(1).setHVec().addSynArg( aLchild.getCat().getSynArgs(), aLchild.getHVec() ); }
       if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                              // Init ditto.
     }
   }
@@ -742,11 +747,14 @@ cout<<"doing "<<hv<<" "<< e << endl;
     }
   }
   void applyUnariesBotUp( ApexWithCarriers& awc, EVar e ) {                                 // From bottom up, extract least recent nolos first...
+cout<<"ooooo "<<awc<<" "<<e<<endl;
     for( unsigned int iBack = e.getNoloArity(); e != EVar::eNil; e = e.withoutBot() ) {
       if(      e.bot() == 'O' )   awc.back().setHVec().swap( 1, 2 );
       else if( e.bot() == 'V' ) { awc.back().setHVec().addSynArg( -1, getNoloBack(0,awc).getHVec() ); awc.erase(awc.end()-1); }
-      else                      { awc.back().setHVec().addSynArg( -getDir(e.bot()), getNoloBack(iBack,awc).getHVec() );
+      else                      { awc.insert( awc.end()-1, Sign() ); setNoloBack(iBack,awc).setHVec() = HVec(1);   // THIS IS A HACK; SHOULD BE PRE-CALC
+                                  awc.back().setHVec().addSynArg( -getDir(e.bot()), getNoloBack(iBack,awc).getHVec() );
                                   setNoloBack(iBack--,awc).setHVec().addSynArg( getDir(e.bot()), awc.back().getHVec() ); }
+cout<<"i did "<<e.bot()<<" to get "<<awc<<endl;
     }
   }
   /*
