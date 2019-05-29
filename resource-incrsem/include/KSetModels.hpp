@@ -181,7 +181,7 @@ class FPredictorVec : public list<unsigned int> {
       int d = (FEATCONFIG & 1) ? 0 : ss.getDepth(); // max used depth - (dbar)
 #ifdef SIMPLE_STORE
       const HVec& hvB = ( ss.getBase().getHVec().size() > 0 ) ? ss.getBase().getHVec() : hvBot; //contexts of lowest b (bdbar)
-      const HVec& hvF = ss.getNoloBack().getHVec();
+      const HVec& hvF = ( ss.getBase().getCat().getNoloArity() ) ? ss.getNoloBack().getHVec() : HVec();
 #else
       const HVec& hvB = ( ss.at(ss.size()-1).getHVec().size() > 0 ) ? ss.at(ss.size()-1).getHVec() : hvBot; //contexts of lowest b (bdbar)
       int iCarrier = ss.getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
@@ -336,7 +336,7 @@ class JPredictorVec : public list<unsigned int> {
 #endif
       const HVec& hvAncstr = ( aAncstr.getHVec().size()==0 ) ? hvBot : aAncstr.getHVec();
 #ifdef SIMPLE_STORE
-      const HVec& hvFiller = ss.getNoloBack().getHVec();
+      const HVec& hvFiller = ( ss.getBase(f).getCat().getNoloArity() ) ? ss.getNoloBack().getHVec() : HVec();
 #else
       int iCarrierB = ss.getAncestorBCarrierIndex( f );
       const HVec& hvFiller = ( iCarrierB<0                 ) ? hvBot : ss.at( iCarrierB ).getHVec();

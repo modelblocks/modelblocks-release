@@ -33,7 +33,7 @@ typedef Delimited<int>  F;  // fork decision
 typedef Delimited<int>  J;  // join decision
 typedef Delimited<char> O;  // composition operation
 const O O_N("N");
-const O O_I(".");
+const O O_I("."); //(".");
 typedef Delimited<char> S;  // side (A,B)
 const S S_A("/");
 const S S_B(";");
@@ -331,14 +331,17 @@ class EVar : public DiscreteDomainRV<int,domE> {   // NOTE: can't be subclass of
  public:
   static const EVar eNil;
  private:
-  static map<EVar,uint> meiNoloArity;
+  static map<EVar,int>  meiNoloDelta;
+  static map<EVar,int>  meiNoloTemps;
   static map<EVar,char> meoTop;
   static map<EVar,char> meoBot;
   static map<EVar,EVar> meeNoTop;
   static map<EVar,EVar> meeNoBot;
   void calcDetermModels ( const char* ps ) {       // NOTE: top is front, bot is back...
-    if( meiNoloArity.end()==meiNoloArity.find(*this) ) { uint a=0; for(uint i=0; i<strlen(ps); i++) a += (ps[i]!='O') ? 0 : 1; // : (ps[i]=='V') ? 1 : -1;
-                                                         meiNoloArity[*this]=a; }
+    if( meiNoloDelta.end()==meiNoloDelta.find(*this) ) { int a=0; for(uint i=0; i<strlen(ps); i++) a += (ps[i]=='O') ? 0 : (ps[i]=='V') ? -1 : 1;
+                                                         meiNoloDelta[*this]=a; }
+    if( meiNoloTemps.end()==meiNoloTemps.find(*this) ) { int a=0; for(uint i=0; i<strlen(ps); i++) if(ps[i]=='V') a++;
+                                                         meiNoloTemps[*this]=a; }
     if(       meoTop.end()==      meoTop.find(*this) and strlen(ps)>0 ) { char& c=  meoTop[*this]; c=ps[0]; }
     if(       meoBot.end()==      meoBot.find(*this) and strlen(ps)>0 ) { char& c=  meoBot[*this]; c=ps[strlen(ps)-1]; }
     if(     meeNoTop.end()==    meeNoTop.find(*this) and strlen(ps)>0 ) { EVar& e=meeNoTop[*this]; e=ps+1; }
@@ -347,14 +350,16 @@ class EVar : public DiscreteDomainRV<int,domE> {   // NOTE: can't be subclass of
  public:
   EVar ( )                : DiscreteDomainRV<int,domE> ( )    { }
   EVar ( const char* ps ) : DiscreteDomainRV<int,domE> ( ps ) { calcDetermModels(ps); }
-  uint getNoloArity ( ) const { auto it = meiNoloArity.find( *this ); assert( it != meiNoloArity.end() ); return ( it!=meiNoloArity.end() ) ? it->second : 0; }
+  int  getNoloDelta ( ) const { auto it = meiNoloDelta.find( *this ); assert( it != meiNoloDelta.end() ); return ( it!=meiNoloDelta.end() ) ? it->second : 0; }
+  int  getNoloTemps ( ) const { auto it = meiNoloDelta.find( *this ); assert( it != meiNoloDelta.end() ); return ( it!=meiNoloDelta.end() ) ? it->second : 0; }
   char top          ( ) const { auto it =       meoTop.find( *this ); assert( it !=       meoTop.end() ); return ( it!=      meoTop.end() ) ? it->second : '?'; }
   char bot          ( ) const { auto it =       meoBot.find( *this ); assert( it !=       meoBot.end() ); return ( it!=      meoBot.end() ) ? it->second : '?'; }
   EVar withoutTop   ( ) const { auto it =     meeNoTop.find( *this ); assert( it !=     meeNoTop.end() ); return ( it!=    meeNoTop.end() ) ? it->second : eNil; }
   EVar withoutBot   ( ) const { auto it =     meeNoBot.find( *this ); assert( it !=     meeNoBot.end() ); return ( it!=    meeNoBot.end() ) ? it->second : eNil; }
   char popTop       ( )       { auto it =       meoTop.find( *this ); assert( it !=       meoTop.end() ); *this = meeNoTop[*this]; return ( it!=meoTop.end() ) ? it->second : '?'; }
 };
-map<EVar,uint> EVar::meiNoloArity;
+map<EVar,int>  EVar::meiNoloDelta;
+map<EVar,int>  EVar::meiNoloTemps;
 map<EVar,char> EVar::meoTop;
 map<EVar,char> EVar::meoBot;
 map<EVar,EVar> EVar::meeNoTop;
@@ -549,6 +554,8 @@ class BaseWithCarriers : public SignWithCarriers {
   const Sign& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : bTop; }
 };
 
+////////////////////////////////////////////////////////////////////////////////
+
 class DerivationFragment : public DelimitedPair<psX,ApexWithCarriers,psX,BaseWithCarriers,psX> {
  public:
   ApexWithCarriers&       apex( )       { return pair<ApexWithCarriers,BaseWithCarriers>::first;  }
@@ -558,6 +565,8 @@ class DerivationFragment : public DelimitedPair<psX,ApexWithCarriers,psX,BaseWit
 };
 const DerivationFragment dfTop;
 
+////////////////////////////////////////////////////////////////////////////////
+
 class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
  public:
 
@@ -566,17 +575,18 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
   StoreState ( ) : DelimitedVector<psX,DerivationFragment,psX,psX> ( ) { } 
   StoreState ( const StoreState& qPrev, F f, J j, EVar evF, EVar evJ, O opL, O opR, CVar cA, CVar cB, const Sign& aPretrm, const LeftChildSign& aLchild ) {
-cout<<"evF="<<evF<<"!!!"<<endl;
     // Terminal match and nonterminal match...
     if( f==0 and j==1 and qPrev.getDepth()>1 ) {
       reserve( qPrev.size()-1 );
       if( qPrev.size() >= 2 ) insert( end(), qPrev.begin(), qPrev.end()-2 );                                 // Copy fragments to d-2
       emplace( end() )->apex() = qPrev.back(1).apex();                                                       // Copy apex at d-1.
 
+      // Create intermediate base parent...
       BaseWithCarriers bwcParent = qPrev.back(1).base();  applyUnariesTopDn( bwcParent, evJ );               // Calc parent contexts (below unaries).
       if( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) bwcParent.back().setHVec().emplace_back();    // Add space for satisfied argument. 
       if( getDir(opL)!=-10 ) bwcParent.back().setHVec().addSynArg( -getDir(opL), aLchild.getHVec() );
 
+      // Create right child base...
       back().base() = bwcParent;  back().base().back() = Sign( HVec(), cB, S_B );
       back().base().back().setHVec() = HVec( cB.getSynArgs()+1 );                                                      // Fill in base at d-1.
       if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), bwcParent.back().getHVec() );      // Calc base contexts.
@@ -595,11 +605,16 @@ cout<<"evF="<<evF<<"!!!"<<endl;
       if( qPrev.size() >= 1 ) insert( end(), qPrev.begin(), qPrev.end()-1 );                                 // Copy fragments to d-1.
       emplace( end() );                                                                                      // Add depth level d.
 
+      // Create new apex...
+      unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
+      if( qPrev.back().apex().size() > iSubtracted ) back().apex().insert( back().apex().end(), qPrev.back().apex().begin(), qPrev.back().apex().end() - 1 - iSubtracted );                // Add nolos from left child as older.
       back().apex().set( *this, qPrev.back().apex(), evJ, opL, opR, cA, aLchild );                           // Fill in apex at d.
       HVec hvParent( cA.getSynArgs() + ( ( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) ? 2 : 1 ) );
       hvParent.addSynArg( -getDir(opL), aLchild.getHVec() );                                                 // Calc parent contexts (below unaries).
-      back().apex().back().setHVec() = hvParent;  applyUnariesBotUp( back().apex().back().setHVec(), evJ );  // Calc apex contexts.
+      back().apex().back().setHVec() = hvParent;  applyUnariesBotUp( back().apex()/*.back().setHVec()*/, evJ );  // Calc apex contexts.
 
+      // Create right child base...
+//      if( qPrev.back().base().size() > 0 ) insert( back().base().end(), qPrev.back().base().begin(), qPrev.back().base().end() - 1 );          // Copy nolos from prev base as oldest.
       back().base().set( *this, qPrev.back().base(), evJ, opL, opR, cB, getApex() );                         // Fill in base at d.
       if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), hvParent );              // Calc base contexts.
       if( opL=='G' or opR=='R' ) { back().base().insert( back().base().end()-1, Sign() );
@@ -617,13 +632,16 @@ cout<<"evF="<<evF<<"!!!"<<endl;
       if( qPrev.size() >= 1 ) insert( end(), qPrev.begin(), qPrev.end()-1 );                                 // Copy fragments to d-1
       emplace( end() )->apex() = qPrev.back().apex();                                                        // Copy apex at d.
 
+      // Create preterm...
       ApexWithCarriers awcPretrm;  awcPretrm.set( *this, ApexWithCarriers(), evF, O_I, O_I, aLchild.getCat(), LeftChildSign() );  awcPretrm.back()=aLchild;
       applyUnariesBotUp( awcPretrm, evF );
 
+      // Create intermediate base parent...
       BaseWithCarriers bwcParent = qPrev.back().base();  applyUnariesTopDn( bwcParent, evJ );                // Calc parent contexts (below unaries).
       if( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) bwcParent.back().setHVec().emplace_back();    // Add space for satisfied argument. 
       if( getDir(opL)!=-10 ) bwcParent.back().setHVec().addSynArg( -getDir(opL), awcPretrm.back().getHVec() );
 
+      // Create right child base...
       back().base() = bwcParent;  back().base().back() = Sign( HVec(), cB, S_B );
       back().base().back().setHVec() = HVec( cB.getSynArgs()+1 );                                            // Fill in base at d.
       if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), bwcParent.back().getHVec() );      // Calc base contexts.
@@ -642,14 +660,20 @@ cout<<"evF="<<evF<<"!!!"<<endl;
       insert( end(), qPrev.begin(), qPrev.end() );                                                           // Copy fragments to d.
       emplace( end() );                                                                                      // Add depth level d+1.
 
+      // Create preterm...
       ApexWithCarriers awcPretrm;  awcPretrm.set( *this, ApexWithCarriers(), evF, O_I, O_I, aLchild.getCat(), LeftChildSign() );
       awcPretrm.back()=aPretrm;  applyUnariesBotUp( awcPretrm, evF );
 
+      // Create new apex...
+      unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
+      if( awcPretrm.size() > iSubtracted ) back().apex().insert( back().apex().end(), awcPretrm.begin(), awcPretrm.end() - 1 - iSubtracted );                // Add nolos from left child as older.
       back().apex().set( *this, awcPretrm, evJ, opL, opR, cA, awcPretrm.back() );                            // Fill in apex at d+1.
       HVec hvParent( cA.getSynArgs() + ( ( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) ? 2 : 1 ) );
       hvParent.addSynArg( -getDir(opL), awcPretrm.back().getHVec() );                                        // Calc parent contexts (below unaries).
       back().apex().back().setHVec() = hvParent;  applyUnariesBotUp( awcPretrm, evJ );                       // Calc apex contexts.
 
+      // Create right child base...
+//      if( qPrev.back().base().size() > 0 ) insert( back().base().end(), qPrev.back().base().begin(), qPrev.back().base().end() - 1 );          // Copy nolos from prev back as oldest.
       back().base().set( *this, qPrev.back().base(), evJ, opL, opR, cB, getApex() );                         // Fill in base at d+1.
       if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), hvParent );              // Calc base contexts.
       if( opL=='G' or opR=='R' ) { back().base().insert( back().base().end()-1, Sign() );
@@ -691,27 +715,27 @@ cout<<"evF="<<evF<<"!!!"<<endl;
     return( aTop );
   }
 
-  void applyUnariesTopDn( BaseWithCarriers& bwc, EVar e ) {
-    for( unsigned int iBack = 0; e != EVar::eNil; e = e.withoutTop() ) {       // From top down, extract most recent nolos first...
-      if(      e.top() == 'O' )   bwc.back().setHVec().swap( 1, 2 );
-      else if( e.top() == 'V' ) { bwc.insert( bwc.end()-1, Sign() ); setNoloBack(0,bwc).setHVec().addSynArg( 1, bwc.back().getHVec() ); bwc.back().setHVec().at(1) = KVec(); }
-      else                      { bwc.back().setHVec().addSynArg( -getDir(e.top()), getNoloBack(iBack,bwc).getHVec() );
-                                  setNoloBack(iBack++,bwc).setHVec().addSynArg( getDir(e.top()), bwc.back().getHVec() ); }
-    }
-  }
   void applyUnariesBotUp( HVec& hv, EVar e ) const {                           // From bottom up, extract least recent nolos first...
-    for( unsigned int iBack = e.getNoloArity(); e != EVar::eNil; e = e.withoutBot() ) {
+    for( unsigned int iBack = e.getNoloDelta() + e.getNoloTemps(); e != EVar::eNil; e = e.withoutBot() ) {
       if( e.bot() == 'O' or e.bot() == 'V' ) hv.swap( 1, 2 );
       else                                   hv.addSynArg( getDir(e.bot()), getNoloBack(iBack).getHVec() );
     }
   }
-  void applyUnariesBotUp( ApexWithCarriers& awc, EVar e ) {                                 // From bottom up, extract least recent nolos first...
-    for( unsigned int iBack = e.getNoloArity(); e != EVar::eNil; e = e.withoutBot() ) {
+  void applyUnariesBotUp( ApexWithCarriers& awc, EVar e ) {                    // From bottom up, extract least recent nolos first...
+    for( unsigned int iBack = e.getNoloDelta() + e.getNoloTemps(); e != EVar::eNil; e = e.withoutBot() ) {
       if(      e.bot() == 'O' )   awc.back().setHVec().swap( 1, 2 );
       else if( e.bot() == 'V' ) { awc.back().setHVec().addSynArg( -1, getNoloBack(0,awc).getHVec() ); awc.erase(awc.end()-1); }
-      else                      { awc.insert( awc.end()-1, Sign() ); setNoloBack(iBack,awc).setHVec() = HVec(1);   // THIS IS A HACK; SHOULD BE PRE-CALC
+      else                      { cout<<"I'm adding an apex nolo bc e.bot()="<<e.bot()<<endl; awc.insert( awc.end()-1, Sign() ); setNoloBack(iBack,awc).setHVec() = HVec(1);   // THIS IS A HACK; SHOULD BE PRE-CALC
                                   awc.back().setHVec().addSynArg( -getDir(e.bot()), getNoloBack(iBack,awc).getHVec() );
                                   setNoloBack(iBack--,awc).setHVec().addSynArg( getDir(e.bot()), awc.back().getHVec() ); }
+    }
+  }
+  void applyUnariesTopDn( BaseWithCarriers& bwc, EVar e ) {
+    for( unsigned int iBack = 0; e != EVar::eNil; e = e.withoutTop() ) {       // From top down, extract most recent nolos first...
+      if(      e.top() == 'O' )   bwc.back().setHVec().swap( 1, 2 );
+      else if( e.top() == 'V' ) { cout<<"I'm adding a base nolo bc e.top()="<<e.top()<<endl; bwc.insert( bwc.end()-1, Sign() ); setNoloBack(0,bwc).setHVec().addSynArg( 1, bwc.back().getHVec() ); bwc.back().setHVec().at(1) = KVec(); }
+      else                      { bwc.back().setHVec().addSynArg( -getDir(e.top()), getNoloBack(iBack,bwc).getHVec() );
+                                  setNoloBack(iBack++,bwc).setHVec().addSynArg( getDir(e.top()), bwc.back().getHVec() ); }
     }
   }
 };
@@ -733,18 +757,15 @@ LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ApexWithCarriers::set ( const StoreState& ss, const ApexWithCarriers& awc, EVar evJ, O opL, O opR, CVar cA, const LeftChildSign& aLchild ) {
-    unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
-    if( awc.size() > iSubtracted ) insert( end(), awc.begin(), awc.end() - 1 - iSubtracted );                // Add nolos from left child as older.
-    int iAdded = cA.getNoloArity() - aLchild.getCat().getNoloArity() - ss.getBase().getCat().getNoloArity();
-    if( iAdded > 0 ) insert( end(), iAdded, Sign() );                          // Add nolos not in left child as more recent.
+void ApexWithCarriers::set ( const StoreState& ss, const ApexWithCarriers& awc, EVar ev, O opL, O opR, CVar cA, const LeftChildSign& aLchild ) {
+    int iToAdd = cA.getNoloArity() - ss.getBase().getCat().getNoloArity() - ( awc.size() - 1 );
+    if( iToAdd > 0 ) insert( end(), iToAdd, Sign() );                          // Add nolos not in left child as more recent.
     *emplace( end() ) = Sign( HVec(), cA, S_A );  back().setHVec() = HVec( cA.getSynArgs()+( ( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) ? 2 : 1 ) );
 }
 
 void BaseWithCarriers::set ( const StoreState& ss, const BaseWithCarriers& bwc, EVar evJ, O opL, O opR, CVar cB, const Sign& aParent ) {
-    if( bwc.size() > 0 ) insert( end(), bwc.begin(), bwc.end() - 1 );          // Add nolos from parent as older.
-    int iAdded = cB.getNoloArity() - aParent.getCat().getNoloArity();
-    if( iAdded > 0 ) insert( end(), iAdded, Sign() );                          // Add nolos not in parent as more recent.
+    int iToAdd = cB.getNoloArity() - aParent.getCat().getNoloArity();
+    if( iToAdd > 0 ) insert( end(), iToAdd, Sign() );                          // Add nolos not in parent as more recent.
     *emplace( end() ) = Sign( HVec(), cB, S_B );  back().setHVec() = HVec( cB.getSynArgs() + 1 );
 }
 
@@ -1043,7 +1064,7 @@ class APredictorVec : public DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Del
     DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( d, f, j, e, o, cP, cL ) { }
   APredictorVec ( F f, J j, EVar eF, EVar eJ, O opL, const LeftChildSign& aLchild, const StoreState& ss ) :
 #ifdef SIMPLE_STORE
-    DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()+f-j, f, j, eJ, opL, ss.getBase(f).getCat(), (j==0) ? aLchild.getCat() : cBot ) { } 
+    DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()+f-j, f, j, eJ, opL, ss.getBase(1-f).getCat(), (j==0) ? aLchild.getCat() : cBot ) { } 
 #else
     DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()+f-j, f, j, eJ, opL, ss.at(ss.getAncestorBIndex(f)).getCat(), (j==0) ? aLchild.getCat() : cBot ) { } 
 #endif

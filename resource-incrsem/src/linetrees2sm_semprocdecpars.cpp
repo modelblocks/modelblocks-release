@@ -87,7 +87,7 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
   if( string::npos != l.find("-lH") ) return 'H';
   if( string::npos != l.find("-lR") ) return 'R';
   if( string::npos != l.find("-lV") ) return 'V';
-//  if( string::npos != l.find("-lN") ) return 'N';
+  if( string::npos != l.find("-lN") ) return 'N';
   if( string::npos != lSibling.find("-lU") ) return ( getCat(l).getSynArgs()==1 ) ? 'U' : 'u';
   if( string::npos != l.find("-lI") ) return 'I';
   if( string::npos != l.find("-lC") ) return 'C';
@@ -106,7 +106,7 @@ string getUnaryOp ( const Tree<L>& tr ) {
   if( string::npos != L(tr.front()).find("-lQ") ) return "O";
   N n =  CVar( removeLink(tr).c_str() ).getLastNonlocal();
   if( n == N_NONE ) return "";
-  if( (tr.front().size()==0 /*|| tr.front().front().size()==0*/) && n == N("-rN") ) return "0";
+  if( (/*tr.front().size()==0 ||*/ tr.front().size()==1 and tr.front().front().size()==0) and n == N("-rN") ) return "0";
   if( string::npos != L(tr.front()).find("-lE") )
     return ( CVar(removeLink(tr.front()).c_str()).getSynArgs() > CVar(removeLink(tr).c_str()).getSynArgs() ) ? (string(1,'0'+CVar(removeLink(tr.front()).c_str()).getSynArgs())) : "M";
   else return "";
@@ -273,8 +273,6 @@ void calcContext ( Tree<L>& tr,
     cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;  modJ.getResponseIndex(j,e.c_str(),oL,oR);
     cout << "A " << APredictorVec(f,j,eF.c_str(),e.c_str(),oL,aLchild,q)                << " : " << getCat(removeLink(l))          << endl;
     cout << "B " << BPredictorVec(f,j,eF.c_str(),e.c_str(),oL,oR,getCat(l),aLchild,q)   << " : " << getCat(removeLink(tr.back()))  << endl;
-
-cout<<"eF="<<eF<<"!!!!!!"<<endl;
 
     // Update storestate...
     q = StoreState ( q, f, j, eF.c_str(), e.c_str(), oL, oR, getCat(removeLink(l)), getCat(removeLink(tr.back())), aPretrm, aLchild );
