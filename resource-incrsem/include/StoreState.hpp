@@ -544,7 +544,7 @@ ApexWithCarriers awcDummy;
 
 class BaseWithCarriers : public SignWithCarriers {
  public:
-  void set ( O opL, O opR, CVar cB, CVar cP );
+  void set ( O opL, O opR, CVar cB, CVar cP, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild );
   Sign&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
   const Sign& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : bTop; }
 };
@@ -577,19 +577,13 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
       // Create intermediate base parent...
       BaseWithCarriers bwcParent = qPrev.back(1).base();  if( evJ != EVar::eNil and evJ.bot()=='V' ) bwcParent.emplace( bwcParent.end()-1 );
-      applyUnariesTopDn( bwcParent, evJ );               // Calc parent contexts (below unaries).
+      applyUnariesTopDn( bwcParent, evJ );                                                                   // Calc parent contexts (below unaries).
       if( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) bwcParent.back().setHVec().emplace_back();    // Add space for satisfied argument. 
       if( getDir(opL)!=-10 ) bwcParent.back().setHVec().addSynArg( -getDir(opL), aLchild.getHVec() );
 
       // Create right child base...
       back().base() = bwcParent;  back().base().pop_back();
-      back().base().set( opL, opR, cB, cA );
-      if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), bwcParent.back().getHVec() );      // Calc base contexts.
-      if( opL=='G' or opR=='R' ) { setNoloBack( 0, back().base() ).setHVec() = HVec( aLchild.getCat().getSynArgs() );
-                                   setNoloBack( 0, back().base() ).setHVec().add( aLchild.getHVec() ); }
-      if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( getNoloBack( 0, back().base() ).getHVec() );
-      if(             opR=='I' ) { back().base().back(1).setHVec() = HVec(1);
-                                   back().base().back(1).setHVec().addSynArg( aLchild.getCat().getSynArgs(), aLchild.getHVec() ); }
+      back().base().set( opL, opR, cB, cA, *this, bwcParent, qPrev.back().apex() );
       if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec();               // If base != apex, end ditto.
     }
     // Terminal match and nonterminal non-match...
@@ -601,19 +595,13 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       // Create new apex...
       unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
       if( qPrev.back().apex().size() > iSubtracted ) back().apex().insert( back().apex().end(), qPrev.back().apex().begin(), qPrev.back().apex().end() - 1 - iSubtracted );                // Add nolos from left child as older.
-      back().apex().set( opL, opR, cA, getBase().getCat() );                           // Fill in apex at d.
+      back().apex().set( opL, opR, cA, getBase().getCat() );                                                 // Fill in apex at d.
       HVec hvParent( cA.getSynArgs() + ( ( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) ? 2 : 1 ) );
       hvParent.addSynArg( -getDir(opL), aLchild.getHVec() );                                                 // Calc parent contexts (below unaries).
-      back().apex().back().setHVec() = hvParent;  applyUnariesBotUp( back().apex(), evJ );  // Calc apex contexts.
+      back().apex().back().setHVec() = hvParent;  applyUnariesBotUp( back().apex(), evJ );                   // Calc apex contexts.
 
       // Create right child base...
-      back().base().set( opL, opR, cB, cA );                         // Fill in base at d.
-      if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), hvParent );              // Calc base contexts.
-      if( opL=='G' or opR=='R' ) { setNoloBack( 0, back().base() ).setHVec() = HVec( aLchild.getCat().getSynArgs() );
-                                   setNoloBack( 0, back().base() ).setHVec().add( aLchild.getHVec() ); }
-      if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( getNoloBack( 0, back().base() ).getHVec() );
-      if(             opR=='I' ) { back().base().back(1).setHVec() = HVec(1);
-                                   back().base().back(1).setHVec().addSynArg( aLchild.getCat().getSynArgs(), aLchild.getHVec() ); }
+      back().base().set( opL, opR, cB, cA, *this, back().apex(), qPrev.back().apex() );                      // Fill in base at d.
       if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                    // Init ditto.
     }
     // Terminal non-match and nonterminal match...
@@ -628,19 +616,13 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
       // Create intermediate base parent...
       BaseWithCarriers bwcParent = qPrev.back().base();  if( evJ != EVar::eNil and evJ.bot()=='V' ) bwcParent.emplace( bwcParent.end()-1 );
-      applyUnariesTopDn( bwcParent, evJ );                // Calc parent contexts (below unaries).
+      applyUnariesTopDn( bwcParent, evJ );                                                                   // Calc parent contexts (below unaries).
       if( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) bwcParent.back().setHVec().emplace_back();    // Add space for satisfied argument. 
       if( getDir(opL)!=-10 ) bwcParent.back().setHVec().addSynArg( -getDir(opL), awcPretrm.back().getHVec() );
 
       // Create right child base...
       back().base() = bwcParent;  back().base().pop_back();
-      back().base().set( opL, opR, cB, cA );
-      if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), bwcParent.back().getHVec() );      // Calc base contexts.
-      if( opL=='G' or opR=='R' ) { setNoloBack( 0, back().base() ).setHVec() = HVec( awcPretrm.back().getCat().getSynArgs() );
-                                   setNoloBack( 0, back().base() ).setHVec().add( awcPretrm.back().getHVec() ); }
-      if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( getNoloBack( 0, awcPretrm ).getHVec() );
-      if(             opR=='I' ) { back().base().back(1).setHVec() = HVec(1);
-                                   back().base().back(1).setHVec().addSynArg( aLchild.getCat().getSynArgs(), aLchild.getHVec() ); }
+      back().base().set( opL, opR, cB, cA, *this, bwcParent, awcPretrm );
       if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec();               // If base != apex, end ditto.
     }
     // Terminal non-match and nonterminal non-match...
@@ -656,19 +638,13 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       // Create new apex...
       unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
       if( awcPretrm.size() > iSubtracted ) back().apex().insert( back().apex().end(), awcPretrm.begin(), awcPretrm.end() - 1 - iSubtracted );        // Add nolos from left child as older.
-      back().apex().set( opL, opR, cA, getBase().getCat() );                            // Fill in apex at d+1.
+      back().apex().set( opL, opR, cA, getBase().getCat() );                                                 // Fill in apex at d+1.
       HVec hvParent( cA.getSynArgs() + ( ( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) ? 2 : 1 ) );
       hvParent.addSynArg( -getDir(opL), awcPretrm.back().getHVec() );                                        // Calc parent contexts (below unaries).
       back().apex().back().setHVec() = hvParent;  applyUnariesBotUp( awcPretrm, evJ );                       // Calc apex contexts.
 
       // Create right child base...
-      back().base().set( opL, opR, cB, cA );                         // Fill in base at d+1.
-      if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), hvParent );              // Calc base contexts.
-      if( opL=='G' or opR=='R' ) { setNoloBack( 0, back().base() ).setHVec() = HVec( awcPretrm.back().getCat().getSynArgs() );
-                                   setNoloBack( 0, back().base() ).setHVec().add( awcPretrm.back().getHVec() ); }
-      if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( getNoloBack( 0, awcPretrm ).getHVec() );
-      if(             opR=='I' ) { back().base().back(1).setHVec() = HVec(1);
-                                   back().base().back(1).setHVec().addSynArg( aLchild.getCat().getSynArgs(), aLchild.getHVec() ); }
+      back().base().set( opL, opR, cB, cA, *this, back().apex(), awcPretrm );                                // Fill in base at d+1.
       if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                    // Init ditto.
     }
   }
@@ -755,10 +731,17 @@ void ApexWithCarriers::set ( O opL, O opR, CVar cA, CVar cB ) {
   *emplace( end() ) = Sign( HVec(), cA, S_A );  back().setHVec() = HVec( cA.getSynArgs() + ( ((opL>='1' and opL<='9') or (opR>='1' and opR<='9')) ? 2 : 1 ) );
 }
 
-void BaseWithCarriers::set ( O opL, O opR, CVar cB, CVar cP ) {
+void BaseWithCarriers::set ( O opL, O opR, CVar cB, CVar cP, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild ) {
   int iAdding = cB.getNoloArity() - cP.getNoloArity() - size();
   if( iAdding > 0 ) insert( end(), iAdding, Sign() );                          // Add nolos not in parent as more recent.
   *emplace( end() ) = Sign( HVec(), cB, S_B );  back().setHVec() = HVec( cB.getSynArgs() + 1 );
+
+  if( getDir(opR)!=-10 ) back().setHVec().addSynArg( getDir(opR), swcParent.back().getHVec() );              // Calc base contexts.
+  if( opL=='G' or opR=='R' ) { ss.setNoloBack( 0, *this ).setHVec() = HVec( awcLchild.back().getCat().getSynArgs() );
+                               ss.setNoloBack( 0, *this ).setHVec().add( awcLchild.back().getHVec() ); }
+  if( opL=='R' or opR=='H' ) back().setHVec().add( ss.getNoloBack( 0, awcLchild ).getHVec() );
+  if(             opR=='I' ) { back(1).setHVec() = HVec(1);
+                               back(1).setHVec().addSynArg( awcLchild.back().getCat().getSynArgs(), awcLchild.back().getHVec() ); }
 }
 
 #else
