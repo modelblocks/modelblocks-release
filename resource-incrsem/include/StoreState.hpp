@@ -565,7 +565,6 @@ const DerivationFragment dfTop;
 class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
  public:
 
-//  static const Sign aTop;
   static       Sign aDummy;  // for set, to compile
 
   StoreState ( ) : DelimitedVector<psX,DerivationFragment,psX,psX> ( ) { } 
@@ -583,16 +582,13 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       if( getDir(opL)!=-10 ) bwcParent.back().setHVec().addSynArg( -getDir(opL), aLchild.getHVec() );
 
       // Create right child base...
-      back().base() = bwcParent;  back().base().pop_back(); //.back() = Sign( HVec(), cB, S_B );
+      back().base() = bwcParent;  back().base().pop_back();
       back().base().set( opL, opR, cB, cA );
-      back().base().back().setHVec() = HVec( cB.getSynArgs()+1 );                                                      // Fill in base at d-1.
       if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), bwcParent.back().getHVec() );      // Calc base contexts.
-      if( opL=='G' or opR=='R' ) { //back().base().insert( back().base().end()-1, Sign() );
-                                   setNoloBack( 0, back().base() ).setHVec() = HVec( aLchild.getCat().getSynArgs() );
+      if( opL=='G' or opR=='R' ) { setNoloBack( 0, back().base() ).setHVec() = HVec( aLchild.getCat().getSynArgs() );
                                    setNoloBack( 0, back().base() ).setHVec().add( aLchild.getHVec() ); }
       if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( getNoloBack( 0, back().base() ).getHVec() );
-      if(             opR=='I' ) { //back().base().insert( back().base().end()-1, Sign() );
-                                   back().base().back(1).setHVec() = HVec(1);
+      if(             opR=='I' ) { back().base().back(1).setHVec() = HVec(1);
                                    back().base().back(1).setHVec().addSynArg( aLchild.getCat().getSynArgs(), aLchild.getHVec() ); }
       if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec();               // If base != apex, end ditto.
     }
@@ -608,18 +604,15 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       back().apex().set( opL, opR, cA, getBase().getCat() );                           // Fill in apex at d.
       HVec hvParent( cA.getSynArgs() + ( ( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) ? 2 : 1 ) );
       hvParent.addSynArg( -getDir(opL), aLchild.getHVec() );                                                 // Calc parent contexts (below unaries).
-      back().apex().back().setHVec() = hvParent;  applyUnariesBotUp( back().apex()/*.back().setHVec()*/, evJ );  // Calc apex contexts.
+      back().apex().back().setHVec() = hvParent;  applyUnariesBotUp( back().apex(), evJ );  // Calc apex contexts.
 
       // Create right child base...
-//      if( qPrev.back().base().size() > 0 ) insert( back().base().end(), qPrev.back().base().begin(), qPrev.back().base().end() - 1 );          // Copy nolos from prev base as oldest.
       back().base().set( opL, opR, cB, cA );                         // Fill in base at d.
       if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), hvParent );              // Calc base contexts.
-      if( opL=='G' or opR=='R' ) { //back().base().insert( back().base().end()-1, Sign() );
-                                   setNoloBack( 0, back().base() ).setHVec() = HVec( aLchild.getCat().getSynArgs() );
+      if( opL=='G' or opR=='R' ) { setNoloBack( 0, back().base() ).setHVec() = HVec( aLchild.getCat().getSynArgs() );
                                    setNoloBack( 0, back().base() ).setHVec().add( aLchild.getHVec() ); }
       if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( getNoloBack( 0, back().base() ).getHVec() );
-      if(             opR=='I' ) { //back().base().insert( back().base().end()-1, Sign() );
-                                   back().base().back(1).setHVec() = HVec(1);
+      if(             opR=='I' ) { back().base().back(1).setHVec() = HVec(1);
                                    back().base().back(1).setHVec().addSynArg( aLchild.getCat().getSynArgs(), aLchild.getHVec() ); }
       if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                    // Init ditto.
     }
@@ -640,16 +633,13 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       if( getDir(opL)!=-10 ) bwcParent.back().setHVec().addSynArg( -getDir(opL), awcPretrm.back().getHVec() );
 
       // Create right child base...
-      back().base() = bwcParent;  back().base().pop_back(); //.back() = Sign( HVec(), cB, S_B );
+      back().base() = bwcParent;  back().base().pop_back();
       back().base().set( opL, opR, cB, cA );
-      back().base().back().setHVec() = HVec( cB.getSynArgs()+1 );                                            // Fill in base at d.
       if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), bwcParent.back().getHVec() );      // Calc base contexts.
-      if( opL=='G' or opR=='R' ) { //back().base().insert( back().base().end()-1, Sign() );
-                                   setNoloBack( 0, back().base() ).setHVec() = HVec( awcPretrm.back().getCat().getSynArgs() );
+      if( opL=='G' or opR=='R' ) { setNoloBack( 0, back().base() ).setHVec() = HVec( awcPretrm.back().getCat().getSynArgs() );
                                    setNoloBack( 0, back().base() ).setHVec().add( awcPretrm.back().getHVec() ); }
       if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( getNoloBack( 0, awcPretrm ).getHVec() );
-      if(             opR=='I' ) { //back().base().insert( back().base().end()-1, Sign() );
-                                   back().base().back(1).setHVec() = HVec(1);
+      if(             opR=='I' ) { back().base().back(1).setHVec() = HVec(1);
                                    back().base().back(1).setHVec().addSynArg( aLchild.getCat().getSynArgs(), aLchild.getHVec() ); }
       if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec();               // If base != apex, end ditto.
     }
@@ -672,15 +662,12 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       back().apex().back().setHVec() = hvParent;  applyUnariesBotUp( awcPretrm, evJ );                       // Calc apex contexts.
 
       // Create right child base...
-//      if( qPrev.back().base().size() > 0 ) insert( back().base().end(), qPrev.back().base().begin(), qPrev.back().base().end() - 1 );          // Copy nolos from prev back as oldest.
       back().base().set( opL, opR, cB, cA );                         // Fill in base at d+1.
       if( getDir(opR)!=-10 ) back().base().back().setHVec().addSynArg( getDir(opR), hvParent );              // Calc base contexts.
-      if( opL=='G' or opR=='R' ) { //back().base().insert( back().base().end()-1, Sign() );
-                                   setNoloBack( 0, back().base() ).setHVec() = HVec( awcPretrm.back().getCat().getSynArgs() );
+      if( opL=='G' or opR=='R' ) { setNoloBack( 0, back().base() ).setHVec() = HVec( awcPretrm.back().getCat().getSynArgs() );
                                    setNoloBack( 0, back().base() ).setHVec().add( awcPretrm.back().getHVec() ); }
       if( opL=='R' or opR=='H' ) back().base().back().setHVec().add( getNoloBack( 0, awcPretrm ).getHVec() );
-      if(             opR=='I' ) { //back().base().insert( back().base().end()-1, Sign() );
-                                   back().base().back(1).setHVec() = HVec(1);
+      if(             opR=='I' ) { back().base().back(1).setHVec() = HVec(1);
                                    back().base().back(1).setHVec().addSynArg( aLchild.getCat().getSynArgs(), aLchild.getHVec() ); }
       if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                    // Init ditto.
     }
@@ -728,9 +715,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
                                 { hvTemp = HVec(1);  hvTemp.addSynArg( getDir(e.bot()), awc.back().getHVec() );
                                   e = e.withoutTop();  awc.back().setHVec().addSynArg( -1, hvTemp ); }
       else if( e.bot() == 'V' ) { awc.back().setHVec().addSynArg( -1, getNoloBack(0,awc).getHVec() ); } //awc.erase(awc.end()-1); }
-      else                      { //cout<<"I'm adding an apex nolo bc e.bot()="<<e.bot()<<endl; awc.insert( awc.end()-1, Sign() );
-                                  //setNoloBack(iBack,awc).setHVec() = HVec(1);   // THIS IS A HACK; SHOULD BE PRE-CALC
-                                  awc.back().setHVec().addSynArg( -getDir(e.bot()), getNoloBack(iBack,awc).getHVec() );
+      else                      { awc.back().setHVec().addSynArg( -getDir(e.bot()), getNoloBack(iBack,awc).getHVec() );
                                   setNoloBack(iBack--,awc).setHVec().addSynArg( getDir(e.bot()), awc.back().getHVec() ); }
     }
   }
@@ -741,15 +726,12 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       else if( e.top() == 'V' and e.withoutTop() != EVar::eNil and e.withoutTop().top() >= '0' and e.withoutTop().top() <= '9' )
                                 { hvTemp = HVec( 1 );  hvTemp.addSynArg( 1, bwc.back().getHVec() );  bwc.back().setHVec().at( 1 ) = KVec();
                                   e = e.withoutTop();  bwc.back().setHVec().addSynArg( -getDir(e.top()), hvTemp ); }
-      else if( e.top() == 'V' ) { //bwc.insert( bwc.end()-1, Sign() );
-                                  setNoloBack(0,bwc).setHVec().addSynArg( 1, bwc.back().getHVec() );  bwc.back().setHVec().at(1) = KVec(); }
-      else                      { //cout<<"I'm adding a base nolo bc e.top()="<<e.top()<<endl;
-                                  bwc.back().setHVec().addSynArg( -getDir(e.top()), getNoloBack(iBack,bwc).getHVec() );
+      else if( e.top() == 'V' ) { setNoloBack(0,bwc).setHVec().addSynArg( 1, bwc.back().getHVec() );  bwc.back().setHVec().at(1) = KVec(); }
+      else                      { bwc.back().setHVec().addSynArg( -getDir(e.top()), getNoloBack(iBack,bwc).getHVec() );
                                   setNoloBack(iBack++,bwc).setHVec().addSynArg( getDir(e.top()), bwc.back().getHVec() ); }
     }
   }
 };
-//const Sign StoreState::aTop( hvTop, cTop, S_B );
 Sign StoreState::aDummy( hvTop, cTop, S_B );
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -774,7 +756,7 @@ void ApexWithCarriers::set ( O opL, O opR, CVar cA, CVar cB ) {
 }
 
 void BaseWithCarriers::set ( O opL, O opR, CVar cB, CVar cP ) {
-  int iAdding = cB.getNoloArity() - cP.getNoloArity() - size(); // + ( (opL=='G' or opR=='R' or opR=='I') ? 1 : 0 );
+  int iAdding = cB.getNoloArity() - cP.getNoloArity() - size();
   if( iAdding > 0 ) insert( end(), iAdding, Sign() );                          // Add nolos not in parent as more recent.
   *emplace( end() ) = Sign( HVec(), cB, S_B );  back().setHVec() = HVec( cB.getSynArgs() + 1 );
 }
