@@ -536,7 +536,7 @@ class SignWithCarriers : public DelimitedVector<psX,Sign,psX,psX> {
 
 class ApexWithCarriers : public SignWithCarriers {
  public:
-  void set ( O opL, O opR, CVar cA, CVar cB );
+  void set ( CVar cB, CVar cA, O opL, O opR );
   Sign&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
   const Sign& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : aTop; }
 };
@@ -544,7 +544,7 @@ ApexWithCarriers awcDummy;
 
 class BaseWithCarriers : public SignWithCarriers {
  public:
-  void set ( O opL, O opR, CVar cB, CVar cP, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild );
+  void set ( CVar cP, CVar cB, O opL, O opR, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild );
   Sign&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
   const Sign& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : bTop; }
 };
@@ -583,7 +583,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
       // Create right child base...
       back().base() = bwcParent;  back().base().pop_back();
-      back().base().set( opL, opR, cB, cA, *this, bwcParent, qPrev.back().apex() );
+      back().base().set( bwcParent.back().getCat(), cB, opL, opR, *this, bwcParent, qPrev.back().apex() );
       if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec();               // If base != apex, end ditto.
     }
     // Terminal match and nonterminal non-match...
@@ -595,13 +595,13 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       // Create new apex...
       unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
       if( qPrev.back().apex().size() > iSubtracted ) back().apex().insert( back().apex().end(), qPrev.back().apex().begin(), qPrev.back().apex().end() - 1 - iSubtracted );                // Add nolos from left child as older.
-      back().apex().set( opL, opR, cA, getBase().getCat() );                                                 // Fill in apex at d.
+      back().apex().set( getBase().getCat(), cA, opL, opR );                                                 // Fill in apex at d.
       HVec hvParent( cA.getSynArgs() + ( ( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) ? 2 : 1 ) );
       hvParent.addSynArg( -getDir(opL), aLchild.getHVec() );                                                 // Calc parent contexts (below unaries).
       back().apex().back().setHVec() = hvParent;  applyUnariesBotUp( back().apex(), evJ );                   // Calc apex contexts.
 
       // Create right child base...
-      back().base().set( opL, opR, cB, cA, *this, back().apex(), qPrev.back().apex() );                      // Fill in base at d.
+      back().base().set( cA, cB, opL, opR, *this, back().apex(), qPrev.back().apex() );                      // Fill in base at d.
       if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                    // Init ditto.
     }
     // Terminal non-match and nonterminal match...
@@ -611,7 +611,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       emplace( end() )->apex() = qPrev.back().apex();                                                        // Copy apex at d.
 
       // Create preterm...
-      ApexWithCarriers awcPretrm;  awcPretrm.set( O_I, O_I, aLchild.getCat(), getBase().getCat() );
+      ApexWithCarriers awcPretrm;  awcPretrm.set( getBase().getCat(), aLchild.getCat(), O_I, O_I );
       awcPretrm.back()=aLchild;  applyUnariesBotUp( awcPretrm, evF );
 
       // Create intermediate base parent...
@@ -622,7 +622,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
       // Create right child base...
       back().base() = bwcParent;  back().base().pop_back();
-      back().base().set( opL, opR, cB, cA, *this, bwcParent, awcPretrm );
+      back().base().set( bwcParent.back().getCat(), cB, opL, opR, *this, bwcParent, awcPretrm );
       if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec();               // If base != apex, end ditto.
     }
     // Terminal non-match and nonterminal non-match...
@@ -632,19 +632,19 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       emplace( end() );                                                                                      // Add depth level d+1.
 
       // Create preterm...
-      ApexWithCarriers awcPretrm;  awcPretrm.set( O_I, O_I, aLchild.getCat(), getBase().getCat() );
+      ApexWithCarriers awcPretrm;  awcPretrm.set( getBase().getCat(), aLchild.getCat(), O_I, O_I );
       awcPretrm.back()=aPretrm;  applyUnariesBotUp( awcPretrm, evF );
 
       // Create new apex...
       unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
       if( awcPretrm.size() > iSubtracted ) back().apex().insert( back().apex().end(), awcPretrm.begin(), awcPretrm.end() - 1 - iSubtracted );        // Add nolos from left child as older.
-      back().apex().set( opL, opR, cA, getBase().getCat() );                                                 // Fill in apex at d+1.
+      back().apex().set( getBase().getCat(), cA, opL, opR );                                                 // Fill in apex at d+1.
       HVec hvParent( cA.getSynArgs() + ( ( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) ? 2 : 1 ) );
       hvParent.addSynArg( -getDir(opL), awcPretrm.back().getHVec() );                                        // Calc parent contexts (below unaries).
       back().apex().back().setHVec() = hvParent;  applyUnariesBotUp( awcPretrm, evJ );                       // Calc apex contexts.
 
       // Create right child base...
-      back().base().set( opL, opR, cB, cA, *this, back().apex(), awcPretrm );                                // Fill in base at d+1.
+      back().base().set( cA, cB, opL, opR, *this, back().apex(), awcPretrm );                                // Fill in base at d+1.
       if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                    // Init ditto.
     }
   }
@@ -725,13 +725,13 @@ LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ApexWithCarriers::set ( O opL, O opR, CVar cA, CVar cB ) {
+void ApexWithCarriers::set ( CVar cB, CVar cA, O opL, O opR ) {
   int iAdding = cA.getNoloArity() - cB.getNoloArity() - size();
   if( iAdding > 0 ) insert( end(), iAdding, Sign() );                          // Add nolos not in left child as more recent.
   *emplace( end() ) = Sign( HVec(), cA, S_A );  back().setHVec() = HVec( cA.getSynArgs() + ( ((opL>='1' and opL<='9') or (opR>='1' and opR<='9')) ? 2 : 1 ) );
 }
 
-void BaseWithCarriers::set ( O opL, O opR, CVar cB, CVar cP, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild ) {
+void BaseWithCarriers::set ( CVar cP, CVar cB, O opL, O opR, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild ) {
   int iAdding = cB.getNoloArity() - cP.getNoloArity() - size();
   if( iAdding > 0 ) insert( end(), iAdding, Sign() );                          // Add nolos not in parent as more recent.
   *emplace( end() ) = Sign( HVec(), cB, S_B );  back().setHVec() = HVec( cB.getSynArgs() + 1 );
