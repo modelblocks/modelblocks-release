@@ -536,7 +536,7 @@ class SignWithCarriers : public DelimitedVector<psX,Sign,psX,psX> {
 
 class ApexWithCarriers : public SignWithCarriers {
  public:
-  void set ( CVar cB, CVar cA, O opL, O opR );
+  void set ( CVar cB, CVar cA, O opL, O opR, const Sign& aLchild = Sign() );
   Sign&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
   const Sign& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : aTop; }
 };
@@ -595,10 +595,8 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       // Create new apex...
       unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
       if( qPrev.back().apex().size() > iSubtracted ) back().apex().insert( back().apex().end(), qPrev.back().apex().begin(), qPrev.back().apex().end() - 1 - iSubtracted );                // Add nolos from left child as older.
-      back().apex().set( getBase().getCat(), cA, opL, opR );                                                 // Fill in apex at d.
-      HVec hvParent( cA.getSynArgs() + ( ( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) ? 2 : 1 ) );
-      hvParent.addSynArg( -getDir(opL), aLchild.getHVec() );                                                 // Calc parent contexts (below unaries).
-      back().apex().back().setHVec() = hvParent;  applyUnariesBotUp( back().apex(), evJ );                   // Calc apex contexts.
+      back().apex().set( getBase().getCat(), cA, opL, opR, aLchild );                                                 // Fill in apex at d.
+      applyUnariesBotUp( back().apex(), evJ );                   // Calc apex contexts.
 
       // Create right child base...
       back().base().set( cA, cB, opL, opR, *this, back().apex(), qPrev.back().apex() );                      // Fill in base at d.
@@ -638,10 +636,8 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       // Create new apex...
       unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
       if( awcPretrm.size() > iSubtracted ) back().apex().insert( back().apex().end(), awcPretrm.begin(), awcPretrm.end() - 1 - iSubtracted );        // Add nolos from left child as older.
-      back().apex().set( getBase().getCat(), cA, opL, opR );                                                 // Fill in apex at d+1.
-      HVec hvParent( cA.getSynArgs() + ( ( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) ? 2 : 1 ) );
-      hvParent.addSynArg( -getDir(opL), awcPretrm.back().getHVec() );                                        // Calc parent contexts (below unaries).
-      back().apex().back().setHVec() = hvParent;  applyUnariesBotUp( awcPretrm, evJ );                       // Calc apex contexts.
+      back().apex().set( getBase().getCat(), cA, opL, opR, awcPretrm.back() );                                                 // Fill in apex at d+1.
+      applyUnariesBotUp( awcPretrm, evJ );                       // Calc apex contexts.
 
       // Create right child base...
       back().base().set( cA, cB, opL, opR, *this, back().apex(), awcPretrm );                                // Fill in base at d+1.
@@ -725,18 +721,20 @@ LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ApexWithCarriers::set ( CVar cB, CVar cA, O opL, O opR ) {
+void ApexWithCarriers::set ( CVar cB, CVar cA, O opL, O opR, const Sign& aLchild ) {
   int iAdding = cA.getNoloArity() - cB.getNoloArity() - size();
-  if( iAdding > 0 ) insert( end(), iAdding, Sign() );                          // Add nolos not in left child as more recent.
+  if( iAdding > 0 ) insert( end(), iAdding, Sign() );                                                        // Add nolos not in lchild as more recent.
   *emplace( end() ) = Sign( HVec(), cA, S_A );  back().setHVec() = HVec( cA.getSynArgs() + ( ((opL>='1' and opL<='9') or (opR>='1' and opR<='9')) ? 2 : 1 ) );
+
+  if( aLchild!=Sign() and getDir(opL)!=-10 ) back().setHVec().addSynArg( -getDir(opL), aLchild.getHVec() );  // Apply operator from lchild to parent.
 }
 
 void BaseWithCarriers::set ( CVar cP, CVar cB, O opL, O opR, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild ) {
   int iAdding = cB.getNoloArity() - cP.getNoloArity() - size();
-  if( iAdding > 0 ) insert( end(), iAdding, Sign() );                          // Add nolos not in parent as more recent.
+  if( iAdding > 0 ) insert( end(), iAdding, Sign() );                                                        // Add nolos not in parent as more recent.
   *emplace( end() ) = Sign( HVec(), cB, S_B );  back().setHVec() = HVec( cB.getSynArgs() + 1 );
 
-  if( getDir(opR)!=-10 ) back().setHVec().addSynArg( getDir(opR), swcParent.back().getHVec() );              // Calc base contexts.
+  if( getDir(opR)!=-10 ) back().setHVec().addSynArg( getDir(opR), swcParent.back().getHVec() );              // Apply operator from parent to rchild.
   if( opL=='G' or opR=='R' ) { ss.setNoloBack( 0, *this ).setHVec() = HVec( awcLchild.back().getCat().getSynArgs() );
                                ss.setNoloBack( 0, *this ).setHVec().add( awcLchild.back().getHVec() ); }
   if( opL=='R' or opR=='H' ) back().setHVec().add( ss.getNoloBack( 0, awcLchild ).getHVec() );
