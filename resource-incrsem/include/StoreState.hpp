@@ -610,7 +610,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
       // Create preterm...
       ApexWithCarriers awcPretrm;  awcPretrm.set( getBase().getCat(), aLchild.getCat(), O_I, O_I );
-      awcPretrm.back()=aLchild;  applyUnariesBotUp( awcPretrm, evF );
+      awcPretrm.back()=aPretrm;  applyUnariesBotUp( awcPretrm, evF );
 
       // Create intermediate base parent...
       BaseWithCarriers bwcParent = qPrev.back().base();  if( evJ != EVar::eNil and evJ.bot()=='V' ) bwcParent.emplace( bwcParent.end()-1 );

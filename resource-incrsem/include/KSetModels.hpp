@@ -408,8 +408,8 @@ class JModel {
       jr1 = getResponseIndex( 1, EVar::eNil, 'N', 'I' ); 
     }
 
-    unsigned int getResponse0( ) { return jr0; }
-    unsigned int getResponse1( ) { return jr1; }
+    unsigned int getResponse0( ) const { return jr0; }
+    unsigned int getResponse1( ) const { return jr1; }
 
     unsigned int getPredictorIndex( const string& s ) {
       const auto& it = msi.find( s );  if( it != msi.end() ) return( it->second );
