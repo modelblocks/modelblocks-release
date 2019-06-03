@@ -568,6 +568,71 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
   static       Sign aDummy;  // for set, to compile
 
   StoreState ( ) : DelimitedVector<psX,DerivationFragment,psX,psX> ( ) { } 
+
+  StoreState ( CVar cA, CVar cB ) { emplace( end() ); back().apex().emplace_back( hvBot, cA, S_A ); back().base().emplace_back( hvBot, cB, S_B ); }
+
+  StoreState ( const StoreState& qPrev, const HVec& hvAnt, EVar evF, K k, CVar cP, const EMat& matE, const OFunc& funcO ) {
+    // Add preterm and apply unaries...
+    reserve( qPrev.size() + 1 );
+    insert( end(), qPrev.begin(), qPrev.end() );
+    emplace( end() )->apex().set( getBase().getCat(), cP, 'I', 'I', Sign() );
+    back().apex().back().setHVec() = HVec( k, matE, funcO );
+    back().apex().back().setHVec().add( hvAnt );
+    applyUnariesBotUp( back().apex(), evF );
+  }
+
+  StoreState ( const StoreState& qPrev, F f ) {
+    if( f==0 ) {
+      // Close most recent derivation fragment and make new complete sign (lowest apex)...
+      reserve( qPrev.size()-1 );
+      insert( end(), qPrev.begin(), qPrev.end()-2 );
+      emplace( end() )->apex().set( getBase().getCat(), qPrev.back(1).apex().back().getCat(), 'N', 'N', Sign() );
+      if( qPrev.getApex(1).isDitto() ) back().apex().back().setHVec() = qPrev.back(1).base().back().getHVec();
+      else                             back().apex().back().setHVec() = qPrev.back(1).apex().back().getHVec();
+    }
+    else {
+      // Leave preterm as complete sign...
+      *this = qPrev;
+    }
+  }
+
+  StoreState ( const StoreState& qPrev, J j, EVar evJ, O opL, O opR, CVar cA, CVar cB ) {
+    if( j==1 and qPrev.getDepth()>1 ) {
+      // Grow prev derivation fragment downward to subsume new apex...
+      reserve( qPrev.size()-1 );
+      if( qPrev.size() >= 2 ) insert( end(), qPrev.begin(), qPrev.end()-2 );
+      emplace( end() )->apex() = qPrev.back(1).apex();
+
+      // Create intermediate base parent...
+      BaseWithCarriers bwcParent = qPrev.back(1).base();  if( evJ != EVar::eNil and evJ.bot()=='V' ) bwcParent.emplace( bwcParent.end()-1 );
+      applyUnariesTopDn( bwcParent, evJ );                                                                   // Calc parent contexts (below unaries).
+      if( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) bwcParent.back().setHVec().emplace_back();    // Add space for satisfied argument. 
+      if( getDir(opL)!=-10 ) bwcParent.back().setHVec().addSynArg( -getDir(opL), qPrev.getApex().getHVec() );
+
+      // Create right child base...
+      back().base() = bwcParent;  back().base().pop_back();
+      back().base().set( bwcParent.back().getCat(), cB, opL, opR, *this, bwcParent, qPrev.back().apex() );
+      if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec();               // If base != apex, end ditto.
+    }
+    else if( j==0 ) {
+      // Grow apex upward into new derivation fragment...
+      reserve( qPrev.size() );
+      insert( end(), qPrev.begin(), qPrev.end()-1 );
+      emplace( end() );                                                                                      // Add depth level d.
+
+      // Create new apex...
+      unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
+      if( qPrev.back().apex().size() > iSubtracted ) back().apex().insert( back().apex().end(), qPrev.back().apex().begin(), qPrev.back().apex().end() - 1 - iSubtracted );                // Add nolos from left child as older.
+      back().apex().set( getBase().getCat(), cA, opL, opR, qPrev.getApex() );                                                 // Fill in apex at d.
+      applyUnariesBotUp( back().apex(), evJ );                   // Calc apex contexts.
+
+      // Create right child base...
+      back().base().set( cA, cB, opL, opR, *this, back().apex(), qPrev.back().apex() );                      // Fill in base at d.
+      if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                    // Init ditto.
+    }
+  }
+
+/*
   StoreState ( const StoreState& qPrev, F f, J j, EVar evF, EVar evJ, O opL, O opR, CVar cA, CVar cB, const Sign& aPretrm, const LeftChildSign& aLchild ) {
     // Terminal match and nonterminal match...
     if( f==0 and j==1 and qPrev.getDepth()>1 ) {
@@ -644,8 +709,9 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                    // Init ditto.
     }
   }
+*/
 
-  unsigned int getDepth( ) const { return size(); }
+  unsigned int getDepth( ) const { return /*( size()>0 and back().base().size()==0 ) ? size()-1 :*/ size(); }
 
   DerivationFragment&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
   const DerivationFragment& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : dfTop; }
@@ -653,7 +719,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
   Sign&       setApex (        unsigned int iDepthBack = 0                     )       {  return back( iDepthBack ).apex().back();            }
   const Sign& getApex (        unsigned int iDepthBack = 0                     ) const {  return back( iDepthBack ).apex().back();            }
   const Sign& getApexCarrier ( unsigned int iDepthBack, unsigned int iCarrBack ) const {  return back( iDepthBack ).apex().back( iCarrBack ); }
-  const Sign& getBase (        unsigned int iDepthBack = 0                     ) const {  return back( iDepthBack ).base().back();            }
+  const Sign& getBase (        unsigned int iDepthBack = 0                     ) const {  return back( iDepthBack + (back().base().size()==0) ).base().back();            }
   const Sign& getBaseCarrier ( unsigned int iDepthBack, unsigned int iCarrBack ) const {  return back( iDepthBack ).base().back( iCarrBack ); }
 
   Sign& setNoloBack ( unsigned int iCarrBack = 0, SignWithCarriers& awc = awcDummy ) {                 // NOTE: getNoloBack(0) is most recent nonlocal dep; i.e. furthest left.
@@ -1045,7 +1111,7 @@ class APredictorVec : public DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Del
     DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( d, f, j, e, o, cP, cL ) { }
   APredictorVec ( F f, J j, EVar eF, EVar eJ, O opL, const LeftChildSign& aLchild, const StoreState& ss ) :
 #ifdef SIMPLE_STORE
-    DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()+f-j, f, j, eJ, opL, ss.getBase(1-f).getCat(), (j==0) ? aLchild.getCat() : cBot ) { } 
+    DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()-j, f, j, eJ, opL, ss.getBase().getCat(), (j==0) ? aLchild.getCat() : cBot ) { } 
 #else
     DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()+f-j, f, j, eJ, opL, ss.at(ss.getAncestorBIndex(f)).getCat(), (j==0) ? aLchild.getCat() : cBot ) { } 
 #endif
@@ -1074,7 +1140,11 @@ class BPredictorVec : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Deli
   BPredictorVec ( D d, F f, J j, EVar e, O oL, O oR, CVar cP, CVar cL ) :
     DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( d, f, j, e, oL, oR, cP, cL ) { }
   BPredictorVec ( F f, J j, EVar eF, EVar eJ, O opL, O opR, CVar cParent, const LeftChildSign& aLchild, const StoreState& ss ) :
+#ifdef SIMPLE_STORE
+    DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()-j, f, j, eJ, opL, opR, cParent, aLchild.getCat() ) { }
+#else
     DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()+f-j, f, j, eJ, opL, opR, cParent, aLchild.getCat() ) { }
+#endif
 };
 
 class BModel : public map<BPredictorVec,map<B,double>> {

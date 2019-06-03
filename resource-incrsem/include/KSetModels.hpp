@@ -328,15 +328,16 @@ class JPredictorVec : public list<unsigned int> {
 
     template<class JM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
     JPredictorVec( JM& jm, F f, EVar eF, const LeftChildSign& aLchild, const StoreState& ss ) {
-      int d = (FEATCONFIG & 1) ? 0 : ss.getDepth()+f;
 #ifdef SIMPLE_STORE
-      const Sign& aAncstr  = ss.getBase(f);
+      int d = (FEATCONFIG & 1) ? 0 : ss.getDepth();
+      const Sign& aAncstr  = ss.getBase();
 #else
+      int d = (FEATCONFIG & 1) ? 0 : ss.getDepth()+f;
       const Sign& aAncstr  = ss.at( ss.getAncestorBIndex(f) );
 #endif
       const HVec& hvAncstr = ( aAncstr.getHVec().size()==0 ) ? hvBot : aAncstr.getHVec();
 #ifdef SIMPLE_STORE
-      const HVec& hvFiller = ( ss.getBase(f).getCat().getNoloArity() ) ? ss.getNoloBack().getHVec() : HVec();
+      const HVec& hvFiller = ( ss.getBase().getCat().getNoloArity() ) ? ss.getNoloBack().getHVec() : HVec();
 #else
       int iCarrierB = ss.getAncestorBCarrierIndex( f );
       const HVec& hvFiller = ( iCarrierB<0                 ) ? hvBot : ss.at( iCarrierB ).getHVec();
