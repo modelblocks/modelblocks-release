@@ -1032,6 +1032,20 @@ LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign
 
 ////////////////////////////////////////////////////////////////////////////////
 
+W wUnkIng ( "!unk!ing" );
+W wUnkEd  ( "!unk!ed"  );
+W wUnkS   ( "!unk!s"   );
+W wUnkIon ( "!unk!ion" );
+W wUnkEr  ( "!unk!er"  );
+W wUnkEst ( "!unk!est" );
+W wUnkLy  ( "!unk!ly"  );
+W wUnkIty ( "!unk!ity" );
+W wUnkY   ( "!unk!y"   );
+W wUnkAl  ( "!unk!al"  );
+W wUnkCap ( "!unk!cap" );
+W wUnkNum ( "!unk!num" );
+W wUnk    ( "!unk!"    );
+
 W unkWord ( const char* ps ) {
   return ( 0==strcmp(ps+strlen(ps)-strlen("ing"), "ing") ) ? W("!unk!ing") :
          ( 0==strcmp(ps+strlen(ps)-strlen("ed"),  "ed" ) ) ? W("!unk!ed") :
