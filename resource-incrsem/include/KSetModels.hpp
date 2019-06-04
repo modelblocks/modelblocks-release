@@ -337,7 +337,7 @@ class JPredictorVec : public list<unsigned int> {
 #endif
       const HVec& hvAncstr = ( aAncstr.getHVec().size()==0 ) ? hvBot : aAncstr.getHVec();
 #ifdef SIMPLE_STORE
-      const HVec& hvFiller = ( ss.getBase().getCat().getNoloArity() ) ? ss.getNoloBack().getHVec() : HVec();
+      const HVec& hvFiller = ( ss.getBase().getCat().getNoloArity() ) ? ss.getNoloBack().getHVec() : hvBot; //HVec();
 #else
       int iCarrierB = ss.getAncestorBCarrierIndex( f );
       const HVec& hvFiller = ( iCarrierB<0                 ) ? hvBot : ss.at( iCarrierB ).getHVec();
