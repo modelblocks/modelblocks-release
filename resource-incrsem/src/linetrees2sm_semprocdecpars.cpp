@@ -82,16 +82,21 @@ CVar getCat ( const L& l ) {
 ////////////////////////////////////////////////////////////////////////////////
 
 O getOp ( const L& l, const L& lSibling, const L& lParent ) {
-  if( string::npos != l.find("-lN") or string::npos != l.find("-lG") or string::npos != l.find("-lH") or string::npos != l.find("-lR") ) return 'N';
+//  if( string::npos != l.find("-lN") or string::npos != l.find("-lG") or string::npos != l.find("-lH") or string::npos != l.find("-lR") ) return 'N';
+  if( string::npos != l.find("-lG") ) return 'G';
+  if( string::npos != l.find("-lH") ) return 'H';
+  if( string::npos != l.find("-lR") ) return 'R';
   if( string::npos != l.find("-lV") ) return 'V';
-  if( string::npos != lSibling.find("-lU") ) return ( getCat(l).getArity()==1 ) ? 'U' : 'u';
+  if( string::npos != l.find("-lN") ) return 'N';
+  if( string::npos != lSibling.find("-lU") ) return ( getCat(l).getSynArgs()==1 ) ? 'U' : 'u';
+  if( string::npos != l.find("-lI") ) return 'I';
   if( string::npos != l.find("-lC") ) return 'C';
-  if( string::npos == l.find("-l")  or string::npos != l.find("-lS") or string::npos != l.find("-lU") ) return 'I';
+  if( string::npos == l.find("-l")  or string::npos != l.find("-lS") or string::npos != l.find("-lU") ) return O_I;
   if( string::npos != l.find("-lM") or string::npos != l.find("-lQ") ) return 'M';
-  if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos != lParent.find("\\") ) return '0'+getCat( string(lParent,lParent.find("\\")+1).c_str() ).getArity();
-  if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos == lParent.find('\\') ) return '0'+getCat( lSibling ).getArity();
+  if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos != lParent.find("\\") ) return '0'+getCat( string(lParent,lParent.find("\\")+1).c_str() ).getSynArgs();
+  if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos == lParent.find('\\') ) return '0'+getCat( lSibling ).getSynArgs();
   cerr << "WARNING: unhandled -l tag in label \"" << l << "\"" << " -- assuming identity."<<endl;
-  return 'I';
+  return O_I;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -101,9 +106,9 @@ string getUnaryOp ( const Tree<L>& tr ) {
   if( string::npos != L(tr.front()).find("-lQ") ) return "O";
   N n =  CVar( removeLink(tr).c_str() ).getLastNonlocal();
   if( n == N_NONE ) return "";
-  if( (tr.front().size()==0 || tr.front().front().size()==0) && n == N("-rN") ) return "0";
+  if( (/*tr.front().size()==0 ||*/ tr.front().size()==1 and tr.front().front().size()==0) and n == N("-rN") ) return "0";
   if( string::npos != L(tr.front()).find("-lE") )
-    return ( CVar(removeLink(tr.front()).c_str()).getArity() > CVar(removeLink(tr).c_str()).getArity() ) ? (string(1,'0'+CVar(removeLink(tr.front()).c_str()).getArity())) : "M";
+    return ( CVar(removeLink(tr.front()).c_str()).getSynArgs() > CVar(removeLink(tr).c_str()).getSynArgs() ) ? (string(1,'0'+CVar(removeLink(tr.front()).c_str()).getSynArgs())) : "M";
   else return "";
 }
 
@@ -172,7 +177,10 @@ void calcContext ( Tree<L>& tr,
     eF              = e + getUnaryOp( tr );
     pair<K,CVar> kc = getPred ( removeLink(tr), removeLink(tr.front()) );
     K k             = (FEATCONFIG & 8 && kc.first.getString()[2]!='y') ? K::kBot : kc.first;
+#ifdef SIMPLE_STORE
+#else
     aPretrm         = (not failtree) ? Sign( HVec(k, matE, funcO), getCat(removeLink(l)), S_A ) : Sign() ;
+#endif
     bool validIntra = false;
 
     std::string annotSentIdx = annot.substr(0,annot.size()-2); //get all but last two...
@@ -185,17 +193,24 @@ void calcContext ( Tree<L>& tr,
       annot2kset[currentloc] = hvAnt;
     }
     annot2kset[currentloc] = HVec(k, matE, funcO); //add current k
-    for (auto& ant : hvAnt) {
-      if (hvAnt != hvTop) aPretrm.first().emplace_back(ant); //add antecedent ks to aPretrm
-    }
+#ifdef SIMPLE_STORE
+#else
+    if( hvAnt != hvTop ) aPretrm.setHVec().add( hvAnt );
+#endif
     annot2tdisc[currentloc] = tDisc; //map current sent,word index to discourse word counter
     if (not failtree) {
       // Print preterminal / fork-phase predictors...
       FPredictorVec lfp( modF, hvAnt, nullAnt, q );
       cout<<"----"<<q<<endl;
+#ifdef DENSE_VECTORS
       cout << "F " << lfp << "|" << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << aPretrm.getCat() /*getCat(l)*/     << endl;
       cout << "W " << e << " " << k << " " << aPretrm.getCat() /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+#else
+      cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : f" << f << "&" << e << "&" << k << endl;  modF.getResponseIndex(f,e.c_str(),k);
+      cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) << endl;
+      cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " : " << removeLink(tr.front())  << endl;
+#endif
 
       // Print antecedent list...
       for( int i = tDisc; (i > 0 and tDisc-i <= COREF_WINDOW); i-- ) {  //only look back COREF_WINDOW antecedents at max
@@ -209,8 +224,8 @@ void calcContext ( Tree<L>& tr,
             candidate = antecedentCandidates[i-1]; //there are one fewer candidates than tDisc value.  e.g., second word only has one previous candidate.
           }
           else {
-            candidate = Sign(hvTop, "NONE", "/"); //null antecedent generated at first iteration, where i=tDisc. Sign consists of: kset, type (syncat), side (A/B)
-            
+            candidate = Sign(); //Sign(hvTop, "NONE", "/"); //null antecedent generated at first iteration, where i=tDisc. Sign consists of: kset, type (syncat), side (A/B)
+
             if (annot == "") isCoref = 1; //null antecedent is correct choice, "1" when no annotation TODO fix logic for filtering intra/inter?
           }
           
@@ -225,6 +240,14 @@ void calcContext ( Tree<L>& tr,
           cout << "N " << pair<const NModel&,const NPredictorVec&>(modN,npv) << " : " << isCoref << endl; //i-1 because that's candidate index 
         } //single candidate output
       } //all previous antecedent candidates output
+
+#ifdef SIMPLE_STORE
+      q = StoreState( q, hvAnt, eF.c_str(), k, getCat(removeLink(l)), matE, funcO );
+      aPretrm = q.back().apex().back();
+    } else {
+      aPretrm = Sign();
+#else
+#endif
     }
 
     antecedentCandidates.emplace_back(aPretrm); //append current prtrm to candidate list for future coref decisions 
@@ -256,21 +279,39 @@ void calcContext ( Tree<L>& tr,
     calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 0, d+s );
 
     J j          = s;
+#ifdef SIMPLE_STORE
+    cout << "~~~~ " << q.back().apex() << endl;
+    q = StoreState( q, f );
+    const Sign& aLchild = q.getApex();
+#else
     LeftChildSign aLchild ( q, f, eF.c_str(), aPretrm );
+#endif
     e            = e + getUnaryOp( tr );
     O oL         = getOp ( removeLink(tr.front()), removeLink(tr.back()),  removeLink(tr) );
     O oR         = getOp ( removeLink(tr.back()),  removeLink(tr.front()), removeLink(tr) );
 
     // Print binary / join-phase predictors...
     JPredictorVec ljp( modJ, f, eF.c_str(), aLchild, q );
+#ifdef SIMPLE_STORE
+    cout << "==== " << q.getApex() << "   " << removeLink(tr) << " -> " << removeLink(tr.front()) << " " << removeLink(tr.back()) << endl;
+#else
     cout << "==== " << aLchild << "   " << removeLink(tr) << " -> " << removeLink(tr.front()) << " " << removeLink(tr.back()) << endl;
+#endif
+#ifdef DENSE_VECTORS
 //    cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;  modJ.getResponseIndex(j,e.c_str(),oL,oR);
     cout << "J " << ljp << "|" << j << "&" << e << "&" << oL << "&" << oR << endl;  // modJ.getResponseIndex(j,e.c_str(),oL,oR);
+#else
+    cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;  modJ.getResponseIndex(j,e.c_str(),oL,oR);
+#endif
     cout << "A " << APredictorVec(f,j,eF.c_str(),e.c_str(),oL,aLchild,q)                << " : " << getCat(removeLink(l))          << endl;
     cout << "B " << BPredictorVec(f,j,eF.c_str(),e.c_str(),oL,oR,getCat(l),aLchild,q)   << " : " << getCat(removeLink(tr.back()))  << endl;
 
     // Update storestate...
+#ifdef SIMPLE_STORE
+    q = StoreState ( q, j, e.c_str(), oL, oR, getCat(removeLink(l)), getCat(removeLink(tr.back())) );
+#else
     q = StoreState ( q, f, j, eF.c_str(), e.c_str(), oL, oR, getCat(removeLink(l)), getCat(removeLink(tr.back())), aPretrm, aLchild );
+#endif
 
     // Traverse right child...
     calcContext ( tr.back(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 1, d );

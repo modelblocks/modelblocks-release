@@ -56,7 +56,12 @@ class Trellis : public vector<Beam<HiddState>> {
     Trellis ( ) : vector<Beam<HiddState>>() { reserve(100); }
     Beam<HiddState>& operator[] ( uint i ) { if ( i==size() ) emplace_back(BEAM_WIDTH); return vector<Beam<HiddState>>::operator[](i); }
     void setMostLikelySequence ( DelimitedList<psX,BeamElement<HiddState>,psLine,psX>& lbe, const JModel& jm ) {
+#ifdef SIMPLE_STORE
+      static StoreState ssLongFail( cFail, cFail );
+//      static StoreState ssLongFail;  ssLongFail.emplace( ssLongFail.end() );  ssLongFail.back().apex().emplace_back(hvBot,cFail,S_A);  ssLongFail.back().base().emplace_back(hvBot,cFail,S_B);
+#else
       static StoreState ssLongFail( StoreState(), 1, 0, EVar::eNil, EVar::eNil, O_N, O_I, cFail, cFail, Sign(hvBot,cFail,S_A), Sign(hvBot,cFail,S_A) ); //fork, nojoin
+#endif
       lbe.clear(); if( back().size()>0 ) lbe.push_front( *back().begin() );
       if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( lbe.front().getBack() );
       if( lbe.size()>0 ) lbe.emplace_back( BeamElement<HiddState>() );
@@ -387,16 +392,27 @@ int main ( int nArgs, char* argv[] ) {
                         double probFPW = probFork * modP.find(ppredictor)->second.find(c_p_t)->second * probwgivkl;
                         if ( VERBOSE>1 ) cout << "      f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << probFork << " * " << modP.find(ppredictor)->second.find(c_p_t)->second << " * " << probwgivkl << " = " << probFPW << endl;
 
-                        Sign aPretrm;  aPretrm.setHVec() = HVec( k_p_t, matE, funcO );
-#ifdef DENSE_VECTORS
-                        aPretrm.setHVec().add( hvAnt ); 
+#ifdef SIMPLE_STORE
+                        StoreState qPretrm( q_tdec1, hvAnt, e_p_t, k_p_t, c_p_t, matE, funcO );
+                        const Sign& aPretrm = qPretrm.getApex();
+                        StoreState qTermPhase( qPretrm, f );
+                        const Sign& aLchild = qTermPhase.getApex();
 #else
-                        for (auto& k : hvAnt[0]) if (k != K::kTop) aPretrm.setHVec()[0].emplace_back(k); // add antecedent contexts
-#endif
+                        Sign aPretrm;  aPretrm.setHVec() = HVec( k_p_t, matE, funcO );
+//#ifdef DENSE_VECTORS
+                        aPretrm.setHVec().add( hvAnt ); 
+//#else
+//                        for (auto& k : hvAnt[0]) if (k != K::kTop) aPretrm.setHVec()[0].emplace_back(k); // add antecedent contexts
+//#endif
                         aPretrm.second() = c_p_t;  aPretrm.third() = S_A;          // aPretrm (pos tag)
                         const LeftChildSign aLchild( q_tdec1, f, e_p_t, aPretrm );
+#endif
 
+#ifdef SIMPLE_STORE
+                        JPredictorVec ljpredictors( modJ, f, e_p_t, aLchild, qTermPhase );  // q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
+#else
                         JPredictorVec ljpredictors( modJ, f, e_p_t, aLchild, q_tdec1 );  // q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
+#endif
                         arma::vec jresponses = modJ.calcResponses( ljpredictors );
 
                         // For each possible no-join or join decision, and operator decisions...
@@ -411,7 +427,11 @@ int main ( int nArgs, char* argv[] ) {
                             if ( VERBOSE>1 ) cout << "       J ... " << " : " << modJ.getJEOO(jresponse) << " = " << probJoin << endl;
 
                             // For each possible apex category label...
+#ifdef SIMPLE_STORE
+                            APredictorVec apredictor( f, j, e_p_t, e, opL, aLchild, qTermPhase );  // save apredictor for use in prob calc
+#else
                             APredictorVec apredictor( f, j, e_p_t, e, opL, aLchild, q_tdec1 );  // save apredictor for use in prob calc
+#endif
                             if ( VERBOSE>1 ) cout << "         A " << apredictor << "..." << endl;
                             if ( modA.end()!=modA.find(apredictor) )
                               for ( auto& cpA : modA.find(apredictor)->second ) {
@@ -420,7 +440,11 @@ int main ( int nArgs, char* argv[] ) {
                                   if ( VERBOSE>1 ) cout << "         A " << apredictor << " : " << cpA.first << " = " << cpA.second << endl;
 
                                   // For each possible brink category label...
+#ifdef SIMPLE_STORE
+                                  BPredictorVec bpredictor( f, j, e_p_t, e, opL, opR, cpA.first, aLchild, qTermPhase );  // bpredictor for prob calc
+#else
                                   BPredictorVec bpredictor( f, j, e_p_t, e, opL, opR, cpA.first, aLchild, q_tdec1 );  // bpredictor for prob calc
+#endif
                                   if ( VERBOSE>1 ) cout << "          B " << bpredictor << "..." << endl;
                                   if ( modB.end()!=modB.find(bpredictor) )
                                     for ( auto& cpB : modB.find(bpredictor)->second ) {
@@ -435,7 +459,11 @@ int main ( int nArgs, char* argv[] ) {
                                           cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << " JRESP " << modJ.getJEOO(jresponse) << " A " << cpA.first << " B " << cpB.first << endl;
                                         } //closes if chrono
                                         // Calculate probability and storestate and add to beam...
+#ifdef SIMPLE_STORE
+                                        StoreState ss( qTermPhase, j, e, opL, opR, cpA.first, cpB.first );
+#else
                                         StoreState ss( q_tdec1, f, j, e_p_t, e, opL, opR, cpA.first, cpB.first, aPretrm, aLchild );
+#endif
                                         if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
                                           beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second), be_tdec1 ) ); 
                                           if( VERBOSE>1 ) cout << "                send (" << be_tdec1.getHidd() << ") to (" << ss << ") with "

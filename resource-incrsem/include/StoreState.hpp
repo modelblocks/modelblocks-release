@@ -28,22 +28,12 @@ char psRBrack[] = "]";
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int getDir ( char cOp ) {
-  return (cOp>='0' && cOp<='9')             ? cOp-'0' :  // (numbered argument)
-         (cOp=='M' || cOp=='U')             ? -1      :  // (modifier)
-         (cOp=='u')                         ? -2      :  // (auxiliary w arity 2)
-         (cOp=='I' || cOp=='C' || cOp=='V') ? 0       :  // (identity)
-                                              -10;       // (will not map)
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 typedef Delimited<int>  D;  // depth
 typedef Delimited<int>  F;  // fork decision
 typedef Delimited<int>  J;  // join decision
 typedef Delimited<char> O;  // composition operation
 const O O_N("N");
-const O O_I("I");
+const O O_I("."); //(".");
 typedef Delimited<char> S;  // side (A,B)
 const S S_A("/");
 const S S_B(";");
@@ -53,6 +43,16 @@ typedef Delimited<DiscreteDomainRV<int,domAdHoc>> AdHocFeature;
 const AdHocFeature corefON("acorefON");
 const AdHocFeature corefOFF("acorefOFF");
 const AdHocFeature bias("abias");
+
+////////////////////////////////////////////////////////////////////////////////
+
+int getDir ( O cOp ) {
+  return (cOp>='0' && cOp<='9')             ? cOp-'0' :  // (numbered argument)
+         (cOp=='M' || cOp=='U')             ? -1      :  // (modifier)
+         (cOp=='u')                         ? -2      :  // (auxiliary w arity 2)
+         (cOp==O_I || cOp=='C' || cOp=='V') ? 0       :  // (identity)
+                                              -10;       // (will not map)
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -81,6 +81,7 @@ class CVar : public DiscreteDomainRV<int,domCVar> {
   static map<N,bool>               mnbArg;
   static map<CVar,uint>            mciSynArgs;
   static map<CVar,int>             mciArity;
+  static map<CVar,int>             mciNoloArity;
   static map<CVar,bool>            mcbIsCarry;
   static map<CVar,N>               mcnFirstNol;
   static map<CVar,CVar>            mccNoFirstNol;
@@ -96,7 +97,7 @@ class CVar : public DiscreteDomainRV<int,domCVar> {
     for ( uint i=0; i<strlen(l); i++ ) {
       if ( l[i]=='{' ) depth++;
       if ( l[i]=='}' ) depth--;
-      if ( l[i]=='-' && l[i+1]>='a' && l[i+1]<='d' && depth==0 ) ctr++;
+      if ( l[i]=='-' && l[i+1]>='a' && l[i+1]<='b' && depth==0 ) ctr++;
     }
     return ctr;
   }
@@ -109,6 +110,16 @@ class CVar : public DiscreteDomainRV<int,domCVar> {
       if ( l[i]=='-' && l[i+1]>='a' && l[i+1]<='d' && depth==0 ) ctr++;
     }
     return ('N'==l[0] and not (strlen(l)>7 and '{'==l[3] and 'N'==l[4] and 'D'==l[7]) ) ? ctr+1 : ctr;
+  }
+  int getNoloArity ( const char* l ) {
+    int depth = 0;
+    int ctr   = 0;
+    for ( uint i=0; i<strlen(l); i++ ) {
+      if ( l[i]=='{' ) depth++;
+      if ( l[i]=='}' ) depth--;
+      if ( l[i]=='-' && (l[i+1]=='g' or l[i+1]=='h' or l[i+1]=='i' or l[i+1]=='r' or l[i+1]=='v') && depth==0 ) ctr++;
+    }
+    return ctr;
   }
   N getFirstNolo ( const char* l ) {
     int depth = 0;
@@ -170,6 +181,7 @@ class CVar : public DiscreteDomainRV<int,domCVar> {
     if( mnbArg.end()==mnbArg.find(*this) ) { mnbArg[*this]=( strlen(ps)<=4 ); }
     if( mciSynArgs.end()==mciSynArgs.find(*this) ) { mciSynArgs[*this]=getSynArgs(ps); }
     if( mciArity.end()==mciArity.find(*this) ) { mciArity[*this]=getArity(ps); }
+    if( mciNoloArity.end()==mciNoloArity.find(*this) ) { mciNoloArity[*this]=getNoloArity(ps); }
     if( mcbIsCarry.end()==mcbIsCarry.find(*this) ) { mcbIsCarry[*this]=( ps[0]=='-' && ps[1]>='a' && ps[1]<='z' ); }  //( ps[strlen(ps)-1]=='^' ); }
     if( mcnFirstNol.end()==mcnFirstNol.find(*this) && strlen(ps)>0 && !(ps[0]=='-'&&ps[1]>='a'&&ps[1]<='z') ) { N& n=mcnFirstNol[*this]; n=getFirstNolo(ps); }
     if( mccNoFirstNol.end()==mccNoFirstNol.find(*this) ) { CVar& c=mccNoFirstNol[*this]; c=getNoFirstNoloHelper(ps); }
@@ -198,6 +210,7 @@ class CVar : public DiscreteDomainRV<int,domCVar> {
   bool isArg            ( )       const { return mnbArg[*this]; }
   uint getSynArgs       ( )       const { return mciSynArgs[*this]; }
   int  getArity         ( )       const { return mciArity[*this]; }
+  int  getNoloArity     ( )       const { return mciNoloArity[*this]; }
   bool isCarrier        ( )       const { return mcbIsCarry[*this]; }
   N    getFirstNonlocal ( )       const { return mcnFirstNol[*this]; }
   CVar withoutFirstNolo ( )       const { return mccNoFirstNol[*this]; }
@@ -211,6 +224,7 @@ class CVar : public DiscreteDomainRV<int,domCVar> {
 map<N,bool>               CVar::mnbArg;
 map<CVar,uint>            CVar::mciSynArgs;
 map<CVar,int>             CVar::mciArity;
+map<CVar,int>             CVar::mciNoloArity;
 map<CVar,bool>            CVar::mcbIsCarry;
 map<CVar,N>               CVar::mcnLastNol;
 map<CVar,CVar>            CVar::mccNoLastNol;
@@ -264,7 +278,10 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
       if( mkik.end()==mkik.find(pair<K,int>(*this,4)) && ps[strlen(ps)-2]!='-' && ps[strlen(ps)-1]==cSelf ) { K& k=mkik[pair<K,int>(*this,4)]; k=string(ps,strlen(ps)-1).append("4").c_str(); }
       if( mkik.end()==mkik.find(pair<K,int>(*this,1)) && ps[strlen(ps)-2]=='-' && ps[strlen(ps)-1]=='1' ) { K& k=mkik[pair<K,int>(*this,1)]; k=string(ps,strlen(ps)-2).c_str(); }
       if( mkx.end()==mkx.find(*this) ) { const char* psU=strchr(ps,'_'); XVar x=(psU)?string(ps,psU-ps).c_str():ps; mkx[*this]=x; mkdir[*this]=(psU-ps==uint(strlen(ps)-2))?stoi(psU+1):0; if(mxk.end()==mxk.find(x)) { mxk[x]=(ps[strlen(ps)-1]=='0'||!psU)?*this:(string(ps,psU-ps)+"_0").c_str(); } }
-      if( ps[strlen(ps)-1]=='0' ) { K& k=mkik[pair<K,int>(*this,1)]; k=string(ps,strlen(ps)-1).append("1").c_str(); }
+      if( ps[strlen(ps)-1]=='0' ) { K& k =mkik[pair<K,int>(*this,1)]; k =string(ps,strlen(ps)-1).append("1").c_str();
+                                    K& k2=mkik[pair<K,int>(*this,2)]; k2=string(ps,strlen(ps)-1).append("2").c_str();
+                                    K& k3=mkik[pair<K,int>(*this,3)]; k3=string(ps,strlen(ps)-1).append("3").c_str();
+                                    K& k4=mkik[pair<K,int>(*this,4)]; k4=string(ps,strlen(ps)-1).append("4").c_str(); }
 
 //     if( mkkVU.end()==mkkVU.find(*this) && ps[strlen(ps)-2]=='-' && ps[strlen(ps)-1]=='1' ) { K& k=mkkVU[*this]; k=string(ps,strlen(ps)-2).append("-2").c_str(); }
 //     else if( mkkVU.end()==mkkVU.find(*this) )                                              { K& k=mkkO[*this]; k=ps; }
@@ -314,25 +331,30 @@ class EVar : public DiscreteDomainRV<int,domE> {   // NOTE: can't be subclass of
  public:
   static const EVar eNil;
  private:
+  static map<EVar,int>  meiNoloDelta;
   static map<EVar,char> meoTop;
   static map<EVar,char> meoBot;
   static map<EVar,EVar> meeNoTop;
   static map<EVar,EVar> meeNoBot;
   void calcDetermModels ( const char* ps ) {       // NOTE: top is front, bot is back...
-    if(   meoTop.end()==  meoTop.find(*this) and strlen(ps)>0 ) { char& c=  meoTop[*this]; c=ps[0]; }
-    if(   meoBot.end()==  meoBot.find(*this) and strlen(ps)>0 ) { char& c=  meoBot[*this]; c=ps[strlen(ps)-1]; }
-    if( meeNoTop.end()==meeNoTop.find(*this) and strlen(ps)>0 ) { EVar& e=meeNoTop[*this]; e=ps+1; }
-    if( meeNoBot.end()==meeNoBot.find(*this) and strlen(ps)>0 ) { EVar& e=meeNoBot[*this]; e=string(ps,0,strlen(ps)-1).c_str(); }
+    if( meiNoloDelta.end()==meiNoloDelta.find(*this) ) { int a=0; for(uint i=0; i<strlen(ps); i++) a += (ps[i]=='O') ? 0 : (ps[i]=='V') ? -1 : 1;
+                                                         meiNoloDelta[*this]=a; }
+    if(       meoTop.end()==      meoTop.find(*this) and strlen(ps)>0 ) { char& c=  meoTop[*this]; c=ps[0]; }
+    if(       meoBot.end()==      meoBot.find(*this) and strlen(ps)>0 ) { char& c=  meoBot[*this]; c=ps[strlen(ps)-1]; }
+    if(     meeNoTop.end()==    meeNoTop.find(*this) and strlen(ps)>0 ) { EVar& e=meeNoTop[*this]; e=ps+1; }
+    if(     meeNoBot.end()==    meeNoBot.find(*this) and strlen(ps)>0 ) { EVar& e=meeNoBot[*this]; e=string(ps,0,strlen(ps)-1).c_str(); }
   }
  public:
   EVar ( )                : DiscreteDomainRV<int,domE> ( )    { }
   EVar ( const char* ps ) : DiscreteDomainRV<int,domE> ( ps ) { calcDetermModels(ps); }
-  char top        ( ) const { auto it =   meoTop.find( *this ); assert( it != meoTop.end() ); return ( it!=meoTop.end() ) ? it->second : '?'; }
-  char bot        ( ) const { auto it =   meoBot.find( *this ); assert( it != meoBot.end() ); return ( it!=meoBot.end() ) ? it->second : '?'; }
-  EVar withoutTop ( ) const { auto it = meeNoTop.find( *this ); assert( it != meeNoTop.end() ); return ( it!=meeNoTop.end() ) ? it->second : eNil; }
-  EVar withoutBot ( ) const { auto it = meeNoBot.find( *this ); assert( it != meeNoBot.end() ); return ( it!=meeNoBot.end() ) ? it->second : eNil; }
-  char popTop     ( )       { auto it =   meoTop.find( *this ); assert( it != meoTop.end() ); *this = meeNoTop[*this]; return ( it!=meoTop.end() ) ? it->second : '?'; }
+  int  getNoloDelta ( ) const { auto it = meiNoloDelta.find( *this ); assert( it != meiNoloDelta.end() ); return ( it!=meiNoloDelta.end() ) ? it->second : 0; }
+  char top          ( ) const { auto it =       meoTop.find( *this ); assert( it !=       meoTop.end() ); return ( it!=      meoTop.end() ) ? it->second : '?'; }
+  char bot          ( ) const { auto it =       meoBot.find( *this ); assert( it !=       meoBot.end() ); return ( it!=      meoBot.end() ) ? it->second : '?'; }
+  EVar withoutTop   ( ) const { auto it =     meeNoTop.find( *this ); assert( it !=     meeNoTop.end() ); return ( it!=    meeNoTop.end() ) ? it->second : eNil; }
+  EVar withoutBot   ( ) const { auto it =     meeNoBot.find( *this ); assert( it !=     meeNoBot.end() ); return ( it!=    meeNoBot.end() ) ? it->second : eNil; }
+  char popTop       ( )       { auto it =       meoTop.find( *this ); assert( it !=       meoTop.end() ); *this = meeNoTop[*this]; return ( it!=meoTop.end() ) ? it->second : '?'; }
 };
+map<EVar,int>  EVar::meiNoloDelta;
 map<EVar,char> EVar::meoTop;
 map<EVar,char> EVar::meoBot;
 map<EVar,EVar> EVar::meeNoTop;
@@ -451,18 +473,20 @@ class HVec : public DelimitedVector<psX,KVec,psX,psX> {
     int dir = k.getDir();
     at(0) = (dir) ? funcO( dir, matE( k.getXVar() ) ) : matE( k.getXVar() );
     for( unsigned int arg=1; arg<k.getCat().getSynArgs()+1; arg++ )
-      at(arg) = funcO(arg, at(0));
+      at(arg) = funcO( dir + arg, matE( k.getXVar() ) );  //funcO(arg, at(0));
   }
   HVec& add( const HVec& hv ) {
     for( unsigned int arg=0; arg<size() and arg<hv.size(); arg++ ) at(arg).add( hv.at(arg) );
     return *this;
   }
   HVec& addSynArg( int iDir, const HVec& hv ) {
-    if     ( iDir == 0                ) add( hv );
-    else if( iDir < 0 and 0<hv.size() ) { if( -iDir>=int(size()) ) resize( -iDir + 1 );
-                                          at(-iDir).add( hv.at( 0  ) ); }
-    else if( iDir<int(hv.size())      ) { if( 0>=size() ) resize( 1 );
-                                          at( 0   ).add( hv.at(iDir) ); }
+//cout<<"trying addSynArg(" << iDir << "," << hv << ")" <<endl;
+    if     ( iDir == 0                  )          add( hv );
+    else if( iDir < 0 and 0 < hv.size() )          { if( -iDir >= int(size()) ) resize( -iDir + 1 );
+                                                     at( -iDir ).add( hv.at( 0  ) ); }
+    else if( iDir >= 0 and iDir < int(hv.size()) ) { if( 0 >= size() ) resize( 1 );
+                                                     at( 0   ).add( hv.at(iDir) ); }
+//    else cout<<"i failed."<< endl;
     return *this;
   }
   HVec& swap( int i, int j ) {
@@ -470,8 +494,10 @@ class HVec : public DelimitedVector<psX,KVec,psX,psX> {
     else if( size() >= 2 ) at(i) = KVec();
     return *this;
   }
+#ifndef SIMPLE_STORE
   HVec& applyUnariesTopDn( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
   HVec& applyUnariesBotUp( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
+#endif
   bool isDitto ( ) const { return ( *this == hvDitto ); }
 };
 
@@ -485,6 +511,7 @@ class Sign : public DelimitedTrip<psX,HVec,psColon,CVar,psX,S,psX> {
  public:
   Sign ( )                              : DelimitedTrip<psX,HVec,psColon,CVar,psX,S,psX> ( )           { third()=S_A; }
   Sign ( const HVec& hv1, CVar c, S s ) : DelimitedTrip<psX,HVec,psColon,CVar,psX,S,psX> ( hv1, c, s ) { }
+/*
   Sign ( const HVec& hv1, const HVec& hv2, CVar c, S s ) {
     first().reserve( hv1.size() + hv2.size() );
     first().insert( first().end(), hv1.begin(), hv1.end() );
@@ -492,6 +519,7 @@ class Sign : public DelimitedTrip<psX,HVec,psColon,CVar,psX,S,psX> {
     second() = c;
     third()  = s;
   }
+*/
   HVec&       setHVec ( )       { return first();  }
   CVar&       setCat  ( )       { return second(); }
   S&          setSide ( )       { return third();  }
@@ -500,14 +528,313 @@ class Sign : public DelimitedTrip<psX,HVec,psColon,CVar,psX,S,psX> {
   S           getSide ( ) const { return third();  }
   bool        isDitto ( ) const { return getHVec().isDitto(); }
 };
+const Sign aTop( hvTop, cTop, S_A );
+const Sign bTop( hvTop, cTop, S_B );
 
 ////////////////////////////////////////////////////////////////////////////////
 
 class LeftChildSign : public Sign {
  public:
+  LeftChildSign ( ) : Sign() { }
   LeftChildSign ( const Sign& a ) : Sign(a) { }
   LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm );
 };
+
+////////////////////////////////////////////////////////////////////////////////
+
+#ifdef SIMPLE_STORE
+
+class SignWithCarriers : public DelimitedVector<psX,Sign,psX,psX> {
+ public:
+  Sign&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
+  const Sign& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : aTop; }
+};
+
+class ApexWithCarriers : public SignWithCarriers {
+ public:
+  void set ( CVar cB, CVar cA, O opL, O opR, const Sign& aLchild = Sign() );
+  Sign&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
+  const Sign& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : aTop; }
+};
+ApexWithCarriers awcDummy;
+
+class BaseWithCarriers : public SignWithCarriers {
+ public:
+  void set ( CVar cP, CVar cB, O opL, O opR, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild );
+  Sign&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
+  const Sign& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : bTop; }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class DerivationFragment : public DelimitedPair<psX,ApexWithCarriers,psX,BaseWithCarriers,psX> {
+ public:
+  ApexWithCarriers&       apex( )       { return pair<ApexWithCarriers,BaseWithCarriers>::first;  }
+  BaseWithCarriers&       base( )       { return pair<ApexWithCarriers,BaseWithCarriers>::second; }
+  const ApexWithCarriers& apex( ) const { return pair<ApexWithCarriers,BaseWithCarriers>::first;  }
+  const BaseWithCarriers& base( ) const { return pair<ApexWithCarriers,BaseWithCarriers>::second; }
+};
+const DerivationFragment dfTop;
+
+////////////////////////////////////////////////////////////////////////////////
+
+class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
+ public:
+
+  static       Sign aDummy;  // for set, to compile
+
+  StoreState ( ) : DelimitedVector<psX,DerivationFragment,psX,psX> ( ) { } 
+
+  StoreState ( CVar cA, CVar cB ) { emplace( end() ); back().apex().emplace_back( hvBot, cA, S_A ); back().base().emplace_back( hvBot, cB, S_B ); }
+
+  StoreState ( const StoreState& qPrev, const HVec& hvAnt, EVar evF, K k, CVar cP, const EMat& matE, const OFunc& funcO ) {
+    // Add preterm and apply unaries...
+    reserve( qPrev.size() + 1 );
+    insert( end(), qPrev.begin(), qPrev.end() );
+    emplace( end() )->apex().set( getBase().getCat(), cP, 'I', 'I', Sign() );
+    back().apex().back().setHVec() = HVec( k, matE, funcO );
+    back().apex().back().setHVec().add( hvAnt );
+    applyUnariesBotUp( back().apex(), evF );
+  }
+
+  StoreState ( const StoreState& qPrev, F f ) {
+    if( f==0 ) {
+      // Close most recent derivation fragment and make new complete sign (lowest apex)...
+      reserve( qPrev.size()-1 );
+      insert( end(), qPrev.begin(), qPrev.end()-2 );
+      emplace( end() )->apex().set( getBase().getCat(), qPrev.back(1).apex().back().getCat(), 'N', 'N', Sign() );
+      if( qPrev.getApex(1).isDitto() ) back().apex().back().setHVec() = qPrev.back(1).base().back().getHVec();
+      else                             back().apex().back().setHVec() = qPrev.back(1).apex().back().getHVec();
+    }
+    else {
+      // Leave preterm as complete sign...
+      *this = qPrev;
+    }
+  }
+
+  StoreState ( const StoreState& qPrev, J j, EVar evJ, O opL, O opR, CVar cA, CVar cB ) {
+    if( j==1 and qPrev.getDepth()>1 ) {
+      // Grow prev derivation fragment downward to subsume new apex...
+      reserve( qPrev.size()-1 );
+      if( qPrev.size() >= 2 ) insert( end(), qPrev.begin(), qPrev.end()-2 );
+      emplace( end() )->apex() = qPrev.back(1).apex();
+
+      // Create intermediate base parent...
+      BaseWithCarriers bwcParent = qPrev.back(1).base();  if( evJ != EVar::eNil and evJ.bot()=='V' ) bwcParent.emplace( bwcParent.end()-1 );
+      applyUnariesTopDn( bwcParent, evJ );                                                                   // Calc parent contexts (below unaries).
+      if( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) bwcParent.back().setHVec().emplace_back();    // Add space for satisfied argument. 
+      if( getDir(opL)!=-10 ) bwcParent.back().setHVec().addSynArg( -getDir(opL), qPrev.getApex().getHVec() );
+
+      // Create right child base...
+      back().base() = bwcParent;  back().base().pop_back();
+      back().base().set( bwcParent.back().getCat(), cB, opL, opR, *this, bwcParent, qPrev.back().apex() );
+      if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec();               // If base != apex, end ditto.
+    }
+    else if( j==0 ) {
+      // Grow apex upward into new derivation fragment...
+      reserve( qPrev.size() );
+      insert( end(), qPrev.begin(), qPrev.end()-1 );
+      emplace( end() );                                                                                      // Add depth level d.
+
+      // Create new apex...
+      unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
+      if( qPrev.back().apex().size() > iSubtracted ) back().apex().insert( back().apex().end(), qPrev.back().apex().begin(), qPrev.back().apex().end() - 1 - iSubtracted );                // Add nolos from left child as older.
+      back().apex().set( getBase().getCat(), cA, opL, opR, qPrev.getApex() );                                                 // Fill in apex at d.
+      applyUnariesBotUp( back().apex(), evJ );                   // Calc apex contexts.
+
+      // Create right child base...
+      back().base().set( cA, cB, opL, opR, *this, back().apex(), qPrev.back().apex() );                      // Fill in base at d.
+      if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                    // Init ditto.
+    }
+  }
+
+/*
+  StoreState ( const StoreState& qPrev, F f, J j, EVar evF, EVar evJ, O opL, O opR, CVar cA, CVar cB, const Sign& aPretrm, const LeftChildSign& aLchild ) {
+    // Terminal match and nonterminal match...
+    if( f==0 and j==1 and qPrev.getDepth()>1 ) {
+      reserve( qPrev.size()-1 );
+      if( qPrev.size() >= 2 ) insert( end(), qPrev.begin(), qPrev.end()-2 );                                 // Copy fragments to d-2
+      emplace( end() )->apex() = qPrev.back(1).apex();                                                       // Copy apex at d-1.
+
+      // Create intermediate base parent...
+      BaseWithCarriers bwcParent = qPrev.back(1).base();  if( evJ != EVar::eNil and evJ.bot()=='V' ) bwcParent.emplace( bwcParent.end()-1 );
+      applyUnariesTopDn( bwcParent, evJ );                                                                   // Calc parent contexts (below unaries).
+      if( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) bwcParent.back().setHVec().emplace_back();    // Add space for satisfied argument. 
+      if( getDir(opL)!=-10 ) bwcParent.back().setHVec().addSynArg( -getDir(opL), aLchild.getHVec() );
+
+      // Create right child base...
+      back().base() = bwcParent;  back().base().pop_back();
+      back().base().set( bwcParent.back().getCat(), cB, opL, opR, *this, bwcParent, qPrev.back().apex() );
+      if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec();               // If base != apex, end ditto.
+    }
+    // Terminal match and nonterminal non-match...
+    else if( f==0 and j==0 ) {
+      reserve( qPrev.size() );
+      if( qPrev.size() >= 1 ) insert( end(), qPrev.begin(), qPrev.end()-1 );                                 // Copy fragments to d-1.
+      emplace( end() );                                                                                      // Add depth level d.
+
+      // Create new apex...
+      unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
+      if( qPrev.back().apex().size() > iSubtracted ) back().apex().insert( back().apex().end(), qPrev.back().apex().begin(), qPrev.back().apex().end() - 1 - iSubtracted );                // Add nolos from left child as older.
+      back().apex().set( getBase().getCat(), cA, opL, opR, aLchild );                                                 // Fill in apex at d.
+      applyUnariesBotUp( back().apex(), evJ );                   // Calc apex contexts.
+
+      // Create right child base...
+      back().base().set( cA, cB, opL, opR, *this, back().apex(), qPrev.back().apex() );                      // Fill in base at d.
+      if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                    // Init ditto.
+    }
+    // Terminal non-match and nonterminal match...
+    else if( f==1 and j==1 ) {
+      reserve( qPrev.size() );
+      if( qPrev.size() >= 1 ) insert( end(), qPrev.begin(), qPrev.end()-1 );                                 // Copy fragments to d-1
+      emplace( end() )->apex() = qPrev.back().apex();                                                        // Copy apex at d.
+
+      // Create preterm...
+      ApexWithCarriers awcPretrm;  awcPretrm.set( getBase().getCat(), aLchild.getCat(), O_I, O_I );
+      awcPretrm.back()=aPretrm;  applyUnariesBotUp( awcPretrm, evF );
+
+      // Create intermediate base parent...
+      BaseWithCarriers bwcParent = qPrev.back().base();  if( evJ != EVar::eNil and evJ.bot()=='V' ) bwcParent.emplace( bwcParent.end()-1 );
+      applyUnariesTopDn( bwcParent, evJ );                                                                   // Calc parent contexts (below unaries).
+      if( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) bwcParent.back().setHVec().emplace_back();    // Add space for satisfied argument. 
+      if( getDir(opL)!=-10 ) bwcParent.back().setHVec().addSynArg( -getDir(opL), awcPretrm.back().getHVec() );
+
+      // Create right child base...
+      back().base() = bwcParent;  back().base().pop_back();
+      back().base().set( bwcParent.back().getCat(), cB, opL, opR, *this, bwcParent, awcPretrm );
+      if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec();               // If base != apex, end ditto.
+    }
+    // Terminal non-match and nonterminal non-match...
+    else if( f==1 and j==0 ) {
+      reserve( qPrev.size()+1 );
+      insert( end(), qPrev.begin(), qPrev.end() );                                                           // Copy fragments to d.
+      emplace( end() );                                                                                      // Add depth level d+1.
+
+      // Create preterm...
+      ApexWithCarriers awcPretrm;  awcPretrm.set( getBase().getCat(), aLchild.getCat(), O_I, O_I );
+      awcPretrm.back()=aPretrm;  applyUnariesBotUp( awcPretrm, evF );
+
+      // Create new apex...
+      unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
+      if( awcPretrm.size() > iSubtracted ) back().apex().insert( back().apex().end(), awcPretrm.begin(), awcPretrm.end() - 1 - iSubtracted );        // Add nolos from left child as older.
+      back().apex().set( getBase().getCat(), cA, opL, opR, awcPretrm.back() );                                                 // Fill in apex at d+1.
+      applyUnariesBotUp( awcPretrm, evJ );                       // Calc apex contexts.
+
+      // Create right child base...
+      back().base().set( cA, cB, opL, opR, *this, back().apex(), awcPretrm );                                // Fill in base at d+1.
+      if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                    // Init ditto.
+    }
+  }
+*/
+
+  unsigned int getDepth( ) const { return /*( size()>0 and back().base().size()==0 ) ? size()-1 :*/ size(); }
+
+  DerivationFragment&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
+  const DerivationFragment& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : dfTop; }
+
+  Sign&       setApex (        unsigned int iDepthBack = 0                     )       {  return back( iDepthBack ).apex().back();            }
+  const Sign& getApex (        unsigned int iDepthBack = 0                     ) const {  return back( iDepthBack ).apex().back();            }
+  const Sign& getApexCarrier ( unsigned int iDepthBack, unsigned int iCarrBack ) const {  return back( iDepthBack ).apex().back( iCarrBack ); }
+  const Sign& getBase (        unsigned int iDepthBack = 0                     ) const {  return back( iDepthBack + (back().base().size()==0) ).base().back();            }
+  const Sign& getBaseCarrier ( unsigned int iDepthBack, unsigned int iCarrBack ) const {  return back( iDepthBack ).base().back( iCarrBack ); }
+
+  Sign& setNoloBack ( unsigned int iCarrBack = 0, SignWithCarriers& awc = awcDummy ) {                 // NOTE: getNoloBack(0) is most recent nonlocal dep; i.e. furthest left.
+    for( int i = int(awc.size())-1; i-->0; )  if( iCarrBack-- == 0 ) return awc.at(i);
+    // Count down from bot...   // Count back from end...                   // Decrement counter and if finished, report...
+    for( int d=size(); d--; ) { for( int i=at(d).base().size()-1; i-->0; )  if( iCarrBack-- == 0 ) return( at(d).base().at(i) );
+                                for( int i=at(d).apex().size()-1; i-->0; )  if( iCarrBack-- == 0 ) return( at(d).apex().at(i) ); }
+    cout << "FAILING: " << *this << " " << iCarrBack << " " << awc << endl;
+    assert( false );
+    return( aDummy );
+  }
+  const Sign& getNoloBack ( int iCarrBack = 0, const SignWithCarriers& awc = SignWithCarriers() ) const {     // NOTE: getNoloBack(0) is most recent nonlocal dep; i.e. furthest left.
+    for( int i = int(awc.size())-1; i-->0; )  if( iCarrBack-- == 0 ) return awc.at(i);
+
+    // Count down from bot...   // Count back from end...                        // Decrement counter and if finished, report...
+    int D = ( back().base().size()==0 ) ? size() - 1 : size();
+    for( int d=D; d--; ) { for( int i=int(at(d).base().size())-1; i-->0; )  if( iCarrBack-- == 0 ) return( at(d).base().at(i) );
+                           for( int i=int(at(d).apex().size())-1; i-->0; )  if( iCarrBack-- == 0 ) return( at(d).apex().at(i) ); }
+    return( aTop );
+  }
+
+  void applyUnariesBotUp( HVec& hv, EVar e ) const {                           // From bottom up, extract least recent nolos first...
+    for( unsigned int iBack = e.getNoloDelta()-1; e != EVar::eNil; e = e.withoutBot() ) {
+      if( e.bot() == 'O' or e.bot() == 'V' ) hv.swap( 1, 2 );
+      else                                   hv.addSynArg( getDir(e.bot()), getNoloBack(iBack).getHVec() );
+    }
+  }
+  void applyUnariesBotUp( ApexWithCarriers& awc, EVar e ) {                    // From bottom up, extract least recent nolos first...
+    HVec hvTemp;
+    for( unsigned int iBack = e.getNoloDelta()-1; e != EVar::eNil; e = e.withoutBot() ) {
+      if(      e.bot() == 'O' )   awc.back().setHVec().swap( 1, 2 );
+      else if( e.bot() >= '0' and e.bot() <= '9' and  e.withoutBot() != EVar::eNil and e.withoutBot().top() == 'V' )
+                                { hvTemp = HVec(1);  hvTemp.addSynArg( getDir(e.bot()), awc.back().getHVec() );
+                                  e = e.withoutTop();  awc.back().setHVec().addSynArg( -1, hvTemp ); }
+      else if( e.bot() == 'V' ) { awc.back().setHVec().addSynArg( -1, getNoloBack(0,awc).getHVec() ); } //awc.erase(awc.end()-1); }
+      else                      { awc.back().setHVec().addSynArg( -getDir(e.bot()), getNoloBack(iBack,awc).getHVec() );
+                                  setNoloBack(iBack--,awc).setHVec().addSynArg( getDir(e.bot()), awc.back().getHVec() ); }
+    }
+  }
+  void applyUnariesTopDn( BaseWithCarriers& bwc, EVar e ) {
+    for( unsigned int iBack = (e != EVar::eNil and e.bot()=='V') ? 1 : 0; e != EVar::eNil; e = e.withoutTop() ) {       // From top down, extract most recent nolos first...
+      HVec hvTemp;
+      if(      e.top() == 'O' )   bwc.back().setHVec().swap( 1, 2 );
+      else if( e.top() == 'V' and e.withoutTop() != EVar::eNil and e.withoutTop().top() >= '0' and e.withoutTop().top() <= '9' )
+                                { hvTemp = HVec( 1 );  hvTemp.addSynArg( 1, bwc.back().getHVec() );  bwc.back().setHVec().at( 1 ) = KVec();
+                                  e = e.withoutTop();  bwc.back().setHVec().addSynArg( -getDir(e.top()), hvTemp ); }
+      else if( e.top() == 'V' ) { setNoloBack(0,bwc).setHVec().addSynArg( 1, bwc.back().getHVec() );  bwc.back().setHVec().at(1) = KVec(); }
+      else                      { bwc.back().setHVec().addSynArg( -getDir(e.top()), getNoloBack(iBack,bwc).getHVec() );
+                                  setNoloBack(iBack++,bwc).setHVec().addSynArg( getDir(e.top()), bwc.back().getHVec() ); }
+    }
+  }
+};
+Sign StoreState::aDummy( hvTop, cTop, S_B );
+
+////////////////////////////////////////////////////////////////////////////////
+
+LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm ) {
+    setSide() = S_A;
+    if( f==1 )                            { setCat()  = aPretrm.getCat();
+                                            setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ); qPrev.applyUnariesBotUp( setHVec(), eF ); }
+    else if( qPrev.size()<=0 )            { *this = aTop; }
+    else if( !qPrev.getApex().isDitto() ) { setCat()  = qPrev.getApex().getCat();
+                                            setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( qPrev.getApex().getHVec() ); qPrev.applyUnariesBotUp( setHVec(), eF ); }
+    else                                  { setCat()  = qPrev.getApex().getCat();
+                                            setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ); qPrev.applyUnariesBotUp( setHVec(), eF ); setHVec().add( qPrev.getBase(1).getHVec() ); }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+/*
+void SignWithCarriers::setSign ( CVar cA, O opL, O opR, const Sign& aLchild ) {
+  back().setHVec().resize( cA.getSynArgs() + ( ((opL>='1' and opL<='9') or (opR>='1' and opR<='9')) ? 2 : 1 ) );
+  if( aLchild!=Sign() and getDir(opL)!=-10 ) back().setHVec().addSynArg( -getDir(opL), aLchild.getHVec() );  // Apply operator from lchild to parent.
+}
+*/
+
+void ApexWithCarriers::set ( CVar cB, CVar cA, O opL, O opR, const Sign& aLchild ) {
+  int iAdding = cA.getNoloArity() - cB.getNoloArity() - size();
+  if( iAdding > 0 ) insert( end(), iAdding, Sign() );                                                        // Add nolos not in lchild as more recent.
+//  *emplace( end() ) = Sign( HVec(), cA, S_A );  setSign( cA, opL, opR, aLchild );
+  *emplace( end() ) = Sign( HVec(), cA, S_A );  back().setHVec() = HVec( cA.getSynArgs() + ( ((opL>='1' and opL<='9') or (opR>='1' and opR<='9')) ? 2 : 1 ) );
+
+  if( aLchild!=Sign() and getDir(opL)!=-10 ) back().setHVec().addSynArg( -getDir(opL), aLchild.getHVec() );  // Apply operator from lchild to parent.
+}
+
+void BaseWithCarriers::set ( CVar cP, CVar cB, O opL, O opR, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild ) {
+  int iAdding = cB.getNoloArity() - cP.getNoloArity() - size();
+  if( iAdding > 0 ) insert( end(), iAdding, Sign() );                                                        // Add nolos not in parent as more recent.
+  *emplace( end() ) = Sign( HVec(), cB, S_B );  back().setHVec() = HVec( cB.getSynArgs() + 1 );
+
+  if( getDir(opR)!=-10 ) back().setHVec().addSynArg( getDir(opR), swcParent.back().getHVec() );              // Apply operator from parent to rchild.
+  if( opL=='G' or opR=='R' ) { ss.setNoloBack( 0, *this ).setHVec() = HVec( awcLchild.back().getCat().getSynArgs() );
+                               ss.setNoloBack( 0, *this ).setHVec().add( awcLchild.back().getHVec() ); }
+  if( opL=='R' or opR=='H' ) back().setHVec().add( ss.getNoloBack( 0, awcLchild ).getHVec() );
+  if(             opR=='I' ) { back(1).setHVec() = HVec(1);
+                               back(1).setHVec().addSynArg( awcLchild.back().getCat().getSynArgs(), awcLchild.back().getHVec() ); }
+}
+
+#else
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -576,7 +903,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     //// B.2. Copy store state and add parent/preterm contexts to existing non-locals via extraction operation...
     for( int i=0; i<((f==0&&j==1)?iAncestorB:(f==0&&j==0)?iLowerA:(f==1&&j==1)?iAncestorB:iAncestorB+1); i++ ) {
       Sign& s = *emplace( end() ) = qPrev[i];
-      if( i==iAncestorA and j==1 and qPrev[i].isDitto() and opR!='I' )            { s.setHVec() = hvParent; } 
+      if( i==iAncestorA and j==1 and qPrev[i].isDitto() and opR!=O_I )            { s.setHVec() = hvParent; } 
       else if( viCarrierP.size()>0 and i==viCarrierP.back() and evF!=EVar::eNil ) { viCarrierP.pop_back();
                                                                                     s.setHVec() = HVec( s.getCat().getSynArgs()+1 );
                                                                                     s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() ); }
@@ -600,7 +927,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
                                                                   s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent );
                                                                   cCurrA=cCurrA.withoutFirstNolo(); }
       // Add lowest A...
-      *emplace( end() ) = Sign( (opR=='I') ? HVec::hvDitto /*HVec(KVec(arma::ones(20)))*/ : hvParent, cA, S_A );
+      *emplace( end() ) = Sign( (opR==O_I) ? HVec::hvDitto /*HVec(KVec(arma::ones(20)))*/ : hvParent, cA, S_A );
       iLowerA = size()-1;
     }
     // Add B carriers...
@@ -663,6 +990,15 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
     if( nB!=N_NONE ) for( int i=iAncestor-1; i>=0 && (operator[](i).getCat().isCarrier() || operator[](i).getCat().containsCarrier(nB)); i-- ) if( operator[](i).getCat()==nB ) return i;
     return -1;
   } 
+
+  /*
+  const Sign& getBase( unsigned int iDepthOffset ) const {
+    return at( getDepth() - iDepthOffset );
+  }
+
+  const Sign& getBaseCarrier( unsigned int iDepthOffset, unsigned int iCarrierProximity ) {
+    return at( 
+  */
 };
 const Sign StoreState::aTop( hvTop, cTop, S_B );
 
@@ -710,7 +1046,23 @@ LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign
                                        setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ).add( aAncestorB.getHVec() ); }
 }
 
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
+
+W wUnkIng ( "!unk!ing" );
+W wUnkEd  ( "!unk!ed"  );
+W wUnkS   ( "!unk!s"   );
+W wUnkIon ( "!unk!ion" );
+W wUnkEr  ( "!unk!er"  );
+W wUnkEst ( "!unk!est" );
+W wUnkLy  ( "!unk!ly"  );
+W wUnkIty ( "!unk!ity" );
+W wUnkY   ( "!unk!y"   );
+W wUnkAl  ( "!unk!al"  );
+W wUnkCap ( "!unk!cap" );
+W wUnkNum ( "!unk!num" );
+W wUnk    ( "!unk!"    );
 
 W unkWord ( const char* ps ) {
   return ( 0==strcmp(ps+strlen(ps)-strlen("ing"), "ing") ) ? W("!unk!ing") :
@@ -758,7 +1110,11 @@ class PPredictorVec : public DelimitedQuint<psX,D,psSpace,F,psSpace,Delimited<EV
  public:
   PPredictorVec ( ) { }
   PPredictorVec ( F f, EVar e, K k_p_t, const StoreState& ss ) :
+#ifdef SIMPLE_STORE
+    DelimitedQuint<psX,D,psSpace,F,psSpace,Delimited<EVar>,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth(), f, e, ss.getBase().getCat(), k_p_t.getCat() ) { }
+#else
     DelimitedQuint<psX,D,psSpace,F,psSpace,Delimited<EVar>,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth(), f, e, ss.at(ss.size()-1).getCat(), k_p_t.getCat() ) { }
+#endif
 };
 
 class PModel : public map<PPredictorVec,map<P,double>> {
@@ -786,7 +1142,11 @@ class APredictorVec : public DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Del
   APredictorVec ( D d, F f, J j, EVar e, O o, CVar cP, CVar cL ) :
     DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( d, f, j, e, o, cP, cL ) { }
   APredictorVec ( F f, J j, EVar eF, EVar eJ, O opL, const LeftChildSign& aLchild, const StoreState& ss ) :
+#ifdef SIMPLE_STORE
+    DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()-j, f, j, eJ, opL, ss.getBase().getCat(), (j==0) ? aLchild.getCat() : cBot ) { } 
+#else
     DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()+f-j, f, j, eJ, opL, ss.at(ss.getAncestorBIndex(f)).getCat(), (j==0) ? aLchild.getCat() : cBot ) { } 
+#endif
 };
 
 class AModel : public map<APredictorVec,map<A,double>> {
@@ -812,7 +1172,11 @@ class BPredictorVec : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Deli
   BPredictorVec ( D d, F f, J j, EVar e, O oL, O oR, CVar cP, CVar cL ) :
     DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( d, f, j, e, oL, oR, cP, cL ) { }
   BPredictorVec ( F f, J j, EVar eF, EVar eJ, O opL, O opR, CVar cParent, const LeftChildSign& aLchild, const StoreState& ss ) :
+#ifdef SIMPLE_STORE
+    DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()-j, f, j, eJ, opL, opR, cParent, aLchild.getCat() ) { }
+#else
     DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()+f-j, f, j, eJ, opL, opR, cParent, aLchild.getCat() ) { }
+#endif
 };
 
 class BModel : public map<BPredictorVec,map<B,double>> {
