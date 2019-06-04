@@ -192,9 +192,8 @@ void calcContext ( Tree<L>& tr,
     if (not failtree) {
       // Print preterminal / fork-phase predictors...
       FPredictorVec lfp( modF, hvAnt, nullAnt, q );
-
       cout<<"----"<<q<<endl;
-      cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : f" << f << "&" << e << "&" << k << endl;  modF.getResponseIndex(f,e.c_str(),k);
+      cout << "F " << lfp << "|" << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << aPretrm.getCat() /*getCat(l)*/     << endl;
       cout << "W " << e << " " << k << " " << aPretrm.getCat() /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
 
@@ -265,7 +264,8 @@ void calcContext ( Tree<L>& tr,
     // Print binary / join-phase predictors...
     JPredictorVec ljp( modJ, f, eF.c_str(), aLchild, q );
     cout << "==== " << aLchild << "   " << removeLink(tr) << " -> " << removeLink(tr.front()) << " " << removeLink(tr.back()) << endl;
-    cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;  modJ.getResponseIndex(j,e.c_str(),oL,oR);
+//    cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;  modJ.getResponseIndex(j,e.c_str(),oL,oR);
+    cout << "J " << ljp << "|" << j << "&" << e << "&" << oL << "&" << oR << endl;  // modJ.getResponseIndex(j,e.c_str(),oL,oR);
     cout << "A " << APredictorVec(f,j,eF.c_str(),e.c_str(),oL,aLchild,q)                << " : " << getCat(removeLink(l))          << endl;
     cout << "B " << BPredictorVec(f,j,eF.c_str(),e.c_str(),oL,oR,getCat(l),aLchild,q)   << " : " << getCat(removeLink(tr.back()))  << endl;
 
@@ -310,7 +310,7 @@ int main ( int nArgs, char* argv[] ) {
     }
   }
   for( auto& l : lLC ) mldLemmaCounts[l.second] = l.first;
-
+//  cout << matE << endl;
   int linenum = 0;
   int discourselinenum = 0; //increments on sentence in discourse/article
   map<string,HVec> annot2kset;
@@ -346,8 +346,8 @@ int main ( int nArgs, char* argv[] ) {
     else {cin.get();}
   }
 
-  cerr << "F TOTALS: " << modF.getNumPredictors() << " predictors, " << modF.getNumResponses() << " responses." << endl;
-  cerr << "J TOTALS: " << modJ.getNumPredictors() << " predictors, " << modJ.getNumResponses() << " responses." << endl;
+  // cerr << "F TOTALS: " << modF.getNumPredictors() << " predictors, " << modF.getNumResponses() << " responses." << endl;
+  // cerr << "J TOTALS: " << modJ.getNumPredictors() << " predictors, " << modJ.getNumResponses() << " responses." << endl;
 }
 
 

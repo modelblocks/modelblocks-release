@@ -377,10 +377,23 @@ class EMat {
       }
     }
     KVec operator() ( XVar x ) const { const auto& it = mxv.find( x ); return ( it == mxv.end() ) ? KVec() : it->second; }   // return mxv[x]; }
+    friend ostream& operator<< ( ostream& os, const EMat& matE ) {
+      for ( const auto& it : matE.mxv ) os << it.first << " : " << it.second << endl;
+      return os;
+    }
 // should return the vectors that underwent the -0 relationship function
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+
+arma::mat relu( const arma::mat& km ) {
+  arma::mat A(km.n_rows, 1);
+  for ( unsigned int c = 0; c<km.n_rows; c++ ) {
+    if ( km(c,0) <= 0 ) {A(c,0)=(0.0);}
+    else A(c,0) = (km(c));
+  }
+  return A;
+}
 
 class OFunc {
   map<int,DelimitedMat<psX, double, psComma, 40, 20, psX>> mrwf;
@@ -397,21 +410,24 @@ class OFunc {
       }
     }
 
-//  implementation of ReLU
-    arma::mat relu( const arma::mat& km ) {
-      arma::mat A(km.n_rows, 1);
-      for ( int c = 0; c<km.n_rows; c++ ) {
-        if ( km(c,0) <= 0 ) {A(c,0)=(0.0);}
-        else A(c,0) = (km(c));
-      }
-      return A;
-    }
-
 //  implementation of MLP; apply appropriate weights via matmul
     arma::vec operator() ( int rel, const Col<double>& kv ) const {
-//                          (1x20) * (20x40) * (40x20) = (1x20)
-      return Mat<double>(mrws[rel]) * relu(Mat<double>(mrwf[rel])*kv);
+//                          (20x40) * (40x20) * (20x1)
+      auto its = mrws.find(rel);
+      auto itf = mrwf.find(rel);
+      assert (its != mrws.end() && itf != mrwf.end());
+      return Mat<double>(its->second) * relu(Mat<double>(itf->second)*kv);
     }
+
+//  implementation of ReLU
+//    arma::mat relu( const arma::mat& km ) const {
+//      arma::mat A(km.n_rows, 1);
+//      for ( unsigned int c = 0; c<km.n_rows; c++ ) {
+//        if ( km(c,0) <= 0 ) {A(c,0)=(0.0);}
+//        else A(c,0) = (km(c));
+//      }
+//      return A;
+//    }
 };
 
 #else
@@ -929,13 +945,13 @@ class NModel {
     }
 
     arma::vec calcLogResponses( const NPredictorVec& npv ) const {
-      arma::vec nlogresponses = arma::zeros( matN.n_rows );
-      nlogresponses += npv.getAntDist() * matN.col(getPredictorIndex("ntdist"));
-      for ( auto& npredr : npv.getList() ) {
-        if ( npredr < matN.n_cols ) { 
-          nlogresponses += matN.col( npredr ); 
-        }
-      }
+      arma::vec nlogresponses = arma::ones( 2 );
+//      nlogresponses += npv.getAntDist() * matN.col(getPredictorIndex("ntdist"));
+//      for ( auto& npredr : npv.getList() ) {
+//        if ( npredr < matN.n_cols ) {
+//          nlogresponses += matN.col( npredr );
+//        }
+//      }
       return nlogresponses;
     }
 
@@ -960,25 +976,38 @@ class NModel {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class FPredictorVec : public list<unsigned int> {
+class FPredictorVec {
 
-  public:
+  private:
+    int d;
+    int iCarrier;
+    const HVec& hvB;
+    const HVec& hvF;
+    CVar catBase;
 
+    public:
     template<class FM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
-    FPredictorVec( FM& fm, const HVec& hvAnt, bool nullAnt, const StoreState& ss ) {
-//      int d = (FEATCONFIG & 1) ? 0 : ss.getDepth(); // max used depth - (dbar)
-//      const HVec& hvB = ( ss.at(ss.size()-1).getHVec().size() > 0 ) ? ss.at(ss.size()-1).getHVec() : hvBot; //contexts of lowest b (bdbar)
-//      int iCarrier = ss.getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
-//      const HVec& hvF = ( iCarrier >= 0 ) ? ss.at(iCarrier).getHVec() : HVec();
-//      emplace_back( fm.getPredictorIndex( "Bias" ) );  // add bias
-//      if( STORESTATE_TYPE ) emplace_back( fm.getPredictorIndex( d, ss.at(ss.size()-1).getCat() ) );
-//      if( !(FEATCONFIG & 2) ) {
-//        for( uint iB=0; iB<hvB.size();   iB++ )  for( auto& kB : hvB[iB] )   emplace_back( fm.getPredictorIndex( d, kNil,            kB.project(-iB), kNil ) );
-//        for( uint iF=0; iF<hvF.size();   iF++ )  for( auto& kF : hvF[iF] )   emplace_back( fm.getPredictorIndex( d, kF.project(-iF), kNil,            kNil ) );
-//        for( uint iA=0; iA<hvAnt.size(); iA++ )  for( auto& kA : hvAnt[iA] ) emplace_back( fm.getPredictorIndex( d, kNil,            kNil,            kA.project(-iA) ) );
-//      }
-//      if( nullAnt ) emplace_back( fm.getPredictorIndex( "corefOFF" ) );
-//      else          emplace_back( fm.getPredictorIndex( "corefON"  ) );
+    FPredictorVec( FM& fm, const HVec& hvAnt, bool nullAnt, const StoreState& ss ) : iCarrier (ss.getAncestorBCarrierIndex( 1 )), hvB (( ss.at(ss.size()-1).getHVec().size() > 0 ) ? ss.at(ss.size()-1).getHVec() : hvBot), hvF (( ss.getAncestorBCarrierIndex( 1 ) >= 0 ) ? ss.at(ss.getAncestorBCarrierIndex( 1 )).getHVec() : hvBot){ // used to be .getHVec() : HVec()
+      d = (FEATCONFIG & 1) ? 0 : ss.getDepth();
+      catBase = ss.at(ss.size()-1).getCat();
+    }
+
+    int getD() {
+        return d;
+    }
+    const HVec& getHvB() {
+        return hvB;
+    }
+    const HVec& getHvF() {
+        return hvF;
+    }
+    CVar getCatBase() {
+        return catBase;
+    }
+
+    friend ostream& operator<< ( ostream& os, const FPredictorVec& fpv ) {
+      os << fpv.d << "|" << fpv.catBase << "|" << fpv.hvB << "|" << fpv.hvF;
+      return os;
     }
 };
 
@@ -987,225 +1016,196 @@ class FPredictorVec : public list<unsigned int> {
 class FModel {
 
   typedef DelimitedTrip<psX,F,psAmpersand,Delimited<EVar>,psAmpersand,Delimited<K>,psX> FEK;
+  typedef DelimitedCol<psLBrack, double, psComma, 10, psRBrack> CVec;
 
   private:
 
-    arma::mat matF;                              // matrix itself
+    map<CVar,CVec> mcv;                     // map between cat and 10-dim embeds
 
-    unsigned int iNextPredictor = 0;             // predictor and response next-pointers
+    map<FEK,unsigned int> mfeki;               // response indices
+    map<unsigned int,FEK> mifek;
+
     unsigned int iNextResponse  = 0;
 
-    map<string,unsigned int> msi;                // predictor indices for ad-hoc feature
-    map<unsigned int,string> mis;
-    map<quad<D,K,K,K>,unsigned int> mdkkki;      // predictor indices for k-context tuples
-    map<unsigned int,quad<D,K,K,K>> midkkk;
-    map<pair<D,CVar>,unsigned int> mdci;         // predictor indices for category tuples
-    map<unsigned int,pair<D,CVar>> midc;
-
-    map<FEK,unsigned int> mfeki;                 // response indices
-    map<unsigned int,FEK> mifek;
+    // Matrix dimensions could be different; how to accommodate for this?
+    DelimitedMat<psX, double, psComma, 56, 56, psX> fwf;  // weights for J model
+    DelimitedMat<psX, double, psComma, 606, 56, psX> fws;
 
   public:
 
     FModel( ) { }
     FModel( istream& is ) {
-      list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
-      while( is.peek()=='F' ) {
-        auto& prw = *l.emplace( l.end() );
-        is >> "F ";
-        if( is.peek()=='a' )   { Delimited<string> s;   is >> "a" >> s >> " : ";                          prw.first()  = getPredictorIndex( s );             }
-        else{
-          D d;                                          is >> "d" >> d >> "&";
-          if( is.peek()=='t' ) { Delimited<CVar> c;     is >> "t" >> c >> " : ";                          prw.first()  = getPredictorIndex( d, c );          }
-          else                 { Delimited<K> kN,kF,kA; is >> kN >> "&" >> kF >> "&" >> kA >> " : ";      prw.first()  = getPredictorIndex( d, kN, kF, kA ); }
-        }
-        F f; Delimited<EVar> e; Delimited<K> k;         is >> "f" >> f >> "&" >> e >> "&" >> k >> " = ";  prw.second() = getResponseIndex( f, e, k );
-        Delimited<double> w;                            is >> w >> "\n";                                  prw.third()  = w;
+      while ( is.peek()=='F' ) {
+        Delimited<char> c;
+        is >> "F " >> c >> " ";
+        if (c == 'F') is >> fwf >> "\n";
+        if (c == 'S') is >> fws >> "\n";
       }
-      if( l.size()==0 ) cerr << "ERROR: No F items found." << endl;
-      matF.zeros ( mifek.size(), iNextPredictor );
-      for( auto& prw : l ) { matF( prw.second(), prw.first() ) = prw.third(); }
+      while ( is.peek()=='C' ) {
+        Delimited<CVar> c;
+        is >> "C " >> c >> " ";
+        is >> mcv[c] >> "\n";
+      }
+      while ( is.peek()=='f' ) {
+        Delimited<int> k;
+        is >> "f " >> k >> " ";
+        is >> mifek[k] >> "\n";
+        mfeki[mifek[k]] = k;
+      }
     }
 
-    unsigned int getPredictorIndex( const string& s ) {
-      const auto& it = msi.find( s );  if( it != msi.end() ) return( it->second );
-      msi[ s ] = iNextPredictor;  mis[ iNextPredictor ] = s;  return( iNextPredictor++ );
-    }
-    unsigned int getPredictorIndex( const string& s ) const {                  // const version with closed predictor domain
-      const auto& it = msi.find( s );  return( ( it != msi.end() ) ? it->second : 0 );
+    const FEK& getFEK( unsigned int i ) const {
+      auto it = mifek.find( i );
+      assert( it != mifek.end() );
+      return it->second;
     }
 
-    unsigned int getPredictorIndex( D d, K kF, K kA, K kL ) {
-      const auto& it = mdkkki.find( quad<D,K,K,K>(d,kF,kA,kL) );  if( it != mdkkki.end() ) return( it->second );
-      mdkkki[ quad<D,K,K,K>(d,kF,kA,kL) ] = iNextPredictor;  midkkk[ iNextPredictor ] = quad<D,K,K,K>(d,kF,kA,kL);  return( iNextPredictor++ );
-    }
-    unsigned int getPredictorIndex( D d, K kF, K kA, K kL ) const {            // const version with closed predictor domain
-      const auto& it = mdkkki.find( quad<D,K,K,K>(d,kF,kA,kL) );  return( ( it != mdkkki.end() ) ? it->second : 0 );
-    }
-
-    unsigned int getPredictorIndex( D d, CVar c ) {
-      const auto& it = mdci.find( pair<D,CVar>(d,c) );  if( it != mdci.end() ) return( it->second );
-      mdci[ pair<D,CVar>(d,c) ] = iNextPredictor;  midc[ iNextPredictor ] = pair<D,CVar>(d,c);  return( iNextPredictor++ );
-    }
-    unsigned int getPredictorIndex( D d, CVar c ) const {                      // const version with closed predictor domain
-      const auto& it = mdci.find( pair<D,CVar>(d,c) );  return( ( it != mdci.end() ) ? it->second : 0 );
+    const CVec& getCatEmbed( CVar i ) const {
+      auto it = mcv.find( i );
+      assert( it != mcv.end() );
+      return it->second;
     }
 
     unsigned int getResponseIndex( F f, EVar e, K k ) {
       const auto& it = mfeki.find( FEK(f,e,k) );  if( it != mfeki.end() ) return( it->second );
       mfeki[ FEK(f,e,k) ] = iNextResponse;  mifek[ iNextResponse ] = FEK(f,e,k);  return( iNextResponse++ );
     }
+
     unsigned int getResponseIndex( F f, EVar e, K k ) const {                  // const version with closed predictor domain
       const auto& it = mfeki.find( FEK(f,e,k) );  return( ( it != mfeki.end() ) ? it->second : uint(-1) );
     }
 
-    const FEK& getFEK( unsigned int i ) const {
-      auto it = mifek.find( i );
-      assert( it != mifek.end() );
-      return mifek.find( i )->second;
-    }
+    arma::vec calcResponses( FPredictorVec& lfpredictors ) const {
+// return distribution over JEOO indices
+// vectorize predictors: one-hot for depth, three hvecs, two cat-embeds
+      arma::vec flogresponses = arma::zeros( fwf.n_cols );
+      CVar catB = lfpredictors.getCatBase();
+      const HVec& hvB = lfpredictors.getHvB();
+      const HVec& hvF = lfpredictors.getHvF();
+      int d = lfpredictors.getD();
 
-    arma::vec calcResponses( const FPredictorVec& lfpredictors ) const {
-      arma::vec flogresponses = arma::zeros( matF.n_rows );
-      for ( auto& fpredr : lfpredictors ) if ( fpredr < matF.n_cols ) flogresponses += matF.col( fpredr );
-      arma::vec fresponses = arma::exp( flogresponses );
-      double fnorm = arma::accu( fresponses );                                 // fork normalization term (denominator)
+      const CVec& catBEmb = getCatEmbed(catB);
 
-      // Replace overflowing distribs by max...
-      if( fnorm == 1.0/0.0 ) {
-        uint ind_max=0; for( uint i=0; i<flogresponses.size(); i++ ) if( flogresponses(i)>flogresponses(ind_max) ) ind_max=i;
-        flogresponses -= flogresponses( ind_max );
-        fresponses = arma::exp( flogresponses );
-        fnorm = arma::accu( fresponses ); //accumulate is sum over elements
-      } //closes if fnorm
-      return fresponses / fnorm;
-    }
-
-    friend ostream& operator<<( ostream& os, const pair< const FModel&, const FPredictorVec& >& mv ) {
-      for( const auto& i : mv.second ) {
-        if( &i != &mv.second.front() ) os << ",";
-        const auto& itK = mv.first.midkkk.find(i);
-       	if( itK != mv.first.midkkk.end() ) { os << "d" << itK->second.first() << "&" << itK->second.second() << "&" << itK->second.third() << "&" << itK->second.fourth() << "=1"; continue; }
-        const auto& itC = mv.first.midc.find(i);
-        if( itC != mv.first.midc.end()   ) { os << "d" << itC->second.first << "&t" << itC->second.second << "=1"; continue; }
-        const auto& itS = mv.first.mis.find(i);
-        if( itS != mv.first.mis.end()    ) { os << "a" << itS->second << "=1"; }
+// populate predictor vector
+      for(unsigned int i = 0; i < catBEmb.n_elem; i++){
+        flogresponses(i) = catBEmb(i);
       }
-      return os;
-    }
+      for(unsigned int i = 0; i < hvB.at(0).n_elem; i++){
+        flogresponses(catBEmb.n_elem+i) = hvB.at(0)(i);
+      }
+      for(unsigned int i = 0; i < hvF.at(0).n_elem; i++){
+        flogresponses(catBEmb.n_elem+hvB.at(0).n_elem+i) = hvF.at(0)(i);
+      }
+      flogresponses(catBEmb.n_elem+hvB.at(0).n_elem+hvF.at(0).n_elem+d) = 1;
 
-    unsigned int getNumPredictors( ) { return iNextPredictor; }
-    unsigned int getNumResponses(  ) { return iNextResponse;  }
+// implementation of MLP
+      arma::vec flogscores = Mat<double>(fws) * relu(Mat<double>(fwf)*flogresponses);
+      arma::vec fscores = arma::exp(flogscores);
+      double fnorm = arma::accu(fscores);
+
+      return fscores/fnorm;
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class JPredictorVec : public list<unsigned int> {
+class JPredictorVec {
+
+  private:
+    int d;
+    const Sign& aAncstr;
+    const HVec& hvAncstr;
+    const HVec& hvFiller;
+    const HVec& hvLchild;
+    CVar catAncstr;
+    CVar catLchild;
 
   public:
-
     template<class JM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
-    JPredictorVec( JM& jm, F f, EVar eF, const LeftChildSign& aLchild, const StoreState& ss ) {
-//      int d = (FEATCONFIG & 1) ? 0 : ss.getDepth()+f;
-//      int iCarrierB = ss.getAncestorBCarrierIndex( f );
-//      const Sign& aAncstr  = ss.at( ss.getAncestorBIndex(f) );
-//      const HVec& hvAncstr = ( aAncstr.getHVec().size()==0 ) ? hvBot : aAncstr.getHVec();
-//      const HVec& hvFiller = ( iCarrierB<0                 ) ? hvBot : ss.at( iCarrierB ).getHVec();
-//      const HVec& hvLchild = ( aLchild.getHVec().size()==0 ) ? hvBot : aLchild.getHVec() ;
-//      emplace_back( jm.getPredictorIndex( "Bias" ) );  // add bias
-//      if( STORESTATE_TYPE ) emplace_back( jm.getPredictorIndex( d, aAncstr.getCat(), aLchild. getCat() ) );
-//      if( !(FEATCONFIG & 32) ) {
-//        for( uint iA=0; iA<hvAncstr.size(); iA++ ) for( auto& kA : hvAncstr[iA] )
-//          for( uint iL=0; iL<hvLchild.size(); iL++ ) for( auto& kL : hvLchild[iL] ) emplace_back( jm.getPredictorIndex( d, kNil, kA.project(-iA), kL.project(-iL) ) );
-//        for( uint iF=0; iF<hvFiller.size(); iF++ ) for( auto& kF : hvFiller[iF] )
-//          for( uint iA=0; iA<hvAncstr.size(); iA++ ) for( auto& kA : hvAncstr[iA] ) emplace_back( jm.getPredictorIndex( d, kF.project(-iF), kA.project(-iA), kNil ) );
-//        for( uint iF=0; iF<hvFiller.size(); iF++ ) for( auto& kF : hvFiller[iF] )
-//          for( uint iL=0; iL<hvLchild.size(); iL++ ) for( auto& kL : hvLchild[iL] ) emplace_back( jm.getPredictorIndex( d, kF.project(-iF), kNil, kL.project(-iL) ) );
-//      }
+    JPredictorVec( JM& jm, F f, EVar eF, const LeftChildSign& aLchild, const StoreState& ss ) : aAncstr(ss.at( ss.getAncestorBIndex(f) )),
+    hvAncstr (( aAncstr.getHVec().size()==0 ) ? hvBot : aAncstr.getHVec()),
+    hvFiller (( ss.getAncestorBCarrierIndex( f )<0 ) ? hvBot : ss.at( ss.getAncestorBCarrierIndex( f ) ).getHVec()),
+    hvLchild (( aLchild.getHVec().size()==0 ) ? hvBot : aLchild.getHVec()){
+      d = (FEATCONFIG & 1) ? 0 : ss.getDepth()+f;
+      catAncstr = ( aAncstr.getHVec().size()==0 ) ? cBot : aAncstr.getCat();
+      catLchild = ( aLchild.getHVec().size()==0 ) ? cBot : aLchild.getCat();
+    }
+
+    int getD() {
+        return d;
+    }
+    const HVec& getHvAncstr() {
+        return hvAncstr;
+    }
+    const HVec& getHvFiller() {
+        return hvFiller;
+    }
+    const HVec& getHvLchild() {
+        return hvLchild;
+    }
+    CVar getCatAncstr() {
+        return catAncstr;
+    }
+    CVar getCatLchild() {
+        return catLchild;
+    }
+
+    friend ostream& operator<< ( ostream& os, const JPredictorVec& jpv ) {
+      os << jpv.d << "|" << jpv.catAncstr << "|" << jpv.hvAncstr << "|" << jpv.hvFiller << "|" << jpv.catLchild << "|" << jpv.hvLchild;
+      return os;
     }
 };
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 class JModel {
 
   typedef DelimitedQuad<psX,J,psAmpersand,Delimited<EVar>,psAmpersand,O,psAmpersand,O,psX> JEOO;
+  typedef DelimitedCol<psLBrack, double, psComma, 10, psRBrack> CVec;
+  unsigned int jr0;
+  unsigned int jr1;
 
   private:
 
-    arma::mat matJ;                              // matrix itself
-
-    unsigned int iNextPredictor = 0;             // predictor and response next-pointers
-    unsigned int iNextResponse  = 0;
-
-    map<string,unsigned int> msi;                // predictor indices for ad-hoc feature
-    map<unsigned int,string> mis;
-    map<quad<D,K,K,K>,unsigned int> mdkkki;      // predictor indices for k-context tuples
-    map<unsigned int,quad<D,K,K,K>> midkkk;
-    map<trip<D,CVar,CVar>,unsigned int> mdcci;   // predictor indices for category tuples
-    map<unsigned int,trip<D,CVar,CVar>> midcc;
+    map<CVar,CVec> mcv;                     // map between cat and 10-dim embeds
 
     map<JEOO,unsigned int> mjeooi;               // response indices
     map<unsigned int,JEOO> mijeoo;
 
-    unsigned int jr0;
-    unsigned int jr1;
+    unsigned int iNextResponse  = 0;
+
+    // Matrix dimensions could be different; how to accommodate for this?
+    DelimitedMat<psX, double, psComma, 87, 87, psX> jwf;  // weights for J model
+    DelimitedMat<psX, double, psComma, 45, 87, psX> jws;
 
   public:
 
-    JModel( )             : jr0(getResponseIndex(0,EVar::eNil,O_N,O_I)), jr1(getResponseIndex(1,EVar::eNil,O_N,O_I)) { }
-    JModel( istream& is ) : jr0(getResponseIndex(0,EVar::eNil,O_N,O_I)), jr1(getResponseIndex(1,EVar::eNil,O_N,O_I)) {
-      list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
-      while( is.peek()=='J' ) {
-        auto& prw = *l.emplace( l.end() );
-        is >> "J ";
-        if( is.peek()=='a' )   { Delimited<string> s;   is >> "a" >> s >> " : ";                                        prw.first()  = getPredictorIndex( s );             }
-        else{
-          D d;                                          is >> "d" >> d >> "&";
-          if( is.peek()=='t' ) { Delimited<CVar> cA,cL; is >> "t" >> cA >> "&t" >> cL >> " : ";                         prw.first()  = getPredictorIndex( d, cA, cL );     }
-          else                 { Delimited<K> kF,kA,kL; is >> kF >> "&" >> kA >> "&" >> kL >> " : ";                    prw.first()  = getPredictorIndex( d, kF, kA, kL ); }
-        }
-        J j; Delimited<EVar> e; O oL,oR;                is >> "j" >> j >> "&" >> e >> "&" >> oL >> "&" >> oR >> " = ";  prw.second() = getResponseIndex( j, e, oL, oR );
-        Delimited<double> w;                            is >> w >> "\n";                                                prw.third()  = w;
+    JModel() {
+      jr0 = getResponseIndex( 0, EVar::eNil, 'N', 'I' );
+      jr1 = getResponseIndex( 1, EVar::eNil, 'N', 'I' );
+    }
+    // read in weights, embeddings, and JEOOs
+    JModel(istream& is) {
+      while ( is.peek()=='J' ) {
+        Delimited<char> c;
+        is >> "J " >> c >> " ";
+        if (c == 'F') is >> jwf >> "\n";
+        if (c == 'S') is >> jws >> "\n";
       }
-      if( l.size()==0 ) cerr << "ERROR: No J items found." << endl;
-      matJ.zeros ( mijeoo.size(), iNextPredictor );
-      for( auto& prw : l ) { matJ( prw.second(), prw.first() ) = prw.third(); }
-    }
-
-    unsigned int getResponse0( ) const { return jr0; }
-    unsigned int getResponse1( ) const { return jr1; }
-
-    unsigned int getPredictorIndex( const string& s ) {
-      const auto& it = msi.find( s );  if( it != msi.end() ) return( it->second );
-      msi[ s ] = iNextPredictor;  mis[ iNextPredictor ] = s;  return( iNextPredictor++ );
-    }
-    unsigned int getPredictorIndex( const string& s ) const {                  // const version with closed predictor domain
-      const auto& it = msi.find( s );  return( ( it != msi.end() ) ? it->second : 0 );
-    }
-
-    unsigned int getPredictorIndex( D d, K kF, K kA, K kL ) {
-      const auto& it = mdkkki.find( quad<D,K,K,K>(d,kF,kA,kL) );  if( it != mdkkki.end() ) return( it->second );
-      mdkkki[ quad<D,K,K,K>(d,kF,kA,kL) ] = iNextPredictor;  midkkk[ iNextPredictor ] = quad<D,K,K,K>(d,kF,kA,kL);  return( iNextPredictor++ );
-    }
-    unsigned int getPredictorIndex( D d, K kF, K kA, K kL ) const {            // const version with closed predictor domain
-      const auto& it = mdkkki.find( quad<D,K,K,K>(d,kF,kA,kL) );  return( ( it != mdkkki.end() ) ? it->second : 0 );
-    }
-
-    unsigned int getPredictorIndex( D d, CVar cA, CVar cL ) {
-      const auto& it = mdcci.find( trip<D,CVar,CVar>(d,cA,cL) );  if( it != mdcci.end() ) return( it->second );
-      mdcci[ trip<D,CVar,CVar>(d,cA,cL) ] = iNextPredictor;  midcc[ iNextPredictor ] = trip<D,CVar,CVar>(d,cA,cL);  return( iNextPredictor++ );
-    }
-    unsigned int getPredictorIndex( D d, CVar cA, CVar cL ) const {            // const version with closed predictor domain
-      const auto& it = mdcci.find( trip<D,CVar,CVar>(d,cA,cL) );  return( ( it != mdcci.end() ) ? it->second : 0 );
-    }
-
-    unsigned int getResponseIndex( J j, EVar e, O oL, O oR ) {
-      const auto& it = mjeooi.find( JEOO(j,e,oL,oR) );  if( it != mjeooi.end() ) return( it->second );
-      mjeooi[ JEOO(j,e,oL,oR) ] = iNextResponse;  mijeoo[ iNextResponse ] = JEOO(j,e,oL,oR);  return( iNextResponse++ );
-    }
-    unsigned int getResponseIndex( J j, EVar e, O oL, O oR ) const {           // const version with closed predictor domain
-      const auto& it = mjeooi.find( JEOO(j,e,oL,oR) );  assert( it != mjeooi.end() );  return( ( it != mjeooi.end() ) ? it->second : uint(-1) );
+      while ( is.peek()=='C' ) {
+        Delimited<CVar> c;
+        is >> "C " >> c >> " ";
+        is >> mcv[c] >> "\n";
+      }
+      while ( is.peek()=='j' ) {
+        Delimited<int> k;
+        is >> "j " >> k >> " ";
+        is >> mijeoo[k] >> "\n";
+        mjeooi[mijeoo[k]] = k;
+      }
+      jr0 = getResponseIndex( 0, EVar::eNil, 'N', 'I' );
+      jr1 = getResponseIndex( 1, EVar::eNil, 'N', 'I' );
     }
 
     const JEOO& getJEOO( unsigned int i ) const {
@@ -1214,37 +1214,63 @@ class JModel {
       return it->second;
     }
 
-    arma::vec calcResponses( const JPredictorVec& ljpredictors ) const {
-      arma::vec jlogresponses = arma::zeros( matJ.n_rows );
-      for ( auto& jpredr : ljpredictors ) if ( jpredr < matJ.n_cols ) jlogresponses += matJ.col( jpredr );
-      arma::vec jresponses = arma::exp( jlogresponses );
-      double jnorm = arma::accu( jresponses );                                 // join normalization term (denominator)
-
-      // Replace overflowing distribs by max...
-      if( jnorm == 1.0/0.0 ) {
-        uint ind_max=0; for( uint i=0; i<jlogresponses.size(); i++ ) if( jlogresponses(i)>jlogresponses(ind_max) ) ind_max=i;
-        jlogresponses -= jlogresponses( ind_max );
-        jresponses = arma::exp( jlogresponses );
-        jnorm = arma::accu( jresponses ); //accumulate is sum over elements
-      } //closes if jnorm
-      return jresponses / jnorm;
+    const CVec& getCatEmbed( CVar i ) const {
+      auto it = mcv.find( i );
+      assert( it != mcv.end() );
+      return it->second;
     }
 
-    friend ostream& operator<<( ostream& os, const pair< const JModel&, const JPredictorVec& >& mv ) {
-      for( const auto& i : mv.second ) {
-        if( &i != &mv.second.front() ) os << ",";
-        const auto& itK = mv.first.midkkk.find(i);
-       	if( itK != mv.first.midkkk.end() ) { os << "d" << itK->second.first() << "&" << itK->second.second() << "&" << itK->second.third() << "&" << itK->second.fourth() << "=1"; continue; }
-        const auto& itC = mv.first.midcc.find(i);
-        if( itC != mv.first.midcc.end()  ) { os << "d" << itC->second.first() << "&t" << itC->second.second() << "&t" << itC->second.third() << "=1"; continue; }
-        const auto& itS = mv.first.mis.find(i);
-        if( itS != mv.first.mis.end()    ) { os << "a" << itS->second << "=1"; }
+    unsigned int getResponse0( ) const { return jr0; }
+    unsigned int getResponse1( ) const { return jr1; }
+
+    unsigned int getResponseIndex( J j, EVar e, O oL, O oR ) {
+      const auto& it = mjeooi.find( JEOO(j,e,oL,oR) );  if( it != mjeooi.end() ) return( it->second );
+      mjeooi[ JEOO(j,e,oL,oR) ] = iNextResponse;  mijeoo[ iNextResponse ] = JEOO(j,e,oL,oR);  return( iNextResponse++ );
+    }
+
+    unsigned int getResponseIndex( J j, EVar e, O oL, O oR ) const {           // const version with closed predictor domain
+      const auto& it = mjeooi.find( JEOO(j,e,oL,oR) );  assert( it != mjeooi.end() );  return( ( it != mjeooi.end() ) ? it->second : uint(-1) );
+    }
+
+    arma::vec calcResponses( JPredictorVec& ljpredictors ) const {
+// return distribution over JEOO indices
+// vectorize predictors: one-hot for depth, three hvecs, two cat-embeds
+      arma::vec jlogresponses = arma::zeros( jwf.n_cols );
+      CVar catA = ljpredictors.getCatAncstr();
+      const HVec& hvA = ljpredictors.getHvAncstr();
+      const HVec& hvF = ljpredictors.getHvFiller();
+      CVar catL = ljpredictors.getCatLchild();
+      const HVec& hvL = ljpredictors.getHvLchild();
+      int d = ljpredictors.getD();
+
+      const CVec& catAEmb = getCatEmbed(catA);
+      const CVec& catLEmb = getCatEmbed(catL);
+
+// populate predictor vector
+      for(unsigned int i = 0; i < catAEmb.n_elem; i++){
+        jlogresponses(i) = catAEmb(i);
       }
-      return os;
-    }
+      for(unsigned int i = 0; i < hvA.at(0).n_elem; i++){
+        jlogresponses(catAEmb.n_elem+i) = hvA.at(0)(i);
+      }
+      for(unsigned int i = 0; i < hvF.at(0).n_elem; i++){
+        jlogresponses(catAEmb.n_elem+hvA.at(0).n_elem+i) = hvF.at(0)(i);
+      }
+      for(unsigned int i = 0; i < catLEmb.n_elem; i++){
+        jlogresponses(catAEmb.n_elem+hvA.at(0).n_elem+hvF.at(0).n_elem+i) = catLEmb(i);
+      }
+      for(unsigned int i = 0; i < hvL.at(0).n_elem; i++){
+        jlogresponses(catAEmb.n_elem+hvA.at(0).n_elem+hvF.at(0).n_elem+catLEmb.n_elem+i) = hvL.at(0)(i);
+      }
+      jlogresponses(catAEmb.n_elem+hvA.at(0).n_elem+hvF.at(0).n_elem+catLEmb.n_elem+hvL.at(0).n_elem+d) = 1;
 
-    unsigned int getNumPredictors( ) { return iNextPredictor; }
-    unsigned int getNumResponses(  ) { return iNextResponse;  }
+// implementation of MLP
+      arma::vec jlogscores = Mat<double>(jws) * relu(Mat<double>(jwf)*jlogresponses);
+      arma::vec jscores = arma::exp(jlogscores);
+      double jnorm = arma::accu(jscores);
+
+      return jscores/jnorm;
+    }
 };
 
 #else

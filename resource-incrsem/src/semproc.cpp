@@ -317,10 +317,11 @@ int main ( int nArgs, char* argv[] ) {
                 continue; //skip excluded indices
               }
               bool corefON = (tAnt==int(t)) ? 0 : 1;
+  cout << "i'm here before npv" << endl;
               NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1 );
               arma::vec nlogresponses = modN.calcLogResponses( npv ); //nps.NLogResponses(matN);
               ndenom += exp( nlogresponses(1) - nlogresponses(0) );
-
+  cout << "i'm here after npv" << endl;
             } //closes for tAnt
 
             pbeAnt = &beDummy; //reset pbiAnt pointer after calculating denominator
