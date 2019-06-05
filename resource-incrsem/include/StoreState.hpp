@@ -977,6 +977,39 @@ class PModel : public map<PPredictorVec,map<P,double>> {
 
 class WPredictor : public DelimitedTrip<psX,Delimited<EVar>,psSpace,Delimited<K>,psSpace,Delimited<CVar>,psX> { };
 
+class WModel : public map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> {
+ public:
+  WModel ( ) { }
+  WModel ( istream& is ) {
+    while( is.peek()=='W' ) {
+      WPredictor wp;  W w;  Delimited<double> pr;
+      is >> "W " >> wp >> " : " >> w >> " = " >> pr >> "\n";
+      (*this)[w].emplace_back(wp,pr);
+    }
+
+    // Add unk...
+    for( auto& entry : *this ) {
+      // for each word:{<category:prob>}
+      for( auto& unklistelem : (*this)[unkWord(entry.first.getString().c_str())] ) {
+        // for each possible unked(word) category:prob pair
+        bool BAIL = false;
+        for( auto& listelem : entry.second ) {
+          if (listelem.first == unklistelem.first) {
+            BAIL = true;
+            listelem.second = listelem.second + ( 0.000001 * unklistelem.second ); // merge actual likelihood and unk likelihood
+          }
+        }
+        if (not BAIL) entry.second.push_back( DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>(unklistelem.first,0.000001*unklistelem.second) );
+      }
+    } //closes for auto& entry : lexW
+  }
+
+  const list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>& calcPredictorLikelihoods( W w_t ) const {
+    if( end() == find( unkWord( w_t.getString().c_str() ) ) )  cerr << "ERROR: unable to find unk form: " << unkWord( w_t.getString().c_str() ) << endl;
+    return( ( end() != find(w_t) ) ? find(w_t)->second : find( unkWord( w_t.getString().c_str() ) )->second );
+  }
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 
 class APredictorVec : public DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX> {
