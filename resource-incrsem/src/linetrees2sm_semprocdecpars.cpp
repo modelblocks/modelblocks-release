@@ -34,6 +34,11 @@ bool STORESTATE_CHATTY = true;
 int FEATCONFIG = 0;
 bool INTERSENTENTIAL = true;
 #include <StoreState.hpp>
+#ifdef DENSE_VECTORS
+#include <SemProcModels_dense.hpp>
+#else
+#include <SemProcModels_sparse.hpp>
+#endif
 #include <Beam.hpp>
 #include <BerkUnkWord.hpp>
 #include <Tree.hpp>

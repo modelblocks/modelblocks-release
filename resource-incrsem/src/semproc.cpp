@@ -35,6 +35,11 @@ bool STORESTATE_TYPE = true;
 bool STORESTATE_CHATTY = false;
 uint FEATCONFIG = 0;
 #include <StoreState.hpp>
+#ifdef DENSE_VECTORS
+#include <SemProcModels_dense.hpp>
+#else
+#include <SemProcModels_sparse.hpp>
+#endif
 #include <Beam.hpp>
 int COREF_WINDOW = 50;
 
