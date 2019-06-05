@@ -40,12 +40,13 @@ class NPredictorVec {
 //      mdist = antdist;
       mnpreds.emplace_back( lm.getPredictorIndex( "bias" ) ); //add bias term
 
+      const HVec& hvA = ( antdist ) ? candidate.getHVec() : hvBot;
 #ifdef SIMPLE_STORE
       const HVec& hvB = ss.getBase().getHVec(); //contexts of lowest b (bdbar)
 #else
       const HVec& hvB = ss.at(ss.size()-1).getHVec(); //contexts of lowest b (bdbar)
 #endif
-      for( unsigned int iA=0; iA<candidate.getHVec().size(); iA++ )  for( auto& antk : candidate.getHVec()[iA] ) {
+      for( unsigned int iA=0; iA<hvA.size(); iA++ )  for( auto& antk : hvA[iA] ) {
         mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), kNil ) ); //add unary antecedent k feat, using kxk template
         for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
           mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), currk.project(-iB) ) ); //pairwise kxk feat
@@ -55,13 +56,14 @@ class NPredictorVec {
         mnpreds.emplace_back( lm.getPredictorIndex( kNil, currk.project(-iB) ) ); //unary ancestor k feat
       }
 
-      mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), N_NONE                      ) ); // antecedent CVar
+      CVar cAnt = ( antdist ) ? candidate.getCat() : cNone;
+      mnpreds.emplace_back( lm.getPredictorIndex( cAnt,   N_NONE                      ) ); // antecedent CVar
 #ifdef SIMPLE_STORE
-      mnpreds.emplace_back( lm.getPredictorIndex( N_NONE,             ss.getBase().getCat() ) ); // ancestor CVar
-      mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), ss.getBase().getCat() ) ); // pairwise T
+      mnpreds.emplace_back( lm.getPredictorIndex( N_NONE, ss.getBase().getCat() ) ); // ancestor CVar
+      mnpreds.emplace_back( lm.getPredictorIndex( cAnt,   ss.getBase().getCat() ) ); // pairwise T
 #else
-      mnpreds.emplace_back( lm.getPredictorIndex( N_NONE,             ss.at(ss.size()-1).getCat() ) ); // ancestor CVar
-      mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), ss.at(ss.size()-1).getCat() ) ); // pairwise T
+      mnpreds.emplace_back( lm.getPredictorIndex( N_NONE, ss.at(ss.size()-1).getCat() ) ); // ancestor CVar
+      mnpreds.emplace_back( lm.getPredictorIndex( cAnt,   ss.at(ss.size()-1).getCat() ) ); // pairwise T
 #endif
 
       //corefON feature

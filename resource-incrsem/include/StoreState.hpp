@@ -238,6 +238,7 @@ const CVar cTop("T");
 const CVar cBot("-");
 const CVar cBOT("bot");  // not sure if this really needs to be distinct from cBot
 const CVar cFail("FAIL");
+const CVar cNone("NONE");
 const N N_NONE("");
 
 ////////////////////////////////////////////////////////////////////////////////
