@@ -673,8 +673,8 @@ void BaseWithCarriers::set ( CVar cP, CVar cB, O opL, O opR, StoreState& ss, con
   if( opL=='G' or opR=='R' ) { ss.setNoloBack( 0, *this ).setHVec() = HVec( awcLchild.back().getCat().getSynArgs() );
                                ss.setNoloBack( 0, *this ).setHVec().add( awcLchild.back().getHVec() ); }
   if( opL=='R' or opR=='H' ) back().setHVec().add( ss.getNoloBack( 0, awcLchild ).getHVec() );
-  if(             opR=='I' ) { back(1).setHVec() = HVec(1);
-                               back(1).setHVec().addSynArg( awcLchild.back().getCat().getSynArgs(), awcLchild.back().getHVec() ); }
+  if(             opR=='I' ) { ss.setNoloBack( 0, *this ).setHVec() = HVec(1);
+                               ss.setNoloBack( 0, *this ).setHVec().addSynArg( awcLchild.back().getCat().getSynArgs(), awcLchild.back().getHVec() ); }
 }
 
 #else
