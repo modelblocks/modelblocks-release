@@ -468,14 +468,14 @@ class LeftChildSign : public Sign {
 
 class SignWithCarriers : public DelimitedVector<psX,Sign,psX,psX> {
  public:
-  Sign&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
+  Sign&       back ( unsigned int i = 0 )       { assert( size() > i );  return at( size() - 1 - i ); }
   const Sign& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : aTop; }
 };
 
 class ApexWithCarriers : public SignWithCarriers {
  public:
   void set ( CVar cB, CVar cA, O opL, O opR, const Sign& aLchild = Sign() );
-  Sign&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
+  Sign&       back ( unsigned int i = 0 )       { assert( size() > i );  return at( size() - 1 - i ); }
   const Sign& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : aTop; }
 };
 ApexWithCarriers awcDummy;
@@ -483,7 +483,7 @@ ApexWithCarriers awcDummy;
 class BaseWithCarriers : public SignWithCarriers {
  public:
   void set ( CVar cP, CVar cB, O opL, O opR, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild );
-  Sign&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
+  Sign&       back ( unsigned int i = 0 )       { assert( size() > i );  return at( size() - 1 - i ); }
   const Sign& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : bTop; }
 };
 
@@ -509,6 +509,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
   StoreState ( CVar cA, CVar cB ) { emplace( end() ); back().apex().emplace_back( hvBot, cA, S_A ); back().base().emplace_back( hvBot, cB, S_B ); }
 
+  // Preterminal constructor...
   StoreState ( const StoreState& qPrev, const HVec& hvAnt, EVar evF, K k, CVar cP, const EMat& matE, const OFunc& funcO ) {
     // Add preterm and apply unaries...
     reserve( qPrev.size() + 1 );
@@ -519,6 +520,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
     applyUnariesBotUp( back().apex(), evF );
   }
 
+  // Constructor for terminal phase in left-corner parser...
   StoreState ( const StoreState& qPrev, F f ) {
     if( f==0 ) {
       // Close most recent derivation fragment and make new complete sign (lowest apex)...
@@ -534,6 +536,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
     }
   }
 
+  // Constructor for nonterminal phase in left-corner parser...
   StoreState ( const StoreState& qPrev, J j, EVar evJ, O opL, O opR, CVar cA, CVar cB ) {
     if( j==1 and qPrev.getDepth()>1 ) {
       // Grow prev derivation fragment downward to subsume new apex...
@@ -572,7 +575,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
   unsigned int getDepth( ) const { return size(); }
 
-  DerivationFragment&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
+  DerivationFragment&       back ( unsigned int i = 0 )       { assert( size() > i );  return at( size() - 1 - i ); }
   const DerivationFragment& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : dfTop; }
 
   Sign&       setApex (        unsigned int iDepthBack = 0                     )       {  return back( iDepthBack ).apex().back();            }
