@@ -17,6 +17,8 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <typeinfo>
+
 class NPredictorVec {
 //need to be able to output real-valued distance integers, NPreds
 //TODO maybe try quadratic distance
@@ -170,9 +172,9 @@ class FPredictorVec {
 
     public:
     template<class FM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
-    FPredictorVec( FM& fm, const HVec& hvAnt, bool nullAnt, const StoreState& ss ) : iCarrier (ss.getAncestorBCarrierIndex( 1 )), hvB (( ss.at(ss.size()-1).getHVec().size() > 0 ) ? ss.at(ss.size()-1).getHVec() : hvBot), hvF (( ss.getAncestorBCarrierIndex( 1 ) >= 0 ) ? ss.at(ss.getAncestorBCarrierIndex( 1 )).getHVec() : hvBot){ // used to be .getHVec() : HVec()
+    FPredictorVec( FM& fm, const HVec& hvAnt, bool nullAnt, const StoreState& ss ) : hvB (( ss.getBase().getHVec().size() > 0 ) ? ss.getBase().getHVec() : hvBot), hvF (( ss.getBase().getCat().getNoloArity() ) ? ss.getNoloBack().getHVec() : hvBot){
       d = (FEATCONFIG & 1) ? 0 : ss.getDepth();
-      catBase = ss.at(ss.size()-1).getCat();
+      catBase = ss.getBase().getCat();
     }
 
     int getD() {
@@ -215,7 +217,6 @@ class FModel {
     DelimitedMat<psX, double, psComma, 606, 56, psX> fws;
 
   public:
-
     FModel( ) { }
     FModel( istream& is ) {
       while ( is.peek()=='F' ) {
@@ -230,11 +231,21 @@ class FModel {
         is >> mcv[c] >> "\n";
       }
       while ( is.peek()=='f' ) {
-        Delimited<int> k;
-        is >> "f " >> k >> " ";
-        is >> mifek[k] >> "\n";
-        mfeki[mifek[k]] = k;
+        unsigned int i;
+        is >> "f " >> i >> " ";
+        is >> mifek[i] >> " " >> "\n";
+        mfeki[mifek[i]] = i;
+//        F f; Delimited<EVar> e; Delimited<K> k;
+//        is >> f >> "&" >> e >> "&" >> k >> "\n";
+//        mifek[i] = FEK(f,e,k);
+//        mfeki[FEK(f,e,k)] = i;
       }
+    }
+
+    void checkMap() {
+      for(auto it = mfeki.cbegin(); it != mfeki.cend(); ++it) {
+        std::cout << it->first << " " << it->second << "\n";
+        }
     }
 
     const FEK& getFEK( unsigned int i ) const {
@@ -255,7 +266,8 @@ class FModel {
     }
 
     unsigned int getResponseIndex( F f, EVar e, K k ) const {                  // const version with closed predictor domain
-      const auto& it = mfeki.find( FEK(f,e,k) );  return( ( it != mfeki.end() ) ? it->second : uint(-1) );
+      const auto& it = mfeki.find( FEK(f,e,k) );
+      return ( ( it != mfeki.end() ) ? it->second : uint(-1) );
     }
 
     arma::vec calcResponses( FPredictorVec& lfpredictors ) const {
@@ -299,17 +311,17 @@ class JPredictorVec {
     const Sign& aAncstr;
     const HVec& hvAncstr;
     const HVec& hvFiller;
-    const HVec& hvLchild;
+    const HVec hvLchild;
     CVar catAncstr;
     CVar catLchild;
 
   public:
     template<class JM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
-    JPredictorVec( JM& jm, F f, EVar eF, const LeftChildSign& aLchild, const StoreState& ss ) : aAncstr(ss.at( ss.getAncestorBIndex(f) )),
+    JPredictorVec( JM& jm, F f, EVar eF, const LeftChildSign& aLchild, const StoreState& ss ) : aAncstr(ss.getBase()),
     hvAncstr (( aAncstr.getHVec().size()==0 ) ? hvBot : aAncstr.getHVec()),
-    hvFiller (( ss.getAncestorBCarrierIndex( f )<0 ) ? hvBot : ss.at( ss.getAncestorBCarrierIndex( f ) ).getHVec()),
+    hvFiller (( ss.getBase().getCat().getNoloArity() ) ? ss.getNoloBack().getHVec() : hvBot),
     hvLchild (( aLchild.getHVec().size()==0 ) ? hvBot : aLchild.getHVec()){
-      d = (FEATCONFIG & 1) ? 0 : ss.getDepth()+f;
+      d = (FEATCONFIG & 1) ? 0 : ss.getDepth();
       catAncstr = ( aAncstr.getHVec().size()==0 ) ? cBot : aAncstr.getCat();
       catLchild = ( aLchild.getHVec().size()==0 ) ? cBot : aLchild.getCat();
     }
@@ -360,13 +372,13 @@ class JModel {
 
     // Matrix dimensions could be different; how to accommodate for this?
     DelimitedMat<psX, double, psComma, 87, 87, psX> jwf;  // weights for J model
-    DelimitedMat<psX, double, psComma, 45, 87, psX> jws;
+    DelimitedMat<psX, double, psComma, 50, 87, psX> jws;
 
   public:
 
     JModel() {
-      jr0 = getResponseIndex( 0, EVar::eNil, 'N', 'I' );
-      jr1 = getResponseIndex( 1, EVar::eNil, 'N', 'I' );
+      jr0 = getResponseIndex( 0, EVar::eNil, 'N', O_I );
+      jr1 = getResponseIndex( 1, EVar::eNil, 'N', O_I );
     }
     // read in weights, embeddings, and JEOOs
     JModel(istream& is) {
@@ -384,11 +396,11 @@ class JModel {
       while ( is.peek()=='j' ) {
         Delimited<int> k;
         is >> "j " >> k >> " ";
-        is >> mijeoo[k] >> "\n";
+        is >> mijeoo[k] >> " " >> "\n";
         mjeooi[mijeoo[k]] = k;
       }
-      jr0 = getResponseIndex( 0, EVar::eNil, 'N', 'I' );
-      jr1 = getResponseIndex( 1, EVar::eNil, 'N', 'I' );
+      jr0 = getResponseIndex( 0, EVar::eNil, 'N', O_I );
+      jr1 = getResponseIndex( 1, EVar::eNil, 'N', O_I );
     }
 
     const JEOO& getJEOO( unsigned int i ) const {
@@ -433,19 +445,25 @@ class JModel {
       for(unsigned int i = 0; i < catAEmb.n_elem; i++){
         jlogresponses(i) = catAEmb(i);
       }
+      cout << "cataemb done" << endl;
       for(unsigned int i = 0; i < hvA.at(0).n_elem; i++){
         jlogresponses(catAEmb.n_elem+i) = hvA.at(0)(i);
       }
+      cout << "hva done" << endl;
       for(unsigned int i = 0; i < hvF.at(0).n_elem; i++){
         jlogresponses(catAEmb.n_elem+hvA.at(0).n_elem+i) = hvF.at(0)(i);
       }
+      cout << "hvf done" << endl;
       for(unsigned int i = 0; i < catLEmb.n_elem; i++){
         jlogresponses(catAEmb.n_elem+hvA.at(0).n_elem+hvF.at(0).n_elem+i) = catLEmb(i);
       }
+      cout << "catlemb done" << endl;
       for(unsigned int i = 0; i < hvL.at(0).n_elem; i++){
         jlogresponses(catAEmb.n_elem+hvA.at(0).n_elem+hvF.at(0).n_elem+catLEmb.n_elem+i) = hvL.at(0)(i);
       }
+      cout << "hvl done" << endl;
       jlogresponses(catAEmb.n_elem+hvA.at(0).n_elem+hvF.at(0).n_elem+catLEmb.n_elem+hvL.at(0).n_elem+d) = 1;
+      cout << "depth done" << endl;
 
 // implementation of MLP
       arma::vec jlogscores = Mat<double>(jws) * relu(Mat<double>(jwf)*jlogresponses);
