@@ -433,15 +433,6 @@ class Sign : public DelimitedTrip<psX,HVec,psColon,CVar,psX,S,psX> {
  public:
   Sign ( )                              : DelimitedTrip<psX,HVec,psColon,CVar,psX,S,psX> ( )           { third()=S_A; }
   Sign ( const HVec& hv1, CVar c, S s ) : DelimitedTrip<psX,HVec,psColon,CVar,psX,S,psX> ( hv1, c, s ) { }
-/*
-  Sign ( const HVec& hv1, const HVec& hv2, CVar c, S s ) {
-    first().reserve( hv1.size() + hv2.size() );
-    first().insert( first().end(), hv1.begin(), hv1.end() );
-    first().insert( first().end(), hv2.begin(), hv2.end() );
-    second() = c;
-    third()  = s;
-  }
-*/
   HVec&       setHVec ( )       { return first();  }
   CVar&       setCat  ( )       { return second(); }
   S&          setSide ( )       { return third();  }
@@ -455,16 +446,15 @@ const Sign bTop( hvTop, cTop, S_B );
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifdef SIMPLE_STORE
+
 class LeftChildSign : public Sign {
  public:
   LeftChildSign ( ) : Sign() { }
   LeftChildSign ( const Sign& a ) : Sign(a) { }
-  LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm );
-};
+ };
 
 ////////////////////////////////////////////////////////////////////////////////
-
-#ifdef SIMPLE_STORE
 
 class SignWithCarriers : public DelimitedVector<psX,Sign,psX,psX> {
  public:
@@ -603,12 +593,6 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
     return( aTop );
   }
 
-  void applyUnariesBotUp( HVec& hv, EVar e ) const {                           // From bottom up, extract least recent nolos first...
-    for( unsigned int iBack = e.getNoloDelta()-1; e != EVar::eNil; e = e.withoutBot() ) {
-      if( e.bot() == 'O' or e.bot() == 'V' ) hv.swap( 1, 2 );
-      else                                   hv.addSynArg( getDir(e.bot()), getNoloBack(iBack).getHVec() );
-    }
-  }
   void applyUnariesBotUp( ApexWithCarriers& awc, EVar e ) {                    // From bottom up, extract least recent nolos first...
     HVec hvTemp;
     for( unsigned int iBack = e.getNoloDelta()-1; e != EVar::eNil; e = e.withoutBot() ) {
@@ -635,19 +619,6 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
   }
 };
 Sign StoreState::aDummy( hvTop, cTop, S_B );
-
-////////////////////////////////////////////////////////////////////////////////
-
-LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm ) {
-    setSide() = S_A;
-    if( f==1 )                            { setCat()  = aPretrm.getCat();
-                                            setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ); qPrev.applyUnariesBotUp( setHVec(), eF ); }
-    else if( qPrev.size()<=0 )            { *this = aTop; }
-    else if( !qPrev.getApex().isDitto() ) { setCat()  = qPrev.getApex().getCat();
-                                            setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( qPrev.getApex().getHVec() ); qPrev.applyUnariesBotUp( setHVec(), eF ); }
-    else                                  { setCat()  = qPrev.getApex().getCat();
-                                            setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ); qPrev.applyUnariesBotUp( setHVec(), eF ); setHVec().add( qPrev.getBase(1).getHVec() ); }
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -684,7 +655,16 @@ void BaseWithCarriers::set ( CVar cP, CVar cB, O opL, O opR, StoreState& ss, con
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format can't be read in bc of internal psX delimicer, but we don't need to.
+class LeftChildSign : public Sign {
+ public:
+  LeftChildSign ( ) : Sign() { }
+  LeftChildSign ( const Sign& a ) : Sign(a) { }
+  LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm );
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format can't be read in bc of internal psX delimiter, but we don't need to.
  public:
 
   static const Sign aTop;
