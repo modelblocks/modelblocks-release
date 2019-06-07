@@ -433,15 +433,6 @@ class Sign : public DelimitedTrip<psX,HVec,psColon,CVar,psX,S,psX> {
  public:
   Sign ( )                              : DelimitedTrip<psX,HVec,psColon,CVar,psX,S,psX> ( )           { third()=S_A; }
   Sign ( const HVec& hv1, CVar c, S s ) : DelimitedTrip<psX,HVec,psColon,CVar,psX,S,psX> ( hv1, c, s ) { }
-/*
-  Sign ( const HVec& hv1, const HVec& hv2, CVar c, S s ) {
-    first().reserve( hv1.size() + hv2.size() );
-    first().insert( first().end(), hv1.begin(), hv1.end() );
-    first().insert( first().end(), hv2.begin(), hv2.end() );
-    second() = c;
-    third()  = s;
-  }
-*/
   HVec&       setHVec ( )       { return first();  }
   CVar&       setCat  ( )       { return second(); }
   S&          setSide ( )       { return third();  }
@@ -455,27 +446,26 @@ const Sign bTop( hvTop, cTop, S_B );
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifdef SIMPLE_STORE
+
 class LeftChildSign : public Sign {
  public:
   LeftChildSign ( ) : Sign() { }
   LeftChildSign ( const Sign& a ) : Sign(a) { }
-  LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm );
-};
+ };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef SIMPLE_STORE
-
 class SignWithCarriers : public DelimitedVector<psX,Sign,psX,psX> {
  public:
-  Sign&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
+  Sign&       back ( unsigned int i = 0 )       { assert( size() > i );  return at( size() - 1 - i ); }
   const Sign& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : aTop; }
 };
 
 class ApexWithCarriers : public SignWithCarriers {
  public:
   void set ( CVar cB, CVar cA, O opL, O opR, const Sign& aLchild = Sign() );
-  Sign&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
+  Sign&       back ( unsigned int i = 0 )       { assert( size() > i );  return at( size() - 1 - i ); }
   const Sign& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : aTop; }
 };
 ApexWithCarriers awcDummy;
@@ -483,7 +473,7 @@ ApexWithCarriers awcDummy;
 class BaseWithCarriers : public SignWithCarriers {
  public:
   void set ( CVar cP, CVar cB, O opL, O opR, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild );
-  Sign&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
+  Sign&       back ( unsigned int i = 0 )       { assert( size() > i );  return at( size() - 1 - i ); }
   const Sign& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : bTop; }
 };
 
@@ -509,6 +499,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
   StoreState ( CVar cA, CVar cB ) { emplace( end() ); back().apex().emplace_back( hvBot, cA, S_A ); back().base().emplace_back( hvBot, cB, S_B ); }
 
+  // Preterminal constructor...
   StoreState ( const StoreState& qPrev, const HVec& hvAnt, EVar evF, K k, CVar cP, const EMat& matE, const OFunc& funcO ) {
     // Add preterm and apply unaries...
     reserve( qPrev.size() + 1 );
@@ -519,6 +510,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
     applyUnariesBotUp( back().apex(), evF );
   }
 
+  // Constructor for terminal phase in left-corner parser...
   StoreState ( const StoreState& qPrev, F f ) {
     if( f==0 ) {
       // Close most recent derivation fragment and make new complete sign (lowest apex)...
@@ -534,6 +526,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
     }
   }
 
+  // Constructor for nonterminal phase in left-corner parser...
   StoreState ( const StoreState& qPrev, J j, EVar evJ, O opL, O opR, CVar cA, CVar cB ) {
     if( j==1 and qPrev.getDepth()>1 ) {
       // Grow prev derivation fragment downward to subsume new apex...
@@ -570,88 +563,9 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
     }
   }
 
-/*
-  StoreState ( const StoreState& qPrev, F f, J j, EVar evF, EVar evJ, O opL, O opR, CVar cA, CVar cB, const Sign& aPretrm, const LeftChildSign& aLchild ) {
-    // Terminal match and nonterminal match...
-    if( f==0 and j==1 and qPrev.getDepth()>1 ) {
-      reserve( qPrev.size()-1 );
-      if( qPrev.size() >= 2 ) insert( end(), qPrev.begin(), qPrev.end()-2 );                                 // Copy fragments to d-2
-      emplace( end() )->apex() = qPrev.back(1).apex();                                                       // Copy apex at d-1.
+  unsigned int getDepth( ) const { return size(); }
 
-      // Create intermediate base parent...
-      BaseWithCarriers bwcParent = qPrev.back(1).base();  if( evJ != EVar::eNil and evJ.bot()=='V' ) bwcParent.emplace( bwcParent.end()-1 );
-      applyUnariesTopDn( bwcParent, evJ );                                                                   // Calc parent contexts (below unaries).
-      if( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) bwcParent.back().setHVec().emplace_back();    // Add space for satisfied argument. 
-      if( getDir(opL)!=-10 ) bwcParent.back().setHVec().addSynArg( -getDir(opL), aLchild.getHVec() );
-
-      // Create right child base...
-      back().base() = bwcParent;  back().base().pop_back();
-      back().base().set( bwcParent.back().getCat(), cB, opL, opR, *this, bwcParent, qPrev.back().apex() );
-      if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec();               // If base != apex, end ditto.
-    }
-    // Terminal match and nonterminal non-match...
-    else if( f==0 and j==0 ) {
-      reserve( qPrev.size() );
-      if( qPrev.size() >= 1 ) insert( end(), qPrev.begin(), qPrev.end()-1 );                                 // Copy fragments to d-1.
-      emplace( end() );                                                                                      // Add depth level d.
-
-      // Create new apex...
-      unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
-      if( qPrev.back().apex().size() > iSubtracted ) back().apex().insert( back().apex().end(), qPrev.back().apex().begin(), qPrev.back().apex().end() - 1 - iSubtracted );                // Add nolos from left child as older.
-      back().apex().set( getBase().getCat(), cA, opL, opR, aLchild );                                                 // Fill in apex at d.
-      applyUnariesBotUp( back().apex(), evJ );                   // Calc apex contexts.
-
-      // Create right child base...
-      back().base().set( cA, cB, opL, opR, *this, back().apex(), qPrev.back().apex() );                      // Fill in base at d.
-      if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                    // Init ditto.
-    }
-    // Terminal non-match and nonterminal match...
-    else if( f==1 and j==1 ) {
-      reserve( qPrev.size() );
-      if( qPrev.size() >= 1 ) insert( end(), qPrev.begin(), qPrev.end()-1 );                                 // Copy fragments to d-1
-      emplace( end() )->apex() = qPrev.back().apex();                                                        // Copy apex at d.
-
-      // Create preterm...
-      ApexWithCarriers awcPretrm;  awcPretrm.set( getBase().getCat(), aLchild.getCat(), O_I, O_I );
-      awcPretrm.back()=aPretrm;  applyUnariesBotUp( awcPretrm, evF );
-
-      // Create intermediate base parent...
-      BaseWithCarriers bwcParent = qPrev.back().base();  if( evJ != EVar::eNil and evJ.bot()=='V' ) bwcParent.emplace( bwcParent.end()-1 );
-      applyUnariesTopDn( bwcParent, evJ );                                                                   // Calc parent contexts (below unaries).
-      if( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) bwcParent.back().setHVec().emplace_back();    // Add space for satisfied argument. 
-      if( getDir(opL)!=-10 ) bwcParent.back().setHVec().addSynArg( -getDir(opL), awcPretrm.back().getHVec() );
-
-      // Create right child base...
-      back().base() = bwcParent;  back().base().pop_back();
-      back().base().set( bwcParent.back().getCat(), cB, opL, opR, *this, bwcParent, awcPretrm );
-      if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec();               // If base != apex, end ditto.
-    }
-    // Terminal non-match and nonterminal non-match...
-    else if( f==1 and j==0 ) {
-      reserve( qPrev.size()+1 );
-      insert( end(), qPrev.begin(), qPrev.end() );                                                           // Copy fragments to d.
-      emplace( end() );                                                                                      // Add depth level d+1.
-
-      // Create preterm...
-      ApexWithCarriers awcPretrm;  awcPretrm.set( getBase().getCat(), aLchild.getCat(), O_I, O_I );
-      awcPretrm.back()=aPretrm;  applyUnariesBotUp( awcPretrm, evF );
-
-      // Create new apex...
-      unsigned int iSubtracted = ( opL=='R' or opR=='H' or opR=='N' ) ? 1 : 0;   // Subtract newest nolos that are discharged on way up in current branch.
-      if( awcPretrm.size() > iSubtracted ) back().apex().insert( back().apex().end(), awcPretrm.begin(), awcPretrm.end() - 1 - iSubtracted );        // Add nolos from left child as older.
-      back().apex().set( getBase().getCat(), cA, opL, opR, awcPretrm.back() );                                                 // Fill in apex at d+1.
-      applyUnariesBotUp( awcPretrm, evJ );                       // Calc apex contexts.
-
-      // Create right child base...
-      back().base().set( cA, cB, opL, opR, *this, back().apex(), awcPretrm );                                // Fill in base at d+1.
-      if( opR==O_I ) setApex().setHVec() = HVec::hvDitto;                                                    // Init ditto.
-    }
-  }
-*/
-
-  unsigned int getDepth( ) const { return /*( size()>0 and back().base().size()==0 ) ? size()-1 :*/ size(); }
-
-  DerivationFragment&       back ( unsigned int i = 0 )       { return at( size() - 1 - i ); }
+  DerivationFragment&       back ( unsigned int i = 0 )       { assert( size() > i );  return at( size() - 1 - i ); }
   const DerivationFragment& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : dfTop; }
 
   Sign&       setApex (        unsigned int iDepthBack = 0                     )       {  return back( iDepthBack ).apex().back();            }
@@ -679,12 +593,6 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
     return( aTop );
   }
 
-  void applyUnariesBotUp( HVec& hv, EVar e ) const {                           // From bottom up, extract least recent nolos first...
-    for( unsigned int iBack = e.getNoloDelta()-1; e != EVar::eNil; e = e.withoutBot() ) {
-      if( e.bot() == 'O' or e.bot() == 'V' ) hv.swap( 1, 2 );
-      else                                   hv.addSynArg( getDir(e.bot()), getNoloBack(iBack).getHVec() );
-    }
-  }
   void applyUnariesBotUp( ApexWithCarriers& awc, EVar e ) {                    // From bottom up, extract least recent nolos first...
     HVec hvTemp;
     for( unsigned int iBack = e.getNoloDelta()-1; e != EVar::eNil; e = e.withoutBot() ) {
@@ -714,19 +622,6 @@ Sign StoreState::aDummy( hvTop, cTop, S_B );
 
 ////////////////////////////////////////////////////////////////////////////////
 
-LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm ) {
-    setSide() = S_A;
-    if( f==1 )                            { setCat()  = aPretrm.getCat();
-                                            setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ); qPrev.applyUnariesBotUp( setHVec(), eF ); }
-    else if( qPrev.size()<=0 )            { *this = aTop; }
-    else if( !qPrev.getApex().isDitto() ) { setCat()  = qPrev.getApex().getCat();
-                                            setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( qPrev.getApex().getHVec() ); qPrev.applyUnariesBotUp( setHVec(), eF ); }
-    else                                  { setCat()  = qPrev.getApex().getCat();
-                                            setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ); qPrev.applyUnariesBotUp( setHVec(), eF ); setHVec().add( qPrev.getBase(1).getHVec() ); }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 /*
 void SignWithCarriers::setSign ( CVar cA, O opL, O opR, const Sign& aLchild ) {
   back().setHVec().resize( cA.getSynArgs() + ( ((opL>='1' and opL<='9') or (opR>='1' and opR<='9')) ? 2 : 1 ) );
@@ -752,15 +647,24 @@ void BaseWithCarriers::set ( CVar cP, CVar cB, O opL, O opR, StoreState& ss, con
   if( opL=='G' or opR=='R' ) { ss.setNoloBack( 0, *this ).setHVec() = HVec( awcLchild.back().getCat().getSynArgs() );
                                ss.setNoloBack( 0, *this ).setHVec().add( awcLchild.back().getHVec() ); }
   if( opL=='R' or opR=='H' ) back().setHVec().add( ss.getNoloBack( 0, awcLchild ).getHVec() );
-  if(             opR=='I' ) { back(1).setHVec() = HVec(1);
-                               back(1).setHVec().addSynArg( awcLchild.back().getCat().getSynArgs(), awcLchild.back().getHVec() ); }
+  if(             opR=='I' ) { ss.setNoloBack( 0, *this ).setHVec() = HVec(1);
+                               ss.setNoloBack( 0, *this ).setHVec().addSynArg( awcLchild.back().getCat().getSynArgs(), awcLchild.back().getHVec() ); }
 }
 
 #else
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format can't be read in bc of internal psX delimicer, but we don't need to.
+class LeftChildSign : public Sign {
+ public:
+  LeftChildSign ( ) : Sign() { }
+  LeftChildSign ( const Sign& a ) : Sign(a) { }
+  LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm );
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format can't be read in bc of internal psX delimiter, but we don't need to.
  public:
 
   static const Sign aTop;
@@ -849,7 +753,7 @@ class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format c
                                                                   s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent );
                                                                   cCurrA=cCurrA.withoutFirstNolo(); }
       // Add lowest A...
-      *emplace( end() ) = Sign( (opR==O_I) ? HVec::hvDitto /*HVec(KVec(arma::ones(20)))*/ : hvParent, cA, S_A );
+      *emplace( end() ) = Sign( (opR==O_I) ? HVec::hvDitto : hvParent, cA, S_A );
       iLowerA = size()-1;
     }
     // Add B carriers...
@@ -1055,6 +959,39 @@ class PModel : public map<PPredictorVec,map<P,double>> {
 ////////////////////////////////////////////////////////////////////////////////
 
 class WPredictor : public DelimitedTrip<psX,Delimited<EVar>,psSpace,Delimited<K>,psSpace,Delimited<CVar>,psX> { };
+
+class WModel : public map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> {
+ public:
+  WModel ( ) { }
+  WModel ( istream& is ) {
+    while( is.peek()=='W' ) {
+      WPredictor wp;  W w;  Delimited<double> pr;
+      is >> "W " >> wp >> " : " >> w >> " = " >> pr >> "\n";
+      (*this)[w].emplace_back(wp,pr);
+    }
+
+    // Add unk...
+    for( auto& entry : *this ) {
+      // for each word:{<category:prob>}
+      for( auto& unklistelem : (*this)[unkWord(entry.first.getString().c_str())] ) {
+        // for each possible unked(word) category:prob pair
+        bool BAIL = false;
+        for( auto& listelem : entry.second ) {
+          if (listelem.first == unklistelem.first) {
+            BAIL = true;
+            listelem.second = listelem.second + ( 0.000001 * unklistelem.second ); // merge actual likelihood and unk likelihood
+          }
+        }
+        if (not BAIL) entry.second.push_back( DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>(unklistelem.first,0.000001*unklistelem.second) );
+      }
+    } //closes for auto& entry : lexW
+  }
+
+  const list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>& calcPredictorLikelihoods( W w_t ) const {
+    if( end() == find( unkWord( w_t.getString().c_str() ) ) )  cerr << "ERROR: unable to find unk form: " << unkWord( w_t.getString().c_str() ) << endl;
+    return( ( end() != find(w_t) ) ? find(w_t)->second : find( unkWord( w_t.getString().c_str() ) )->second );
+  }
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 

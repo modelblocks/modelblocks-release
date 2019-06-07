@@ -132,7 +132,8 @@ int main ( int nArgs, char* argv[] ) {
   NModel                        modNmutable;
   FModel                        modFmutable;
   PModel                        modPmutable;
-  map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> lexW;
+  WModel                        modWmutable;
+//  map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> lexW;
   JModel                        modJmutable;
   AModel                        modAmutable;
   BModel                        modBmutable;
@@ -162,7 +163,7 @@ int main ( int nArgs, char* argv[] ) {
           if ( fin.peek()=='N' ) modNmutable = NModel( fin );
           if ( fin.peek()=='F' ) modFmutable = FModel( fin );
           if ( fin.peek()=='P' ) modPmutable = PModel( fin );
-          if ( fin.peek()=='W' ) fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
+          if ( fin.peek()=='W' ) modWmutable = WModel( fin );  //fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
           if ( fin.peek()=='J' ) modJmutable = JModel( fin );
           if ( fin.peek()=='A' ) modAmutable = AModel( fin );
           if ( fin.peek()=='B' ) modBmutable = BModel( fin );
@@ -172,8 +173,8 @@ int main ( int nArgs, char* argv[] ) {
       }
     } //closes for int a=1
 
-    // Populate model structures...
-    for ( auto& prw : lW ) lexW[prw.second()].emplace_back(prw.first(),prw.third());
+//    // Populate model structures...
+//    for ( auto& prw : lW ) lexW[prw.second()].emplace_back(prw.first(),prw.third());
   } //closes define model lists
 
 //  modJmutable.getResponseIndex( 0, EVar::eNil, O_N, O_I );
@@ -184,25 +185,10 @@ int main ( int nArgs, char* argv[] ) {
   const NModel& modN  = modNmutable;
   const FModel& modF  = modFmutable;
   const PModel& modP  = modPmutable;
+  const WModel& modW  = modWmutable;
   const JModel& modJ  = modJmutable;
   const AModel& modA  = modAmutable;
   const BModel& modB  = modBmutable;
-
-  // Add unk...
-  for( auto& entry : lexW ) {
-    // for each word:{<category:prob>}
-    for( auto& unklistelem : lexW[unkWord(entry.first.getString().c_str())] ) {
-      // for each possible unked(word) category:prob pair
-      bool BAIL = false;
-      for( auto& listelem : entry.second ) {
-        if (listelem.first == unklistelem.first) {
-          BAIL = true;
-          listelem.second = listelem.second + ( 0.000001 * unklistelem.second ); // merge actual likelihood and unk likelihood
-        }
-      }
-      if (not BAIL) entry.second.push_back( DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>(unklistelem.first,0.000001*unklistelem.second) );
-    }
-  } //closes for auto& entry : lexW
 
   cerr<<"Models ready."<<endl;
 
@@ -229,7 +215,7 @@ int main ( int nArgs, char* argv[] ) {
   */
 
   // loop over threads (each thread gets an article)
-  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [/*&corpus,&iartNextToProc,&iartNextToDump,*/&articleMLSs,&articles,&mutexMLSList,&linenum,numThreads,&matE,&funcO,&modN,&modF,modP,lexW,&modJ,modA,modB] (uint numt) {
+  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [/*&corpus,&iartNextToProc,&iartNextToDump,*/&articleMLSs,&articles,&mutexMLSList,&linenum,numThreads,&matE,&funcO,&modN,&modF,&modP,&modW,&modJ,&modA,&modB] (uint numt) {
 
     auto tpLastReport = chrono::high_resolution_clock::now();  // clock for thread heartbeats
 
@@ -327,11 +313,9 @@ int main ( int nArgs, char* argv[] ) {
                 continue; //skip excluded indices
               }
               bool corefON = (tAnt==int(t)) ? 0 : 1;
-  cout << "i'm here before npv" << endl;
               NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1 );
               arma::vec nlogresponses = modN.calcLogResponses( npv ); //nps.NLogResponses(matN);
               ndenom += exp( nlogresponses(1) - nlogresponses(0) );
-  cout << "i'm here after npv" << endl;
             } //closes for tAnt
 
             pbeAnt = &beDummy; //reset pbiAnt pointer after calculating denominator
@@ -362,8 +346,7 @@ int main ( int nArgs, char* argv[] ) {
                 arma::vec fresponses = modF.calcResponses( lfpredictors );
 
                 // For each possible lemma (context + label + prob) for preterminal of current word...
-                if( lexW.end() == lexW.find(unkWord(w_t.getString().c_str())) ) cerr<<"ERROR: unable to find unk form: "<<unkWord(w_t.getString().c_str())<<endl;
-                for ( auto& ektpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW.find(w_t)->second : lexW.find(unkWord(w_t.getString().c_str()))->second ) {
+                for ( auto& ektpr_p_t : modW.calcPredictorLikelihoods(w_t) ) {
                   if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(ektpr_p_t.second) > beams[t].rbegin()->getProb() ) {
                     EVar  e_p_t       = ektpr_p_t.first.first();
                     K     k_p_t       = (FEATCONFIG & 8 && ektpr_p_t.first.second().getString()[2]!='y') ? K::kBot : ektpr_p_t.first.second();   // context of current preterminal
