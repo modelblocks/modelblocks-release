@@ -563,17 +563,19 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
     }
   }
 
+  // Extraction method for depth...
   unsigned int getDepth( ) const { return size(); }
 
+  // Bounds-checking extraction methods for derivation fragments...
   DerivationFragment&       back ( unsigned int i = 0 )       { assert( size() > i );  return at( size() - 1 - i ); }
   const DerivationFragment& back ( unsigned int i = 0 ) const { return ( size() > i ) ? at( size() - 1 - i ) : dfTop; }
 
-  Sign&       setApex (        unsigned int iDepthBack = 0                     )       {  return back( iDepthBack ).apex().back();            }
-  const Sign& getApex (        unsigned int iDepthBack = 0                     ) const {  return back( iDepthBack ).apex().back();            }
-  const Sign& getApexCarrier ( unsigned int iDepthBack, unsigned int iCarrBack ) const {  return back( iDepthBack ).apex().back( iCarrBack ); }
-  const Sign& getBase (        unsigned int iDepthBack = 0                     ) const {  return back( iDepthBack + (back().base().size()==0) ).base().back();            }
-  const Sign& getBaseCarrier ( unsigned int iDepthBack, unsigned int iCarrBack ) const {  return back( iDepthBack ).base().back( iCarrBack ); }
+  // Bounds-checking extraction methods for apex and base signs...
+  Sign&       setApex ( unsigned int iDepthBack = 0 )       {  return back( iDepthBack ).apex().back();                             }
+  const Sign& getApex ( unsigned int iDepthBack = 0 ) const {  return back( iDepthBack ).apex().back();                             }
+  const Sign& getBase ( unsigned int iDepthBack = 0 ) const {  return back( iDepthBack + (back().base().size()==0) ).base().back(); }
 
+  // Specification and extraction methods for nonlocal dependencies...
   Sign& setNoloBack ( unsigned int iCarrBack = 0, SignWithCarriers& awc = awcDummy ) {                 // NOTE: getNoloBack(0) is most recent nonlocal dep; i.e. furthest left.
     for( int i = int(awc.size())-1; i-->0; )  if( iCarrBack-- == 0 ) return awc.at(i);
     // Count down from bot...   // Count back from end...                   // Decrement counter and if finished, report...
@@ -588,11 +590,12 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
     // Count down from bot...   // Count back from end...                        // Decrement counter and if finished, report...
     int D = ( back().base().size()==0 ) ? size() - 1 : size();
-    for( int d=D; d--; ) { for( int i=int(at(d).base().size())-1; i-->0; )  if( iCarrBack-- == 0 ) return( at(d).base().at(i) );
-                           for( int i=int(at(d).apex().size())-1; i-->0; )  if( iCarrBack-- == 0 ) return( at(d).apex().at(i) ); }
+    for( int d=D; d--; )      { for( int i=int(at(d).base().size())-1; i-->0; )  if( iCarrBack-- == 0 ) return( at(d).base().at(i) );
+                                for( int i=int(at(d).apex().size())-1; i-->0; )  if( iCarrBack-- == 0 ) return( at(d).apex().at(i) ); }
     return( aTop );
   }
 
+  // Specification methods for unary operations...
   void applyUnariesBotUp( ApexWithCarriers& awc, EVar e ) {                    // From bottom up, extract least recent nolos first...
     HVec hvTemp;
     for( unsigned int iBack = e.getNoloDelta()-1; e != EVar::eNil; e = e.withoutBot() ) {
@@ -629,6 +632,7 @@ void SignWithCarriers::setSign ( CVar cA, O opL, O opR, const Sign& aLchild ) {
 }
 */
 
+// Implementation of specifier method to allocate apex and carriers...
 void ApexWithCarriers::set ( CVar cB, CVar cA, O opL, O opR, const Sign& aLchild ) {
   int iAdding = cA.getNoloArity() - cB.getNoloArity() - size();
   if( iAdding > 0 ) insert( end(), iAdding, Sign() );                                                        // Add nolos not in lchild as more recent.
@@ -638,13 +642,14 @@ void ApexWithCarriers::set ( CVar cB, CVar cA, O opL, O opR, const Sign& aLchild
   if( aLchild!=Sign() and getDir(opL)!=-10 ) back().setHVec().addSynArg( -getDir(opL), aLchild.getHVec() );  // Apply operator from lchild to parent.
 }
 
+// Implementation of specifier method to allocate base and carriers...
 void BaseWithCarriers::set ( CVar cP, CVar cB, O opL, O opR, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild ) {
   int iAdding = cB.getNoloArity() - cP.getNoloArity() - size();
   if( iAdding > 0 ) insert( end(), iAdding, Sign() );                                                        // Add nolos not in parent as more recent.
   *emplace( end() ) = Sign( HVec(), cB, S_B );  back().setHVec() = HVec( cB.getSynArgs() + 1 );
 
   if( getDir(opR)!=-10 ) back().setHVec().addSynArg( getDir(opR), swcParent.back().getHVec() );              // Apply operator from parent to rchild.
-  if( opL=='G' or opR=='R' ) { ss.setNoloBack( 0, *this ).setHVec() = HVec( awcLchild.back().getCat().getSynArgs() );
+  if( opL=='G' or opR=='R' ) { ss.setNoloBack( 0, *this ).setHVec() = HVec( awcLchild.back().getCat().getSynArgs() + 1 );
                                ss.setNoloBack( 0, *this ).setHVec().add( awcLchild.back().getHVec() ); }
   if( opL=='R' or opR=='H' ) back().setHVec().add( ss.getNoloBack( 0, awcLchild ).getHVec() );
   if(             opR=='I' ) { ss.setNoloBack( 0, *this ).setHVec() = HVec(1);

@@ -371,20 +371,22 @@ int main ( int nArgs, char* argv[] ) {
 
                       // If preterminal prob is nonzero...
                       PPredictorVec ppredictor( f, e_p_t, k_p_t, q_tdec1 );
-                      if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << c_p_t << "...?" << endl;
+                      if ( VERBOSE>1 ) cout << "       P " << ppredictor << " : " << c_p_t << "...?" << endl;
                       if ( modP.end()!=modP.find(ppredictor) && modP.find(ppredictor)->second.end()!=modP.find(ppredictor)->second.find(c_p_t) ) {
 
-                        if ( VERBOSE>1 ) cout << "      P " << ppredictor << " : " << c_p_t << " = " << modP.find(ppredictor)->second.find(c_p_t)->second << endl;
+                        if ( VERBOSE>1 ) cout << "       P " << ppredictor << " : " << c_p_t << " = " << modP.find(ppredictor)->second.find(c_p_t)->second << endl;
 
                         // Calc probability for fork phase...
                         double probFPW = probFork * modP.find(ppredictor)->second.find(c_p_t)->second * probwgivkl;
-                        if ( VERBOSE>1 ) cout << "      f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << probFork << " * " << modP.find(ppredictor)->second.find(c_p_t)->second << " * " << probwgivkl << " = " << probFPW << endl;
+                        if ( VERBOSE>1 ) cout << "       f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << probFork << " * " << modP.find(ppredictor)->second.find(c_p_t)->second << " * " << probwgivkl << " = " << probFPW << endl;
 
 #ifdef SIMPLE_STORE
                         StoreState qPretrm( q_tdec1, hvAnt, e_p_t, k_p_t, c_p_t, matE, funcO );
                         const Sign& aPretrm = qPretrm.getApex();
                         StoreState qTermPhase( qPretrm, f );
                         const Sign& aLchild = qTermPhase.getApex();
+                        if( VERBOSE>1 ) cout << "       qPretrm="    << qPretrm    << endl;
+                        if( VERBOSE>1 ) cout << "       qTermPhase=" << qTermPhase << endl;
 #else
                         Sign aPretrm;  aPretrm.setHVec() = HVec( k_p_t, matE, funcO );
 //#ifdef DENSE_VECTORS
@@ -412,7 +414,7 @@ int main ( int nArgs, char* argv[] ) {
                             O    opR = modJ.getJEOO( jresponse ).fourth(); //.getROp();
                             //if( jresponse.toInt() >= int(jresponses.size()) ) cerr << "ERROR: unknown jresponse: " << jresponse << endl;
                             double probJoin = jresponses[jresponse]; //  / jnorm;
-                            if ( VERBOSE>1 ) cout << "       J ... " << " : " << modJ.getJEOO(jresponse) << " = " << probJoin << endl;
+                            if ( VERBOSE>1 ) cout << "        J ... " << " : " << modJ.getJEOO(jresponse) << " = " << probJoin << endl;
 
                             // For each possible apex category label...
 #ifdef SIMPLE_STORE
