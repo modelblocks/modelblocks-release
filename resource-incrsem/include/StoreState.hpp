@@ -542,7 +542,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
       // Create right child base...
       back().base() = bwcParent;  back().base().pop_back();
-      back().base().set( bwcParent.back().getCat(), cB, opL, opR, *this, bwcParent, qPrev.back().apex() );
+      back().base().set( /*bwcParent.back().getCat()*/ getApex().getCat(), cB, opL, opR, *this, bwcParent, qPrev.back().apex() );
       if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec();               // If base != apex, end ditto.
     }
     else if( j==0 ) {
@@ -643,8 +643,8 @@ void ApexWithCarriers::set ( CVar cB, CVar cA, O opL, O opR, const Sign& aLchild
 }
 
 // Implementation of specifier method to allocate base and carriers...
-void BaseWithCarriers::set ( CVar cP, CVar cB, O opL, O opR, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild ) {
-  int iAdding = cB.getNoloArity() - cP.getNoloArity() - size();
+void BaseWithCarriers::set ( CVar cA, CVar cB, O opL, O opR, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild ) {
+  int iAdding = cB.getNoloArity() - cA.getNoloArity() - size();
   if( iAdding > 0 ) insert( end(), iAdding, Sign() );                                                        // Add nolos not in parent as more recent.
   *emplace( end() ) = Sign( HVec(), cB, S_B );  back().setHVec() = HVec( cB.getSynArgs() + 1 );
 
