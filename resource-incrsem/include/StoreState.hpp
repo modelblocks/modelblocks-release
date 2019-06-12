@@ -577,11 +577,12 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
   // Specification and extraction methods for nonlocal dependencies...
   Sign& setNoloBack ( unsigned int iCarrBack = 0, SignWithCarriers& awc = awcDummy ) {                 // NOTE: getNoloBack(0) is most recent nonlocal dep; i.e. furthest left.
+    int iCalledWith = iCarrBack;
     for( int i = int(awc.size())-1; i-->0; )  if( iCarrBack-- == 0 ) return awc.at(i);
     // Count down from bot...   // Count back from end...                   // Decrement counter and if finished, report...
     for( int d=size(); d--; ) { for( int i=at(d).base().size()-1; i-->0; )  if( iCarrBack-- == 0 ) return( at(d).base().at(i) );
                                 for( int i=at(d).apex().size()-1; i-->0; )  if( iCarrBack-- == 0 ) return( at(d).apex().at(i) ); }
-    cout << "FAILING: " << *this << " " << iCarrBack << " " << awc << endl;
+    cout << "FAILING: " << *this << " " << iCalledWith << " " << awc << endl;
     assert( false );
     return( aDummy );
   }
@@ -600,7 +601,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
     HVec hvTemp;
     for( unsigned int iBack = e.getNoloDelta()-1; e != EVar::eNil; e = e.withoutBot() ) {
       if(      e.bot() == 'O' )   awc.back().setHVec().swap( 1, 2 );
-      else if( e.bot() >= '0' and e.bot() <= '9' and  e.withoutBot() != EVar::eNil and e.withoutBot().top() == 'V' )
+      else if( e.bot() >= '0' and e.bot() <= '9' and  e.withoutBot() != EVar::eNil and e.withoutBot().bot() == 'V' )
                                 { hvTemp = HVec(1);  hvTemp.addSynArg( getDir(e.bot()), awc.back().getHVec() );
                                   e = e.withoutTop();  awc.back().setHVec().addSynArg( -1, hvTemp ); }
       else if( e.bot() == 'V' ) { awc.back().setHVec().addSynArg( -1, getNoloBack(0,awc).getHVec() ); } //awc.erase(awc.end()-1); }
