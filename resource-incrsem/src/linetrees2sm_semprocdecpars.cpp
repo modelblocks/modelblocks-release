@@ -111,7 +111,7 @@ string getUnaryOp ( const Tree<L>& tr ) {
   if( string::npos != L(tr.front()).find("-lQ") ) return "O";
   N n =  CVar( removeLink(tr).c_str() ).getLastNonlocal();
   if( n == N_NONE ) return "";
-  if( (/*tr.front().size()==0 ||*/ tr.size()==1 and tr.front().size()==1 and tr.front().front().size()==0) and n == N("-rN") ) return "0";
+  if( (/*tr.front().size()==0 ||*/ tr.front().size()==1 and tr.front().front().size()==0) and n == N("-rN") ) return "0";
   if( string::npos != L(tr.front()).find("-lE") )
     return ( CVar(removeLink(tr.front()).c_str()).getSynArgs() > CVar(removeLink(tr).c_str()).getSynArgs() ) ? (string(1,'0'+CVar(removeLink(tr.front()).c_str()).getSynArgs())) : "M";
   else return "";
@@ -209,8 +209,8 @@ void calcContext ( Tree<L>& tr,
       cout<<"----"<<q<<endl;
 #ifdef DENSE_VECTORS
       cout << "F " << lfp << "|" << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);
-      cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << aPretrm.getCat() /*getCat(l)*/     << endl;
-      cout << "W " << e << " " << k << " " << aPretrm.getCat() /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+      cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) /*getCat(l)*/     << endl;
+      cout << "W " << e << " " << k << " " << getCat(removeLink(l)) /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
 #else
       cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : f" << f << "&" << e << "&" << k << endl;  modF.getResponseIndex(f,e.c_str(),k);
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) << endl;
@@ -357,8 +357,7 @@ int main ( int nArgs, char* argv[] ) {
   }
   for( auto& l : lLC ) mldLemmaCounts[l.second] = l.first;
 //  cout << matE << endl;
-  int linenum = 0;
-  int discourselinenum = 0; //increments on sentence in discourse/article
+  int linenum = 0;  int discourselinenum = 0; //increments on sentence in discourse/article
   map<string,HVec> annot2kset;
   int tDisc = 0; //increments on word in discourse/article
   vector<Sign> antecedentCandidates;

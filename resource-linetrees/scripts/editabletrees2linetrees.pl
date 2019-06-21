@@ -49,6 +49,7 @@ while(<STDIN>){
     ## Get rid of extra spaces
     $tree =~ s/ *\)/\)/g;
     $tree =~ s/ +/ /g;
+    $tree =~ s/ $//;
 
     print "$tree\n";
     $tree = "";

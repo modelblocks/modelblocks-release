@@ -172,7 +172,7 @@ class FPredictorVec {
 
     public:
     template<class FM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
-    FPredictorVec( FM& fm, const HVec& hvAnt, bool nullAnt, const StoreState& ss ) : hvB (( ss.getBase().getHVec().size() > 0 ) ? ss.getBase().getHVec() : hvBot), hvF (( ss.getBase().getCat().getNoloArity() ) ? ss.getNoloBack().getHVec() : hvBot){
+    FPredictorVec( FM& fm, const HVec& hvAnt, bool nullAnt, const StoreState& ss ) : hvB (( ss.getBase().getHVec().size() > 0 ) ? ss.getBase().getHVec() : hvBot), hvF (( ss.getBase().getCat().getNoloArity() && ss.getNoloBack().getHVec().size() != 0 ) ? ss.getNoloBack().getHVec() : hvBot){
       d = (FEATCONFIG & 1) ? 0 : ss.getDepth();
       catBase = ss.getBase().getCat();
     }
@@ -235,17 +235,7 @@ class FModel {
         is >> "f " >> i >> " ";
         is >> mifek[i] >> " " >> "\n";
         mfeki[mifek[i]] = i;
-//        F f; Delimited<EVar> e; Delimited<K> k;
-//        is >> f >> "&" >> e >> "&" >> k >> "\n";
-//        mifek[i] = FEK(f,e,k);
-//        mfeki[FEK(f,e,k)] = i;
       }
-    }
-
-    void checkMap() {
-      for(auto it = mfeki.cbegin(); it != mfeki.cend(); ++it) {
-        std::cout << it->first << " " << it->second << "\n";
-        }
     }
 
     const FEK& getFEK( unsigned int i ) const {
@@ -319,7 +309,7 @@ class JPredictorVec {
     template<class JM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
     JPredictorVec( JM& jm, F f, EVar eF, const LeftChildSign& aLchild, const StoreState& ss ) : aAncstr(ss.getBase()),
     hvAncstr (( aAncstr.getHVec().size()==0 ) ? hvBot : aAncstr.getHVec()),
-    hvFiller (( ss.getBase().getCat().getNoloArity() ) ? ss.getNoloBack().getHVec() : hvBot),
+    hvFiller (( ss.getBase().getCat().getNoloArity() && ss.getNoloBack().getHVec().size() != 0 ) ? ss.getNoloBack().getHVec() : hvBot),
     hvLchild (( aLchild.getHVec().size()==0 ) ? hvBot : aLchild.getHVec()){
       d = (FEATCONFIG & 1) ? 0 : ss.getDepth();
       catAncstr = ( aAncstr.getHVec().size()==0 ) ? cBot : aAncstr.getCat();
@@ -445,25 +435,19 @@ class JModel {
       for(unsigned int i = 0; i < catAEmb.n_elem; i++){
         jlogresponses(i) = catAEmb(i);
       }
-      cout << "cataemb done" << endl;
       for(unsigned int i = 0; i < hvA.at(0).n_elem; i++){
         jlogresponses(catAEmb.n_elem+i) = hvA.at(0)(i);
       }
-      cout << "hva done" << endl;
       for(unsigned int i = 0; i < hvF.at(0).n_elem; i++){
         jlogresponses(catAEmb.n_elem+hvA.at(0).n_elem+i) = hvF.at(0)(i);
       }
-      cout << "hvf done" << endl;
       for(unsigned int i = 0; i < catLEmb.n_elem; i++){
         jlogresponses(catAEmb.n_elem+hvA.at(0).n_elem+hvF.at(0).n_elem+i) = catLEmb(i);
       }
-      cout << "catlemb done" << endl;
       for(unsigned int i = 0; i < hvL.at(0).n_elem; i++){
         jlogresponses(catAEmb.n_elem+hvA.at(0).n_elem+hvF.at(0).n_elem+catLEmb.n_elem+i) = hvL.at(0)(i);
       }
-      cout << "hvl done" << endl;
       jlogresponses(catAEmb.n_elem+hvA.at(0).n_elem+hvF.at(0).n_elem+catLEmb.n_elem+hvL.at(0).n_elem+d) = 1;
-      cout << "depth done" << endl;
 
 // implementation of MLP
       arma::vec jlogscores = Mat<double>(jws) * relu(Mat<double>(jwf)*jlogresponses);
