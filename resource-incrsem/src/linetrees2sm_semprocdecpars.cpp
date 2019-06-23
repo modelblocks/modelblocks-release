@@ -111,7 +111,7 @@ string getUnaryOp ( const Tree<L>& tr ) {
   if( string::npos != L(tr.front()).find("-lQ") ) return "O";
   N n =  CVar( removeLink(tr).c_str() ).getLastNonlocal();
   if( n == N_NONE ) return "";
-  if( (/*tr.front().size()==0 ||*/ tr.front().size()==1 and tr.front().front().size()==0) and n == N("-rN") ) return "0";
+  if( (/*tr.front().size()==0 ||*/ tr.size()==1 and tr.front().size()==1 and tr.front().front().size()==0) and n == N("-rN") ) return "0";
   if( string::npos != L(tr.front()).find("-lE") )
     return ( CVar(removeLink(tr.front()).c_str()).getSynArgs() > CVar(removeLink(tr).c_str()).getSynArgs() ) ? (string(1,'0'+CVar(removeLink(tr.front()).c_str()).getSynArgs())) : "M";
   else return "";
