@@ -307,30 +307,64 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           print( x, l, G[x,l] )
         ## obtain pred by applying morph rules to word token...
         s = re.sub('-l.','',G[x,'0']) + ':' + G[x,'w'].lower()
-        while( '-x' in s ):
-          s1           = re.sub( '^.((?:(?!-x).)*)-x.%:(\\S*)%(\\S*)\|(\\S*)%(\\S*):([^% ]*)%([^-: ]*)([^: ]*):\\2(\\S*)\\3', '\\4\\1\\5\\8:\\6\\9\\7', s )
-          if s1==s: s1 = re.sub( '^.((?:(?!-x).)*)-x.%(\\S*)\|([^% ]*)%([^-: ]*)([^: ]*):(\\S*)\\2', '\\3\\1\\5:\\6\\4', s )
-          if s1==s: s1 = re.sub( '-x', '', s )
-          s = s1
-        s = re.sub( 'BNOM-aD-bO', 'B-aN-bN', s )
-        s = re.sub( 'BNOM-aD', 'B-aN', s )
-        s = re.sub( 'BNOM', 'B-aN', s )
-        ## place pred in ##e or ##r node, depending on category...
-        if s[0]=='N' and not s.startswith('N-b{N-aD}') and not s.startswith('N-b{V-g{R') and not s.startswith('N-b{I-aN-g{R'):
-          G.equate( s, '0', x+'e' )
-          if (x+'s','h') in G: G.equate( G.result('h',x+'s'), 'h', x+'e' )      ## inherit possible/hypothetical world from s node.
-          G.equate( G.result('r',G.result('s',x)), '1', x+'e' )
-        else: G.equate( s, '0', G.result('r',G.result('s',x)) )
-        ## coindex subject of raising construction with subject of direct object...
-        if re.match( '^.-aN-b{.-aN}:', s ) != None:
-          G.equate( G.result('1\'',G.result('s',x)), '1\'', G.result('2\'',G.result('s',x)) )
+        eqns = re.sub( '-x.*:', ':', s )
+        for xrule in re.split( '-x', G[x,'0'] )[1:] :   #re.findall( '(-x(?:(?!-x).)*)', s ):
+          m = re.search( '(.*)%(.*)%(.*)\|(.*)%(.*)%(.*)', xrule )
+          if m is not None: eqns = re.sub( '^'+m.group(1)+'(.*)'+m.group(2)+'(.*)'+m.group(3)+'$', m.group(4)+'\\1'+m.group(5)+'\\2'+m.group(6), eqns )
+          m = re.search( '(.*)%(.*)\|(.*)%(.*)', xrule )
+          if m is not None: eqns = re.sub( '^'+m.group(1)+'(.*)'+m.group(2)+'$', m.group(3)+'\\1'+m.group(4), eqns )
+        s = eqns
+
+        if '-x' in G[x,'0'] and '=' not in eqns:
+          sys.stderr.write( 'ERROR: rewrite rules in: ' + G[x,'0'] + ' specify no graph equations, will have no effect!\n' )
+
+        ## if lexical rules produce equations, build appropriate graph...
+        if '=' in eqns:
+          ## translate eqn into graph...
+#         print( ' -> ' + eqns )
+#         G.dump()
+          for eqn in eqns.split( '^' ):
+            lhs,rhs = eqn.split( '=' )
+            xlhs = xrhs = G.result('s',x)
+            for lbl in lhs[:-1]:
+              xlhs = G.result( lbl+'\'' if lbl.isdigit() and xlhs[-1] in 's\'' else lbl, xlhs )
+            if ':' in rhs: G.equate( rhs, lhs[-1]+'\'' if lhs[-1].isdigit() and xlhs[-1] in 's\'' else lhs[-1], xlhs )
+            else:
+#            for num,lbl in enumerate(rhs):
+#              xrhs = G.result( lbl+'\'' if lbl.isdigit() and num==0 else lbl, xrhs )
+              for lbl in rhs:
+                xrhs = G.result( lbl+'\'' if lbl.isdigit() and xrhs[-1] in 's\'' else lbl, xrhs )
+              G.equate( xrhs, lhs[-1]+'\'' if lhs[-1].isdigit() and xlhs[-1] in 's\'' else lhs[-1], xlhs )
+#          G.dump()
+        '''
+#        while( '-x' in s ):
+#          s1           = re.sub( '^.((?:(?!-x).)*)-x.%:(\\S*)%(\\S*)\|(\\S*)%(\\S*):([^% ]*)%([^-: ]*)([^: ]*):\\2(\\S*)\\3', '\\4\\1\\5\\8:\\6\\9\\7', s )
+#          if s1==s: s1 = re.sub( '^.((?:(?!-x).)*)-x.%(\\S*)\|([^% ]*)%([^-: ]*)([^: ]*):(\\S*)\\2', '\\3\\1\\5:\\6\\4', s )
+#          if s1==s: s1 = re.sub( '-x', '', s )
+#          s = s1
+        ## if lexical rules produce non-equations...
+        else:
+          s = re.sub( 'BNOM-aD-bO', 'B-aN-bN', s )
+          s = re.sub( 'BNOM-aD', 'B-aN', s )
+          s = re.sub( 'BNOM', 'B-aN', s )
+          ## place pred in ##e or ##r node, depending on category...
+          if s[0]=='N' and not s.startswith('N-b{N-aD}') and not s.startswith('N-b{V-g{R') and not s.startswith('N-b{I-aN-g{R'):
+            G.equate( s, '0', x+'e' )
+            if (x+'s','h') in G: G.equate( G.result('h',x+'s'), 'h', x+'e' )      ## inherit possible/hypothetical world from s node.
+            G.equate( G.result('r',G.result('s',x)), '1', x+'e' )
+          else: G.equate( s, '0', G.result('r',G.result('s',x)) )
+          ## coindex subject of raising construction with subject of direct object...
+          if re.match( '^.-aN-b{.-aN}:', s ) != None:
+            G.equate( G.result('1\'',G.result('s',x)), '1\'', G.result('2\'',G.result('s',x)) )
 #          G.equate( G.result('1\'',G.result('2\'',G.result('s',x))), '1\'', G.result('s',x) )
+        '''
     ## for each word...
     for x,l in sorted(G):
       if l=='w':
         ## rename 's' node again, in case it changed in above raising attachments...
         if (x,    's') in G: G.rename( x+'s', G[x    ,'s'] )
         if (x+'s','r') in G: G.rename( x+'r', G[x+'s','r'] )
+    '''
     ## for each syntactic dependency...
     for x,l in sorted(G):
       if l[-1]=='\'':
@@ -347,6 +381,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
             sys.stderr.write( str(G) + '\n' )
         except KeyError as e:
           sys.stderr.write( 'KeyError ' + str(e) + ' in ' + str(t) + '\n' )
+    '''
 
 ################################################################################
 
@@ -355,7 +390,7 @@ class SemCueGraph( cuegraph.CueGraph ):
   def __init__( H, t ):
     G = StoreStateCueGraph( t )
     for x,l in sorted(G.keys()):
-      if l!='A' and l!='B' and l!='s' and l!='w' and (l!='0' or x[-1] in 'er') and l[-1]!='\'':
+      if l!='A' and l!='B' and l!='s' and l!='w' and l not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' and (l!='0' or x[-1] in 'erABCDEFGHIJKLMNOPQRSTUVWXYZ') and l[-1]!='\'':
         H[x,l] = G[x,l]
 
 ################################################################################
