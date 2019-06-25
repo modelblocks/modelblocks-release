@@ -133,12 +133,13 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       else: G.equate( G.result(l,d), l, d+'u' )
       if len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN.endswith('-rN}'):  ## Ee
         G.equate( G.result('s',n), 'e', G.result('r',G.result('s',dLower)) )
-      elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ):  ## Eb,Ed
+      elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ):  ## Ec,Ed
 #      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
         G.equate( G.result('r',G.result('s',dLower)), '1\'', id+'y' )
         G.equate( G.result('s',n), 'e', id+'y' )
-      else:                                                  ## Ea,Ec
-        G.equate( G.result('s',n), 'e', G.result( str(G.getArity(sD))+'\'', G.result('s',dLower) ) )
+      else:                                                  ## Ea,Eb
+#        G.equate( G.result('s',n), 'e', G.result( str(G.getArity(sD))+'\'', G.result('s',dLower) ) )
+        G.equate( G.result('s',n), str(G.getArity(sD))+'\'', G.result('s',dLower) )
       G.equate( G.result('s',d), 's', d+'u' )
     elif '-l' not in sD:                                     ## T
       ## update category of every nonlocal sign on store that changes with type change...
