@@ -307,12 +307,13 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           G.dump( )
           print( x, l, G[x,l] )
         ## apply -n, -m, and -s tags...
-        for dep in re.findall( '-[mns][0-9]+', G[x,'0'] ):
+        for dep in re.findall( '-[mnts][0-9]+', G[x,'0'] ):
           dest = dep[2:] if len(dep)>4 else sentnumprefix+dep[2:]
           if dep[1]=='m': G.equate( dest+'r', 'r', x+'r' )
           if dep[1]=='n': G.equate( dest+'s', 'r', x+'r' )
+          if dep[1]=='t': G.equate( dest+'r', 's', x+'s' )
           if dep[1]=='s': G.equate( dest+'s', 's', x+'s' )
-        G[x,'0'] = re.sub( '-[mns][0-9]+', '', G[x,'0'] )
+        G[x,'0'] = re.sub( '-[mnts][0-9]+', '', G[x,'0'] )
         ## obtain pred by applying morph rules to word token...
         s = re.sub('-l.','',G[x,'0']) + ':' + G[x,'W'].lower()
         eqns = re.sub( '-x.*:', ':', s )
@@ -405,7 +406,7 @@ class SemCueGraph( cuegraph.CueGraph ):
   def add( H, t, sentnumprefix ):
     G = StoreStateCueGraph( t, sentnumprefix )
     for x,l in sorted( G.keys() ):
-      if l not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' and (l!='0' or x[-1] in 'erABCDEFGHIJKLMNOPQRSTUVWXYZ') and l[-1]!='\'':
+      if l not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' and (l!='0' or x[-1] in 'erCDEFGHIJKLMNOPQRSTUVWXYZ') and l[-1]!='\'':
         H[x,l] = G[x,l]
 
 ################################################################################
