@@ -208,6 +208,11 @@ endef
 #%.cuegraphs:  %.protographs  $(GCG-SCRIPTS)/protographs2cuegraphs.pl
 #	cat $<  |  perl -p $(word 2,$^)  >  $@
 
+#### obtain discourse-aligned space-delimited cued-association graphs
+.PRECIOUS: %.discgraphs
+%.discgraphs:  %.linetrees $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
+	cat $<  |  sed 's/\^g//g' | python $(word 3,$^)  >  $@
+
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
 .PRECIOUS: %.refconts
 %.refconts:  %.cuegraphs  $(GCG-SCRIPTS)/cuegraphs2refconts.py
