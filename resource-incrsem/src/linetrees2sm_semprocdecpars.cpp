@@ -92,6 +92,7 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
   if( string::npos != l.find("-lH") ) return 'H';
   if( string::npos != l.find("-lR") ) return 'R';
   if( string::npos != l.find("-lV") ) return 'V';
+  if( string::npos != l.find("-lD") ) return 'N';
   if( string::npos != l.find("-lN") ) return 'N';
   if( string::npos != lSibling.find("-lU") ) return ( getCat(l).getSynArgs()==1 ) ? 'U' : 'u';
   if( string::npos != l.find("-lI") ) return 'I';
@@ -100,7 +101,8 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
   if( string::npos != l.find("-lM") or string::npos != l.find("-lQ") ) return 'M';
   if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos != lParent.find("\\") ) return '0'+getCat( string(lParent,lParent.find("\\")+1).c_str() ).getSynArgs();
   if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos == lParent.find('\\') ) return '0'+getCat( lSibling ).getSynArgs();
-  cerr << "WARNING: unhandled -l tag in label \"" << l << "\"" << " -- assuming identity."<<endl;
+  cout << "(WARNING: unhandled -l tag in label \"" << l << "\"" << " in binary branch -- assuming identity.)"<<endl;
+  cerr << "WARNING: unhandled -l tag in label \"" << l << "\"" << " in binary branch -- assuming identity."<<endl;
   return O_I;
 }
 
