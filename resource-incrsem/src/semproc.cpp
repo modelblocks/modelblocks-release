@@ -528,6 +528,7 @@ int main ( int nArgs, char* argv[] ) {
 //            for( auto& be : mls ) {
 //              cout << be.getHidd() << endl;
 ////          cout << (iartNextToDump++)->second << endl;
+          cout << "!ARTICLE" << endl;
           auto isent = iartNextToDump->first.begin();  // Iterator over sentences.
           auto imls  = iartNextToDump->second.begin(); // Iterator over most likely sequences.
           for( ;  isent != iartNextToDump->first.end() and imls != iartNextToDump->second.end();  isent++, imls++ ) {

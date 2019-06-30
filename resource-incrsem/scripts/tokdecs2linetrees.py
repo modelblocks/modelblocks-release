@@ -34,6 +34,9 @@ def unaryprojlist(e,c):
   return l
 
 for s in sys.stdin:
+    if s == '!ARTICLE\n':
+      print( '!ARTICLE' )
+      continue
     s = re.sub( '/[^ ;/]*\^;[^ ;/]*', '', s )   ## remove bottom carriers. (OBSOLETE)
     s = re.sub( '(?<=.);[ \n]', ' ', s )        ## remove trailing ;
     s = re.sub( '/ ', ' ', s )                  ## remove trailing /
