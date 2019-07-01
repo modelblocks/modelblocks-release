@@ -148,8 +148,8 @@ endef
 
 %.nofail.linetrees: %.linetrees
 	cat $< | grep -v '(FAIL' > $@
-%.skipfail.linetrees: %.linetrees
-	cat $< | perl -pe 's/^\(FAIL.*/(FAIL skip)/' > $@
+%.goldfailerr.linetrees: %.linetrees
+	cat $< | perl -pe 's/^\(FAIL.*/(FAIL err)/' > $@
 
 %.noqp.linetrees:  %.linetrees  $(GCG-SCRIPTS)/remove-qps.pl
 	cat $<  |  perl $(word 2,$^)  >  $@
