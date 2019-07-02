@@ -196,13 +196,8 @@ int main ( int nArgs, char* argv[] ) {
 
   mutex mutexMLSList;
   vector<thread> vtWorkers;  vtWorkers.reserve( numThreads );
-  uint linenum = 0;
 
   if( OUTPUT_MEASURES ) cout << "word pos f j store totsurp" << endl;
-
-  // For each line in stdin...
-  list<list<DelimitedList<psX,ObsWord,psSpace,psX>>> articles; //list of list of sents. each list of sents is an article.
-  list<list<DelimitedList<psX,BeamElement<HiddState>,psLine,psX>>> articleMLSs; //list of MLSs
 
 #ifdef SERIAL_IO
   // List of articles, which are pairs of lists of lists of words and lists of lists of hidd states...
@@ -219,6 +214,10 @@ int main ( int nArgs, char* argv[] ) {
   auto iartNextToProc = corpus.begin();
   auto iartNextToDump = corpus.begin();
 #else
+  uint linenum = 0;
+  // For each line in stdin...
+  list<list<DelimitedList<psX,ObsWord,psSpace,psX>>> articles; //list of list of sents. each list of sents is an article.
+  list<list<DelimitedList<psX,BeamElement<HiddState>,psLine,psX>>> articleMLSs; //list of MLSs
 #endif
 
   // loop over threads (each thread gets an article)

@@ -398,6 +398,7 @@ class HVec : public DelimitedVector<psX,KVec,psX,psX> {
       at(arg) = funcO( dir + arg, matE( k.getXVar() ) );  //funcO(arg, at(0));
   }
   HVec& add( const HVec& hv ) {
+    if( size() < hv.size() ) resize( hv.size() );
     for( unsigned int arg=0; arg<size() and arg<hv.size(); arg++ ) at(arg).add( hv.at(arg) );
     return *this;
   }
@@ -441,6 +442,8 @@ class Sign : public DelimitedTrip<psX,HVec,psColon,CVar,psX,S,psX> {
   S           getSide ( ) const { return third();  }
   bool        isDitto ( ) const { return getHVec().isDitto(); }
 };
+const Sign aNil( HVec(), cTop, S_A );
+const Sign bNil( HVec(), cTop, S_B );
 const Sign aTop( hvTop, cTop, S_A );
 const Sign bTop( hvTop, cTop, S_B );
 
@@ -636,7 +639,7 @@ void SignWithCarriers::setSign ( CVar cA, O opL, O opR, const Sign& aLchild ) {
 // Implementation of specifier method to allocate apex and carriers...
 void ApexWithCarriers::set ( CVar cB, CVar cA, O opL, O opR, const Sign& aLchild ) {
   int iAdding = cA.getNoloArity() - cB.getNoloArity() - size();
-  if( iAdding > 0 ) insert( end(), iAdding, Sign() );                                                        // Add nolos not in lchild as more recent.
+  if( iAdding > 0 ) insert( end(), iAdding, bNil );                                                        // Add nolos not in lchild as more recent.
 //  *emplace( end() ) = Sign( HVec(), cA, S_A );  setSign( cA, opL, opR, aLchild );
   *emplace( end() ) = Sign( HVec(), cA, S_A );  back().setHVec() = HVec( cA.getSynArgs() + ( ((opL>='1' and opL<='9') or (opR>='1' and opR<='9')) ? 2 : 1 ) );
 
@@ -646,7 +649,7 @@ void ApexWithCarriers::set ( CVar cB, CVar cA, O opL, O opR, const Sign& aLchild
 // Implementation of specifier method to allocate base and carriers...
 void BaseWithCarriers::set ( CVar cA, CVar cB, O opL, O opR, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild ) {
   int iAdding = cB.getNoloArity() - cA.getNoloArity() - size();
-  if( iAdding > 0 ) insert( end(), iAdding, Sign() );                                                        // Add nolos not in parent as more recent.
+  if( iAdding > 0 ) insert( end(), iAdding, aNil );                                                        // Add nolos not in parent as more recent.
   *emplace( end() ) = Sign( HVec(), cB, S_B );  back().setHVec() = HVec( cB.getSynArgs() + 1 );
 
   if( getDir(opR)!=-10 ) back().setHVec().addSynArg( getDir(opR), swcParent.back().getHVec() );              // Apply operator from parent to rchild.
