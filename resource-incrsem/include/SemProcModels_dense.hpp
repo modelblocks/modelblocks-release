@@ -191,7 +191,7 @@ class FPredictorVec {
     }
 
     friend ostream& operator<< ( ostream& os, const FPredictorVec& fpv ) {
-      os << fpv.d << "|" << fpv.catBase << "|" << fpv.hvB << "|" << fpv.hvF;
+      os << fpv.d << " " << fpv.catBase << " " << fpv.hvB << " " << fpv.hvF;
       return os;
     }
 };
@@ -213,8 +213,8 @@ class FModel {
     unsigned int iNextResponse  = 0;
 
     // Matrix dimensions could be different; how to accommodate for this?
-    DelimitedMat<psX, double, psComma, 56, 56, psX> fwf;  // weights for J model
-    DelimitedMat<psX, double, psComma, 606, 56, psX> fws;
+    DelimitedMat<psX, double, psComma, 57, 57, psX> fwf;  // weights for J model
+    DelimitedVector<psX, double, psComma, psX> fws;
 
   public:
     FModel( ) { }
@@ -233,7 +233,7 @@ class FModel {
       while ( is.peek()=='f' ) {
         unsigned int i;
         is >> "f " >> i >> " ";
-        is >> mifek[i] >> " " >> "\n";
+        is >> mifek[i] >> "\n";
         mfeki[mifek[i]] = i;
       }
     }
@@ -263,7 +263,7 @@ class FModel {
     arma::vec calcResponses( FPredictorVec& lfpredictors ) const {
 // return distribution over JEOO indices
 // vectorize predictors: one-hot for depth, three hvecs, two cat-embeds
-      arma::vec flogresponses = arma::zeros( fwf.n_cols );
+      arma::vec flogresponses = arma::zeros( 57 );
       CVar catB = lfpredictors.getCatBase();
       const HVec& hvB = lfpredictors.getHvB();
       const HVec& hvF = lfpredictors.getHvF();
@@ -284,7 +284,9 @@ class FModel {
       flogresponses(catBEmb.n_elem+hvB.at(0).n_elem+hvF.at(0).n_elem+d) = 1;
 
 // implementation of MLP
-      arma::vec flogscores = Mat<double>(fws) * relu(Mat<double>(fwf)*flogresponses);
+      mat fwsm(fws);
+      fwsm.reshape(fws.size()/57, 57);
+      arma::vec flogscores = fwsm * relu(Mat<double>(fwf)*flogresponses);
       arma::vec fscores = arma::exp(flogscores);
       double fnorm = arma::accu(fscores);
 
@@ -336,7 +338,7 @@ class JPredictorVec {
     }
 
     friend ostream& operator<< ( ostream& os, const JPredictorVec& jpv ) {
-      os << jpv.d << "|" << jpv.catAncstr << "|" << jpv.hvAncstr << "|" << jpv.hvFiller << "|" << jpv.catLchild << "|" << jpv.hvLchild;
+      os << jpv.d << " " << jpv.catAncstr << " " << jpv.hvAncstr << " " << jpv.hvFiller << " " << jpv.catLchild << " " << jpv.hvLchild;
       return os;
     }
 };
@@ -362,7 +364,8 @@ class JModel {
 
     // Matrix dimensions could be different; how to accommodate for this?
     DelimitedMat<psX, double, psComma, 87, 87, psX> jwf;  // weights for J model
-    DelimitedMat<psX, double, psComma, 50, 87, psX> jws;
+//    DelimitedMat<psX, double, psComma, 102, 87, psX> jws;
+    DelimitedVector<psX, double, psComma, psX> jws;
 
   public:
 
@@ -386,7 +389,7 @@ class JModel {
       while ( is.peek()=='j' ) {
         Delimited<int> k;
         is >> "j " >> k >> " ";
-        is >> mijeoo[k] >> " " >> "\n";
+        is >> mijeoo[k] >> "\n";
         mjeooi[mijeoo[k]] = k;
       }
       jr0 = getResponseIndex( 0, EVar::eNil, 'N', O_I );
@@ -420,7 +423,7 @@ class JModel {
     arma::vec calcResponses( JPredictorVec& ljpredictors ) const {
 // return distribution over JEOO indices
 // vectorize predictors: one-hot for depth, three hvecs, two cat-embeds
-      arma::vec jlogresponses = arma::zeros( jwf.n_cols );
+      arma::vec jlogresponses = arma::zeros( 87 );
       CVar catA = ljpredictors.getCatAncstr();
       const HVec& hvA = ljpredictors.getHvAncstr();
       const HVec& hvF = ljpredictors.getHvFiller();
@@ -450,7 +453,9 @@ class JModel {
       jlogresponses(catAEmb.n_elem+hvA.at(0).n_elem+hvF.at(0).n_elem+catLEmb.n_elem+hvL.at(0).n_elem+d) = 1;
 
 // implementation of MLP
-      arma::vec jlogscores = Mat<double>(jws) * relu(Mat<double>(jwf)*jlogresponses);
+      mat jwsm(jws);
+      jwsm.reshape(jws.size()/87, 87);
+      arma::vec jlogscores = jwsm * relu(Mat<double>(jwf)*jlogresponses);
       arma::vec jscores = arma::exp(jlogscores);
       double jnorm = arma::accu(jscores);
 
