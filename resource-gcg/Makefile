@@ -210,8 +210,12 @@ endef
 
 #### obtain discourse-aligned space-delimited cued-association graphs
 .PRECIOUS: %.discgraphs
-%.discgraphs:  %.linetrees $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
+%.discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
 	cat $<  |  sed 's/\^g//g' | python $(word 3,$^)  >  $@
+
+#### obtain discourse-aligned lambda expressions
+%.discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
+	cat $<  |  python $(word 2,$^)  |  $(word 3,$^)  >  $@
 
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
 .PRECIOUS: %.refconts
