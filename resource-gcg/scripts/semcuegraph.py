@@ -134,7 +134,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( 'A-aN-bN:~',                          '0', G.result('r',G.result('S',dUpper)) )
     elif '-lZ' in sD and sC.startswith('A-a'):               ## Za
       G.equate( G.result(l,d), l, d+'u' )
-      G.equate( G.result('r',G.result('r',G.result('S',dLower))), '1\'', G.result('S',dUpper) )
+#      G.equate( G.result('r',G.result('r',G.result('S',dLower))), '1\'', G.result('S',dUpper) )
+      G.equate( G.result('r',G.result('S',dLower)), '1\'', G.result('S',dUpper) )
       G.equate( G.result('S',dUpper), 'h', G.result('S',dLower) )              ## hypothetical world inheritance -- should be implemented throughout
     elif '-lZ' in sD and sC.startswith('R-a'):               ## Zb
       G.equate( G.result(l,d), l, d+'u' )
