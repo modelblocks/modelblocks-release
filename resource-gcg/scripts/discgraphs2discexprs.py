@@ -53,11 +53,16 @@ for line in sys.stdin:
   Preds  = [ ]
   Quants = [ ] 
 
-  ## Distinguish preds and quants:
+  ## Distinguish preds and quants...
   for elempred,Particips in PorQs.items():
     ## If three participants and last restriction-inherits from previous, it's a quant...
     if len( Particips ) == 3 and (Particips[2],'r') in Inhs and Inhs[ Particips[2], 'r' ] == Particips[1]:  Quants.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
     else:                                                                                                   Preds.append ( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
+  ## Induce low existential quants...
+  for nusco in Scopes:
+    if nusco not in [s for q,e,r,s in Quants]:
+      if (nusco,'r') not in Inhs: Inhs[nusco,'r'] = nusco+'r'
+      Quants.append( ( 'D:some', nusco+'P', Inhs[nusco,'r'], nusco ) )
 
   Translations = [ ]
   Abstractions = collections.defaultdict( list )  ## Key is lambda.
