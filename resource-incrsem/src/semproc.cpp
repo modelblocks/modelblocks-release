@@ -205,7 +205,7 @@ int main ( int nArgs, char* argv[] ) {
   // Read in list of articles...
 //  while( cin.peek() != EOF ) { cin >> corpus.emplace( corpus.end() )->first >> "!ARTICLE\n";  cerr<<"i got: "<<corpus.back().first.size()<<endl;  }
   while( cin.peek() != EOF ) {
-    cin >> "!ARTICLE\n";
+    if( cin.peek() == '!' ) cin >> "!ARTICLE\n";
     corpus.emplace_back();
     while( cin.peek() != '!' && cin.peek() != EOF )  cin >> *corpus.back().first.emplace( corpus.back().first.end() ) >> "\n";
     cerr<<"I read an article with " << corpus.back().first.size() << " sentences." << endl;
