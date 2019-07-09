@@ -39,16 +39,16 @@ for line in sys.stdin:
   if VERBOSE: print( 'GRAPH: ' + line )
 
   ## Initialize associations...
-  PorQs  = collections.defaultdict( list )    ## Key is elem pred.
-  Scopes = { }                                ## Key is outscoped.
-  Inhs   = { }                                ## Key is inheritor.
+  PorQs  = collections.defaultdict( list )                                     ## Key is elem pred.
+  Scopes = { }                                                                 ## Key is outscoped.
+  Inhs   = collections.defaultdict( lambda : collections.defaultdict(float) )  ## Key is inheritor.
   
   ## For each assoc...
   for assoc in sorted( line.split(' ') ):
     src,lbl,dst = assoc.split(',')
     if lbl.isdigit():  PorQs  [src].insert( int(lbl), dst )   ## Add preds and quants.
-    elif lbl == 's':   Scopes [src]     = dst                 ## Add scopes.
-    else:              Inhs   [src,lbl] = dst                 ## Add inheritances.
+    elif lbl == 's':   Scopes [src]      = dst                ## Add scopes.
+    else:              Inhs   [src][lbl] = dst                ## Add inheritances.
 
   Preds  = [ ]
   Quants = [ ] 
@@ -56,13 +56,13 @@ for line in sys.stdin:
   ## Distinguish preds and quants...
   for elempred,Particips in PorQs.items():
     ## If three participants and last restriction-inherits from previous, it's a quant...
-    if len( Particips ) == 3 and (Particips[2],'r') in Inhs and Inhs[ Particips[2], 'r' ] == Particips[1]:  Quants.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
-    else:                                                                                                   Preds.append ( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
+    if len( Particips ) == 3 and Inhs.get(Particips[2],{}).get('r','') == Particips[1]:  Quants.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
+    else:                                                                                Preds.append ( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
   ## Induce low existential quants...
   for nusco in Scopes:
     if nusco not in [s for q,e,r,s in Quants]:
-      if (nusco,'r') not in Inhs: Inhs[nusco,'r'] = nusco+'r'
-      Quants.append( ( 'D:some', nusco+'P', Inhs[nusco,'r'], nusco ) )
+      if Inhs[nusco].get('r','') == '': Inhs[nusco]['r'] = nusco+'r'
+      Quants.append( ( 'D:some', nusco+'P', Inhs[nusco]['r'], nusco ) )
 
   Translations = [ ]
   Abstractions = collections.defaultdict( list )  ## Key is lambda.
@@ -86,7 +86,7 @@ for line in sys.stdin:
     ## P rule...
     for Participants in list(Preds):
       for particip in Participants[1:]:
-        if particip not in Scopes.values() and (particip,'r') not in Inhs and (particip,'c') not in Inhs and (particip,'e') not in Inhs:
+        if particip not in Scopes.values() and particip not in Inhs:
           if VERBOSE: print( 'applying P to make \\' + particip + '. ' + str(Participants) )
           Abstractions[ particip ].append( Participants )
           if Participants in Preds: Preds.remove( Participants )
@@ -99,7 +99,7 @@ for line in sys.stdin:
 
     ## M rule...
     for var,Structs in Abstractions.items():
-      if len(Structs) == 1 and var not in Scopes.values() and (var,'r') not in Inhs and (var,'c') not in Inhs and (var,'e') not in Inhs:
+      if len(Structs) == 1 and var not in Scopes.values() and var not in Inhs:
         if VERBOSE: print( 'applying M to make \\' + var + '. ' + str(Structs) )
         Expressions[var] = Structs[0]
         del Abstractions[var]
@@ -120,16 +120,19 @@ for line in sys.stdin:
         Translations.remove( (q, R, S) )
 
     ## I1 rule...
-    for srclbl,dst in Inhs.items():
-      if (dst,'r') not in Inhs and (dst,'c') not in Inhs and (dst,'e') not in Inhs and dst not in Abstractions and dst not in Expressions and dst not in Scopes.values() and dst not in [ x for Particips in Preds for x in Particips ]:
-        if VERBOSE: print( 'applying I1 to make \\' + dst + ' True' )
-        Abstractions[ dst ].append( () )
+    for src,lbldst in Inhs.items():
+      for lbl,dst in lbldst.items():
+        if dst not in Inhs and dst not in Abstractions and dst not in Expressions and dst not in Scopes.values() and dst not in [ x for Particips in Preds for x in Particips ]:
+          if VERBOSE: print( 'applying I1 to make \\' + dst + ' True' )
+          Abstractions[ dst ].append( () )
 
     ## I2 rule...
-    for srclbl,dst in Inhs.items():
-      if dst in Expressions:
-        if VERBOSE: print( 'applying I2 to replace ' + dst + ' with ' + srclbl[0] + ' to make ' + str(replaceVarName( Expressions[dst], dst, srclbl[0] )) )   #' in ' + str(Expressions[dst]) )
-        Abstractions[ srclbl[0] ].append( replaceVarName( Expressions[dst], dst, srclbl[0] ) )
-        del Inhs[srclbl]
+    for src,lbldst in Inhs.items():
+      for lbl,dst in lbldst.items():
+        if dst in Expressions:
+          if VERBOSE: print( 'applying I2 to replace ' + dst + ' with ' + src + ' to make ' + str(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
+          Abstractions[ src ].append( replaceVarName( Expressions[dst], dst, src ) )
+          del Inhs[src][lbl]
+          if len(Inhs[src])==0: del Inhs[src]
 
 print( Translations )
