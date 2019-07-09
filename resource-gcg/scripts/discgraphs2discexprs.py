@@ -121,7 +121,7 @@ for line in sys.stdin:
 
     ## I1 rule...
     for srclbl,dst in Inhs.items():
-      if dst not in Abstractions and dst not in Expressions and dst not in [ x for Particips in Preds for x in Particips ]:
+      if (dst,'r') not in Inhs and (dst,'c') not in Inhs and (dst,'e') not in Inhs and dst not in Abstractions and dst not in Expressions and dst not in Scopes.values() and dst not in [ x for Particips in Preds for x in Particips ]:
         if VERBOSE: print( 'applying I1 to make \\' + dst + ' True' )
         Abstractions[ dst ].append( () )
 
