@@ -58,12 +58,46 @@ for line in sys.stdin:
     ## If three participants and last restriction-inherits from previous, it's a quant...
     if len( Particips ) == 3 and Inhs.get(Particips[2],{}).get('r','') == Particips[1]:  Quants.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
     else:                                                                                Preds.append ( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
+
+  ## Induce low existential quants for predicates occurring as arguments, to form chain...
+  for Particips in Preds:
+    for x in Particips[2:]:
+      if x in PorQs and x not in Scopes:
+        Outscopers = []
+        for y in Particips[2:]:
+          if y in Scopes:
+            projection = y
+            while projection in Scopes:
+              projection = Scopes[projection]
+              if projection in Particips: Outscopers += [projection]
+        Scopes[x] = [y for y in Particips[2:] if y != x and y not in Outscopers][0]
+  print( 'S = ' + str(sorted(Scopes.items())) )
   ## Induce low existential quants when only scope annotated...
   for nusco in Scopes:
     if nusco not in [s for q,e,r,s in Quants]:
       if Inhs[nusco].get('r','') == '': Inhs[nusco]['r'] = nusco+'r'
       Quants.append( ( 'D:some', nusco+'P', Inhs[nusco]['r'], nusco ) )
-  ## Induce low existantial quants for missing arguments...
+  ## Induce low existential quants for predicates (add to lowest arg)...
+  for Particips in Preds:
+    if len( Particips ) > 2:
+      e = Particips[1]
+      if e not in [s for q,_,r,s in Quants] and e not in [r for q,_,r,s in Quants]:
+        lowest = Particips[2] if Particips[2] in Scopes else Particips[-1]
+        for x in Particips[2:-1]:
+          if x != lowest:
+            outscoper = x
+            while outscoper in Scopes:
+              if outscoper == lowest: lowest = x
+              outscoper = Scopes[outscoper]
+        if Inhs[e].get('r','') == '': Inhs[e]['r'] = e+'r'
+        Quants.append( ( 'D:some', e+'Q', Inhs[e]['r'], e ) )
+        Scopes[e] = lowest
+        #y = [s for s in Inhs if Inhs.get(s,{}).get('r','') == e][0]
+#        e,y = (e,e[:-1]+'s') if e[-1]=='r' else (e+'r',e)
+#        if Inhs[y].get('r','') == '': Inhs[y]['r'] = e
+#        Quants.append( ( 'D:some', y+'P', e, y ) )
+#        Scopes[y] = lowest
+  ## Induce low existential quants for missing arguments...
   for Particips in Preds:
     lowest = Particips[1]
     for x in Particips[2:]:
