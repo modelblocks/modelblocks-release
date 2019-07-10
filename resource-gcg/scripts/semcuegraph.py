@@ -339,9 +339,15 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         eqns = re.sub( '-x.*:', ':', s )
         for xrule in re.split( '-x', G[x,'0'] )[1:] :   #re.findall( '(-x(?:(?!-x).)*)', s ):
           m = re.search( '(.*)%(.*)%(.*)\|(.*)%(.*)%(.*)', xrule )
-          if m is not None: eqns = re.sub( '^'+m.group(1)+'(.*)'+m.group(2)+'(.*)'+m.group(3)+'$', m.group(4)+'\\1'+m.group(5)+'\\2'+m.group(6), eqns )
+          if m is not None:
+            eqns = re.sub( '^'+m.group(1)+'(.*)'+m.group(2)+'(.*)'+m.group(3)+'$', m.group(4)+'\\1'+m.group(5)+'\\2'+m.group(6), eqns )
+            continue
           m = re.search( '(.*)%(.*)\|(.*)%(.*)', xrule )
-          if m is not None: eqns = re.sub( '^'+m.group(1)+'(.*)'+m.group(2)+'$', m.group(3)+'\\1'+m.group(4), eqns )
+          if m is not None:
+            eqns = re.sub( '^'+m.group(1)+'(.*)'+m.group(2)+'$', m.group(3)+'\\1'+m.group(4), eqns )
+            continue
+          m = re.search( '.*%.*\|(.*)', xrule )
+          if m is not None: eqns = m.group(1)
         s = eqns
 
         if '-x' in G[x,'0'] and '=' not in eqns:

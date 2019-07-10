@@ -4,16 +4,23 @@ import tree
 import gcgtree
 import semcuegraph
 
+RELABEL = False
+
 for a in sys.argv:
   if a=='-d':
     gcgtree.VERBOSE = True
     semcuegraph.VERBOSE = True
+  if a=='r':
+    RELABEL = True
 
 ################################################################################
 
 for line in sys.stdin:
 
-  t = gcgtree.GCGTree( line )
+  if RELABEL: t = gcgtree.GCGTree( line )
+  else:
+    t = tree.Tree( )
+    t.read( line )
   G = semcuegraph.SemCueGraph( t )
   print( str(G) )
 

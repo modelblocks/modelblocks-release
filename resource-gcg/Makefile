@@ -212,6 +212,8 @@ endef
 .PRECIOUS: %.discgraphs
 %.discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
 	cat $<  |  sed 's/\^g//g' | python $(word 3,$^)  >  $@
+%.verbose.discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
+	cat $<  |  sed 's/\^g//g' | python $(word 3,$^) -d  >  $@
 
 #### obtain discourse-aligned lambda expressions
 %.discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent

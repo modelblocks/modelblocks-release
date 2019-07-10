@@ -71,7 +71,7 @@ for line in sys.stdin:
               projection = Scopes[projection]
               if projection in Particips: Outscopers += [projection]
         Scopes[x] = [y for y in Particips[2:] if y != x and y not in Outscopers][0]
-  print( 'S = ' + str(sorted(Scopes.items())) )
+        print( 'E1: inducing scope ' + x + ' to ' + Scopes[x] )
   ## Induce low existential quants when only scope annotated...
   for nusco in Scopes:
     if nusco not in [s for q,e,r,s in Quants]:
@@ -92,6 +92,7 @@ for line in sys.stdin:
         if Inhs[e].get('r','') == '': Inhs[e]['r'] = e+'r'
         Quants.append( ( 'D:some', e+'Q', Inhs[e]['r'], e ) )
         Scopes[e] = lowest
+        print( 'E3: inducing scope ' + e + ' to ' + Scopes[e] )
         #y = [s for s in Inhs if Inhs.get(s,{}).get('r','') == e][0]
 #        e,y = (e,e[:-1]+'s') if e[-1]=='r' else (e+'r',e)
 #        if Inhs[y].get('r','') == '': Inhs[y]['r'] = e
@@ -106,6 +107,7 @@ for line in sys.stdin:
         Quants.append( ( 'D:some', x+'Q', Inhs[x]['r'], x ) )
         Scopes[x] = lowest
         lowest = x
+        print( 'E4: inducing scope ' + x + ' to ' + Scopes[x] )
 
   Translations = [ ]
   Abstractions = collections.defaultdict( list )  ## Key is lambda.

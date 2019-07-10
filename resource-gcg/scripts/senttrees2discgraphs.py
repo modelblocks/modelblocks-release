@@ -23,10 +23,14 @@ import tree
 import gcgtree
 import semcuegraph
 
+RELABEL = False
+
 for a in sys.argv:
   if a=='-d':
     gcgtree.VERBOSE = True
     semcuegraph.VERBOSE = True
+  if a=='-r':
+    RELABEL = True
 
 ################################################################################
 
@@ -43,7 +47,10 @@ for line in sys.stdin:
     discctr += 1
 
   else:
-    t = gcgtree.GCGTree( line )
+    if RELABEL: t = gcgtree.GCGTree( line )
+    else:
+      t = tree.Tree( )
+      t.read( line )
     G.add( t, ('0' if sentctr<10 else '') + str(sentctr) )
     sentctr += 1
 
