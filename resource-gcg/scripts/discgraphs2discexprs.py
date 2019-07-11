@@ -42,13 +42,15 @@ for line in sys.stdin:
   PorQs  = collections.defaultdict( list )                                     ## Key is elem pred.
   Scopes = { }                                                                 ## Key is outscoped.
   Inhs   = collections.defaultdict( lambda : collections.defaultdict(float) )  ## Key is inheritor.
-  
+  Nuscos = { }
+ 
   ## For each assoc...
   for assoc in sorted( line.split(' ') ):
     src,lbl,dst = assoc.split(',')
     if lbl.isdigit():  PorQs  [src].insert( int(lbl), dst )   ## Add preds and quants.
     elif lbl == 's':   Scopes [src]      = dst                ## Add scopes.
     else:              Inhs   [src][lbl] = dst                ## Add inheritances.
+    if lbl == 'r':     Nuscos [dst]      = src                ## Index nusco of each restr
 
   Preds  = [ ]
   Quants = [ ] 
@@ -59,6 +61,31 @@ for line in sys.stdin:
     if len( Particips ) == 3 and Inhs.get(Particips[2],{}).get('r','') == Particips[1]:  Quants.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
     else:                                                                                Preds.append ( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
 
+  def ceiling( x ):
+    if x in Nuscos: return ceiling( Nuscos[x] )
+    if x in Scopes: return ceiling( Scopes[x] )
+    return x
+
+  ## Induce scopes upward to pred args...
+  for Args in Preds:
+    for a in Args[2:]:
+      if a not in Scopes.values() and a not in Scopes and Nuscos.get(a,'') not in Scopes and ( a in PorQs or Inhs.get(a,{}).get('r','') in PorQs ):
+        print( 'X1: inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
+        Scopes[ ceiling( Args[1] ) ] = a
+  ## Induce scopes upward to non-pred args...
+  for Args in Preds:
+    for a in Args[2:]:
+      if a not in Scopes.values() and a not in Scopes and Nuscos.get(a,'') not in Scopes:
+        print( 'X2: inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
+        Scopes[ ceiling( Args[1] ) ] = a
+  ## Induce scopes upward to anything else not in chain...
+  for Args in Preds:
+    for a in Args[2:]:
+      if a not in Scopes.values() and ceiling( a ) != ceiling( Args[1] ):
+        print( 'X3: inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
+        Scopes[ ceiling( Args[1] ) ] = a
+
+  '''
   ## Induce low existential quants for predicates occurring as arguments, to form chain...
   for Particips in Preds:
     for x in Particips[2:]:
@@ -71,12 +98,14 @@ for line in sys.stdin:
               projection = Scopes[projection]
               if projection in Particips: Outscopers += [projection]
         Scopes[x] = [y for y in Particips[2:] if y != x and y not in Outscopers][0]
-        print( 'E1: inducing scope ' + x + ' to ' + Scopes[x] )
+        print( 'X1args: inducing scope ' + x + ' to ' + Scopes[x] )
+  '''
   ## Induce low existential quants when only scope annotated...
   for nusco in Scopes:
     if nusco not in [s for q,e,r,s in Quants]:
       if Inhs[nusco].get('r','') == '': Inhs[nusco]['r'] = nusco+'r'
       Quants.append( ( 'D:some', nusco+'P', Inhs[nusco]['r'], nusco ) )
+  '''
   ## Induce low existential quants for predicates (add to lowest arg)...
   for Particips in Preds:
     if len( Particips ) > 2:
@@ -92,13 +121,13 @@ for line in sys.stdin:
         if Inhs[e].get('r','') == '': Inhs[e]['r'] = e+'r'
         Quants.append( ( 'D:some', e+'Q', Inhs[e]['r'], e ) )
         Scopes[e] = lowest
-        print( 'E3: inducing scope ' + e + ' to ' + Scopes[e] )
+        print( 'X3pred: inducing scope ' + e + ' to ' + Scopes[e] )
         #y = [s for s in Inhs if Inhs.get(s,{}).get('r','') == e][0]
 #        e,y = (e,e[:-1]+'s') if e[-1]=='r' else (e+'r',e)
 #        if Inhs[y].get('r','') == '': Inhs[y]['r'] = e
 #        Quants.append( ( 'D:some', y+'P', e, y ) )
 #        Scopes[y] = lowest
-  ## Induce low existential quants for missing arguments...
+  ## Induce low existential quants for missing/elided arguments...
   for Particips in Preds:
     lowest = Particips[1]
     for x in Particips[2:]:
@@ -107,7 +136,8 @@ for line in sys.stdin:
         Quants.append( ( 'D:some', x+'Q', Inhs[x]['r'], x ) )
         Scopes[x] = lowest
         lowest = x
-        print( 'E4: inducing scope ' + x + ' to ' + Scopes[x] )
+        print( 'X4elis: inducing scope ' + x + ' to ' + Scopes[x] )
+  '''
 
   Translations = [ ]
   Abstractions = collections.defaultdict( list )  ## Key is lambda.
