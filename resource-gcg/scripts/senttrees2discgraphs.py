@@ -29,6 +29,8 @@ for a in sys.argv:
   if a=='-d':
     gcgtree.VERBOSE = True
     semcuegraph.VERBOSE = True
+  if a=='-e':
+    semcuegraph.EQN_DEFAULTS = True
   if a=='-r':
     RELABEL = True
 

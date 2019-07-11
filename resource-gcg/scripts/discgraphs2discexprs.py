@@ -50,7 +50,7 @@ for line in sys.stdin:
     if lbl.isdigit():  PorQs  [src].insert( int(lbl), dst )   ## Add preds and quants.
     elif lbl == 's':   Scopes [src]      = dst                ## Add scopes.
     else:              Inhs   [src][lbl] = dst                ## Add inheritances.
-    if lbl == 'r':     Nuscos [dst]      = src                ## Index nusco of each restr
+    if lbl == 'r':     Nuscos [dst]      = src                ## Index nusco of each restr.
 
   Preds  = [ ]
   Quants = [ ] 
