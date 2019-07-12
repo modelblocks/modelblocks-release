@@ -32,6 +32,14 @@ def replaceVarName( struct, xOld, xNew ):
   if type(struct)==str: return xNew if struct==xOld else struct
   return tuple( [ replaceVarName(x,xOld,xNew) for x in struct ] )
 
+## lambda expression format...
+def lambdaFormat( expr ):
+  if len( expr ) == 0:          return 'T'
+  elif isinstance( expr, str ): return expr
+  elif expr[0] == 'lambda':     return '(\\' + expr[1] + ' ' + ' '.join( [ lambdaFormat(subexpr) for subexpr in expr[2:] ] ) + ')'
+  elif expr[0] == 'and':        return '(^ ' +                 ' '.join( [ lambdaFormat(subexpr) for subexpr in expr[1:] if len(subexpr)>0 ] ) + ')'
+  else:                         return '('   + expr[0] + ' ' + ' '.join( [ lambdaFormat(subexpr) for subexpr in expr[1:] ] ) + ')'
+
 ## For each discourse graph...
 for line in sys.stdin:
 
@@ -172,4 +180,9 @@ for line in sys.stdin:
           if len(Inhs[src])==0: del Inhs[src]
           active = True
 
-print( Translations )
+#print( Translations )
+for expr in Translations:
+  print( lambdaFormat(expr) )
+
+
+
