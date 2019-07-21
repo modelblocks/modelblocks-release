@@ -155,8 +155,9 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         G.equate( G.result('S',n), 'e', G.result('r',G.result('S',dLower)) )
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ):  ## Ec,Ed
 #      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
-        G.equate( G.result('r',G.result('S',dLower)), '1\'', id+'y' )
-        G.equate( G.result('S',n), 'e', id+'y' )
+        G.equate( G.result('1\'',G.result('S',n)), 'e', G.result('r',G.result('S',dLower)) )
+#        G.equate( G.result('r',G.result('S',dLower)), '1\'', id+'y' )
+#        G.equate( G.result('S',n), 'e', id+'y' )
       else:                                                  ## Ea,Eb
 #        G.equate( G.result('S',n), 'e', G.result( str(G.getArity(sD))+'\'', G.result('S',dLower) ) )
         G.equate( G.result('S',n), str(G.getArity(sD))+'\'', G.result('S',dLower) )
@@ -323,9 +324,6 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         ## rename 'S' and 'r' nodes...
         if (x,    'S') in G: G.rename( x+'s', G[x,    'S'] )
         if (x+'s','r') in G: G.rename( x+'r', G[x+'s','r'] )
-        if VERBOSE:
-          G.dump( )
-          print( x, l, G[x,l] )
         ## apply -n, -m, and -s tags...
         for dep in re.findall( '-[mnts][0-9]+', G[x,'0'] ):
           dest = dep[2:] if len(dep)>4 else sentnumprefix+dep[2:]
@@ -378,6 +376,9 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
                 xrhs = G.result( lbl+'\'' if lbl.isdigit() and xrhs[-1] in 'sS\'' else lbl, xrhs )
               G.equate( xrhs, lhs[-1]+'\'' if lhs[-1].isdigit() and xlhs[-1] in 'sS\'' else lhs[-1], xlhs )
 #          G.dump()
+        if VERBOSE:
+          G.dump( )
+          print( x, l, G[x,l] )
         '''
 #        while( '-x' in s ):
 #          s1           = re.sub( '^.((?:(?!-x).)*)-x.%:(\\S*)%(\\S*)\|(\\S*)%(\\S*):([^% ]*)%([^-: ]*)([^: ]*):\\2(\\S*)\\3', '\\4\\1\\5\\8:\\6\\9\\7', s )

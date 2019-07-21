@@ -93,6 +93,12 @@ for line in sys.stdin:
       if a not in Scopes.values() and ceiling( a ) != ceiling( Args[1] ):
         print( 'X3: inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
         Scopes[ ceiling( Args[1] ) ] = a
+  ## Induce scopes upward to anything else not in chain...
+  for Args in Preds:
+    for a in Args[2:]:
+      if ceiling( a ) != ceiling( Args[1] ):
+        print( 'X4: inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
+        Scopes[ ceiling( Args[1] ) ] = a
 
   ## Induce low existential quants when only scope annotated...
   for nusco in Scopes:
