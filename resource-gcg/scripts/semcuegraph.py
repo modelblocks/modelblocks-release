@@ -214,7 +214,11 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('A',c), 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or re.match('.*-[ri]N-lH$',sE)!=None else G.b )
 
     d,e = G.a,G.b
-    if   '-lA' in sD:                               ## Aa
+    if   '-lD' in sD:                               ## Da
+      G.equate( G.result('S',c), 'S', e )
+    elif '-lD' in sE:                               ## Db
+      G.equate( G.result('S',d), 'S', c )
+    elif '-lA' in sD:                               ## Aa
       G.equate( G.result('S',c), 'S', e )
       G.equate( G.result('S',d), str(G.getArity(sE))+'\'', G.result('S',e) )
     elif '-lA' in sE:                               ## Ab
@@ -282,7 +286,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('S',d), 'S', G.result('A',e) )
       G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
     else:
-      if sC != sD != sE != 'FAIL':
+      if sC != 'FAIL':   #sC != sD != sE != 'FAIL':
         sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + '.\n' )
 
 

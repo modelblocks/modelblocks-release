@@ -33,12 +33,25 @@ def replaceVarName( struct, xOld, xNew ):
   return tuple( [ replaceVarName(x,xOld,xNew) for x in struct ] )
 
 ## lambda expression format...
-def lambdaFormat( expr ):
-  if len( expr ) == 0:          return 'T'
-  elif isinstance( expr, str ): return expr
-  elif expr[0] == 'lambda':     return '(\\' + expr[1] + ' ' + ' '.join( [ lambdaFormat(subexpr) for subexpr in expr[2:] ] ) + ')'
-  elif expr[0] == 'and':        return '(^ ' +                 ' '.join( [ lambdaFormat(subexpr) for subexpr in expr[1:] if len(subexpr)>0 ] ) + ')'
-  else:                         return '('   + expr[0] + ' ' + ' '.join( [ lambdaFormat(subexpr) for subexpr in expr[1:] ] ) + ')'
+def lambdaFormat( expr, inAnd = False ):
+  if len( expr ) == 0:                 return 'T'
+  elif isinstance( expr, str ):        return expr
+  elif expr[0] == 'lambda':            return '(\\' + expr[1] + ' ' + ' '.join( [ lambdaFormat(subexpr,False) for subexpr in expr[2:] ] ) + ')'
+  elif expr[0] == 'and' and not inAnd: return '(^ ' +                 ' '.join( [ lambdaFormat(subexpr,True ) for subexpr in expr[1:] if len(subexpr)>0 ] ) + ')'
+  elif expr[0] == 'and' and inAnd:     return                         ' '.join( [ lambdaFormat(subexpr,True ) for subexpr in expr[1:] if len(subexpr)>0 ] )
+  else:                                return '('   + expr[0] + ' ' + ' '.join( [ lambdaFormat(subexpr,False) for subexpr in expr[1:] ] ) + ')'
+
+## find unbound vars...
+def findUnboundVars( expr, bound = [] ):
+  if   len( expr ) == 0: return
+  elif isinstance( expr, str ):
+    if expr not in bound: print( 'ERROR: unbound var: ' + expr )
+  elif expr[0] == 'lambda':
+    for subexpr in expr[2:]:
+      findUnboundVars( subexpr, bound + [ expr[1] ] )
+  else:
+    for subexpr in expr[1:]:
+      findUnboundVars( subexpr, bound               )
 
 ## For each discourse graph...
 for line in sys.stdin:
@@ -79,25 +92,25 @@ for line in sys.stdin:
   for Args in Preds:
     for a in Args[2:]:
       if a not in Scopes.values() and a not in Scopes and Nuscos.get(a,'') not in Scopes and ( a in PorQs or Inhs.get(a,{}).get('r','') in PorQs ):
-        print( 'X1: inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
+        if VERBOSE: print( 'X1: inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
         Scopes[ ceiling( Args[1] ) ] = a
   ## Induce scopes upward to non-pred args...
   for Args in Preds:
     for a in Args[2:]:
       if a not in Scopes.values() and a not in Scopes and Nuscos.get(a,'') not in Scopes:
-        print( 'X2: inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
+        if VERBOSE: print( 'X2: inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
         Scopes[ ceiling( Args[1] ) ] = a
   ## Induce scopes upward to anything else not in chain...
   for Args in Preds:
     for a in Args[2:]:
       if a not in Scopes.values() and ceiling( a ) != ceiling( Args[1] ):
-        print( 'X3: inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
+        if VERBOSE: print( 'X3: inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
         Scopes[ ceiling( Args[1] ) ] = a
   ## Induce scopes upward to anything else not in chain...
   for Args in Preds:
     for a in Args[2:]:
       if ceiling( a ) != ceiling( Args[1] ):
-        print( 'X4: inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
+        if VERBOSE: print( 'X4: inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
         Scopes[ ceiling( Args[1] ) ] = a
 
   ## Induce low existential quants when only scope annotated...
@@ -159,6 +172,25 @@ for line in sys.stdin:
         Quants.remove( (q, e, r, s) )
         active = True
 
+    ## I1 rule...
+    for src,lbldst in Inhs.items():
+      for lbl,dst in lbldst.items():
+        if dst not in Inhs and dst not in Abstractions and dst not in Expressions and dst not in Scopes.values() and dst not in [ x for Particips in Preds for x in Particips ]:
+          if VERBOSE: print( 'applying I1 to make \\' + dst + ' True' )
+          Abstractions[ dst ].append( () )
+          active = True
+
+    ## I2,I3 rule...
+    for src,lbldst in Inhs.items():
+      for lbl,dst in lbldst.items():
+        if dst in Expressions:
+          if VERBOSE: print( 'applying I2 to replace ' + dst + ' with ' + src + ' to make ' + str(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
+          Abstractions[ src ].append( replaceVarName( Expressions[dst], dst, src ) )
+          if dst in Scopes and src in [s for q,e,r,s in Quants]:  Scopes[src] = Scopes[dst]     ## I3 rule.
+          del Inhs[src][lbl]
+          if len(Inhs[src])==0: del Inhs[src]
+          active = True
+
     ## S1 rule...
     for q,R,S in list(Translations):
       if S[1] in Scopes:
@@ -168,27 +200,10 @@ for line in sys.stdin:
         Translations.remove( (q, R, S) )
         active = True
 
-    ## I1 rule...
-    for src,lbldst in Inhs.items():
-      for lbl,dst in lbldst.items():
-        if dst not in Inhs and dst not in Abstractions and dst not in Expressions and dst not in Scopes.values() and dst not in [ x for Particips in Preds for x in Particips ]:
-          if VERBOSE: print( 'applying I1 to make \\' + dst + ' True' )
-          Abstractions[ dst ].append( () )
-          active = True
-
-    ## I2 rule...
-    for src,lbldst in Inhs.items():
-      for lbl,dst in lbldst.items():
-        if dst in Expressions:
-          if VERBOSE: print( 'applying I2 to replace ' + dst + ' with ' + src + ' to make ' + str(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
-          Abstractions[ src ].append( replaceVarName( Expressions[dst], dst, src ) )
-          del Inhs[src][lbl]
-          if len(Inhs[src])==0: del Inhs[src]
-          active = True
-
 #print( Translations )
 for expr in Translations:
   print( lambdaFormat(expr) )
+  findUnboundVars( expr )
 
 
 
