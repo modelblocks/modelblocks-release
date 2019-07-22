@@ -56,5 +56,6 @@ for line in sys.stdin:
     G.add( t, ('0' if sentctr<10 else '') + str(sentctr) )
     sentctr += 1
 
+G.finalize()
 print( str(G) )
 

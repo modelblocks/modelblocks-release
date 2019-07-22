@@ -77,13 +77,13 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.rename( id,     G.b )
       G.b = id
       G[G.b,'0'] = sD
-      G.equate( w, 'W', G.b )
+      G.equate( w, 'X', G.b )
       G.a = G.result( 'A', G.b )
       while (G.a,'A') in G: G.a = G[G.a,'A']      ## traverse all non-local dependencies on A
     if f==1:
       G.a = id
       G.equate( sD, '0', G.a )
-      G.equate( w,  'W', G.a )
+      G.equate( w,  'X', G.a )
       ## add all nonlocal dependencies with no nolo on store...
       b = G.a
       for sN in reversed( gcgtree.deps(sD) ):
@@ -312,7 +312,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     return i
 
 
-  def __init__( G, t, sentnumprefix='' ):
+#  def __init__( G, t, sentnumprefix='' ):
+  def add( G, t, sentnumprefix='' ):
     
 #    gcgtree.relabel( t )
     if VERBOSE: print( t )
@@ -324,7 +325,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     ## for each word...
     for x,l in sorted(G):
       ## add predicates by applying morph rules...
-      if l=='W':
+      if l=='X':
         ## rename 'S' and 'r' nodes...
         if (x,    'S') in G: G.rename( x+'s', G[x,    'S'] )
         if (x+'s','r') in G: G.rename( x+'r', G[x+'s','r'] )
@@ -337,7 +338,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           if dep[1]=='s': G.equate( dest+'s', 's', x+'s' )
         G[x,'0'] = re.sub( '-[mnts][0-9]+', '', G[x,'0'] )
         ## obtain pred by applying morph rules to word token...
-        s = re.sub('-l.','',G[x,'0']) + ':' + G[x,'W'].lower()
+        s = re.sub('-l.','',G[x,'0']) + ':' + G[x,'X'].lower()
         eqns = re.sub( '-x.*:', ':', s )
         for xrule in re.split( '-x', G[x,'0'] )[1:] :   #re.findall( '(-x(?:(?!-x).)*)', s ):
           m = re.search( '(.*)%(.*)%(.*)\|(.*)%(.*)%(.*)', xrule )
@@ -407,7 +408,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         '''
     ## for each word...
     for x,l in sorted(G):
-      if l=='W':
+      if l=='X':
         ## rename 'S' node again, in case it changed in above raising attachments...
         if (x,    'S') in G: G.rename( x+'s', G[x    ,'S'] )
         if (x+'s','r') in G: G.rename( x+'r', G[x+'s','r'] )
@@ -432,20 +433,27 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 
 ################################################################################
 
-class SemCueGraph( cuegraph.CueGraph ):
+#class SemCueGraph( cuegraph.CueGraph ):
+class SemCueGraph( StoreStateCueGraph ):
 
   def __init__( H, t=None ):
     if t is not None:
       G = StoreStateCueGraph( t )
       for x,l in sorted( G.keys() ):
-        if l!='A' and l!='B' and l!='S' and l!='W' and l not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' and (l!='0' or x[-1] in 'erABCDEFGHIJKLMNOPQRSTUVWXYZ') and l[-1]!='\'':
+        if l!='A' and l!='B' and l!='S' and l!='X' and l not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' and (l!='0' or x[-1] in 'erABCDEFGHIJKLMNOPQRSTUVWXYZ') and l[-1]!='\'':
           H[x,l] = G[x,l]
 
-  def add( H, t, sentnumprefix ):
-    G = StoreStateCueGraph( t, sentnumprefix )
+#  def add( H, t, sentnumprefix ):
+#    H.add( t, sentnumprefix )
+##    G = StoreStateCueGraph( t, sentnumprefix )
+##    for x,l in sorted( G.keys() ):
+##      if l not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' and (l!='0' or x[-1] in 'erCDEFGHIJKLMNOPQRSTUVWXYZ') and l[-1]!='\'':
+##        H[x,l] = G[x,l]
+
+  def finalize( G ):
     for x,l in sorted( G.keys() ):
-      if l not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' and (l!='0' or x[-1] in 'erCDEFGHIJKLMNOPQRSTUVWXYZ') and l[-1]!='\'':
-        H[x,l] = G[x,l]
+      if l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'erCDEFGHIJKLMNOPQRSTUVWXYZ': 
+        del G[x,l]
 
 ################################################################################
 
