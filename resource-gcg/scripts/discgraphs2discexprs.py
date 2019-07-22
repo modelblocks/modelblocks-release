@@ -114,10 +114,12 @@ for line in sys.stdin:
         Scopes[ ceiling( Args[1] ) ] = a
 
   ## Induce low existential quants when only scope annotated...
-  for nusco in Scopes:
-    if nusco not in [s for q,e,r,s in Quants]:
-      if Inhs[nusco].get('r','') == '': Inhs[nusco]['r'] = nusco+'r'
-      Quants.append( ( 'D:some', nusco+'P', Inhs[nusco]['r'], nusco ) )
+  for Args in Preds:
+    for a in Args[1:]:
+      nusco = a if a in Nuscos.values() else Nuscos.get(a,a)
+      if nusco not in [s for q,e,r,s in Quants]:
+        if Inhs[nusco].get('r','') == '': Inhs[nusco]['r'] = nusco+'r'
+        Quants.append( ( 'D:some', nusco+'P', Inhs[nusco]['r'], nusco ) )
 
   Translations = [ ]
   Abstractions = collections.defaultdict( list )  ## Key is lambda.

@@ -331,8 +331,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         ## apply -n, -m, and -s tags...
         for dep in re.findall( '-[mnts][0-9]+', G[x,'0'] ):
           dest = dep[2:] if len(dep)>4 else sentnumprefix+dep[2:]
-          if dep[1]=='m': G.equate( dest+'r', 'r', x+'r' )
-          if dep[1]=='n': G.equate( dest+'s', 'r', x+'r' )
+          if dep[1]=='m': G.equate( dest+'r', 'n', x+'r' )
+          if dep[1]=='n': G.equate( dest+'s', 'n', x+'r' )
           if dep[1]=='t': G.equate( dest+'r', 's', x+'s' )
           if dep[1]=='s': G.equate( dest+'s', 's', x+'s' )
         G[x,'0'] = re.sub( '-[mnts][0-9]+', '', G[x,'0'] )
