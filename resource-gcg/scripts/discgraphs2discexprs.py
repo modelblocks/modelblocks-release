@@ -84,9 +84,17 @@ for line in sys.stdin:
 
   ## helper function to get most outscoping referent in scope chain, sharing vars Nuscos,Scopes
   def ceiling( x ):
-    if x in Nuscos: return ceiling( Nuscos[x] )
+    if x in Nuscos and x not in Nuscos.values(): return ceiling( Nuscos[x] )
     if x in Scopes: return ceiling( Scopes[x] )
     return x
+
+  ## Copy outgoing Scopes up to 'e' inheritances...
+  for inheritor in Scopes.keys():
+    inherited = Inhs.get(inheritor,{}).get('e','')
+    if inherited == '': inherited = Inhs.get( Inhs.get(inheritor,{}).get('r',''), {} ).get('e','')
+    if inherited != '':
+      Scopes[inherited] = Scopes[inheritor]
+      if VERBOSE: print( 'X0: copying scope up extraction-inheritance ' + inherited + ' to ' + Scopes[inherited] )
 
   ## Induce scopes upward to pred args...
   for Args in Preds:
@@ -188,7 +196,7 @@ for line in sys.stdin:
         if dst in Expressions:
           if VERBOSE: print( 'applying I2 to replace ' + dst + ' with ' + src + ' to make ' + str(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
           Abstractions[ src ].append( replaceVarName( Expressions[dst], dst, src ) )
-          if dst in Scopes and src in [s for q,e,r,s in Quants]:  Scopes[src] = Scopes[dst]     ## I3 rule.
+          if dst in Scopes and src in [s for q,e,r,s in Quants] + [r for q,e,r,s in Quants]:  Scopes[src if src in Nuscos.values() else Nuscos[src]] = Scopes[dst]     ## I3 rule.
           del Inhs[src][lbl]
           if len(Inhs[src])==0: del Inhs[src]
           active = True
