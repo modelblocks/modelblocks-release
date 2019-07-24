@@ -354,10 +354,11 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         s = eqns
 
         if EQN_DEFAULTS and ':' in eqns and '=' not in eqns:
-          if   eqns.startswith('N-b{N-aD}:'): eqns = 'r0='  + eqns + '^r1=1r^r2=1'
-          elif eqns.startswith('A'):          eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
-          elif eqns.startswith('B'):          eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
-          elif eqns.startswith('N'):          eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i+1)+'='+str(i) for i in range(1,G.getArity(G[x,'0'])  ) ] )
+          if   eqns.startswith('N-b{N-aD}:'):    eqns = 'r0='  + eqns + '^r1=1r^r2=1'
+          elif eqns.startswith('N-aD-b{N-aD}:'): eqns = 'r0='  + eqns + '^r1=2r^r2=2'
+          elif eqns.startswith('A'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
+          elif eqns.startswith('B'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
+          elif eqns.startswith('N'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i+1)+'='+str(i) for i in range(1,G.getArity(G[x,'0'])  ) ] )
           sys.stderr.write( 'Inducing default equation: ' + eqns + '\n' )
 
         if '-x' in G[x,'0'] and '=' not in eqns:
