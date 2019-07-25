@@ -43,6 +43,8 @@ uint FEATCONFIG = 0;
 #include <Beam.hpp>
 int COREF_WINDOW = INT_MAX;
 
+#define SERIAL_IO
+
 ////////////////////////////////////////////////////////////////////////////////
 
 char psSpcColonSpc[]  = " : ";
@@ -222,35 +224,39 @@ int main ( int nArgs, char* argv[] ) {
 
   mutex mutexMLSList;
   vector<thread> vtWorkers;  vtWorkers.reserve( numThreads );
-  uint linenum = 0;
 
   if( OUTPUT_MEASURES ) cout << "word pos f j store totsurp" << endl;
 
-  // For each line in stdin...
-  list<list<DelimitedList<psX,ObsWord,psSpace,psX>>> articles; //list of list of sents. each list of sents is an article.
-  list<list<DelimitedList<psX,BeamElement<HiddState>,psLine,psX>>> articleMLSs; //list of MLSs
-
-  /* UNFINISHED SIMPLER IO 
+#ifdef SERIAL_IO
   // List of articles, which are pairs of lists of lists of words and lists of lists of hidd states...
   list< pair< DelimitedList<psX,DelimitedList<psX,ObsWord,psSpace,psX>,psLine,psX>, DelimitedList<psX,DelimitedList<psX,BeamElement<HiddState>,psLine,psX>,psLine,psX> > > corpus;
   // Read in list of articles...
 //  while( cin.peek() != EOF ) { cin >> corpus.emplace( corpus.end() )->first >> "!ARTICLE\n";  cerr<<"i got: "<<corpus.back().first.size()<<endl;  }
-  while( cin.peek() != EOF ) { cin >> "!ARTICLE\n"; corpus.emplace_back(); while( cin.peek() != '!' && cin.peek() != EOF ) cin >> *corpus.back().first.emplace( corpus.back().first.end() ) >> "\n";  cerr<<"i got: "<<corpus.back().first.size()<<endl; }
-
+  while( cin.peek() != EOF ) {
+    if( cin.peek() == '!' ) cin >> "!ARTICLE\n";
+    corpus.emplace_back();
+    while( cin.peek() != '!' && cin.peek() != EOF )  cin >> *corpus.back().first.emplace( corpus.back().first.end() ) >> "\n";
+    cerr<<"I read an article with " << corpus.back().first.size() << " sentences." << endl;
+  }
   // Pointers to 
   auto iartNextToProc = corpus.begin();
   auto iartNextToDump = corpus.begin();
-  */
+#else
+  uint linenum = 0;
+  // For each line in stdin...
+  list<list<DelimitedList<psX,ObsWord,psSpace,psX>>> articles; //list of list of sents. each list of sents is an article.
+  list<list<DelimitedList<psX,BeamElement<HiddState>,psLine,psX>>> articleMLSs; //list of MLSs
+#endif
 
   // loop over threads (each thread gets an article)
-  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [/*&corpus,&iartNextToProc,&iartNextToDump,*/&articleMLSs,&articles,&mutexMLSList,&linenum,numThreads,&matE,&funcO,&modN,&modF,&modP,&modW,&modJ,&modA,&modB] (uint numt) {
+  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&corpus,&iartNextToProc,&iartNextToDump,/*&articleMLSs,&articles,&linenum,*/&mutexMLSList,numThreads,&matE,&funcO,&modN,&modF,&modP,&modW,&modJ,&modA,&modB] (uint numt) {
 
     auto tpLastReport = chrono::high_resolution_clock::now();  // clock for thread heartbeats
 
     // Loop over articles...
     while( true ) {
 
-      /* UNFINISHED SIMPLER IO 
+#ifdef SERIAL_IO
       decltype(corpus)::iterator iart;
       { lock_guard<mutex> guard( mutexMLSList );
         if( iartNextToProc == corpus.end() ) break;
@@ -260,8 +266,7 @@ int main ( int nArgs, char* argv[] ) {
       auto&       MLSs  = iart->second;
 
       int currline = 0;
-      */
-
+#else
       // Read in your worker thread's article in this lock block
       mutexMLSList.lock( );
       if( not ( cin && EOF!=cin.peek() ) ) { mutexMLSList.unlock(); break; }
@@ -284,6 +289,7 @@ int main ( int nArgs, char* argv[] ) {
         sents.emplace_back( lwSent );
       }
       mutexMLSList.unlock();
+#endif
 
       if ( numThreads == 1 ) cerr << "#" << currline;
 
@@ -293,11 +299,14 @@ int main ( int nArgs, char* argv[] ) {
       for (auto& lwSent : sents) {
         currline++;
 
+#ifdef SERIAL_IO
+#else
 //        mutexMLSList.lock();
         // Add mls to list...
         MLSs.emplace_back( ); //establish placeholder for mls for this specific sentence
         auto& mls = MLSs.back();
 //        mutexMLSList.unlock(); 
+#endif
 
         Trellis   beams;  // sequence of beams - each beam is hypotheses at a given timestep
         uint      t=0;    // time step
@@ -519,10 +528,11 @@ int main ( int nArgs, char* argv[] ) {
         //DelimitedList<psX,pair<HiddState,ProbBack>,psLine,psX> mls;
 
         { lock_guard<mutex> guard( mutexMLSList );
-          /* UNFINISHED SIMPLER IO
+#ifdef SERIAL_IO
           auto& mls = *MLSs.emplace( MLSs.end() ); //establish placeholder for mls for this specific sentence
           //auto& mls = MLSs.back();
-          */
+#else
+#endif 
           if( numThreads > 1 ) cerr << "Finished line " << currline << " (" << beams[t].size() << ")..." << endl;
           //cerr << "Worker: " << numt << " attempting to set mls on beams..." << endl;
           beams.setMostLikelySequence( mls, modJ );
@@ -544,13 +554,25 @@ int main ( int nArgs, char* argv[] ) {
         //cerr << "concbug: checking to print..." << endl;
         //finished sent, now looping over global data and see whether it's ready to print
         //see if articles is not empty and first article is not empty and first sentence of first article is done, then print it.
-        /* UNFINISHED SIMPLER IO 
-        while( iartNextToDump->first.size() == iartNextToDump->second.size() )
-          for( auto& mls : (iartNextToDump++)->second )
-            for( auto& be : mls )
-              cout << be.getHidd() << endl;
-//          cout << (iartNextToDump++)->second << endl;
-        */
+#ifdef SERIAL_IO
+        while( iartNextToDump != corpus.end() and iartNextToDump->first.size() == iartNextToDump->second.size() ) {
+//          for( auto& mls : (iartNextToDump++)->second ) {
+//            for( auto& be : mls ) {
+//              cout << be.getHidd() << endl;
+////          cout << (iartNextToDump++)->second << endl;
+          cout << "!ARTICLE" << endl;
+          auto isent = iartNextToDump->first.begin();  // Iterator over sentences.
+          auto imls  = iartNextToDump->second.begin(); // Iterator over most likely sequences.
+          for( ;  isent != iartNextToDump->first.end() and imls != iartNextToDump->second.end();  isent++, imls++ ) {
+            auto iw  = isent->begin();         // Iterator over words.
+            auto ibe = next( imls->begin() );  // Iterator over mls elements.
+            for( ;  iw != isent->end() and ibe != imls->end();  ibe++, iw++ )
+//              cerr << "trying to dump id=" << ibe->getHidd().fifth() << " EVar=" << modJ.getJEOO(ibe->getHidd().fifth()).second().toInt() << endl;
+              cout << *iw << " " << ibe->getHidd().first() << " f" << ibe->getHidd().second() << "&" << ibe->getHidd().third() << "&" << ibe->getHidd().fourth() << " j" << modJ.getJEOO(ibe->getHidd().fifth()) << " " << ibe->getHidd().sixth() << " " << ibe->getHidd().seventh() << " " << ibe->getProb() << endl; //tokdecs output is: WORD HIDDSTATE PROB
+          }
+          iartNextToDump++;
+        }
+#else
         while( articleMLSs.size()>0 && articleMLSs.front().size()>0 && articleMLSs.front().size()==articles.front().size() ) { 
           int u=1; 
           auto ibe=next(articleMLSs.front().front().begin());  //iterator over beam elements?
@@ -568,6 +590,7 @@ int main ( int nArgs, char* argv[] ) {
           } 
         } //closes while articleMLSs 
         //cerr << "concbug: done checking to print." << endl;
+#endif
       } //closes lock guard for print loop  
     } //closes while(True)
   }, numtglobal )); //brace closes for numtglobal

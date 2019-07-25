@@ -92,6 +92,7 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
   if( string::npos != l.find("-lH") ) return 'H';
   if( string::npos != l.find("-lR") ) return 'R';
   if( string::npos != l.find("-lV") ) return 'V';
+  if( string::npos != l.find("-lD") ) return 'N';
   if( string::npos != l.find("-lN") ) return 'N';
   if( string::npos != lSibling.find("-lU") ) return ( getCat(l).getSynArgs()==1 ) ? 'U' : 'u';
   if( string::npos != l.find("-lI") ) return 'I';
@@ -100,7 +101,8 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
   if( string::npos != l.find("-lM") or string::npos != l.find("-lQ") ) return 'M';
   if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos != lParent.find("\\") ) return '0'+getCat( string(lParent,lParent.find("\\")+1).c_str() ).getSynArgs();
   if( (string::npos != l.find("-lA") or string::npos != l.find("-lI")) and string::npos == lParent.find('\\') ) return '0'+getCat( lSibling ).getSynArgs();
-  cerr << "WARNING: unhandled -l tag in label \"" << l << "\"" << " -- assuming identity."<<endl;
+  cout << "(WARNING: unhandled -l tag in label \"" << l << "\"" << " in binary branch -- assuming identity.)"<<endl;
+  cerr << "WARNING: unhandled -l tag in label \"" << l << "\"" << " in binary branch -- assuming identity."<<endl;
   return O_I;
 }
 
@@ -111,7 +113,7 @@ string getUnaryOp ( const Tree<L>& tr ) {
   if( string::npos != L(tr.front()).find("-lQ") ) return "O";
   N n =  CVar( removeLink(tr).c_str() ).getLastNonlocal();
   if( n == N_NONE ) return "";
-  if( (/*tr.front().size()==0 ||*/ tr.front().size()==1 and tr.front().front().size()==0) and n == N("-rN") ) return "0";
+  if( (/*tr.front().size()==0 ||*/ tr.size()==1 and tr.front().size()==1 and tr.front().front().size()==0) and n == N("-rN") ) return "0";
   if( string::npos != L(tr.front()).find("-lE") )
     return ( CVar(removeLink(tr.front()).c_str()).getSynArgs() > CVar(removeLink(tr).c_str()).getSynArgs() ) ? (string(1,'0'+CVar(removeLink(tr.front()).c_str()).getSynArgs())) : "M";
   else return "";
@@ -205,6 +207,19 @@ void calcContext ( Tree<L>& tr,
     annot2tdisc[currentloc] = tDisc; //map current sent,word index to discourse word counter
     W histword(""); //histword will track most recent observed word whose k is unk. will be stored for correct antecedent only.
     if (not isFailTree) {
+      // Print preterminal / fork-phase predictors...
+      FPredictorVec lfp( modF, hvAnt, nullAnt, q );
+      cout<<"----"<<q<<endl;
+#ifdef DENSE_VECTORS
+      cout << "F " << lfp << " " << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);
+      cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) /*getCat(l)*/     << endl;
+      cout << "W " << e << " " << k << " " << getCat(removeLink(l)) /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+#else
+      cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : f" << f << "&" << e << "&" << k << endl;  modF.getResponseIndex(f,e.c_str(),k);
+      cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) << endl;
+      cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " : " << removeLink(tr.front())  << endl;
+#endif
+
       // Print antecedent list...
       for( int i = tDisc; (i > 0 and tDisc-i <= COREF_WINDOW); i-- ) {  //only look back COREF_WINDOW antecedents at max
         if( excludedIndices.find(i) != excludedIndices.end() ) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs. //TODO Could also try making multiple positive examples, creating positive for each pair in chain
@@ -327,7 +342,7 @@ void calcContext ( Tree<L>& tr,
 #endif
 #ifdef DENSE_VECTORS
 //    cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;  modJ.getResponseIndex(j,e.c_str(),oL,oR);
-    cout << "J " << ljp << "|" << j << "&" << e << "&" << oL << "&" << oR << endl;  // modJ.getResponseIndex(j,e.c_str(),oL,oR);
+    cout << "J " << ljp << " " << j << "&" << e << "&" << oL << "&" << oR << endl;  // modJ.getResponseIndex(j,e.c_str(),oL,oR);
 #else
     cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;  modJ.getResponseIndex(j,e.c_str(),oL,oR);
 #endif
@@ -380,8 +395,7 @@ int main ( int nArgs, char* argv[] ) {
   }
   for( auto& l : lLC ) mldLemmaCounts[l.second] = l.first;
 //  cout << matE << endl;
-  int linenum = 0;
-  int discourselinenum = 0; //increments on sentence in discourse/article
+  int linenum = 0;  int discourselinenum = 0; //increments on sentence in discourse/article
   map<string,HVec> annot2kset;
   int tDisc = 0; //increments on word in discourse/article
   vector<trip<Sign,W,K>> antecedentCandidates;

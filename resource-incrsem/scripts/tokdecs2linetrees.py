@@ -34,6 +34,9 @@ def unaryprojlist(e,c):
   return l
 
 for s in sys.stdin:
+    if s == '!ARTICLE\n':
+      print( '!ARTICLE' )
+      continue
     s = re.sub( '/[^ ;/]*\^;[^ ;/]*', '', s )   ## remove bottom carriers. (OBSOLETE)
     s = re.sub( '(?<=.);[ \n]', ' ', s )        ## remove trailing ;
     s = re.sub( '/ ', ' ', s )                  ## remove trailing /
@@ -79,8 +82,8 @@ for s in sys.stdin:
             if '&' in j:
               bJ,eJ,oL,oR = j.split('&')
               ## calc op tags for left and right children...
-              if oL!='I' and oL!='U' and oL!='u' or oR=='U' or oR=='u' : SS[-1].c     += '-l' + ('A' if oL>='1' and oL<='9' else 'U' if oR=='U' or oR=='u' else oL)
-              if oR!='I' and oR!='U' and oR!='u' or oL=='U' or oL=='u' : b            += '-l' + ('A' if oR>='1' and oR<='9' else 'U' if oL=='U' or oL=='u' else oR)
+              if oL!='.' and oL!='U' and oL!='u' or oR=='U' or oR=='u' : SS[-1].c     += '-l' + ('A' if oL>='1' and oL<='9' else 'U' if oR=='U' or oR=='u' else oL)
+              if oR!='.' and oR!='U' and oR!='u' or oL=='U' or oL=='u' : b            += '-l' + ('A' if oR>='1' and oR<='9' else 'U' if oL=='U' or oL=='u' else oR)
               ####sys.stderr.write( j + ' trying SS[-2]:' + ( str(SS[-2]) if len(SS)>1 else '')  + ' SS[-1]:' + (str(SS[-1]) if len(SS)>0 else '') + ' a:' + a + ' b:' + b + '\n' )
               kids = [ SS[-1], Tree(b) ]  # bc b updated
               for c in reversed( unaryprojlist( eJ, getB(SS[-2]) if j.startswith('j1') else a ) ):

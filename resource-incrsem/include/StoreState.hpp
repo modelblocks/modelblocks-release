@@ -411,6 +411,7 @@ class HVec : public DelimitedVector<psX,KVec,psX,psX> {
       at(arg) = funcO( dir + arg, matE( k.getXVar() ) );  //funcO(arg, at(0));
   }
   HVec& add( const HVec& hv ) {
+    if( size() < hv.size() ) resize( hv.size() );
     for( unsigned int arg=0; arg<size() and arg<hv.size(); arg++ ) at(arg).add( hv.at(arg) );
     return *this;
   }
@@ -454,6 +455,8 @@ class Sign : public DelimitedTrip<psX,HVec,psColon,CVar,psX,S,psX> {
   S           getSide ( ) const { return third();  }
   bool        isDitto ( ) const { return getHVec().isDitto(); }
 };
+const Sign aNil( HVec(), cTop, S_A );
+const Sign bNil( HVec(), cTop, S_B );
 const Sign aTop( hvTop, cTop, S_A );
 const Sign bTop( hvTop, cTop, S_B );
 
@@ -555,7 +558,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
       // Create right child base...
       back().base() = bwcParent;  back().base().pop_back();
-      back().base().set( bwcParent.back().getCat(), cB, opL, opR, *this, bwcParent, qPrev.back().apex() );
+      back().base().set( /*bwcParent.back().getCat()*/ getApex().getCat(), cB, opL, opR, *this, bwcParent, qPrev.back().apex() );
       if( getApex().isDitto() and opR!=O_I ) setApex().setHVec() = bwcParent.back().getHVec();               // If base != apex, end ditto.
     }
     else if( j==0 ) {
@@ -590,11 +593,12 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
   // Specification and extraction methods for nonlocal dependencies...
   Sign& setNoloBack ( unsigned int iCarrBack = 0, SignWithCarriers& awc = awcDummy ) {                 // NOTE: getNoloBack(0) is most recent nonlocal dep; i.e. furthest left.
+    int iCalledWith = iCarrBack;
     for( int i = int(awc.size())-1; i-->0; )  if( iCarrBack-- == 0 ) return awc.at(i);
     // Count down from bot...   // Count back from end...                   // Decrement counter and if finished, report...
     for( int d=size(); d--; ) { for( int i=at(d).base().size()-1; i-->0; )  if( iCarrBack-- == 0 ) return( at(d).base().at(i) );
                                 for( int i=at(d).apex().size()-1; i-->0; )  if( iCarrBack-- == 0 ) return( at(d).apex().at(i) ); }
-    cout << "FAILING: " << *this << " " << iCarrBack << " " << awc << endl;
+    cout << "FAILING: " << *this << " " << iCalledWith << " " << awc << endl;
     assert( false );
     return( aDummy );
   }
@@ -613,7 +617,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
     HVec hvTemp;
     for( unsigned int iBack = e.getNoloDelta()-1; e != EVar::eNil; e = e.withoutBot() ) {
       if(      e.bot() == 'O' )   awc.back().setHVec().swap( 1, 2 );
-      else if( e.bot() >= '0' and e.bot() <= '9' and  e.withoutBot() != EVar::eNil and e.withoutBot().top() == 'V' )
+      else if( e.bot() >= '0' and e.bot() <= '9' and  e.withoutBot() != EVar::eNil and e.withoutBot().bot() == 'V' )
                                 { hvTemp = HVec(1);  hvTemp.addSynArg( getDir(e.bot()), awc.back().getHVec() );
                                   e = e.withoutTop();  awc.back().setHVec().addSynArg( -1, hvTemp ); }
       else if( e.bot() == 'V' ) { awc.back().setHVec().addSynArg( -1, getNoloBack(0,awc).getHVec() ); } //awc.erase(awc.end()-1); }
@@ -626,9 +630,9 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       HVec hvTemp;
       if(      e.top() == 'O' )   bwc.back().setHVec().swap( 1, 2 );
       else if( e.top() == 'V' and e.withoutTop() != EVar::eNil and e.withoutTop().top() >= '0' and e.withoutTop().top() <= '9' )
-                                { hvTemp = HVec( 1 );  hvTemp.addSynArg( 1, bwc.back().getHVec() );  bwc.back().setHVec().at( 1 ) = KVec();
+                                { hvTemp = HVec( 1 );  hvTemp.addSynArg( 1, bwc.back().getHVec() );  if( bwc.back().getHVec().size() > 1 ) bwc.back().setHVec().at( 1 ) = KVec();
                                   e = e.withoutTop();  bwc.back().setHVec().addSynArg( -getDir(e.top()), hvTemp ); }
-      else if( e.top() == 'V' ) { setNoloBack(0,bwc).setHVec().addSynArg( 1, bwc.back().getHVec() );  bwc.back().setHVec().at(1) = KVec(); }
+      else if( e.top() == 'V' ) { setNoloBack(0,bwc).setHVec().addSynArg( 1, bwc.back().getHVec() );  if( bwc.back().getHVec().size() > 1 ) bwc.back().setHVec().at( 1 ) = KVec(); }
       else                      { bwc.back().setHVec().addSynArg( -getDir(e.top()), getNoloBack(iBack,bwc).getHVec() );
                                   setNoloBack(iBack++,bwc).setHVec().addSynArg( getDir(e.top()), bwc.back().getHVec() ); }
     }
@@ -648,7 +652,7 @@ void SignWithCarriers::setSign ( CVar cA, O opL, O opR, const Sign& aLchild ) {
 // Implementation of specifier method to allocate apex and carriers...
 void ApexWithCarriers::set ( CVar cB, CVar cA, O opL, O opR, const Sign& aLchild ) {
   int iAdding = cA.getNoloArity() - cB.getNoloArity() - size();
-  if( iAdding > 0 ) insert( end(), iAdding, Sign() );                                                        // Add nolos not in lchild as more recent.
+  if( iAdding > 0 ) insert( end(), iAdding, bNil );                                                        // Add nolos not in lchild as more recent.
 //  *emplace( end() ) = Sign( HVec(), cA, S_A );  setSign( cA, opL, opR, aLchild );
   *emplace( end() ) = Sign( HVec(), cA, S_A );  back().setHVec() = HVec( cA.getSynArgs() + ( ((opL>='1' and opL<='9') or (opR>='1' and opR<='9')) ? 2 : 1 ) );
 
@@ -656,9 +660,9 @@ void ApexWithCarriers::set ( CVar cB, CVar cA, O opL, O opR, const Sign& aLchild
 }
 
 // Implementation of specifier method to allocate base and carriers...
-void BaseWithCarriers::set ( CVar cP, CVar cB, O opL, O opR, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild ) {
-  int iAdding = cB.getNoloArity() - cP.getNoloArity() - size();
-  if( iAdding > 0 ) insert( end(), iAdding, Sign() );                                                        // Add nolos not in parent as more recent.
+void BaseWithCarriers::set ( CVar cA, CVar cB, O opL, O opR, StoreState& ss, const SignWithCarriers& swcParent, const ApexWithCarriers& awcLchild ) {
+  int iAdding = cB.getNoloArity() - cA.getNoloArity() - size();
+  if( iAdding > 0 ) insert( end(), iAdding, aNil );                                                        // Add nolos not in parent as more recent.
   *emplace( end() ) = Sign( HVec(), cB, S_B );  back().setHVec() = HVec( cB.getSynArgs() + 1 );
 
   if( getDir(opR)!=-10 ) back().setHVec().addSynArg( getDir(opR), swcParent.back().getHVec() );              // Apply operator from parent to rchild.
