@@ -520,7 +520,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       reserve( qPrev.size()-1 );
       insert( end(), qPrev.begin(), qPrev.end()-2 );
       emplace( end() )->apex().set( getBase().getCat(), qPrev.back(1).apex().back().getCat(), 'N', 'N', Sign() );
-      if( qPrev.getApex(1).isDitto() ) back().apex().back().setHVec() = qPrev.back(1).base().back().getHVec();
+      if( qPrev.getApex(1).isDitto() ) back().apex().back().setHVec().add( qPrev.back(1).base().back().getHVec() ).add( qPrev.back().apex().back().getHVec() );
       else                             back().apex().back().setHVec() = qPrev.back(1).apex().back().getHVec();
     }
     else {
