@@ -64,6 +64,7 @@ for line in sys.stdin:
   ## Initialize associations...
   PorQs  = collections.defaultdict( list )                                     ## Key is elem pred.
   Scopes = { }                                                                 ## Key is outscoped.
+  Traces = { }                                                                 ## Key is outscoped.
   Inhs   = collections.defaultdict( lambda : collections.defaultdict(float) )  ## Key is inheritor.
   Nuscos = { }
  
@@ -72,6 +73,7 @@ for line in sys.stdin:
     src,lbl,dst = assoc.split(',')
     if lbl.isdigit():  PorQs  [src].insert( int(lbl), dst )   ## Add preds and quants.
     elif lbl == 's':   Scopes [src]      = dst                ## Add scopes.
+    elif lbl == 't':   Traces [src]      = dst                ## Add traces.
     else:              Inhs   [src][lbl] = dst                ## Add inheritances.
     if lbl == 'r':     Nuscos [dst]      = src                ## Index nusco of each restr.
 
@@ -149,6 +151,7 @@ for line in sys.stdin:
       print( 'P = ' + str(sorted(Preds)) )
       print( 'Q = ' + str(sorted(Quants)) )
       print( 'S = ' + str(sorted(Scopes.items())) )
+      print( 'T = ' + str(sorted(Traces.items())) )
       print( 'I = ' + str(sorted(Inhs.items())) )
       print( 'T = ' + str(sorted(Translations)) )
       print( 'A = ' + str(sorted(Abstractions.items())) )
@@ -198,9 +201,10 @@ for line in sys.stdin:
     for src,lbldst in Inhs.items():
       for lbl,dst in lbldst.items():
         if dst in Expressions:
-          if src in Scopes and dst in Scopes:
-            Abstractions[ src ].append( replaceVarName( replaceVarName( Expressions[dst], dst, src ), Scopes[dst], Scopes[src] ) )    ## I4 rule.
-            if VERBOSE: print( 'applying I4 to replace ' + dst + ' with ' + src + ' and ' + Scopes[dst] + ' with ' + Scopes[src] + ' to make ' + str(Abstractions[src][-1]) )
+          if src in Scopes and dst in Traces:
+            Abstractions[ src ].append( replaceVarName( replaceVarName( Expressions[dst], dst, src ), Traces[dst], Scopes[src] ) )    ## I4 rule.
+            if VERBOSE: print( 'applying I4 to replace ' + dst + ' with ' + src + ' and ' + Traces[dst] + ' with ' + Scopes[src] + ' to make ' + str(Abstractions[src][-1]) )
+#            del Traces[dst]
           else:
             if VERBOSE: print( 'applying I2/I3 to replace ' + dst + ' with ' + src + ' to make ' + str(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
             Abstractions[ src ].append( replaceVarName( Expressions[dst], dst, src ) )
@@ -215,7 +219,7 @@ for line in sys.stdin:
         if VERBOSE: print( 'applying S1 to make (\\' + Scopes[ S[1] ] + ' ' + q + ' ' + str(R) + ' ' + str(S) + ')' )
         Abstractions[ Scopes[ S[1] ] ].append( (q, R, S) )
         del Scopes[ S[1] ]
-        if R[1] in Scopes: del Scopes[ R[1] ]   ## Should use 't' trace assoc.
+#        if R[1] in Scopes: del Scopes[ R[1] ]   ## Should use 't' trace assoc.
         Translations.remove( (q, R, S) )
         active = True
 
