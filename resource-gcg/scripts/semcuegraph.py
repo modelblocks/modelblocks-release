@@ -153,9 +153,15 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       else: G.equate( G.result(l,d), l, d+'u' )
       if len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN.endswith('-rN}'):  ## Ee
         G.equate( G.result('S',n), 'e', G.result('r',G.result('S',dLower)) )
+      elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN == '-g{V-aN}':  ## Ef
+#      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
+        G.equate( G.result('1\'',G.result('S',n)), 'e', G.result('S',dLower) )
+#        G.equate( G.result('r',G.result('S',dLower)), '1\'', id+'y' )
+#        G.equate( G.result('S',n), 'e', id+'y' )
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ):  ## Ec,Ed
 #      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
         G.equate( G.result('1\'',G.result('S',n)), 'e', G.result('r',G.result('S',dLower)) )
+        G.equate( G.result('s',G.result('S',dLower)), 's', G.result('1\'',G.result('S',n)) )
 #        G.equate( G.result('r',G.result('S',dLower)), '1\'', id+'y' )
 #        G.equate( G.result('S',n), 'e', id+'y' )
       else:                                                  ## Ea,Eb

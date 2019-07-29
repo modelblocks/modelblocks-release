@@ -53,6 +53,8 @@ def findUnboundVars( expr, bound = [] ):
     for subexpr in expr[1:]:
       findUnboundVars( subexpr, bound               )
 
+################################################################################
+
 ## For each discourse graph...
 for line in sys.stdin:
 
@@ -88,6 +90,7 @@ for line in sys.stdin:
     if x in Scopes: return ceiling( Scopes[x] )
     return x
 
+  '''
   ## Copy outgoing Scopes up to 'e' inheritances...
   for inheritor in Scopes.keys():
     inherited = Inhs.get(inheritor,{}).get('e','')
@@ -95,6 +98,7 @@ for line in sys.stdin:
     if inherited != '':
       Scopes[inherited] = Scopes[inheritor]
       if VERBOSE: print( 'X0: copying scope up extraction-inheritance ' + inherited + ' to ' + Scopes[inherited] )
+  '''
 
   ## Induce scopes upward to pred args...
   for Args in Preds:
@@ -118,7 +122,7 @@ for line in sys.stdin:
   for Args in Preds:
     for a in Args[2:]:
       if ceiling( a ) != ceiling( Args[1] ):
-        if VERBOSE: print( 'X4: inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
+        if VERBOSE: print( 'X4: pred ' + Args[1] + ' inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
         Scopes[ ceiling( Args[1] ) ] = a
 
   ## Induce low existential quants when only scope annotated...
@@ -190,13 +194,17 @@ for line in sys.stdin:
           Abstractions[ dst ].append( () )
           active = True
 
-    ## I2,I3 rule...
+    ## I2,I3,I4 rule...
     for src,lbldst in Inhs.items():
       for lbl,dst in lbldst.items():
         if dst in Expressions:
-          if VERBOSE: print( 'applying I2 to replace ' + dst + ' with ' + src + ' to make ' + str(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
-          Abstractions[ src ].append( replaceVarName( Expressions[dst], dst, src ) )
-          if dst in Scopes and src in [s for q,e,r,s in Quants] + [r for q,e,r,s in Quants]:  Scopes[src if src in Nuscos.values() else Nuscos[src]] = Scopes[dst]     ## I3 rule.
+          if src in Scopes and dst in Scopes:
+            Abstractions[ src ].append( replaceVarName( replaceVarName( Expressions[dst], dst, src ), Scopes[dst], Scopes[src] ) )    ## I4 rule.
+            if VERBOSE: print( 'applying I4 to replace ' + dst + ' with ' + src + ' and ' + Scopes[dst] + ' with ' + Scopes[src] + ' to make ' + str(Abstractions[src][-1]) )
+          else:
+            if VERBOSE: print( 'applying I2/I3 to replace ' + dst + ' with ' + src + ' to make ' + str(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
+            Abstractions[ src ].append( replaceVarName( Expressions[dst], dst, src ) )
+            if dst in Scopes and src in [s for q,e,r,s in Quants] + [r for q,e,r,s in Quants]:  Scopes[src if src in Nuscos.values() else Nuscos[src]] = Scopes[dst]     ## I3 rule.
           del Inhs[src][lbl]
           if len(Inhs[src])==0: del Inhs[src]
           active = True
@@ -207,6 +215,7 @@ for line in sys.stdin:
         if VERBOSE: print( 'applying S1 to make (\\' + Scopes[ S[1] ] + ' ' + q + ' ' + str(R) + ' ' + str(S) + ')' )
         Abstractions[ Scopes[ S[1] ] ].append( (q, R, S) )
         del Scopes[ S[1] ]
+        if R[1] in Scopes: del Scopes[ R[1] ]   ## Should use 't' trace assoc.
         Translations.remove( (q, R, S) )
         active = True
 
