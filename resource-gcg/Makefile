@@ -212,14 +212,14 @@ endef
 .PRECIOUS: %.discgraphs
 %.discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
 	cat $<  |  sed 's/\^g//g' | python $(word 3,$^) -e  >  $@
-%.verbose.discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
+%.verbose-discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
 	cat $<  |  sed 's/\^g//g' | python $(word 3,$^) -d -e  >  $@
 
 #### obtain discourse-aligned lambda expressions
 %.discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
 	cat $<  |  python $(word 2,$^)  |  $(word 3,$^)  >  $@
 #### obtain discourse-aligned lambda expressions
-%.verbose.discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
+%.verbose-discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
 	cat $<  |  python $(word 2,$^) -d  |  $(word 3,$^)  >  $@
 
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies

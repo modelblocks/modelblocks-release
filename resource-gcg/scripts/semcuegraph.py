@@ -156,6 +156,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN == '-g{V-aN}':  ## Ef
 #      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
         G.equate( G.result('1\'',G.result('S',n)), 'e', G.result('S',dLower) )
+        G.equate( G.result('s',G.result('S',dLower)), 's', G.result('1\'',G.result('S',n)) )
 #        G.equate( G.result('r',G.result('S',dLower)), '1\'', id+'y' )
 #        G.equate( G.result('S',n), 'e', id+'y' )
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ):  ## Ec,Ed
@@ -205,7 +206,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     G.equate( sE, '0', G.b )
     if j==0:
       c = id + 'a'
-      G.equate( c, 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or re.match('.*-[ri]N-lH$',sE)!=None else G.b )
+      G.equate( c, 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or re.match('.*-[ri]N-lH$',sE)!=None or re.match('.*-g{.-aN}-lH$',sE)!=None else G.b )
       G.equate( sC, '0', c )
       ## add all nonlocal dependencies with no nolo on store...
       b = c
@@ -217,7 +218,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     if j==1:
       c = G.result( 'B', G.a )
       while (c,'B') in G: c = G[c,'B']            ## if there are non-local dependencies on B
-      G.equate( G.result('A',c), 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or re.match('.*-[ri]N-lH$',sE)!=None else G.b )
+      G.equate( G.result('A',c), 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or re.match('.*-[ri]N-lH$',sE)!=None or re.match('.*{.-aN}-lH$',sE)!=None else G.b )
 
     d,e = G.a,G.b
     if   '-lD' in sD:                               ## Da
@@ -265,6 +266,9 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       if n!='':
         if re.match('.*-[ri]N-lH$',sE)!=None:       ## Hb
           G.equate( G.result('r',G.result('S',n)), 'S', G.result('A',e) )
+          G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
+        elif re.match('.*-g\{.-aN\}-lH$',sE)!=None:   ## Hc
+          G.equate( G.result('S',n), 'S', G.result('A',e) )
           G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
         else:                                       ## Ha
           G.equate( G.result('S',e), 'S', n )
@@ -336,13 +340,14 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         if (x,    'S') in G: G.rename( x+'s', G[x,    'S'] )
         if (x+'s','r') in G: G.rename( x+'r', G[x+'s','r'] )
         ## apply -n, -m, and -s tags...
-        for dep in re.findall( '-[mnts][0-9]+', G[x,'0'] ):
+        for dep in re.findall( '-[mntsw][0-9]+', G[x,'0'] ):
           dest = dep[2:] if len(dep)>4 else sentnumprefix+dep[2:]
           if dep[1]=='m': G.equate( dest+'r', 'n', x+'r' )
           if dep[1]=='n': G.equate( dest+'s', 'n', x+'r' )
           if dep[1]=='t': G.equate( dest+'r', 's', x+'s' )
           if dep[1]=='s': G.equate( dest+'s', 's', x+'s' )
-        G[x,'0'] = re.sub( '-[mnts][0-9]+', '', G[x,'0'] )
+          if dep[1]=='w': G.equate( dest+'s', 'W', x+'s' )
+        G[x,'0'] = re.sub( '-[mntsw][0-9]+', '', G[x,'0'] )
         ## obtain pred by applying morph rules to word token...
         s = re.sub('-l.','',G[x,'0']) + ':' + G[x,'X'].lower()
         eqns = re.sub( '-x.*:', ':', s )
@@ -364,7 +369,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif eqns.startswith('N-aD-b{N-aD}:'): eqns = 'r0='  + eqns + '^r1=2r^r2=2'
           elif eqns.startswith('A'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif eqns.startswith('B'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
-          elif eqns.startswith('N'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i+1)+'='+str(i) for i in range(1,G.getArity(G[x,'0'])  ) ] )
+          elif eqns.startswith('N'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
           sys.stderr.write( 'Inducing default equation: ' + eqns + '\n' )
 
         if '-x' in G[x,'0'] and '=' not in eqns:
