@@ -201,7 +201,11 @@ for line in sys.stdin:
     for src,lbldst in Inhs.items():
       for lbl,dst in lbldst.items():
         if dst in Expressions:
-          if src in Scopes and dst in Traces:
+          if src in Scopes and dst in Traces and Scopes[src] in Scopes and Traces[dst] in Traces:
+            Abstractions[ src ].append( replaceVarName( replaceVarName( replaceVarName( Expressions[dst], dst, src ), Traces[dst], Scopes[src] ), Traces[Traces[dst]], Scopes[Scopes[src]] ) )    ## I4 rule.
+            if VERBOSE: print( 'applying I4 to replace ' + dst + ' with ' + src + ' and ' + Traces[dst] + ' with ' + Scopes[src] + ' and ' + Traces[Traces[dst]] + ' with ' + Scopes[Scopes[src]] + ' to make ' + str(Abstractions[src][-1]) )
+#            del Traces[dst]
+          elif src in Scopes and dst in Traces:
             Abstractions[ src ].append( replaceVarName( replaceVarName( Expressions[dst], dst, src ), Traces[dst], Scopes[src] ) )    ## I4 rule.
             if VERBOSE: print( 'applying I4 to replace ' + dst + ' with ' + src + ' and ' + Traces[dst] + ' with ' + Scopes[src] + ' to make ' + str(Abstractions[src][-1]) )
 #            del Traces[dst]
