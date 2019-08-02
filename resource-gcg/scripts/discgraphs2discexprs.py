@@ -102,6 +102,7 @@ for line in sys.stdin:
       if VERBOSE: print( 'X0: copying scope up extraction-inheritance ' + inherited + ' to ' + Scopes[inherited] )
   '''
 
+  '''
   ## Induce scopes upward to pred args...
   for Args in Preds:
     for a in Args[2:]:
@@ -126,6 +127,45 @@ for line in sys.stdin:
       if ceiling( a ) != ceiling( Args[1] ):
         if VERBOSE: print( 'X4: pred ' + Args[1] + ' inducing scope ' + ceiling( Args[1] ) + ' to ' + a )
         Scopes[ ceiling( Args[1] ) ] = a
+  '''
+  active = True
+  while active:
+    active = False
+    ## Induce scope from argument to argument...
+    for pred in Preds:
+      for xBot in pred[2:]:
+        if xBot in Scopes and xBot not in Scopes.values():
+          for x in pred[2:]:
+            if x not in Scopes and Nuscos.get(x,'') not in Scopes and ceiling( x ) != ceiling( xBot ):
+              print( 'X1: adding scope from ' + ceiling( x ) + ' to ' + xBot )
+              Scopes[ ceiling( x ) ] = xBot
+              active = True
+    ## Induce scope from predicate to argument...
+    if not active:
+      for pred in Preds:
+        for xBot in pred[2:]:
+          if xBot in Scopes and xBot not in Scopes.values():
+            if pred[1] not in Scopes and Nuscos.get(pred[1],'') not in Scopes:
+              print( 'X2: adding scope from ' + ceiling( pred[1] ) + ' to ' + xBot )
+              Scopes[ ceiling( pred[1] ) ] = xBot
+              active = True
+    ## Induce scope from argument to argument...
+    if not active:
+      for pred in Preds:
+        for xBot in pred[2:]:
+          for x in pred[2:]:
+            if x not in Scopes and Nuscos.get(x,'') not in Scopes and ceiling( x ) != ceiling( xBot ):
+              print( 'X3: adding scope from ' + ceiling( x ) + ' to ' + xBot )
+              Scopes[ ceiling( x ) ] = xBot
+              active = True
+    ## Induce scope from predicate to argument...
+    if not active:
+      for pred in Preds:
+        for xBot in pred[2:]:
+          if pred[1] not in Scopes and Nuscos.get(pred[1],'') not in Scopes:
+            print( 'X4: adding scope from ' + ceiling( pred[1] ) + ' to ' + xBot )
+            Scopes[ ceiling( pred[1] ) ] = xBot
+            active = True
 
   ## Induce low existential quants when only scope annotated...
   for Args in Preds:
