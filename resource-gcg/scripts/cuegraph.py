@@ -43,7 +43,9 @@ class CueGraph( dict ):
             G[xNew,l] = G[xOld,l]
             del G[xOld,l]
       for z,l in G.keys():
-        if z == xOld and (xNew,l) in G: G.rename( G[xNew,l], G[xOld,l] )
+        if z == xOld and (xNew,l) in G:
+          G.rename( G[xNew,l], G[xOld,l] )
+          del G[xOld,l]
 
   def result( G, l, x ):                     ## (f_l x)
     if (x,l) not in G:  G[x,l] = x+l         ## if dest is new, name it after source and label
