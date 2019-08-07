@@ -90,6 +90,8 @@ for line in sys.stdin:
   def ceiling( x ):
     if x in Nuscos and x not in Nuscos.values(): return ceiling( Nuscos[x] )
     if x in Scopes: return ceiling( Scopes[x] )
+    if x in Inhs and 'r' in Inhs[x] and Inhs[x]['r'] in Inhs and 'n' in Inhs[Inhs[x]['r']]: return ceiling( Inhs[ Inhs[x]['r'] ]['n'] )
+    if x in Inhs and 'n' in Inhs[x]: return ceiling( Inhs[x]['n'] )
     return x
 
   '''
@@ -137,7 +139,7 @@ for line in sys.stdin:
         if xBot in Scopes and xBot not in Scopes.values():
           for x in pred[2:]:
             if x not in Scopes and Nuscos.get(x,'') not in Scopes and ceiling( x ) != ceiling( xBot ):
-              print( 'X1: adding scope from ' + ceiling( x ) + ' to ' + xBot )
+              if VERBOSE: print( 'X1: pred ' + pred[1] + ' adding scope from ' + ceiling( x ) + ' to ' + xBot )
               Scopes[ ceiling( x ) ] = xBot
               active = True
     ## Induce scope from predicate to argument...
@@ -146,7 +148,7 @@ for line in sys.stdin:
         for xBot in pred[2:]:
           if xBot in Scopes and xBot not in Scopes.values():
             if pred[1] not in Scopes and Nuscos.get(pred[1],'') not in Scopes:
-              print( 'X2: adding scope from ' + ceiling( pred[1] ) + ' to ' + xBot )
+              if VERBOSE: print( 'X2: pred ' + pred[1] + ' adding scope from ' + ceiling( pred[1] ) + ' to ' + xBot )
               Scopes[ ceiling( pred[1] ) ] = xBot
               active = True
     ## Induce scope from argument to argument...
@@ -155,7 +157,7 @@ for line in sys.stdin:
         for xBot in pred[2:]:
           for x in pred[2:]:
             if x not in Scopes and Nuscos.get(x,'') not in Scopes and ceiling( x ) != ceiling( xBot ):
-              print( 'X3: adding scope from ' + ceiling( x ) + ' to ' + xBot )
+              if VERBOSE: print( 'X3: pred ' + pred[1] + ' adding scope from ' + ceiling( x ) + ' to ' + xBot )
               Scopes[ ceiling( x ) ] = xBot
               active = True
     ## Induce scope from predicate to argument...
@@ -163,7 +165,7 @@ for line in sys.stdin:
       for pred in Preds:
         for xBot in pred[2:]:
           if pred[1] not in Scopes and Nuscos.get(pred[1],'') not in Scopes:
-            print( 'X4: adding scope from ' + ceiling( pred[1] ) + ' to ' + xBot )
+            if VERBOSE: print( 'X4: pred ' + pred[1] + ' adding scope from ' + ceiling( pred[1] ) + ' to ' + xBot )
             Scopes[ ceiling( pred[1] ) ] = xBot
             active = True
 
