@@ -68,6 +68,7 @@ for line in sys.stdin:
   Inhs   = collections.defaultdict( lambda : collections.defaultdict(float) )  ## Key is inheritor.
   Nuscos = collections.defaultdict( list )                                     ## Key is restrictor.
   NuscoValues = { }
+  Inheriteds = { }
  
   ## For each assoc...
   for assoc in sorted( line.split(' ') ):
@@ -78,6 +79,7 @@ for line in sys.stdin:
     else:              Inhs   [src][lbl] = dst                ## Add inheritances.
     if lbl == 'r':     Nuscos [dst].append( src )             ## Index nusco of each restr.
     if lbl == 'r':     NuscoValues[src]  = True
+    if lbl == 'e':     Inheriteds[dst]   = True
 
   Preds  = [ ]
   Quants = [ ] 
@@ -147,16 +149,16 @@ for line in sys.stdin:
   active = True
   while active:
     active = False
-    ## Induce scope from argument to argument...
+    ## Induce scope from argument to bot argument...
     for pred in Preds:
       for xHi in pred[2:]:
         if xHi in Scopes and xHi not in Scopes.values():
           for xLo in pred[2:]:
-            if xLo not in Scopes and not any( [x in Scopes for x in Nuscos.get(xLo,[])] ) and ceiling( xLo ) != ceiling( xHi ):
+            if xLo not in Scopes and xHi not in Inheriteds and not any( [x in Scopes for x in Nuscos.get(xLo,[])] ) and ceiling( xLo ) != ceiling( xHi ):
               if VERBOSE: print( 'X1: pred ' + pred[1] + ' adding scope from ' + ceiling( xLo ) + ' to ' + xHi )
               Scopes[ ceiling( xLo ) ] = xHi
               active = True
-    ## Induce scope from predicate to argument...
+    ## Induce scope from predicate to bot argument...
     if not active:
       for pred in Preds:
         for xHi in pred[2:]:
@@ -170,7 +172,7 @@ for line in sys.stdin:
       for pred in Preds:
         for xHi in pred[2:]:
           for xLo in pred[2:]:
-            if xLo not in Scopes and not any( [x in Scopes for x in Nuscos.get(xLo,[])] ) and ceiling( xLo ) != ceiling( xHi ):
+            if xLo not in Scopes and xHi not in Inheriteds and not any( [x in Scopes for x in Nuscos.get(xLo,[])] ) and ceiling( xLo ) != ceiling( xHi ):
               if VERBOSE: print( 'X3: pred ' + pred[1] + ' adding scope from ' + ceiling( xLo ) + ' to ' + xHi )
               Scopes[ ceiling( xLo ) ] = xHi
               active = True
@@ -183,6 +185,7 @@ for line in sys.stdin:
             Scopes[ ceiling( pred[1] ) ] = xHi
             active = True
 
+  '''
   ## Induce low existential quants when only scope annotated...
   for Args in Preds:
     for a in Args[1:]:
@@ -190,6 +193,27 @@ for line in sys.stdin:
       if nusco not in [s for q,e,r,s,n in Quants]:
         if Inhs[nusco].get('r','') == '': Inhs[nusco]['r'] = nusco+'r'
         Quants.append( ( 'D:someQ', nusco+'P', Inhs[nusco]['r'], nusco, '_' ) )
+  '''
+
+  ## Clean up abstract scopes...
+  for x,ly in Inhs.items():
+    for l,y in ly.items():
+      if l=='r' and 'r' in Inhs.get(y,{}): continue  ## don't delete scope with redundant predicative inheritor
+      if y in Scopes and l in 'abcdefghijklmnopqruvxyz':  del Scopes[y]
+
+
+  ## Induce low existential quants when only scope annotated...
+  for xCh,xPt in Scopes.items():
+    if xCh not in [s for q,e,r,s,n in Quants]:
+      if Inhs[xCh].get('r','') == '': Inhs[xCh]['r'] = xCh+'r'
+      Quants.append( ( 'D:someQ', xCh+'P', Inhs[xCh]['r'], xCh, '_' ) )
+  '''  # this adds wack quants to restrictors
+  for xCh,xPt in Scopes.items():
+    if xPt not in [s for q,e,r,s,n in Quants] + [r for q,e,r,s,n in Quants]:
+      if Inhs[xPt].get('r','') == '': Inhs[xPt]['r'] = xPt+'r'
+      Quants.append( ( 'D:someQ', xPt+'P', Inhs[xPt]['r'], xPt, '_' ) )
+  '''
+
 
   Translations = [ ]
   Abstractions = collections.defaultdict( list )  ## Key is lambda.

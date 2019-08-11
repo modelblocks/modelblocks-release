@@ -161,13 +161,13 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 #        G.equate( G.result('S',n), 'e', id+'y' )
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN == '-g{V-gN}':  ## Eg
         G.equate( G.result('S',dLower), 's', G.result('S',n) )
-        G.equate( 'D:some',                      '0', G.result('Q',G.result('S',n)) )
+        G.equate( 'D:someQ',                     '0', G.result('Q',G.result('S',n)) )
         G.equate( G.result('r',G.result('S',n)), '1', G.result('Q',G.result('S',n)) )
         G.equate( G.result('S',n),               '2', G.result('Q',G.result('S',n)) )
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ):  ## Ec,Ed
 #      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
         G.equate( G.result('1\'',G.result('S',n)), 'e', G.result('r',G.result('S',dLower)) )
-        G.equate( G.result('s',G.result('S',dLower)), 's', G.result('1\'',G.result('S',n)) )    ## sent7
+#        G.equate( G.result('s',G.result('S',dLower)), 's', G.result('1\'',G.result('S',n)) )    ## sent7
 #        G.equate( G.result('r',G.result('S',dLower)), '1\'', id+'y' )
 #        G.equate( G.result('S',n), 'e', id+'y' )
       else:                                                  ## Ea,Eb
@@ -485,7 +485,18 @@ class SemCueGraph( StoreStateCueGraph ):
       if l in 's' and (G[x,l],'r') not in G:
         del G[x,l]   ## remove spurious scopes that result from coindexation
         sys.stderr.write( 'removing ' + x + ',' + l + ' because not real\n' )
- 
+    ## inherit all scopes...
+    active = True
+    while active:
+      active = False
+      for (x,l),y in G.items():
+        if l=='r' and (y,'r') in G: continue  ## skip redundant predicative nusco
+        if l in 'abcdefghijklmnopqruvxyz' and (y,'s') in G:  ## no s or t or w
+          #if (x,'s') in G:  sys.stderr.write( 'WARNING: ' + x + ' has departing scope and inherits departing scope from ' + y + '\n' )
+          if (x,'s') not in G:
+            G[x,'s'] = G[y,'s']
+            active = True
+
 ################################################################################
 
 def last_inh( z, G ):
