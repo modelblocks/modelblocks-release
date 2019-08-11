@@ -45,7 +45,7 @@ def lambdaFormat( expr, inAnd = False ):
 def findUnboundVars( expr, bound = [] ):
   if   len( expr ) == 0: return
   elif isinstance( expr, str ):
-    if expr not in bound: print( 'ERROR: unbound var: ' + expr )
+    if expr not in bound and expr != '_': print( 'ERROR: unbound var: ' + expr )
   elif expr[0] == 'lambda':
     for subexpr in expr[2:]:
       findUnboundVars( subexpr, bound + [ expr[1] ] )
@@ -66,7 +66,8 @@ for line in sys.stdin:
   Scopes = { }                                                                 ## Key is outscoped.
   Traces = { }                                                                 ## Key is outscoped.
   Inhs   = collections.defaultdict( lambda : collections.defaultdict(float) )  ## Key is inheritor.
-  Nuscos = { }
+  Nuscos = collections.defaultdict( list )                                     ## Key is restrictor.
+  NuscoValues = { }
  
   ## For each assoc...
   for assoc in sorted( line.split(' ') ):
@@ -75,7 +76,8 @@ for line in sys.stdin:
     elif lbl == 's':   Scopes [src]      = dst                ## Add scopes.
     elif lbl == 't':   Traces [src]      = dst                ## Add traces.
     else:              Inhs   [src][lbl] = dst                ## Add inheritances.
-    if lbl == 'r':     Nuscos [dst]      = src                ## Index nusco of each restr.
+    if lbl == 'r':     Nuscos [dst].append( src )             ## Index nusco of each restr.
+    if lbl == 'r':     NuscoValues[src]  = True
 
   Preds  = [ ]
   Quants = [ ] 
@@ -83,15 +85,27 @@ for line in sys.stdin:
   ## Distinguish preds and quants...
   for elempred,Particips in PorQs.items():
     ## If three participants and last restriction-inherits from previous, it's a quant...
-    if len( Particips ) == 3 and Inhs.get(Particips[2],{}).get('r','') == Particips[1]:  Quants.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
-    else:                                                                                Preds.append ( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
+#    if len( Particips ) == 3 and Inhs.get(Particips[2],{}).get('r','') == Particips[1]:  Quants.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
+    if Particips[0].endswith('Q'):  Quants.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] + (['_'] if len(Particips)<4 else []) ) )
+    else:                           Preds.append ( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
 
   ## helper function to get most outscoping referent in scope chain, sharing vars Nuscos,Scopes
-  def ceiling( x ):
-    if x in Nuscos and x not in Nuscos.values(): return ceiling( Nuscos[x] )
+  def ceiling( x, recursed = False ):
+    ## Choose scope if there is one...
     if x in Scopes: return ceiling( Scopes[x] )
-    if x in Inhs and 'r' in Inhs[x] and Inhs[x]['r'] in Inhs and 'n' in Inhs[Inhs[x]['r']]: return ceiling( Inhs[ Inhs[x]['r'] ]['n'] )
-    if x in Inhs and 'n' in Inhs[x]: return ceiling( Inhs[x]['n'] )
+    ## Try nuclear scope if in restrictor...
+    if not recursed and x in Nuscos and x not in NuscoValues:
+      return ceiling( Nuscos[x][0] )
+#      for y in Nuscos[x]:
+#        best = ceiling( y )
+#        if best != y: return best
+    ## Try each inheritance...
+    for l in Inhs.get(x,{}):
+      best = ceiling( Inhs[x][l], True )
+      if best != Inhs[x][l]: return best
+#    if x in Inhs and 'c' in Inhs[x]: return ceiling( Inhs[x]['c'] )
+#    if x in Inhs and 'r' in Inhs[x] and Inhs[x]['r'] in Inhs and 'n' in Inhs[Inhs[x]['r']]: return ceiling( Inhs[ Inhs[x]['r'] ]['n'] )
+#    if x in Inhs and 'n' in Inhs[x]: return ceiling( Inhs[x]['n'] )
     return x
 
   '''
@@ -135,47 +149,47 @@ for line in sys.stdin:
     active = False
     ## Induce scope from argument to argument...
     for pred in Preds:
-      for xBot in pred[2:]:
-        if xBot in Scopes and xBot not in Scopes.values():
-          for x in pred[2:]:
-            if x not in Scopes and Nuscos.get(x,'') not in Scopes and ceiling( x ) != ceiling( xBot ):
-              if VERBOSE: print( 'X1: pred ' + pred[1] + ' adding scope from ' + ceiling( x ) + ' to ' + xBot )
-              Scopes[ ceiling( x ) ] = xBot
+      for xHi in pred[2:]:
+        if xHi in Scopes and xHi not in Scopes.values():
+          for xLo in pred[2:]:
+            if xLo not in Scopes and not any( [x in Scopes for x in Nuscos.get(xLo,[])] ) and ceiling( xLo ) != ceiling( xHi ):
+              if VERBOSE: print( 'X1: pred ' + pred[1] + ' adding scope from ' + ceiling( xLo ) + ' to ' + xHi )
+              Scopes[ ceiling( xLo ) ] = xHi
               active = True
     ## Induce scope from predicate to argument...
     if not active:
       for pred in Preds:
-        for xBot in pred[2:]:
-          if xBot in Scopes and xBot not in Scopes.values():
-            if pred[1] not in Scopes and Nuscos.get(pred[1],'') not in Scopes:
-              if VERBOSE: print( 'X2: pred ' + pred[1] + ' adding scope from ' + ceiling( pred[1] ) + ' to ' + xBot )
-              Scopes[ ceiling( pred[1] ) ] = xBot
+        for xHi in pred[2:]:
+          if xHi in Scopes and xHi not in Scopes.values():
+            if pred[1] not in Scopes and not any( [x in Scopes for x in Nuscos.get(pred[1],[])] ) and ceiling( pred[1] ) != ceiling( xHi ):
+              if VERBOSE: print( 'X2: pred ' + pred[1] + ' adding scope from ' + ceiling( pred[1] ) + ' to ' + xHi )
+              Scopes[ ceiling( pred[1] ) ] = xHi
               active = True
     ## Induce scope from argument to argument...
     if not active:
       for pred in Preds:
-        for xBot in pred[2:]:
-          for x in pred[2:]:
-            if x not in Scopes and Nuscos.get(x,'') not in Scopes and ceiling( x ) != ceiling( xBot ):
-              if VERBOSE: print( 'X3: pred ' + pred[1] + ' adding scope from ' + ceiling( x ) + ' to ' + xBot )
-              Scopes[ ceiling( x ) ] = xBot
+        for xHi in pred[2:]:
+          for xLo in pred[2:]:
+            if xLo not in Scopes and not any( [x in Scopes for x in Nuscos.get(xLo,[])] ) and ceiling( xLo ) != ceiling( xHi ):
+              if VERBOSE: print( 'X3: pred ' + pred[1] + ' adding scope from ' + ceiling( xLo ) + ' to ' + xHi )
+              Scopes[ ceiling( xLo ) ] = xHi
               active = True
     ## Induce scope from predicate to argument...
     if not active:
       for pred in Preds:
-        for xBot in pred[2:]:
-          if pred[1] not in Scopes and Nuscos.get(pred[1],'') not in Scopes:
-            if VERBOSE: print( 'X4: pred ' + pred[1] + ' adding scope from ' + ceiling( pred[1] ) + ' to ' + xBot )
-            Scopes[ ceiling( pred[1] ) ] = xBot
+        for xHi in pred[2:]:
+          if pred[1] not in Scopes and not any( [x in Scopes for x in Nuscos.get(pred[1],[])] ) and ceiling( pred[1] ) != ceiling( xHi ):
+            if VERBOSE: print( 'X4: pred ' + pred[1] + ' adding scope from ' + ceiling( pred[1] ) + ' to ' + xHi )
+            Scopes[ ceiling( pred[1] ) ] = xHi
             active = True
 
   ## Induce low existential quants when only scope annotated...
   for Args in Preds:
     for a in Args[1:]:
-      nusco = a if a in Nuscos.values() else Nuscos.get(a,a)
-      if nusco not in [s for q,e,r,s in Quants]:
+      nusco = a if a in NuscoValues else Nuscos.get(a,[a])[0]
+      if nusco not in [s for q,e,r,s,n in Quants]:
         if Inhs[nusco].get('r','') == '': Inhs[nusco]['r'] = nusco+'r'
-        Quants.append( ( 'D:some', nusco+'P', Inhs[nusco]['r'], nusco ) )
+        Quants.append( ( 'D:someQ', nusco+'P', Inhs[nusco]['r'], nusco, '_' ) )
 
   Translations = [ ]
   Abstractions = collections.defaultdict( list )  ## Key is lambda.
@@ -224,11 +238,11 @@ for line in sys.stdin:
         active = True
  
     ## Q rule...
-    for q,e,r,s in list(Quants):
+    for q,e,r,s,n in list(Quants):
       if r in Expressions and s in Expressions:
         if VERBOSE: print( 'applying Q to make (' + q + ' (\\' + r + '. ' + str(Expressions[r]) + ') (\\' + s + '. ' + str(Expressions[s]) + '))' )
-        Translations.append( ( q, ( 'lambda', r, Expressions[r] ), ( 'lambda', s, Expressions[s] ) ) )
-        Quants.remove( (q, e, r, s) )
+        Translations.append( ( q, n, ( 'lambda', r, Expressions[r] ), ( 'lambda', s, Expressions[s] ) ) )
+        Quants.remove( (q, e, r, s, n) )
         active = True
 
     ## I1 rule...
@@ -254,19 +268,19 @@ for line in sys.stdin:
           else:
             if VERBOSE: print( 'applying I2/I3 to replace ' + dst + ' with ' + src + ' to make ' + str(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
             Abstractions[ src ].append( replaceVarName( Expressions[dst], dst, src ) )
-            if dst in Scopes and src in [s for q,e,r,s in Quants] + [r for q,e,r,s in Quants]:  Scopes[src if src in Nuscos.values() else Nuscos[src]] = Scopes[dst]     ## I3 rule.
+            if dst in Scopes and src in [s for q,e,r,s,n in Quants] + [r for q,e,r,s,n in Quants]:  Scopes[src if src in NuscoValues else Nuscos[src][0]] = Scopes[dst]     ## I3 rule.
           del Inhs[src][lbl]
           if len(Inhs[src])==0: del Inhs[src]
           active = True
 
     ## S1 rule...
-    for q,R,S in list(Translations):
+    for q,n,R,S in list(Translations):
       if S[1] in Scopes:
         if VERBOSE: print( 'applying S1 to make (\\' + Scopes[ S[1] ] + ' ' + q + ' ' + str(R) + ' ' + str(S) + ')' )
-        Abstractions[ Scopes[ S[1] ] ].append( (q, R, S) )
+        Abstractions[ Scopes[ S[1] ] ].append( (q, n, R, S) )
         del Scopes[ S[1] ]
 #        if R[1] in Scopes: del Scopes[ R[1] ]   ## Should use 't' trace assoc.
-        Translations.remove( (q, R, S) )
+        Translations.remove( (q, n, R, S) )
         active = True
 
 #print( Translations )

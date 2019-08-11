@@ -156,7 +156,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN == '-g{V-aN}':  ## Ef
 #      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
         G.equate( G.result('1\'',G.result('S',n)), 'e', G.result('S',dLower) )
-        G.equate( G.result('s',G.result('S',dLower)), 's', G.result('1\'',G.result('S',n)) )
+#        G.equate( G.result('s',G.result('S',dLower)), 's', G.result('1\'',G.result('S',n)) )    ## sent7
 #        G.equate( G.result('r',G.result('S',dLower)), '1\'', id+'y' )
 #        G.equate( G.result('S',n), 'e', id+'y' )
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN == '-g{V-gN}':  ## Eg
@@ -167,7 +167,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ):  ## Ec,Ed
 #      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
         G.equate( G.result('1\'',G.result('S',n)), 'e', G.result('r',G.result('S',dLower)) )
-        G.equate( G.result('s',G.result('S',dLower)), 's', G.result('1\'',G.result('S',n)) )
+        G.equate( G.result('s',G.result('S',dLower)), 's', G.result('1\'',G.result('S',n)) )    ## sent7
 #        G.equate( G.result('r',G.result('S',dLower)), '1\'', id+'y' )
 #        G.equate( G.result('S',n), 'e', id+'y' )
       else:                                                  ## Ea,Eb
@@ -361,10 +361,11 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         s = re.sub('-l.','',G[x,'0']) + ':' + G[x,'X'].lower()
         eqns = re.sub( '-x.*:', ':', s )
         for xrule in re.split( '-x', G[x,'0'] )[1:] :   #re.findall( '(-x(?:(?!-x).)*)', s ):
-          if   xrule == 'NGEN' :  xrule = '%|Qr0=D:gen^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
-          elif xrule == 'NORD' :  xrule = '%|Qr0=%DecOne^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r'
-          elif xrule == 'QGEN' :  xrule = '%|r0=D:gen^r1=1r^r2=1'
-          elif xrule == 'NCOMP':  xrule = '%|Er0=%^Er1=r^Er2=2^2w=^t=s^Q0=D:someDummy^Q1=31r^Q2=31'
+          if   xrule == 'NGEN' :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
+          elif xrule == 'NORD' :  xrule = '%|Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r'
+          elif xrule == 'QGEN' :  xrule = '%|r0=D:genQ^r1=1r^r2=1'
+          elif xrule == 'NCOMP':  xrule = '%|Er0=%^Er1=r^Er2=2^2w=^t=s^Q0=D:someDummyQ^Q1=31r^Q2=31'
+          elif xrule == 'PRED' :  xrule = '%|r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'COPU' :  xrule = '%|21=1'
           m = re.search( '(.*)%(.*)%(.*)\|(.*)%(.*)%(.*)', xrule )
           if m is not None:
@@ -380,8 +381,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 
         ## apply default lex sems...
         if EQN_DEFAULTS and ':' in eqns and '=' not in eqns:
-          if   eqns.startswith('N-b{N-aD}:'):    eqns = 'r0='  + eqns + '^r1=1r^r2=1'
-          elif eqns.startswith('N-aD-b{N-aD}:'): eqns = 'r0='  + eqns + '^r1=2r^r2=2'
+          if   eqns.startswith('N-b{N-aD}:'):    eqns = 'r0='  + eqns + 'Q^r1=1r^r2=1'
+          elif eqns.startswith('N-aD-b{N-aD}:'): eqns = 'r0='  + eqns + 'Q^r1=2r^r2=2'
           elif eqns.startswith('A'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif eqns.startswith('B'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif eqns.startswith('N'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
@@ -481,7 +482,10 @@ class SemCueGraph( StoreStateCueGraph ):
     for x,l in sorted( G.keys() ):
       if l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'erCDEFGHIJKLMNOPQRSTUVWXYZ': 
         del G[x,l]
-
+      if l in 's' and (G[x,l],'r') not in G:
+        del G[x,l]   ## remove spurious scopes that result from coindexation
+        sys.stderr.write( 'removing ' + x + ',' + l + ' because not real\n' )
+ 
 ################################################################################
 
 def last_inh( z, G ):
