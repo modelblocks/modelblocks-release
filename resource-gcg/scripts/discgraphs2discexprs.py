@@ -199,7 +199,7 @@ for line in sys.stdin:
   for x,ly in Inhs.items():
     for l,y in ly.items():
       if l=='r' and 'r' in Inhs.get(y,{}): continue  ## don't delete scope with redundant predicative inheritor
-      if y in Scopes and l in 'abcdefghijklmnopqruvxyz':  del Scopes[y]
+      if y in Scopes and l in 'abcdefghijklmnopqruvxyz' and y not in [s for q,e,r,s,n in Quants]:  del Scopes[y]
 
 
   ## Induce low existential quants when only scope annotated...
