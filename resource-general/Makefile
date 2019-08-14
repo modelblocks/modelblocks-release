@@ -81,6 +81,9 @@ CCL-SCRIPTS := $(RESOURCE-CCL)/scripts
 RESOURCE-CHILDES := $(abspath $(MBDIR)/resource-childes)
 CHILDES-SCRIPTS := $(RESOURCE-CHILDES)/scripts
 
+RESOURCE-CONLEN := $(abspath $(MBDIR)/resource-conlen)
+CONLEN-SCRIPTS := $(RESOURCE-CONLEN)/scripts
+
 RESOURCE-DMV := $(abspath $(MBDIR)/resource-dmv)
 DMV-SCRIPTS := $(RESOURCE-DMV)/scripts
 
@@ -227,6 +230,7 @@ include $(RESOURCE-ALICE)/Makefile
 include $(RESOURCE-BMMM)/Makefile
 include $(RESOURCE-CCL)/Makefile
 include $(RESOURCE-CHILDES)/Makefile
+include $(RESOURCE-CONLEN)/Makefile
 include $(RESOURCE-DUNDEE)/Makefile
 include $(RESOURCE-TOM)/Makefile
 include $(RESOURCE-DMV)/Makefile
