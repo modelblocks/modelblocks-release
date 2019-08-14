@@ -364,7 +364,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           if   xrule == 'NGEN' :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'NORD' :  xrule = '%|Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r'
           elif xrule == 'QGEN' :  xrule = '%|r0=D:genQ^r1=1r^r2=1'
-          elif xrule == 'NCOMP':  xrule = '%|Er0=%^Er1=r^Er2=2^2w=^t=s^Q0=D:someDummyQ^Q1=31r^Q2=31'
+          elif xrule == 'NCOMP':  xrule = '%|Er0=%^Er1=r^Er2=2^2w=^t=s' #^Q0=D:someDummyQ^Q1=31r^Q2=31'
           elif xrule == 'PRED' :  xrule = '%|r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'COPU' :  xrule = '%|21=1'
           m = re.search( '(.*)%(.*)%(.*)\|(.*)%(.*)%(.*)', xrule )
