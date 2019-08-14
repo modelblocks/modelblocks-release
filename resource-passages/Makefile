@@ -127,13 +127,13 @@ genmodel/%.xlsx: $$(DEP-PASSAGES) $(PASSAGESDIR)/$$*.xlsx $(CONFIGDIR)/user-pass
 	head -n+73 $(word 1, $^) | tail -n+2 | \
 	awk '{for (i=3; i<7; i++) if ($$i != "") print $$i}' FPAT="([^ ]*)|(\"[^\"]+\")" | sed 's/^\"\|\"$$//g' | sed 's/ $$//g' > $@
 
-genmodel/passages72.linetoks: $$(DEP-TOKENIZER) genmodel/passages72.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | genmodel
+%passages72.linetoks: $$(DEP-TOKENIZER) %passages72.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
 	cat $(word 1, $^) | $(word 2, $^) | sed 's/ $$//g' > $@
 
 %passages96.lineitems: genmodel/passages_96concepts.fromxlsx.csv | genmodel
 	tail -n+2 $(word 1, $^) | awk '{print $$3}' FPAT="([^ ]+)|(\"[^\"]+\")" | sed 's/^\"\|\"$$//g' | sed 's/ $$//g' > $@
 
-genmodel/passages96.linetoks: $$(DEP-TOKENIZER) genmodel/passages96.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | genmodel
+%passages96.linetoks: $$(DEP-TOKENIZER) %passages96.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
 	cat $(word 1, $^) | $(word 2, $^) | sed 's/ $$//g' > $@
 
 passages%.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-PASSAGES)/srcmodel/passages$$*.stripped.linetrees passages%.linetoks

@@ -238,15 +238,15 @@ Linetoks:
   blocktitle: Linetoks
   targetsuffix: .linetoks
 endef
-%.linetoks:  $(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.linetrees)))
+%.fromtrees.linetoks:  $(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.linetrees)))
 	cat $<  |  sed 's/(-NONE-[^)]*)//g'  \
 		|  sed 's/([^ ]* //g;s/)//g'  |  sed 's/  */ /g;s/^ *//;s/ *$$//;'  \
 		|  sed 's/!unf! *//g' >  $@
-%.linetoks:  %.linetrees
+%.fromtrees.linetoks:  %.linetrees
 	cat $<  |  sed 's/(-NONE-[^)]*)//g'  \
 		|  sed 's/([^ ]* //g;s/)//g'  |  sed 's/  */ /g;s/^ *//;s/ *$$//;'  \
 		|  sed 's/!unf! *//g' >  $@
-%.morph.linetoks: %.linetoks
+%.fromtrees.morph.linetoks: %.linetoks
 	morfessor -t $^ -T $^ --output-format={analysis}' ' --output-newlines > $@
 
 

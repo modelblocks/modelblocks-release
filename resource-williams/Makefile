@@ -94,12 +94,12 @@ endif
 %williams.itemmeasures: $$(DEP-WILLIAMS) $(WILLIAMSDIR)/williams.itemmeasures $(CONFIGDIR)/user-williams-directory.txt | %
 	cp $< $@
 
-genmodel/williams.lineitems: genmodel/williams.itemmeasures $(GENERAL-SCRIPTS)/itemmeasures2lineitems.py | genmodel
+%williams.lineitems: %williams.itemmeasures $(GENERAL-SCRIPTS)/itemmeasures2lineitems.py
 	cat $< | python $(word 2, $^) > $@
 
-genmodel/williams.linetoks: $(DEP-TOKENIZER) genmodel/williams.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | genmodel
+%williams.linetoks: $$(DEP-TOKENIZER) %williams.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
 	cat $< | $(word 2, $^) | sed 's/ $$//g'> $@
 
-genmodel/williams.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-WILLIAMS)/srcmodel/williams.stripped.linetrees genmodel/williams.linetoks
+%williams.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-WILLIAMS)/srcmodel/williams.stripped.linetrees %williams.linetoks
 	python $^ > $@
 

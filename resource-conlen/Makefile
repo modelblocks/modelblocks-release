@@ -94,12 +94,15 @@ endif
 %conlen.itemmeasures: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length.itemmeasures $(CONFIGDIR)/user-conlen-directory.txt | %
 	cp $< $@
 
-genmodel/conlen%.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_%.lineitems | genmodel
+conlen%.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_$$*.lineitems | genmodel
 	cp $< $@
 
-genmodel/conlen%.linetoks: $$(DEP-TOKENIZER) genmodel/conlen%.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | genmodel
+conlen%.linetoks: $$(DEP-TOKENIZER) conlen%.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
 	cat $< | $(word 2, $^) | sed 's/ $$//g'> $@
 
-genmodel/conlen.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlen.stripped.linetrees genmodel/conlen.linetoks
+genmodel/conlenc.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees genmodel/conlenc.linetoks
+	python $^ > $@
+
+genmodel/conlenjab.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees genmodel/conlenjab.linetoks
 	python $^ > $@
 

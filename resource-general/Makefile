@@ -230,8 +230,8 @@ include $(RESOURCE-ALICE)/Makefile
 include $(RESOURCE-BMMM)/Makefile
 include $(RESOURCE-CCL)/Makefile
 include $(RESOURCE-CHILDES)/Makefile
-include $(RESOURCE-CONLEN)/Makefile
 include $(RESOURCE-DUNDEE)/Makefile
+include $(RESOURCE-CONLEN)/Makefile
 include $(RESOURCE-TOM)/Makefile
 include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
