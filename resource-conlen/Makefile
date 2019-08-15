@@ -98,11 +98,32 @@ conlen%.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_$$*.lineitems 
 	cp $< $@
 
 conlen%.linetoks: $$(DEP-TOKENIZER) conlen%.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
-	cat $< | $(word 2, $^) | sed 's/ $$//g'> $@
+	cat $< | $(word 2, $^) | sed 's/ $$//g' | sed 's/\r //g' > $@
 
-genmodel/conlenc.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees genmodel/conlenc.linetoks
+%conlenc.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees %conlenc.linetoks
 	python $^ > $@
 
-genmodel/conlenjab.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees genmodel/conlenjab.linetoks
+%conlenc.12.stripped.linetrees: $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees
+	head -n 30 $^ > $@
+
+%conlenc.6.stripped.linetrees: $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees
+	head -n 90 $^ | tail -n 60 > $@
+
+%conlenc.4.stripped.linetrees: $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees
+	head -n 180 $^ | tail -n 90 > $@
+
+%conlenc.3.stripped.linetrees: $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees
+	head -n 300 $^ | tail -n 120 > $@
+
+%conlenc.2.stripped.linetrees: $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees
+	head -n 480 $^ | tail -n 180 > $@
+
+%conlenc.1.stripped.linetrees: $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees
+	tail -n 360 $^ > $@
+
+%conlenjab.stripped.linetrees: %conlenc.12.stripped.linetrees %conlenc.4.stripped.linetrees %conlenc.1.stripped.linetrees
+	cat $^ > $@
+
+%conlenjab.linetrees: $(GCG-SCRIPTS)/plugLeaves.py %conlenjab.stripped.linetrees %conlenjab.linetoks
 	python $^ > $@
 
