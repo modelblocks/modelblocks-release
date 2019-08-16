@@ -375,7 +375,7 @@
 (N (A-aN-x-lM (A-aN-x LEAF!)) (N-aD LEAF!))
 (R-aN (R-aN-x-lM (R-aN-x LEAF!)) (R-aN LEAF!))
 (A-aN (A-aN-bN LEAF!) (N-lA (N LEAF!)))
-(N (A-aN-x-lM (A-aN-x LEAF!)) LEAF!)
+(N (A-aN-x-lM (A-aN-x LEAF!)) (N LEAF!))
 (N (A-aN-x-lM (A-aN-x LEAF!)) (N LEAF!))
 (N (N-b{N-aD} LEAF!) (N-aD-lA (N-aD LEAF!)))
 (A-aN (R-aN-x-lM (R-aN-x LEAF!)) (A-aN LEAF!))

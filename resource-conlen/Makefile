@@ -130,4 +130,5 @@ conlen%.linetoks: $$(DEP-TOKENIZER) conlen%.lineitems $(TOKENIZERDIR)/ptb_tokeni
 %conlenncsents.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenncsents.stripped.linetrees %conlenncsents.linetoks
 	python $^ > $@
 
-
+conlenncfilt%itemmeasures: conlenncsents%itemmeasures $(CONLEN-SCRIPTS)/build_nc.py $$(dir %)/conlennc.lineitems
+	cat $< | python $(word 2, $^) $(word 3, $^) > $@
