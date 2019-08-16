@@ -127,3 +127,7 @@ conlen%.linetoks: $$(DEP-TOKENIZER) conlen%.lineitems $(TOKENIZERDIR)/ptb_tokeni
 %conlenjab.linetrees: $(GCG-SCRIPTS)/plugLeaves.py %conlenjab.stripped.linetrees %conlenjab.linetoks
 	python $^ > $@
 
+%conlenncsents.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenncsents.stripped.linetrees %conlenncsents.linetoks
+	python $^ > $@
+
+
