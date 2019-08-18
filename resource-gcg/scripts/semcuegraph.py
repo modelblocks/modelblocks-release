@@ -136,7 +136,9 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result(l,d), l, d+'u' )
 #      G.equate( G.result('r',G.result('r',G.result('S',dLower))), '1\'', G.result('S',dUpper) )
       G.equate( G.result('r',G.result('S',dLower)), '1\'', G.result('S',dUpper) )
-      G.equate( G.result('S',dUpper), 'h', G.result('S',dLower) )              ## hypothetical world inheritance -- should be implemented throughout
+#      G.equate( G.result('S',dUpper), 'h', G.result('S',dLower) )              ## hypothetical world inheritance -- should be implemented throughout
+      G.equate( G.result('S',dUpper), 'H', G.result('S',dLower) )    ## hypothetical world inheritance
+#      G.equate( G.result('S',dUpper), 'h', G.result('r',G.result('E',G.result('S',dLower))) )    ## hypothetical world inheritance
     elif '-lZ' in sD and sC.startswith('R-a'):               ## Zb
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('S',dLower),                 '2', G.result('r',G.result('S',dUpper)) )
@@ -304,6 +306,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('S',d), 'S', c )
       G.equate( G.result('S',d), 'S', G.result('A',e) )
       G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
+    elif sD==',' and sE.endswith('-pPc') or sD==';' and sE.endswith('-pPs'):
+      G.equate( G.result('S',c), 'S', e )
     else:
       if sC != 'FAIL':   #sC != sD != sE != 'FAIL':
         sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + '.\n' )
@@ -362,7 +366,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         eqns = re.sub( '-x.*:', ':', s )
         for xrule in re.split( '-x', G[x,'0'] )[1:] :   #re.findall( '(-x(?:(?!-x).)*)', s ):
           if   xrule == 'NGEN' :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
-          elif xrule == 'NORD' :  xrule = '%|Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r'
+          elif xrule == 'NORD' :  xrule = '%|Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r^Rrh=H'
           elif xrule == 'QGEN' :  xrule = '%|r0=D:genQ^r1=1r^r2=1'
           elif xrule == 'NCOMP':  xrule = '%|Er0=%^Er1=r^Er2=2^2w=^t=s' #^Q0=D:someDummyQ^Q1=31r^Q2=31'
           elif xrule == 'PRED' :  xrule = '%|r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
@@ -385,7 +389,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif eqns.startswith('N-aD-b{N-aD}:'): eqns = 'r0='  + eqns + 'Q^r1=2r^r2=2'
           elif eqns.startswith('A'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif eqns.startswith('B'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
-          elif eqns.startswith('N'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
+          elif eqns.startswith('N'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=H'
           sys.stderr.write( 'Inducing default equation: ' + eqns + '\n' )
 
         if '-x' in G[x,'0'] and '=' not in eqns:
