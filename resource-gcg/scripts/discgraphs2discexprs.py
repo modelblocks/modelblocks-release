@@ -94,6 +94,12 @@ for line in sys.stdin:
     if Particips[0].endswith('Q'):  Quants.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] + (['_'] if len(Particips)<4 else []) ) )
     else:                           Preds.append ( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
 
+  ## Report items...
+  if VERBOSE: 
+    print( 'P = ' + str(sorted(Preds)) )
+    print( 'Q = ' + str(sorted(Quants)) )
+    print( 'S = ' + str(sorted(Scopes.items())) )
+
 
   ## Construct list of inheriting refstates...
   Subs = collections.defaultdict( list )
@@ -101,7 +107,7 @@ for line in sys.stdin:
     for l,xHi in lxHi.items():
       if l!='w':
         Subs[ xHi ].append( xLo )
-  print( 'Subs = ' + str(Subs) )
+#  print( 'Subs = ' + str(Subs) )
 
 
   ## Check that no reft has multiple outscopers...
@@ -119,7 +125,7 @@ for line in sys.stdin:
   for pred in Preds:
     for x in pred[1:]:
       if len( getBossesInChain(x) ) > 1: sys.stderr.write( 'WARNING: ' + x + ' has multiple outscopings in inheritance chain: ' + str( getBossesInChain(x) ) + '\n' )
-      print( x, getBossesInChain(x) )
+      print( 'Bosses of ' + x + ': ' + str(getBossesInChain(x)) )
 
 
   #### II. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
@@ -152,10 +158,8 @@ for line in sys.stdin:
       for xLo in Subs.get(xHi,[]):
         if xLo not in [s for _,_,_,s,_ in Quants]:
           if VERBOSE: print( 'Inheriting quant ' + q + ' from ' + xHi + ' to ' + xLo + '.' )
-#          Quants.append( (q,e,Inhs.get(xLo,{}).get('r','??'),xLo,n) )
           Quants.append( (q,e,r,xLo,n) )
           active = True
-  print( 'Quants = ' + str(Quants) )
   ## Clean up abstract scopes...
 #  for x,ly in Inhs.items():
 #    for l,y in ly.items():
@@ -166,26 +170,79 @@ for line in sys.stdin:
       if VERBOSE: print( 'Removing redundant abstract scope parent ' + Scopes[xHi] + ' from ' + xHi + ' because of inheritance at ' + str(Subs[xHi]) )
       del Scopes[xHi]
   ## Clean up abstract quants...
-  print( Subs )
   for q,e,r,s,n in Quants[:]:
     if s in Subs:
       if VERBOSE: print( 'Removing redundant abstract quant ' + q + ' from ' + s + ' because of inheritance at ' + Subs[s][0] )
       Quants.remove( (q,e,r,s,n) )
-  print( 'Quants = ' + str(Quants) )
+
+  ## Report items...
+  if VERBOSE: 
+    print( 'P = ' + str(sorted(Preds)) )
+    print( 'Q = ' + str(sorted(Quants)) )
+    print( 'S = ' + str(sorted(Scopes.items())) )
 
 
   #### III. INDUCE UNANNOTATED SCOPES AND EXISTENTIAL QUANTS...
 
-  ## Deterministically add scopes from unary elem preds to single participants...
-  for pred in Preds:
-    if len(pred) == 3:
-      print( 'Deterministically scoping unary predicate ' + pred[0] + ' ' + pred[1] + ' to argument ' + pred[2] )
-      Scopes[ pred[1] ] = pred[2]
+  ## Scope ceiling...
+#  def getCeilingFromSup( xLo ):
+#    return getCeilingInChain( Scopes[xLo] ) if xLo in Scopes else sets.Set( [ y  for l,xHi in Inhs.get(xLo,{}).items() if l!='w'  for y in getCeilingFromSup(xHi) ] )
+#  def getCeilingFromSub( xHi ):
+#    return getCeilingInChain( Scopes[xHi] ) if xHi in Scopes else sets.Set( [ y  for xLo in Subs.get(xHi,[])  for y in getCeilingFromSub(xLo) ] )
+#  def getCeilingInChain( x ):
+#    out = getCeilingFromSup( x ) | getCeilingFromSub( x )
+#    return out if len(out)>0 else sets.Set( [x] )
+  def ceiling( x ):
+    y = sorted( getBossesInChain(x) )[0]
+    return y if y in NuscoValues or y not in Nuscos else Nuscos[y][0]
+
+  ## List of referents that are or participate in elementary predications...
+  Referents = sets.Set([ x for pred in Preds for x in pred[1:] ])
+
+  ## List of referents that participate in elementary predications (which does not include the elementary predication itself)...
+  Participants = sets.Set([ x for pred in Preds for x in pred[2:] ])
+
+  AnnotatedCeilings = sets.Set([ ceiling(x) for x in Scopes.keys() ])
+
+  ## List of original (dominant) refts...
+  HighAnnotated = sets.Set([ x for x in Referents if ceiling(x) in AnnotatedCeilings ])  # | sets.Set([ ceiling(x) for x in Scopes.values() ])
+  print( 'HighAnnotated = ' + str(HighAnnotated) )
+
+  ## Deterministically add scopes...
+  active = True
+  while active:
+    active = False
+    for pred in Preds:
+      if pred[1] not in Participants:
+        for xAnn in pred[2:]:
+          if xAnn in HighAnnotated:
+            if len(pred) == 3 and pred[1] not in Scopes:
+              print( 'Unconstrained elementary predicate ' + pred[0] + ' ' + pred[1] + ' deterministically binding self to annotated participant ' + xAnn )
+              Scopes[ pred[1] ] = xAnn
+              active = True
+            if len(pred) == 4:
+              for xNotAnn in pred[2:]:
+                if xAnn != xNotAnn and xNotAnn not in HighAnnotated and pred[1] not in Scopes:
+                  print( 'Unconstrained elementary predicate ' + pred[0] + ' ' + pred[1] + ' deterministically binding self to non-annotated participant ' + xNotAnn + ' given other participant ' + xAnn + ' is annotated.' )
+                  Scopes[ pred[1] ] = xNotAnn
+                  active = True
+
+#    if len(pred) == 3:
+#      print( 'Deterministically scoping unary elementary predicate ' + pred[0] + ' ' + pred[1] + ' to participant ' + pred[2] )
+#      Scopes[ pred[1] ] = pred[2]
+#    elif pred[2] in PorQs:
+#      print( 'Deterministically scoping elementary predicate ' + pred[0] + ' ' + pred[1] + ' to elementary predicate participant ' + pred[2] )
+#      Scopes[ pred[1] ] = pred[2]
+#    elif pred[3] in PorQs:
+#      print( 'Deterministically scoping elementary predicate ' + pred[0] + ' ' + pred[1] + ' to elementary predicate participant ' + pred[3] )
+#      Scopes[ pred[1] ] = pred[3]
 
   ## Recursive function to search space of scopings...
   def tryScope( HypScopes, nest=1 ):
 
     if VERBOSE: print( '  '*nest + str(sorted(HypScopes.items())) )
+
+#    if nest > 8: exit(0)
 
     ## Helper function to determine if one ref state outscopes another
     def reachesFromSup( xLo, xHi ):
@@ -208,7 +265,7 @@ for line in sys.stdin:
       return outscopingFromSup( x ) or outscopingFromSub( x )
     '''
 
-    ## Check that no reft has multiple outscopers...
+    ## Scope Ceiling...
     def getCeilingFromSup( xLo ):
       return getCeilingInChain( HypScopes[xLo] ) if xLo in HypScopes else sets.Set( [ y  for l,xHi in Inhs.get(xLo,{}).items() if l!='w'  for y in getCeilingFromSup(xHi) ] )
     def getCeilingFromSub( xHi ):
@@ -222,18 +279,24 @@ for line in sys.stdin:
 
     unsatisfied = False
     for pred in Preds:  ## Note: for speed, try unary first
-      if len(pred) > 3:
+#      if len(pred) > 3:
         for xHi in pred[2:]:
-          if not reachesInChain( pred[1], xHi ):
-            if VERBOSE: print( '  '*nest + str(nest) + ': ' + pred[0] + ' ' + pred[1] + ' not bound by ' + xHi + ', try ceiling ' + pred[1] + ' = ' + ceiling(pred[1]) + ' to ' + xHi + '...' )
-            unsatisfied = True
-            if ceiling(pred[1]) != ceiling(xHi):   #not outscopingInChain( xHi ):
-              AppendedHypScopes = HypScopes.copy()
-              AppendedHypScopes[ ceiling(pred[1]) ] = xHi
-              OutputScopes = tryScope( AppendedHypScopes, nest+1 )
-              if OutputScopes != None: return OutputScopes
+          if reachesInChain( pred[1], xHi ):
+            if VERBOSE: print( '  '*nest + str(nest) + ': ' + pred[0] + ' ' + pred[1] + ' bound by ' + xHi + '.' )
           else:
-            if VERBOSE: print( '  '*nest + str(nest) + ': ' + pred[0] + ' ' + pred[1] + ' bound by ' + xHi )
+            unsatisfied = True
+            if xHi in HighAnnotated and any([not reachesInChain(pred[1],x) and x not in HighAnnotated for x in pred[2:] if x!=xHi]):
+              if VERBOSE: print( '  '*nest + str(nest) + ': ' + pred[0] + ' ' + pred[1] + ' dispreferred to annotated ' + xHi + ' when other participants not bound: ' + ','.join([x for x in pred[2:] if x!=xHi and not reachesInChain(pred[1],x) and x not in HighAnnotated ]) + '.' )
+            else:
+              if ceiling(pred[1]) == ceiling(xHi):
+                print( '  '*nest + str(nest) + ': dead end -- ' + pred[1] + ' coapical with but not bound by ' + xHi + '.' )
+                return None
+              else:
+                if VERBOSE: print( '  '*nest + str(nest) + ': ' + pred[0] + ' ' + pred[1] + ' not bound by ' + xHi + ', try ceiling ' + pred[1] + ' = ' + ceiling(pred[1]) + ' to ' + xHi + '...' )
+                AppendedHypScopes = HypScopes.copy()
+                AppendedHypScopes[ ceiling(pred[1]) ] = xHi
+                OutputScopes = tryScope( AppendedHypScopes, nest+1 )
+                if OutputScopes != None: return OutputScopes
     if not unsatisfied:
       print( 'Found scoping:' )
       print( HypScopes )
@@ -272,7 +335,6 @@ for line in sys.stdin:
       for xLo in Subs.get(xHi,[]):
         if xLo not in [s for _,_,_,s,_ in Quants]:
           if VERBOSE: print( 'Inheriting quant ' + q + ' from ' + xHi + ' to ' + xLo + '.' )
-#          Quants.append( (q,e,Inhs.get(xLo,{}).get('r','??'),xLo,n) )
           Quants.append( (q,e,r,xLo,n) )
           active = True
   ## Clean up abstract scopes...
