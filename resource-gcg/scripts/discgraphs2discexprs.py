@@ -162,9 +162,9 @@ for line in sys.stdin:
 #      if l=='r' and 'r' in Inhs.get(y,{}): continue  ## don't delete scope with redundant predicative inheritor
 #      if y in Scopes and l in 'abcdefghijklmnopqruvxyz' and y not in [s for q,e,r,s,n in Quants]:
   for xHi in Scopes.keys():
-    for xLo in Subs.get(xHi,[]):
-        if VERBOSE: print( 'Removing redundant abstract scope parent ' + Scopes[xHi] + ' from ' + xHi + ' because of inheritance at ' + xLo )
-        del Scopes[xHi]
+    if xHi in Subs: #for xLo in Subs.get(xHi,[]):
+      if VERBOSE: print( 'Removing redundant abstract scope parent ' + Scopes[xHi] + ' from ' + xHi + ' because of inheritance at ' + str(Subs[xHi]) )
+      del Scopes[xHi]
   ## Clean up abstract quants...
   print( Subs )
   for q,e,r,s,n in Quants[:]:
@@ -277,9 +277,9 @@ for line in sys.stdin:
           active = True
   ## Clean up abstract scopes...
   for xHi in Scopes.keys():
-    for xLo in Subs.get(xHi,[]):
-        if VERBOSE: print( 'Removing redundant abstract scope parent ' + Scopes[xHi] + ' from ' + xHi + ' because of inheritance at ' + xLo )
-        del Scopes[xHi]
+    if xHi in Subs: #for xLo in Subs.get(xHi,[]):
+      if VERBOSE: print( 'Removing redundant abstract scope parent ' + Scopes[xHi] + ' from ' + xHi + ' because of inheritance at ' + str(Subs[xHi]) )
+      del Scopes[xHi]
   ## Clean up abstract quants...
   print( Subs )
   for q,e,r,s,n in Quants[:]:
