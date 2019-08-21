@@ -59,6 +59,8 @@ def findUnboundVars( expr, bound = [] ):
 ## For each discourse graph...
 for line in sys.stdin:
 
+  #### I. READ IN AND PREPROCESS DISCOURSE GRAPH...
+
   line = line.rstrip()
   if VERBOSE: print( 'GRAPH: ' + line )
 
@@ -92,6 +94,200 @@ for line in sys.stdin:
     if Particips[0].endswith('Q'):  Quants.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] + (['_'] if len(Particips)<4 else []) ) )
     else:                           Preds.append ( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
 
+
+  ## Construct list of inheriting refstates...
+  Subs = collections.defaultdict( list )
+  for xLo,lxHi in Inhs.items():
+    for l,xHi in lxHi.items():
+      if l!='w':
+        Subs[ xHi ].append( xLo )
+  print( 'Subs = ' + str(Subs) )
+
+
+  ## Check that no reft has multiple outscopers...
+  def getBossesFromSup( xLo ):
+#    print( 'now getting sup ' + xLo )
+    if xLo in Scopes: return getBossesInChain( Scopes[xLo] )
+    return sets.Set( [ y  for l,xHi in Inhs.get(xLo,{}).items() if l!='w'  for y in getBossesFromSup(xHi) ] )
+  def getBossesFromSub( xHi ):
+#    print( 'now getting sub ' + xHi )
+    if xHi in Scopes: return getBossesInChain( Scopes[xHi] )
+    return sets.Set( [ y  for xLo in Subs.get(xHi,[])  for y in getBossesFromSub(xLo) ] )
+  def getBossesInChain( x ):
+    out = getBossesFromSup(x) | getBossesFromSub(x)
+    return out if len(out)>0 else sets.Set( [x] )
+  for pred in Preds:
+    for x in pred[1:]:
+      if len( getBossesInChain(x) ) > 1: sys.stderr.write( 'WARNING: ' + x + ' has multiple outscopings in inheritance chain: ' + str( getBossesInChain(x) ) + '\n' )
+      print( x, getBossesInChain(x) )
+
+
+  #### II. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
+
+  ## Smite redundant nuscos of predicative noun phrases out of Subs...
+  for xHi,l in Subs.items():
+    for xLo in l:
+      if 'r' in Inhs.get(Inhs.get(xLo,[]).get('r',''),[]):
+        print( 'Smiting ' + xLo + ' out of Subs, for being redundant.' )
+        Subs[xHi].remove(xLo)
+        if len(Subs[xHi])==0: del Subs[xHi]
+  ## Propagate scopes down inheritance chains...
+  active = True
+  while active:
+    active = False
+#    for xLo,lxHi in Inhs.items():
+#      for l,xHi in lxHi.items():
+#        if xHi in Scopes and xLo not in Scopes and l!='w':
+    for xHi in Scopes.keys():
+      for xLo in Subs.get(xHi,[]):
+        if xLo not in Scopes:
+          if VERBOSE: print( 'Inheriting scope parent ' + Scopes[xHi] + ' from ' + xHi + ' to ' + xLo + '.' )
+          Scopes[ xLo ] = Scopes[ xHi ]
+          active = True
+  ## Propagate quants down inheritance chains...
+  active = True
+  while active:
+    active = False
+    for q,e,r,xHi,n in Quants[:]:
+      for xLo in Subs.get(xHi,[]):
+        if xLo not in [s for _,_,_,s,_ in Quants]:
+          if VERBOSE: print( 'Inheriting quant ' + q + ' from ' + xHi + ' to ' + xLo + '.' )
+#          Quants.append( (q,e,Inhs.get(xLo,{}).get('r','??'),xLo,n) )
+          Quants.append( (q,e,r,xLo,n) )
+          active = True
+  print( 'Quants = ' + str(Quants) )
+  ## Clean up abstract scopes...
+#  for x,ly in Inhs.items():
+#    for l,y in ly.items():
+#      if l=='r' and 'r' in Inhs.get(y,{}): continue  ## don't delete scope with redundant predicative inheritor
+#      if y in Scopes and l in 'abcdefghijklmnopqruvxyz' and y not in [s for q,e,r,s,n in Quants]:
+  for xHi in Scopes.keys():
+    for xLo in Subs.get(xHi,[]):
+        if VERBOSE: print( 'Removing redundant abstract scope parent ' + Scopes[xHi] + ' from ' + xHi + ' because of inheritance at ' + xLo )
+        del Scopes[xHi]
+  ## Clean up abstract quants...
+  print( Subs )
+  for q,e,r,s,n in Quants[:]:
+    if s in Subs:
+      if VERBOSE: print( 'Removing redundant abstract quant ' + q + ' from ' + s + ' because of inheritance at ' + Subs[s][0] )
+      Quants.remove( (q,e,r,s,n) )
+  print( 'Quants = ' + str(Quants) )
+
+
+  #### III. INDUCE UNANNOTATED SCOPES AND EXISTENTIAL QUANTS...
+
+  ## Deterministically add scopes from unary elem preds to single participants...
+  for pred in Preds:
+    if len(pred) == 3:
+      print( 'Deterministically scoping unary predicate ' + pred[0] + ' ' + pred[1] + ' to argument ' + pred[2] )
+      Scopes[ pred[1] ] = pred[2]
+
+  ## Recursive function to search space of scopings...
+  def tryScope( HypScopes, nest=1 ):
+
+    if VERBOSE: print( '  '*nest + str(sorted(HypScopes.items())) )
+
+    ## Helper function to determine if one ref state outscopes another
+    def reachesFromSup( xLo, xHi ):
+      #print( '  '*nest + 'reachesFromSup ' + xLo + ' ' + xHi )
+      return True if xLo == xHi else reachesInChain( HypScopes[xLo], xHi ) if xLo in HypScopes else any( [ reachesFromSup(xSup,xHi) for l,xSup in Inhs.get(xLo,{}).items() if l!='w' ] )
+    def reachesFromSub( xLo, xHi ):
+      #print( '  '*nest + 'reachesFromSub ' + xLo + ' ' + xHi )
+      return True if xLo == xHi else reachesInChain( HypScopes[xLo], xHi ) if xLo in HypScopes else any( [ reachesFromSub(xSub,xHi) for xSub in Subs.get(xLo,[]) ] )
+    def reachesInChain( xLo, xHi ):
+      #print( '  '*nest + 'reachesInChain ' + xLo + ' ' + xHi )
+      return reachesFromSup( xLo, xHi ) or reachesFromSub( xLo, xHi )
+
+    '''
+    ## Helper functions to explore inheritance chain...
+    def outscopingFromSup( xLo ):
+      return True if xLo in HypScopes.values() else any( [ outscopingFromSup(xHi) for l,xHi in Inhs.get(xLo,{}).items() if l!='w' ] )
+    def outscopingFromSub( xHi ):
+      return True if xHi in HypScopes.values() else any( [ outscopingFromSub(xLo) for xLo in Subs.get(xHi,[]) ] )
+    def outscopingInChain( x ):
+      return outscopingFromSup( x ) or outscopingFromSub( x )
+    '''
+
+    ## Check that no reft has multiple outscopers...
+    def getCeilingFromSup( xLo ):
+      return getCeilingInChain( HypScopes[xLo] ) if xLo in HypScopes else sets.Set( [ y  for l,xHi in Inhs.get(xLo,{}).items() if l!='w'  for y in getCeilingFromSup(xHi) ] )
+    def getCeilingFromSub( xHi ):
+      return getCeilingInChain( HypScopes[xHi] ) if xHi in HypScopes else sets.Set( [ y  for xLo in Subs.get(xHi,[])  for y in getCeilingFromSub(xLo) ] )
+    def getCeilingInChain( x ):
+      out = getCeilingFromSup( x ) | getCeilingFromSub( x )
+      return out if len(out)>0 else sets.Set( [x] )
+    def ceiling( x ):
+      y = sorted( getCeilingInChain(x) )[0]
+      return y if y in NuscoValues or y not in Nuscos else Nuscos[y][0]
+
+    unsatisfied = False
+    for pred in Preds:  ## Note: for speed, try unary first
+      if len(pred) > 3:
+        for xHi in pred[2:]:
+          if not reachesInChain( pred[1], xHi ):
+            if VERBOSE: print( '  '*nest + str(nest) + ': ' + pred[0] + ' ' + pred[1] + ' not bound by ' + xHi + ', try ceiling ' + pred[1] + ' = ' + ceiling(pred[1]) + ' to ' + xHi + '...' )
+            unsatisfied = True
+            if ceiling(pred[1]) != ceiling(xHi):   #not outscopingInChain( xHi ):
+              AppendedHypScopes = HypScopes.copy()
+              AppendedHypScopes[ ceiling(pred[1]) ] = xHi
+              OutputScopes = tryScope( AppendedHypScopes, nest+1 )
+              if OutputScopes != None: return OutputScopes
+          else:
+            if VERBOSE: print( '  '*nest + str(nest) + ': ' + pred[0] + ' ' + pred[1] + ' bound by ' + xHi )
+    if not unsatisfied:
+      print( 'Found scoping:' )
+      print( HypScopes )
+      return HypScopes
+    return None
+
+  print( 'running tryScope...' )
+  Scopes = tryScope( Scopes )
+  print( Scopes )
+
+  ## Induce low existential quants when only scope annotated...
+  for xCh in sorted(Scopes.keys() + [x for x in Scopes.values() if x in NuscoValues]):  #sorted([ s for s in NuscoValues if 'r' not in Inhs.get(Inhs.get(s,{}).get('r',''),{}) ]): #Scopes:
+    if xCh not in [s for _,_,_,s,_ in Quants]: # + [r for q,e,r,s,n in Quants]:
+      if Inhs[xCh].get('r','') == '': Inhs[xCh]['r'] = xCh+'r'
+      if VERBOSE: print( 'Inducing existential quantifier: ' + str([ 'D:someQ', xCh+'P', Inhs[xCh]['r'], xCh, '_' ]) )
+      Quants.append( ( 'D:someQ', xCh+'P', Inhs[xCh]['r'], xCh, '_' ) )
+
+
+  #### IV. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
+
+  ## Propagate scopes down inheritance chains...
+  active = True
+  while active:
+    active = False
+    for xHi in Scopes.keys():
+      for xLo in Subs.get(xHi,[]):
+        if xLo not in Scopes:
+          if VERBOSE: print( 'Inheriting scope parent ' + Scopes[xHi] + ' from ' + xHi + ' to ' + xLo + '.' )
+          Scopes[ xLo ] = Scopes[ xHi ]
+          active = True
+  ## Propagate quants down inheritance chains...
+  active = True
+  while active:
+    active = False
+    for q,e,r,xHi,n in Quants[:]:
+      for xLo in Subs.get(xHi,[]):
+        if xLo not in [s for _,_,_,s,_ in Quants]:
+          if VERBOSE: print( 'Inheriting quant ' + q + ' from ' + xHi + ' to ' + xLo + '.' )
+#          Quants.append( (q,e,Inhs.get(xLo,{}).get('r','??'),xLo,n) )
+          Quants.append( (q,e,r,xLo,n) )
+          active = True
+  ## Clean up abstract scopes...
+  for xHi in Scopes.keys():
+    for xLo in Subs.get(xHi,[]):
+        if VERBOSE: print( 'Removing redundant abstract scope parent ' + Scopes[xHi] + ' from ' + xHi + ' because of inheritance at ' + xLo )
+        del Scopes[xHi]
+  ## Clean up abstract quants...
+  print( Subs )
+  for q,e,r,s,n in Quants[:]:
+    if s in Subs:
+      if VERBOSE: print( 'Removing redundant abstract quant ' + q + ' from ' + s + ' because of inheritance at ' + Subs[s][0] )
+      Quants.remove( (q,e,r,s,n) )
+  print( 'Quants = ' + str(Quants) )
+
   '''
   ## helper function to get most outscoping referent in scope chain, sharing vars Nuscos,Scopes
   def ceiling( x, recursed = False ):
@@ -113,13 +309,7 @@ for line in sys.stdin:
     return x
   '''
 
-  ## Construct list of inheriting refstates...
-  Subs = collections.defaultdict( list )
-  for xLo,lxHi in Inhs.items():
-    for l,xHi in lxHi.items():
-      if l!='w':
-        Subs[ xHi ].append( xLo )
-  print( 'Subs = ' + str(Subs) )
+  '''
   OrigQuant = { }
   for q,e,r,s,n in Quants:
     OrigQuant[r] = True
@@ -159,25 +349,10 @@ for line in sys.stdin:
   def hasOrigQuantInChain( x ):
     return hasOrigQuantAbove(x) or hasOrigQuantBelow(x)
 
-  ## Check that no reft has multiple outscopers...
-  def getBossesFromSup( xLo ):
-#    print( 'now getting sup ' + xLo )
-    if xLo in Scopes: return getBossesInChain( Scopes[xLo] )
-    return sets.Set( [ y  for l,xHi in Inhs.get(xLo,{}).items() if l!='w'  for y in getBossesFromSup(xHi) ] )
-  def getBossesFromSub( xHi ):
-#    print( 'now getting sub ' + xHi )
-    if xHi in Scopes: return getBossesInChain( Scopes[xHi] )
-    return sets.Set( [ y  for xLo in Subs.get(xHi,[])  for y in getBossesFromSub(xLo) ] )
-  def getBossesInChain( x ):
-    out = getBossesFromSup(x) | getBossesFromSub(x)
-    return out if len(out)>0 else sets.Set( [x] )
-  for pred in Preds:
-    for x in pred[1:]:
-      if len( getBossesInChain(x) ) > 1: sys.stderr.write( 'WARNING: multiple outscopings in inheritance chain: ' + str( getBossesInChain(x) ) + '\n' )
-      print( x, getBossesInChain(x) )
   def ceiling( x ):
     y = sorted( getBossesInChain(x) )[0]
     return y if y in NuscoValues or y not in Nuscos else Nuscos[y][0]
+  '''
 
   '''
   Sepocs = dict( (v,k) for k,v in Scopes.items() )
@@ -194,6 +369,7 @@ for line in sys.stdin:
     return sorted( getMinionsInChain(x) )[0]
   '''
 
+  '''
   ## Find depth of annotated scope associaitons...
   Depths = { }
   def getDepthFromAbove( xLo ):
@@ -205,6 +381,8 @@ for line in sys.stdin:
   def getDepthInChain( x ):
     return max( [ getDepthFromAbove(x), getDepthFromBelow(x) ] )
   '''
+
+  '''
   active = True
   while active:
     active = False
@@ -215,12 +393,13 @@ for line in sys.stdin:
           Depths[x] = d
           active = True
   '''
+  '''
   for pred in Preds:
     for x in pred[1:]:
       Depths[x] = getDepthInChain( x )
   print( 'Depths = ' + str( Depths ) )
-
-
+  '''
+  '''
   active = True
   while active:
     active = False
@@ -229,10 +408,10 @@ for line in sys.stdin:
     for pred in Preds:
         xLo = pred[1]
         if getDepthInChain( xLo ) == 0:
-          l = [ xHi for xHi in pred[2:] if xHi in PorQs and ceiling(xLo) != ceiling(xHi) ]
+          l = [ xHi for xHi in pred[2:] if getDepthInChain(xHi) == 0 and ceiling(xLo) != ceiling(xHi) ]  #if xHi in PorQs and ceiling(xLo) != ceiling(xHi) ]
 #          print( pred[1], xLo, l )
-          if len( l ) == 1:
-            if VERBOSE: print( 'X1: pred ' + pred[1] + ' adding scope from ceiling of ' + xLo + ' = ' + ceiling(xLo) + ' to ' + l[0] ) #floor( max(l)[1] ) )
+          if len( l ) == 1 and l[0] in PorQs:
+            if VERBOSE: print( 'X1: pred ' + pred[1] + ' ' + pred[0] + ' adding scope from ceiling of ' + xLo + ' = ' + ceiling(xLo) + ' to ' + l[0] ) #floor( max(l)[1] ) )
             Scopes[ ceiling(xLo) ] = l[0] #floor( max(l)[1] )
             active = True
 
@@ -240,31 +419,29 @@ for line in sys.stdin:
     for pred in Preds:
         xLo = pred[1]
         if getDepthInChain( xLo ) == 0:
-          l = [ xHi for xHi in pred[2:] if xHi.endswith('\'') and getDepthInChain(xHi)==0 and not hasOrigQuantInChain(xHi) and ceiling(xLo) != ceiling(xHi) ]
+          l = [ xHi for xHi in pred[2:] if getDepthInChain(xHi) == 0 and ceiling(xLo) != ceiling(xHi) and xHi.endswith('\'') and not hasOrigQuantInChain(xHi) ] # and getDepthInChain(xHi)==0 and ceiling(xLo) != ceiling(xHi) ]
 #          print( pred[1], xLo, l )
-          if len( l ) == 1:
-            if VERBOSE: print( 'X2: pred ' + pred[1] + ' adding scope from ceiling of ' + xLo + ' = ' + ceiling(xLo) + ' to ' + l[0] ) #floor( max(l)[1] ) )
+          if len( l ) == 1 and l[0].endswith('\'') and not hasOrigQuantInChain( l[0] ):
+            if VERBOSE: print( 'X2: pred ' + pred[1] + ' ' + pred[0] + ' adding scope from ceiling of ' + xLo + ' = ' + ceiling(xLo) + ' to ' + l[0] ) #floor( max(l)[1] ) )
             Scopes[ ceiling(xLo) ] = l[0] #floor( max(l)[1] )
             active = True
 
     ## Attach arguments to arguments...
-#    for pred in Preds:
-#      for xLo in pred[2:]:
-#        for xHi in pred[2:]:
-
-    l = sorted( [ (getDepthInChain(xHi),xLo not in PorQs,pred[1],xLo,xHi)  for pred in Preds  for xLo in pred[1:]  for xHi in pred[2:]  if xLo != xHi ],  reverse=True )   ## and xLo not in PorQs
+    l = sorted( [ (xLo not in PorQs,hasOrigQuantInChain(ceiling(xHi)),getDepthInChain(xHi),hasOrigQuantInChain(xHi),pred[1],pred[0],xLo,xHi)  for pred in Preds  for xLo in pred[1:]  for xHi in pred[2:]  if xLo != xHi and ceiling(xLo) != ceiling(xHi) ],  reverse=True )   ## and xLo not in PorQs
     print(l)
-    for _,_,pd,xLo,xHi in l:
+    for _,_,_,_,pd1,pd0,xLo,xHi in l:
       if ceiling(xLo) != ceiling(xHi):
 #        print( 'Scos = ' + str(Scopes) )
 #        print( 'Subs = ' + str(Subs) )
 #        print( 'Boss = ' + str(getBossesInChain(xLo)) )
-        if VERBOSE: print( 'X3: pred ' + pd + ' adding scope from ceiling of ' + xLo + ' = ' + ceiling(xLo) + ' to ' + xHi )
+        if VERBOSE: print( 'X3: pred ' + pd1 + ' ' + pd0 + ' adding scope from ceiling of ' + xLo + ' = ' + ceiling(xLo) + ' to ' + xHi )
         Scopes[ ceiling(xLo) ] = xHi
         active = True
         break
+  '''
 
-    '''
+
+  '''
   active = True
   while active:
     active = False
@@ -280,9 +457,9 @@ for line in sys.stdin:
         Scopes[ ceiling(xLo) ] = xHi
         active = True
         break
-    '''
+  '''
 
-    '''
+  '''
     ## Induce scope from argument to argument...
     l = sorted( [ (getDepthInChain(xHi),pred[1],xLo,xHi)  for pred in Preds  for xLo in pred[1:]  for xHi in pred[2:]  if xLo != xHi ],  reverse=True )
     print(l)
@@ -324,9 +501,9 @@ for line in sys.stdin:
             Scopes[ ceiling(xLo) ] = max(l)[1] #floor( max(l)[1] )
 #            Sepocs[ floor( max(l)[1] ) ] = ceiling(xLo)
             active = True
-    '''
+  '''
 
-    '''
+  '''
     ## Induce scope from argument to bot argument...
     for pred in Preds:
      if len(pred) > 3:
@@ -374,21 +551,17 @@ for line in sys.stdin:
             if VERBOSE: print( 'X4: pred ' + pred[1] + ' adding scope from ' + ceiling( pred[1] ) + ' to ' + xHi )
             Scopes[ ceiling( pred[1] ) ] = xHi
             active = True
-    '''
+  '''
 
-  ## Clean up abstract scopes...
-  for x,ly in Inhs.items():
-    for l,y in ly.items():
-      if l=='r' and 'r' in Inhs.get(y,{}): continue  ## don't delete scope with redundant predicative inheritor
-      if y in Scopes and l in 'abcdefghijklmnopqruvxyz' and y not in [s for q,e,r,s,n in Quants]:  del Scopes[y]
-
-
+  '''
   ## Induce low existential quants when only scope annotated...
   for xCh,xPt in Scopes.items():
     if xCh not in [s for q,e,r,s,n in Quants]:
       if Inhs[xCh].get('r','') == '': Inhs[xCh]['r'] = xCh+'r'
       Quants.append( ( 'D:someQ', xCh+'P', Inhs[xCh]['r'], xCh, '_' ) )
+  '''
 
+  #### V. TRANSLATE TO LAMBDA CALCULUS...
 
   Translations = [ ]
   Abstractions = collections.defaultdict( list )  ## Key is lambda.
@@ -406,9 +579,9 @@ for line in sys.stdin:
       print( 'P = ' + str(sorted(Preds)) )
       print( 'Q = ' + str(sorted(Quants)) )
       print( 'S = ' + str(sorted(Scopes.items())) )
-      print( 'T = ' + str(sorted(Traces.items())) )
+      print( 't = ' + str(sorted(Traces.items())) )
       print( 'I = ' + str(sorted(Inhs.items())) )
-      print( 'T = ' + str(sorted(Translations)) )
+      print( 'T =  ' + str(sorted(Translations)) )
       print( 'A = ' + str(sorted(Abstractions.items())) )
       print( 'E = ' + str(sorted(Expressions.items())) )
 
@@ -458,14 +631,14 @@ for line in sys.stdin:
         if dst in Expressions:
           if src in Scopes and dst in Traces and Scopes[src] in Scopes and Traces[dst] in Traces:
             Abstractions[ src ].append( replaceVarName( replaceVarName( replaceVarName( Expressions[dst], dst, src ), Traces[dst], Scopes[src] ), Traces[Traces[dst]], Scopes[Scopes[src]] ) )    ## I4 rule.
-            if VERBOSE: print( 'applying I4 to replace ' + dst + ' with ' + src + ' and ' + Traces[dst] + ' with ' + Scopes[src] + ' and ' + Traces[Traces[dst]] + ' with ' + Scopes[Scopes[src]] + ' to make ' + lambdaFormat(Abstractions[src][-1]) )
+            if VERBOSE: print( 'applying I4 to replace ' + dst + ' with ' + src + ' and ' + Traces[dst] + ' with ' + Scopes[src] + ' and ' + Traces[Traces[dst]] + ' with ' + Scopes[Scopes[src]] + ' to make \\' + src + ' ' + lambdaFormat(Abstractions[src][-1]) )
 #            del Traces[dst]
           elif src in Scopes and dst in Traces:
             Abstractions[ src ].append( replaceVarName( replaceVarName( Expressions[dst], dst, src ), Traces[dst], Scopes[src] ) )    ## I4 rule.
-            if VERBOSE: print( 'applying I4 to replace ' + dst + ' with ' + src + ' and ' + Traces[dst] + ' with ' + Scopes[src] + ' to make ' + lambdaFormat(Abstractions[src][-1]) )
+            if VERBOSE: print( 'applying I4 to replace ' + dst + ' with ' + src + ' and ' + Traces[dst] + ' with ' + Scopes[src] + ' to make \\' + src + ' ' + lambdaFormat(Abstractions[src][-1]) )
 #            del Traces[dst]
           else:
-            if VERBOSE: print( 'applying I2/I3 to replace ' + dst + ' with ' + src + ' to make ' + lambdaFormat(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
+            if VERBOSE: print( 'applying I2/I3 to replace ' + dst + ' with ' + src + ' to make \\' + src + ' ' + lambdaFormat(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
             Abstractions[ src ].append( replaceVarName( Expressions[dst], dst, src ) )
             if dst in Scopes and src in [s for q,e,r,s,n in Quants] + [r for q,e,r,s,n in Quants]:  Scopes[src if src in NuscoValues else Nuscos[src][0]] = Scopes[dst]     ## I3 rule.
           del Inhs[src][lbl]
@@ -479,7 +652,9 @@ for line in sys.stdin:
         Abstractions[ Scopes[ S[1] ] ].append( (q, n, R, S) )
         del Scopes[ S[1] ]
 #        if R[1] in Scopes: del Scopes[ R[1] ]   ## Should use 't' trace assoc.
+        print( 'size of Translations before = ' + str(len(Translations)) )
         Translations.remove( (q, n, R, S) )
+        print( 'size of Translations after = ' + str(len(Translations)) )
         active = True
 
 #print( Translations )

@@ -370,6 +370,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif xrule == 'QGEN' :  xrule = '%|r0=D:genQ^r1=1r^r2=1'
           elif xrule == 'NCOMP':  xrule = '%|Er0=%^Er1=r^Er2=2^2w=^t=s' #^Q0=D:someDummyQ^Q1=31r^Q2=31'
           elif xrule == 'PRED' :  xrule = '%|r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
+          elif xrule == 'NOUN' :  xrule = '%|Er0=%^Er1=r' + ''.join( [ '^Er' +str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=H'
           elif xrule == 'COPU' :  xrule = '%|21=1'
           m = re.search( '(.*)%(.*)%(.*)\|(.*)%(.*)%(.*)', xrule )
           if m is not None:
@@ -486,9 +487,12 @@ class SemCueGraph( StoreStateCueGraph ):
     for x,l in sorted( G.keys() ):
       if l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'erCDEFGHIJKLMNOPQRSTUVWXYZ': 
         del G[x,l]
+      '''
       if l in 's' and (G[x,l],'r') not in G:
         del G[x,l]   ## remove spurious scopes that result from coindexation
         sys.stderr.write( 'removing ' + x + ',' + l + ' because not real\n' )
+      '''
+    '''
     ## inherit all scopes...
     active = True
     while active:
@@ -500,6 +504,7 @@ class SemCueGraph( StoreStateCueGraph ):
           if (x,'s') not in G:
             G[x,'s'] = G[y,'s']
             active = True
+    '''
 
 ################################################################################
 
