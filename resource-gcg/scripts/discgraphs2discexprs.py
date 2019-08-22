@@ -202,15 +202,15 @@ for line in sys.stdin:
   ## List of referents that participate in elementary predications (which does not include the elementary predication itself)...
   Participants = sets.Set([ x for pred in Preds for x in pred[2:] ])
 
-  AnnotatedCeilings = sets.Set([ ceiling(x) for x in Scopes.keys() ])
-
-  ## List of original (dominant) refts...
-  HighAnnotated = sets.Set([ x for x in Referents if ceiling(x) in AnnotatedCeilings ])  # | sets.Set([ ceiling(x) for x in Scopes.values() ])
-  print( 'HighAnnotated = ' + str(HighAnnotated) )
-
   ## Deterministically add scopes...
   active = True
   while active:
+    ## Calculate ceilings of scoped refts...
+    AnnotatedCeilings = sets.Set([ ceiling(x) for x in Scopes.keys() ])
+    ## List of original (dominant) refts...
+    HighAnnotated = sets.Set([ x for x in Referents if ceiling(x) in AnnotatedCeilings ])  # | sets.Set([ ceiling(x) for x in Scopes.values() ])
+    print( 'HighAnnotated = ' + str(HighAnnotated) )
+
     active = False
     for pred in Preds:
       if pred[1] not in Participants:
@@ -298,17 +298,23 @@ for line in sys.stdin:
                 OutputScopes = tryScope( AppendedHypScopes, nest+1 )
                 if OutputScopes != None: return OutputScopes
     if not unsatisfied:
-      print( 'Found scoping:' )
-      print( HypScopes )
+      if VERBOSE: print( 'Found scoping:' )
+      if VERBOSE: print( HypScopes )
       return HypScopes
     return None
 
-  print( 'running tryScope...' )
+  if VERBOSE: print( 'running tryScope...' )
   Scopes = tryScope( Scopes )
-  print( Scopes )
+  if VERBOSE: print( Scopes )
 
   ## Induce low existential quants when only scope annotated...
-  for xCh in sorted(Scopes.keys() + [x for x in Scopes.values() if x in NuscoValues]):  #sorted([ s for s in NuscoValues if 'r' not in Inhs.get(Inhs.get(s,{}).get('r',''),{}) ]): #Scopes:
+#  for xCh in sorted([x if x in NuscoValues else Nuscos[x] for x in Scopes.keys()] + [x for x in Scopes.values() if x in NuscoValues]):  #sorted([ s for s in NuscoValues if 'r' not in Inhs.get(Inhs.get(s,{}).get('r',''),{}) ]): #Scopes:
+#  ScopeyNuscos = [ x for x in NuscoValues if 'r' not in Inhs.get(Inhs.get(x,{}).get('r',''),{}) and (x in Scopes.keys()+Scopes.values() or Inhs.get(x,{}).get('r','') in Scopes.keys()+Scopes.values()) ]
+  ScopeyNuscos = [ x for x in Referents | sets.Set(Inhs.keys()) if (x not in Nuscos or x in NuscoValues) and 'r' not in Inhs.get(Inhs.get(x,{}).get('r',''),{}) and (x in Scopes.keys()+Scopes.values() or Inhs.get(x,{}).get('r','') in Scopes.keys()+Scopes.values()) ]
+  print( 'ScopeyNuscos = ' + str(ScopeyNuscos) )
+  print( 'Referents = ' + str(Referents) )
+  print( 'Nuscos = ' + str(Nuscos) )
+  for xCh in ScopeyNuscos:
     if xCh not in [s for _,_,_,s,_ in Quants]: # + [r for q,e,r,s,n in Quants]:
       if Inhs[xCh].get('r','') == '': Inhs[xCh]['r'] = xCh+'r'
       if VERBOSE: print( 'Inducing existential quantifier: ' + str([ 'D:someQ', xCh+'P', Inhs[xCh]['r'], xCh, '_' ]) )
