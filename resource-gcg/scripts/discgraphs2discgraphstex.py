@@ -12,7 +12,7 @@ for line in sys.stdin:
   print( '\\tikzstyle{reft}=[circle,minimum width=2.5ex,inner sep=0pt,draw]' )
   print( '\\tikzstyle{pred}=[node distance=20mm,anchor=mid]' )
   print( '\\begin{document}' )
-  print( '\\begin{tikzpicture}[scale=3]' )
+  print( '\\begin{tikzpicture}[xscale=3,yscale=5]' )
 
   Nodes = sets.Set()
 
@@ -25,28 +25,23 @@ for line in sys.stdin:
     for x in [src] if lbl=='0' else [src,dst]:
       if x not in Nodes:
         Nodes.add( x )
-        if   x[4]=='a':    print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',' + x[0:2] + '.8) [reft]{' + x[4:] + '};' )
-        elif x[4]=='b':    print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',' + x[0:2] + '.6) [reft]{' + x[4:] + '};' )
-        elif x[4]=='u':    print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',' + x[0:2] + '.6) [reft]{' + x[4:] + '};' )
-        elif x[4:]=='s':   print( '\\node(x' + x + ') at (' + x[2:4] + '.8,' + x[0:2] + '.4) [reft]{' + x[4:] + '};\n' +
-                                  '\\node(w' + x + ')[above of=x' + x + ',pred]{' + x[0:4] + '};\n' +
-                                  '\\draw(w' + x + ') -- node[left]{S} (x' + x + ');' )
-        elif x[4:]=='r':   print( '\\node(x' + x + ') at (' + x[2:4] + '.6,' + x[0:2] + '.4) [reft]{' + x[4:] + '};' )
-        elif x[4:]=='sE':  print( '\\node(x' + x + ') at (' + x[2:4] + '.4,' + x[0:2] + '.4) [reft]{' + x[4:] + '};' )
-        elif x[4:]=='sEr': print( '\\node(x' + x + ') at (' + x[2:4] + '.2,' + x[0:2] + '.4) [reft]{' + x[4:] + '};' )
-        elif x[4:]=='sQ':  print( '\\node(x' + x + ') at (' + x[2:4] + '.6,' + x[0:2] + '.2) [reft]{' + x[4:] + '};' )
-        elif x[4:]=='sQr': print( '\\node(x' + x + ') at (' + x[2:4] + '.4,' + x[0:2] + '.2) [reft]{' + x[4:] + '};' )
-        elif x[4:]=='sR':  print( '\\node(x' + x + ') at (' + x[2:4] + '.8,' + x[0:2] + '.0) [reft]{' + x[4:] + '};' )
-        elif x[4:]=='sRr': print( '\\node(x' + x + ') at (' + x[2:4] + '.6,' + x[0:2] + '.0) [reft]{' + x[4:] + '};' )
-        else:              print( '\\node(x' + x + ') at (' + x[2:4] + '.0,' + x[0:2] + '.4) [reft]{' + x[4:] + '};' )
+        if   x[4]=='a':     print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',-' + x[0:2] + '.0) [reft]{' + x[4:] + '};' )
+        elif x[4]=='b':     print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',-' + x[0:2] + '.2) [reft]{' + x[4:] + '};' )
+        elif x[4]=='u':     print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',-' + x[0:2] + '.2) [reft]{' + x[4:] + '};' )
+        elif x[4:]=='s':    print( '\\node(x' + x + ') at (' + x[2:4] +                                '.8,-' + x[0:2] + '.4) [reft]{' + x[4:] + '};\n' +
+                                   '\\node(w' + x + ')[above of=x' + x + ',pred]{' + x[0:4] + '};\n' +
+                                   '\\draw(w' + x + ') -- node[left]{S} (x' + x + ');' )
+        elif x[4:]=='r':    print( '\\node(x' + x + ') at (' + x[2:4] +                                '.6,-' + x[0:2] + '.4) [reft]{' + x[4:] + '};' )
+        elif x[4:6]=='sE':  print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',-' + x[0:2] + '.4) [reft]{' + x[4:] + '};' )
+        elif x[4:6]=='sQ':  print( '\\node(x' + x + ') at (' + x[2:4] + ('.4' if x[-1]=='r' else '.6') + ',-' + x[0:2] + '.6) [reft]{' + x[4:] + '};' )
+        elif x[4:6]=='sR':  print( '\\node(x' + x + ') at (' + x[2:4] + ('.6' if x[-1]=='r' else '.8') + ',-' + x[0:2] + '.8) [reft]{' + x[4:] + '};' )
+        else:               print( '\\node(x' + x + ') at (' + x[2:4] +                                '.0,-' + x[0:2] + '.4) [reft]{' + x[4:] + '};' )
 
     if lbl == '0':
       print( '\\node(k' + src[0:4] + ')[below of=x' + src + ',pred] {' + dst + '};' )
       print( '\\draw(x' + src + ') -- node[left]{0} (k' + src[0:4] + ');' )
     elif lbl == 's':
       print( '\\draw[magenta](x' + src + ') to [bend ' + ('left' if src[0:4]<dst[0:4] else 'right') + ',near start] node[above]{' + lbl + '} (x' + dst + ');' )
-#    elif lbl == '1' and src[0:4]==dst[0:4]:
-#      print( '\\draw(x' + src + ') -- node[below]{' + lbl + '} (x' + dst + ');' )
     elif lbl >= '1' and lbl <= '9':
       print( '\\draw(x' + src + ') to [bend ' + ('right' if src[0:4]<=dst[0:4] else 'left') + ',near start] node[below]{' + lbl + '} (x' + dst + ');' )
     elif lbl == 'r' and src[0:4]==dst[0:4]:
