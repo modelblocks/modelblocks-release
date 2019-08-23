@@ -492,7 +492,7 @@ class SemCueGraph( StoreStateCueGraph ):
         del G[x,l]   ## remove spurious scopes that result from coindexation
         sys.stderr.write( 'removing ' + x + ',' + l + ' because not real\n' )
       '''
-#    '''
+    '''
     ## inherit all scopes...
     active = True
     while active:
@@ -504,7 +504,7 @@ class SemCueGraph( StoreStateCueGraph ):
           if (x,'s') not in G:
             G[x,'s'] = G[y,'s']
             active = True
-#    '''
+    '''
 
 ################################################################################
 

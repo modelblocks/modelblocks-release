@@ -13,7 +13,7 @@ for line in sys.stdin:
   line = line.rstrip()
 
 #  print( 'digraph G {' )   ## dot
-  print( '\\begin{tikzpicture}[xscale=3,yscale=5]' )
+  print( '\\begin{tikzpicture}[x=1cm,y=3cm,scale=3]' )
 
   Nodes = sets.Set()
 
@@ -26,17 +26,19 @@ for line in sys.stdin:
     for x in [src] if lbl=='0' else [src,dst]:
       if x not in Nodes:
         Nodes.add( x )
-        if   x[4]=='a':     print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',-' + x[0:2] + '.0) [reft]{' + x[4:] + '};' )
-        elif x[4]=='b':     print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',-' + x[0:2] + '.2) [reft]{' + x[4:] + '};' )
-        elif x[4]=='u':     print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',-' + x[0:2] + '.2) [reft]{' + x[4:] + '};' )
-        elif x[4:]=='s':    print( '\\node(x' + x + ') at (' + x[2:4] +                                '.8,-' + x[0:2] + '.4) [reft]{' + x[4:] + '};\n' +
-                                   '\\node(w' + x + ')[above of=x' + x + ',pred]{' + x[0:4] + '};\n' +
-                                   '\\draw(w' + x + ') -- node[left]{S} (x' + x + ');' )
-        elif x[4:]=='r':    print( '\\node(x' + x + ') at (' + x[2:4] +                                '.6,-' + x[0:2] + '.4) [reft]{' + x[4:] + '};' )
-        elif x[4:6]=='sE':  print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',-' + x[0:2] + '.4) [reft]{' + x[4:] + '};' )
-        elif x[4:6]=='sQ':  print( '\\node(x' + x + ') at (' + x[2:4] + ('.4' if x[-1]=='r' else '.6') + ',-' + x[0:2] + '.6) [reft]{' + x[4:] + '};' )
-        elif x[4:6]=='sR':  print( '\\node(x' + x + ') at (' + x[2:4] + ('.6' if x[-1]=='r' else '.8') + ',-' + x[0:2] + '.8) [reft]{' + x[4:] + '};' )
-        else:               print( '\\node(x' + x + ') at (' + x[2:4] +                                '.0,-' + x[0:2] + '.4) [reft]{' + x[4:] + '};' )
+        if   x[4]=='a' and len(x)>7 and x[7]=='Q':  print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',-' + x[0:2] + '.4) [reft]{' + x[4:] + '};' )
+        elif x[4]=='a':                             print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',-' + x[0:2] + '.2) [reft]{' + x[4:] + '};' )
+        elif x[4]=='b' and len(x)>7 and x[7]=='Q':  print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',-' + x[0:2] + '.5) [reft]{' + x[4:] + '};' )
+        elif x[4]=='b':                             print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',-' + x[0:2] + '.3) [reft]{' + x[4:] + '};' )
+        elif x[4]=='u':                             print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',-' + x[0:2] + '.3) [reft]{' + x[4:] + '};' )
+        elif x[4:]=='s':                            print( '\\node(x' + x + ') at (' + x[2:4] +                                '.8,-' + x[0:2] + '.4) [reft]{' + x[4:] + '};\n' +
+                                                           '\\node(w' + x + ')[above of=x' + x + ',pred]{' + x[0:4] + '};\n' +
+                                                           '\\draw(w' + x + ') -- node[left]{S} (x' + x + ');' )
+        elif x[4:]=='r':                            print( '\\node(x' + x + ') at (' + x[2:4] +                                '.6,-' + x[0:2] + '.4) [reft]{' + x[4:] + '};' )
+        elif x[4:6]=='sE':                          print( '\\node(x' + x + ') at (' + x[2:4] + ('.2' if x[-1]=='r' else '.4') + ',-' + x[0:2] + '.4) [reft]{' + x[4:] + '};' )
+        elif x[4:6]=='sQ':                          print( '\\node(x' + x + ') at (' + x[2:4] + ('.4' if x[-1]=='r' else '.6') + ',-' + x[0:2] + '.5) [reft]{' + x[4:] + '};' )
+        elif x[4:6]=='sR':                          print( '\\node(x' + x + ') at (' + x[2:4] + ('.6' if x[-1]=='r' else '.8') + ',-' + x[0:2] + '.6) [reft]{' + x[4:] + '};' )
+        else:                                       print( '\\node(x' + x + ') at (' + x[2:4] +                                '.0,-' + x[0:2] + '.4) [reft]{' + x[4:] + '};' )
 
     if lbl == '0':
       print( '\\node(k' + src[0:4] + ')[below of=x' + src + ',pred] {' + dst + '};' )
