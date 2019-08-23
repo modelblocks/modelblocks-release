@@ -36,26 +36,35 @@ for a in sys.argv:
 
 ################################################################################
 
-discctr = 0
-sentctr = 0
-G       = semcuegraph.SemCueGraph( )
+finished = False
 
-for line in sys.stdin:
+## For each discourse...
+while not finished:
 
-  if '!ARTICLE' in line:
-    if discctr>0: print( str(G) )
-    sentctr = 0
-    G = semcuegraph.SemCueGraph( )
-    discctr += 1
+  ## Define discourse graph...
+  G = semcuegraph.SemCueGraph( )
+  sentctr = 0
 
-  else:
-    if RELABEL: t = gcgtree.GCGTree( line )
+  ## For each sentence...
+  for line in sys.stdin:
+
+    if '!ARTICLE' in line: break
+
+    ## Initialize new tree with or without tree-lengthening...
+    if RELABEL:
+      t = gcgtree.GCGTree( line )
     else:
       t = tree.Tree( )
       t.read( line )
+    ## Add tree to discourse graph...
     G.add( t, ('0' if sentctr<10 else '') + str(sentctr) )
     sentctr += 1
 
-G.finalize()
-print( str(G) )
+  else: finished = True
+
+  ## If discourse contained any sentences, finalize and print graph...
+  if sentctr>0:
+    G.finalize()
+    print( str(G) )
+
 

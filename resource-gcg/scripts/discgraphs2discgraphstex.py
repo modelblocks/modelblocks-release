@@ -1,17 +1,18 @@
 import sys
 import sets
 
+print( '\\documentclass[tikz]{standalone}' )
+print( '\\tikzset{>=latex,->}' )
+print( '\\tikzstyle{reft}=[circle,minimum width=2.5ex,inner sep=0pt,draw]' )
+print( '\\tikzstyle{pred}=[node distance=20mm,anchor=mid]' )
+print( '\\begin{document}' )
+
 ## For each discourse graph...
 for line in sys.stdin:
 
   line = line.rstrip()
 
 #  print( 'digraph G {' )   ## dot
-  print( '\\documentclass[tikz]{standalone}' )
-  print( '\\tikzset{>=latex,->}' )
-  print( '\\tikzstyle{reft}=[circle,minimum width=2.5ex,inner sep=0pt,draw]' )
-  print( '\\tikzstyle{pred}=[node distance=20mm,anchor=mid]' )
-  print( '\\begin{document}' )
   print( '\\begin{tikzpicture}[xscale=3,yscale=5]' )
 
   Nodes = sets.Set()
@@ -50,10 +51,13 @@ for line in sys.stdin:
       print( '\\draw[blue](x' + src + ') to [bend ' + ('right' if src[0:4]<dst[0:4] else 'left') + ',near start] node[below]{' + lbl + '} (x' + dst + ');' )
 
   print( '\\end{tikzpicture}' )
-  print( '\\end{document}' )  
 
 #  print( '{ ordering=out; x->"' + '"[style="invis"]; x->"'.join([ x for x in Nodes if ':' not in x ]) + '"[style="invis"]; }' )  ## dot
 #  print( '{ rank=same; "' + '"; "'.join(sorted([ x for x in Nodes if ':' in x ])) + '"; }' )   ## dot
 
 #  print( '}' )  ## dot
+
+print( '\\end{document}' )  
+
+
 
