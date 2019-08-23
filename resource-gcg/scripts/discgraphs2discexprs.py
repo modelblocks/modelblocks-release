@@ -46,7 +46,7 @@ def lambdaFormat( expr, inAnd = False ):
 def findUnboundVars( expr, bound = [] ):
   if   len( expr ) == 0: return
   elif isinstance( expr, str ):
-    if expr not in bound and expr != '_': print( 'ERROR: unbound var: ' + expr )
+    if expr not in bound and expr != '_': sys.stderr.write( 'ERROR: unbound var: ' + expr + '\n' )
   elif expr[0] == 'lambda':
     for subexpr in expr[2:]:
       findUnboundVars( subexpr, bound + [ expr[1] ] )
@@ -66,8 +66,13 @@ def checkConstsUsed( expr, OrigConsts ):
 
 ################################################################################
 
+discctr = 0
+
 ## For each discourse graph...
 for line in sys.stdin:
+
+  discctr += 1
+  print( '#DISCOURSE ' + str(discctr) )
 
   #### I. READ IN AND PREPROCESS DISCOURSE GRAPH...
 
@@ -137,7 +142,7 @@ for line in sys.stdin:
   for pred in Preds:
     for x in pred[1:]:
       if len( getBossesInChain(x) ) > 1: sys.stderr.write( 'WARNING: ' + x + ' has multiple outscopings in inheritance chain: ' + str( getBossesInChain(x) ) + '\n' )
-      print( 'Bosses of ' + x + ': ' + str(getBossesInChain(x)) )
+      if VERBOSE: print( 'Bosses of ' + x + ': ' + str(getBossesInChain(x)) )
 
 
   #### II. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
@@ -146,7 +151,7 @@ for line in sys.stdin:
   for xHi,l in Subs.items():
     for xLo in l:
       if 'r' in Inhs.get(Inhs.get(xLo,[]).get('r',''),[]):
-        print( 'Smiting ' + xLo + ' out of Subs, for being redundant.' )
+        if VERBOSE: print( 'Smiting ' + xLo + ' out of Subs, for being redundant.' )
         Subs[xHi].remove(xLo)
         if len(Subs[xHi])==0: del Subs[xHi]
   ## Propagate scopes down inheritance chains...
@@ -221,7 +226,7 @@ for line in sys.stdin:
     AnnotatedCeilings = sets.Set([ ceiling(x) for x in Scopes.keys() ])
     ## List of original (dominant) refts...
     HighAnnotated = sets.Set([ x for x in Referents if ceiling(x) in AnnotatedCeilings ])  # | sets.Set([ ceiling(x) for x in Scopes.values() ])
-    print( 'HighAnnotated = ' + str(HighAnnotated) )
+    if VERBOSE: print( 'HighAnnotated = ' + str(HighAnnotated) )
 
     active = False
     for pred in Preds:
@@ -229,13 +234,13 @@ for line in sys.stdin:
         for xAnn in pred[2:]:
           if xAnn in HighAnnotated:
             if len(pred) == 3 and pred[1] not in Scopes:
-              print( 'Unconstrained elementary predicate ' + pred[0] + ' ' + pred[1] + ' deterministically binding self to annotated participant ' + xAnn )
+              if VERBOSE: print( 'Unconstrained elementary predicate ' + pred[0] + ' ' + pred[1] + ' deterministically binding self to annotated participant ' + xAnn )
               Scopes[ pred[1] ] = xAnn
               active = True
             if len(pred) == 4:
               for xNotAnn in pred[2:]:
                 if xAnn != xNotAnn and xNotAnn not in HighAnnotated and pred[1] not in Scopes:
-                  print( 'Unconstrained elementary predicate ' + pred[0] + ' ' + pred[1] + ' deterministically binding self to non-annotated participant ' + xNotAnn + ' given other participant ' + xAnn + ' is annotated.' )
+                  if VERBOSE: print( 'Unconstrained elementary predicate ' + pred[0] + ' ' + pred[1] + ' deterministically binding self to non-annotated participant ' + xNotAnn + ' given other participant ' + xAnn + ' is annotated.' )
                   Scopes[ pred[1] ] = xNotAnn
                   active = True
 
@@ -301,7 +306,7 @@ for line in sys.stdin:
               if VERBOSE: print( '  '*nest + str(nest) + ': ' + pred[0] + ' ' + pred[1] + ' dispreferred to annotated ' + xHi + ' when other participants not bound: ' + ','.join([x for x in pred[2:] if x!=xHi and not reachesInChain(pred[1],x) and x not in HighAnnotated ]) + '.' )
             else:
               if ceiling(pred[1]) == ceiling(xHi):
-                print( '  '*nest + str(nest) + ': dead end -- ' + pred[1] + ' coapical with but not bound by ' + xHi + '.' )
+                if VERBOSE: print( '  '*nest + str(nest) + ': dead end -- ' + pred[1] + ' coapical with but not bound by ' + xHi + '.' )
                 return None
               else:
                 if VERBOSE: print( '  '*nest + str(nest) + ': ' + pred[0] + ' ' + pred[1] + ' not bound by ' + xHi + ', try ceiling ' + pred[1] + ' = ' + ceiling(pred[1]) + ' to ' + xHi + '...' )
@@ -323,9 +328,9 @@ for line in sys.stdin:
 #  for xCh in sorted([x if x in NuscoValues else Nuscos[x] for x in Scopes.keys()] + [x for x in Scopes.values() if x in NuscoValues]):  #sorted([ s for s in NuscoValues if 'r' not in Inhs.get(Inhs.get(s,{}).get('r',''),{}) ]): #Scopes:
 #  ScopeyNuscos = [ x for x in NuscoValues if 'r' not in Inhs.get(Inhs.get(x,{}).get('r',''),{}) and (x in Scopes.keys()+Scopes.values() or Inhs.get(x,{}).get('r','') in Scopes.keys()+Scopes.values()) ]
   ScopeyNuscos = [ x for x in Referents | sets.Set(Inhs.keys()) if (x not in Nuscos or x in NuscoValues) and 'r' not in Inhs.get(Inhs.get(x,{}).get('r',''),{}) and (x in Scopes.keys()+Scopes.values() or Inhs.get(x,{}).get('r','') in Scopes.keys()+Scopes.values()) ]
-  print( 'ScopeyNuscos = ' + str(ScopeyNuscos) )
-  print( 'Referents = ' + str(Referents) )
-  print( 'Nuscos = ' + str(Nuscos) )
+  if VERBOSE: print( 'ScopeyNuscos = ' + str(ScopeyNuscos) )
+  if VERBOSE: print( 'Referents = ' + str(Referents) )
+  if VERBOSE: print( 'Nuscos = ' + str(Nuscos) )
   for xCh in ScopeyNuscos:
     if xCh not in [s for _,_,_,s,_ in Quants]: # + [r for q,e,r,s,n in Quants]:
       if Inhs[xCh].get('r','') == '': Inhs[xCh]['r'] = xCh+'r'
@@ -361,12 +366,12 @@ for line in sys.stdin:
       if VERBOSE: print( 'Removing redundant abstract scope parent ' + Scopes[xHi] + ' from ' + xHi + ' because of inheritance at ' + str(Subs[xHi]) )
       del Scopes[xHi]
   ## Clean up abstract quants...
-  print( Subs )
+  if VERBOSE: print( 'Subs = ' + str(Subs) )
   for q,e,r,s,n in Quants[:]:
     if s in Subs:
       if VERBOSE: print( 'Removing redundant abstract quant ' + q + ' from ' + s + ' because of inheritance at ' + Subs[s][0] )
       Quants.remove( (q,e,r,s,n) )
-  print( 'Quants = ' + str(Quants) )
+  if VERBOSE: print( 'Quants = ' + str(Quants) )
 
 
   #### V. TRANSLATE TO LAMBDA CALCULUS...
@@ -460,16 +465,14 @@ for line in sys.stdin:
         Abstractions[ Scopes[ S[1] ] ].append( (q, n, R, S) )
         del Scopes[ S[1] ]
 #        if R[1] in Scopes: del Scopes[ R[1] ]   ## Should use 't' trace assoc.
-        print( 'size of Translations before = ' + str(len(Translations)) )
         Translations.remove( (q, n, R, S) )
-        print( 'size of Translations after = ' + str(len(Translations)) )
         active = True
 
-#print( Translations )
-for expr in Translations:
-  print( lambdaFormat(expr) )
-  findUnboundVars( expr )
-  checkConstsUsed( expr, OrigConsts )
-for k in OrigConsts:
-  print( 'WARNING: const does not appear in translations: ' + k )
+  for expr in Translations:
+    print( lambdaFormat(expr) )
+    findUnboundVars( expr )
+    checkConstsUsed( expr, OrigConsts )
+  for k in OrigConsts:
+    sys.stderr.write( 'WARNING: const does not appear in translations: ' + k + '\n' )
+
 
