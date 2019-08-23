@@ -52,7 +52,17 @@ def findUnboundVars( expr, bound = [] ):
       findUnboundVars( subexpr, bound + [ expr[1] ] )
   else:
     for subexpr in expr[1:]:
-      findUnboundVars( subexpr, bound               )
+      findUnboundVars( subexpr, bound )
+
+## Check off consts used in expr...
+def checkConstsUsed( expr, OrigConsts ):
+  if len( expr ) == 0: return
+  if isinstance( expr, str ): return
+  if expr[0] in OrigConsts:
+    OrigConsts.remove( expr[0] )
+  for subexpr in expr:
+    checkConstsUsed( subexpr, OrigConsts )
+
 
 ################################################################################
 
@@ -93,6 +103,8 @@ for line in sys.stdin:
 #    if len( Particips ) == 3 and Inhs.get(Particips[2],{}).get('r','') == Particips[1]:  Quants.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
     if Particips[0].endswith('Q'):  Quants.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] + (['_'] if len(Particips)<4 else []) ) )
     else:                           Preds.append ( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
+
+  OrigConsts = [ ep[0] for ep in Preds ] + [ q[0] for q in Quants ]
 
   ## Report items...
   if VERBOSE: 
@@ -457,6 +469,7 @@ for line in sys.stdin:
 for expr in Translations:
   print( lambdaFormat(expr) )
   findUnboundVars( expr )
-
-
+  checkConstsUsed( expr, OrigConsts )
+for k in OrigConsts:
+  print( 'WARNING: const does not appear in translations: ' + k )
 
