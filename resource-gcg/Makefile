@@ -215,9 +215,17 @@ endef
 %.verbose-discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
 	cat $<  |  sed 's/\^g//g' | python $(word 3,$^) -d -e  >  $@
 
-#### obtain pdf drawing of discgraph
-%.discgraphs.pdf:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discgraphspdf.py
-	cat $<  |  python $(word 2,$^)  |  dot -Tpdf  >  $@
+# #### obtain pdf drawing of discgraph   (neato/dot)
+# %.discgraphs.pdf:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discgraphspdf.py
+# 	cat $<  |  python $(word 2,$^)  |  dot -Tpdf  >  $@
+
+#### obtain tex drawing of discgraph 
+%.discgraphs.tex:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discgraphstex.py
+	cat $<  |  python $(word 2,$^)  >  $@
+
+#### obtain pdf from tex
+%.pdf:  %.tex
+	cd $(dir $<);  pdflatex $(notdir $<)
 
 #### obtain discourse-aligned lambda expressions
 %.discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
