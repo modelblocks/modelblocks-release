@@ -46,24 +46,25 @@ class NPredictorVec {
 #else
       const HVec& hvB = ss.at(ss.size()-1).getHVec(); //contexts of lowest b (bdbar)
 #endif
+      int j;
       for( unsigned int iA=0; iA<hvA.size(); iA++ )  for( auto& antk : hvA[iA] ) {
-        mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), kNil ) ); //add unary antecedent k feat, using kxk template
+        if( 0 != ( j=lm.getPredictorIndex( antk.project(-iA), kNil ) ) ) mnpreds.emplace_back(j); //add unary antecedent k feat, using kxk template
         for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
-          mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), currk.project(-iB) ) ); //pairwise kxk feat
+          if( 0 != ( j=lm.getPredictorIndex( antk.project(-iA), currk.project(-iB) ) ) ) mnpreds.emplace_back(j); //pairwise kxk feat
         }
       }
       for( unsigned int iB=0; iB<hvB.size(); iB++ )  for( auto& currk : hvB[iB] ) {
-        mnpreds.emplace_back( lm.getPredictorIndex( kNil, currk.project(-iB) ) ); //unary ancestor k feat
+        if( 0 != ( j=lm.getPredictorIndex( kNil, currk.project(-iB) ) ) ) mnpreds.emplace_back(j); //unary ancestor k feat
       }
 
       CVar cAnt = ( antdist ) ? candidate.getCat() : cNone;
-      mnpreds.emplace_back( lm.getPredictorIndex( cAnt,   N_NONE                      ) ); // antecedent CVar
+      if( 0 != ( j=lm.getPredictorIndex( cAnt,   N_NONE                      ) ) ) mnpreds.emplace_back(j);; // antecedent CVar
 #ifdef SIMPLE_STORE
-      mnpreds.emplace_back( lm.getPredictorIndex( N_NONE, ss.getBase().getCat() ) ); // ancestor CVar
-      mnpreds.emplace_back( lm.getPredictorIndex( cAnt,   ss.getBase().getCat() ) ); // pairwise T
+      if( 0 != ( j=lm.getPredictorIndex( N_NONE, ss.getBase().getCat() ) ) ) mnpreds.emplace_back(j);; // ancestor CVar
+      if( 0 != ( j=lm.getPredictorIndex( cAnt,   ss.getBase().getCat() ) ) ) mnpreds.emplace_back(j);; // pairwise T
 #else
-      mnpreds.emplace_back( lm.getPredictorIndex( N_NONE, ss.at(ss.size()-1).getCat() ) ); // ancestor CVar
-      mnpreds.emplace_back( lm.getPredictorIndex( cAnt,   ss.at(ss.size()-1).getCat() ) ); // pairwise T
+      if( 0 != ( j=lm.getPredictorIndex( N_NONE, ss.at(ss.size()-1).getCat() ) ) ) mnpreds.emplace_back(j);; // ancestor CVar
+      if( 0 != ( j=lm.getPredictorIndex( cAnt,   ss.at(ss.size()-1).getCat() ) ) ) mnpreds.emplace_back(j);; // pairwise T
 #endif
 
       //corefON feature
@@ -190,18 +191,19 @@ class FPredictorVec : public list<unsigned int> {
       const HVec& hvF = ( iCarrier >= 0 ) ? ss.at(iCarrier).getHVec() : HVec();
 #endif
       emplace_back( fm.getPredictorIndex( "Bias" ) );  // add bias
+      int j;
 #ifdef SIMPLE_STORE
-      if( STORESTATE_TYPE ) emplace_back( fm.getPredictorIndex( d, ss.getBase().getCat() ) ); 
+      if( STORESTATE_TYPE ) if( 0 != ( j=fm.getPredictorIndex( d, ss.getBase().getCat() ) ) ) emplace_back(j); 
 #else
-      if( STORESTATE_TYPE ) emplace_back( fm.getPredictorIndex( d, ss.at(ss.size()-1).getCat() ) ); 
+      if( STORESTATE_TYPE ) if( 0 != ( j=fm.getPredictorIndex( d, ss.at(ss.size()-1).getCat() ) ) emplace_back(j); 
 #endif
       if( !(FEATCONFIG & 2) ) {
-        for( uint iB=0; iB<hvB.size();   iB++ )  for( auto& kB : hvB[iB] )   emplace_back( fm.getPredictorIndex( d, kNil,            kB.project(-iB), kNil ) );
-        for( uint iF=0; iF<hvF.size();   iF++ )  for( auto& kF : hvF[iF] )   emplace_back( fm.getPredictorIndex( d, kF.project(-iF), kNil,            kNil ) );
-        for( uint iA=0; iA<hvAnt.size(); iA++ )  for( auto& kA : hvAnt[iA] ) emplace_back( fm.getPredictorIndex( d, kNil,            kNil,            kA.project(-iA) ) );
+        for( uint iB=0; iB<hvB.size();   iB++ )  for( auto& kB : hvB[iB] )   if( 0 != ( j=fm.getPredictorIndex( d, kNil,            kB.project(-iB), kNil            ) ) ) emplace_back(j);
+        for( uint iF=0; iF<hvF.size();   iF++ )  for( auto& kF : hvF[iF] )   if( 0 != ( j=fm.getPredictorIndex( d, kF.project(-iF), kNil,            kNil            ) ) ) emplace_back(j);
+        for( uint iA=0; iA<hvAnt.size(); iA++ )  for( auto& kA : hvAnt[iA] ) if( 0 != ( j=fm.getPredictorIndex( d, kNil,            kNil,            kA.project(-iA) ) ) ) emplace_back(j);
       }
-      if( nullAnt ) emplace_back( fm.getPredictorIndex( "corefOFF" ) );
-      else          emplace_back( fm.getPredictorIndex( "corefON"  ) ); 
+      if( nullAnt ) { if( 0 != ( j=fm.getPredictorIndex( "corefOFF" ) ) ) emplace_back(j); }
+      else            if( 0 != ( j=fm.getPredictorIndex( "corefON"  ) ) ) emplace_back(j); 
     }
 };
 
@@ -346,14 +348,15 @@ class JPredictorVec : public list<unsigned int> {
 #endif
       const HVec& hvLchild = ( aLchild.getHVec().size()==0 ) ? hvBot : aLchild.getHVec() ;
       emplace_back( jm.getPredictorIndex( "Bias" ) );  // add bias
-      if( STORESTATE_TYPE ) emplace_back( jm.getPredictorIndex( d, aAncstr.getCat(), aLchild. getCat() ) );
+      int j;
+      if( STORESTATE_TYPE ) if( 0 != ( j=jm.getPredictorIndex( d, aAncstr.getCat(), aLchild. getCat() ) ) ) emplace_back(j);
       if( !(FEATCONFIG & 32) ) {
         for( uint iA=0; iA<hvAncstr.size(); iA++ ) for( auto& kA : hvAncstr[iA] )
-          for( uint iL=0; iL<hvLchild.size(); iL++ ) for( auto& kL : hvLchild[iL] ) emplace_back( jm.getPredictorIndex( d, kNil, kA.project(-iA), kL.project(-iL) ) );
+          for( uint iL=0; iL<hvLchild.size(); iL++ ) for( auto& kL : hvLchild[iL] ) if( 0 != ( j=jm.getPredictorIndex( d, kNil, kA.project(-iA), kL.project(-iL) ) ) ) emplace_back(j);
         for( uint iF=0; iF<hvFiller.size(); iF++ ) for( auto& kF : hvFiller[iF] )
-          for( uint iA=0; iA<hvAncstr.size(); iA++ ) for( auto& kA : hvAncstr[iA] ) emplace_back( jm.getPredictorIndex( d, kF.project(-iF), kA.project(-iA), kNil ) );
+          for( uint iA=0; iA<hvAncstr.size(); iA++ ) for( auto& kA : hvAncstr[iA] ) if( 0 != ( j=jm.getPredictorIndex( d, kF.project(-iF), kA.project(-iA), kNil ) ) ) emplace_back(j);
         for( uint iF=0; iF<hvFiller.size(); iF++ ) for( auto& kF : hvFiller[iF] )
-          for( uint iL=0; iL<hvLchild.size(); iL++ ) for( auto& kL : hvLchild[iL] ) emplace_back( jm.getPredictorIndex( d, kF.project(-iF), kNil, kL.project(-iL) ) );
+          for( uint iL=0; iL<hvLchild.size(); iL++ ) for( auto& kL : hvLchild[iL] ) if( 0 != ( j=jm.getPredictorIndex( d, kF.project(-iF), kNil, kL.project(-iL) ) ) ) emplace_back(j);
       }
     }
 };

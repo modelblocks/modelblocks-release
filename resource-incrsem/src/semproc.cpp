@@ -352,7 +352,7 @@ int main ( int nArgs, char* argv[] ) {
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
 
                 FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );
-                //if( VERBOSE>1 ) cout << "     f predictors: " << lfpredictors;
+                if( VERBOSE>1 ) cout << "     f predictors: " << pair<const FModel&,const FPredictorVec&>( modF, lfpredictors ) << endl;
                 arma::vec fresponses = modF.calcResponses( lfpredictors );
 
                 // For each possible lemma (context + label + prob) for preterminal of current word...
@@ -413,7 +413,7 @@ int main ( int nArgs, char* argv[] ) {
 #else
                         JPredictorVec ljpredictors( modJ, f, e_p_t, aLchild, q_tdec1 );  // q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
 #endif
-                        //if( VERBOSE>1 ) cout << "        j predictors: " << ljpredictors;
+                        if( VERBOSE>1 ) cout << "        j predictors: " << pair<const JModel&,const JPredictorVec&>( modJ, ljpredictors ) << endl;
                         arma::vec jresponses = modJ.calcResponses( ljpredictors );
 
                         // For each possible no-join or join decision, and operator decisions...
