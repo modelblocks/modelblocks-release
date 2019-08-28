@@ -249,6 +249,8 @@ endef
 %.fromtrees.morph.linetoks: %.linetoks
 	morfessor -t $^ -T $^ --output-format={analysis}' ' --output-newlines > $@
 
+%.delim.linetoks: %.linetoks $(LTREES-SCRIPTS)/linetoks2delimlinetoks.py
+	cat $< | python $(word 2,$^) > $@
 
 #### reverse the order of tokens by sentence in an input linetoks file
 %.rev.linetoks: %.linetoks
