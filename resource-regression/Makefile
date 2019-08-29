@@ -61,6 +61,11 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 %_spilled.resmeasures:  $$(basename %).resmeasures
 	ln -sf $(abspath $<) $(abspath $@)
 
+%_altspilled.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/spilloverMetrics.py
+	cat $(word 1,$^)  |  python $(word 2,$^) $(word 1, $(subst _, ,$(subst .,,$(suffix $*)))) -n $(word 2, $(subst _, ,$(subst .,,$(suffix $*)))) >  $@
+%_altspilled.resmeasures:  $$(basename %).resmeasures
+	ln -sf $(abspath $<) $(abspath $@)
+
 ## apply predictor modifications: <data>.<predr>_cumued.prdmeasures
 %_cumued.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/accumulateMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@

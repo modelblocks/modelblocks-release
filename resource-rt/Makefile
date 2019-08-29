@@ -333,7 +333,7 @@ $(RT-SCRIPTS)/filter_cols.py
 
 # Computes parser complexity predictors 
 %_parsed.tokmeasures: %_parsed.tokdecs $(RT-SCRIPTS)/filter_cols.awk
-	cat $< | awk -f $(word 2, $^) -v cols=word:totsurp > $@
+	cat $< | awk -f $(word 2, $^) -v cols=word:totsurp | grep -v "!ARTICLE" > $@
 
 # Merges surprisal columns from a parser trained on multiple grammars
 %.merged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*))_parsed.tokmeasures)

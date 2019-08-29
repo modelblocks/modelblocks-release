@@ -8,25 +8,26 @@ Generate by-word tsv of predictors for coreference-based features. Uses annotate
 To run:
     python extract_coref_predictors.py <input_filename>
 
-"uid", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog", "storypos", "storypos13bin", "storypos23bin", "storypos33bin", "storypos12bin", "storypos22bin", "maxcorefsize"
+"uid", "word", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog", "storypos", "storypos13bin", "storypos23bin", "storypos33bin", "storypos12bin", "storypos22bin", "maxcorefsize"
 
 Output format:
 Column 1: word_id, in sentenceid_wordid format
-Column 2: binary corefence indicator
-Column 3: distance in words to antecedent
-Column 4: distance in nouns,verbs to antecedent
-Column 5: size of chain in mention count up to current mention
-Column 6: binary indicator if is anaphoric and pronominal
-Column 7: distance in words, log transformed
-Column 8: distance in referents, log transformed
-Column 9: incremental mention count size, log transformed
-Column 10: relative sentence position in story, from 0 to 1
-Column 11: binary indicator if sentence in 1st third of story
-Column 12: binary indicator if sentence in 2nd third of story
-Column 13: binary indicator if sentence in 3rd third of story
-Column 14: binary indicator if sentence in 1st half of story
-Column 15: binary indicator if sentence in 2nd half of story
-Column 16: size of chain in mention count over entire story - fixed max for every mention
+Column 2: word, as string
+Column 3: binary corefence indicator
+Column 4: distance in words to antecedent
+Column 5: distance in nouns,verbs to antecedent
+Column 6: size of chain in mention count up to current mention
+Column 7: binary indicator if is anaphoric and pronominal
+Column 8: distance in words, log transformed
+Column 9: distance in referents, log transformed
+Column 10: incremental mention count size, log transformed
+Column 11: relative sentence position in story, from 0 to 1
+Column 12: binary indicator if sentence in 1st third of story
+Column 13: binary indicator if sentence in 2nd third of story
+Column 14: binary indicator if sentence in 3rd third of story
+Column 15: binary indicator if sentence in 1st half of story
+Column 16: binary indicator if sentence in 2nd half of story
+Column 17: size of chain in mention count over entire story - fixed max for every mention
 '''
 
 from __future__ import division, print_function
@@ -204,6 +205,7 @@ class CorefPredictors:
             story_pos = self.get_story_pos(sentidx)
             storypos13bin, storypos23bin, storypos33bin, storypos12bin, storypos22bin  = self.get_story_pos_bins(story_pos)
             max_chain_size = self.get_max_chain_size(curr_id)
+            word = self.get_word(line)
 
             #check for anaphoricity
             match = re.search(r".*-[nm]([0-9]+) ", line)
@@ -214,7 +216,7 @@ class CorefPredictors:
                 ref_dist = self.get_dist("ref", curr_id, ante_id)
                 chain_size = self.get_chain_size(curr_id, ante_id)
                 #self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), str(ispro)]) #list of lists
-                word = self.get_word(line)
+            
                 isanaphpro = "y" if self.is_pro(word) else "n" #don't need to check category because already restricted to anaphoric instances. i.e., already excludes relativizers, determiners, etc.
 
             else:
@@ -235,12 +237,12 @@ class CorefPredictors:
                 ref_dist_log = "nan"
                 chain_size_log = "nan"
             #self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro]) #list of lists
-            self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro, str(word_dist_log), str(ref_dist_log), str(chain_size_log), str(story_pos), str(storypos13bin), str(storypos23bin), str(storypos33bin), str(storypos12bin), str(storypos22bin), str(max_chain_size)]) #list of lists
+            self.predictors.append([curr_id, str(word), str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), isanaphpro, str(word_dist_log), str(ref_dist_log), str(chain_size_log), str(story_pos), str(storypos13bin), str(storypos23bin), str(storypos33bin), str(storypos12bin), str(storypos22bin), str(max_chain_size)]) #list of lists
                 
 
     def print_predictors(self):
         #pdb.set_trace()
-        print(DELIM.join(["uid", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog", "storypos", "storypos13bin", "storypos23bin", "storypos33bin", "storypos12bin", "storypos22bin", "maxcorefsize"]))
+        print(DELIM.join(["uid", "word", "corefbin", "coreflenw", "coreflenr", "corefsize", "isanaphpro", "coreflenwlog", "coreflenrlog", "corefsizelog", "storypos", "storypos13bin", "storypos23bin", "storypos33bin", "storypos12bin", "storypos22bin", "maxcorefsize"]))
         for p in self.predictors:
             print(DELIM.join(p))
 

@@ -262,7 +262,7 @@ void calcContext ( Tree<L>& tr,
       } //all previous antecedent candidates output
 
       // Print preterminal / fork-phase predictors...
-      FPredictorVec lfp( modF, hvAnt, nullAnt, q );
+      //FPredictorVec lfp( modF, hvAnt, nullAnt, q );
       cout<<"----"<<q<<endl;
 #ifdef DENSE_VECTORS
       cout << "F " << lfp << "|" << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);

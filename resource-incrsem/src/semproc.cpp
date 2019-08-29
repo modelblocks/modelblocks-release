@@ -225,7 +225,7 @@ int main ( int nArgs, char* argv[] ) {
   mutex mutexMLSList;
   vector<thread> vtWorkers;  vtWorkers.reserve( numThreads );
 
-  if( OUTPUT_MEASURES ) cout << "word pos f j store totsurp" << endl;
+  if( OUTPUT_MEASURES ) cout << "word pos f j store ndec totsurp" << endl;
 
 #ifdef SERIAL_IO
   // List of articles, which are pairs of lists of lists of words and lists of lists of hidd states...
