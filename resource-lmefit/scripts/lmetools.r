@@ -212,8 +212,8 @@ cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=
     }
 
     # Remove any incomplete rows
-    data <- data[complete.cases(data),]
-    smartPrint(paste('Number of data rows (complete cases):', nrow(data)), stdout=stdout)
+    # data <- data[complete.cases(data),]
+    # smartPrint(paste('Number of data rows (complete cases):', nrow(data)), stdout=stdout)
 
     if (!is.null(restrdomain)) {
         restr = file(description=paste0('scripts/', restrdomain, '.restrdomain.txt'), open='r')

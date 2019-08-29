@@ -97,9 +97,9 @@ endif
 genmodel/tom.lineitems: genmodel/tom.itemmeasures $(GENERAL-SCRIPTS)/itemmeasures2lineitems.py | genmodel
 	cat $< | python $(word 2, $^) > $@
 
-genmodel/tom.linetoks: $(DEP-TOKENIZER) genmodel/tom.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt | genmodel
+%tom.linetoks: $$(DEP-TOKENIZER) %tom.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
 	cat $< | $(word 2, $^) | sed 's/ $$//g'> $@
 
-genmodel/tom.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-TOM)/srcmodel/tom.stripped.linetrees genmodel/tom.linetoks
+%tom.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-TOM)/srcmodel/tom.stripped.linetrees %tom.linetoks
 	python $^ > $@
 

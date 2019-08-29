@@ -60,30 +60,30 @@
 ################################################################################
 
 ifndef MAKECONFIG
-CONFIG := $(CONFIGDIR)/user-williams-directory.txt
+CONFIG := $(CONFIGDIR)/user-conlen-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
 $(info $(call CONFIGWARN,$(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
-WILLIAMSDIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(WILLIAMSDIR))))
-RESOURCE-NAME := The Williams intracranial recordings corpus
+CONLENDIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(CONLENDIR))))
+RESOURCE-NAME := The constituent length fMRI corpus
 define RESOURCE-DESCR =
 
-NAME: The Williams intracranial recordings corpus
-MB POINTER FILE: config/user-williams-directory.txt
+NAME: The constituent length fMRI corpus
+MB POINTER FILE: config/user-conlen-directory.txt
 AVAILABILITY: Unreleased
-DESCRIPTION: Materials used to stimulate neural responses to language in different conditions
+DESCRIPTION: Materials used to study effects of constituent length on brain responses
 endef
-WILLIAMS-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
-DEP-WILLIAMS = $(error $(WILLIAMS-ERROR))
+CONLEN-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-CONLEN = $(error $(CONLEN-ERROR))
 endif
 endif
 
 
 
-%/user-williams-directory.txt: | %   
-	echo '/home/corpora/original/english/williams' > $@
+%/user-conlen-directory.txt: | %   
+	echo '/home/corpora/original/english/constituent_length' > $@
 
 ################################################################################
 #
@@ -91,15 +91,44 @@ endif
 #
 ################################################################################
 
-%williams.itemmeasures: $$(DEP-WILLIAMS) $(WILLIAMSDIR)/williams.itemmeasures $(CONFIGDIR)/user-williams-directory.txt | %
+%conlen.itemmeasures: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length.itemmeasures $(CONFIGDIR)/user-conlen-directory.txt | %
 	cp $< $@
 
-%williams.lineitems: %williams.itemmeasures $(GENERAL-SCRIPTS)/itemmeasures2lineitems.py
-	cat $< | python $(word 2, $^) > $@
+conlen%.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_$$*.lineitems | genmodel
+	cp $< $@
 
-%williams.linetoks: $$(DEP-TOKENIZER) %williams.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
-	cat $< | $(word 2, $^) | sed 's/ $$//g'> $@
+conlen%.linetoks: $$(DEP-TOKENIZER) conlen%.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
+	cat $< | $(word 2, $^) | sed 's/ $$//g' | sed 's/\r //g' > $@
 
-%williams.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-WILLIAMS)/srcmodel/williams.stripped.linetrees %williams.linetoks
+%conlenc.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees %conlenc.linetoks
 	python $^ > $@
 
+%conlenc.12.stripped.linetrees: $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees
+	head -n 30 $^ > $@
+
+%conlenc.6.stripped.linetrees: $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees
+	head -n 90 $^ | tail -n 60 > $@
+
+%conlenc.4.stripped.linetrees: $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees
+	head -n 180 $^ | tail -n 90 > $@
+
+%conlenc.3.stripped.linetrees: $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees
+	head -n 300 $^ | tail -n 120 > $@
+
+%conlenc.2.stripped.linetrees: $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees
+	head -n 480 $^ | tail -n 180 > $@
+
+%conlenc.1.stripped.linetrees: $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees
+	tail -n 360 $^ > $@
+
+%conlenjab.stripped.linetrees: %conlenc.12.stripped.linetrees %conlenc.4.stripped.linetrees %conlenc.1.stripped.linetrees
+	cat $^ > $@
+
+%conlenjab.linetrees: $(GCG-SCRIPTS)/plugLeaves.py %conlenjab.stripped.linetrees %conlenjab.linetoks
+	python $^ > $@
+
+%conlenncsents.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenncsents.stripped.linetrees %conlenncsents.linetoks
+	python $^ > $@
+
+conlenncfilt%itemmeasures: conlenncsents%itemmeasures $(CONLEN-SCRIPTS)/build_nc.py $$(dir %)/conlennc.lineitems
+	cat $< | python $(word 2, $^) $(word 3, $^) > $@

@@ -2,7 +2,7 @@ import sys
 
 model = {}
 
-print('word unigram')
+print('word unigramsurp')
 
 with open(sys.argv[1],'r') as f:
   for line in f:
@@ -15,7 +15,7 @@ with open(sys.argv[2],'r') as f:
   for line in f:
     for word in line.strip().split():
       if word in model:
-        print '%s %s' %(word, model[word])
+        print '%s %s' %(word, -model[word])
       else:
         ##if we don't know a word, treat as UNK
-        print '%s %s' %('<unk>', model['<unk>'])
+        print '%s %s' %('<unk>', -model['<unk>'])

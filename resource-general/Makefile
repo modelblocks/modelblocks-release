@@ -81,6 +81,9 @@ CCL-SCRIPTS := $(RESOURCE-CCL)/scripts
 RESOURCE-CHILDES := $(abspath $(MBDIR)/resource-childes)
 CHILDES-SCRIPTS := $(RESOURCE-CHILDES)/scripts
 
+RESOURCE-CONLEN := $(abspath $(MBDIR)/resource-conlen)
+CONLEN-SCRIPTS := $(RESOURCE-CONLEN)/scripts
+
 RESOURCE-DMV := $(abspath $(MBDIR)/resource-dmv)
 DMV-SCRIPTS := $(RESOURCE-DMV)/scripts
 
@@ -110,6 +113,9 @@ GIGAWORD-SCRIPTS := $(RESOURCE-GIGAWORD)/scripts
 
 RESOURCE-GLOVE := $(abspath $(MBDIR)/resource-glove)
 GLOVE-SCRIPTS := $(RESOURCE-GLOVE)/scripts
+
+RESOURCE-HUTH := $(abspath $(MBDIR)/resource-huth)
+HUTH-SCRIPTS := $(RESOURCE-HUTH)/scripts
 
 RESOURCE-WILLIAMS := $(abspath $(MBDIR)/resource-williams)
 WILLIAMS-SCRIPTS := $(RESOURCE-WILLIAMS)/scripts
@@ -209,6 +215,7 @@ include $(RESOURCE-BNC)/Makefile
 include $(RESOURCE-TREEBANK)/Makefile
 include $(RESOURCE-GIGAWORD)/Makefile
 include $(RESOURCE-GLOVE)/Makefile
+include $(RESOURCE-HUTH)/Makefile
 include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
@@ -224,6 +231,7 @@ include $(RESOURCE-BMMM)/Makefile
 include $(RESOURCE-CCL)/Makefile
 include $(RESOURCE-CHILDES)/Makefile
 include $(RESOURCE-DUNDEE)/Makefile
+include $(RESOURCE-CONLEN)/Makefile
 include $(RESOURCE-TOM)/Makefile
 include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile

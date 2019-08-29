@@ -41,11 +41,7 @@ class NPredictorVec {
       mnpreds.emplace_back( lm.getPredictorIndex( "bias" ) ); //add bias term
 
       const HVec& hvA = ( antdist ) ? candidate.getHVec() : hvBot;
-#ifdef SIMPLE_STORE
       const HVec& hvB = ss.getBase().getHVec(); //contexts of lowest b (bdbar)
-#else
-      const HVec& hvB = ss.at(ss.size()-1).getHVec(); //contexts of lowest b (bdbar)
-#endif
       int j;
       for( unsigned int iA=0; iA<hvA.size(); iA++ )  for( auto& antk : hvA[iA] ) {
         if( 0 != ( j=lm.getPredictorIndex( antk.project(-iA), kNil ) ) ) mnpreds.emplace_back(j); //add unary antecedent k feat, using kxk template
@@ -59,13 +55,8 @@ class NPredictorVec {
 
       CVar cAnt = ( antdist ) ? candidate.getCat() : cNone;
       if( 0 != ( j=lm.getPredictorIndex( cAnt,   N_NONE                      ) ) ) mnpreds.emplace_back(j);; // antecedent CVar
-#ifdef SIMPLE_STORE
       if( 0 != ( j=lm.getPredictorIndex( N_NONE, ss.getBase().getCat() ) ) ) mnpreds.emplace_back(j);; // ancestor CVar
       if( 0 != ( j=lm.getPredictorIndex( cAnt,   ss.getBase().getCat() ) ) ) mnpreds.emplace_back(j);; // pairwise T
-#else
-      if( 0 != ( j=lm.getPredictorIndex( N_NONE, ss.at(ss.size()-1).getCat() ) ) ) mnpreds.emplace_back(j);; // ancestor CVar
-      if( 0 != ( j=lm.getPredictorIndex( cAnt,   ss.at(ss.size()-1).getCat() ) ) ) mnpreds.emplace_back(j);; // pairwise T
-#endif
 
       //corefON feature
       if (bcorefON == true) {
@@ -182,21 +173,11 @@ class FPredictorVec : public list<unsigned int> {
     template<class FM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
     FPredictorVec( FM& fm, const HVec& hvAnt, bool nullAnt, const StoreState& ss ) {
       int d = (FEATCONFIG & 1) ? 0 : ss.getDepth(); // max used depth - (dbar)
-#ifdef SIMPLE_STORE
       const HVec& hvB = ( ss.getBase().getHVec().size() > 0 ) ? ss.getBase().getHVec() : hvBot; //contexts of lowest b (bdbar)
       const HVec& hvF = ( ss.getBase().getCat().getNoloArity() ) ? ss.getNoloBack().getHVec() : HVec();
-#else
-      const HVec& hvB = ( ss.at(ss.size()-1).getHVec().size() > 0 ) ? ss.at(ss.size()-1).getHVec() : hvBot; //contexts of lowest b (bdbar)
-      int iCarrier = ss.getAncestorBCarrierIndex( 1 ); // get lowest nonlocal above bdbar
-      const HVec& hvF = ( iCarrier >= 0 ) ? ss.at(iCarrier).getHVec() : HVec();
-#endif
       emplace_back( fm.getPredictorIndex( "Bias" ) );  // add bias
       int j;
-#ifdef SIMPLE_STORE
       if( STORESTATE_TYPE ) if( 0 != ( j=fm.getPredictorIndex( d, ss.getBase().getCat() ) ) ) emplace_back(j); 
-#else
-      if( STORESTATE_TYPE ) if( 0 != ( j=fm.getPredictorIndex( d, ss.at(ss.size()-1).getCat() ) ) emplace_back(j); 
-#endif
       if( !(FEATCONFIG & 2) ) {
         for( uint iB=0; iB<hvB.size();   iB++ )  for( auto& kB : hvB[iB] )   if( 0 != ( j=fm.getPredictorIndex( d, kNil,            kB.project(-iB), kNil            ) ) ) emplace_back(j);
         for( uint iF=0; iF<hvF.size();   iF++ )  for( auto& kF : hvF[iF] )   if( 0 != ( j=fm.getPredictorIndex( d, kF.project(-iF), kNil,            kNil            ) ) ) emplace_back(j);
@@ -332,20 +313,10 @@ class JPredictorVec : public list<unsigned int> {
 
     template<class JM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
     JPredictorVec( JM& jm, F f, EVar eF, const LeftChildSign& aLchild, const StoreState& ss ) {
-#ifdef SIMPLE_STORE
       int d = (FEATCONFIG & 1) ? 0 : ss.getDepth();
       const Sign& aAncstr  = ss.getBase();
-#else
-      int d = (FEATCONFIG & 1) ? 0 : ss.getDepth()+f;
-      const Sign& aAncstr  = ss.at( ss.getAncestorBIndex(f) );
-#endif
       const HVec& hvAncstr = ( aAncstr.getHVec().size()==0 ) ? hvBot : aAncstr.getHVec();
-#ifdef SIMPLE_STORE
       const HVec& hvFiller = ( ss.getBase().getCat().getNoloArity() ) ? ss.getNoloBack().getHVec() : hvBot; //HVec();
-#else
-      int iCarrierB = ss.getAncestorBCarrierIndex( f );
-      const HVec& hvFiller = ( iCarrierB<0                 ) ? hvBot : ss.at( iCarrierB ).getHVec();
-#endif
       const HVec& hvLchild = ( aLchild.getHVec().size()==0 ) ? hvBot : aLchild.getHVec() ;
       emplace_back( jm.getPredictorIndex( "Bias" ) );  // add bias
       int j;

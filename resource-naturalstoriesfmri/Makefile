@@ -125,9 +125,12 @@ naturalstoriesfmri%.itemmeasures: naturalstories%.itemmeasures
 
 %naturalstoriesfmri.evmeasures: $$(DEP-NATSTORIES) $$(DEP-NATSTORIESFMRI) $(NATSTORFMRIDIR)/naturalstoriesFMRI.evmeasures $(NATSTORIESFMRI-SCRIPTS)/preprocess_natstor_fmri.py \
 $(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(NATSTORIESFMRI-SCRIPTS)/filter_docs.py $(CONFIGDIR)/user-naturalstories-fmri-directory.txt $(NATSTORDIR)/audio/*.wav | %
-	cat $(word 1, $^) | python $(word 2, $^) $(NATSTOR-STORIES) sampleid | python $(word 3, $^) $(wordlist 6, $(words $^), $^) -c | python $(word 4, $^) > $@
+	cat $(word 1, $^) | python $(word 2, $^) $(NATSTOR-STORIES) sampleid | python $(word 3, $^) $(wordlist 6, $(words $^), $^) | python $(word 4, $^) > $@
 
 # Link fMRI data (melted and filtered to Lang only) to NatStor text preprocessing pipeline
+
+%.soundpower.prdmeasures: $$(DEP-NATSTORIES) %.evmeasures $(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(CONFIGDIR)/user-naturalstories-directory.txt $(NATSTORDIR)/audio/*.wav
+	cat $(word 1, $^) | python $(word 2, $^) $(wordlist 4, $(words $^), $^) -I 0.100 > $@
 
 %naturalstoriesfmri_Lang.linetoks: %naturalstories.linetoks
 	cp $(word 1, $^) $@
@@ -160,6 +163,24 @@ naturalstoriesfmri_MD%.itemmeasures: naturalstories%.itemmeasures
 
 %naturalstoriesfmri_MD.evmeasures: %naturalstoriesfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
 	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k MDlangloc.* | python $(word 3, $^) - > $@
+
+# Link fMRI data (melted and filtered to AC only) to NatStor text preprocessing pipeline
+
+%naturalstoriesfmri_AC.linetoks: %naturalstories.linetoks
+	cp $(word 1, $^) $@
+
+%naturalstoriesfmri_AC.lineitems: %naturalstories.lineitems
+	cp $(word 1, $^) $@
+
+naturalstoriesfmri_AC%.tokmeasures: naturalstories%.tokmeasures
+	cp $(word 1, $^) $@
+
+naturalstoriesfmri_AC%.itemmeasures: naturalstories%.itemmeasures
+	cp $(word 1, $^) $@
+
+%naturalstoriesfmri_AC.evmeasures: %naturalstoriesfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
+	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k AC.* | python $(word 3, $^) - > $@
+
 
 # Link fMRI data (melted and filtered to Lang and MDlangloc only) to NatStor text preprocessing pipeline
 

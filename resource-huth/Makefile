@@ -24,7 +24,7 @@
 #  Include statements to this file should be preceded by the following includes
 #
 #  include $(dir $(CURDIR))resource-general/Makefile
-#  include $(RESOURCE-RHACKS)/Makefile
+#  include $(RESOURCE-HUTH)/Makefile
 #
 ################################################################################
 
@@ -47,31 +47,31 @@
 ################################################################################
 
 ifndef MAKECONFIG
-CONFIG := $(CONFIGDIR)/user-rhacks-directory.txt
+CONFIG := $(CONFIGDIR)/user-huth-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
 $(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
-RHACKSDIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(RHACKSDIR))))
-RESOURCE-NAME := R-Hacks
+HUTHDIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(HUTHDIR))))
+RESOURCE-NAME := Huth Speech Model Tutorial
 define RESOURCE-DESCR =
 
-NAME: R-Hacks
-MB POINTER FILE: config/user-rhacks-directory.txt
+NAME: Huth Speech Model Tutorial
+MB POINTER FILE: config/user-huth-directory.txt
 AVAILABILITY: Free
-URL: https://github.com/aufrank/R-hacks
-DESCRIPTION: Useful bits of code for programming and analysis in R.
+URL: https://github.com/HuthLab/speechmodeltutorial
+DESCRIPTION: fMRI speech processing code from Alex Huth's EACL14 tutorial
 endef
-RHACKS-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
-DEP-RHACKS = $(error $(RHACKS-ERROR))
+HUTH-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-HUTH = $(error $(HUTH-ERROR))
 else
-DEP-RHACKS :=
+DEP-HUTH :=
 endif
 endif
     
-%/user-rhacks-directory.txt: | %   
-	echo '/home/compling/R-hacks' > $@
+%/user-huth-directory.txt: | %   
+	echo '/home/compling/speechmodeltutorial' > $@
 
 ################################################################################
 #
@@ -79,10 +79,11 @@ endif
 #
 ################################################################################
 
-$(RESOURCE-RHACKS)/scripts:
-	mkdir $(RESOURCE-RHACKS)/scripts
+$(RESOURCE-HUTH)/scripts:
+	mkdir $(RESOURCE-HUTH)/scripts
 
-.PRECIOUS: $(RHACKS-SCRIPTS)/%.R
-$(RHACKS-SCRIPTS)/%.R: $$(DEP-RHACKS) $(RHACKSDIR)/%.R | $(RHACKS-SCRIPTS)
+.PRECIOUS: $(HUTH-SCRIPTS)/%.py
+$(HUTH-SCRIPTS)/%.py: $$(DEP-HUTH) $(HUTHDIR)/%.py | $(HUTH-SCRIPTS)
 	cp $(word 1, $^) $@
+
 
