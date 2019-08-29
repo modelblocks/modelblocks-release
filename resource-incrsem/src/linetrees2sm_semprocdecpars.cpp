@@ -185,10 +185,6 @@ void calcContext ( Tree<L>& tr,
     eF              = e + getUnaryOp( tr );
     pair<K,CVar> kc = getPred ( removeLink(tr), removeLink(tr.front()) );
     K k             = (FEATCONFIG & 8 && kc.first.getString()[2]!='y') ? K::kBot : kc.first;
-#ifdef SIMPLE_STORE
-#else
-    aPretrm         = (not failtree) ? Sign( HVec(k, matE, funcO), getCat(removeLink(l)), S_A ) : Sign() ;
-#endif
     bool validIntra = false;
 
     std::string annotSentIdx = annot.substr(0,annot.size()-2); //get all but last two...
@@ -201,10 +197,6 @@ void calcContext ( Tree<L>& tr,
       annot2kset[currentloc] = hvAnt;
     }
     annot2kset[currentloc] = HVec(k, matE, funcO); //add current k
-#ifdef SIMPLE_STORE
-#else
-    if( hvAnt != hvTop ) aPretrm.setHVec().add( hvAnt );
-#endif
     annot2tdisc[currentloc] = tDisc; //map current sent,word index to discourse word counter
     if (not failtree) {
       // Print preterminal / fork-phase predictors...
@@ -249,13 +241,10 @@ void calcContext ( Tree<L>& tr,
         } //single candidate output
       } //all previous antecedent candidates output
 
-#ifdef SIMPLE_STORE
       q = StoreState( q, hvAnt, eF.c_str(), k, getCat(removeLink(l)), matE, funcO );
       aPretrm = q.back().apex().back();
     } else {
       aPretrm = Sign();
-#else
-#endif
     }
 
     antecedentCandidates.emplace_back(aPretrm); //append current prtrm to candidate list for future coref decisions 
@@ -287,24 +276,16 @@ void calcContext ( Tree<L>& tr,
     calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 0, d+s );
 
     J j          = s;
-#ifdef SIMPLE_STORE
     cout << "~~~~ " << q.back().apex() << endl;
     q = StoreState( q, f );
     const Sign& aLchild = q.getApex();
-#else
-    LeftChildSign aLchild ( q, f, eF.c_str(), aPretrm );
-#endif
     e            = e + getUnaryOp( tr );
     O oL         = getOp ( removeLink(tr.front()), removeLink(tr.back()),  removeLink(tr) );
     O oR         = getOp ( removeLink(tr.back()),  removeLink(tr.front()), removeLink(tr) );
 
     // Print binary / join-phase predictors...
     JPredictorVec ljp( modJ, f, eF.c_str(), aLchild, q );
-#ifdef SIMPLE_STORE
     cout << "==== " << q.getApex() << "   " << removeLink(tr) << " -> " << removeLink(tr.front()) << " " << removeLink(tr.back()) << endl;
-#else
-    cout << "==== " << aLchild << "   " << removeLink(tr) << " -> " << removeLink(tr.front()) << " " << removeLink(tr.back()) << endl;
-#endif
 #ifdef DENSE_VECTORS
 //    cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;  modJ.getResponseIndex(j,e.c_str(),oL,oR);
     cout << "J " << ljp << " " << j << "&" << e << "&" << oL << "&" << oR << endl;  // modJ.getResponseIndex(j,e.c_str(),oL,oR);
@@ -315,11 +296,7 @@ void calcContext ( Tree<L>& tr,
     cout << "B " << BPredictorVec(f,j,eF.c_str(),e.c_str(),oL,oR,getCat(l),aLchild,q)   << " : " << getCat(removeLink(tr.back()))  << endl;
 
     // Update storestate...
-#ifdef SIMPLE_STORE
     q = StoreState ( q, j, e.c_str(), oL, oR, getCat(removeLink(l)), getCat(removeLink(tr.back())) );
-#else
-    q = StoreState ( q, f, j, eF.c_str(), e.c_str(), oL, oR, getCat(removeLink(l)), getCat(removeLink(tr.back())), aPretrm, aLchild );
-#endif
 
     // Traverse right child...
     calcContext ( tr.back(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 1, d );

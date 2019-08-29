@@ -417,10 +417,6 @@ class HVec : public DelimitedVector<psX,KVec,psX,psX> {
     else if( size() >= 2 ) at(i) = KVec();
     return *this;
   }
-#ifndef SIMPLE_STORE
-  HVec& applyUnariesTopDn( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
-  HVec& applyUnariesBotUp( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss );
-#endif
   bool isDitto ( ) const { return ( *this == hvDitto ); }
 };
 
@@ -448,8 +444,6 @@ const Sign aTop( hvTop, cTop, S_A );
 const Sign bTop( hvTop, cTop, S_B );
 
 ////////////////////////////////////////////////////////////////////////////////
-
-#ifdef SIMPLE_STORE
 
 class LeftChildSign : public Sign {
  public:
@@ -660,228 +654,6 @@ void BaseWithCarriers::set ( CVar cA, CVar cB, O opL, O opR, StoreState& ss, con
                                ss.setNoloBack( 0, *this ).setHVec().addSynArg( awcLchild.back().getCat().getSynArgs(), awcLchild.back().getHVec() ); }
 }
 
-#else
-
-////////////////////////////////////////////////////////////////////////////////
-
-class LeftChildSign : public Sign {
- public:
-  LeftChildSign ( ) : Sign() { }
-  LeftChildSign ( const Sign& a ) : Sign(a) { }
-  LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm );
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-class StoreState : public DelimitedVector<psX,Sign,psX,psX> {  // NOTE: format can't be read in bc of internal psX delimiter, but we don't need to.
- public:
-
-  static const Sign aTop;
-
-  StoreState ( ) : DelimitedVector<psX,Sign,psX,psX> ( ) { }
-  StoreState ( const StoreState& qPrev, F f, J j, EVar evF, EVar evJ, O opL, O opR, CVar cA, CVar cB, const Sign& aPretrm, const LeftChildSign& aLchild ) {
-
-    ////// A. FIND STORE LANDMARKS AND EXISTING P,A,B CARRIERS...
-
-    //// A.1. Find reentrance points in old structure...
-    int iAncestorA = qPrev.getAncestorAIndex(f);
-    int iAncestorB = qPrev.getAncestorBIndex(f);
-    int iLowerA    = (f==1) ? qPrev.size() : qPrev.getAncestorAIndex(1);
-
-    //// A.2. Create vectors of carrier indices (one for each nonlocal in category, first to last)...
-    CVar cCurrP=aPretrm.getCat();  vector<int> viCarrierP;  viCarrierP.reserve(4);
-    CVar cCurrL=aLchild.getCat();  vector<int> viCarrierL;  viCarrierL.reserve(4);
-    CVar cCurrA=cA;                vector<int> viCarrierA;  viCarrierA.reserve(4);
-    CVar cCurrB=cB;                vector<int> viCarrierB;  viCarrierB.reserve(4);
-    int nNewCarriers = 0;
-    for( int i=qPrev.size()-1; i>=-1; i-- ) {
-      CVar cI = (i>-1) ? qPrev[i].getCat() : cTop;
-      N nP=cCurrP.getLastNonlocal();
-      if( i>-1 and                  nP!=N_NONE && qPrev[i].getCat()==nP                      ) { viCarrierP.push_back(i);  cCurrP=cCurrP.withoutLastNolo(); }
-      if(                           nP!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nP) ) { viCarrierP.push_back(-1); cCurrP=cCurrP.withoutLastNolo(); nNewCarriers++; }
-      N nL=cCurrL.getLastNonlocal();
-      if( i>-1 and i<iLowerA     && nL!=N_NONE && qPrev[i].getCat()==nL                      ) { viCarrierL.push_back(i);  cCurrL=cCurrL.withoutLastNolo(); }
-      if(          i<iLowerA     && nL!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nL) ) { viCarrierL.push_back(-1); cCurrL=cCurrL.withoutLastNolo(); nNewCarriers++; }
-      N nA=cCurrA.getLastNonlocal();
-      if( i>-1 and i<iLowerA     && nA!=N_NONE && qPrev[i].getCat()==nA                      ) { viCarrierA.push_back(i);  cCurrA=cCurrA.withoutLastNolo(); }
-      if(          i<iLowerA     && nA!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nA) ) { viCarrierA.push_back(-1); cCurrA=cCurrA.withoutLastNolo(); nNewCarriers++; }
-      N nB=cCurrB.getLastNonlocal();
-      if( i>-1 and i<iAncestorB  && nB!=N_NONE && qPrev[i].getCat()==nB                      ) { viCarrierB.push_back(i);  cCurrB=cCurrB.withoutLastNolo(); }
-      if(          i<=iAncestorB && nB!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nB) ) { viCarrierB.push_back(-1); cCurrB=cCurrB.withoutLastNolo(); nNewCarriers++; }
-    }
-
-    //cout<<" viCarrierP="; for( int i : viCarrierP ) cout<<" "<<i; cout<<endl;
-    //cout<<" viCarrierA="; for( int i : viCarrierA ) cout<<" "<<i; cout<<endl;
-    //cout<<" viCarrierL="; for( int i : viCarrierL ) cout<<" "<<i; cout<<endl;
-    //cout<<" viCarrierB="; for( int i : viCarrierB ) cout<<" "<<i; cout<<endl;
-
-    // Reserve store big enough for ancestorB + new A and B if no join + any needed carriers...
-    reserve( iAncestorB + 1 + ((j==0) ? 2 : 0) + nNewCarriers ); 
-
-    ////// B. FILL IN NEW PARTS OF NEW STORE...
-
-    //// B.1. Add existing nolo contexts to parent via extraction op...
-    HVec hvParent( cA.getSynArgs()+( ( (opL>='1' and opL<='9') or (opR>='1' and opR<='9') ) ? 2 : 1 ) );
-    HVec hvRchild( cB.getSynArgs()+1 );
-    // If join, apply unaries going down from ancestor, then merge redirect of left child...
-    if( j ) {
-      hvParent.add( qPrev.at(iAncestorB).getHVec() ).applyUnariesTopDn( evJ, viCarrierA, qPrev ).addSynArg( -getDir(opL), aLchild.getHVec() );
-      hvRchild.addSynArg( getDir(opR), hvParent );
-    }
-    // If not join, merge redirect of left child...
-    else {
-      hvParent.addSynArg( -getDir(opL), aLchild.getHVec() );
-      hvRchild.addSynArg( getDir(opR), hvParent ); 
-      hvParent.applyUnariesBotUp( evJ, viCarrierA, qPrev );
-    }
-
-    //// B.2. Copy store state and add parent/preterm contexts to existing non-locals via extraction operation...
-    for( int i=0; i<((f==0&&j==1)?iAncestorB:(f==0&&j==0)?iLowerA:(f==1&&j==1)?iAncestorB:iAncestorB+1); i++ ) {
-      Sign& s = *emplace( end() ) = qPrev[i];
-      if( i==iAncestorA and j==1 and qPrev[i].isDitto() and opR!=O_I )            { s.setHVec() = hvParent; } 
-      else if( viCarrierP.size()>0 and i==viCarrierP.back() and evF!=EVar::eNil ) { viCarrierP.pop_back();
-                                                                                    s.setHVec() = HVec( s.getCat().getSynArgs()+1 );
-                                                                                    s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() ); }
-      else if( viCarrierA.size()>0 and i==viCarrierA.back() and evJ!=EVar::eNil ) { viCarrierA.pop_back();
-                                                                                    s.setHVec() = HVec( s.getCat().getSynArgs()+1 );
-                                                                                    s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent ); }
-      else                                                                        { s = qPrev[i]; }
-    }
-
-    //// B.3. Add new non-locals with contexts from parent/rchild via new extraction or G/H/V operations...
-    // If no join, add A carriers followed by new lowest A...
-    if( j==0 ) {
-      // Add A carriers...
-      cCurrP = aPretrm.getCat();  cCurrA = cA;
-      for( int i : viCarrierP ) if( i==-1 and evF!=EVar::eNil ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierP for "<<cCurrP.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
-                                                                  Sign& s = *emplace( end() ) = Sign( HVec(1), cCurrP.getFirstNonlocal(), S_B );
-                                                                  s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() );
-                                                                  cCurrP=cCurrP.withoutFirstNolo(); }
-      for( int i : viCarrierA ) if( i==-1 and evJ!=EVar::eNil ) { if( STORESTATE_CHATTY ) cout<<"(adding carrierA for "<<cCurrA.getFirstNonlocal()<<" bc none above "<<iAncestorB<<")"<<endl;
-                                                                  Sign& s = *emplace( end() ) = Sign( HVec(1), cCurrA.getFirstNonlocal(), S_B );
-                                                                  s.setHVec().addSynArg( getDir(evJ.popTop()), hvParent );
-                                                                  cCurrA=cCurrA.withoutFirstNolo(); }
-      // Add lowest A...
-      *emplace( end() ) = Sign( (opR==O_I) ? HVec::hvDitto : hvParent, cA, S_A );
-      iLowerA = size()-1;
-    }
-    // Add B carriers...
-    N nA = cA.getLastNonlocal();  N nB = cB.getLastNonlocal();  N nL = aLchild.getCat().getLastNonlocal();
-    if( nB!=N_NONE and nB!=nA and viCarrierB[0]==-1 ) {  if( STORESTATE_CHATTY ) cout<<"(adding carrierB for "<<nB<<" bc none above "<<iAncestorB<<") (G/R rule)"<<endl;
-                                                         *emplace( end() ) = Sign( aLchild.getHVec(), nB, S_A ); }                            // Add left child kset as A carrier (G rule).
-    // WS: SUPPOSED TO BE FOR C-rN EXTRAPOSITION, BUT DOESN'T QUITE WORK...
-    // if( nL!=N_NONE && iCarrierL>iAncestorB )    if( STORESTATE_CHATTY ) cout<<"(adding carrierL for "<<nL<<" bc none above "<<iLowerA<<" and below "<<iAncestorB<<")"<<endl;
-    // if( nL!=N_NONE && iCarrierL>iAncestorB )    *emplace( end() ) = Sign( qPrev[iCarrierL].getKSet(), nL, S_A );            // Add right child kset as L carrier (H rule).
-    // For B, if left child nolo cat not listed in apex carrier signs (H rule)...
-    if( nL!=N_NONE and nL!=nA and nL!=N("-vN") ) {
-      if( STORESTATE_CHATTY ) cout<<"(attaching carrierL for "<<nL<<" above "<<iLowerA<<" and below "<<iAncestorB<<") (H rule)"<<endl;
-      // If no join, use lowest left-child carrier as right...
-      // CODE REVIEW: should not keep lowest left carrier if using H rule.
-      if( j==0 ) {
-        // Redefine viCarrier on current time step...
-        cCurrL=aLchild.getCat();
-        viCarrierL.clear();
-        for( int i=iLowerA-1; i>=-1; i-- ) {
-          CVar cI = at(i).getCat();
-          N nL=cCurrL.getLastNonlocal(); if( i>-1 && nL!=N_NONE && cI==nL                                     ) { viCarrierL.push_back(i);  cCurrL=cCurrL.withoutLastNolo(); }
-                                         if(         nL!=N_NONE && !cI.isCarrier() && !cI.containsCarrier(nL) ) { viCarrierL.push_back(-1); cCurrL=cCurrL.withoutLastNolo(); }
-        }
-        //cout<<" viCarrierL="; for( int& i : viCarrierL ) cout<<" "<<i; cout<<endl;
-        if( viCarrierL[0]>iAncestorB ) { Sign& s = *emplace( end() ) = Sign( hvRchild, cB, S_B );  s.setHVec().add( at(viCarrierL[0]).getHVec() ); }  // Add right child kset as B (H rule).
-        else cerr<<"ERROR StoreState 1019: should not happen, on '"<<qPrev<<" "<<f<<" "<<j<<" "<<evF<<" "<<evJ<<" "<<opL<<" "<<opR<<" "<<cA<<" "<<cB<<" "<<aPretrm<<" "<<aLchild<<"'"<<endl;
-      } else {  // If j==1...
-        Sign& s = *emplace( end() ) = Sign( hvRchild, cB, S_B );
-        // If existing left carrier, integrate with sign...
-        if( viCarrierL[0]!=-1 ) s.setHVec().add( qPrev.at(viCarrierL[0]).getHVec() );
-        // If extraction...
-        if( evF!=EVar::eNil )   s.setHVec().addSynArg( getDir(evF.popTop()), aPretrm.getHVec() );
-      }
-    }
-    // Add lowest B...
-    else if( size()>0 )            { *emplace( end() ) = Sign( hvRchild, cB, S_B ); }
-  }
-
-  const Sign& at ( int i ) const { assert(i<int(size())); return (i<0) ? aTop : operator[](i); }
-
-  int getDepth ( ) const {
-    int d = 0; for( int i=size()-1; i>=0; i-- ) if( !operator[](i).getCat().isCarrier() && operator[](i).getSide()==S_B ) d++;
-    return d;
-  }
-
-  int getAncestorBIndex ( F f ) const {
-    if( f==1 ) return size()-1;
-    for( int i=size()-2; i>=0; i-- ) if( !operator[](i).getCat().isCarrier() && operator[](i).getSide()==S_B ) return i;
-    return -1;
-  }
-
-  int getAncestorAIndex ( F f ) const {
-    for( int i=getAncestorBIndex(f)-1; i>=0; i-- ) if( !operator[](i).getCat().isCarrier() && operator[](i).getSide()==S_A ) return i;
-    return -1;
-  }
-
-  int getAncestorBCarrierIndex ( F f ) const {
-    int iAncestor = getAncestorBIndex( f );
-    N nB = at(iAncestor).getCat().getLastNonlocal();
-    if( nB!=N_NONE ) for( int i=iAncestor-1; i>=0 && (operator[](i).getCat().isCarrier() || operator[](i).getCat().containsCarrier(nB)); i-- ) if( operator[](i).getCat()==nB ) return i;
-    return -1;
-  } 
-
-  /*
-  const Sign& getBase( unsigned int iDepthOffset ) const {
-    return at( getDepth() - iDepthOffset );
-  }
-
-  const Sign& getBaseCarrier( unsigned int iDepthOffset, unsigned int iCarrierProximity ) {
-    return at( 
-  */
-};
-const Sign StoreState::aTop( hvTop, cTop, S_B );
-
-////////////////////////////////////////////////////////////////////////////////
-
-HVec& HVec::applyUnariesTopDn( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss ) {
-  for( int i=0; e!=EVar::eNil; e=e.withoutTop() ) {
-    if( e.top()>='0' and e.top()<='9' and i<int(viCarrierIndices.size()) and viCarrierIndices[i++]!=-1 )  addSynArg( -getDir(e.top()), ss.at(viCarrierIndices[i-1]).getHVec() );
-    else if( e.top()=='O' or e.top()=='V' )  swap(1,2);
-  }
-  return *this;
-}
-
-HVec& HVec::applyUnariesBotUp( EVar e, const vector<int>& viCarrierIndices, const StoreState& ss ) {
-  for( int i=viCarrierIndices.size()-1; e!=EVar::eNil; e=e.withoutBot() ) {
-    if( e.bot()>='0' and e.bot()<='9' and i>=0 and viCarrierIndices[i--]!=-1 )  addSynArg( -getDir(e.bot()), ss.at(viCarrierIndices[i+1]).getHVec() );
-    else if( e.bot()=='O' or e.bot()=='V' )  swap(1,2);
-  }
-  return *this;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-LeftChildSign::LeftChildSign ( const StoreState& qPrev, F f, EVar eF, const Sign& aPretrm ) {
-//    int         iCarrierB  = qPrev.getAncestorBCarrierIndex( 1 );
-    int         iAncestorB = qPrev.getAncestorBIndex(f);
-    CVar        cCurrB     = qPrev.at(iAncestorB).getCat();
-    vector<int> viCarrierB;  viCarrierB.reserve(4);
-    for( int i=qPrev.size()-1; i>=-1; i-- ) {
-      N nB=cCurrB.getLastNonlocal();
-      if( i>-1 && i<iAncestorB  && nB!=N_NONE && qPrev[i].getCat()==nB                                                               ) { viCarrierB.push_back(i);  cCurrB=cCurrB.withoutLastNolo(); }
-      if(         i<=iAncestorB && nB!=N_NONE && (i<0 || (!qPrev[i].getCat().isCarrier() && !qPrev[i].getCat().containsCarrier(nB))) ) { viCarrierB.push_back(-1); cCurrB=cCurrB.withoutLastNolo(); }
-    }
-    //cout<<" viCarrierB="; for( int i : viCarrierB ) cout<<" "<<i; cout<<endl;
-    const Sign& aAncestorA = qPrev.at( qPrev.getAncestorAIndex(1) );
-    const Sign& aAncestorB = qPrev.at( qPrev.getAncestorBIndex(1) );
-//    const KSet& ksExtrtn   = (iCarrierB<0) ? KSet() : qPrev.at(iCarrierB).getKSet();
-    setSide() = S_A;
-    if( f==1 )                       { setCat()  = aPretrm.getCat();
-                                       setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
-    else if( qPrev.size()<=0 )       { *this = StoreState::aTop; }
-    else if( !aAncestorA.isDitto() ) { setCat()  = aAncestorA.getCat();
-                                       setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aAncestorA.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ); }
-    else                             { setCat()  = aAncestorA.getCat();
-                                       setHVec() = HVec(getCat().getSynArgs()+1);  setHVec().add( aPretrm.getHVec() ).applyUnariesBotUp( eF, viCarrierB, qPrev ).add( aAncestorB.getHVec() ); }
-}
-
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -945,11 +717,7 @@ class PPredictorVec : public DelimitedQuint<psX,D,psSpace,F,psSpace,Delimited<EV
  public:
   PPredictorVec ( ) { }
   PPredictorVec ( F f, EVar e, K k_p_t, const StoreState& ss ) :
-#ifdef SIMPLE_STORE
     DelimitedQuint<psX,D,psSpace,F,psSpace,Delimited<EVar>,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth(), f, e, ss.getBase().getCat(), k_p_t.getCat() ) { }
-#else
-    DelimitedQuint<psX,D,psSpace,F,psSpace,Delimited<EVar>,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth(), f, e, ss.at(ss.size()-1).getCat(), k_p_t.getCat() ) { }
-#endif
 };
 
 class PModel : public map<PPredictorVec,map<P,double>> {
@@ -1010,11 +778,7 @@ class APredictorVec : public DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Del
   APredictorVec ( D d, F f, J j, EVar e, O o, CVar cP, CVar cL ) :
     DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( d, f, j, e, o, cP, cL ) { }
   APredictorVec ( F f, J j, EVar eF, EVar eJ, O opL, const LeftChildSign& aLchild, const StoreState& ss ) :
-#ifdef SIMPLE_STORE
     DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()-j, f, j, eJ, opL, ss.getBase().getCat(), (j==0) ? aLchild.getCat() : cBot ) { } 
-#else
-    DelimitedSept<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()+f-j, f, j, eJ, opL, ss.at(ss.getAncestorBIndex(f)).getCat(), (j==0) ? aLchild.getCat() : cBot ) { } 
-#endif
 };
 
 class AModel : public map<APredictorVec,map<A,double>> {
@@ -1040,11 +804,7 @@ class BPredictorVec : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Deli
   BPredictorVec ( D d, F f, J j, EVar e, O oL, O oR, CVar cP, CVar cL ) :
     DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( d, f, j, e, oL, oR, cP, cL ) { }
   BPredictorVec ( F f, J j, EVar eF, EVar eJ, O opL, O opR, CVar cParent, const LeftChildSign& aLchild, const StoreState& ss ) :
-#ifdef SIMPLE_STORE
     DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()-j, f, j, eJ, opL, opR, cParent, aLchild.getCat() ) { }
-#else
-    DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()+f-j, f, j, eJ, opL, opR, cParent, aLchild.getCat() ) { }
-#endif
 };
 
 class BModel : public map<BPredictorVec,map<B,double>> {
