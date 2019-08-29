@@ -379,6 +379,7 @@ int main ( int nArgs, char* argv[] ) {
 
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
                 FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );
+                if( VERBOSE>1 ) cout << "     f predictors: " << pair<const FModel&,const FPredictorVec&>( modF, lfpredictors ) << endl;
                 arma::vec fresponses = modF.calcResponses( lfpredictors );
               
                 //get most recent observed word for which k of fek F decision was 'unk'.
@@ -445,6 +446,7 @@ int main ( int nArgs, char* argv[] ) {
 #else
                         JPredictorVec ljpredictors( modJ, f, e_p_t, aLchild, q_tdec1 );  // q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
 #endif
+                        if( VERBOSE>1 ) cout << "        j predictors: " << pair<const JModel&,const JPredictorVec&>( modJ, ljpredictors ) << endl;
                         arma::vec jresponses = modJ.calcResponses( ljpredictors );
 
                         // For each possible no-join or join decision, and operator decisions...
@@ -517,7 +519,11 @@ int main ( int nArgs, char* argv[] ) {
 
           // Write output...
           if ( numThreads == 1 ) cerr << " (" << beams[t].size() << ")";
-          if ( VERBOSE ) cout << beams[t] << endl;
+          if ( VERBOSE ) { //cout << beams[t] << endl;
+            cout << "BEAM" << endl;
+            for( auto& be : beams[t] )
+              cout << be.getProb() << " " << be.getHidd().first() << " f" << be.getHidd().second() << "&" << be.getHidd().third() << "&" << be.getHidd().fourth() << " j" << modJ.getJEOO(be.getHidd().fifth()) << " " << be.getHidd().sixth() << " " << be.getHidd().seventh() << " me: " << &be << " myback: " << &be.getBack() << endl; //tokdecs output is: WORD HIDDSTATE PROB
+          }
           { lock_guard<mutex> guard( mutexMLSList ); 
             cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << endl;	
           } //closes lock_guard

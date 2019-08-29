@@ -351,7 +351,7 @@ class EVar : public DiscreteDomainRV<int,domE> {   // NOTE: can't be subclass of
   static map<EVar,EVar> meeNoTop;
   static map<EVar,EVar> meeNoBot;
   void calcDetermModels ( const char* ps ) {       // NOTE: top is front, bot is back...
-    if( meiNoloDelta.end()==meiNoloDelta.find(*this) ) { int a=0; for(uint i=0; i<strlen(ps); i++) a += (ps[i]=='O') ? 0 : (ps[i]=='V') ? -1 : 1;
+    if( meiNoloDelta.end()==meiNoloDelta.find(*this) ) { int a=0; for(uint i=0; i<strlen(ps); i++) a += (ps[i]=='O' or ps[i]=='Z') ? 0 : (ps[i]=='V') ? -1 : 1;
                                                          meiNoloDelta[*this]=a; }
     if(       meoTop.end()==      meoTop.find(*this) and strlen(ps)>0 ) { char& c=  meoTop[*this]; c=ps[0]; }
     if(       meoBot.end()==      meoBot.find(*this) and strlen(ps)>0 ) { char& c=  meoBot[*this]; c=ps[strlen(ps)-1]; }
@@ -533,7 +533,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
       reserve( qPrev.size()-1 );
       insert( end(), qPrev.begin(), qPrev.end()-2 );
       emplace( end() )->apex().set( getBase().getCat(), qPrev.back(1).apex().back().getCat(), 'N', 'N', Sign() );
-      if( qPrev.getApex(1).isDitto() ) back().apex().back().setHVec() = qPrev.back(1).base().back().getHVec();
+      if( qPrev.getApex(1).isDitto() ) back().apex().back().setHVec().add( qPrev.back(1).base().back().getHVec() ).add( qPrev.back().apex().back().getHVec() );
       else                             back().apex().back().setHVec() = qPrev.back(1).apex().back().getHVec();
     }
     else {
@@ -614,23 +614,23 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
 
   // Specification methods for unary operations...
   void applyUnariesBotUp( ApexWithCarriers& awc, EVar e ) {                    // From bottom up, extract least recent nolos first...
-    HVec hvTemp;
     for( unsigned int iBack = e.getNoloDelta()-1; e != EVar::eNil; e = e.withoutBot() ) {
       if(      e.bot() == 'O' )   awc.back().setHVec().swap( 1, 2 );
+      else if( e.bot() == 'Z' )   awc.back().setHVec() = HVec(1);
       else if( e.bot() >= '0' and e.bot() <= '9' and  e.withoutBot() != EVar::eNil and e.withoutBot().bot() == 'V' )
-                                { hvTemp = HVec(1);  hvTemp.addSynArg( getDir(e.bot()), awc.back().getHVec() );
+                                { HVec hvTemp = HVec(1);  hvTemp.addSynArg( getDir(e.bot()), awc.back().getHVec() );
                                   e = e.withoutTop();  awc.back().setHVec().addSynArg( -1, hvTemp ); }
       else if( e.bot() == 'V' ) { awc.back().setHVec().addSynArg( -1, getNoloBack(0,awc).getHVec() ); } //awc.erase(awc.end()-1); }
       else                      { awc.back().setHVec().addSynArg( -getDir(e.bot()), getNoloBack(iBack,awc).getHVec() );
                                   setNoloBack(iBack--,awc).setHVec().addSynArg( getDir(e.bot()), awc.back().getHVec() ); }
     }
   }
-  void applyUnariesTopDn( BaseWithCarriers& bwc, EVar e ) {
-    for( unsigned int iBack = (e != EVar::eNil and e.bot()=='V') ? 1 : 0; e != EVar::eNil; e = e.withoutTop() ) {       // From top down, extract most recent nolos first...
-      HVec hvTemp;
+  void applyUnariesTopDn( BaseWithCarriers& bwc, EVar e ) {                    // From top down, extract most recent nolos first...
+    for( unsigned int iBack = (e != EVar::eNil and e.bot()=='V') ? 1 : 0; e != EVar::eNil; e = e.withoutTop() ) {
       if(      e.top() == 'O' )   bwc.back().setHVec().swap( 1, 2 );
+      else if( e.bot() == 'Z' )   bwc.back().setHVec() = HVec(1);
       else if( e.top() == 'V' and e.withoutTop() != EVar::eNil and e.withoutTop().top() >= '0' and e.withoutTop().top() <= '9' )
-                                { hvTemp = HVec( 1 );  hvTemp.addSynArg( 1, bwc.back().getHVec() );  if( bwc.back().getHVec().size() > 1 ) bwc.back().setHVec().at( 1 ) = KVec();
+                                { HVec hvTemp = HVec(1);  hvTemp.addSynArg( 1, bwc.back().getHVec() );  if( bwc.back().getHVec().size() > 1 ) bwc.back().setHVec().at( 1 ) = KVec();
                                   e = e.withoutTop();  bwc.back().setHVec().addSynArg( -getDir(e.top()), hvTemp ); }
       else if( e.top() == 'V' ) { setNoloBack(0,bwc).setHVec().addSynArg( 1, bwc.back().getHVec() );  if( bwc.back().getHVec().size() > 1 ) bwc.back().setHVec().at( 1 ) = KVec(); }
       else                      { bwc.back().setHVec().addSynArg( -getDir(e.top()), getNoloBack(iBack,bwc).getHVec() );
