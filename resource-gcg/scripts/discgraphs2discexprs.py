@@ -69,6 +69,7 @@ def checkConstsUsed( expr, OrigConsts ):
 class DiscGraph:
 
   def __init__( D, line ):
+
     ## Initialize associations...
     D.PorQs  = collections.defaultdict( list )                                     ## Key is elem pred.
     D.Scopes = { }                                                                 ## Key is outscoped.
@@ -154,10 +155,36 @@ class DiscGraph:
     return out if len(out)>0 else sets.Set( [x] )
 
   def check( D ):
-    for pred in D.PredTuples:
-      for x in pred[1:]:
-        if len( D.getBossesInChain(x) ) > 1: sys.stderr.write( 'WARNING: ' + x + ' has multiple outscopings in inheritance chain: ' + str( D.getBossesInChain(x) ) + '\n' )
-        if VERBOSE: print( 'Bosses of ' + x + ': ' + str(D.getBossesInChain(x)) )
+    ## Check for inheritance cycles...
+    def checkInhCycles( xLo, L=[] ):
+      if xLo in L: sys.stderr.write( 'ERROR: inheritance cycle: ' + str(L+[xLo]) + '\n' )
+      for l,xHi in D.Inhs.get(xLo,{}).items():
+        checkInhCycles( xHi, L + [xLo] )
+    ## Check for scope cycles...
+    def checkScopeCyclesFromSup( xLo, L=[] ):
+      if xLo in L:
+        print( 'ERROR: scope cycle: ' + str(L+[xLo]) )
+        sys.stderr.write( 'ERROR: scope cycle: ' + str(L+[xLo]) + '\n' )
+        exit( 1 )
+      return checkScopeCyclesInChain(D.Scopes[xLo],L+[xLo]) if xLo in D.Scopes else any([ checkScopeCyclesFromSup(xHi,L+[xLo]) for l,xHi in D.Inhs.get(xLo,{}).items() ])
+    def checkScopeCyclesFromSub( xHi, L=[] ):
+      if xHi in L:
+        print( 'ERROR: scope cycle: ' + str(L+[xHi]) )
+        sys.stderr.write( 'ERROR: scope cycle: ' + str(L+[xHi]) + '\n' )
+        exit( 1 )
+      return checkScopeCyclesInChain(D.Scopes[xHi],L+[xHi]) if xHi in D.Scopes else any([ checkScopeCyclesFromSub(xLo,L+[xHi]) for xLo in D.Subs.get(xHi,[]) ])
+    def checkScopeCyclesInChain( x, L=[] ):
+      return checkScopeCyclesFromSup( x, L ) or checkScopeCyclesFromSub( x, L )
+    ## Check for inheritance cycles...
+    for x in D.Referents:
+      checkInhCycles( x )
+    ## Check for scopecycles...
+    for x in D.Referents:
+      checkScopeCyclesInChain( x )
+    ## Check for multiple outscopings...
+    for x in D.Referents:
+      if len( D.getBossesInChain(x) ) > 1: sys.stderr.write( 'WARNING: ' + x + ' has multiple outscopings in inheritance chain: ' + str( D.getBossesInChain(x) ) + '\n' )
+      if VERBOSE: print( 'Bosses of ' + x + ': ' + str(D.getBossesInChain(x)) )
 
   def normForm( D ):
     ## Smite redundant nuscos of predicative noun phrases out of Subs...
@@ -341,6 +368,9 @@ for line in sys.stdin:
   if VERBOSE: print( 'RefToPredTuples = ' + str(RefToPredTuples) )
   ## Calculate ceilings of scoped refts...
   AnnotatedCeilings = sets.Set([ D.ceiling(x) for x in D.Scopes.keys() ])
+  if len(AnnotatedCeilings) > 1:
+    print( 'WARNING: Multiple annotated ceilings: ' + str(AnnotatedCeilings) )
+    sys.stderr.write( 'WARNING: Multiple annotated ceilings: ' + str(AnnotatedCeilings) + '\n' )
   if VERBOSE: print( 'AnnotatedCeilings = ' + str(AnnotatedCeilings) )
   ## List of original (dominant) refts...
   RecencyConnected = sorted( [ (0 if x in ScopeLeaves else -1,x) for x in D.Referents if D.ceiling(x) in AnnotatedCeilings ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
