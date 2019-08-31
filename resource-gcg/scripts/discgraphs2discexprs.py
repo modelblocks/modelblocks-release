@@ -271,6 +271,12 @@ class InducibleDiscGraph( DiscGraph ):
     ## Mapping from referent to elementary predications containing it...
     D.RefToPredTuples = { xOrig : [ (ptup,xInChain)  for xInChain in D.Chains[xOrig]  for ptup in D.PredTuples  if xInChain in ptup[2:] ]  for xOrig in D.Referents }
     if VERBOSE: print( 'RefToPredTuples = ' + str(D.RefToPredTuples) )
+    ## Calculate ceilings of scoped refts...
+    D.AnnotatedCeilings = sets.Set([ D.ceiling(x) for x in D.Scopes.keys() ])
+    if len(D.AnnotatedCeilings) > 1:
+      print( 'WARNING: Multiple annotated ceilings: ' + str(D.AnnotatedCeilings) )
+      sys.stderr.write( 'WARNING: Multiple annotated ceilings: ' + str(D.AnnotatedCeilings) + '\n' )
+    if VERBOSE: print( 'AnnotatedCeilings = ' + str(D.AnnotatedCeilings) )
 
   def ceiling( D, x ):
     y = sorted( D.getBossesInChain(x) )[0]
@@ -282,9 +288,18 @@ class InducibleDiscGraph( DiscGraph ):
       Out += D.getHeirs( xLo )
     return Out
 
-#  def tryScope( D, HypScopes, RecencyConnected, step=1, ptup=None, xHi=None, xLo=None ):
-#    for ptup in 
+  '''
+  def satisfy( D, HypScopes, ptup, xHi, xLo ):
 
+  def satisfy( D, HypScopes, ptup ):
+    for xHi in ptup[2:]:
+      for xLo in ptup[1:]:
+        if xHi != xLo:
+
+  def tryScope( D, HypScopes, RecencyConnected, step=1, ptup=None, xHi=None, xLo=None ):
+    for _,xHiOrig in RecencyConnected:
+      for  
+  '''
 
   '''
   Heirs = Subs.deepcopy()
@@ -371,16 +386,10 @@ for line in sys.stdin:
   for x in D.Referents:
     if not outscopingInChain(x): ScopeLeaves.append( x )
 
-  ## Calculate ceilings of scoped refts...
-  AnnotatedCeilings = sets.Set([ D.ceiling(x) for x in D.Scopes.keys() ])
-  if len(AnnotatedCeilings) > 1:
-    print( 'WARNING: Multiple annotated ceilings: ' + str(AnnotatedCeilings) )
-    sys.stderr.write( 'WARNING: Multiple annotated ceilings: ' + str(AnnotatedCeilings) + '\n' )
-  if VERBOSE: print( 'AnnotatedCeilings = ' + str(AnnotatedCeilings) )
   ## List of original (dominant) refts...
-  RecencyConnected = sorted( [ (0 if x in ScopeLeaves else -1,x) for x in D.Referents if D.ceiling(x) in AnnotatedCeilings ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
+  RecencyConnected = sorted( [ (0 if x in ScopeLeaves else -1,x) for x in D.Referents if D.ceiling(x) in D.AnnotatedCeilings ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
 
-  NotOutscopable = [ x for x in D.Referents if D.ceiling(x) in AnnotatedCeilings ]
+  NotOutscopable = [ x for x in D.Referents if D.ceiling(x) in D.AnnotatedCeilings ]
 
 
   ## Recursive function to search space of scopings...
