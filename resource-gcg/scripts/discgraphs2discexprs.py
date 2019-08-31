@@ -166,15 +166,16 @@ class DiscGraph:
         print( 'ERROR: scope cycle: ' + str(L+[xLo]) )
         sys.stderr.write( 'ERROR: scope cycle: ' + str(L+[xLo]) + '\n' )
         exit( 1 )
-      return checkScopeCyclesInChain(D.Scopes[xLo],L+[xLo]) if xLo in D.Scopes else any([ checkScopeCyclesFromSup(xHi,L+[xLo]) for l,xHi in D.Inhs.get(xLo,{}).items() ])
+      return checkScopeCyclesInChain(D.Scopes[xLo],L+[xLo]) if xLo in D.Scopes else any([ checkScopeCyclesFromSup(xHi,L+[xLo]) for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' ])
     def checkScopeCyclesFromSub( xHi, L=[] ):
       if xHi in L:
         print( 'ERROR: scope cycle: ' + str(L+[xHi]) )
         sys.stderr.write( 'ERROR: scope cycle: ' + str(L+[xHi]) + '\n' )
         exit( 1 )
       return checkScopeCyclesInChain(D.Scopes[xHi],L+[xHi]) if xHi in D.Scopes else any([ checkScopeCyclesFromSub(xLo,L+[xHi]) for xLo in D.Subs.get(xHi,[]) ])
+    ## CODE REVIEW: INCOMING SCOPE NOT INHERITED DOWNWARD
     def checkScopeCyclesInChain( x, L=[] ):
-      return checkScopeCyclesFromSup( x, L ) or checkScopeCyclesFromSub( x, L )
+      return checkScopeCyclesFromSup( x, L ) #or checkScopeCyclesFromSub( x, L )
     ## Check for inheritance cycles...
     for x in D.Referents:
       checkInhCycles( x )
@@ -241,6 +242,9 @@ class DiscGraph:
 #    out = getCeilingFromSup( x ) | getCeilingFromSub( x )
 #    return out if len(out)>0 else sets.Set( [x] )
 
+
+################################################################################
+
 class InducibleDiscGraph( DiscGraph ):
 
   def __init__( D, line ):
@@ -257,6 +261,17 @@ class InducibleDiscGraph( DiscGraph ):
     ## List of heirs for each participant...
     D.HeirsOfParticipants = [ xLo for xHi in D.Participants for xLo in D.Heirs.get(xHi,[]) ] 
     if VERBOSE: print( 'HeirsOfParticipants = ' + str(D.HeirsOfParticipants) )
+    ## Obtain inheritance chain for each reft...
+    def getChainFromSup( xLo ):
+      return [ xLo ] + [ x for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' for x in getChainFromSup(xHi) ]
+    def getChainFromSub( xHi ):
+      return [ xHi ] + [ x for xLo in D.Subs.get(xHi,[]) for x in getChainFromSub(xLo) ]
+    D.Chains = { x : sets.Set( getChainFromSup(x) + getChainFromSub(x) ) for x in D.Referents }
+    if VERBOSE: print( 'Chains = ' + str(D.Chains) )
+#    Inheritances = { x : sets.Set( getChainFromSup(x) ) for x in Referents }
+    ## Mapping from referent to elementary predications containing it...
+    D.RefToPredTuples = { xOrig : [ (ptup,xInChain)  for xInChain in D.Chains[xOrig]  for ptup in D.PredTuples  if xInChain in ptup[2:] ]  for xOrig in D.Referents }
+    if VERBOSE: print( 'RefToPredTuples = ' + str(D.RefToPredTuples) )
 
   def ceiling( D, x ):
     y = sorted( D.getBossesInChain(x) )[0]
@@ -267,6 +282,10 @@ class InducibleDiscGraph( DiscGraph ):
     for xLo in D.Subs.get(xHi,[]):
       Out += D.getHeirs( xLo )
     return Out
+
+#  def tryScope( D, HypScopes, RecencyConnected, step=1, ptup=None, xHi=None, xLo=None ):
+#    for ptup in 
+
 
   '''
   Heirs = Subs.deepcopy()
@@ -353,19 +372,6 @@ for line in sys.stdin:
   for x in D.Referents:
     if not outscopingInChain(x): ScopeLeaves.append( x )
 
-  ## Obtain inheritance chain for each reft...
-  def getChainFromSup( xLo ):
-    return [ xLo ] + [ x for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' for x in getChainFromSup(xHi) ]
-  def getChainFromSub( xHi ):
-    return [ xHi ] + [ x for xLo in D.Subs.get(xHi,[]) for x in getChainFromSub(xLo) ]
-  Chains = { x : sets.Set( getChainFromSup(x) + getChainFromSub(x) ) for x in D.Referents }
-  if VERBOSE: print( 'Chains = ' + str(Chains) )
-
-#  Inheritances = { x : sets.Set( getChainFromSup(x) ) for x in Referents }
-
-  ## Mapping from referent to elementary predications containing it...
-  RefToPredTuples = { xOrig : [ (ptup,xInChain)  for xInChain in Chains[xOrig]  for ptup in D.PredTuples  if xInChain in ptup[2:] ]  for xOrig in D.Referents }
-  if VERBOSE: print( 'RefToPredTuples = ' + str(RefToPredTuples) )
   ## Calculate ceilings of scoped refts...
   AnnotatedCeilings = sets.Set([ D.ceiling(x) for x in D.Scopes.keys() ])
   if len(AnnotatedCeilings) > 1:
@@ -390,10 +396,10 @@ for line in sys.stdin:
     ## Helper function to determine if one ref state outscopes another
     def reachesFromSup( xLo, xHi ):
 #      if step==36: print( '  '*step + 'reachesFromSup ' + xLo + ' ' + xHi )
-      return True if xLo in Chains.get(xHi,[]) else reachesInChain( HypScopes[xLo], xHi ) if xLo in HypScopes else any( [ reachesFromSup(xSup,xHi) for l,xSup in D.Inhs.get(xLo,{}).items() if l!='w' ] )
+      return True if xLo in D.Chains.get(xHi,[]) else reachesInChain( HypScopes[xLo], xHi ) if xLo in HypScopes else any( [ reachesFromSup(xSup,xHi) for l,xSup in D.Inhs.get(xLo,{}).items() if l!='w' ] )
     def reachesFromSub( xLo, xHi ):
 #      if step==36: print( '  '*step + 'reachesFromSub ' + xLo + ' ' + xHi )
-      return True if xLo in Chains.get(xHi,[]) else reachesInChain( HypScopes[xLo], xHi ) if xLo in HypScopes else any( [ reachesFromSub(xSub,xHi) for xSub in D.Subs.get(xLo,[]) ] )
+      return True if xLo in D.Chains.get(xHi,[]) else reachesInChain( HypScopes[xLo], xHi ) if xLo in HypScopes else any( [ reachesFromSub(xSub,xHi) for xSub in D.Subs.get(xLo,[]) ] )
     def reachesInChain( xLo, xHi ):
 #      if step==36: print( '  '*step + 'reachesInChain ' + xLo + ' ' + xHi )
       return reachesFromSup( xLo, xHi ) or reachesFromSub( xLo, xHi )
@@ -422,12 +428,12 @@ for line in sys.stdin:
 
     xHiOrig = RecencyConnected[0][1]
     ## Ensure no elem pred with unbound arguments...
-    for xHi in Chains[ xHiOrig ]:
+    for xHi in D.Chains[ xHiOrig ]:
       for ptup in D.PredTuples:
         if xHi == ptup[1] and not all([ reachesInChain(xHi,x) for x in ptup[2:] ]):
           if VERBOSE: print( '  '*step + str(step) + ': dead end -- ' + xHiOrig + ' is elementary predication ' + xHi + ' with unbound arguments.' )
           return None
-    for ptup,xHi in RefToPredTuples.get( xHiOrig, [] ):
+    for ptup,xHi in D.RefToPredTuples.get( xHiOrig, [] ):
       if not reachesInChain( ptup[1], xHi ) and reachesInChain( xHi, ceiling(ptup[1]) ):
         if VERBOSE: print( '  '*step + str(step) + ': dead end -- ' + xHiOrig + ' aka ' + xHi + ' is coapical with but does not outscope elementary predication ' + ptup[1] + '.' )
         return None
@@ -435,7 +441,7 @@ for line in sys.stdin:
     unsatisfied = False
     for _,xHiOrig in RecencyConnected:
       ## Recurse...
-      for ptup,xHi in RefToPredTuples[ xHiOrig ]:
+      for ptup,xHi in D.RefToPredTuples[ xHiOrig ]:
         for xLo in reversed(ptup[1:]):
 #          print('  '*step + 'gonna call reaches on ' + xLo + ' ' + xHi )
           if xLo == xHi or xLo in NotOutscopable:
@@ -486,6 +492,10 @@ for line in sys.stdin:
       if VERBOSE: print( 'Found scoping:' )
       if VERBOSE: print( HypScopes )
       return HypScopes
+    else:
+      print( 'Failed.' )
+      print( D.strGraph( HypScopes ) )
+      exit( 1 )
     return None
 
   if VERBOSE: print( 'running tryScope...' )
