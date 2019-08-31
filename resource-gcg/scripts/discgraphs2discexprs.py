@@ -163,19 +163,18 @@ class DiscGraph:
     ## Check for scope cycles...
     def checkScopeCyclesFromSup( xLo, L=[] ):
       if xLo in L:
-        print( 'ERROR: scope cycle: ' + str(L+[xLo]) )
-        sys.stderr.write( 'ERROR: scope cycle: ' + str(L+[xLo]) + '\n' )
-        exit( 1 )
+        print( 'WARNING: scope cycle: ' + str(L+[xLo]) )
+        sys.stderr.write( 'WARNING: scope cycle: ' + str(L+[xLo]) + '\n' )
+        return True
       return checkScopeCyclesInChain(D.Scopes[xLo],L+[xLo]) if xLo in D.Scopes else any([ checkScopeCyclesFromSup(xHi,L+[xLo]) for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' ])
     def checkScopeCyclesFromSub( xHi, L=[] ):
       if xHi in L:
-        print( 'ERROR: scope cycle: ' + str(L+[xHi]) )
-        sys.stderr.write( 'ERROR: scope cycle: ' + str(L+[xHi]) + '\n' )
-        exit( 1 )
+        print( 'WARNING: scope cycle: ' + str(L+[xHi]) )
+        sys.stderr.write( 'WARNING: scope cycle: ' + str(L+[xHi]) + '\n' )
+        return True
       return checkScopeCyclesInChain(D.Scopes[xHi],L+[xHi]) if xHi in D.Scopes else any([ checkScopeCyclesFromSub(xLo,L+[xHi]) for xLo in D.Subs.get(xHi,[]) ])
-    ## CODE REVIEW: INCOMING SCOPE NOT INHERITED DOWNWARD
     def checkScopeCyclesInChain( x, L=[] ):
-      return checkScopeCyclesFromSup( x, L ) #or checkScopeCyclesFromSub( x, L )
+      return checkScopeCyclesFromSup( x, L ) or checkScopeCyclesFromSub( x, L )
     ## Check for inheritance cycles...
     for x in D.Referents:
       checkInhCycles( x )
