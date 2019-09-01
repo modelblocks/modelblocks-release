@@ -99,7 +99,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       if psi[1] in 'ir' and sD[0] in 'AR':
         G.equate( G.result('S',G.findNolo(psi,id)), 'e', G.result('2',G.result('r',G.result('S',id))) )    ## adverbial relpro
       elif psi[1] in 'ir':
-        G.equate( G.result('S',G.findNolo(psi,id)), 'e', G.result('r',G.result('S',id)) )                  ## restrictive nominal relpro
+        G.equate( G.result('r',G.result('S',G.findNolo(psi,id))), 'e', G.result('r',G.result('S',id)) )    ## restrictive nominal relpro
 
 
   def updateUna( G, s, sC, sD, id ):

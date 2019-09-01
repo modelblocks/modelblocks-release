@@ -46,7 +46,9 @@ def lambdaFormat( expr, inAnd = False ):
 def findUnboundVars( expr, bound = [] ):
   if   len( expr ) == 0: return
   elif isinstance( expr, str ):
-    if expr not in bound and expr != '_': sys.stderr.write( 'ERROR: unbound var: ' + expr + '\n' )
+    if expr not in bound and expr != '_':
+      sys.stderr.write( 'ERROR: unbound var: ' + expr + '\n' )
+      print(            'ERROR: unbound var: ' + expr  )
   elif expr[0] == 'lambda':
     for subexpr in expr[2:]:
       findUnboundVars( subexpr, bound + [ expr[1] ] )
@@ -272,13 +274,15 @@ class InducibleDiscGraph( DiscGraph ):
     D.RefToPredTuples = { xOrig : [ (ptup,xInChain)  for xInChain in D.Chains[xOrig]  for ptup in D.PredTuples  if xInChain in ptup[2:] ]  for xOrig in D.Referents }
     if VERBOSE: print( 'RefToPredTuples = ' + str(D.RefToPredTuples) )
     ## Calculate ceilings of scoped refts...
-    D.AnnotatedCeilings = sets.Set([ D.ceiling(x) for x in D.Scopes.keys() ])
+    D.AnnotatedCeilings = sets.Set([ y  for y in D.Referents  for x in D.Scopes.keys()  if D.ceiling(x) in D.Chains[y] ]) #D.Chains[D.ceiling(x)]  for x in D.Scopes.keys() ])
     if len(D.AnnotatedCeilings) > 1:
       print( 'WARNING: Multiple annotated ceilings: ' + str(D.AnnotatedCeilings) )
       sys.stderr.write( 'WARNING: Multiple annotated ceilings: ' + str(D.AnnotatedCeilings) + '\n' )
     if VERBOSE: print( 'AnnotatedCeilings = ' + str(D.AnnotatedCeilings) )
     D.NotOutscopable = [ x for x in D.Referents if D.ceiling(x) in D.AnnotatedCeilings ]
+    if VERBOSE: print( 'NotOutscopable = ' + str(D.NotOutscopable) )
     D.PredToTuple = { xOrig : ptup  for ptup in D.PredTuples  for xOrig in D.Chains[ ptup[1] ] }
+    if VERBOSE: print( 'PredToTuple = ' + str(D.PredToTuple) )
 
   def ceiling( D, x ):
     y = sorted( D.getBossesInChain(x) )[0]
@@ -350,10 +354,10 @@ class InducibleDiscGraph( DiscGraph ):
       ## If elem pred already outscoped by arg, do nothing...
       if   D.reachesInChain( HypScopes, ptup[1], ptup[2] ): return []
       ## If arg already outscopes splice, scope elem pred to splice...
-      elif D.reachesInChain( HypScopes, xSplice, ptup[2] ): return [ (ptup[1],xSplice) ]
+      elif D.reachesInChain( HypScopes, xSplice, ptup[2] ): return [ (ptup[1],xSplice) ] if xSplice!='' else []
       ## If arg is elem pred, recurse to that pred...
       elif ptup[2] in D.PredToTuple:                        return [ (ptup[1],ptup[2]) ] + D.satisfyPred( HypScopes, D.PredToTuple[ptup[2]], xSplice, step+1 )
-      elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings:   return [ (ptup[1],ptup[2]), (ptup[2],xSplice) ] 
+      elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings:   return [ (ptup[1],ptup[2]), (ptup[2],xSplice) ] if xSplice!='' else [ (ptup[1],ptup[2]) ] 
       else:                                                 print( 'ERROR: unary could not scope: ' + ' '.join(ptup) ) 
     ## For binary predicates...
     if len(ptup) == 4:
@@ -363,6 +367,10 @@ class InducibleDiscGraph( DiscGraph ):
       elif D.reachesInChain( HypScopes, xSplice, ptup[2] ) and D.reachesInChain( HypScopes, ptup[3], ptup[2] ): return [ (ptup[1],ptup[3]) ]
       ## If 2nd arg already outscopes splice and 1st arg already outscopes 2nd arg, scope elem pred to 1st arg...
       elif D.reachesInChain( HypScopes, xSplice, ptup[3] ) and D.reachesInChain( HypScopes, ptup[2], ptup[3] ): return [ (ptup[1],ptup[2]) ]
+      ## If 1st arg already outscopes splice and 2nd arg already outscopes 1st arg, scope elem pred to 2nd arg...
+      elif xSplice=='' and D.ceiling(ptup[2]) in D.AnnotatedCeilings and D.reachesInChain( HypScopes, ptup[3], ptup[2] ): return [ (ptup[1],ptup[3]) ]
+      ## If 2nd arg already outscopes splice and 1st arg already outscopes 2nd arg, scope elem pred to 1st arg...
+      elif xSplice=='' and D.ceiling(ptup[3]) in D.AnnotatedCeilings and D.reachesInChain( HypScopes, ptup[2], ptup[3] ): return [ (ptup[1],ptup[2]) ]
       ## If 1st arg already outscopes splice and 2nd arg is elem pred...
       elif D.reachesInChain( HypScopes, xSplice, ptup[2] ) and ptup[3] in D.PredToTuple:  return [ (ptup[1],ptup[3]) ] + D.satisfyPred( HypScopes, D.PredToTuple[ptup[3]], xSplice, step+1 )
       ## If 2nd arg already outscopes splice and 1st arg is elem pred...
@@ -386,13 +394,13 @@ class InducibleDiscGraph( DiscGraph ):
       for _,xHiOrig in RecencyConnected[:]:
         print( '  ' + D.strGraph() )
         print( '  '*step + str(step) + ': working on refstate ' + str(xHiOrig) + '...' )
-        for ptup,xSplice in D.RefToPredTuples[ xHiOrig ]:
+        for ptup,xSplice in D.RefToPredTuples.get( xHiOrig, [] ) + ( [ ( D.PredToTuple[xHiOrig], '' ) ] if xHiOrig in D.PredToTuple else [] ):
           l = D.satisfyPred( D.Scopes, ptup, xSplice, step+1 )
           print( '  '*step + str(step) + '  l=' + str(l) )
           for xLo,xHi in l:
             print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
             D.Scopes[ D.ceiling(xLo) ] = xHi
-            RecencyConnected = [ (step,xLo) ] + RecencyConnected
+            RecencyConnected = [ (step,x) for x in D.Chains.get(xLo,[]) ] + RecencyConnected
           if l!=[]: D.tryScope( HypScopes, RecencyConnected, step+1 )
 #            active = True
 
@@ -482,7 +490,7 @@ for line in sys.stdin:
     if not outscopingInChain(x): ScopeLeaves.append( x )
 
   ## List of original (dominant) refts...
-  RecencyConnected = sorted( [ (0 if x in ScopeLeaves else -1,x) for x in D.Referents if D.ceiling(x) in D.AnnotatedCeilings ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
+  RecencyConnected = sorted( [ (0 if x in ScopeLeaves else -1,x)  for x in D.Referents  if D.ceiling(x) in D.AnnotatedCeilings ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
 
   '''
   ## Recursive function to search space of scopings...
@@ -600,6 +608,7 @@ for line in sys.stdin:
 #  D.Scopes = tryScope( D.Scopes, RecencyConnected )
   D.tryScope( D.Scopes, RecencyConnected )
   if VERBOSE: print( D.Scopes )
+  if VERBOSE: print( 'GRAPH: ' + D.strGraph() )
 
   ## Induce low existential quants when only scope annotated...
 #  for xCh in sorted([x if x in NuscoValues else Nuscos[x] for x in Scopes.keys()] + [x for x in Scopes.values() if x in NuscoValues]):  #sorted([ s for s in NuscoValues if 'r' not in Inhs.get(Inhs.get(s,{}).get('r',''),{}) ]): #Scopes:
@@ -754,5 +763,5 @@ for line in sys.stdin:
     checkConstsUsed( expr, D.OrigConsts )
   for k in D.OrigConsts:
     sys.stderr.write( 'WARNING: const does not appear in translations: ' + k + '\n' )
-
+    print(            'WARNING: const does not appear in translations: ' + k )
 
