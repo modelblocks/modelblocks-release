@@ -112,7 +112,7 @@ class DiscGraph:
     D.Subs = collections.defaultdict( list )
     for xLo,lxHi in D.Inhs.items():
       for l,xHi in lxHi.items():
-        if l!='w':
+        if l!='w' and l!='o':
           D.Subs[ xHi ].append( xLo )
     print( 'Subs = ' + str(D.Subs) )
 
@@ -145,7 +145,7 @@ class DiscGraph:
   def getBossesFromSup( D, xLo ):
 #      print( 'now getting sup ' + xLo )
     if xLo in D.Scopes: return D.getBossesInChain( D.Scopes[xLo] )
-    return sets.Set( [ y  for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w'  for y in D.getBossesFromSup(xHi) ] )
+    return sets.Set( [ y  for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o'  for y in D.getBossesFromSup(xHi) ] )
   def getBossesFromSub( D, xHi ):
 #      print( 'now getting sub ' + xHi )
     if xHi in D.Scopes: return D.getBossesInChain( D.Scopes[xHi] )
@@ -166,7 +166,7 @@ class DiscGraph:
         print( 'WARNING: scope cycle: ' + str(L+[xLo]) )
         sys.stderr.write( 'WARNING: scope cycle: ' + str(L+[xLo]) + '\n' )
         return True
-      return checkScopeCyclesInChain(D.Scopes[xLo],L+[xLo]) if xLo in D.Scopes else any([ checkScopeCyclesFromSup(xHi,L+[xLo]) for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' ])
+      return checkScopeCyclesInChain(D.Scopes[xLo],L+[xLo]) if xLo in D.Scopes else any([ checkScopeCyclesFromSup(xHi,L+[xLo]) for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' ])
     def checkScopeCyclesFromSub( xHi, L=[] ):
       if xHi in L:
         print( 'WARNING: scope cycle: ' + str(L+[xHi]) )
@@ -262,7 +262,7 @@ class InducibleDiscGraph( DiscGraph ):
     if VERBOSE: print( 'HeirsOfParticipants = ' + str(D.HeirsOfParticipants) )
     ## Obtain inheritance chain for each reft...
     def getChainFromSup( xLo ):
-      return [ xLo ] + [ x for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' for x in getChainFromSup(xHi) ]
+      return [ xLo ] + [ x for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' for x in getChainFromSup(xHi) ]
     def getChainFromSub( xHi ):
       return [ xHi ] + [ x for xLo in D.Subs.get(xHi,[]) for x in getChainFromSub(xLo) ]
     D.Chains = { x : sets.Set( getChainFromSup(x) + getChainFromSub(x) ) for x in D.Referents }
@@ -277,6 +277,8 @@ class InducibleDiscGraph( DiscGraph ):
       print( 'WARNING: Multiple annotated ceilings: ' + str(D.AnnotatedCeilings) )
       sys.stderr.write( 'WARNING: Multiple annotated ceilings: ' + str(D.AnnotatedCeilings) + '\n' )
     if VERBOSE: print( 'AnnotatedCeilings = ' + str(D.AnnotatedCeilings) )
+    D.NotOutscopable = [ x for x in D.Referents if D.ceiling(x) in D.AnnotatedCeilings ]
+    D.PredToTuple = { xOrig : ptup  for ptup in D.PredTuples  for xOrig in D.Chains[ ptup[1] ] }
 
   def ceiling( D, x ):
     y = sorted( D.getBossesInChain(x) )[0]
@@ -288,18 +290,108 @@ class InducibleDiscGraph( DiscGraph ):
       Out += D.getHeirs( xLo )
     return Out
 
-  '''
-  def satisfy( D, HypScopes, ptup, xHi, xLo ):
+  ## Helper function to determine if one ref state outscopes another
+  def reachesFromSup( D, HypScopes, xLo, xHi ):
+#      if step==36: print( '  '*step + 'reachesFromSup ' + xLo + ' ' + xHi )
+    return True if xLo in D.Chains.get(xHi,[]) else D.reachesInChain( HypScopes, HypScopes[xLo], xHi ) if xLo in HypScopes else any( [ D.reachesFromSup(HypScopes,xSup,xHi) for l,xSup in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' ] )
+  def reachesFromSub( D, HypScopes, xLo, xHi ):
+#      if step==36: print( '  '*step + 'reachesFromSub ' + xLo + ' ' + xHi )
+    return True if xLo in D.Chains.get(xHi,[]) else D.reachesInChain( HypScopes, HypScopes[xLo], xHi ) if xLo in HypScopes else any( [ D.reachesFromSub(HypScopes,xSub,xHi) for xSub in D.Subs.get(xLo,[]) ] )
+  def reachesInChain( D, HypScopes, xLo, xHi ):
+#      if step==36: print( '  '*step + 'reachesInChain ' + xLo + ' ' + xHi )
+    return D.reachesFromSup( HypScopes, xLo, xHi ) or D.reachesFromSub( HypScopes, xLo, xHi )
 
-  def satisfy( D, HypScopes, ptup ):
-    for xHi in ptup[2:]:
-      for xLo in ptup[1:]:
-        if xHi != xLo:
-
-  def tryScope( D, HypScopes, RecencyConnected, step=1, ptup=None, xHi=None, xLo=None ):
-    for _,xHiOrig in RecencyConnected:
-      for  
   '''
+  def outscopeWith( D, HypScopes, xLo, xHi, step ):
+    print( '  '*step + str(step) + ': trying to outscope ' + xLo + ' with ' + xHi + '...' )
+    if D.reachesInChain(HypScopes,xLo,xHi): return []
+    elif not D.reachesInChain( HypScopes, xLo, D.ceiling(xHi) ): return [ ( D.ceiling(xLo), xHi ) ]
+    else: print( 'ERROR: ' + xLo + ' coapical with but not outscoped by ' + xHi + '!' )
+    return [ ]
+
+  def outscopeArgWith( D, HypScopes, xLo, xHi, step ):
+    print( '  '*step + str(step) + ': trying to outscope arg ' + xLo + ' with ' + xHi + '...' )
+    if xLo in D.PorQs: return D.satisfy( HypScopes, tuple( [ D.PorQs[xLo][0] ] + [ xLo ] + D.PorQs[xLo][1:] ), step+1, xHi )
+    else: return D.outscopeWith( HypScopes, xLo, xHi, step+1 )
+
+  def satisfy( D, HypScopes, ptup, step, xHi=None ):
+    print( '  '*step + str(step) + ': trying to satisfy pred tuple ' + ' '.join(ptup) + ' with hi ' + str(xHi) + '...' )
+    if len(ptup)==3 and D.reachesInChain( HypScopes, xHi, ptup[2] ): return []
+    if xHi != None:
+      l = D.satisfy( HypScopes, ptup, step+1 )
+      if l!=[]: return l + D.outscopeArgWith( HypScopes, l[-1][-1], xHi, step+1 )
+      else: return []
+    elif   len(ptup)==2:
+      print( 'ERROR: zero-ary predicate: ' + str(ptup) )
+      exit( 1 )
+    elif len(ptup)==3:  return D.outscopeWith( HypScopes, ptup[1], ptup[2], step+1 )
+    elif len(ptup)==4:
+      if   D.reachesInChain( HypScopes, ptup[2], ptup[3] ) and not D.reachesInChain( HypScopes, ptup[1], ptup[2]):
+        return D.outscopeWith( HypScopes, ptup[1], ptup[2], step+1 )
+      elif D.reachesInChain( HypScopes, ptup[1], ptup[2] ) and not D.reachesInChain( HypScopes, ptup[2], ptup[3]) and ptup[2] not in D.NotOutscopable:
+        return D.outscopeArgWith( HypScopes, ptup[2], ptup[3], step+1 )
+      elif D.reachesInChain( HypScopes, ptup[3], ptup[2] ) and not D.reachesInChain( HypScopes, ptup[1], ptup[3]):
+        return D.outscopeWith( HypScopes, ptup[1], ptup[3], step+1 )
+      elif D.reachesInChain( HypScopes, ptup[1], ptup[3] ) and not D.reachesInChain( HypScopes, ptup[3], ptup[2]) and ptup[2] not in D.NotOutscopable:
+        return D.outscopeArgWith( HypScopes, ptup[3], ptup[2], step+1 )
+      elif not D.reachesInChain( HypScopes, ptup[1], D.ceiling(ptup[2]) ) and not D.reachesInChain( HypScopes, ptup[2], D.ceiling(ptup[3]) ) and ptup[2] not in D.NotOutscopable:
+        return D.outscopeWith( HypScopes, ptup[1], ptup[2], step+1 ) + D.outscopeArgWith( HypScopes, ptup[2], ptup[3], step+1 )
+      elif not D.reachesInChain( HypScopes, ptup[1], D.ceiling(ptup[3]) ) and not D.reachesInChain( HypScopes, ptup[3], D.ceiling(ptup[2]) ) and ptup[3] not in D.NotOutscopable:
+        return D.outscopeWith( HypScopes, ptup[1], ptup[3], step+1 ) + D.outscopeArgWith( HypScopes, ptup[3], ptup[2], step+1 )
+    else:
+      print( 'ERROR: ptup too large: ' + str(ptup) )
+      exit(1)
+  '''
+
+  def satisfyPred( D, HypScopes, ptup, xSplice, step ):
+    print( '  '*step + str(step) + ': trying to satisfy pred tuple ' + ' '.join(ptup) + ' for ' + xSplice + '...' )
+    ## For unary predicates...
+    if len(ptup) == 3:
+      ## If elem pred already outscoped by arg, do nothing...
+      if   D.reachesInChain( HypScopes, ptup[1], ptup[2] ): return []
+      ## If arg already outscopes splice, scope elem pred to splice...
+      elif D.reachesInChain( HypScopes, xSplice, ptup[2] ): return [ (ptup[1],xSplice) ]
+      ## If arg is elem pred, recurse to that pred...
+      elif ptup[2] in D.PredToTuple:                        return [ (ptup[1],ptup[2]) ] + D.satisfyPred( HypScopes, D.PredToTuple[ptup[2]], xSplice, step+1 )
+      else:                                                 print( 'ERROR: unary could not scope: ' + ' '.join(ptup) ) 
+    ## For binary predicates...
+    if len(ptup) == 4:
+      ## If elem pred already outscoped by both args, do nothing...
+      if   D.reachesInChain( HypScopes, ptup[1], ptup[2] ) and D.reachesInChain( HypScopes, ptup[1], ptup[3] ): return []
+      ## If 1st arg already outscopes splice and 2nd arg already outscopes 1st arg, scope elem pred to 2nd arg...
+      elif D.reachesInChain( HypScopes, xSplice, ptup[2] ) and D.reachesInChain( HypScopes, ptup[3], ptup[2] ): return [ (ptup[1],ptup[3]) ]
+      ## If 2nd arg already outscopes splice and 1st arg already outscopes 2nd arg, scope elem pred to 1st arg...
+      elif D.reachesInChain( HypScopes, xSplice, ptup[3] ) and D.reachesInChain( HypScopes, ptup[2], ptup[3] ): return [ (ptup[1],ptup[2]) ]
+      ## If 1st arg already outscopes splice and 2nd arg is elem pred...
+      elif D.reachesInChain( HypScopes, xSplice, ptup[2] ) and ptup[3] in D.PredToTuple:  return [ (ptup[1],ptup[3]) ] + D.satisfyPred( HypScopes, D.PredToTuple[ptup[3]], xSplice, step+1 )
+      ## If 2nd arg already outscopes splice and 1st arg is elem pred...
+      elif D.reachesInChain( HypScopes, xSplice, ptup[3] ) and ptup[2] in D.PredToTuple:  return [ (ptup[1],ptup[2]) ] + D.satisfyPred( HypScopes, D.PredToTuple[ptup[2]], xSplice, step+1 )
+      ## If 1st arg already outscopes splice and 2nd arg is elem pred...
+      elif D.reachesInChain( HypScopes, xSplice, ptup[2] ) and D.ceiling(ptup[3]) not in D.AnnotatedCeilings:  return [ (ptup[1],ptup[3]), (ptup[3],xSplice) ]
+      ## If 2nd arg already outscopes splice and 1st arg is elem pred...
+      elif D.reachesInChain( HypScopes, xSplice, ptup[3] ) and D.ceiling(ptup[2]) not in D.AnnotatedCeilings:  return [ (ptup[1],ptup[2]), (ptup[2],xSplice) ]
+      elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings and ptup[3] in D.PredToTuple:  return [ (ptup[1],ptup[2]), (ptup[2],ptup[3]) ] + D.satisfyPred( HypScopes, D.PredToTuple[ptup[3]], xSplice, step+1 )
+      elif D.ceiling(ptup[3]) not in D.AnnotatedCeilings and ptup[2] in D.PredToTuple:  return [ (ptup[1],ptup[3]), (ptup[3],ptup[2]) ] + D.satisfyPred( HypScopes, D.PredToTuple[ptup[2]], xSplice, step+1 )
+      else:                                                                                      print( 'ERROR: binary could not scope: ' + ' '.join(ptup) )
+
+  def tryScope( D, HypScopes, RecencyConnected, step=1 ):
+#    active = True
+#    while active:
+      print( RecencyConnected )
+      active = False
+      l = []
+      for _,xHiOrig in RecencyConnected[:]:
+        print( '  ' + D.strGraph() )
+        print( '  '*step + str(step) + ': working on refstate ' + str(xHiOrig) + '...' )
+        for ptup,xSplice in D.RefToPredTuples[ xHiOrig ]:
+          l = D.satisfyPred( D.Scopes, ptup, xSplice, step+1 )
+          print( '  '*step + str(step) + '  l=' + str(l) )
+          for xLo,xHi in l:
+            print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
+            D.Scopes[ D.ceiling(xLo) ] = xHi
+            RecencyConnected = [ (step,xLo) ] + RecencyConnected
+          if l!=[]: D.tryScope( HypScopes, RecencyConnected, step+1 )
+#            active = True
 
   '''
   Heirs = Subs.deepcopy()
@@ -377,7 +469,7 @@ for line in sys.stdin:
 
   ## Helper functions to explore inheritance chain...
   def outscopingFromSup( xLo ):
-    return True if xLo in D.Scopes.values() else any( [ outscopingFromSup(xHi) for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' ] )
+    return True if xLo in D.Scopes.values() else any( [ outscopingFromSup(xHi) for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' ] )
   def outscopingFromSub( xHi ):
     return True if xHi in D.Scopes.values() else any( [ outscopingFromSub(xLo) for xLo in D.Subs.get(xHi,[]) ] )
   def outscopingInChain( x ):
@@ -389,9 +481,7 @@ for line in sys.stdin:
   ## List of original (dominant) refts...
   RecencyConnected = sorted( [ (0 if x in ScopeLeaves else -1,x) for x in D.Referents if D.ceiling(x) in D.AnnotatedCeilings ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
 
-  NotOutscopable = [ x for x in D.Referents if D.ceiling(x) in D.AnnotatedCeilings ]
-
-
+  '''
   ## Recursive function to search space of scopings...
   def tryScope( HypScopes, RecencyConnected, step=1 ):
 
@@ -412,15 +502,13 @@ for line in sys.stdin:
 #      if step==36: print( '  '*step + 'reachesInChain ' + xLo + ' ' + xHi )
       return reachesFromSup( xLo, xHi ) or reachesFromSub( xLo, xHi )
 
-    '''
-    ## Helper functions to explore inheritance chain...
-    def outscopingFromSup( xLo ):
-      return True if xLo in HypScopes.values() else any( [ outscopingFromSup(xHi) for l,xHi in Inhs.get(xLo,{}).items() if l!='w' ] )
-    def outscopingFromSub( xHi ):
-      return True if xHi in HypScopes.values() else any( [ outscopingFromSub(xLo) for xLo in Subs.get(xHi,[]) ] )
-    def outscopingInChain( x ):
-      return outscopingFromSup( x ) or outscopingFromSub( x )
-    '''
+#    ## Helper functions to explore inheritance chain...
+#    def outscopingFromSup( xLo ):
+#      return True if xLo in HypScopes.values() else any( [ outscopingFromSup(xHi) for l,xHi in Inhs.get(xLo,{}).items() if l!='w' ] )
+#    def outscopingFromSub( xHi ):
+#      return True if xHi in HypScopes.values() else any( [ outscopingFromSub(xLo) for xLo in Subs.get(xHi,[]) ] )
+#    def outscopingInChain( x ):
+#      return outscopingFromSup( x ) or outscopingFromSub( x )
 
     ## Scope Ceiling...
     def getCeilingFromSup( xLo ):
@@ -474,28 +562,26 @@ for line in sys.stdin:
               AppendedHypScopes[ ceiling(xLo) ] = xHi
               OutputScopes = tryScope( AppendedHypScopes, [ (step,xLo) ] + RecencyConnected, step+1 )
               if OutputScopes != None: return OutputScopes
-    '''
-    unsatisfied = False
-    for pred in PredTuples:  ## Note: for speed, try unary first
-#      if len(pred) > 3:
-        for xHi in pred[2:]:
-          if reachesInChain( pred[1], xHi ):
-            if VERBOSE: print( '  '*step + str(step) + ': ' + pred[0] + ' ' + pred[1] + ' bound by ' + xHi + '.' )
-          else:
-            unsatisfied = True
-            if xHi in HighAnnotated and any([not reachesInChain(pred[1],x) and x not in HighAnnotated for x in pred[2:] if x!=xHi]):
-              if VERBOSE: print( '  '*step + str(step) + ': ' + pred[0] + ' ' + pred[1] + ' dispreferred to annotated ' + xHi + ' when other participants not bound: ' + ','.join([x for x in pred[2:] if x!=xHi and not reachesInChain(pred[1],x) and x not in HighAnnotated ]) + '.' )
-            else:
-              if ceiling(pred[1]) == ceiling(xHi):
-                if VERBOSE: print( '  '*step + str(step) + ': dead end -- ' + pred[1] + ' coapical with but not bound by ' + xHi + '.' )
-                return None
-              else:
-                if VERBOSE: print( '  '*step + str(step) + ': ' + pred[0] + ' ' + pred[1] + ' not bound by ' + xHi + ', try ceiling ' + pred[1] + ' = ' + ceiling(pred[1]) + ' to ' + xHi + '...' )
-                AppendedHypScopes = HypScopes.copy()
-                AppendedHypScopes[ ceiling(pred[1]) ] = xHi
-                OutputScopes = tryScope( AppendedHypScopes, step+1 )
-                if OutputScopes != None: return OutputScopes
-    '''
+#    unsatisfied = False
+#    for pred in PredTuples:  ## Note: for speed, try unary first
+##      if len(pred) > 3:
+#        for xHi in pred[2:]:
+#          if reachesInChain( pred[1], xHi ):
+#            if VERBOSE: print( '  '*step + str(step) + ': ' + pred[0] + ' ' + pred[1] + ' bound by ' + xHi + '.' )
+#          else:
+#            unsatisfied = True
+#            if xHi in HighAnnotated and any([not reachesInChain(pred[1],x) and x not in HighAnnotated for x in pred[2:] if x!=xHi]):
+#              if VERBOSE: print( '  '*step + str(step) + ': ' + pred[0] + ' ' + pred[1] + ' dispreferred to annotated ' + xHi + ' when other participants not bound: ' + ','.join([x for x in pred[2:] if x!=xHi and not reachesInChain(pred[1],x) and x not in HighAnnotated ]) + '.' )
+#            else:
+#              if ceiling(pred[1]) == ceiling(xHi):
+#                if VERBOSE: print( '  '*step + str(step) + ': dead end -- ' + pred[1] + ' coapical with but not bound by ' + xHi + '.' )
+#                return None
+#              else:
+#                if VERBOSE: print( '  '*step + str(step) + ': ' + pred[0] + ' ' + pred[1] + ' not bound by ' + xHi + ', try ceiling ' + pred[1] + ' = ' + ceiling(pred[1]) + ' to ' + xHi + '...' )
+#                AppendedHypScopes = HypScopes.copy()
+#                AppendedHypScopes[ ceiling(pred[1]) ] = xHi
+#                OutputScopes = tryScope( AppendedHypScopes, step+1 )
+#                if OutputScopes != None: return OutputScopes
     if not unsatisfied:
       if VERBOSE: print( 'Found scoping:' )
       if VERBOSE: print( HypScopes )
@@ -505,9 +591,11 @@ for line in sys.stdin:
       print( D.strGraph( HypScopes ) )
       exit( 1 )
     return None
+  '''
 
   if VERBOSE: print( 'running tryScope...' )
-  D.Scopes = tryScope( D.Scopes, RecencyConnected )
+#  D.Scopes = tryScope( D.Scopes, RecencyConnected )
+  D.tryScope( D.Scopes, RecencyConnected )
   if VERBOSE: print( D.Scopes )
 
   ## Induce low existential quants when only scope annotated...
