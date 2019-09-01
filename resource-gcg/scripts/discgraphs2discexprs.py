@@ -353,6 +353,7 @@ class InducibleDiscGraph( DiscGraph ):
       elif D.reachesInChain( HypScopes, xSplice, ptup[2] ): return [ (ptup[1],xSplice) ]
       ## If arg is elem pred, recurse to that pred...
       elif ptup[2] in D.PredToTuple:                        return [ (ptup[1],ptup[2]) ] + D.satisfyPred( HypScopes, D.PredToTuple[ptup[2]], xSplice, step+1 )
+      elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings:   return [ (ptup[1],ptup[2]), (ptup[2],xSplice) ] 
       else:                                                 print( 'ERROR: unary could not scope: ' + ' '.join(ptup) ) 
     ## For binary predicates...
     if len(ptup) == 4:
@@ -372,6 +373,8 @@ class InducibleDiscGraph( DiscGraph ):
       elif D.reachesInChain( HypScopes, xSplice, ptup[3] ) and D.ceiling(ptup[2]) not in D.AnnotatedCeilings:  return [ (ptup[1],ptup[2]), (ptup[2],xSplice) ]
       elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings and ptup[3] in D.PredToTuple:  return [ (ptup[1],ptup[2]), (ptup[2],ptup[3]) ] + D.satisfyPred( HypScopes, D.PredToTuple[ptup[3]], xSplice, step+1 )
       elif D.ceiling(ptup[3]) not in D.AnnotatedCeilings and ptup[2] in D.PredToTuple:  return [ (ptup[1],ptup[3]), (ptup[3],ptup[2]) ] + D.satisfyPred( HypScopes, D.PredToTuple[ptup[2]], xSplice, step+1 )
+      elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings and D.reachesInChain( HypScopes, ptup[3], D.ceiling(ptup[2]) ): return [ (ptup[1],ptup[3]), (ptup[3],xSplice) ]
+      elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings and D.ceiling(ptup[3]) not in D.AnnotatedCeilings: return [ (ptup[1],ptup[3]), (ptup[3],ptup[2]), (ptup[2],xSplice) ]
       else:                                                                                      print( 'ERROR: binary could not scope: ' + ' '.join(ptup) )
 
   def tryScope( D, HypScopes, RecencyConnected, step=1 ):
