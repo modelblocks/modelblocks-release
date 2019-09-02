@@ -272,7 +272,23 @@ class InducibleDiscGraph( DiscGraph ):
     if VERBOSE: print( 'Chains = ' + str(D.Chains) )
 #    Inheritances = { x : sets.Set( getChainFromSup(x) ) for x in Referents }
     ## Mapping from referent to elementary predications containing it...
-    D.RefToPredTuples = { xOrig : [ (ptup,xInChain)  for xInChain in D.Chains[xOrig]  for ptup in D.PredTuples  if xInChain in ptup[2:] ]  for xOrig in D.Referents }
+#    D.RefToPredTuples = { xOrig : [ (ptup,xInChain)  for xInChain in D.Chains[xOrig]  for ptup in D.PredTuples  if xInChain in ptup[2:] ]  for xOrig in D.Referents }
+    def orderTuplesFromSups( x ):
+      Out = []
+      if x in D.Nuscos:
+        for src in D.Nuscos[x]:
+          Out += [ (ptup,src) for ptup in D.PredTuples if src in ptup[2:] ]
+      Out += [ (ptup,x) for ptup in D.PredTuples if x in ptup[2:] ]
+      for lbl,dst in D.Inhs.get(x,{}).items():
+        Out += orderTuplesFromSups( dst )
+      return Out
+    def orderTuplesFromSubs( x ):
+      Out = []
+      for src in D.Subs.get(x,[]):
+        Out += orderTuplesFromSubs( src )
+        Out += [ (ptup,src) for ptup in D.PredTuples if src in ptup[2:] ]
+      return Out
+    D.RefToPredTuples = { x : orderTuplesFromSubs(x) + orderTuplesFromSups(x)  for x in D.Referents }
     if VERBOSE: print( 'RefToPredTuples = ' + str(D.RefToPredTuples) )
     ## Calculate ceilings of scoped refts...
     D.AnnotatedCeilings = sets.Set([ y  for y in D.Referents  for x in D.Scopes.keys()  if D.ceiling(x) in D.Chains[y] ]) #D.Chains[D.ceiling(x)]  for x in D.Scopes.keys() ])
@@ -284,6 +300,14 @@ class InducibleDiscGraph( DiscGraph ):
     if VERBOSE: print( 'NotOutscopable = ' + str(D.NotOutscopable) )
     D.PredToTuple = { xOrig : ptup  for ptup in D.PredTuples  for xOrig in D.Chains[ ptup[1] ] }
     if VERBOSE: print( 'PredToTuple = ' + str(D.PredToTuple) )
+    def allInherited( src ):
+      Out = []
+      for lbl,dst in D.Inhs.get(src,{}).items():
+        if lbl!='w' and lbl!='o':
+          Out += [ dst ] + allInherited( dst )
+      return Out
+    D.AllInherited = { x : allInherited( x )  for x in D.Referents }
+    if VERBOSE: print( 'AllInherited = ' + str(D.AllInherited) )
 
   def ceiling( D, x ):
     y = sorted( D.getBossesInChain(x) )[0]
@@ -493,7 +517,7 @@ for line in sys.stdin:
     if not outscopingInChain(x): ScopeLeaves.append( x )
 
   ## List of original (dominant) refts...
-  RecencyConnected = sorted( [ (0 if x in ScopeLeaves else -1,x)  for x in D.Referents  if D.ceiling(x) in D.AnnotatedCeilings ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
+  RecencyConnected = sorted( [ ((0 if x not in D.Subs else -1) + (0 if x in ScopeLeaves else -2),x)  for x in D.Referents  if D.ceiling(x) in D.AnnotatedCeilings ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
 
   '''
   ## Recursive function to search space of scopings...
@@ -732,7 +756,6 @@ for line in sys.stdin:
 
     ## I2,I3,I4 rule...
     for src,lbldst in D.Inhs.items():
-      lbldstcopy = lbldst.copy()
       for lbl,dst in lbldst.items():
         if dst in Expressions:
           if src in D.Scopes and dst in D.Traces and D.Scopes[src] in D.Scopes and D.Traces[dst] in D.Traces:
@@ -751,7 +774,7 @@ for line in sys.stdin:
           if len(D.Inhs[src])==0: del D.Inhs[src]
           active = True
       ## Rename all relevant abstractions with all inheritances, in case of multiple inheritance...
-      for lbl,dst in lbldstcopy.items():
+      for dst in D.AllInherited[ src ]:
         if dst in Expressions:
           Abstractions[ src ] = [ replaceVarName( a, dst, src )  for a in Abstractions[src] ]
 
