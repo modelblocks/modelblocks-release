@@ -248,6 +248,11 @@ class DiscGraph:
 
 class InducibleDiscGraph( DiscGraph ):
 
+  def getChainFromSup( D, xLo ):
+    return [ xLo ] + [ x for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' for x in D.getChainFromSup(xHi) ]
+  def getChainFromSub( D, xHi ):
+    return [ xHi ] + [ x for xLo in D.Subs.get(xHi,[]) for x in D.getChainFromSub(xLo) ]
+
   def __init__( D, line ):
     DiscGraph.__init__( D, line )
     ## List of referents that are or participate in elementary predications...
@@ -263,11 +268,7 @@ class InducibleDiscGraph( DiscGraph ):
     D.HeirsOfParticipants = [ xLo for xHi in D.Participants for xLo in D.Heirs.get(xHi,[]) ] 
     if VERBOSE: print( 'HeirsOfParticipants = ' + str(D.HeirsOfParticipants) )
     ## Obtain inheritance chain for each reft...
-    def getChainFromSup( xLo ):
-      return [ xLo ] + [ x for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' for x in getChainFromSup(xHi) ]
-    def getChainFromSub( xHi ):
-      return [ xHi ] + [ x for xLo in D.Subs.get(xHi,[]) for x in getChainFromSub(xLo) ]
-    D.Chains = { x : sets.Set( getChainFromSup(x) + getChainFromSub(x) ) for x in D.Referents }
+    D.Chains = { x : sets.Set( D.getChainFromSup(x) + D.getChainFromSub(x) ) for x in D.Referents }
     if VERBOSE: print( 'Chains = ' + str(D.Chains) )
 #    Inheritances = { x : sets.Set( getChainFromSup(x) ) for x in Referents }
     ## Mapping from referent to elementary predications containing it...
@@ -381,6 +382,8 @@ class InducibleDiscGraph( DiscGraph ):
       elif D.reachesInChain( HypScopes, xSplice, ptup[3] ) and D.ceiling(ptup[2]) not in D.AnnotatedCeilings:  return [ (ptup[1],ptup[2]), (ptup[2],xSplice) ]
       elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings and ptup[3] in D.PredToTuple:  return [ (ptup[1],ptup[2]), (ptup[2],ptup[3]) ] + D.satisfyPred( HypScopes, D.PredToTuple[ptup[3]], xSplice, step+1 )
       elif D.ceiling(ptup[3]) not in D.AnnotatedCeilings and ptup[2] in D.PredToTuple:  return [ (ptup[1],ptup[3]), (ptup[3],ptup[2]) ] + D.satisfyPred( HypScopes, D.PredToTuple[ptup[2]], xSplice, step+1 )
+      elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings and ptup[3] in D.getChainFromSup( ptup[2] ): return [ (ptup[1],ptup[3]), (ptup[3],xSplice) ]
+      elif D.ceiling(ptup[3]) not in D.AnnotatedCeilings and ptup[2] in D.getChainFromSup( ptup[3] ): return [ (ptup[1],ptup[2]), (ptup[2],xSplice) ]
       elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings and D.reachesInChain( HypScopes, ptup[3], D.ceiling(ptup[2]) ): return [ (ptup[1],ptup[3]), (ptup[3],xSplice) ]
       elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings and D.ceiling(ptup[3]) not in D.AnnotatedCeilings: return [ (ptup[1],ptup[3]), (ptup[3],ptup[2]), (ptup[2],xSplice) ]
       else:                                                                                      print( 'ERROR: binary could not scope: ' + ' '.join(ptup) )
@@ -729,6 +732,7 @@ for line in sys.stdin:
 
     ## I2,I3,I4 rule...
     for src,lbldst in D.Inhs.items():
+      lbldstcopy = lbldst.copy()
       for lbl,dst in lbldst.items():
         if dst in Expressions:
           if src in D.Scopes and dst in D.Traces and D.Scopes[src] in D.Scopes and D.Traces[dst] in D.Traces:
@@ -746,6 +750,10 @@ for line in sys.stdin:
           del D.Inhs[src][lbl]
           if len(D.Inhs[src])==0: del D.Inhs[src]
           active = True
+      ## Rename all relevant abstractions with all inheritances, in case of multiple inheritance...
+      for lbl,dst in lbldstcopy.items():
+        if dst in Expressions:
+          Abstractions[ src ] = [ replaceVarName( a, dst, src )  for a in Abstractions[src] ]
 
     ## S1 rule...
     for q,n,R,S in list(Translations):
