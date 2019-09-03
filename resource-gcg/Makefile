@@ -228,6 +228,10 @@ endef
 	cd $(dir $<);  pdflatex $(notdir $<)
 
 #### obtain discourse-aligned lambda expressions
+%.discgraphs.formerrs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphvalidator.py
+	cat $<  |  python $(word 2,$^)  >  $@
+
+#### obtain discourse-aligned lambda expressions
 %.discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
 	cat $<  |  python $(word 2,$^)  |  $(word 3,$^)  >  $@
 #### obtain discourse-aligned lambda expressions

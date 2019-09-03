@@ -18,8 +18,11 @@
 ###############################################################################
 
 import sys
+import os
 import collections
 import sets
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
+import discgraph
 
 VERBOSE = False
 for a in sys.argv:
@@ -68,185 +71,7 @@ def checkConstsUsed( expr, OrigConsts ):
 
 ################################################################################
 
-class DiscGraph:
-
-  def __init__( D, line ):
-
-    ## Initialize associations...
-    D.PorQs  = collections.defaultdict( list )                                     ## Key is elem pred.
-    D.Scopes = { }                                                                 ## Key is outscoped.
-    D.Traces = { }                                                                 ## Key is outscoped.
-    D.Inhs   = collections.defaultdict( lambda : collections.defaultdict(float) )  ## Key is inheritor.
-    D.Nuscos = collections.defaultdict( list )                                     ## Key is restrictor.
-    D.NuscoValues = { }
-    D.Inheriteds = { }
-   
-    ## For each assoc...
-    for assoc in sorted( line.split(' ') ):
-      src,lbl,dst = assoc.split(',')
-      if lbl.isdigit():  D.PorQs  [src].insert( int(lbl), dst )   ## Add preds and quants.
-      elif lbl == 's':   D.Scopes [src]      = dst                ## Add scopes.
-      elif lbl == 't':   D.Traces [src]      = dst                ## Add traces.
-      else:              D.Inhs   [src][lbl] = dst                ## Add inheritances.
-      if lbl == 'r':     D.Nuscos [dst].append( src )             ## Index nusco of each restr.
-      if lbl == 'r':     D.NuscoValues[src]  = True
-      if lbl == 'e':     D.Inheriteds[dst]   = True
-
-    D.PredTuples  = [ ]
-    D.QuantTuples = [ ] 
-
-    ## Distinguish preds and quants...
-    for elempred,Particips in D.PorQs.items():
-      ## If three participants and last restriction-inherits from previous, it's a quant...
-  #    if len( Particips ) == 3 and Inhs.get(Particips[2],{}).get('r','') == Particips[1]:  QuantTuples.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
-      if Particips[0].endswith('Q'):  D.QuantTuples.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] + (['_'] if len(Particips)<4 else []) ) )
-      else:                           D.PredTuples.append ( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
-
-    D.OrigConsts = [ ep[0] for ep in D.PredTuples ] + [ q[0] for q in D.QuantTuples ]
-
-    ## Report items...
-    if VERBOSE: 
-      print( 'P = ' + str(sorted(D.PredTuples)) )
-      print( 'Q = ' + str(sorted(D.QuantTuples)) )
-      print( 'S = ' + str(sorted(D.Scopes.items())) )
-
-    ## Construct list of inheriting refstates...
-    D.Subs = collections.defaultdict( list )
-    for xLo,lxHi in D.Inhs.items():
-      for l,xHi in lxHi.items():
-        if l!='w' and l!='o':
-          D.Subs[ xHi ].append( xLo )
-    print( 'Subs = ' + str(D.Subs) )
-
-
-  def strGraph( D, HypScopes = None ):  # PredTuples, QuantTuples, Inhs, Scopes ):
-    if HypScopes == None: HypScopes = D.Scopes
-    G = []
-    ## List elementary predications...
-    for ptup in D.PredTuples:
-      G.append( ptup[1] + ',0,' + ptup[0] )
-      for n,x in enumerate( ptup[2:] ):
-        G.append( ptup[1] + ',' + str(n+1) + ',' + x )
-    ## List quantifiers...
-    for qtup in D.QuantTuples:
-      G.append( qtup[1] + ',0,' + qtup[0] )
-      for n,x in enumerate( qtup[2:] ):
-        if x != '_':
-          G.append( qtup[1] + ',' + str(n+1) + ',' + x )
-    ## List inheritances...
-    for xLo,lxHi in D.Inhs.items():
-      for l,xHi in lxHi.items():
-        G.append( xLo + ',' + l +',' + xHi )
-    ## List scopes...
-    for xLo,xHi in HypScopes.items():
-      G.append( xLo + ',s,' + xHi )
-    ## print out...
-    return ' '.join( sorted( G ) )
-
-  ## Check that no reft has multiple outscopers...
-  def getBossesFromSup( D, xLo ):
-#      print( 'now getting sup ' + xLo )
-    if xLo in D.Scopes: return D.getBossesInChain( D.Scopes[xLo] )
-    return sets.Set( [ y  for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o'  for y in D.getBossesFromSup(xHi) ] )
-  def getBossesFromSub( D, xHi ):
-#      print( 'now getting sub ' + xHi )
-    if xHi in D.Scopes: return D.getBossesInChain( D.Scopes[xHi] )
-    return sets.Set( [ y  for xLo in D.Subs.get(xHi,[])  for y in D.getBossesFromSub(xLo) ] )
-  def getBossesInChain( D, x ):
-    out = D.getBossesFromSup(x) | D.getBossesFromSub(x)
-    return out if len(out)>0 else sets.Set( [x] )
-
-  def check( D ):
-    ## Check for inheritance cycles...
-    def checkInhCycles( xLo, L=[] ):
-      if xLo in L: sys.stderr.write( 'ERROR: inheritance cycle: ' + str(L+[xLo]) + '\n' )
-      for l,xHi in D.Inhs.get(xLo,{}).items():
-        checkInhCycles( xHi, L + [xLo] )
-    ## Check for scope cycles...
-    def checkScopeCyclesFromSup( xLo, L=[] ):
-      if xLo in L:
-        print( 'WARNING: scope cycle: ' + str(L+[xLo]) )
-        sys.stderr.write( 'WARNING: scope cycle: ' + str(L+[xLo]) + '\n' )
-        return True
-      return checkScopeCyclesInChain(D.Scopes[xLo],L+[xLo]) if xLo in D.Scopes else any([ checkScopeCyclesFromSup(xHi,L+[xLo]) for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' ])
-    def checkScopeCyclesFromSub( xHi, L=[] ):
-      if xHi in L:
-        print( 'WARNING: scope cycle: ' + str(L+[xHi]) )
-        sys.stderr.write( 'WARNING: scope cycle: ' + str(L+[xHi]) + '\n' )
-        return True
-      return checkScopeCyclesInChain(D.Scopes[xHi],L+[xHi]) if xHi in D.Scopes else any([ checkScopeCyclesFromSub(xLo,L+[xHi]) for xLo in D.Subs.get(xHi,[]) ])
-    def checkScopeCyclesInChain( x, L=[] ):
-      return checkScopeCyclesFromSup( x, L ) or checkScopeCyclesFromSub( x, L )
-    ## Check for inheritance cycles...
-    for x in D.Referents:
-      checkInhCycles( x )
-    ## Check for scopecycles...
-    for x in D.Referents:
-      checkScopeCyclesInChain( x )
-    ## Check for multiple outscopings...
-    for x in D.Referents:
-      if len( D.getBossesInChain(x) ) > 1: sys.stderr.write( 'WARNING: ' + x + ' has multiple outscopings in inheritance chain: ' + str( D.getBossesInChain(x) ) + '\n' )
-      if VERBOSE: print( 'Bosses of ' + x + ': ' + str(D.getBossesInChain(x)) )
-
-  def normForm( D ):
-    ## Smite redundant nuscos of predicative noun phrases out of Subs...
-    for xHi,l in D.Subs.items():
-      for xLo in l:
-        if 'r' in D.Inhs.get(D.Inhs.get(xLo,[]).get('r',''),[]):
-          if VERBOSE: print( 'Smiting ' + xLo + ' out of Subs, for being redundant.' )
-          D.Subs[xHi].remove(xLo)
-          if len(D.Subs[xHi])==0: del D.Subs[xHi]
-    ## Propagate scopes down inheritance chains...
-    active = True
-    while active:
-      active = False
-      for xHi in D.Scopes.keys():
-        for xLo in D.Subs.get(xHi,[]):
-          if xLo not in D.Scopes:
-            if VERBOSE: print( 'Inheriting scope parent ' + D.Scopes[xHi] + ' from ' + xHi + ' to ' + xLo + '.' )
-            D.Scopes[ xLo ] = D.Scopes[ xHi ]
-            active = True
-    ## Propagate quants down inheritance chains...
-    active = True
-    while active:
-      active = False
-      for q,e,r,xHi,n in D.QuantTuples[:]:
-        for xLo in D.Subs.get(xHi,[]):
-          if xLo not in [s for _,_,_,s,_ in D.QuantTuples]:
-            if VERBOSE: print( 'Inheriting quant ' + q + ' from ' + xHi + ' to ' + xLo + '.' )
-            D.QuantTuples.append( (q,e,r,xLo,n) )
-            active = True
-    ## Clean up abstract scopes...
-    for xHi in D.Scopes.keys():
-      if xHi in D.Subs: #for xLo in Subs.get(xHi,[]):
-        if VERBOSE: print( 'Removing redundant abstract scope parent ' + D.Scopes[xHi] + ' from ' + xHi + ' because of inheritance at ' + str(D.Subs[xHi]) )
-        del D.Scopes[xHi]
-    ## Clean up abstract quants...
-    for q,e,r,s,n in D.QuantTuples[:]:
-      if s in D.Subs:
-        if VERBOSE: print( 'Removing redundant abstract quant ' + q + ' from ' + s + ' because of inheritance at ' + D.Subs[s][0] )
-        D.QuantTuples.remove( (q,e,r,s,n) )
-
-    ## Report items...
-    if VERBOSE: 
-      print( 'P = ' + str(sorted(D.PredTuples)) )
-      print( 'Q = ' + str(sorted(D.QuantTuples)) )
-      print( 'S = ' + str(sorted(D.Scopes.items())) )
-
-
-  ## Scope ceiling...
-#  def getCeilingFromSup( xLo ):
-#    return getCeilingInChain( Scopes[xLo] ) if xLo in Scopes else sets.Set( [ y  for l,xHi in Inhs.get(xLo,{}).items() if l!='w'  for y in getCeilingFromSup(xHi) ] )
-#  def getCeilingFromSub( xHi ):
-#    return getCeilingInChain( Scopes[xHi] ) if xHi in Scopes else sets.Set( [ y  for xLo in Subs.get(xHi,[])  for y in getCeilingFromSub(xLo) ] )
-#  def getCeilingInChain( x ):
-#    out = getCeilingFromSup( x ) | getCeilingFromSub( x )
-#    return out if len(out)>0 else sets.Set( [x] )
-
-
-################################################################################
-
-class InducibleDiscGraph( DiscGraph ):
+class InducibleDiscGraph( discgraph.DiscGraph ):
 
   def getChainFromSup( D, xLo ):
     return [ xLo ] + [ x for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' for x in D.getChainFromSup(xHi) ]
@@ -254,9 +79,7 @@ class InducibleDiscGraph( DiscGraph ):
     return [ xHi ] + [ x for xLo in D.Subs.get(xHi,[]) for x in D.getChainFromSub(xLo) ]
 
   def __init__( D, line ):
-    DiscGraph.__init__( D, line )
-    ## List of referents that are or participate in elementary predications...
-    D.Referents = sets.Set( [ x for pred in D.PredTuples for x in pred[1:] ] + D.Inhs.keys() )
+    discgraph.DiscGraph.__init__( D, line )
     ## List of referents that participate in elementary predications (which does not include the elementary predication itself)...
     D.Participants = sets.Set([ x for pred in D.PredTuples for x in pred[2:] ])
     ## List of heirs for each inherited referent...
@@ -293,7 +116,7 @@ class InducibleDiscGraph( DiscGraph ):
     ## Calculate ceilings of scoped refts...
     D.AnnotatedCeilings = sets.Set([ y  for y in D.Referents  for x in D.Scopes.keys()  if D.ceiling(x) in D.Chains[y] ]) #D.Chains[D.ceiling(x)]  for x in D.Scopes.keys() ])
     if len(D.AnnotatedCeilings) > 1:
-      print( 'WARNING: Multiple annotated ceilings: ' + str(D.AnnotatedCeilings) )
+      print(           '#WARNING: Multiple annotated ceilings: ' + str(D.AnnotatedCeilings) )
       sys.stderr.write( 'WARNING: Multiple annotated ceilings: ' + str(D.AnnotatedCeilings) + '\n' )
     if VERBOSE: print( 'AnnotatedCeilings = ' + str(D.AnnotatedCeilings) )
     D.NotOutscopable = [ x for x in D.Referents if D.ceiling(x) in D.AnnotatedCeilings ]
@@ -373,7 +196,7 @@ class InducibleDiscGraph( DiscGraph ):
   '''
 
   def satisfyPred( D, HypScopes, ptup, xSplice, step ):
-    print( '  '*step + str(step) + ': trying to satisfy pred tuple ' + ' '.join(ptup) + ' for ' + xSplice + '...' )
+    if VERBOSE: print( '  '*step + str(step) + ': trying to satisfy pred tuple ' + ' '.join(ptup) + ' for ' + xSplice + '...' )
     ## For unary predicates...
     if len(ptup) == 3:
       ## If elem pred already outscoped by arg, do nothing...
@@ -415,17 +238,17 @@ class InducibleDiscGraph( DiscGraph ):
   def tryScope( D, HypScopes, RecencyConnected, step=1 ):
 #    active = True
 #    while active:
-      print( RecencyConnected )
+      if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
       active = False
       l = []
       for _,xHiOrig in RecencyConnected[:]:
-        print( '  ' + D.strGraph() )
-        print( '  '*step + str(step) + ': working on refstate ' + str(xHiOrig) + '...' )
+        if VERBOSE: print( '  ' + D.strGraph() )
+        if VERBOSE: print( '  '*step + str(step) + ': working on refstate ' + str(xHiOrig) + '...' )
         for ptup,xSplice in D.RefToPredTuples.get( xHiOrig, [] ) + ( [ ( D.PredToTuple[xHiOrig], '' ) ] if xHiOrig in D.PredToTuple else [] ):
           l = D.satisfyPred( D.Scopes, ptup, xSplice, step+1 )
-          print( '  '*step + str(step) + '  l=' + str(l) )
+          if VERBOSE: print( '  '*step + str(step) + '  l=' + str(l) )
           for xLo,xHi in l:
-            print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
+            if VERBOSE: print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
             D.Scopes[ D.ceiling(xLo) ] = xHi
             RecencyConnected = [ (step,x) for x in D.Chains.get(xLo,[]) ] + RecencyConnected
           if l!=[]: D.tryScope( HypScopes, RecencyConnected, step+1 )
@@ -788,11 +611,12 @@ for line in sys.stdin:
         Translations.remove( (q, n, R, S) )
         active = True
 
-  for expr in Translations:
-    print( lambdaFormat(expr) )
-    findUnboundVars( expr )
-    checkConstsUsed( expr, D.OrigConsts )
+  expr = tuple( ['and'] + Translations )
+  print( lambdaFormat(expr) )
+#  for expr in Translations:
+  findUnboundVars( expr )
+  checkConstsUsed( expr, D.OrigConsts )
   for k in D.OrigConsts:
+    print(           '#WARNING: const does not appear in translations: ' + k )
     sys.stderr.write( 'WARNING: const does not appear in translations: ' + k + '\n' )
-    print(            'WARNING: const does not appear in translations: ' + k )
 
