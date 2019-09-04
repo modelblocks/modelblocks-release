@@ -34,6 +34,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 
 
   def getArity( G, cat ):
+    cat = re.sub( '-x.*', '', cat )
     while '{' in cat:
       cat = re.sub('\{[^\{\}]*\}','X',cat)
     return len(re.findall('-[ab]',cat))
