@@ -51,8 +51,8 @@ def findUnboundVars( expr, bound = [] ):
   if   len( expr ) == 0: return
   elif isinstance( expr, str ):
     if expr not in bound and expr != '_':
-      sys.stderr.write( 'ERROR: unbound var: ' + expr + '\n' )
-      print(            'ERROR: unbound var: ' + expr  )
+      sys.stderr.write( '    DOWNSTREAM LAMBDA EXPRESSION ERROR: unbound var: ' + expr + '\n' )
+      print(           '#    DOWNSTREAM LAMBDA EXPRESSION ERROR: unbound var: ' + expr  )
   elif expr[0] == 'lambda':
     for subexpr in expr[2:]:
       findUnboundVars( subexpr, bound + [ expr[1] ] )
@@ -114,6 +114,12 @@ for line in sys.stdin:
   D.tryScope( RecencyConnected )
   if VERBOSE: print( D.Scopes )
   if VERBOSE: print( 'GRAPH: ' + D.strGraph() )
+
+  DisjointPreds = sets.Set([ ( D.ceiling(xt[1]), D.ceiling(yt[1]) )  for xt in D.PredTuples for yt in D.PredTuples  if xt[1] < yt[1] and not D.reachesInChain( xt[1], D.ceiling(yt[1]) ) ])
+  if len(DisjointPreds) > 0:
+    print(           '#WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences: ' + str(DisjointPreds) )
+    sys.stderr.write( 'WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences: ' + str(DisjointPreds) + '\n' )
+
 
   ## Induce low existential quants when only scope annotated...
 #  for xCh in sorted([x if x in NuscoValues else Nuscos[x] for x in Scopes.keys()] + [x for x in Scopes.values() if x in NuscoValues]):  #sorted([ s for s in NuscoValues if 'r' not in Inhs.get(Inhs.get(s,{}).get('r',''),{}) ]): #Scopes:
@@ -237,6 +243,6 @@ for line in sys.stdin:
   findUnboundVars( expr )
   checkConstsUsed( expr, D.OrigConsts )
   for k in D.OrigConsts:
-    print(           '#WARNING: const does not appear in translations: ' + k )
-    sys.stderr.write( 'WARNING: const does not appear in translations: ' + k + '\n' )
+    print(           '#    DOWNSTREAM LAMBDA EXPRESSION WARNING: const does not appear in translations: ' + k )
+    sys.stderr.write( '    DOWNSTREAM LAMBDA EXPRESSION WARNING: const does not appear in translations: ' + k + '\n' )
 

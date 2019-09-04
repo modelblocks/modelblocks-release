@@ -164,6 +164,9 @@ class DiscGraph:
           if VERBOSE: print( 'Smiting ' + xLo + ' out of Subs, for being redundant.' )
           D.Subs[xHi].remove(xLo)
           if len(D.Subs[xHi])==0: del D.Subs[xHi]
+          if xLo in D.Scopes:
+            sys.stderr.write( 'ERROR: scope should not be annotated on redundant predicative referent: ' + xLo + '\n' )
+            print(           '#ERROR: scope should not be annotated on redundant predicative referent: ' + xLo )
     ## Propagate scopes down inheritance chains...
     active = True
     while active:

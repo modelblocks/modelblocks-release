@@ -74,9 +74,14 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
     if VERBOSE: print( 'RefToPredTuples = ' + str(D.RefToPredTuples) )
     ## Calculate ceilings of scoped refts...
     D.AnnotatedCeilings = sets.Set([ y  for y in D.Referents  for x in D.Scopes.keys()  if D.ceiling(x) in D.Chains[y] ]) #D.Chains[D.ceiling(x)]  for x in D.Scopes.keys() ])
-    if len(D.AnnotatedCeilings) > 1:
-      print(           '#WARNING: Multiple annotated ceilings: ' + str(D.AnnotatedCeilings) )
-      sys.stderr.write( 'WARNING: Multiple annotated ceilings: ' + str(D.AnnotatedCeilings) + '\n' )
+    if len(D.AnnotatedCeilings) == 0:
+      print(           '#WARNING: Discourse contains no scope annotations -- using first word of title.' )
+      sys.stderr.write( 'WARNING: Discourse contains no scope annotations -- using first word of title.\n' )
+      D.AnnotatedCeilings = sets.Set([ '0001s' ])
+    DisjointCeilingPairs = [ (x,y)  for x in D.AnnotatedCeilings  for y in D.AnnotatedCeilings  if x<y and not D.reachesInChain( x, y ) ]
+    if len(DisjointCeilingPairs) > 0:
+      print(           '#WARNING: Maxima of scopal annotations are disjoint: ' + str(DisjointCeilingPairs) + ' -- disconnected annotations cannot all be assumed dominant.' )
+      sys.stderr.write( 'WARNING: Maxima of scopal annotations are disjoint: ' + str(DisjointCeilingPairs) + ' -- disconnected annotations cannot all be assumed dominant.\n' )
     if VERBOSE: print( 'AnnotatedCeilings = ' + str(D.AnnotatedCeilings) )
     D.NotOutscopable = [ x for x in D.Referents if D.ceiling(x) in D.AnnotatedCeilings ]
     if VERBOSE: print( 'NotOutscopable = ' + str(D.NotOutscopable) )
@@ -106,13 +111,13 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 
   ## Helper function to determine if one ref state outscopes another
   def reachesFromSup( D, xLo, xHi ):
-#      if step==36: print( '  '*step + 'reachesFromSup ' + xLo + ' ' + xHi )
+#    print( 'reachesFromSup ' + xLo + ' ' + xHi )
     return True if xLo in D.Chains.get(xHi,[]) else D.reachesInChain( D.Scopes[xLo], xHi ) if xLo in D.Scopes else any( [ D.reachesFromSup(xSup,xHi) for l,xSup in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' ] )
   def reachesFromSub( D, xLo, xHi ):
-#      if step==36: print( '  '*step + 'reachesFromSub ' + xLo + ' ' + xHi )
+#    print( 'reachesFromSub ' + xLo + ' ' + xHi )
     return True if xLo in D.Chains.get(xHi,[]) else D.reachesInChain( D.Scopes[xLo], xHi ) if xLo in D.Scopes else any( [ D.reachesFromSub(xSub,xHi) for xSub in D.Subs.get(xLo,[]) ] )
   def reachesInChain( D, xLo, xHi ):
-#      if step==36: print( '  '*step + 'reachesInChain ' + xLo + ' ' + xHi )
+#    print( 'reachesInChain ' + xLo + ' ' + xHi )
     return D.reachesFromSup( xLo, xHi ) or D.reachesFromSub( xLo, xHi )
 
 
@@ -121,15 +126,19 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
     ## For unary predicates...
     if len(ptup) == 3:
       ## If elem pred already outscoped by arg, do nothing...
-      if   D.reachesInChain( ptup[1], ptup[2] ): return []
+      if   D.reachesInChain( ptup[1], ptup[2] ):            return []
       ## If arg already outscopes splice, scope elem pred to splice...
-      elif D.reachesInChain( xSplice, ptup[2] ): return [ (ptup[1],xSplice) ] if xSplice!='' else []
+      elif D.reachesInChain( xSplice, ptup[2] ):            return [ (ptup[1],xSplice) ] if xSplice!='' else []
       ## If arg is elem pred, recurse to that pred...
       elif ptup[2] in D.PredToTuple:                        return [ (ptup[1],ptup[2]) ] + D.satisfyPred( D.PredToTuple[ptup[2]], xSplice, step+1 )
       elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings:   return [ (ptup[1],ptup[2]), (ptup[2],xSplice) ] if xSplice!='' else [ (ptup[1],ptup[2]) ] 
-      else:                                                 print( 'ERROR: unary could not scope: ' + ' '.join(ptup) ) 
+      else:
+        print(           '#ERROR: unary could not scope: ' + ' '.join(ptup) ) 
+        sys.stderr.write( 'ERROR: unary could not scope: ' + ' '.join(ptup) + '\n' ) 
+        exit( 1 )
     ## For binary predicates...
     if len(ptup) == 4:
+#      if VERBOSE: print( '  '*step + str(step) + ': note that reach of splice, ptup3 =' + str(D.reachesInChain(xSplice,ptup[3])) + ', reach of ptup2, ptup3 =' + str(D.reachesInChain(ptup[2],ptup[3])) )
       ## If elem pred already outscoped by both args, do nothing...
       if   D.reachesInChain( ptup[1], ptup[2] ) and D.reachesInChain( ptup[1], ptup[3] ): return []
       ## If 1st arg already outscopes splice and 2nd arg already outscopes 1st arg, scope elem pred to 2nd arg...
@@ -154,8 +163,10 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       elif D.ceiling(ptup[3]) not in D.AnnotatedCeilings and ptup[2] in D.getChainFromSup( ptup[3] ): return [ (ptup[1],ptup[2]), (ptup[2],xSplice) ]
       elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings and D.reachesInChain( ptup[3], D.ceiling(ptup[2]) ): return [ (ptup[1],ptup[3]), (ptup[3],xSplice) ]
       elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings and D.ceiling(ptup[3]) not in D.AnnotatedCeilings: return [ (ptup[1],ptup[3]), (ptup[3],ptup[2]), (ptup[2],xSplice) ]
-      else:                                                                                      print( 'ERROR: binary could not scope: ' + ' '.join(ptup) )
-
+      else:
+        print(           '#ERROR: binary predicate participants could not scope, possibly in different branches: ' + ' '.join(ptup) )
+        sys.stderr.write( 'ERROR: binary predicate participants could not scope, possibly in different branches: ' + ' '.join(ptup) + '\n' )
+        exit( 1 )
 
   def tryScope( D, RecencyConnected, step=1 ):
 #    active = True
