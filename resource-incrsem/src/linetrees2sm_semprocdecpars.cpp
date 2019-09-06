@@ -91,7 +91,7 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
   if( string::npos != l.find("-lG") ) return 'G';
   if( string::npos != l.find("-lH") ) return 'H';
   if( string::npos != l.find("-lR") ) return 'R';
-  if( string::npos != l.find("-lV") ) return 'V';
+  if( string::npos != l.find("-lV") ) return 'V';  // NOTE: may not be used.
   if( string::npos != l.find("-lD") ) return 'N';
   if( string::npos != l.find("-lN") ) return 'N';
   if( string::npos != lSibling.find("-lU") ) return ( getCat(l).getSynArgs()==1 ) ? 'U' : 'u';
@@ -110,6 +110,7 @@ O getOp ( const L& l, const L& lSibling, const L& lParent ) {
 
 string getUnaryOp ( const Tree<L>& tr ) {
   if( string::npos != L(tr.front()).find("-lV") ) return "V";
+  if( string::npos != L(tr.front()).find("-lZ") ) return "Z";
   if( string::npos != L(tr.front()).find("-lQ") ) return "O";
   N n =  CVar( removeLink(tr).c_str() ).getLastNonlocal();
   if( n == N_NONE ) return "";
