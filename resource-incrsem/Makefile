@@ -190,7 +190,7 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 			$$(basename %).lemmacounts  \
 			#$$(basename %).nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
 	#cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
-	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/wsj_emat_omodel_mat.txt  >  $@
 
 .PRECIOUS: %sm_corefsemprocdecpars
 %sm_corefsemprocdecpars:     $$(basename %).linetrees  \
@@ -301,8 +301,11 @@ endef
 	cat $(word 6,$^)  |  sed 's/^/B /'  >>  $@
 	cat $(word 7,$^)  |  sed 's/^/W /'  >>  $@
 
+.PRECIOUS: %fgcnmodel
 %fgcnmodel:  $$(basename %).fgcndecpars  # dependencies here
 	echo "add model builder code here"  >  $@
+
+.PRECIOUS: %jgcnmodel
 %jgcnmodel:  $$(basename %).jgcndecpars  # dependencies here
 	echo "add model builder code here"  >  $@
 
@@ -318,12 +321,13 @@ endef
                 $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.bcptmodel \
                 $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.wcptmodel 
 	cat $(word 1,$^)  |  sed 's/^/N /'   >  $@
-	cat $(word 2,$^)  |  sed 's/^/F /'  >>  $@
-	cat $(word 3,$^)  |  sed 's/^/J /'  >>  $@
+	cat $(word 2,$^)                    >>  $@
+	cat $(word 3,$^)                    >>  $@
 	cat $(word 4,$^)  |  sed 's/^/P /'  >>  $@
 	cat $(word 5,$^)  |  sed 's/^/A /'  >>  $@
 	cat $(word 6,$^)  |  sed 's/^/B /'  >>  $@
 	cat $(word 7,$^)  |  sed 's/^/W /'  >>  $@
+	cat genmodel/wsj_emat_omodel_mat.txt >> $@
 
 .PRECIOUS: %_corefsemprocmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e4_1e-6_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
