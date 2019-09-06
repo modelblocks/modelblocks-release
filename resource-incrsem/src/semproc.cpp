@@ -192,7 +192,21 @@ int main ( int nArgs, char* argv[] ) {
   const AModel& modA  = modAmutable;
   const BModel& modB  = modBmutable;
 
+//  const vec& test = arma::ones<vec>(40);
+//  const vec& testf = arma::ones<vec>(57);
+//  const vec& testj = arma::ones<vec>(87);
   cerr<<"Models ready."<<endl;
+//  cerr << "Experiments with 1s" << endl;
+//  cerr << "OFunc(1) " << funcO(1, test) << endl;
+//  cerr << "OFunc(-1) " << funcO(-1, test) << endl;
+//  cerr << "OFunc(2) " << funcO(2, test) << endl;
+//  cerr << "OFunc(-2) " << funcO(-2, test) << endl;
+//  cerr << "OFunc(3) " << funcO(3, test) << endl;
+//  cerr << "OFunc(-3) " << funcO(-3, test) << endl;
+//  cerr << "OFunc(4) " << funcO(4, test) << endl;
+//  cerr << "OFunc(-4) " << funcO(-4, test) << endl;
+//  cerr << "F " << modF.testCalcResponses(testf) << endl;
+//  cerr << "J " << modJ.testCalcResponses(testj) << endl;
 
   mutex mutexMLSList;
   vector<thread> vtWorkers;  vtWorkers.reserve( numThreads );
