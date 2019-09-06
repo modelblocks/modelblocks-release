@@ -100,7 +100,7 @@ conlen%.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_$$*.lineitems 
 conlen%.linetoks: $$(DEP-TOKENIZER) conlen%.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
 	cat $< | $(word 2, $^) | sed 's/ $$//g' | sed 's/\r //g' > $@
 
-%conlenc.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees %conlenc.linetoks
+%conlenc.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees %conlenc.linetoks
 	python $^ > $@
 
 %conlenc.12.stripped.linetrees: $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees
@@ -124,7 +124,7 @@ conlen%.linetoks: $$(DEP-TOKENIZER) conlen%.lineitems $(TOKENIZERDIR)/ptb_tokeni
 %conlenjab.stripped.linetrees: %conlenc.12.stripped.linetrees %conlenc.4.stripped.linetrees %conlenc.1.stripped.linetrees
 	cat $^ > $@
 
-%conlenjab.linetrees: $(GCG-SCRIPTS)/plugLeaves.py %conlenjab.stripped.linetrees %conlenjab.linetoks
+%conlenjab.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py %conlenjab.stripped.linetrees %conlenjab.linetoks
 	python $^ > $@
 
 %conlenncsents.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenncsents.stripped.linetrees %conlenncsents.linetoks
@@ -132,3 +132,4 @@ conlen%.linetoks: $$(DEP-TOKENIZER) conlen%.lineitems $(TOKENIZERDIR)/ptb_tokeni
 
 conlenncfilt%itemmeasures: conlenncsents%itemmeasures $(CONLEN-SCRIPTS)/build_nc.py $$(dir %)/conlennc.lineitems
 	cat $< | python $(word 2, $^) $(word 3, $^) > $@
+
