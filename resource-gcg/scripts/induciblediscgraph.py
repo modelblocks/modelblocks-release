@@ -132,6 +132,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       ## If arg is elem pred, recurse to that pred...
       elif ptup[2] in D.PredToTuple:                        return [ (ptup[1],ptup[2]) ] + D.satisfyPred( D.PredToTuple[ptup[2]], xSplice, step+1 )
       elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings:   return [ (ptup[1],ptup[2]), (ptup[2],xSplice) ] if xSplice!='' else [ (ptup[1],ptup[2]) ] 
+      elif xSplice=='' and D.ceiling(ptup[2]) in D.AnnotatedCeilings: return [ (ptup[1],ptup[2]) ]
       else:
         print(           '#ERROR: unary could not scope: ' + ' '.join(ptup) ) 
         sys.stderr.write( 'ERROR: unary could not scope: ' + ' '.join(ptup) + '\n' ) 
@@ -184,6 +185,12 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
             if VERBOSE: print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
             D.Scopes[ D.ceiling(xLo) ] = xHi
             RecencyConnected = [ (step,x) for x in D.Chains.get(xLo,[]) ] + RecencyConnected
+#            if VERBOSE: print( '  '*step + str(step) + '  trying ' + xLo + ' to ' + xHi + '...' )
+#            for x in D.Referents:
+#              if any([ y in [x] + D.AllInherited.get(x,[])  for y in [xLo] + D.AllInherited.get(xLo,[]) ]) and x not in D.Subs:   #D.reachesInChain( x, D.ceiling(xLo) ) and x not in D.Subs ]:
+#                if VERBOSE: print( '  '*step + str(step) + '  because of ' + xLo + ', scoping ' + x + ' to ' + xHi )
+#                D.Scopes[ D.ceiling(x) ] = xHi
+#                RecencyConnected = [ (step,y) for y in D.Chains.get(x,[]) ] + RecencyConnected
           if l!=[]: D.tryScope( RecencyConnected, step+1 )
 #            active = True
 
