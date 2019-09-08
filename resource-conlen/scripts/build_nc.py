@@ -3,7 +3,9 @@ import sys
 linetoks_path = sys.argv[1]
 
 with open(linetoks_path, 'r') as linetoks:
-    h = sys.stdin.readline().strip().split()
+    h = sys.stdin.readline().strip()
+    print(h)
+    h = h.split()
     wix = h.index('word')
 
     l = sys.stdin.readline().strip()

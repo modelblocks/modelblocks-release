@@ -100,6 +100,6 @@ endif
 %williams.linetoks: $$(DEP-TOKENIZER) %williams.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
 	cat $< | $(word 2, $^) | sed 's/ $$//g'> $@
 
-%williams.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-WILLIAMS)/srcmodel/williams.stripped.linetrees %williams.linetoks
+%williams.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-WILLIAMS)/srcmodel/williams.stripped.linetrees %williams.linetoks
 	python $^ > $@
 

@@ -100,6 +100,6 @@ genmodel/tom.lineitems: genmodel/tom.itemmeasures $(GENERAL-SCRIPTS)/itemmeasure
 %tom.linetoks: $$(DEP-TOKENIZER) %tom.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
 	cat $< | $(word 2, $^) | sed 's/ $$//g'> $@
 
-%tom.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-TOM)/srcmodel/tom.stripped.linetrees %tom.linetoks
+%tom.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-TOM)/srcmodel/tom.stripped.linetrees %tom.linetoks
 	python $^ > $@
 

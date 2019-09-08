@@ -198,7 +198,7 @@ genmodel/dundee.linetoks: $$(foreach sect,$$(DUNDEESECTS),genmodel/dundee$$(sect
 #
 ################################################################################
 
-%dundee.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees %dundee.linetoks
+%dundee.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees %dundee.linetoks
 	python $^ > $@
 
 %dundee.edit.editabletrees: $$(dir %)dundee.gold.linetrees bin/indent
