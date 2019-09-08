@@ -167,6 +167,9 @@ class DiscGraph:
           if xLo in D.Scopes:
             sys.stderr.write( 'ERROR: scope should not be annotated on redundant predicative referent: ' + xLo + '\n' )
             print(           '#ERROR: scope should not be annotated on redundant predicative referent: ' + xLo )
+          if xLo in D.Scopes.values():
+            sys.stderr.write( 'ERROR: inheritance should not be annotated to redundant predicative referent: ' + xLo + '\n' )
+            print(           '#ERROR: inheritance should not be annotated to redundant predicative referent: ' + xLo )
           if xLo in D.Subs:
             sys.stderr.write( 'ERROR: inheritance should not be annotated from ' + str(D.Subs[xLo]) + ' to redundant predicative referent: ' + xLo + '\n' )
             print(           '#ERROR: inheritance should not be annotated from ' + str(D.Subs[xLo]) + ' to redundant predicative referent: ' + xLo )
