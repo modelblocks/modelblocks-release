@@ -81,6 +81,9 @@ CCL-SCRIPTS := $(RESOURCE-CCL)/scripts
 RESOURCE-CHILDES := $(abspath $(MBDIR)/resource-childes)
 CHILDES-SCRIPTS := $(RESOURCE-CHILDES)/scripts
 
+RESOURCE-CONLEN := $(abspath $(MBDIR)/resource-conlen)
+CONLEN-SCRIPTS := $(RESOURCE-CONLEN)/scripts
+
 RESOURCE-DMV := $(abspath $(MBDIR)/resource-dmv)
 DMV-SCRIPTS := $(RESOURCE-DMV)/scripts
 
@@ -110,6 +113,12 @@ GIGAWORD-SCRIPTS := $(RESOURCE-GIGAWORD)/scripts
 
 RESOURCE-GLOVE := $(abspath $(MBDIR)/resource-glove)
 GLOVE-SCRIPTS := $(RESOURCE-GLOVE)/scripts
+
+RESOURCE-HUTH := $(abspath $(MBDIR)/resource-huth)
+HUTH-SCRIPTS := $(RESOURCE-HUTH)/scripts
+
+RESOURCE-WILLIAMS := $(abspath $(MBDIR)/resource-williams)
+WILLIAMS-SCRIPTS := $(RESOURCE-WILLIAMS)/scripts
 
 RESOURCE-INCRSEM := $(abspath $(MBDIR)/resource-incrsem)
 INCRSEM-SCRIPTS := $(RESOURCE-INCRSEM)/scripts
@@ -165,6 +174,9 @@ SRILM-SCRIPTS := $(RESOURCE-SRILM)/scripts
 RESOURCE-TOKENIZER := $(abspath $(MBDIR)/resource-tokenizer)
 TOKENIZER-SCRIPTS := $(RESOURCE-TOKENIZER)/scripts
 
+RESOURCE-TOM := $(abspath $(MBDIR)/resource-tom)
+TOM-SCRIPTS := $(RESOURCE-TOM)/scripts
+
 RESOURCE-TREEBANK := $(abspath $(MBDIR)/resource-treebank)
 RESOURCE-TREEBANK-VADAS := $(abspath $(MBDIR)/resource-treebank-vadas)
 TREEBANK-SCRIPTS := $(RESOURCE-TREEBANK)/scripts
@@ -203,6 +215,7 @@ include $(RESOURCE-BNC)/Makefile
 include $(RESOURCE-TREEBANK)/Makefile
 include $(RESOURCE-GIGAWORD)/Makefile
 include $(RESOURCE-GLOVE)/Makefile
+include $(RESOURCE-HUTH)/Makefile
 include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
@@ -218,6 +231,8 @@ include $(RESOURCE-BMMM)/Makefile
 include $(RESOURCE-CCL)/Makefile
 include $(RESOURCE-CHILDES)/Makefile
 include $(RESOURCE-DUNDEE)/Makefile
+include $(RESOURCE-CONLEN)/Makefile
+include $(RESOURCE-TOM)/Makefile
 include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
 include $(RESOURCE-NATSTORIESFMRI)/Makefile
@@ -227,6 +242,7 @@ include $(RESOURCE-RHACKS)/Makefile
 include $(RESOURCE-XLSX2CSV)/Makefile
 include $(RESOURCE-UCL)/Makefile
 include $(RESOURCE-UPPARSE)/Makefile
+include $(RESOURCE-WILLIAMS)/Makefile
 include $(RESOURCE-WORD2VEC)/Makefile
 include $(RESOURCE-WORDNET)/Makefile
 endef

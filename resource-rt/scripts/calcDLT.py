@@ -180,7 +180,7 @@ def calcCosts(t, MOD):
     dltc = 0
     dltcv = 0
     dltv = 0
-    stop = isPunc(t) or t.c[0] == 'X'
+    stop = isPunc(t) or t.c[0] == 'X' or t.p is None
     s = None
     depdirSyn = 'null'
     depdirSem = 'null'

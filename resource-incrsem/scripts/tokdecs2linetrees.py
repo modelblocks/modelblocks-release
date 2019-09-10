@@ -34,11 +34,15 @@ def unaryprojlist(e,c):
   return l
 
 for s in sys.stdin:
+    if s == '!ARTICLE\n':
+      print( '!ARTICLE' )
+      continue
     s = re.sub( '/[^ ;/]*\^;[^ ;/]*', '', s )   ## remove bottom carriers. (OBSOLETE)
     s = re.sub( '(?<=.);[ \n]', ' ', s )        ## remove trailing ;
     s = re.sub( '/ ', ' ', s )                  ## remove trailing /
     s = re.sub( '/([^; ]*)/', '/', s )          ## remove A carriers
     s = re.sub( ';([^/ ]*);', ';', s )          ## remove B carriers
+    s = re.sub( '\]\[', '', s )                 ## remove synarg divisions in context lists
     m = re.search('^([^ ]*) (?!pos)(?:\[[^\]]*\]:)?([^ ]*) ([^ ]*) ([^ ]*) (?:.*;)?([^ ;\n]*)[ \n]',s)
     if m is not None:
         w,p,f,j,q = m.groups()
@@ -49,11 +53,11 @@ for s in sys.stdin:
         treeW = Tree(w)
 
         ## annotate operator tags if semproc...
-        if '&' in f:
-          bF,eF,kF = f.split('&')
-          treeW = Tree( re.sub(':.*','',kF), [ re.sub('.*:(.*)_.*','\\1',kF) ] )
-          for c in reversed( unaryprojlist(eF,p) ):
-            treeW = Tree( c, [treeW] )
+        # if '&' in f:
+        #   bF,eF,kF = f.split('&')
+        #   treeW = Tree( re.sub(':.*','',kF), [ re.sub('.*:(.*)_.*','\\1',kF) ] )
+        #   for c in reversed( unaryprojlist(eF,p) ):
+        #     treeW = Tree( c, [treeW] )
 
         ## apply fork decision...
         if f=='1' or f.startswith('f1'): SS.append( Tree(p,[treeW]) ) #[Tree(w)]) )
@@ -78,8 +82,8 @@ for s in sys.stdin:
             if '&' in j:
               bJ,eJ,oL,oR = j.split('&')
               ## calc op tags for left and right children...
-              if oL!='I' and oL!='U' and oL!='u' or oR=='U' or oR=='u' : SS[-1].c     += '-l' + ('A' if oL>='1' and oL<='9' else 'U' if oR=='U' or oR=='u' else oL)
-              if oR!='I' and oR!='U' and oR!='u' or oL=='U' or oL=='u' : b            += '-l' + ('A' if oR>='1' and oR<='9' else 'U' if oL=='U' or oL=='u' else oR)
+              if oL!='.' and oL!='U' and oL!='u' or oR=='U' or oR=='u' : SS[-1].c     += '-l' + ('A' if oL>='1' and oL<='9' else 'U' if oR=='U' or oR=='u' else oL)
+              if oR!='.' and oR!='U' and oR!='u' or oL=='U' or oL=='u' : b            += '-l' + ('A' if oR>='1' and oR<='9' else 'U' if oL=='U' or oL=='u' else oR)
               ####sys.stderr.write( j + ' trying SS[-2]:' + ( str(SS[-2]) if len(SS)>1 else '')  + ' SS[-1]:' + (str(SS[-1]) if len(SS)>0 else '') + ' a:' + a + ' b:' + b + '\n' )
               kids = [ SS[-1], Tree(b) ]  # bc b updated
               for c in reversed( unaryprojlist( eJ, getB(SS[-2]) if j.startswith('j1') else a ) ):

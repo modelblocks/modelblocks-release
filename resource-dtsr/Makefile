@@ -187,16 +187,16 @@ $(DTSRDIR)/dtsr/dtsrbayes.py
 
 %.dtsr: %.dtsr_outdir/finished.txt;
 
-%_ptsignif: $$(DEP-DTSR) \
+#%_ptsignif: $$(DEP-DTSR) \
 $$(basename $$(basename $$(basename %))).$$(subst .,,$$(suffix $$(basename $$*))).filt.evmeasures \
 $$(word 1,$$(subst ., ,%)).evmeasures \
 $$(basename $$(basename $$(basename %))).$$(subst .,,$$(suffix $$(basename $$*))).$$(subst .,,$$(suffix $$(basename $$(basename $$*)))) \
 $(DTSRDIR)/dtsr/bin/predict.py \
 $(DTSRDIR)/dtsr/bin/pt.py \
 $(DTSRDIR)/dtsr/bin/signif_table.py
-	python3 $(word 4, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -p $(subst .,,$(suffix $*))
-	python3 $(word 5, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -a -M loglik -p $(subst .,,$(suffix $*))
-	python3 $(word 6, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -H -M pt -p $(subst .,,$(suffix $*)) > $@
+#	python3 $(word 4, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -p $(subst .,,$(suffix $*))
+#	python3 $(word 5, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -a -M loglik -p $(subst .,,$(suffix $*))
+#	python3 $(word 6, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -H -M pt -p $(subst .,,$(suffix $*)) > $@
 
 %_2stepsignif: $$(DEP-DTSR) \
 $$(basename $$(basename $$(basename %))).$$(subst .,,$$(suffix $$(basename $$*))).filt.evmeasures \

@@ -56,8 +56,8 @@ while ( <> ) {
   s/\)\(/\) \(/g;
 
   ## conjoin disjoint trees with root node
-  s/^(\(*[^S\( ].*)$/\(S \1\)/;
-  s/^(.*[^\)]\))$/\(S \1\)/;
+  s/^(\(*[^S!\( ].*)$/\(S \1\)/;
+  s/^([^!].*[^\)]\))$/\(S \1\)/;
 
   ## conjoin erroneously split punctuation
   s/\(\. \?\) \(\. \?\)/\(\? \?\)/g;

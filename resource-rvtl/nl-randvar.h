@@ -26,7 +26,7 @@
 #include "nl-safeids.h"
 #include "nl-stringindex.h"
 #include "nl-prob.h"
-#include "nl-hash.h"
+//#include "nl-hash.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -541,6 +541,7 @@ class DelimitedJoint5DRV : public Joint5DRV<V1,V2,V3,V4,V5> {
 
 #endif ///////////////////////////////////
 
+/*
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -556,11 +557,9 @@ class JointArrayRV {
  public:
   typedef T ElementType;
 
-  /*
-  // Constructor / destructor methods...
-  JointArrayRV ( )              { }
-  JointArrayRV ( const T& t )   { for(int i=0;i<I;i++) at[i]=t; }
-  */
+//  // Constructor / destructor methods...
+//  JointArrayRV ( )              { }
+//  JointArrayRV ( const T& t )   { for(int i=0;i<I;i++) at[i]=t; }
 
   // Static extraction methods...
   static const int SIZE = I;
@@ -634,7 +633,7 @@ class DelimitedJointArrayRV : public JointArrayRV<I,T> {
     return psIn;
   }
 };
-
+*/
 
 ///////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

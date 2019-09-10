@@ -293,12 +293,18 @@ genmodel/rename_cols.params: | genmodel
 %.lc.tokmeasures: %.linetoks $(RT-SCRIPTS)/calcEmbd.py %.nopunc.semprocdecpars
 	cat $< | python $(word 2, $^) $(word 3, $^) > $@
     
+%.lc.tokmeasures: %.gold.linetoks $(RT-SCRIPTS)/calcEmbd.py %.nopunc.semprocdecpars
+	cat $< | python $(word 2, $^) $(word 3, $^) > $@
+    
 # Pastes DLT predictors to existing identically tokenized tokmeasures file
 %.dlt.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).dlt.tokmeasures
 	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
  
 # Computes DLT predictors
 %.dlt.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
+	cat $< | python $(word 2, $^) > $@
+
+%.dlt.tokmeasures: %.gold.linetrees $(RT-SCRIPTS)/calcDLT.py
 	cat $< | python $(word 2, $^) > $@
 
 # Pastes GloVe predictors to existing identically tokenized tokmeasures file
@@ -356,7 +362,7 @@ $(RT-SCRIPTS)/filter_cols.py
 	mv $^ $@
 
 %.itemmeasures: $$(DEP-RHACKS) $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
 	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
@@ -364,7 +370,7 @@ $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.item
 	$(word 5, $^) > $@
 
 %.t.itemmeasures: $$(basename %).t.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
 	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
@@ -372,7 +378,7 @@ $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.item
 	$(word 5, $^) > $@
 
 %.t.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.t.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
 	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
@@ -380,7 +386,7 @@ $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.item
 	$(word 5, $^) > $@
 
 %.r.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures $$(basename %).roark.itemmeasures \
-$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
 	cat $< | python $(word 4, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | paste -d' ' - $(word 3, $^) | \
@@ -425,11 +431,15 @@ endef
 %.itemmeasures: %.tokmeasures $$(basename %).itemmeasures $(RT-SCRIPTS)/roll_toks.py
 	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 > $@ 
 
-%.all-itemmeasures:  $(RT-SCRIPTS)/evmeas2uniqcols.py  $(RT-SCRIPTS)/filter_cols.py  $(RT-SCRIPTS)/addCols.r  \
-                         $$(patsubst $$(pc),$$(word 1,$$(subst ., ,$$*)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,$$*)),$$(subst ., ,%)))
-	paste -d ' ' $(wordlist 4,$(words $^),$^)  |  python $(word 1,$^)  |  python $(word 2,$^)  |  $(word 3,$^)  >  $@
+%.all-itemmeasures:  $(RT-SCRIPTS)/evmeas2uniqcols.py  $(RT-SCRIPTS)/filter_cols.py  $(RT-SCRIPTS)/addCols.r  $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
+                         $$(patsubst $$(pc),$$(word 1,$$(subst ., ,$$*)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,$$*)),$$(subst ., ,%))) \
+			 $$(word 1, $$(subst ., ,%)).itemmeasures
+	paste -d ' ' $(wordlist 6,$(words $^),$^)  |  python $(word 1,$^)  |  python $(word 2,$^)  |  $(word 3,$^)  >  $@
 #%.core-itemmeasures: $$(patsubst $$(pc),$$(word 1,$$(subst ., ,%)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,%)),$$(subst ., ,%))) 
 #	paste $^  >  $@
+
+%.delim.lineitems: %.itemmeasures $(RT-SCRIPTS)/itemmeasures2delimlineitems.py
+	cat $< | python $(word 2, $^) > $@
 
 ## TO SPEC
 .PRECIOUS: %.core-evmeasures

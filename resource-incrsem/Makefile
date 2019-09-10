@@ -157,9 +157,18 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 #	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/%[^ %|]*\|//g;s/-x(?:(?!-[a-z])[^ }])*(?=[^\)]* )//g'  >  $@
 #	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/-x[^- \}]*%[^- ]*(?=[^\)]* )//g'  >  $@
 
+## note that 'nol' has been changed to 'nol4train'
+%.nol4train.linetrees:  %.linetrees
+	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/-x[^-} ][^ |]*[|][^- ]*//g'  >  $@
+#	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/%[^ %|]*\|//g;s/-x(?:(?!-[a-z])[^ }])*(?=[^\)]* )//g'  >  $@
+#	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/-x[^- \}]*%[^- ]*(?=[^\)]* )//g'  >  $@
+
 ## remove scope and coref tags...
 %.nosem.linetrees:  %.linetrees
-	cat $<  |  perl -pe 's/[-+](?:[nmsw]|nn+)[0-9]+(?=[^\)]* )//g;'  >  $@
+	cat $<  |  perl -pe 's/[-+](?:[nmstw]|nn+)[0-9]+(?=[^\)]* )//g;'  >  $@
+
+%.nodelim.linetrees:  %.linetrees
+	cat $<  |  grep -v '!ARTICLE'  >  $@
 
 ## obtain lemma counts from trees...
 %.lemmacounts:  %.linetrees  $(INCRSEM-SCRIPTS)/printlemmas.py  $(INCRSEM-SCRIPTS)/printlemmas.d
@@ -170,14 +179,24 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 %sm_semprocdecpars:     $$(basename %).linetrees  \
 			$(BIN)/linetrees2sm_semprocdecpars  \
 			$$(basename %).lemmacounts  \
-			$$(basename %).nol.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
-	cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
+			#$$(basename %).nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
+	#cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
+
+## obtain predictors and responses for all semantic processing models...
+.PRECIOUS: %densemprocdecpars
+%densemprocdecpars:     $$(basename %).linetrees  \
+			$(BIN)/linetrees2densemprocdecpars  \
+			$$(basename %).lemmacounts  \
+			#$$(basename %).nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
+	#cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/wsj_emat_omodel_mat.txt  >  $@
 
 .PRECIOUS: %sm_corefsemprocdecpars
 %sm_corefsemprocdecpars:     $$(basename %).linetrees  \
 			$(BIN)/linetrees2sm_semprocdecpars_coref  \
 			$$(basename %).lemmacounts  \
-			$$(basename %).unlinked.nol.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
+			#$$(basename %).unlinked.nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
 	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
 #%semprocdecpars:  $$(basename $$(basename %)).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename $$(basename %)).lemmacounts
 #	cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst _, ,$(subst .,, $(suffix $*))) $(word 3,$^)  >  $@
@@ -228,8 +247,12 @@ endef
 ################################################################################
 
 ## pull apart predictor/responses for training...
-%.fmlrdecpars:  %semprocdecpars
-	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
+%.nmlrdecpars:  %semprocdecpars
+	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
+#%.fmlrdecpars:  %semprocdecpars
+%.fmlrdecpars:  %semprocdecpars $(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py 
+	#cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
+	cat $(word 1, $^)  |  grep '^F'  |  sed 's/^. //' | python $(word 2, $^) >  $@
 %.jmlrdecpars:  %semprocdecpars
 	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
 %.pcptdecpars:  %semprocdecpars
@@ -241,22 +264,70 @@ endef
 %.wcptdecpars:  %semprocdecpars
 	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
 
+## pull apart predictor/responses for training...
+%.nmlrdecpars:  %densemprocdecpars
+	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
+#%.fmlrdecpars:  %semprocdecpars
+%.fgcndecpars:  %densemprocdecpars  $(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py 
+	#cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
+	cat $(word 1, $^)  |  grep '^F'  |  sed 's/^. //' | python $(word 2, $^) >  $@
+%.jgcndecpars:  %densemprocdecpars
+	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
+%.pcptdecpars:  %densemprocdecpars
+	cat $<  |  grep '^P'  |  sed 's/^. //'  >  $@
+%.acptdecpars:  %densemprocdecpars
+	cat $<  |  grep '^A'  |  sed 's/^. //'  >  $@
+%.bcptdecpars:  %densemprocdecpars
+	cat $<  |  grep '^B'  |  sed 's/^. //'  >  $@
+%.wcptdecpars:  %densemprocdecpars
+	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
+
 ## push together semantic processing models...
 .PRECIOUS: %_semprocmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e4_1e-6_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e-1_1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
-%_semprocmodel: $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_$$(suffix $$(basename $$(subst _,.,$$*)))_100_fmlrmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_$$(suffix $$(subst _,.,$$*))_100_jmlrmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_.pcptmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_.acptmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_.bcptmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_.wcptmodel
-	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
-	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
-	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
-	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
-	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
-	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
+%_semprocmodel: $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(basename $$(basename $$(subst _,.,$$*))))_100_nmlrmodel \
+ 								$$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(basename $$(subst _,.,$$*)))_100_fmlrmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(subst _,.,$$*))_100_jmlrmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.pcptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.acptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.bcptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.wcptmodel 
+	cat $(word 1,$^)  |  sed 's/^/N /'   >  $@
+	cat $(word 2,$^)  |  sed 's/^/F /'  >>  $@
+	cat $(word 3,$^)  |  sed 's/^/J /'  >>  $@
+	cat $(word 4,$^)  |  sed 's/^/P /'  >>  $@
+	cat $(word 5,$^)  |  sed 's/^/A /'  >>  $@
+	cat $(word 6,$^)  |  sed 's/^/B /'  >>  $@
+	cat $(word 7,$^)  |  sed 's/^/W /'  >>  $@
+
+.PRECIOUS: %fgcnmodel
+%fgcnmodel:  $$(basename %).fgcndecpars  # dependencies here
+	echo "add model builder code here"  >  $@
+
+.PRECIOUS: %jgcnmodel
+%jgcnmodel:  $$(basename %).jgcndecpars  # dependencies here
+	echo "add model builder code here"  >  $@
+
+## push together semantic processing models...
+.PRECIOUS: %_densemprocmodel
+#%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e4_1e-6_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+#%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e-1_1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+%_densemprocmodel: $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(basename $$(basename $$(subst _,.,$$*))))_100_nmlrmodel \
+ 								$$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(basename $$(subst _,.,$$*)))_100_fgcnmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(subst _,.,$$*))_100_jgcnmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.pcptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.acptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.bcptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.wcptmodel 
+	cat $(word 1,$^)  |  sed 's/^/N /'   >  $@
+	cat $(word 2,$^)                    >>  $@
+	cat $(word 3,$^)                    >>  $@
+	cat $(word 4,$^)  |  sed 's/^/P /'  >>  $@
+	cat $(word 5,$^)  |  sed 's/^/A /'  >>  $@
+	cat $(word 6,$^)  |  sed 's/^/B /'  >>  $@
+	cat $(word 7,$^)  |  sed 's/^/W /'  >>  $@
+	cat genmodel/wsj_emat_omodel_mat.txt >> $@
 
 .PRECIOUS: %_corefsemprocmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e4_1e-6_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
@@ -274,22 +345,23 @@ endef
 	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
 	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
 
-.PRECIOUS: %.semproctorchmodel
-%.semproctorchmodel:  %.-batchsize_100_fmlrtorchmodel  %.jmlrtorchmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
-	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
-	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
-	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
-	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
-	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
-	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
-#.PRECIOUS: %.synprocmodel
-#%.synprocmodel:  %.1e-1_100_fmlrmodel  %.1e-1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+#.PRECIOUS: %.semproctorchmodel
+#%.semproctorchmodel:  %.-batchsize_100_fmlrtorchmodel  %.jmlrtorchmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 #	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
 #	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
 #	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
 #	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
 #	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
 #	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
+#
+##.PRECIOUS: %.synprocmodel
+##%.synprocmodel:  %.1e-1_100_fmlrmodel  %.1e-1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+##	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
+##	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
+##	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
+##	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
+##	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
+##	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
 
 ### Get training and test data
 
@@ -493,8 +565,11 @@ endef
 
 .PRECIOUS: %parsed.tokdecs
 %parsed.tokdecs:  bin/$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$(subst +,-,$$(subst -,.,$$*)))))) \
-                  $$(basename %).linetoks \
+                  $$(basename %).delim.linetoks \
                   genmodel/$$(basename $$(subst +,-,$$(subst -,.,$$(subst .,,$$(suffix $$*)))))model  |  $(CONFIGDIR)/user-numthreads.txt
+	###############
+	### parsing ###
+	###############
 	cat $(word 2,$^)  |  $(word 1,$^) -p$(shell cat $|) $(subst _, ,$(subst +,-,$(subst .,,$(suffix $(subst -,.,$*))))) $(word 3,$^)  >  $@  2>  $@.log
 
 ### obtain parsed token states for sem proc model...

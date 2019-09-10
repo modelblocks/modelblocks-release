@@ -136,84 +136,84 @@ computeSplitIDs <- function(data, splitcols) {
     return(data)
 }
 
-cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=FALSE, filterscreens=FALSE, filterpunc=FALSE, restrdomain=NULL, upperbound=NULL, lowerbound=NULL, mincorrect=NULL) {
-    smartPrint(paste('Number of data rows (raw):', nrow(data)))
+cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=FALSE, filterscreens=FALSE, filterpunc=FALSE, restrdomain=NULL, upperbound=NULL, lowerbound=NULL, mincorrect=NULL, stdout=TRUE) {
+    smartPrint(paste('Number of data rows (raw):', nrow(data)), stdout=stdout)
     
     if (!is.null(data$wdelta)) {
         # Remove outliers
         data <- data[data$wdelta <= 4,]
-        smartPrint(paste('Number of data rows (no saccade lengths > 4):', nrow(data)))
+        smartPrint(paste('Number of data rows (no saccade lengths > 4):', nrow(data)), stdout=stdout)
     }
     # Filter tokens
     if (filterfiles) {
         if (!is.null(data$startoffile) && !is.null(data$endoffile)) {
-            smartPrint('Filtering file boundaries')
+            smartPrint('Filtering file boundaries', stdout=stdout)
             data <- data[data$startoffile != 1,]
             data <- data[data$endoffile != 1,]
-            smartPrint(paste('Number of data rows (no file boundaries)', nrow(data)))
-        } else smartPrint('No file boundary fields to filter')
+            smartPrint(paste('Number of data rows (no file boundaries)', nrow(data)), stdout=stdout)
+        } else smartPrint('No file boundary fields to filter', stdout=stdout)
     } else {
-        smartPrint('File boundary filtering off')
+        smartPrint('File boundary filtering off', stdout=stdout)
     }
     if (filterlines) {
         if (!is.null(data$startoffile) && !is.null(data$endoffile)) {
-            smartPrint('Filtering line boundaries')
+            smartPrint('Filtering line boundaries', stdout=stdout)
             data <- data[data$startofline != 1,]
             data <- data[data$endofline != 1,]
-            smartPrint(paste('Number of data rows (no line boundaries)', nrow(data)))
-        } else smartPrint('No line boundary fields to filter')
+            smartPrint(paste('Number of data rows (no line boundaries)', nrow(data)), stdout=stdout)
+        } else smartPrint('No line boundary fields to filter', stdout=stdout)
     } else {
-        smartPrint('Line boundary filtering off')
+        smartPrint('Line boundary filtering off', stdout=stdout)
     }
     if (filtersents) {
         if (!is.null(data$startofsentence) && !is.null(data$endofsentence)) {
-            smartPrint('Filtering sentence boundaries')
+            smartPrint('Filtering sentence boundaries', stdout=stdout)
             data <- data[data$startofsentence != 1,]
             data <- data[data$endofsentence != 1,]
-            smartPrint(paste('Number of data rows (no sentence boundaries)', nrow(data)))
-        } else smartPrint('No sentence boundary fields to filter')
+            smartPrint(paste('Number of data rows (no sentence boundaries)', nrow(data)), stdout=stdout)
+        } else smartPrint('No sentence boundary fields to filter', stdout=stdout)
     } else {
-        smartPrint('Sentence boundary filtering off')
+        smartPrint('Sentence boundary filtering off', stdout=stdout)
     }
     if (filterscreens) {
         if (!is.null(data$startofscreen) && !is.null(data$endofscreen)) {
-            smartPrint('Filtering screen boundaries')
+            smartPrint('Filtering screen boundaries', stdout=stdout)
             data <- data[data$startofscreen != 1,]
             data <- data[data$endofscreen != 1,]
-            smartPrint(paste('Number of data rows (no screen boundaries)', nrow(data)))
-        } else smartPrint('No screen boundary fields to filter')
+            smartPrint(paste('Number of data rows (no screen boundaries)', nrow(data)), stdout=stdout)
+        } else smartPrint('No screen boundary fields to filter', stdout=stdout)
     } else {
-        smartPrint('Screen boundary filtering off')
+        smartPrint('Screen boundary filtering off', stdout=stdout)
     }
     if (filterpunc) {
         if (!is.null(data$punc)) {
-            smartPrint('Filtering screen boundaries')
+            smartPrint('Filtering screen boundaries', stdout=stdout)
             data <- data[data$punc != 1,]
-            smartPrint(paste('Number of data rows (no phrasal punctuation)', nrow(data)))
-        } else smartPrint('No phrasal punctuation field to filter')
+            smartPrint(paste('Number of data rows (no phrasal punctuation)', nrow(data)), stdout=stdout)
+        } else smartPrint('No phrasal punctuation field to filter', stdout=stdout)
     } else {
-        smartPrint('Phrasal punctuation filtering off')
+        smartPrint('Phrasal punctuation filtering off', stdout=stdout)
     }
     if (!is.null(upperbound)) {
-        smartPrint(paste0('Filtering out rows with response variable >= ', toString(upperbound)))
+        smartPrint(paste0('Filtering out rows with response variable >= ', toString(upperbound)), stdout=stdout)
         data <- data[data$fdur < upperbound,]
-        smartPrint(paste0('Number of data rows (fdur < ', upperbound, '): ', nrow(data)))
+        smartPrint(paste0('Number of data rows (fdur < ', upperbound, '): ', nrow(data)), stdout=stdout)
     }
     if (!is.null(lowerbound)) {
-        smartPrint(paste0('Filtering out rows with response variable <= ', toString(lowerbound)))
+        smartPrint(paste0('Filtering out rows with response variable <= ', toString(lowerbound)), stdout=stdout)
         data <- data[data$fdur > lowerbound,]
-        smartPrint(paste0('Number of data rows (fdur > ', lowerbound, '): ', nrow(data)))
+        smartPrint(paste0('Number of data rows (fdur > ', lowerbound, '): ', nrow(data)), stdout=stdout)
     }
 
     if (!is.null(mincorrect) & 'correct' %in% colnames(data)) {
-        smartPrint(paste0('Filtering out rows with correct < ', toString(mincorrect)))
+        smartPrint(paste0('Filtering out rows with correct < ', toString(mincorrect)), stdout=stdout)
         data <- data[data$correct >= mincorrect,]
-        smartPrint(paste0('Number of data rows (min correct): ', nrow(data)))
+        smartPrint(paste0('Number of data rows (min correct): ', nrow(data)), stdout=stdout)
     }
 
     # Remove any incomplete rows
-    data <- data[complete.cases(data),]
-    smartPrint(paste('Number of data rows (complete cases):', nrow(data)))
+    # data <- data[complete.cases(data),]
+    # smartPrint(paste('Number of data rows (complete cases):', nrow(data)), stdout=stdout)
 
     if (!is.null(restrdomain)) {
         restr = file(description=paste0('scripts/', restrdomain, '.restrdomain.txt'), open='r')
@@ -224,14 +224,14 @@ cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=
             if (!(l == "" || substr(l, 1, 1) == '#')) {
                 filter = strsplit(l, '\\s+')[[1]]
                 if (filter[1] == 'only') {
-                    smartPrint(paste0('Filtering out all rows with ', filter[2], ' != ', filter[3]))
+                    smartPrint(paste0('Filtering out all rows with ', filter[2], ' != ', filter[3]), stdout=stdout)
                     data = data[data[[filter[2]]] == filter[3],]
-                    smartPrint(paste0('Number of data rows after filtering out ', filter[2], ' != ', filter[3], ': ', nrow(data)))
+                    smartPrint(paste0('Number of data rows after filtering out ', filter[2], ' != ', filter[3], ': ', nrow(data)), stdout=stdout)
                 } else if (filter[1] == 'noneof') {
-                    smartPrint(paste0('Filtering out all rows with ', filter[2], ' = ', filter[3]))
+                    smartPrint(paste0('Filtering out all rows with ', filter[2], ' = ', filter[3]), stdout=stdout)
                     data = data[data[[filter[2]]] != filter[3],]
-                    smartPrint(paste0('Number of data rows after filtering out ', filter[2], ' = ', filter[3], ': ', nrow(data)))
-                } else smartPrint(paste0('Unrecognized filtering instruction in ', restrdomain, '.restrdomain.txt'))
+                    smartPrint(paste0('Number of data rows after filtering out ', filter[2], ' = ', filter[3], ': ', nrow(data)), stdout=stdout)
+                } else smartPrint(paste0('Unrecognized filtering instruction in ', restrdomain, '.restrdomain.txt'), stdout=stdout)
             }
         }
     }
@@ -256,9 +256,9 @@ addColumns <- function(data) {
     return(data)
 }
 
-recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfactor=NULL) {
+recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfactor=NULL, stdout=TRUE) {
     ## Ensures that data columns are interpreted with the correct dtype, since R doesn't always infer this correctly
-    smartPrint("Recasting Effects")
+    smartPrint("Recasting Effects", stdout=stdout)
 
     ## DEPENDENT VARIABLES
     ## Reading times
@@ -340,14 +340,14 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
         }
     }
 
-    smartPrint('The data frame contains the following columns:')
-    smartPrint(paste(colnames(data), collapse=' '))
+    smartPrint('The data frame contains the following columns:', stdout=stdout)
+    smartPrint(paste(colnames(data), collapse=' '), stdout=stdout)
 
     ## NAN removal
     na_cols <- colnames(data)[colSums(is.na(data)) > 0]
     if (length(na_cols) > 0) {
-        smartPrint('The following columns contain NA values:')
-        smartPrint(paste(na_cols, collapes=' '))
+        smartPrint('The following columns contain NA values:', stdout=stdout)
+        smartPrint(paste(na_cols, collapes=' '), stdout=stdout)
     }
 
     return(data)
@@ -523,7 +523,7 @@ minRelGrad <- function(reg1, reg2) {
 }
 
 # Fit a model formula with bobyqa, try again with nlminb on convergence failure
-regressLinearModel <- function(dataset, form, params) {
+regressLinearModel <- function(dataset, form, params, suppress_nlminb=FALSE) {
     library(optimx)
     library(lme4)
     bobyqa <- lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=50000))
@@ -537,8 +537,9 @@ regressLinearModel <- function(dataset, form, params) {
     smartPrint('SUMMARY:')
     printSummary(m)
     convWarn <- m@optinfo$conv$lme4$messages
+    convWarnN <- NULL
     
-    if (!is.null(convWarn) && !params$suppress_nlminb) {
+    if (!is.null(convWarn) && suppress_nlminb) {
         m1 <- m
         smartPrint('Fitting linear mixed-effects model with nlminb')
         smartPrint(paste(' ', date()))
@@ -693,7 +694,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
                    logmain=FALSE, logdepvar=FALSE, lambda=NULL,
                    addEffects=NULL, extraEffects=NULL, ablEffects=NULL, groupingfactor=NULL,
                    indicatorlevel=NULL, crossfactor=NULL, interact=TRUE,
-                   corpusname='corpus',suppress_nlminb=False) {
+                   corpusname='corpus',suppress_nlminb=FALSE) {
    
     if (fitmode == 'lm') {
         bform <- processForm(baseFormula(bformfile, logdepvar, lambda),
@@ -728,7 +729,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
     } else if (fitmode=='lm') {
         outputModel <- regressSimpleLinearModel(dataset, bform)
     } else {
-        outputModel <- regressLinearModel(dataset, bform)
+        outputModel <- regressLinearModel(dataset, bform, suppress_nlminb=suppress_nlminb)
     }
     if (params$boxcox) {
         mixed = fitmode %in% c('lme', 'bme')
@@ -741,6 +742,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         y_mu = NULL 
     } 
     fitOutput <- list(
+        f = bform,
         fitmode = fitmode,
         abl = ablEffects,
         ablEffects = processEffects(ablEffects, data, logmain),

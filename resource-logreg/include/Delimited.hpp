@@ -60,8 +60,8 @@ class Delimited<double> {
  private:
   double val;
  public:
-  Delimited<double> ( )                 : val()   { }
-  Delimited<double> ( const double& t ) : val(t)  { }
+  Delimited<double> ( )                 : val()         { }
+  Delimited<double> ( const double& t ) : val(t)        { }
   Delimited<double> ( const char* ps )  : val(stod(ps)) { }
   operator double() const { return val; }
 };
@@ -71,8 +71,8 @@ class Delimited<int> {
  private:
   int val;
  public:
-  Delimited<int> ( )                : val()   { }
-  Delimited<int> ( const int& t )   : val(t)  { }
+  Delimited<int> ( )                : val()         { }
+  Delimited<int> ( const int& t )   : val(t)        { }
   Delimited<int> ( const char* ps ) : val(stoi(ps)) { }
   operator int() const { return val; }
   //bool operator< ( const Delimited<int>& i ) { return int(*this)<int(i); }
@@ -83,8 +83,9 @@ class Delimited<char> {
  private:
   int val;
  public:
-  Delimited<char> ( )                : val()   { }
-  Delimited<char> ( const int& t )   : val(t)  { }
+  Delimited<char> ( )                : val()      { }
+  Delimited<char> ( char c )         : val(c)     { }
+//  Delimited<char> ( const int& t )   : val(t)  { }
   Delimited<char> ( const char* ps ) : val(ps[0]) { }
   operator char() const { return val; }
 };
@@ -133,7 +134,7 @@ inline bool operator>> ( pair<istream&,Delimited<T>&> isps, const vector<const c
 }
 
 inline istream& operator>> ( istream& is, const char* ps ) {
-  for ( uint i=0; i<strlen(ps); i++ ) is.get();
+  for ( uint i=0; i<strlen(ps); i++ ) { char c = is.get(); if( c!= ps[i]) cerr<<"ERROR: expected delimiter '"<<ps[i]<<"' encountered '"<<c<<"'"<<endl; assert( c == ps[i] ); }
   return is;
 }
 
@@ -176,7 +177,11 @@ class DelimitedList : public list<T> {
   }
   friend bool operator>> ( pair<istream&,DelimitedList<psD1,T,psD2,psD3>&> ist, const vector<const char*>& vpsDelim ) {
     if (psX!=psD1) ist.first >> psD1;
-    if (psX==psD3) { cerr<<"ERROR: nested lists without final delimiters."<<endl; return false; }
+//    if (psX==psD3) { cerr<<"ERROR: nested lists without final delimiters."<<endl; return false; }
+    if (psX==psD3) {
+      vector<const char*> vpsJointDelim( vpsDelim );  vpsJointDelim.push_back( psD2 );
+      while ( ist.first >> *ist.second.emplace(ist.second.end()) >> vpsJointDelim );
+    }
     while ( ist.first >> *ist.second.emplace(ist.second.end()) >> vector<const char*>{psD2,psD3} );
     return ist.first >> vpsDelim;
   }
@@ -191,8 +196,9 @@ class DelimitedList : public list<T> {
 template<const char* psD1,class T,const char* psD2,const char* psD3>
 class DelimitedVector : public vector<T> {
  public:
-  DelimitedVector<psD1,T,psD2,psD3> ( )       : vector<T> ( )   { }
-  DelimitedVector<psD1,T,psD2,psD3> ( int i ) : vector<T> ( i ) { }
+  DelimitedVector<psD1,T,psD2,psD3> ( )                                             : vector<T> ( )    { }
+  DelimitedVector<psD1,T,psD2,psD3> ( int i )                                       : vector<T> ( i )  { }
+  DelimitedVector<psD1,T,psD2,psD3> ( const DelimitedVector<psD1,T,psD2,psD3>& vt ) : vector<T> ( vt ) { }
   friend pair<istream&,DelimitedVector<psD1,T,psD2,psD3>&> operator>> ( istream& is, DelimitedVector<psD1,T,psD2,psD3>& t ) {
     return pair<istream&,DelimitedVector<psD1,T,psD2,psD3>&>(is,t);
   }
@@ -211,16 +217,73 @@ class DelimitedVector : public vector<T> {
 template<const char* psD1,class T,const char* psD2,size_t iSize,const char* psD3>
 class DelimitedCol : public Col<T> {
  public:
-  DelimitedCol<psD1,T,psD2,iSize,psD3> ( ) : Col<T>(iSize) { }
+  DelimitedCol<psD1,T,psD2,iSize,psD3> ( ) : Col<T>(iSize,fill::zeros) { }
+  DelimitedCol<psD1,T,psD2,iSize,psD3> ( const Col<T>& ct ) : Col<T>(ct) { }
   //operator Col<T>() { return *this; }
-
+  bool operator<( const DelimitedCol<psD1,T,psD2,iSize,psD3>& c1 ) const {
+    for( size_t i=0; i<iSize; i++ ) {
+      if( this->at(i) < c1.at(i) ) return true;
+      if( this->at(i) > c1.at(i) ) return false;
+    }
+    return false;
+  }
+  bool operator==(const DelimitedCol<psD1,T,psD2,iSize,psD3>& c1) const {
+    for( size_t i=0; i<iSize; i++ ) if( this->at(i)!=c1.at(i) ) return false;
+    return true;
+//    return approx_equal(*this, c1, "absdiff", 0.002);
+//    return Col<T>(*this)==Col<T>(c1);
+//    return (*this).Col<T>::operator==(c1);
+  }
   friend pair<istream&,DelimitedCol<psD1,T,psD2,iSize,psD3>&> operator>> ( istream& is, DelimitedCol<psD1,T,psD2,iSize,psD3>& t ) {
     return pair<istream&,DelimitedCol<psD1,T,psD2,iSize,psD3>&>(is,t);
   }
   friend istream& operator>> ( pair<istream&,DelimitedCol<psD1,T,psD2,iSize,psD3>&> ist, const char* psDelim ) {
-    for ( size_t t=0; t<iSize && (ist.first >> reinterpret_cast<Delimited<T>&>(ist.second(t)) >> vector<const char*>{psD2,psDelim}); t++ );
+    if ( psD1[0] != '\0' ) ist.first >> psD1;
+    if ( psD3[0] == '\0' ) for ( size_t t=0; t<iSize && (ist.first >> reinterpret_cast<Delimited<T>&>(ist.second(t)) >> vector<const char*>{psD2,psDelim}); t++ );
+    else for ( size_t t=0; t<iSize && (ist.first >> reinterpret_cast<Delimited<T>&>(ist.second(t)) >> vector<const char*>{psD2,psD3}); t++ );
+    if ( psD3[0] != '\0' ) ist.first >> psDelim;
     return ist.first;
   }
+  friend ostream& operator<< ( ostream& os, const DelimitedCol<psD1,T,psD2,iSize,psD3>& vt ) {
+    os<<psD1; for ( size_t t=0; t<iSize; t++ ) os << vt(t) << ((t==iSize-1) ? "":psD2); os<<psD3;
+    return os;
+  }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+template<const char* psD1,class T,const char* psD2,size_t rSize,size_t cSize,const char* psD3>
+class DelimitedMat : public Mat<T> {
+public:
+    DelimitedMat<psD1,T,psD2,rSize,cSize,psD3> ( ) : Mat<T>(rSize, cSize) { }
+    DelimitedMat<psD1,T,psD2,rSize,cSize,psD3> ( const Mat<T>& ct ) : Mat<T>(ct) { }
+    //operator Col<T>() { return *this; }
+//    bool operator==(const DelimitedCol<psD1,T,psD2,iSize,psD3>& c1) const {
+//      return approx_equal(*this, c1, "absdiff", 0.002);
+//    return Col<T>(*this)==Col<T>(c1);
+//    return (*this).Col<T>::operator==(c1);
+//    }
+    friend pair<istream&,DelimitedMat<psD1,T,psD2,rSize,cSize,psD3>&> operator>> ( istream& is, DelimitedMat<psD1,T,psD2,rSize,cSize,psD3>& t ) {
+      return pair<istream&,DelimitedMat<psD1,T,psD2,rSize,cSize,psD3>&>(is,t);
+    }
+    friend istream& operator>> ( pair<istream&,DelimitedMat<psD1,T,psD2,rSize,cSize,psD3>&> ist, const char* psDelim ) {
+      if ( psD1[0] != '\0' ) ist.first >> psD1;
+      bool b = true;
+      for ( size_t r=0; r<rSize; r++ )
+        for ( size_t c=0; c<cSize && b; c++ ){
+          if ( psD3[0] != '\0' ) b = ist.first >> reinterpret_cast<Delimited<T>&>(ist.second(r,c)) >> vector<const char*>{psD2,psD3};
+          else b = ist.first >> reinterpret_cast<Delimited<T>&>(ist.second(r,c)) >> vector<const char*>{psD2,psDelim};
+        }
+      if ( psD3[0] != '\0' ) ist.first >> psD3;
+      return ist.first;
+    }
+    friend ostream& operator<< ( ostream& os, const DelimitedMat<psD1,T,psD2,rSize,cSize,psD3>& vt ) {
+      os<<psD1;
+      for ( size_t r=0; r<rSize; r++ )
+        for ( size_t c=0; c<cSize; c++ ) os << vt(r,c) << ((r==rSize-1 && c==cSize-1) ? "":psD2);
+      os<<psD3;
+      return os;
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

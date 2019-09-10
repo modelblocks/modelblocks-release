@@ -131,15 +131,18 @@ $(CONFIGDIR)/user-naturalstories-directory.txt | %
 genmodel/naturalstories.linetoks: genmodel/naturalstories.penn.linetrees $(NATSTORIES-SCRIPTS)/penn2sents.py | genmodel
 	cat $< | python $(word 2, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' > $@
 
+genmodel/naturalstories.delim.linetoks: genmodel/naturalstories.delim.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed | genmodel 
+	cat $< | $(word 2, $^) | sed 's/! ARTICLE/!ARTICLE/' | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' > $@
+
 %naturalstories.items: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.tsv $(RT-SCRIPTS)/get_rttokenization.py \
 $(CONFIGDIR)/user-naturalstories-directory.txt
 	cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word, 2, $^) item zone > $@
 
-%/naturalstories.lineitems: $$(DEP-NATSTORIES) %/naturalstories.linetoks $(RT-SCRIPTS)/toks2sents.py \
+%/naturalstories.lineitems: $$(DEP-NATSTORIES) %/naturalstories.penn.linetoks $(RT-SCRIPTS)/toks2sents.py \
 $(NATSTORDIR)/naturalstories_RTS/all_stories.tok $(CONFIGDIR)/user-naturalstories-directory.txt | %
 	cat $(word 3, $^) | sed 's/\t/ /g;s/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' | python $(word 2, $^) $(word 1, $^) > $@
  
-%/naturalstories.docids.itemmeasures: $$(DEP-NATSTORIES) %/naturalstories.lineitems $(NATSTORIES-SCRIPTS)/docids_by_item.py $(NATSTORDIR)/naturalstories_RTS/all_stories.tok
+%/naturalstories.itemmeasures: $$(DEP-NATSTORIES) %/naturalstories.lineitems $(NATSTORIES-SCRIPTS)/docids_by_item.py $(NATSTORDIR)/naturalstories_RTS/all_stories.tok
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) > $@
 
 %naturalstories.mfields.itemmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/all_stories.tok %naturalstories.lineitems \
@@ -157,9 +160,9 @@ $(DTSR-SCRIPTS)/compute_timestamps_from_RT.py $(CONFIGDIR)/user-naturalstories-d
 	python $(word 3, $^) <(cat $(word 1, $^) | sed 's/\t/ /g;s/peaked/peeked/g;' | python $(word 2, $^) WorkerId subject RT fdur) \
 	$(word 4, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' | python $(word 5, $^) > $@
   
-%naturalstories.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.linetrees %naturalstories.linetoks
+%naturalstories.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.linetrees %naturalstories.penn.linetoks
 	python $^ > $@
 
-%naturalstories.coref.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.coref.linetrees %naturalstories.linetoks
+%naturalstories.coref.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.coref.linetrees %naturalstories.penn.linetoks
 	python $^ > $@
 

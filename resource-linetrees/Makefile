@@ -238,10 +238,13 @@ Linetoks:
   blocktitle: Linetoks
   targetsuffix: .linetoks
 endef
-%.linetoks:  $(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.linetrees)))
+
+#### This item is used to flatten trees from treebank corpora *in the genmodel directory* into tokenized parser input...
+%.linetoks:  $(GENMODEL)/%.linetrees   #$(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.linetrees)))
 	cat $<  |  sed 's/(-NONE-[^)]*)//g'  \
 		|  sed 's/([^ ]* //g;s/)//g'  |  sed 's/  */ /g;s/^ *//;s/ *$$//;'  \
 		|  sed 's/!unf! *//g' >  $@
+#### This item is used to flatten trees from treebank corpora into tokenized parser input...
 %.linetoks:  %.linetrees
 	cat $<  |  sed 's/(-NONE-[^)]*)//g'  \
 		|  sed 's/([^ ]* //g;s/)//g'  |  sed 's/  */ /g;s/^ *//;s/ *$$//;'  \
@@ -249,6 +252,8 @@ endef
 %.morph.linetoks: %.linetoks
 	morfessor -t $^ -T $^ --output-format={analysis}' ' --output-newlines > $@
 
+%.delim.linetoks: %.linetoks $(LTREES-SCRIPTS)/linetoks2delimlinetoks.py
+	cat $< | python $(word 2,$^) > $@
 
 #### reverse the order of tokens by sentence in an input linetoks file
 %.rev.linetoks: %.linetoks

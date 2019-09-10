@@ -45,27 +45,31 @@ VPATH += $(RESOURCE-REGRESSION) $(RESOURCE-LMEFIT) $(RESOURCE-DTSR)
 #
 ################################################################################
 
+## literal space character for string conversions
 empty:=
 space:= $(empty) $(empty)
 
-bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
+bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 	cp $< $@
+
+%-avg.itemmeasures: $$(basename %).all-itemmeasures $(REGRESSION-SCRIPTS)/average_by_group.py
+	cat $< | python $(word 2, $^) $(subst .,,$(suffix $*)) > $@
 
 ## apply predictor modifications: <data>.<predr>_<offset>_spilled.prdmeasures
 %_spilled.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/spilloverMetrics.py
-	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+	cat $(word 1,$^)  |  python $(word 2,$^) $(word 1, $(subst _, ,$(subst .,,$(suffix $*)))) -n $(word 2, $(subst _, ,$(subst .,,$(suffix $*)))) >  $@
 %_spilled.resmeasures:  $$(basename %).resmeasures
 	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_cumued.prdmeasures
 %_cumued.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/accumulateMetrics.py
-	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+	cat $(word 1,$^)  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 %_cumued.resmeasures:  $$(basename %).resmeasures
 	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_<offset>_futured.prdmeasures
 %_futured.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/futureMetrics.py
-	cat $(word 1,$^)  |  $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+	cat $(word 1,$^)  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 %_futured.resmeasures:  $$(basename %).resmeasures
 	ln -sf $(abspath $<) $(abspath $@)
 
@@ -75,32 +79,32 @@ bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
 	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
 
 %.resmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/censor.py
-	cat $(word 2,$^)  |  python $(word 3,$^) -c $(word 1,$^)  >  $@
+	cat $(word 2,$^)  |  python3 $(word 3,$^) -c $(word 1,$^)  >  $@
 
 
 ## apply partitioning (prdmeasures unaffected)
-%_part.prdmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/partition.py 
+%_part.prdmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/partition.py  |  genmodel
 	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
 
-%_part.resmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/partition.py
-	cat $(word 2,$^)  |  python $(word 3, $^) -c $(word 1, $^) -p $(subst +, ,$(subst .,,$(suffix $*)))  >  $@
+%_part.resmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/partition.py  |  genmodel
+	cat $(word 2,$^)  |  python3 $(word 3, $^) -c $(word 1, $^) -p $(subst +, ,$(subst .,,$(suffix $*)))  >  $@
 
 
 ## generic fit files: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.fitmodel
 .PRECIOUS: %.fitmodel %.coeffs
 %.fitmodel %.coeffs:  bin/regress-$$(subst .,,$$(suffix $$(subst _,.,$$*)))  \
-                      $$(basename %)_part.prdmeasures  \
-                      $$(basename %)_part.resmeasures  \
-                      scripts/$$(subst .,,$$(word 1,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form
-	$^ $(wordlist 2,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*)))))
+                      genmodel/$$(basename $$*).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.prdmeasures  \
+                      genmodel/$$(basename $$*).$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_part.resmeasures  \
+                      scripts/$$(subst .,,$$(word 2,$$(subst _, ,$$(suffix $$*))))$$(suffix $$(subst _,.,$$*))form  |  bin  genmodel
+	$^ $(wordlist 3,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*)))))  >  $@  2>  $@.log
 
 
 ## generaic predicted errors file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
 %_predicted.errors:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
-                     $$(basename %).fitmodel  \
-           	     $$(basename $$(basename $$(basename %)))$$(suffix $$*)_part.prdmeasures \
-           	     $$(basename $$(basename $$(basename %)))$$(suffix $$*)_part.resmeasures
-	$^  >  $@
+                     genmodel/$$(basename $$*).fitmodel  \
+           	     genmodel/$$(basename $$(basename $$*))$$(suffix $$*)_part.prdmeasures \
+           	     genmodel/$$(basename $$(basename $$*))$$(suffix $$*)_part.resmeasures  |  bin  genmodel
+	$^  >  $@  2>  $@.log
 
 
 # ## generic errors file: <data>.<baseline>_(<predr>_)*<regrmodel>.errors
@@ -109,8 +113,8 @@ bin/signif-pt: $(REGRESSION-SCRIPTS)/signif-pt.sh
 
 
 ## generic signif file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>.(<predr>_)*<signif-type>.signif
-%.signif:  bin/signif-$$(lastword $$(subst _, ,$$(suffix $$*)))  \
-	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), $$(basename $$(basename $$(basename %))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)
-	$^  >  $@
+%signif:  bin/signif-$$(lastword $$(subst _, ,$$(suffix $$*)))  \
+	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(basename $$(basename $$(basename $$*))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)  |  bin  genmodel
+	$^  >  $@  2>  $@.log
 
 

@@ -10,6 +10,7 @@ argparser = argparse.ArgumentParser('''
         Utility for computing sound power metrics from the Natural Stories audio stimuli
 ''')
 argparser.add_argument('files', nargs='+', help='Paths to audio files for processing')
+argparser.add_argument('-I', '--interval', type=float, default=None, help='Interval step at which to extract sound power measures (used for deconvolving sound power using DTSR). If unspecified, extract at each word onset. If speficied, power measures are rescaled by interval value to ensure valid convolution.')
 argparser.add_argument('-c', '--convolve', action='store_true', help='Generate an additional column for sound power convolved with the canonical HRF')
 args = argparser.parse_args()
 
@@ -20,19 +21,17 @@ if DEBUG:
 name = re.compile('^.*/?([^ /])+\.wav *$')
 ix2name = ['Boar', 'Aqua', 'MatchstickSeller', 'KingOfBirds', 'Elvis', 'MrSticky', 'HighSchool', 'Roswell', 'Tulips', 'Tourettes']
 
-
 df = pd.read_csv(sys.stdin, sep=' ', skipinitialspace=True)
-power_ix = (df.time * 441).astype('int') # At a sampling rate of 22050 Hz, there are 441 rmse measurements within a 1 second sampling window
-power_ix = np.array(power_ix)
-docid = np.array(df.docid)
 ix2docid = df.docid.unique()
 docid2ix = {}
 for i in range(len(ix2docid)):
     docid2ix[ix2docid[i]] = i
 
-max_times = {}
-for n in ix2name:
-    max_times[n] = df[df.docid == n].time.max()
+if args.interval:
+    keys = []
+    for x in ['subject', 'docid', 'fROI']:
+        if x in df.columns:
+            keys.append(x)
 
 power = {}
 max_len = 0
@@ -56,6 +55,21 @@ for i in range(len(args.files)):
 
 sys.stderr.write('\n')
 
+if args.interval:
+    df = df[keys].drop_duplicates()
+    intervals = []
+    for docid in ix2name:
+        max_time = float(len(power[docid])) / 441.
+        intervals_cur = pd.DataFrame({'time': np.arange(0, max_time, args.interval)})
+        intervals_cur['docid'] = docid
+        intervals.append(intervals_cur)
+    intervals = pd.concat(intervals, axis=0)
+    df = df.merge(intervals, on='docid', how='left')
+    
+power_ix = (df.time * 441).astype('int') # At a sampling rate of 22050 Hz, there are 441 rmse measurements within a 1 second sampling window
+power_ix = np.array(power_ix)
+
+docid = df.docid
 docid_ix = df.docid.map(docid2ix)
 
 # Instantaneous sound power
@@ -67,7 +81,10 @@ for i in range(power_ix.shape[0]):
         if power_ix[i] < len(power[docid[i]]):
             soundPower[i] = power[docid[i]][power_ix[i]]
 
-df['soundPower'] = soundPower
+if args.interval:
+    df['soundPower%sms' % int(args.interval * 1000)] = soundPower
+else:
+    df['soundPowerInstantaneousAtWord'] = soundPower
 
 if args.convolve:
     # HRF convolved sound power

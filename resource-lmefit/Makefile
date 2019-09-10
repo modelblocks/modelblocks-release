@@ -70,6 +70,21 @@
 #
 #.PRECIOUS: %.rdata ##Disabled for now because it fills the disk quickly. Re-enable for simulations
 
+bin/regress-lmer: $(LMEFIT-SCRIPTS)/regress-lmer.sh $(LMEFIT-SCRIPTS)/lmetools.r \
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
+	cp $< $@
+
+bin/predict-lmer: $(LMEFIT-SCRIPTS)/predict-lmer.sh $(LMEFIT-SCRIPTS)/lmetools.r \
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
+	cp $< $@
+
+bin/signif-lrt: $(LMEFIT-SCRIPTS)/signif-lrt.sh $(LMEFIT-SCRIPTS)/run_lrt.py \
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
+	cp $< $@
+
 define ParamVal
 Partition:
   value: ''
@@ -268,38 +283,38 @@ endef
 # $$(subst .,,$$(suffix $$*))).filt.evmeasures \
 # scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
 # $(LMEFIT-SCRIPTS)/lmetools.r \
-# $(RHACKS-SCRIPTS)/mer-utils.R \
-# $(RHACKS-SCRIPTS)/regression-utils.R
+# $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+# $(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 # 	$< $(word 2, $^) $@ $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) -T > $*.lme
 
 .PRECIOUS: %.lmefit %.lme %.lme.rdata
 %.lme.rdata %.lmefit %.lme: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
 genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
 $$(subst .,,$$(suffix $$*))).filt.evmeasures \
-scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmerform \
 $(LMEFIT-SCRIPTS)/lmetools.r \
-$(RHACKS-SCRIPTS)/mer-utils.R \
-$(RHACKS-SCRIPTS)/regression-utils.R
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	$< $(word 2, $^) $*.lme.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) > $*.lme
 
 .PRECIOUS: %.bmefit %.bme %.bme.rdata
 %.bme.rdata %.bmefit %.bme: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
 genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
 $$(subst .,,$$(suffix $$*))).filt.evmeasures \
-scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmerform \
 $(LMEFIT-SCRIPTS)/lmetools.r \
-$(RHACKS-SCRIPTS)/mer-utils.R \
-$(RHACKS-SCRIPTS)/regression-utils.R
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	$< $(word 2, $^) $*.bme.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) -m bme > $*.bme
 
 .PRECIOUS: %.lmfit %.lm %.lm.rdata
 %.lm.rdata %.lmfit %.lm: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
 genmodel/$$(basename $$(basename $$*)).$$(subst .,,$$(suffix $$(basename $$*)))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
 $$(subst .,,$$(suffix $$*))).filt.evmeasures \
-scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmeform \
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).lmerform \
 $(LMEFIT-SCRIPTS)/lmetools.r \
-$(RHACKS-SCRIPTS)/mer-utils.R \
-$(RHACKS-SCRIPTS)/regression-utils.R
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	$< $(word 2, $^) $*.lm.rdata $(subst _, ,$(subst .,,$(suffix $*))) -b $(word 3, $^) -m lm > $*.lm
 
 sp :=
@@ -311,10 +326,10 @@ pc := %
 %_lmer %_lmer.rdata: $$(DEP-RHACKS)  $(LMEFIT-SCRIPTS)/evmeasures2lmefit.r \
                      genmodel/$$(basename $$*).$$(subst $$(sp),_,$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*)))))_$$(shell python $$(LMEFIT-SCRIPTS)/getEffectsFromCLI.py \
                      $$(subst -a,-a_,$$(subst -A,-A_,$$(subst .,,$$(suffix $$*))))).filt-evmeasures \
-                     scripts/$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
+                     scripts/$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmerform \
                      $(LMEFIT-SCRIPTS)/lmetools.r \
-                     $(RHACKS-SCRIPTS)/mer-utils.R \
-                     $(RHACKS-SCRIPTS)/regression-utils.R
+                     $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+                     $(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	$< $(word 2, $^) $*_lmer.rdata $(subst -A,-A ,$(subst -a,-a ,$(filter -%,$(subst _, ,$(subst .,,$(suffix $*)))))) -b $(word 3, $^) > $*_lmer
 
 
@@ -403,20 +418,20 @@ endef
 %.lrtsignif %.lrt: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
 $$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
 $$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
-$(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $(LMEFIT-SCRIPTS)/lmetools.r \
-$(RHACKS-SCRIPTS)/mer-utils.R \
-$(RHACKS-SCRIPTS)/regression-utils.R
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	$(wordlist 1,3,$^) $(subst _, ,$(subst .,,$(suffix $*))) > $@
 
 .PRECIOUS: %.permsignif %.perm
 %.permsignif %.perm: $$(DEP-RHACKS) $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
 $$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
 $$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
-$(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $(LMEFIT-SCRIPTS)/lmetools.r \
-$(RHACKS-SCRIPTS)/mer-utils.R \
-$(RHACKS-SCRIPTS)/regression-utils.R
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	$(wordlist 1,3,$^) $(subst _, ,$(subst .,,$(suffix $*))) -perm > $@
 
 ## TO SPEC:
@@ -424,10 +439,10 @@ $(RHACKS-SCRIPTS)/regression-utils.R
 %_lrtsignif: $$(DEP-RHACKS)  $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
              $$(basename $$(basename $$*)).-a$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*))))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
              $$(basename $$(basename $$*)).-A$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*))))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
-             $(RHACKS-SCRIPTS)/mer-utils.R  $(RHACKS-SCRIPTS)/regression-utils.R \
+             $(abspath $(RHACKS-SCRIPTS)/mer-utils.R)  $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
              $(LMEFIT-SCRIPTS)/lmetools.r \
-             $(RHACKS-SCRIPTS)/mer-utils.R \
-             $(RHACKS-SCRIPTS)/regression-utils.R
+             $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+             $(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	$(wordlist 1,3,$^) $(filter -%,$(subst _, ,$(subst .,,$(suffix $*)))) > $@
 
 
@@ -510,7 +525,7 @@ $$(basename $$(basename $$(basename $$*))).-a_$$(subst _,+,$$(subst .,,$$(suffix
 $$(basename $$(basename $$(basename $$*))).-A_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-a_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
 $$(basename $$(basename $$(basename $$*))).-a_$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_-A_$$(word 2,$$(subst _, ,$$(subst .,,$$(suffix $$(basename $$(basename $$*))))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
 $$(basename $$(basename $$(basename $$*))).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))_$$(subst .,,$$(suffix $$(basename %))).lme.rdata \
-$(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R \
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $(LMEFIT-SCRIPTS)/lmetools.r
 	$(wordlist 1,5,$^) -t '$(subst _,-vs-,$(subst .,,$(suffix $(basename $(basename $*)))))' \
   -l $(word 1, $(subst _, ,$(subst .,,$(suffix $(basename $(basename $*)))))) \
@@ -523,10 +538,10 @@ $(LMEFIT-SCRIPTS)/lmetools.r
               $$(basename $$(basename $$*)).-a$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_-A$$(word 2,$$(subst _, ,$$(suffix $$*)))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
               $$(basename $$(basename $$*)).-A$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))_-a$$(word 2,$$(subst _, ,$$(suffix $$*)))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
               $$(basename $$(basename $$*)).-A$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*))))+$$(word 2,$$(subst _, ,$$(suffix $$*)))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
-              $(RHACKS-SCRIPTS)/mer-utils.R  $(RHACKS-SCRIPTS)/regression-utils.R \
+              $(abspath $(RHACKS-SCRIPTS)/mer-utils.R)  $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
               $(LMEFIT-SCRIPTS)/lmetools.r \
-              $(RHACKS-SCRIPTS)/mer-utils.R \
-              $(RHACKS-SCRIPTS)/regression-utils.R
+              $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+              $(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	$(wordlist 1,5,$^) -t '$(subst $(sp),-vs-,$(filter-out -%,$(subst _, ,$(subst .,,$(suffix $*)))))' \
 		-l $(word 1,$(subst _, ,$(subst .,,$(suffix $*)))) \
 		-r $(word 2,$(subst _, ,$(suffix $*))) > $@
@@ -548,7 +563,7 @@ $(LMEFIT-SCRIPTS)/lmetools.r
 $(LMEFIT-SCRIPTS)/lmefit2error.r \
 $$(basename $$(basename $$*)).-a_$$(subst .,,$$(suffix $$(basename $$*)))_-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$*))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix %)).lme.rdata \
 $$(basename $$(basename $$*)).-A_$$(subst _,+,$$(subst .,,$$(suffix $$(basename $$*))))_-c_$$(word 1, $$(subst ., ,$$*))_$$(subst .,,$$(suffix %)).lme.rdata \
-$(RHACKS-SCRIPTS)/mtoolbox.R $(RHACKS-SCRIPTS)/mer-utils.R $(RHACKS-SCRIPTS)/regression-utils.R
+$(abspath $(RHACKS-SCRIPTS)/mtoolbox.R) $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	cat $< | $(word 2, $^) -b $(word 3, $^) -m $(word 4, $^) -o $@ $(subst .,,$(suffix $*))
 
 .PRECIOUS: /%.error.multi.evmeasures

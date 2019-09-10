@@ -11,7 +11,7 @@ else
 	dname="";
 fi
 
-base_filename="$dname$(basename $1 .prdmeasures).$(basename $3 .dtsrform)$predsSTR"
+base_filename="$dname$(basename $1 _part.prdmeasures)_$(basename $3 .dtsrform)$predsSTR"
 outdir="${base_filename/_part\./\.}"
 outfile="${base_filename/_part\./\.}"
 outdir+="_dtsr.fitmodel_outdir";
