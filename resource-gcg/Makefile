@@ -220,23 +220,23 @@ endef
 # 	cat $<  |  python $(word 2,$^)  |  dot -Tpdf  >  $@
 
 #### obtain tex drawing of discgraph 
-%.discgraphs.tex:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discgraphstex.py
-	cat $<  |  python $(word 2,$^)  >  $@
+%.discgraphs.tex:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discgraphstex.d  $(GCG-SCRIPTS)/discgraphs2discgraphstex.py
+	cat $<  |  python $(word 3,$^)  >  $@
 
 #### obtain pdf from tex
 %.pdf:  %.tex
 	cd $(dir $<);  pdflatex $(notdir $<)
 
 #### obtain discourse-aligned lambda expressions
-%.discgraphs.formerrs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphvalidator.py
-	cat $<  |  python $(word 2,$^)  >  $@
+%.discgraphs.formerrs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphvalidator.d  $(GCG-SCRIPTS)/discgraphvalidator.py
+	cat $<  |  python $(word 3,$^)  >  $@
 
 #### obtain discourse-aligned lambda expressions
-%.discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
-	cat $<  |  python $(word 2,$^)  |  $(word 3,$^)  >  $@
+%.discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
+	cat $<  |  python $(word 3,$^)  |  $(word 4,$^)  >  $@
 #### obtain discourse-aligned lambda expressions
-%.verbose-discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
-	cat $<  |  python $(word 2,$^) -d  |  $(word 3,$^)  >  $@
+%.verbose-discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
+	cat $<  |  python $(word 3,$^) -d  |  $(word 4,$^)  >  $@
 
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
 .PRECIOUS: %.refconts

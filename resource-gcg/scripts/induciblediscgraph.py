@@ -195,11 +195,14 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       if D.alreadyConnected( ptup[3], xGoal ) and not D.reachesInChain( ptup[3], ptup[2] ):
         if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 4' )
         return [ (xTarget,ptup[2]) ] + D.scopesToConnect( ptup[2], ptup[3], step+1 )
-      if xGoal == '':
+      if xGoal == '' and ptup[3] in D.getHeirs( ptup[2] ):
         if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 5' )
+        return [ (xTarget,ptup[3]) ] + D.scopesToConnect( ptup[3], ptup[2], step+1 )
+      if xGoal == '':
+        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 6' )
         return [ (xTarget,ptup[2]) ] + D.scopesToConnect( ptup[2], ptup[3], step+1 )
       else:
-        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 6' )
+        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 7' )
         return [ (xTarget,ptup[2]) ] + D.scopesToConnect( ptup[2], ptup[3], step+1 ) + D.scopesToConnect( ptup[3], xGoal, step+1 )
 #complain( 'predicate ' + xTarget + ' with goal ' + xGoal + ' not sufficiently constrained; danger of garden-pathing' )
 
