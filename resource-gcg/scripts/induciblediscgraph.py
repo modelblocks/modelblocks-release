@@ -26,6 +26,15 @@ for a in sys.argv:
   if a=='-d':
     VERBOSE = True
 
+
+################################################################################
+
+def complain( s ):
+  print(           '#ERROR: ' + s )
+  sys.stderr.write( 'ERROR: ' + s + '\n' )
+  exit( 1 )
+
+
 ################################################################################
 
 class InducibleDiscGraph( discgraph.DiscGraph ):
@@ -75,9 +84,9 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
     ## Calculate ceilings of scoped refts...
     D.AnnotatedCeilings = sets.Set([ y  for y in D.Referents  for x in D.Scopes.keys()  if D.ceiling(x) in D.Chains[y] ]) #D.Chains[D.ceiling(x)]  for x in D.Scopes.keys() ])
     if len(D.AnnotatedCeilings) == 0:
-      print(           '#WARNING: Discourse contains no scope annotations -- using first word of title.' )
-      sys.stderr.write( 'WARNING: Discourse contains no scope annotations -- using first word of title.\n' )
-      D.AnnotatedCeilings = sets.Set([ '0001s' ])
+      print(           '#WARNING: Discourse contains no scope annotations -- using longest chain.' )
+      sys.stderr.write( 'WARNING: Discourse contains no scope annotations -- using longest chain.\n' )
+      D.AnnotatedCeilings = sets.Set( sorted([ (len(chain),chain)  for x,chain in D.Chains.items() ])[-1][1] )   # sets.Set(D.Chains['0001s'])
     DisjointCeilingPairs = [ (x,y)  for x in D.AnnotatedCeilings  for y in D.AnnotatedCeilings  if x<y and not D.reachesInChain( x, y ) ]
     if len(DisjointCeilingPairs) > 0:
       print(           '#WARNING: Maxima of scopal annotations are disjoint: ' + str(DisjointCeilingPairs) + ' -- disconnected annotations cannot all be assumed dominant.' )
@@ -121,6 +130,84 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
     return D.reachesFromSup( xLo, xHi ) or D.reachesFromSub( xLo, xHi )
 
 
+  def alreadyConnected( D, x, xGoal ):
+    print( 'ceiling of ' + x + ' is ' + D.ceiling(x) )
+    return ( xGoal == '' and D.ceiling( x ) in D.AnnotatedCeilings ) or D.reachesInChain( x, xGoal )
+
+
+  def scopesToConnect( D, xTarget, xGoal, step ):
+    if VERBOSE: print( '  '*step + str(step) + ': trying to satisfy pred ' + xTarget + ' for ' + xGoal + '...' )
+
+#    print( [ xSub  for xSub in D.Subs.get(xTarget,[])  if D.Inhs.get(xSub,{}).get('r','') != xTarget ] )
+
+    ## If any non-'r' heirs, return results for heirs (elementary predicates are always final heirs)...
+    if [] != [ xSub  for xSub in D.Subs.get(xTarget,[])  if D.Inhs.get(xSub,{}).get('r','') != xTarget ]:
+      return [ sco  for xSub in D.Subs.get( xTarget, [] )  if D.Inhs.get(xSub,{}).get('r','') != xTarget  for sco in D.scopesToConnect( xSub, xGoal, step+1 ) ]
+
+    ## If zero-ary (non-predicate)...
+    if xTarget not in D.PredToTuple:
+      if xGoal == '' or D.reachesInChain( xTarget, xGoal ): return []
+      else:                                                 return [ (xTarget,xGoal) ]
+#      else: complain( xTarget + ' is not already connected to goal and is not predicate, so cannot be outscoped by ' + xGoal )
+
+    ptup = D.PredToTuple[ xTarget ]
+#    ## Sanity check...
+#    if ptup[1] != xTarget:
+#      complain( 'too weird -- elem pred ' + xTarget + ' not equal to ptup[1]: ' + ptup[1] )
+    xTarget = ptup[1]
+    ## Report any cycles from participant to elementary predicate...
+    for x in ptup[2:]:
+      if D.reachesInChain( x, xTarget ):
+        complain( 'elementary predication ' + ptup[0] + ' ' + xTarget + ' must be outscoped by argument ' + x + ' which outscopes it!' ) 
+    ## If all participants reachable from elem pred, nothing to do...
+    if all([ D.reachesInChain( xTarget, x )  for x in ptup[2:] ]):
+      if xGoal == '' or D.reachesInChain( xTarget, xGoal ):
+        return []
+      else:
+        complain( 'elementary predication ' + ptup[0] + ' ' + xTarget + ' is already fully bound, cannot become outscoped by goal referent ' + xGoal )
+
+    ## If unary predicate...
+    if len( ptup ) == 3:
+      if D.reachesInChain( xGoal, ptup[2] ):
+        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case a' )
+        return [ (xTarget,xGoal) ]
+      else:
+        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case b' )
+        return [ (xTarget,ptup[2]) ] + D.scopesToConnect( ptup[2], xGoal, step+1 )
+
+    ## If binary predicate...
+    elif len( ptup ) == 4:
+#      if D.reachesInChain( ptup[3], xGoal ) and D.reachesInChain( xGoal, ptup[2] ):
+#        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 1' )
+#        return [ (xTarget,ptup[3]) ]
+#      if D.reachesInChain( ptup[2], xGoal ) and D.reachesInChain( xGoal, ptup[3] ):
+#        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 2' )
+#        return [ (xTarget,ptup[2]) ]
+      if D.reachesInChain( xGoal, ptup[2] ):
+        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 1' )
+        return [ (xTarget,ptup[3]) ] + D.scopesToConnect( ptup[3], xGoal,   step+1 )
+      if D.reachesInChain( xGoal, ptup[3] ):
+        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 2' )
+        return [ (xTarget,ptup[2]) ] + D.scopesToConnect( ptup[2], xGoal,   step+1 )
+      if D.alreadyConnected( ptup[2], xGoal ) and not D.reachesInChain( ptup[2], ptup[3] ):
+        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 3' )
+        return [ (xTarget,ptup[3]) ] + D.scopesToConnect( ptup[3], ptup[2], step+1 )
+      if D.alreadyConnected( ptup[3], xGoal ) and not D.reachesInChain( ptup[3], ptup[2] ):
+        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 4' )
+        return [ (xTarget,ptup[2]) ] + D.scopesToConnect( ptup[2], ptup[3], step+1 )
+      if xGoal == '':
+        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 5' )
+        return [ (xTarget,ptup[2]) ] + D.scopesToConnect( ptup[2], ptup[3], step+1 )
+      else:
+        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 6' )
+        return [ (xTarget,ptup[2]) ] + D.scopesToConnect( ptup[2], ptup[3], step+1 ) + D.scopesToConnect( ptup[3], xGoal, step+1 )
+#complain( 'predicate ' + xTarget + ' with goal ' + xGoal + ' not sufficiently constrained; danger of garden-pathing' )
+
+    ## If trinary and higher predicates...
+    else:
+      complain( 'no support for super-binary predicates: ' + ' '.join(ptup) )
+
+  '''
   def satisfyPred( D, ptup, xSplice, step ):
     if VERBOSE: print( '  '*step + str(step) + ': trying to satisfy pred tuple ' + ' '.join(ptup) + ' for ' + xSplice + '...' )
     ## For unary predicates...
@@ -179,6 +266,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings and ptup[3] in D.getChainFromSup( ptup[2] ): return [ (ptup[1],ptup[3]), (ptup[3],xSplice) ]
       elif D.ceiling(ptup[3]) not in D.AnnotatedCeilings and ptup[2] in D.getChainFromSup( ptup[3] ): return [ (ptup[1],ptup[2]), (ptup[2],xSplice) ]
       elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings and D.reachesInChain( ptup[3], D.ceiling(ptup[2]) ): return [ (ptup[1],ptup[3]), (ptup[3],xSplice) ]
+      elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings and D.ceiling(ptup[3]) not in D.AnnotatedCeilings and xSplice=='': return [ (ptup[1],ptup[3]), (ptup[3],ptup[2]) ]
       elif D.ceiling(ptup[2]) not in D.AnnotatedCeilings and D.ceiling(ptup[3]) not in D.AnnotatedCeilings: return [ (ptup[1],ptup[3]), (ptup[3],ptup[2]), (ptup[2],xSplice) ]
       elif D.ceiling(xSplice) in D.AnnotatedCeilings and D.ceiling(ptup[2]) in D.AnnotatedCeilings and D.ceiling(ptup[3]) in D.AnnotatedCeilings:
         print(           '#ERROR: no possible scoping -- target referent ' + xSplice + ' and both participants ' + ptup[2] + ' and ' + ptup[3] + ' of elem pred ' + ptup[0] + ' ' + ptup[1] + ' already scoped (possibly annotated)!' ) 
@@ -192,7 +280,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       print(           '#ERROR: no support for super-binary predicates: ' + ' '.join(ptup) )
       sys.stderr.write( 'ERROR: no support for super-binary predicates: ' + ' '.join(ptup) + '\n' )
       exit( 1 )
-
+  '''
 
   def tryScope( D, RecencyConnected, step=1 ):
 #    active = True
@@ -203,8 +291,9 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       for _,xHiOrig in RecencyConnected[:]:
         if VERBOSE: print( '  ' + D.strGraph() )
         if VERBOSE: print( '  '*step + str(step) + ': working on refstate ' + str(xHiOrig) + '...' )
-        for ptup,xSplice in D.RefToPredTuples.get( xHiOrig, [] ) + ( [ ( D.PredToTuple[xHiOrig], '' ) ] if xHiOrig in D.PredToTuple else [] ):
-          l = D.satisfyPred( ptup, xSplice, step+1 )
+        for ptup,xGoal in D.RefToPredTuples.get( xHiOrig, [] ) + ( [ ( D.PredToTuple[xHiOrig], '' ) ] if xHiOrig in D.PredToTuple else [] ):
+#          l = D.satisfyPred( ptup, xGoal, step+1 )
+          l = D.scopesToConnect( ptup[1], '', step+1 )
           if VERBOSE: print( '  '*step + str(step) + '  l=' + str(l) )
           for xLo,xHi in l:
             if VERBOSE: print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
