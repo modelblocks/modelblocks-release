@@ -57,7 +57,7 @@ for line in sys.stdin:
       print( '\\node(k' + src[0:4] + ')[below of=x' + src + ',pred] {' + dst + '};' )
       print( '\\draw(x' + src + ') -- node[left]{0} (k' + src[0:4] + ');' )
     elif lbl == 's':
-      print( '\\draw[magenta](x' + src + ') to [bend ' + ('left' if src[0:4]<dst[0:4] else 'right') + ',near start] node[above]{' + lbl + '} (x' + dst + ');' )
+      print( '\\draw[orange](x' + src + ') to [bend ' + ('left' if src[0:4]<dst[0:4] else 'right') + ',near start] node[above]{' + lbl + '} (x' + dst + ');' )
     elif lbl >= '1' and lbl <= '9':
       print( '\\draw(x' + src + ') to [bend ' + ('right' if src[0:4]<=dst[0:4] else 'left') + ',near start] node[below]{' + lbl + '} (x' + dst + ');' )
     elif lbl == 'r' and src[0:4]==dst[0:4]:
