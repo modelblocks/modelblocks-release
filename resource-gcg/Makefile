@@ -214,6 +214,36 @@ endef
 #%.cuegraphs:  %.protographs  $(GCG-SCRIPTS)/protographs2cuegraphs.pl
 #	cat $<  |  perl -p $(word 2,$^)  >  $@
 
+#### obtain discourse-aligned space-delimited cued-association graphs
+.PRECIOUS: %.discgraphs
+%.discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
+	cat $<  |  sed 's/\^g//g' | python $(word 3,$^) -e  >  $@
+%.verbose-discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
+	cat $<  |  sed 's/\^g//g' | python $(word 3,$^) -d -e  >  $@
+
+# #### obtain pdf drawing of discgraph   (neato/dot)
+# %.discgraphs.pdf:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discgraphspdf.py
+# 	cat $<  |  python $(word 2,$^)  |  dot -Tpdf  >  $@
+
+#### obtain tex drawing of discgraph 
+%.discgraphs.tex:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discgraphstex.d  $(GCG-SCRIPTS)/discgraphs2discgraphstex.py
+	cat $<  |  python $(word 3,$^)  >  $@
+
+#### obtain pdf from tex
+%.pdf:  %.tex
+	cd $(dir $<);  pdflatex $(notdir $<)
+
+#### obtain discourse-aligned lambda expressions
+%.discgraphs.formerrs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphvalidator.d  $(GCG-SCRIPTS)/discgraphvalidator.py
+	cat $<  |  python $(word 3,$^)  >  $@
+
+#### obtain discourse-aligned lambda expressions
+%.discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
+	cat $<  |  python $(word 3,$^)  |  $(word 4,$^)  >  $@
+#### obtain discourse-aligned lambda expressions
+%.verbose-discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
+	cat $<  |  python $(word 3,$^) -d  |  $(word 4,$^)  >  $@
+
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
 .PRECIOUS: %.refconts
 %.refconts:  %.cuegraphs  $(GCG-SCRIPTS)/cuegraphs2refconts.py
