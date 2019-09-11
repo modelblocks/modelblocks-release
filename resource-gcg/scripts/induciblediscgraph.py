@@ -132,7 +132,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 
   ## Helper function to determine if ref state is already connected to other ref state...
   def alreadyConnected( D, x, xGoal ):
-    print( 'ceiling of ' + x + ' is ' + D.ceiling(x) )
+#    print( 'ceiling of ' + x + ' is ' + D.ceiling(x) )
     return ( xGoal == '' and D.ceiling( x ) in D.AnnotatedCeilings ) or D.reachesInChain( x, xGoal )
 
 
