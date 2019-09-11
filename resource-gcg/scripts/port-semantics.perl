@@ -5,7 +5,7 @@ use open ':encoding(UTF-8)', ':std'; # assume all files are in UTF-8 (of which A
 open my $syn_file, '<', $ARGV[0] or die "Could not open syntax file $ARGV[0]\n";
 open my $sem_file, '<', $ARGV[1] or die "Could not open semantics file $ARGV[1]\n";
 
-my $annot = qr/((?:-[mnsw]\d+r?)+) +\S+$/; # captures the whole sequence of annots
+my $annot = qr/((?:-[mnstw]\d+r?)+) +\S+$/; # captures the whole sequence of annots
 
 while (<$syn_file>) {
 	unless (/\S/) {print; next} # if line is only whitespace, pass it right through

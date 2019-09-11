@@ -202,6 +202,17 @@ endef
 #
 ################################################################################
 
+#### annotation release format...
+%.toktrees:  $(GCG-SCRIPTS)/port-semantics.perl  %.annot-syn  %.annot-sem
+	perl $^  >  $@
+%.linetrees:  %.toktrees  $(LTREES-SCRIPTS)/editabletrees2linetrees.pl
+	cat $<  |  perl $(word 2,$^)  >  $@
+#### indentation formats for annotation...
+%.fromtoktrees.annot-syn:  %.toktrees
+	cat $<  |  perl -pe 's/-[mnst][0-9]+r?//g'  >  $@
+%.fromtoktrees.annot-sem:  %.toktrees  $(GCG-SCRIPTS)/dedent.perl  $(GCG-SCRIPTS)/bare-ends.perl  $(GCG-SCRIPTS)/yoink-word-rightward.perl  $(GCG-SCRIPTS)/nathans-numberer.perl  $(GCG-SCRIPTS)/munge-NPs.perl
+	cat $(word 1,$^)  |  perl $(word 2,$^) | perl $(word 3,$^) | perl $(word 4,$^) | perl $(word 5,$^) | perl $(word 6,$^)  >  $@
+
 #### obtain sentence-aligned space-delimited variable (semantic) dependencies
 .PRECIOUS: %.protographs
 %.protographs:  %.linetrees  $(GCG-SCRIPTS)/trees2protographs.py
@@ -234,7 +245,7 @@ endef
 	cd $(dir $<);  pdflatex $(notdir $<)
 
 #### obtain discourse-aligned lambda expressions
-%.discgraphs.formerrs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphvalidator.d  $(GCG-SCRIPTS)/discgraphvalidator.py
+%.discgraphs.formerrors:  %.discgraphs  $(GCG-SCRIPTS)/discgraphvalidator.d  $(GCG-SCRIPTS)/discgraphvalidator.py
 	cat $<  |  python $(word 3,$^)  >  $@
 
 #### obtain discourse-aligned lambda expressions
