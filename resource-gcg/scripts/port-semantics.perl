@@ -8,9 +8,9 @@ open my $sem_file, '<', $ARGV[1] or die "Could not open semantics file $ARGV[1]\
 my $annot = qr/((?:-[mnstw]\d+r?)+) +\S+$/; # captures the whole sequence of annots
 
 while (<$syn_file>) {
-	unless (/\S/) {print; next} # if line is only whitespace, pass it right through
+	unless (/[a-zA-Z]/) {print; next} # if line does not contain print, pass it right through
 	my $sem = '';
-	$sem = <$sem_file> until $sem =~ /\S/; # skip blank lines in sem file too
+	$sem = <$sem_file> until $sem =~ /[a-zA-Z]/; # skip blank-ish lines in sem file too
 	$sem =~ s/-[ns]\?{4}//g; # strip leftover -n???? etc (from .annot-ready)
 	# check for annots in $sem, capture if so
 	if ($sem =~ /$annot/) { 
