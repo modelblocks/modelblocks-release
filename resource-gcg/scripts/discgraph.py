@@ -168,11 +168,15 @@ class DiscGraph:
             sys.stderr.write( 'ERROR: scope should not be annotated on redundant predicative referent: ' + xLo + '\n' )
             print(           '#ERROR: scope should not be annotated on redundant predicative referent: ' + xLo )
           if xLo in D.Scopes.values():
-            sys.stderr.write( 'ERROR: inheritance should not be annotated to redundant predicative referent: ' + xLo + '\n' )
-            print(           '#ERROR: inheritance should not be annotated to redundant predicative referent: ' + xLo )
-          if xLo in D.Subs:
+            sys.stderr.write( 'ERROR: scope should not be annotated to redundant predicative referent: ' + xLo + '\n' )
+            print(           '#ERROR: scope should not be annotated to redundant predicative referent: ' + xLo )
+          if xLo in [ x  for x in D.Subs  for l,y in D.Inhs.get(x,{}).items()  if y == xLo and l != 'c' ]:
             sys.stderr.write( 'ERROR: inheritance should not be annotated from ' + str(D.Subs[xLo]) + ' to redundant predicative referent: ' + xLo + '\n' )
             print(           '#ERROR: inheritance should not be annotated from ' + str(D.Subs[xLo]) + ' to redundant predicative referent: ' + xLo )
+          if xLo in [ s  for q,e,r,s,n in D.QuantTuples ]:
+            sys.stderr.write( 'ERROR: quantifier should not be annotated on redundant predicative referent: ' + xLo + '\n' )
+            print(           '#ERROR: quantifier should not be annotated on redundant predicative referent: ' + xLo )
+
 
     ## Propagate scopes down inheritance chains...
     active = True

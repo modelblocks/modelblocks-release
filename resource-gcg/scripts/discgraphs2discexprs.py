@@ -115,10 +115,15 @@ for line in sys.stdin:
   if VERBOSE: print( D.Scopes )
   if VERBOSE: print( 'GRAPH: ' + D.strGraph() )
 
-  DisjointPreds = sets.Set([ ( D.ceiling(xt[1]), D.ceiling(yt[1]) )  for xt in D.PredTuples for yt in D.PredTuples  if xt[1] < yt[1] and not D.reachesInChain( xt[1], D.ceiling(yt[1]) ) ])
-  if len(DisjointPreds) > 0:
-    print(           '#WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences: ' + str(DisjointPreds) )
-    sys.stderr.write( 'WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences: ' + str(DisjointPreds) + '\n' )
+#  DisjointPreds = sets.Set([ ( D.ceiling(xt[1]), D.ceiling(yt[1]) )  for xt in D.PredTuples  for yt in D.PredTuples  if xt[1] < yt[1] and not D.reachesInChain( xt[1], D.ceiling(yt[1]) ) ])
+#  if len(DisjointPreds) > 0:
+#    print(           '#WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences: ' + str(DisjointPreds) )
+#    sys.stderr.write( 'WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences: ' + str(DisjointPreds) + '\n' )
+
+  DisjointRefts = sets.Set([ ( D.ceiling(x), D.ceiling(y) )  for xt in D.PredTuples  for x in xt[1:]  for yt in D.PredTuples  for y in yt[1:]  if x < y and not D.reachesInChain( x, D.ceiling(y) ) ])
+  if len(DisjointRefts) > 0:
+    print(           '#WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences or unscoped argument of scoped predicate: ' + str(DisjointRefts) )
+    sys.stderr.write( 'WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences or unscoped argument of scoped predicate: ' + str(DisjointRefts) + '\n' )
 
 
   ## Induce low existential quants when only scope annotated...

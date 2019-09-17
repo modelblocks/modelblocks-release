@@ -218,7 +218,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
         for ptup,xGoal in D.RefToPredTuples.get( xHiOrig, [] ) + ( [ ( D.PredToTuple[xHiOrig], '' ) ] if xHiOrig in D.PredToTuple else [] ):
           l = D.scopesToConnect( ptup[1], '', step+1 )
           if VERBOSE: print( '  '*step + str(step) + '  l=' + str(l) )
-          for xLo,xHi in l:
+          for xLo,xHi in sets.Set(l):
             if VERBOSE: print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
             D.Scopes[ D.ceiling(xLo) ] = xHi
             RecencyConnected = [ (step,x) for x in D.Chains.get(xLo,[]) ] + RecencyConnected
