@@ -94,6 +94,13 @@ for line in sys.stdin:
 
   #### III. INDUCE UNANNOTATED SCOPES AND EXISTENTIAL QUANTS...
 
+  ## Add dummy args below eventualities...
+  for xt in D.PredTuples:
+    for x in xt[2:]:
+      if x.startswith(xt[1][0:4] + 's') and x.endswith('\''):
+        D.Scopes[x] = xt[1]
+        if VERBOSE: print( 'Scoping dummy argument ' + x + ' to predicate ' + xt[1] )
+
   ## Helper functions to explore inheritance chain...
   def outscopingFromSup( xLo ):
     return True if xLo in D.Scopes.values() else any( [ outscopingFromSup(xHi) for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' ] )
