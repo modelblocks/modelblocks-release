@@ -153,19 +153,19 @@ genmodel/conllwsjdev.%.linetrees: $(foreach sect,00 01 22 24,genmodel/ontowsj$(s
 #.PRECIOUS: genmodel/corontowsj02to21.%.linetrees
 #genmodel/corontowsj02to21.%.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/corontowsj$(sect).%.linetrees)
 #	cat $^  >  $@
-.PRECIOUS: genmodel/corontowsj02to21.casp.linked.linetrees
-genmodel/corontowsj02to21.casp.linked.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/corontowsj$(sect).casp.linked.linetrees)
+.PRECIOUS: genmodel/corontowsj02to21.casp.prtrm.linked.linetrees
+genmodel/corontowsj02to21.casp.prtrm.linked.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/corontowsj$(sect).casp.prtrm.linked.linetrees)
 	cat $^  >  $@
 
 #.PRECIOUS: genmodel/corontowsjdev.%.linetrees 
 #genmodel/corontowsjdev.%.linetrees: $(foreach sect,01 22 24,genmodel/corontowsj$(sect).%.linetrees)
 #	cat $^  >  $@
-.PRECIOUS: genmodel/corontowsjdev.casp.linked.linetrees 
-genmodel/corontowsjdev.casp.linked.linetrees: $(foreach sect,01 22 24,genmodel/corontowsj$(sect).casp.linked.linetrees)
+.PRECIOUS: genmodel/corontowsjdev.casp.prtrm.linked.linetrees 
+genmodel/corontowsjdev.casp.prtrm.linked.linetrees: $(foreach sect,01 22 24,genmodel/corontowsj$(sect).casp.prtrm.linked.linetrees)
 	cat $^  >  $@
 
-.PRECIOUS: genmodel/corconllwsjdev.casp.linked.linetrees
-genmodel/corconllwsjdev.casp.linked.linetrees: $(foreach sect,00 01 22 24,genmodel/corontowsj$(sect).casp.linked.linetrees)
+.PRECIOUS: genmodel/corconllwsjdev.casp.prtrm.linked.linetrees
+genmodel/corconllwsjdev.casp.prtrm.linked.linetrees: $(foreach sect,00 01 22 24,genmodel/corontowsj$(sect).casp.prtrm.linked.linetrees)
 	cat $^  >  $@
 
 #.PRECIOUS: genmodel/corconllwsjdev.casp.linked.linetrees
