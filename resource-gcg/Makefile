@@ -202,17 +202,61 @@ endef
 #
 ################################################################################
 
-#### obtain sentence-aligned space-delimited variable (semantic) dependencies
+#### annotation release format...
+%.toktrees:  $(GCG-SCRIPTS)/port-semantics.perl  %.annot-syn  %.annot-sem
+	perl $^  >  $@
+%.linetrees:  %.toktrees  $(LTREES-SCRIPTS)/editabletrees2linetrees.pl
+	cat $<  |  perl $(word 2,$^)  >  $@
+#### indentation formats for annotation...
+%.fromtoktrees.annot-syn:  %.toktrees
+	cat $<  |  perl -pe 's/-[mnst][0-9]+r?//g'  >  $@
+%.fromtoktrees.annot-sem:  %.toktrees  $(GCG-SCRIPTS)/dedent.perl  $(GCG-SCRIPTS)/bare-ends.perl  $(GCG-SCRIPTS)/yoink-word-rightward.perl  $(GCG-SCRIPTS)/nathans-numberer.perl  $(GCG-SCRIPTS)/munge-NPs.perl
+	cat $(word 1,$^)  |  perl $(word 2,$^) | perl $(word 3,$^) | perl $(word 4,$^) | perl $(word 5,$^) | perl $(word 6,$^)  >  $@
+
+#### DEPRECATED: obtain sentence-aligned space-delimited variable (semantic) dependencies
 .PRECIOUS: %.protographs
 %.protographs:  %.linetrees  $(GCG-SCRIPTS)/trees2protographs.py
 	cat $<  |  python3 $(word 2,$^)  |  perl -pe 's/0,:/0,Pk/g'  >  $@
 
-#### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
+#### DEPRECATED: obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
 .PRECIOUS: %.cuegraphs
 %.cuegraphs:  %.linetrees  $(GCG-SCRIPTS)/linetrees2cuegraphs.d  $(GCG-SCRIPTS)/linetrees2cuegraphs.py
 	cat $<  |  sed 's/\^g//g' | python $(word 3,$^)  >  $@
 #%.cuegraphs:  %.protographs  $(GCG-SCRIPTS)/protographs2cuegraphs.pl
 #	cat $<  |  perl -p $(word 2,$^)  >  $@
+
+#### obtain discourse-aligned space-delimited cued-association graphs
+.PRECIOUS: %.discgraphs
+%.discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
+	cat $<  |  sed 's/\^g//g' | python $(word 3,$^) -e  >  $@
+%.verbose-discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
+	cat $<  |  sed 's/\^g//g' | python $(word 3,$^) -d -e  >  $@
+
+# #### obtain pdf drawing of discgraph   (neato/dot)
+# %.discgraphs.pdf:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discgraphspdf.py
+# 	cat $<  |  python $(word 2,$^)  |  dot -Tpdf  >  $@
+
+#### obtain tex drawing of discgraph 
+%.discgraphs.tex:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discgraphstex.d  $(GCG-SCRIPTS)/discgraphs2discgraphstex.py
+	cat $<  |  python $(word 3,$^)  >  $@
+
+#### obtain pdf from tex
+%.pdf:  %.tex
+	cd $(dir $<);  pdflatex $(notdir $<)
+
+#### obtain discourse-aligned lambda expressions
+%.discgraphs.formerrors:  %.discgraphs  $(GCG-SCRIPTS)/discgraphvalidator.d  $(GCG-SCRIPTS)/discgraphvalidator.py
+	cat $<  |  python $(word 3,$^)  >  $@
+
+#### obtain discourse-aligned lambda expressions
+%.discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
+	cat $<  |  python $(word 3,$^)  |  $(word 4,$^)  >  $@
+#### obtain discourse-aligned lambda expressions
+%.verbose-discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
+	cat $<  |  python $(word 3,$^) -d  |  $(word 4,$^)  >  $@
+%.verbose-discexprs.last.discgraphs:  %.verbose-discexprs
+	cat $<  |  grep 'GRAPH:'  |  tail -n1  |  perl -pe 's/ *GRAPH: *//'  >  $@
+
 
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
 .PRECIOUS: %.refconts

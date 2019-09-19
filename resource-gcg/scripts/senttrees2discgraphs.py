@@ -19,41 +19,52 @@
 
 import sys, os, re, collections
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
+import tree
 import gcgtree
+import semcuegraph
+
+RELABEL = False
+
+for a in sys.argv:
+  if a=='-d':
+    gcgtree.VERBOSE = True
+    semcuegraph.VERBOSE = True
+  if a=='-e':
+    semcuegraph.EQN_DEFAULTS = True
+  if a=='-r':
+    RELABEL = True
 
 ################################################################################
 
-class CueGraph( dict ):
+finished = False
 
-  def __init__( G, s ):
-    G = { }
-    for dep in s.split():
-      x,l,y = re.match('([^,]*),([^,]*),(.*)',dep).groups()
-      G[x,l]=y
+## For each discourse...
+while not finished:
 
-  def __str__( G ):
-    return ' '.join( [ ','.join( (x,l,G[x,l]) ) for x,l in sorted(G) ] )
+  ## Define discourse graph...
+  G = semcuegraph.SemCueGraph( )
+  sentctr = 0
 
-  def rename( G, xNew, xOld ):
-    if xOld != xNew:
-      for z,l in G.keys():
-        if G[z,l] == xOld: G[z,l] = xNew     ## replace old destination with new
-        if z == xOld:                        ## replace old source with new
-          if (xNew,l) not in G:
-            G[xNew,l] = G[xOld,l]
-            del G[xOld,l]
-      for z,l in G.keys():
-        if z == xOld and (xNew,l) in G:
-          G.rename( G[xNew,l], G[xOld,l] )
-          del G[xOld,l]
+  ## For each sentence...
+  for line in sys.stdin:
 
-  def result( G, l, x ):                     ## (f_l x)
-    if (x,l) not in G:  G[x,l] = x+l         ## if dest is new, name it after source and label
-    return G[x,l]
+    if '!ARTICLE' in line: break
 
-  def equate( G, y, l, x ):                  ## y = (f_l x)
-    if (x,l) in G: G.rename( y, G[x,l] )     ## if source and label exist, rename
-    else:          G[x,l] = y                ## otherwise, add to dict
+    ## Initialize new tree with or without tree-lengthening...
+    if RELABEL:
+      t = gcgtree.GCGTree( line )
+    else:
+      t = tree.Tree( )
+      t.read( line )
+    ## Add tree to discourse graph...
+    G.add( t, ('0' if sentctr<10 else '') + str(sentctr) )
+    sentctr += 1
 
+  else: finished = True
+
+  ## If discourse contained any sentences, finalize and print graph...
+  if sentctr>0:
+    G.finalize()
+    print( str(G) )
 
 

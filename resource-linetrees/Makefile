@@ -93,7 +93,7 @@ EditableTrees:
 endef
 #### obtain (flat) linetrees from (indented) editabletrees
 %.linetrees:  %.editabletrees  $(LTREES-SCRIPTS)/editabletrees2linetrees.pl
-	cat $<  |  perl -pe 's/^[0-9]*://;'  |  perl $(word 2,$^)  >  $@
+	cat $<  |  perl -pe 's/^[0-9]*://'  |  perl $(word 2,$^)  >  $@
 %.fromlinetrees.editabletrees:  %.linetrees  bin/indent
 	cat $<  |  $(word 2,$^)  >  $@
 %.numbered.editabletrees:  %.editabletrees  $(LTREES-SCRIPTS)/make-trees-numbered.pl

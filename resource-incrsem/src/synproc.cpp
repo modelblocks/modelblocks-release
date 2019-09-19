@@ -151,6 +151,7 @@ int main ( int nArgs, char* argv[] ) {
       if      ( 0==strcmp(argv[a],"-v") ) VERBOSE = 1;
       else if ( 0==strcmp(argv[a],"-V") ) VERBOSE = 2;
       else if ( 0==strcmp(argv[a],"-u") ) BERKUNK = true;
+      else if ( 0==strncmp(argv[a],"-p",2) ) numThreads = atoi(argv[a]+2);
       else if ( 0==strncmp(argv[a],"-b",2) ) BEAM_WIDTH = atoi(argv[a]+2);
       else if ( 0==strcmp(argv[a],"-c") ) OUTPUT_MEASURES = 1;
       else if ( 0==strcmp(argv[a],"-d") ) NODEP = true;
@@ -285,7 +286,10 @@ int main ( int nArgs, char* argv[] ) {
 
             StoreState ss( q_tdec1, f_tdec1, j_tdec1, tpA.first, tpB.first, p_tdec1 );
             // For each possible lemma (context + label + prob) for preterminal of current word...
-            for( auto& ktpr_p_t : (lexW.end()!=lexW.find(w_t)) ? lexW[w_t] : lexW[ (BERKUNK) ? unkWordBerk(w_t.getString().c_str()) : unkWord(w_t.getString().c_str()) ] )
+            for( auto& ktpr_p_t : (             lexW.end() != lexW.find( w_t)) ? lexW[w_t] :
+                                  ( BERKUNK and lexW.end() != lexW.find( unkWordBerk( w_t.getString().c_str() ) ) ) ? lexW[ unkWordBerk( w_t.getString().c_str() ) ] :
+                                  (             lexW.end() != lexW.find( unkWord(     w_t.getString().c_str() ) ) ) ? lexW[ unkWord(     w_t.getString().c_str() ) ] :
+                                  list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>() )
              if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(tpA.second) + log(tpB.second) + log(ktpr_p_t.second) > beams[t].rbegin()->getProb() ) {
               T t_p_t           = ktpr_p_t.first;  // label of current preterminal
               double probwgivkl = ktpr_p_t.second; // probability of current word given current preterminal
@@ -376,7 +380,7 @@ int main ( int nArgs, char* argv[] ) {
           probCurrTot += exp(be_t.getProb()     - beams[t-1].begin()->getProb());
         mls[t-1].third() = log2(probPrevTot) - log2(probCurrTot);
       }
-      // Dump all consecuative lines that are finished...
+      // Dump all consecutive lines that are finished...
       while( MLSs.size()>0 && MLSs.front().size()>0 ) { cout << MLSs.front() << endl; MLSs.pop_front(); }
     }
 
