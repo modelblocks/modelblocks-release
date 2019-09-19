@@ -93,6 +93,9 @@ DTSR-SCRIPTS := $(RESOURCE-DTSR)/scripts
 RESOURCE-DUNDEE := $(abspath $(MBDIR)/resource-dundee)
 DUNDEE-SCRIPTS := $(RESOURCE-DUNDEE)/scripts
 
+RESOURCE-EPIC := $(abspath $(MBDIR)/resource-epic)
+EPIC-SCRIPTS := $(RESOURCE-EPIC)/scripts
+
 RESOURCE-FEDECOG := $(abspath $(MBDIR)/resource-fedorenkoetal16ecog)
 FEDECOG-SCRIPTS := $(RESOURCE-FEDECOG)/scripts
 
@@ -168,6 +171,9 @@ RT-SCRIPTS := $(RESOURCE-RT)/scripts
 RESOURCE-TOKENIZE := $(abspath $(MBDIR)/resource-segment-tokenize)
 TOKENIZE-SCRIPTS := $(RESOURCE-TOKENIZE)/scripts
 
+RESOURCE-SKIPDEP := $(abspath $(MBDIR)/resource-skipdep)
+SKIPDEP-SCRIPTS := $(RESOURCE-SKIPDEP)/scripts
+
 RESOURCE-SRILM := $(abspath $(MBDIR)/resource-srilm)
 SRILM-SCRIPTS := $(RESOURCE-SRILM)/scripts
 
@@ -210,6 +216,8 @@ include $(RESOURCE-TOKENIZER)/Makefile
 include $(RESOURCE-LTREES)/Makefile
 include $(RESOURCE-GCG)/Makefile
 include $(RESOURCE-LVPCFG)/Makefile
+include $(RESOURCE-SKIPDEP)/Makefile
+include $(RESOURCE-EPIC)/Makefile
 include $(RESOURCE-LCPARSE)/Makefile
 include $(RESOURCE-BNC)/Makefile
 include $(RESOURCE-TREEBANK)/Makefile

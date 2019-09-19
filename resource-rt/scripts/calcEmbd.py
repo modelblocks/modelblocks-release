@@ -390,6 +390,12 @@ with open(args.decpars[0], 'rb') as decpars:
                 if dpars_line:
                     i, prev, preds = process_tok(decpars, dpars_line, i, prev, debug=args.debug)
                     dpars_line = next_tok(decpars)
+                else:
+                    preds = None
             else: ## punctuation token
                 print(' '.join([wrd] + punc_tok))
         ltoks_line = sys.stdin.readline()
+    if preds is not None:
+        print(' '.join([str(P) for P in preds]))
+
+
