@@ -134,6 +134,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
   def alreadyConnected( D, x, xGoal ):
 #    print( 'ceiling of ' + x + ' is ' + D.ceiling(x) )
     return ( xGoal == '' and D.ceiling( x ) in D.AnnotatedCeilings ) or D.reachesInChain( x, xGoal )
+#    return ( xGoal == '' and any([ D.ceiling( x ) in D.AnnotatedCeilings ] + [ D.ceiling( y ) in D.AnnotatedCeilings  for l,y in D.Inhs.get(x,{}).items()  if l!='w' and l!='o' ]) ) or D.reachesInChain( x, xGoal )
 
 
   ## Method to return list of scope (src,dst) pairs to connect target to goal...
