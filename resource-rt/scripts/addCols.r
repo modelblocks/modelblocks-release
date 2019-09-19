@@ -35,6 +35,6 @@ source('../../resource-lmefit/scripts/lmetools.r')
 setwd(wd)
 options('warn'=1) #report non-convergences, etc
 
-data <- read.table(file("stdin"), header=TRUE, quote='', comment.char='')
+data <- read.table(file("stdin"), header=TRUE, quote='', comment.char='', na.strings=c("nan"))
 data <- addColumns(data)
 write.table(data, stdout(), sep=' ', quote=FALSE, row.names=FALSE, na="nan")
