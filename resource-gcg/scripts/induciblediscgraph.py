@@ -169,6 +169,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
         complain( 'elementary predication ' + ptup[0] + ' ' + xLowest + ' must be outscoped by argument ' + x + ' which outscopes it!' ) 
     ## If all participants reachable from elem pred, nothing to do...
     if any([ all([ D.reachesInChain(xLo,xHi)  for xHi in ptup[1:]  if xHi != xLo ])  for xLo in ptup[1:] ]):   #all([ D.reachesInChain( xLowest, x )  for x in ptup[2:] ]):
+#      if VERBOSE: print( '  '*step + str(step) + ': all args of pred ' + ptup[0] + ' ' + ptup[1] + ' are reachable' )
       if xGoal == '' or any([ D.reachesInChain( x, xGoal )  for x in ptup[1:] ]):   #D.reachesInChain( xLowest, xGoal ):
         return []
       elif D.alreadyConnected(ptup[1],''):
@@ -185,6 +186,8 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 
     ## If binary predicate...
     elif len( ptup ) == 4:
+      if D.alreadyConnected( xOther1, xGoal ) and D.alreadyConnected( xOther2, xGoal ) and not D.alreadyConnected( xOther1, xOther2 ) and not D.alreadyConnected( xOther2, xOther1 ):
+        complain( 'arguments ' + xOther1 + ' and ' + xOther2 + ' of elementary predication ' + ptup[0] + ' ' + ptup[1] + ' outscoped in different branches!' )
       if D.reachesInChain( xGoal, xOther1 ) and D.reachesInChain( xGoal, xOther2 ):
         if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 0' )
         return ( [ (xLowest,xGoal) ] if xLowest == ptup[1] else [] ) 
@@ -222,7 +225,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       active = False
       l = []
       for _,xHiOrig in RecencyConnected[:]:
-        if VERBOSE: print( '  ' + D.strGraph() )
+        if VERBOSE: print( '  '*step + 'GRAPH: ' + D.strGraph() )
         if VERBOSE: print( '  '*step + str(step) + ': working on refstate ' + str(xHiOrig) + '...' )
         for ptup,xGoal in D.RefToPredTuples.get( xHiOrig, [] ) + ( [ ( D.PredToTuple[xHiOrig], '' ) ] if xHiOrig in D.PredToTuple else [] ):
           l = D.scopesToConnect( ptup[1], '', step+1 )
