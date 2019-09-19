@@ -123,7 +123,7 @@ genmodel/alice.time.tokmeasures: $(ALICE-SCRIPTS)/alignSrcToks2OrigToks.py genmo
 genmodel/alice.linetoks: $(ALICE-SCRIPTS)/tokmeasures2linetoks.py genmodel/alice.time.tokmeasures | genmodel
 	cat $(word 2, $^) | python $(word 1, $^) > $@
 
-%alice.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-ALICE)/srcmodel/alice.stripped.linetrees %alice.linetoks
+%alice.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-ALICE)/srcmodel/alice.stripped.linetrees %alice.linetoks
 	python $^ > $@
 
 genmodel/alice.sbj.evmeasures: | genmodel

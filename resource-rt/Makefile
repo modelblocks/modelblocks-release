@@ -293,12 +293,18 @@ genmodel/rename_cols.params: | genmodel
 %.lc.tokmeasures: %.linetoks $(RT-SCRIPTS)/calcEmbd.py %.nopunc.semprocdecpars
 	cat $< | python $(word 2, $^) $(word 3, $^) > $@
     
+%.lc.tokmeasures: %.gold.linetoks $(RT-SCRIPTS)/calcEmbd.py %.nopunc.semprocdecpars
+	cat $< | python $(word 2, $^) $(word 3, $^) > $@
+    
 # Pastes DLT predictors to existing identically tokenized tokmeasures file
 %.dlt.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).dlt.tokmeasures
 	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
  
 # Computes DLT predictors
 %.dlt.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
+	cat $< | python $(word 2, $^) > $@
+
+%.dlt.tokmeasures: %.gold.linetrees $(RT-SCRIPTS)/calcDLT.py
 	cat $< | python $(word 2, $^) > $@
 
 # Pastes GloVe predictors to existing identically tokenized tokmeasures file

@@ -19,6 +19,16 @@
 
 #include <typeinfo>
 
+// for semantic ablation
+class TVec : public DelimitedCol<psLBrack, double, psComma, 20, psRBrack> {
+  public:
+    TVec ( ) { }
+    TVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, 20, psRBrack>(kv) { }
+    TVec& add( const TVec& kv ) { *this += kv; return *this; }
+};
+
+const TVec foo   ( arma::zeros<Col<double>>(20) );
+
 class NPredictorVec {
 //need to be able to output real-valued distance integers, NPreds
 //TODO maybe try quadratic distance
@@ -192,6 +202,7 @@ class FPredictorVec {
 
     friend ostream& operator<< ( ostream& os, const FPredictorVec& fpv ) {
       os << fpv.d << " " << fpv.catBase << " " << fpv.hvB << " " << fpv.hvF;
+//      os << fpv.d << " " << fpv.catBase << " " << foo << " " << foo;
       return os;
     }
 };
@@ -201,7 +212,9 @@ class FPredictorVec {
 class FModel {
 
   typedef DelimitedTrip<psX,F,psAmpersand,Delimited<EVar>,psAmpersand,Delimited<K>,psX> FEK;
-  typedef DelimitedCol<psLBrack, double, psComma, 10, psRBrack> CVec;
+//  typedef DelimitedCol<psLBrack, double, psComma, 10, psRBrack> CVec;
+  typedef DelimitedCol<psLBrack, double, psComma, 60, psRBrack> CVec;
+
 
   private:
 
@@ -213,7 +226,9 @@ class FModel {
     unsigned int iNextResponse  = 0;
 
     // Matrix dimensions could be different; how to accommodate for this?
-    DelimitedMat<psX, double, psComma, 57, 57, psX> fwf;  // weights for J model
+//    7+2*sem+syn
+//    DelimitedMat<psX, double, psComma, 57, 57, psX> fwf;  // weights for J model
+    DelimitedMat<psX, double, psComma, 147, 147, psX> fwf;  // weights for J model
     DelimitedVector<psX, double, psComma, psX> fws;
 
   public:
@@ -261,9 +276,10 @@ class FModel {
     }
 
     arma::vec calcResponses( FPredictorVec& lfpredictors ) const {
-// return distribution over JEOO indices
-// vectorize predictors: one-hot for depth, three hvecs, two cat-embeds
-      arma::vec flogresponses = arma::zeros( 57 );
+// return distribution over FEK indices
+// vectorize predictors: one-hot for depth, two hvecs, one cat-embed
+//      arma::vec flogresponses = arma::zeros( 57 );
+      arma::vec flogresponses = arma::zeros( 147 );
       CVar catB = lfpredictors.getCatBase();
       const HVec& hvB = lfpredictors.getHvB();
       const HVec& hvF = lfpredictors.getHvF();
@@ -285,8 +301,19 @@ class FModel {
 
 // implementation of MLP
       mat fwsm(fws);
-      fwsm.reshape(fws.size()/57, 57);
+//      fwsm.reshape(fws.size()/57, 57);
+      fwsm.reshape(fws.size()/147, 147);
       arma::vec flogscores = fwsm * relu(Mat<double>(fwf)*flogresponses);
+      arma::vec fscores = arma::exp(flogscores);
+      double fnorm = arma::accu(fscores);
+
+      return fscores/fnorm;
+    }
+
+  arma::vec testCalcResponses( arma::vec testvec ) const {
+      mat fwsm(fws);
+      fwsm.reshape(fws.size()/57, 57);
+      arma::vec flogscores = fwsm * relu(Mat<double>(fwf)*testvec);
       arma::vec fscores = arma::exp(flogscores);
       double fnorm = arma::accu(fscores);
 
@@ -339,6 +366,7 @@ class JPredictorVec {
 
     friend ostream& operator<< ( ostream& os, const JPredictorVec& jpv ) {
       os << jpv.d << " " << jpv.catAncstr << " " << jpv.hvAncstr << " " << jpv.hvFiller << " " << jpv.catLchild << " " << jpv.hvLchild;
+//      os << jpv.d << " " << jpv.catAncstr << " " << foo << " " << foo << " " << jpv.catLchild << " " << foo;
       return os;
     }
 };
@@ -349,7 +377,8 @@ class JPredictorVec {
 class JModel {
 
   typedef DelimitedQuad<psX,J,psAmpersand,Delimited<EVar>,psAmpersand,O,psAmpersand,O,psX> JEOO;
-  typedef DelimitedCol<psLBrack, double, psComma, 10, psRBrack> CVec;
+//  typedef DelimitedCol<psLBrack, double, psComma, 10, psRBrack> CVec;
+  typedef DelimitedCol<psLBrack, double, psComma, 60, psRBrack> CVec;
   unsigned int jr0;
   unsigned int jr1;
 
@@ -363,8 +392,9 @@ class JModel {
     unsigned int iNextResponse  = 0;
 
     // Matrix dimensions could be different; how to accommodate for this?
-    DelimitedMat<psX, double, psComma, 87, 87, psX> jwf;  // weights for J model
-//    DelimitedMat<psX, double, psComma, 102, 87, psX> jws;
+//    7+3*sem+2*syn
+//    DelimitedMat<psX, double, psComma, 87, 87, psX> jwf;  // weights for J model
+    DelimitedMat<psX, double, psComma, 247, 247, psX> jwf;  // weights for J model
     DelimitedVector<psX, double, psComma, psX> jws;
 
   public:
@@ -423,7 +453,8 @@ class JModel {
     arma::vec calcResponses( JPredictorVec& ljpredictors ) const {
 // return distribution over JEOO indices
 // vectorize predictors: one-hot for depth, three hvecs, two cat-embeds
-      arma::vec jlogresponses = arma::zeros( 87 );
+//      arma::vec jlogresponses = arma::zeros( 87 );
+      arma::vec jlogresponses = arma::zeros( 247 );
       CVar catA = ljpredictors.getCatAncstr();
       const HVec& hvA = ljpredictors.getHvAncstr();
       const HVec& hvF = ljpredictors.getHvFiller();
@@ -454,11 +485,21 @@ class JModel {
 
 // implementation of MLP
       mat jwsm(jws);
-      jwsm.reshape(jws.size()/87, 87);
+//      jwsm.reshape(jws.size()/87, 87);
+      jwsm.reshape(jws.size()/247, 247);
       arma::vec jlogscores = jwsm * relu(Mat<double>(jwf)*jlogresponses);
       arma::vec jscores = arma::exp(jlogscores);
       double jnorm = arma::accu(jscores);
 
+      return jscores/jnorm;
+    }
+
+  arma::vec testCalcResponses( arma::vec testvec ) const {
+      mat jwsm(jws);
+      jwsm.reshape(jws.size()/87, 87);
+      arma::vec jlogscores = jwsm * relu(Mat<double>(jwf)*testvec);
+      arma::vec jscores = arma::exp(jlogscores);
+      double jnorm = arma::accu(jscores);
       return jscores/jnorm;
     }
 };
