@@ -21,7 +21,7 @@ for line in sys.stdin:
 
   ## For each assoc...
   for assoc in sorted( line.split(' ') ):
-    src,lbl,dst = assoc.split(',')
+    src,lbl,dst = assoc.split( ',', 2 )
  
 #    print( '"' + src + '" -> "' + dst + '" [label="' + lbl + '", color=' + ('black' if lbl in '0123456789' else 'magenta' if lbl=='s' else 'blue') + '];' )   #, constraint=false];' )  ## dot
 
