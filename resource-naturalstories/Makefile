@@ -138,7 +138,7 @@ genmodel/naturalstories.delim.linetoks: genmodel/naturalstories.delim.lineitems 
 $(CONFIGDIR)/user-naturalstories-directory.txt
 	cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word, 2, $^) item zone > $@
 
-%/naturalstories.lineitems: $$(DEP-NATSTORIES) %/naturalstories.penn.linetoks $(RT-SCRIPTS)/toks2sents.py \
+%/naturalstories.lineitems: $$(DEP-NATSTORIES) %/naturalstories.linetoks $(RT-SCRIPTS)/toks2sents.py \
 $(NATSTORDIR)/naturalstories_RTS/all_stories.tok $(CONFIGDIR)/user-naturalstories-directory.txt | %
 	cat $(word 3, $^) | sed 's/\t/ /g;s/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' | python $(word 2, $^) $(word 1, $^) > $@
  

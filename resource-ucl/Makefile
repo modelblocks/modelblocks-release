@@ -176,7 +176,7 @@ genmodel/ucl.rm_unfix_items.params: | genmodel
 $(UCLDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | %
 	cut -f 2 $(word 3,$^) | tail -n+2 | $(word 4,$^) | sed 's/ $$//g' > $@
 
-%/ucl.lineitems: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
+%/ucl.lineitems: $$(DEP-UCL) $(CONFIGDIR)/user-ucl-directory.txt \
 $(UCLDIR)/eye_movement/stimuli.txt | %
 	cut -f 2 $(word 3,$^) | tail -n+2 > $@
 
