@@ -144,8 +144,10 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 #    print( [ xSub  for xSub in D.Subs.get(xTarget,[])  if D.Inhs.get(xSub,{}).get('r','') != xTarget ] )
 
     ## If any non-'r' heirs, return results for heirs (elementary predicates are always final heirs)...
-    if [] != [ xSub  for xSub in D.Subs.get(xTarget,[])  if D.Inhs.get(xSub,{}).get('r','') != xTarget ]:
-      return [ sco  for xSub in D.Subs.get( xTarget, [] )  if D.Inhs.get(xSub,{}).get('r','') != xTarget  for sco in D.scopesToConnect( xSub, xGoal, step+1 ) ]
+    if [] != [ xSub  for xSub in D.Subs.get(xTarget,[]) ]:
+      return [ sco  for xSub in D.Subs.get( xTarget, [] )  for sco in D.scopesToConnect( xSub, xGoal, step+1 ) ]
+#    if [] != [ xSub  for xSub in D.Subs.get(xTarget,[])  if D.Inhs.get(xSub,{}).get('r','') != xTarget ]:
+#      return [ sco  for xSub in D.Subs.get( xTarget, [] )  if D.Inhs.get(xSub,{}).get('r','') != xTarget  for sco in D.scopesToConnect( xSub, xGoal, step+1 ) ]
 
     ## If zero-ary (non-predicate)...
     if xTarget not in D.PredToTuple:
