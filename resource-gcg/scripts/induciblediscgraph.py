@@ -177,6 +177,14 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 
     ## If unary predicate...
     if len( ptup ) == 3:
+      ## Update any existing scopes to ensure scope chain targets are or are inherited by arguments...
+      if D.reachesInChain( xLowest, xOther1 ):
+        for xScopeParent in D.Heirs[ xOther1 ]:
+          for xScopeChild in [ xC  for xC,xP in D.Scopes.items()  if xP == xScopeParent  if xP == xScopeParent and D.reachesInChain( xLowest, xC ) ]:   #D.ScopeChildren.get( xScopeParent, {} ):
+            if xScopeParent != xOther1:
+              D.Scopes[ xScopeChild ] = xOther1
+              if VERBOSE: print( '  '*step + str(step) + ': changing heir scope ' + xScopeChild + ' ' + xScopeParent + ' to legator scope ' + xScopeChild + ' ' + xOther1 )
+      ## Recommend scopes...
       if D.reachesInChain( xGoal, xOther1 ):
         if VERBOSE: print( ' ' + '  '*step + str(step) + ': case a' )
         return ( [ (xLowest,xGoal) ] if xLowest == ptup[1] else [] )
@@ -186,6 +194,15 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 
     ## If binary predicate...
     elif len( ptup ) == 4:
+      ## Update any existing scopes to ensure scope chain targets are or are inherited by arguments...
+      for xLo,xHi in [ (xLowest,xOther1), (xLowest,xOther2), (xOther1,xLowest), (xOther1,xOther2), (xOther2,xLowest), (xOther2,xOther1) ]:
+        if D.reachesInChain( xLo, xHi ):
+          for xScopeParent in D.Heirs[ xHi ]:
+            for xScopeChild in [ xC  for xC,xP in D.Scopes.items()  if xP == xScopeParent and D.reachesInChain( xLo, xC ) ]:
+              if xScopeParent != xHi:
+                D.Scopes[ xScopeChild ] = xHi
+                if VERBOSE: print( '  '*step + str(step) + ': changing heir scope ' + xScopeChild + ' ' + xScopeParent + ' to legator scope ' + xScopeChild + ' ' + xHi )
+      ## Recommend scopes...
       if D.alreadyConnected( xOther1, xGoal ) and D.alreadyConnected( xOther2, xGoal ) and not D.alreadyConnected( xOther1, xOther2 ) and not D.alreadyConnected( xOther2, xOther1 ):
         complain( 'arguments ' + xOther1 + ' and ' + xOther2 + ' of elementary predication ' + ptup[0] + ' ' + ptup[1] + ' outscoped in different branches!' )
       if D.reachesInChain( xGoal, xOther1 ) and D.reachesInChain( xGoal, xOther2 ):
