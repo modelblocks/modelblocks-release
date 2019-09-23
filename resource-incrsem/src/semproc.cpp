@@ -376,7 +376,7 @@ int main ( int nArgs, char* argv[] ) {
                     if ( VERBOSE>1 ) cout << "     W " << e_p_t << " " << k_p_t << " " << c_p_t << " : " << w_t << " = " << probwgivkl << endl;
 
                     // For each possible no-fork or fork decision...
-                    for ( auto& f : {0,1} ) {
+                    for ( auto& f : {0,1} ) if ( q_tdec1.size() > 0 or f > 0 ) {
 //                      if( modF.getResponseIndex(f,e_p_t,k_p_t)==0 ) cerr<<"ERROR: unable to find fresponse "<<f<<"&"<<e_p_t<<"&"<<k_p_t<<endl;
                       if( modF.getResponseIndex(f,e_p_t,k_p_t) == uint(-1) ) continue;
                       double probFork = fresponses( modF.getResponseIndex(f,e_p_t,k_p_t) );
@@ -402,9 +402,9 @@ int main ( int nArgs, char* argv[] ) {
 
                         StoreState qPretrm( q_tdec1, hvAnt, e_p_t, k_p_t, c_p_t, matE, funcO );
                         const Sign& aPretrm = qPretrm.getApex();
+                        if( VERBOSE>1 ) cout << "       qPretrm="    << qPretrm    << endl;
                         StoreState qTermPhase( qPretrm, f );
                         const Sign& aLchild = qTermPhase.getApex();
-                        if( VERBOSE>1 ) cout << "       qPretrm="    << qPretrm    << endl;
                         if( VERBOSE>1 ) cout << "       qTermPhase=" << qTermPhase << endl;
 
                         JPredictorVec ljpredictors( modJ, f, e_p_t, aLchild, qTermPhase );  // q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
