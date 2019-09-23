@@ -219,7 +219,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
         return ( [ (xLowest,xGoal) ] if xLowest == ptup[1] else [] ) 
       for xLo,xMd,xHi in [ (xLowest,xOther2,xOther1), (xLowest,xOther1,xOther2) ]:
         if D.reachesInChain( xGoal, xHi ):
-          if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 1 ' + xLo + ' < ' + xMd + ' < ' + xHi )
+          if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 1 ' + xLo + ' under ' + xMd + ' under goal ' + xGoal + ' under ' + xHi )
           return ( [ (xLo,xMd) ] if xLo == ptup[1] else [] ) + ( D.scopesToConnect( xMd, xGoal,   step+1, Connected ) if xMd != ptup[1] else [ (xMd,xGoal) ] )
 #      if D.reachesInChain( xGoal, xOther1 ):
 #        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 1' )
@@ -230,11 +230,11 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       print( 'D.alreadyConnected( ' + xOther1 + ', ' + xGoal + ' ) = ' + str( D.alreadyConnected( xOther1, xGoal, Connected ) ) + 'D.reachesInChain( ' + xOther1 + ', ' + xOther2 + ' ) = ' + str( D.reachesInChain( xOther1, xOther2 ) ) ) 
       for xLo,xMd,xHi in [ (xLowest,xOther1,xOther2), (xLowest,xOther2,xOther1) ]:
         if D.alreadyConnected( xHi, xGoal, Connected ) and not D.reachesInChain( xHi, xMd ):
-          if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 3 ' + xLo + ' < ' + xMd + ' < ' + xHi )
+          if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 3 ' + xLo + ' under ' + xMd + ' under ' + xHi + ' under goal ' + xGoal )
           return ( [ (xLowest,xMd) ] if xLo == ptup[1] else [] ) + ( D.scopesToConnect( xMd, xHi, step+1, Connected ) if xMd != ptup[1] else [ (xMd,xHi) ] )
       for xLo,xMd,xHi in [ (xLowest,xOther1,xOther2), (xLowest,xOther2,xOther1) ]:
         if D.weaklyConnected( xHi, xGoal, Connected ) and not D.reachesInChain( xHi, xMd ):
-          if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 4 ' + xLo + ' < ' + xMd + ' < ' + xHi )
+          if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 4 ' + xLo + ' under ' + xMd + ' under ' + xHi + ' under goal ' + xGoal )
           return ( [ (xLowest,xMd) ] if xLo == ptup[1] else [] ) + ( D.scopesToConnect( xMd, xHi, step+1, Connected ) if xMd != ptup[1] else [ (xMd,xHi) ] )
 #      if D.alreadyConnected( xOther1, xGoal, Connected ) and not D.reachesInChain( xOther1, xOther2 ):
 #        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 3' )
