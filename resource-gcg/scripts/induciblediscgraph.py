@@ -182,7 +182,8 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
         complain( 'elementary predication ' + ptup[0] + ' ' + ptup[1] + ' is already fully bound, cannot become outscoped by goal referent ' + xGoal )
 
     ## If unary predicate...
-    if len( ptup ) == 3:
+#    if len( ptup ) == 3:
+    for xLowest,xOther1 in [ (xLowest,xOther1) ] if len(ptup)==3 else [ (ptup[1],ptup[3]) ] if len(ptup)==4 and D.Scopes.get(ptup[2],'')==ptup[1] else [ (ptup[1],ptup[2]) ] if len(ptup)==4 and D.Scopes.get(ptup[3],'')==ptup[1] else []:
       ## Update any existing scopes to ensure scope chain targets are or are inherited by arguments...
       if D.reachesInChain( xLowest, xOther1 ):
         for xScopeParent in D.Heirs[ xOther1 ]:
@@ -191,6 +192,8 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
               D.Scopes[ xScopeChild ] = xOther1
               if VERBOSE: print( '  '*step + str(step) + ': changing heir scope ' + xScopeChild + ' ' + xScopeParent + ' to legator scope ' + xScopeChild + ' ' + xOther1 )
       ## Recommend scopes...
+      if D.alreadyConnected( xOther1, xLowest, Connected ):
+        complain( 'elementary predication ' + ptup[0] + ' ' + xLowest + ' should not outscope argument ' + xOther1 )
       if D.reachesInChain( xGoal, xOther1 ):
         if VERBOSE: print( ' ' + '  '*step + str(step) + ': case a' )
         return ( [ (xLowest,xGoal) ] if xLowest == ptup[1] else [] )
@@ -199,7 +202,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
         return ( [ (xLowest,xOther1) ] if xLowest == ptup[1] else [] ) + ( D.scopesToConnect( xOther1, xGoal, step+1, Connected ) if xOther1 != ptup[1] else [ (xOther1,xGoal) ] )
 
     ## If binary predicate...
-    elif len( ptup ) == 4:
+    if len( ptup ) == 4:
       ## Update any existing scopes to ensure scope chain targets are or are inherited by arguments...
       for xLo,xHi in [ (xLowest,xOther1), (xLowest,xOther2), (xOther1,xLowest), (xOther1,xOther2), (xOther2,xLowest), (xOther2,xOther1) ]:
         if D.reachesInChain( xLo, xHi ):
