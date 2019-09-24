@@ -158,8 +158,9 @@ class DiscGraph:
 
   def normForm( D ):
     ## Smite redundant nuscos of predicative noun phrases out of Subs...
-    for xHi,l in D.Subs.items():
-      for xLo in l:
+    for xHi,L in D.Subs.items():
+      for xLo in L:
+        ## Diagnose as redundant if reft xLo has rin which also has rin...
         if 'r' in D.Inhs.get(D.Inhs.get(xLo,[]).get('r',''),[]):
           if VERBOSE: print( 'Smiting ' + xLo + ' out of Subs, for being redundant.' )
           D.Subs[xHi].remove(xLo)
@@ -170,9 +171,10 @@ class DiscGraph:
           if xLo in D.Scopes.values():
             sys.stderr.write( 'ERROR: scope should not be annotated to redundant predicative referent: ' + xLo + '\n' )
             print(           '#ERROR: scope should not be annotated to redundant predicative referent: ' + xLo )
-          if xLo in [ x  for x in D.Subs  for l,y in D.Inhs.get(x,{}).items()  if y == xLo and l != 'c' ]:
-            sys.stderr.write( 'ERROR: inheritance should not be annotated from ' + str(D.Subs[xLo]) + ' to redundant predicative referent: ' + xLo + '\n' )
-            print(           '#ERROR: inheritance should not be annotated from ' + str(D.Subs[xLo]) + ' to redundant predicative referent: ' + xLo )
+          BadSubs = [ x  for x in D.Subs.get(xLo,[])  for l,y in D.Inhs.get(x,{}).items()  if y == xLo and l != 'c' ]
+          if BadSubs != []:
+            sys.stderr.write( 'ERROR: inheritance should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo + '\n' )
+            print(           '#ERROR: inheritance should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo )
           if xLo in [ s  for q,e,r,s,n in D.QuantTuples ]:
             sys.stderr.write( 'ERROR: quantifier should not be annotated on redundant predicative referent: ' + xLo + '\n' )
             print(           '#ERROR: quantifier should not be annotated on redundant predicative referent: ' + xLo )

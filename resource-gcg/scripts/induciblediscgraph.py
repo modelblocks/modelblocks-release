@@ -51,10 +51,29 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
     ## List of referents that participate in elementary predications (which does not include the elementary predication itself)...
     D.Participants = sets.Set([ x for pred in D.PredTuples for x in pred[2:] ])
     ## List of heirs for each inherited referent...
-    D.Heirs = collections.defaultdict( list )
+    D.Legators = collections.defaultdict( list )
+    D.Heirs    = collections.defaultdict( list )
+    for xLo in D.Inhs:
+      D.Legators[ xLo ] = D.getLegators( xLo )
     for xHi in D.Subs:
       D.Heirs[ xHi ] = D.getHeirs( xHi )
+    if VERBOSE: print( 'Legators = ' + str(D.Legators) )
     if VERBOSE: print( 'Heirs = ' + str(D.Heirs) )
+    def getTopUnaryLegators( xLo ):
+      L = [ xLeg  for l,xHi in D.Inhs.get( xLo, {} ).items()  if l!='w' and l!='o' and len( D.Subs.get(xHi,[]) ) < 2  for xLeg in getTopUnaryLegators(xHi) ]
+      return L if L != [] else [ xLo ]
+#       if D.Inhs.get( xLo, {} ).items() != []  else [ xLo ]
+#      UnaryL = [ xLeg  for xLeg in D.Legators.get(xLo,[])  if all([ xLo in D.Heirs.get(xHeir,[])  for xHeir in D.Legators.get(xLo,[])  if xHeir in D.Heirs.get(xLeg,[]) ]) ]
+#      return [ x  for x in UnaryL  if not any([ x in D.Heirs.get(y,[])  for y in UnaryL  if y != x ]) ] 
+    def getTopLegators( xLo ):
+      L = [ xLeg  for l,xHi in D.Inhs.get( xLo, {} ).items()  if l!='w' and l!='o'  for xLeg in getTopLegators(xHi) ]
+      return L if L != [] else [ xLo ]
+#       if D.Inhs.get( xLo, {} ).items() != []  else [ xLo ]
+    D.TopLegators = { xLo : sets.Set( getTopLegators(xLo) )  for xLo in D.Inhs }
+    if VERBOSE: print( 'TopLegators = ' + str(D.TopLegators) )
+    D.TopUnaryLegators = { xLo : sets.Set( getTopUnaryLegators(xLo) )  for xLo in D.Inhs }
+    if VERBOSE: print( 'TopUnaryLegators = ' + str(D.TopUnaryLegators) )
+#    D.PredRecency = { }
     ## List of heirs for each participant...
     D.HeirsOfParticipants = [ xLo for xHi in D.Participants for xLo in D.Heirs.get(xHi,[]) ] 
     if VERBOSE: print( 'HeirsOfParticipants = ' + str(D.HeirsOfParticipants) )
@@ -75,12 +94,17 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       return Out
     def orderTuplesFromSubs( x ):
       Out = []
+      Out += [ (ptup,x) for ptup in D.PredTuples if x in ptup[2:] ]
       for src in D.Subs.get(x,[]):
         Out += orderTuplesFromSubs( src )
-        Out += [ (ptup,src) for ptup in D.PredTuples if src in ptup[2:] ]
+#        Out += [ (ptup,src) for ptup in D.PredTuples if src in ptup[2:] ]
       return Out
-    D.RefToPredTuples = { x : orderTuplesFromSubs(x) + orderTuplesFromSups(x)  for x in D.Referents }
-    if VERBOSE: print( 'RefToPredTuples = ' + str(D.RefToPredTuples) )
+    D.FullRefToPredTuples = { x : orderTuplesFromSubs(x) + orderTuplesFromSups(x)  for x in D.Referents }
+    D.WeakRefToPredTuples = { x : orderTuplesFromSubs( D.Inhs.get(x,{}).get('r',x) )  for x in D.Referents }
+    D.BareRefToPredTuples = { x : [ (ptup,x)  for ptup in D.PredTuples  if x in ptup[2:] ]  for x in D.Referents }
+    if VERBOSE: print( 'FullRefToPredTuples = ' + str(D.FullRefToPredTuples) )
+    if VERBOSE: print( 'WeakRefToPredTuples = ' + str(D.WeakRefToPredTuples) )
+    if VERBOSE: print( 'BareRefToPredTuples = ' + str(D.BareRefToPredTuples) )
     ## Calculate ceilings of scoped refts...
     D.AnnotatedCeilings = sets.Set([ y  for y in D.Referents  for x in D.Scopes.keys()  if D.ceiling(x) in D.Chains[y] ]) #D.Chains[D.ceiling(x)]  for x in D.Scopes.keys() ])
     if len(D.AnnotatedCeilings) == 0:
@@ -115,6 +139,12 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
     Out = [ xHi ]
     for xLo in D.Subs.get(xHi,[]):
       Out += D.getHeirs( xLo )
+    return Out
+
+  def getLegators( D, xLo ):
+    Out = [ xLo ]
+    for l,xHi in D.Inhs.get(xLo,{}).items():
+      Out += D.getLegators( xHi )
     return Out
 
 
@@ -213,7 +243,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
                 if VERBOSE: print( '  '*step + str(step) + ': changing heir scope ' + xScopeChild + ' ' + xScopeParent + ' to legator scope ' + xScopeChild + ' ' + xHi )
       ## Recommend scopes...
       if D.alreadyConnected( xOther1, xGoal, Connected ) and D.alreadyConnected( xOther2, xGoal, Connected ) and not D.alreadyConnected( xOther1, xOther2, Connected ) and not D.alreadyConnected( xOther2, xOther1, Connected ):
-        complain( 'arguments ' + xOther1 + ' and ' + xOther2 + ' of elementary predication ' + ptup[0] + ' ' + ptup[1] + ' outscoped in different branches!' )
+        complain( 'arguments ' + xOther1 + ' and ' + xOther2 + ' of elementary predication ' + ptup[0] + ' ' + ptup[1] + ' outscoped in different branches -- possibly due to disconnected scope annotations' )
       if D.reachesInChain( xGoal, xOther1 ) and D.reachesInChain( xGoal, xOther2 ):
         if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 0' )
         return ( [ (xLowest,xGoal) ] if xLowest == ptup[1] else [] ) 
@@ -258,22 +288,67 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       complain( 'no support for super-binary predicates: ' + ' '.join(ptup) )
 
 
+  def constrainDeepestReft( D, xTarg, step, Connected, isFull=False ):
+    if VERBOSE: print( '  '*step + str(step) + ': recursing to ' + xTarg + '...' )
+    ## If any non-'r' heirs, return results for heirs (elementary predicates are always final heirs)...
+#    if [] != [ xSub  for xSub in D.Subs.get( xTarg, [] ) ]:
+#      return [ sco   for xSub in D.Subs.get( xTarg, [] )  for sco in D.constrainDeepestReft( xSub, step+1, Connected, isFull ) ]
+    for xSub in D.Subs.get( xTarg, [] ):
+      l = D.constrainDeepestReft( xSub, step+1, Connected, isFull )
+      if l != []: return l
+    ## First, recurse down scope tree...
+#    for x in D.Chains.get( D.Inhs.get(xTarg,{}).get('r',xTarg), D.Chains[xTarg] ):
+    for xLo,xHi in D.Scopes.items():
+      if xHi == xTarg:
+        for xLeg in D.TopLegators.get( xLo, [xLo] ) if isFull else D.TopUnaryLegators.get( xLo, [xLo] ):
+          l = D.constrainDeepestReft( xLeg, step+1, Connected, isFull )
+          if l != []: return l
+    ## Second, try all preds...
+#    for x in D.Chains[ xTarg ]:
+    for ptup,_ in D.BareRefToPredTuples.get( xTarg, [] ):   #D.FullRefToPredTuples.get( xTarg, [] ) if isFull else D.WeakRefToPredTuples.get( xTarg, [] ):
+        l = D.scopesToConnect( ptup[1], '', step+1, Connected )
+        if l != []: return l
+    return []
+
+
   ## Method to fill in deterministic or truth-functionally indistinguishable scope associations (e.g. for elementary predications) that are not explicitly annotated...
-  def tryScope( D, RecencyConnected, step=1 ):
-      if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
-      active = False
-      l = []
-      for _,xHiOrig in RecencyConnected[:]:
+  def tryScope( D, RecencyConnected, isFull, step=1 ):
+        if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
+#      active = False
+#      l = []
+##      RecencyConnected = sorted( [ ( s if not any([y in D.Scopes.values()  for y in D.Chains.get(x,[]) ]) else -1, x )  for (s,x) in RecencyConnected ] )
+
+#      for _,xHiOrig in RecencyConnected[:]:
+#        if VERBOSE: print( '  '*step + 'GRAPH: ' + D.strGraph() )
+#        if VERBOSE: print( '  '*step + str(step) + ': working on refstate ' + str(xHiOrig) + '...' )
+
+        '''
+#      TupList = sorted([ (0 if any([ xHi in D.Scopes  for xLo in ptup  for xHi in D.Legators[xLo] ]) else -1,ptup)  for ptup in D.PredTuples ], reverse = True)
+      TupList = sorted( [ ( D.PredRecency.get(ptup,0) if any([ xHi in D.Scopes  for xLo in ptup[1:]  for xHi in D.Legators[xLo] ]) and not any([ xHi in D.Scopes.values()  for xLo in ptup[1:]  for xHi in D.Legators[xLo] ]) else 
+                            D.PredRecency.get(ptup,0)-1 if any([ xHi in D.Scopes  for xLo in ptup[1:]  for xHi in D.Chains[xLo] ]) and not any([ xHi in D.Scopes.values()  for xLo in ptup[1:]  for xHi in D.Chains[xLo] ]) else 
+                            D.PredRecency.get(ptup,0)-2 if any([ xHi in D.Scopes  for xLo in ptup[1:]  for xHi in D.Legators[xLo] ]) else
+                            D.PredRecency.get(ptup,0)-3 if any([ xHi in D.Scopes  for xLo in ptup[1:]  for xHi in D.Chains[xLo] ]) else
+                            D.PredRecency.get(ptup,0)-4,ptup)  for ptup in D.PredTuples ], reverse = True )
+      if VERBOSE: print( 'TUP LIST: ' + str(TupList) )
+      for _,ptup in TupList:
+        '''
+#        for ptup,xGoal in D.RefToPredTuples.get( xHiOrig, [] ) + ( [ ( D.PredToTuple[xHiOrig], '' ) ] if xHiOrig in D.PredToTuple else [] ):
+#          l = D.scopesToConnect( ptup[1], '', step+1, [ x  for s,x in RecencyConnected ] )
+
+#      active = True
+#      while active:
+#          active = False
         if VERBOSE: print( '  '*step + 'GRAPH: ' + D.strGraph() )
-        if VERBOSE: print( '  '*step + str(step) + ': working on refstate ' + str(xHiOrig) + '...' )
-        for ptup,xGoal in D.RefToPredTuples.get( xHiOrig, [] ) + ( [ ( D.PredToTuple[xHiOrig], '' ) ] if xHiOrig in D.PredToTuple else [] ):
-          l = D.scopesToConnect( ptup[1], '', step+1, [ x  for s,x in RecencyConnected ] )
+        for xTarget in [ x  for x in D.AnnotatedCeilings  if not any([ y  for y in D.AnnotatedCeilings  if x != y and x in D.Heirs.get(y,[]) ]) ]:
+          l = D.constrainDeepestReft( xTarget, step+1, [ x  for s,x in RecencyConnected ], isFull )
           if VERBOSE: print( '  '*step + str(step) + '  l=' + str(l) )
           for xLo,xHi in sets.Set(l):
             if VERBOSE: print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
             D.Scopes[ D.ceiling(xLo) ] = xHi
+#            D.PredRecency[ ptup ] = step
             RecencyConnected = [ (step,x) for x in D.Chains.get(xLo,[]) ] + RecencyConnected
-          if l!=[]: D.tryScope( RecencyConnected, step+1 )
-
+          if l!=[]:
+            D.tryScope( RecencyConnected, isFull, step+1 )
+#            active = True
 
 
