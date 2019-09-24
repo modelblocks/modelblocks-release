@@ -5,7 +5,7 @@ use open ':encoding(UTF-8)', ':std'; # assume all files are in UTF-8 (of which A
 open my $syn_file, '<', $ARGV[0] or die "Could not open syntax file $ARGV[0]\n";
 open my $sem_file, '<', $ARGV[1] or die "Could not open semantics file $ARGV[1]\n";
 
-my $annot = qr/((?:-[mnstw]\d+r?)+) +\S+$/; # captures the whole sequence of annots
+my $annot = qr/((?:-[mnstw]\d+r?)+)\s+\S+$/; # captures the whole sequence of annots
 
 while (<$syn_file>) {
 	unless (/[a-zA-Z]/) {print; next} # if line does not contain print, pass it right through
