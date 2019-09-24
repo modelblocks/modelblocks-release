@@ -103,3 +103,9 @@ EPIC-TRAINER = target/scala-2.11/epic-assembly-0.4.4.jar epic.parser.models.Pars
 		--threads 8
 	echo 'Epic training finished' > $@
 
+%epic_parsed.output: $$(DEP-EPIC) $$(DEP-SKIPDEP) $(EPICDIR)/target/scala-2.11/ $(BIN)/parser-epic \
+		$$(basename %).linetoks \
+		$(GENMODEL)/$$(basename $$(subst +,-,$$(subst -,.,$$(subst .,,$$(suffix $$*))))).model_output \
+		$(GENMODEL)/$$(basename $$(subst +,-,$$(subst -,.,$$(subst .,,$$(suffix $$*))))).model
+	cat $(word 2,$^)  |  $(word 1,$^) $(subst _, ,$(subst +,-,$(subst .,,$(suffix $(subst -,.,$*))))) $(word 3,$^)  >  $@
+
