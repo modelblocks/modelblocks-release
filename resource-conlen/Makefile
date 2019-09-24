@@ -91,13 +91,53 @@ endif
 #
 ################################################################################
 
-%conlen.itemmeasures: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length.itemmeasures $(CONFIGDIR)/user-conlen-directory.txt | %
+## copy partition ini into project genmodel directory
+genmodel/%.ini: $(CONLEN-SCRIPTS)/%.ini
 	cp $< $@
 
-conlen%.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_$$*.lineitems | genmodel
+genmodel/%_LANG.ini: genmodel/%.ini
 	cp $< $@
 
-conlen%.linetoks: $$(DEP-TOKENIZER) conlen%.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
+genmodel/%_LANG_MD.ini: genmodel/%.ini
+	cp $< $@
+
+genmodel/%_LANG_MD.ini: genmodel/%.ini
+	cp $< $@
+
+%conlen.itemmeasures: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length.itemmeasures $(CONLEN-SCRIPTS)/build_itemmeasures.py $(CONFIGDIR)/user-conlen-directory.txt | %
+	cat $< | python $(word 2, $^) > $@
+
+%conlenc.itemmeasures: $(CONLEN-SCRIPTS)/filter_itemmeasures.py %conlen.itemmeasures
+	python $^ c > $@
+
+%conlennc.itemmeasures: $(CONLEN-SCRIPTS)/filter_itemmeasures.py %conlen.itemmeasures
+	python $^ nc > $@
+
+%conlenjab.itemmeasures: $(CONLEN-SCRIPTS)/filter_itemmeasures.py %conlen.itemmeasures
+	python $^ jab > $@
+
+%conlenc.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_c.lineitems
+	cp $< $@
+
+%conlennc.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_nc.lineitems
+	cp $< $@
+
+%conlenncsents.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_ncsents.lineitems
+	cp $< $@
+
+%conlenjab.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_jab.lineitems
+	cp $< $@
+
+%conlenc.linetoks: $$(DEP-TOKENIZER) %conlenc.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
+	cat $< | $(word 2, $^) | sed 's/ $$//g' | sed 's/\r //g' > $@
+
+%conlennc.linetoks: $$(DEP-TOKENIZER) %conlennc.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
+	cat $< | $(word 2, $^) | sed 's/ $$//g' | sed 's/\r //g' > $@
+
+%conlenncsents.linetoks: $$(DEP-TOKENIZER) %conlenncsents.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
+	cat $< | $(word 2, $^) | sed 's/ $$//g' | sed 's/\r //g' > $@
+
+%conlenjab.linetoks: $$(DEP-TOKENIZER) %conlenjab.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
 	cat $< | $(word 2, $^) | sed 's/ $$//g' | sed 's/\r //g' > $@
 
 %conlenc.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees %conlenc.linetoks
@@ -127,9 +167,40 @@ conlen%.linetoks: $$(DEP-TOKENIZER) conlen%.lineitems $(TOKENIZERDIR)/ptb_tokeni
 %conlenjab.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py %conlenjab.stripped.linetrees %conlenjab.linetoks
 	python $^ > $@
 
-%conlenncsents.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenncsents.stripped.linetrees %conlenncsents.linetoks
+%conlenncsents.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenncsents.stripped.linetrees %conlenncsents.linetoks
 	python $^ > $@
 
-conlenncfilt%itemmeasures: conlenncsents%itemmeasures $(CONLEN-SCRIPTS)/build_nc.py $$(dir %)/conlennc.lineitems
-	cat $< | python $(word 2, $^) $(word 3, $^) > $@
+conlenncfilt%itemmeasures: $$(dir %)/conlennc.itemmeasures conlenncsents%itemmeasures $(CONLEN-SCRIPTS)/build_nc.py $$(dir %)/conlennc.lineitems \
+	$(RT-SCRIPTS)/evmeas2uniqcols.py
+	paste -d ' ' $< <(cat $(word 2, $^) | python $(word 3, $^) $(word 4, $^)) | python $(word 5, $^) > $@
+
+conlenfmri%itemmeasures: $(CONLEN-SCRIPTS)/concat_itemmeasures.py conlenc%itemmeasures conlenncfilt%itemmeasures conlenjab%itemmeasures
+	python $^ > $@
+
+%conlenfmri.evmeasures: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_src.evmeasures $(CONLEN-SCRIPTS)/preprocess_conlen_fmri.py $(CONFIGDIR)/user-conlen-directory.txt | %
+	cat $(word 1, $^) | python $(word 2, $^) > $@
+
+%conlenfmri_LANG.evmeasures: %conlenfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(CONLEN-SCRIPTS)/add_network.py
+	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k LANG.* | python $(word 3, $^) > $@
+
+%conlenfmri_MD.evmeasures: %conlenfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(CONLEN-SCRIPTS)/add_network.py
+	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k MD.* | python $(word 3, $^)  > $@
+
+%conlenfmri_LANG_MD.evmeasures: %conlenfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(CONLEN-SCRIPTS)/add_network.py
+	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k LANG.* MD.* | python $(word 3, $^)  > $@
+
+%conlenfmri.beh.evmeasures: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_beh.txt
+	cp $^ $@
+
+conlenfmri.%.evmeasures: $(CONLEN-SCRIPTS)/merge_itemmeasures_into_runs.py $$(dir %)conlenfmri.beh.evmeasures conlenfmri.%.all-itemmeasures
+	python $^ > $@
+
+conlenfmri_LANG.%.evmeasures: $(CONLEN-SCRIPTS)/tile_stim_into_roi.py $$(dir %)conlenfmri_LANG.evmeasures conlenfmri.%.evmeasures
+	python $^ > $@
+
+conlenfmri_MD.%.evmeasures: $(CONLEN-SCRIPTS)/tile_stim_into_roi.py $$(dir %)conlenfmri_MD.evmeasures conlenfmri.%.evmeasures
+	python $^ > $@
+
+conlenfmri_LANG_MD.%.evmeasures: $(CONLEN-SCRIPTS)/tile_stim_into_roi.py $$(dir %)conlenfmri_LANG_MD.evmeasures conlenfmri.%.evmeasures
+	python $^ > $@
 

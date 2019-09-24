@@ -290,10 +290,10 @@ genmodel/rename_cols.params: | genmodel
 	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
 
 # Computes left-corner predictors
-%.lc.tokmeasures: %.linetoks $(RT-SCRIPTS)/calcEmbd.py %.nopunc.semprocdecpars
+%.lc.tokmeasures: %.linetoks $(RT-SCRIPTS)/calcEmbd.py %.gold.nopunc.0sm_semprocdecpars
 	cat $< | python $(word 2, $^) $(word 3, $^) > $@
     
-%.lc.tokmeasures: %.gold.linetoks $(RT-SCRIPTS)/calcEmbd.py %.nopunc.semprocdecpars
+%.lc.tokmeasures: %.linetoks $(RT-SCRIPTS)/calcEmbd.py %.nopunc.0sm_semprocdecpars
 	cat $< | python $(word 2, $^) $(word 3, $^) > $@
     
 # Pastes DLT predictors to existing identically tokenized tokmeasures file
@@ -301,10 +301,10 @@ genmodel/rename_cols.params: | genmodel
 	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
  
 # Computes DLT predictors
-%.dlt.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
+%.dlt.tokmeasures: %.gold.linetrees $(RT-SCRIPTS)/calcDLT.py
 	cat $< | python $(word 2, $^) > $@
 
-%.dlt.tokmeasures: %.gold.linetrees $(RT-SCRIPTS)/calcDLT.py
+%.dlt.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
 	cat $< | python $(word 2, $^) > $@
 
 # Pastes GloVe predictors to existing identically tokenized tokmeasures file
@@ -339,7 +339,7 @@ $(RT-SCRIPTS)/filter_cols.py
 
 # Computes parser complexity predictors 
 %_parsed.tokmeasures: %_parsed.tokdecs $(RT-SCRIPTS)/filter_cols.awk
-	cat $< | awk -f $(word 2, $^) -v cols=word:totsurp > $@
+	cat $< | awk '!/!ARTICLE/' | awk -f $(word 2, $^) -v cols=word:totsurp > $@
 
 # Merges surprisal columns from a parser trained on multiple grammars
 %.merged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*))_parsed.tokmeasures)
@@ -434,7 +434,7 @@ endef
 %.all-itemmeasures:  $(RT-SCRIPTS)/evmeas2uniqcols.py  $(RT-SCRIPTS)/filter_cols.py  $(RT-SCRIPTS)/addCols.r  $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
                          $$(patsubst $$(pc),$$(word 1,$$(subst ., ,$$*)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,$$*)),$$(subst ., ,%))) \
 			 $$(word 1, $$(subst ., ,%)).itemmeasures
-	paste -d ' ' $(wordlist 6,$(words $^),$^)  |  python $(word 1,$^)  |  python $(word 2,$^)  |  $(word 3,$^)  >  $@
+	paste -d ' ' $(wordlist 6,$(words $^),$^)  |  python $(word 1,$^)  |  python $(word 2,$^)  |   $(word 3,$^)  >  $@
 #%.core-itemmeasures: $$(patsubst $$(pc),$$(word 1,$$(subst ., ,%)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,%)),$$(subst ., ,%))) 
 #	paste $^  >  $@
 
