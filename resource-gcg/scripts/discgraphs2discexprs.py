@@ -117,10 +117,10 @@ for line in sys.stdin:
 
 
   if VERBOSE: print( 'running tryScope...' )
-#  D.Scopes = tryScope( D.Scopes, RecencyConnected )
-  D.tryScope( RecencyConnected, False )
-  if VERBOSE: print( 're-running tryScope...' )
-  RecencyConnected = [ (0,x)  for x in D.Referents  if D.ceiling(x) in D.AnnotatedCeilings ]
+##  D.Scopes = tryScope( D.Scopes, RecencyConnected )
+#  D.tryScope( RecencyConnected, False )
+#  if VERBOSE: print( 're-running tryScope...' )
+#  RecencyConnected = [ (0,x)  for x in D.Referents  if D.ceiling(x) in D.AnnotatedCeilings ]
   D.tryScope( RecencyConnected, True )
   if VERBOSE: print( D.Scopes )
   if VERBOSE: print( 'GRAPH: ' + D.strGraph() )
