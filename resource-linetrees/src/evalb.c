@@ -839,31 +839,32 @@ calc_result(unsigned char *buf1,unsigned char *buf)
 
     /* Find skip and error */
     /*---------------------*/
-/*     if(wn2==0){ */
-/* 	Status = 2; */
-/* 	individual_result(0,0,0,0,0,0); */
-/* 	return; */
-/*     } */
+    if(wn2==0){ 
+ 	      Status = 2; 
+ 	      individual_result(0,0,0,0,0,0); 
+ 	      return; 
+    } 
 
-/*    if(wn1 != wn2){ */
-/*       //if (DEBUG>1) */
-/*     //Error("Length unmatch (%d|%d)\n",wn1,wn2); */
-/* 	fix_quote(); */
-/* 	if(wn1 != wn2){ */
-/* 		Error("Length unmatch (%d|%d)\n",wn1,wn2); */
-/* 		individual_result(0,0,0,0,0,0); */
-/* 		return; */
-/* 	} */
-/*     } */
+    if(wn1 != wn2){ 
+        //if (DEBUG>1) */
+        //Error("Length unmatch (%d|%d)\n",wn1,wn2); */
+ 	      fix_quote(); 
+        
+ 	      if(wn1 != wn2){ 
+ 		        Error("Length unmatch (%d|%d)\n",wn1,wn2); 
+ 		        individual_result(0,0,0,0,0,0); 
+ 		        return; 
+ 	      } 
+    } 
 
-/*     for(i=0;i<wn1;i++){ */
-/* 	if(word_comp(terminal1[i].word,terminal2[i].word)==0){ */
-/* 	    Error("Words unmatch (%s|%s)\n",terminal1[i].word, */
-/*                                             terminal2[i].word); */
-/* 	    individual_result(0,0,0,0,0,0); */
-/* 	    return; */
-/* 	} */
-/*     } */
+     for(i=0;i<wn1;i++){ 
+ 	      if(word_comp(terminal1[i].word,terminal2[i].word)==0){ 
+ 	          Error("Words unmatch (%s|%s)\n",terminal1[i].word, 
+                                            terminal2[i].word); 
+ 	          individual_result(0,0,0,0,0,0); 
+ 	          return; 
+ 	      } 
+     } 
 
 
     /* massage the data */
