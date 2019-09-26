@@ -165,14 +165,11 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 
 ## remove !ARTICLE article delimiters
 %.nodelim.linetrees: %.linetrees
-	cat $< | grep -v "!ARTICLE" > $@
+	cat $< | grep -v '!ARTICLE' > $@
 
 ## remove scope and coref tags...
 %.nosem.linetrees:  %.linetrees
 	cat $<  |  perl -pe 's/[-+](?:[nmstw]|nn+)[0-9]+(?=[^\)]* )//g;'  >  $@
-
-%.nodelim.linetrees:  %.linetrees
-	cat $<  |  grep -v '!ARTICLE'  >  $@
 
 ## obtain lemma counts from trees...
 %.lemmacounts:  %.linetrees  $(INCRSEM-SCRIPTS)/printlemmas.py  $(INCRSEM-SCRIPTS)/printlemmas.d

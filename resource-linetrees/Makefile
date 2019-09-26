@@ -291,8 +291,8 @@ endef
 %.nopunc.linetoks: %.linetoks
 	cat $<  |  perl -pe "s/ (,|\.|\`\`|\`|--|-RRB-|-LRB-|-LCB-|-RCB-|''|'|\.\.\.|\?|\!|\:|\;|\(|\))//g" > $@
 
-%.blankfail.linetrees: %.linetrees
-	cat $< | sed 's/^.*FAIL.*$$//g' > $@
+#%.blankfail.linetrees: %.linetrees
+#	cat $< | sed 's/^.*FAIL.*$$//g' > $@
 
 %.nocurr.linetrees: %.linetrees $(LTREES-SCRIPTS)/make-trees-nounary.pl
 	cat $< | sed 's/\(\$$ \+[^ ()]\+\)//g;' | perl $(word 2, $^) > $@
@@ -352,7 +352,7 @@ endef
 .PRECIOUS: %syneval
 %syneval:  bin/evalb \
            $(RESOURCE-GENERAL)/srcmodel/new.prm \
-           genmodel/$$(subst -,.,$$(basename $$(basename $$*)))$$(subst _,.,$$(suffix $$*))blankfail.linetrees \
+           genmodel/$$(subst -,.,$$(basename $$(basename $$*)))$$(subst _,.,$$(suffix $$*))linetrees \
            $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$(basename $$*))$$(subst _,.,$$(suffix $$*))linetrees
 	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
 
