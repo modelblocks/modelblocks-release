@@ -78,7 +78,9 @@ discctr = 0
 for line in sys.stdin:
 
   discctr += 1
-  print( '#DISCOURSE ' + str(discctr) + '...' )
+  DiscTitle = sorted([ asc  for asc in line.split(' ')  if ',0,' in asc and asc.startswith('000') ])
+  print(            '#DISCOURSE ' + str(discctr) + '... (' + ' '.join(DiscTitle) + ')' )
+  sys.stderr.write( '#DISCOURSE ' + str(discctr) + '... (' + ' '.join(DiscTitle) + ')\n' )
 
   #### I. READ IN AND PREPROCESS DISCOURSE GRAPH...
 

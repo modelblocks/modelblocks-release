@@ -252,7 +252,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
                 if VERBOSE: print( '  '*step + str(step) + ': changing heir scope ' + xScopeChild + ' ' + xScopeParent + ' to legator scope ' + xScopeChild + ' ' + xHi )
       ## Recommend scopes...
       if D.alreadyConnected( xOther1, xGoal, Connected ) and D.alreadyConnected( xOther2, xGoal, Connected ) and not D.alreadyConnected( xOther1, xOther2, Connected ) and not D.alreadyConnected( xOther2, xOther1, Connected ):
-        complain( 'arguments ' + xOther1 + ' and ' + xOther2 + ' of elementary predication ' + ptup[0] + ' ' + ptup[1] + ' outscoped in different branches -- possibly due to disconnected scope annotations' + ' -- unable to build complete expression!' )
+        complain( 'arguments ' + xOther1 + ' and ' + xOther2 + ' of elementary predication ' + ptup[0] + ' ' + ptup[1] + ' outscoped in different branches or components -- possibly due to disconnected scope annotations' + ' -- unable to build complete expression!' )
         return [(None,None)]
       if D.reachesInChain( xGoal, xOther1 ) and D.reachesInChain( xGoal, xOther2 ):
         if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 0' )
