@@ -32,7 +32,7 @@ for a in sys.argv:
 def complain( s ):
   print(           '#ERROR: ' + s )
   sys.stderr.write( 'ERROR: ' + s + '\n' )
-  exit( 1 )
+#  exit( 1 )
 
 
 ################################################################################
@@ -208,14 +208,16 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
     ## Report any cycles from participant to elementary predicate...
     for x in ptup[2:]:
       if D.reachesInChain( x, xLowest ) and not x.endswith('\''):
-        complain( 'elementary predication ' + ptup[0] + ' ' + xLowest + ' should not outscope argument ' + x + '!' ) 
+        complain( 'elementary predication ' + ptup[0] + ' ' + xLowest + ' should not outscope argument ' + x + ' -- unable to build complete expression!' ) 
+        return [(None,None)]
     ## If all participants reachable from elem pred, nothing to do...
     if any([ all([ D.reachesInChain(xLo,xHi)  for xHi in ptup[1:]  if xHi != xLo ])  for xLo in ptup[1:] ]):   #all([ D.reachesInChain( xLowest, x )  for x in ptup[2:] ]):
 #      if VERBOSE: print( '  '*step + str(step) + ': all args of pred ' + ptup[0] + ' ' + ptup[1] + ' are reachable' )
       if xGoal == '' or any([ D.reachesInChain( x, xGoal )  for x in ptup[1:] ]):   #D.reachesInChain( xLowest, xGoal ):
         return []
       elif D.alreadyConnected( ptup[1], '', Connected ):
-        complain( 'elementary predication ' + ptup[0] + ' ' + ptup[1] + ' is already fully bound, cannot become outscoped by goal referent ' + xGoal )
+        complain( 'elementary predication ' + ptup[0] + ' ' + ptup[1] + ' is already fully bound, cannot become outscoped by goal referent ' + xGoal + ' -- unable to build complete expression!' )
+        return [(None,None)]
 
     ## If unary predicate...
 #    if len( ptup ) == 3:
@@ -229,7 +231,8 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
               if VERBOSE: print( '  '*step + str(step) + ': changing heir scope ' + xScopeChild + ' ' + xScopeParent + ' to legator scope ' + xScopeChild + ' ' + xOther1 )
       ## Recommend scopes...
       if D.alreadyConnected( xOther1, xLowest, Connected ):
-        complain( 'elementary predication ' + ptup[0] + ' ' + xLowest + ' should not outscope argument ' + xOther1 )
+        complain( 'elementary predication ' + ptup[0] + ' ' + xLowest + ' should not outscope argument ' + xOther1 + ' -- unable to build complete expression!' )
+        return [(None,None)]
       if D.reachesInChain( xGoal, xOther1 ):
         if VERBOSE: print( ' ' + '  '*step + str(step) + ': case a' )
         return ( [ (xLowest,xGoal) ] if xLowest == ptup[1] else [] )
@@ -249,7 +252,8 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
                 if VERBOSE: print( '  '*step + str(step) + ': changing heir scope ' + xScopeChild + ' ' + xScopeParent + ' to legator scope ' + xScopeChild + ' ' + xHi )
       ## Recommend scopes...
       if D.alreadyConnected( xOther1, xGoal, Connected ) and D.alreadyConnected( xOther2, xGoal, Connected ) and not D.alreadyConnected( xOther1, xOther2, Connected ) and not D.alreadyConnected( xOther2, xOther1, Connected ):
-        complain( 'arguments ' + xOther1 + ' and ' + xOther2 + ' of elementary predication ' + ptup[0] + ' ' + ptup[1] + ' outscoped in different branches -- possibly due to disconnected scope annotations' )
+        complain( 'arguments ' + xOther1 + ' and ' + xOther2 + ' of elementary predication ' + ptup[0] + ' ' + ptup[1] + ' outscoped in different branches -- possibly due to disconnected scope annotations' + ' -- unable to build complete expression!' )
+        return [(None,None)]
       if D.reachesInChain( xGoal, xOther1 ) and D.reachesInChain( xGoal, xOther2 ):
         if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 0' )
         return ( [ (xLowest,xGoal) ] if xLowest == ptup[1] else [] ) 
@@ -263,7 +267,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 #      if D.reachesInChain( xGoal, xOther2 ):
 #        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 2' )
 #        return ( [ (xLowest,xOther1) ] if xLowest == ptup[1] else [] ) + ( D.scopesToConnect( xOther1, xGoal,   step+1, Connected ) if xOther1 != ptup[1] else [ (xOther1,xGoal) ] )
-      print( 'D.alreadyConnected( ' + xOther1 + ', ' + xGoal + ' ) = ' + str( D.alreadyConnected( xOther1, xGoal, Connected ) ) + 'D.reachesInChain( ' + xOther1 + ', ' + xOther2 + ' ) = ' + str( D.reachesInChain( xOther1, xOther2 ) ) ) 
+#      print( 'D.alreadyConnected( ' + xOther1 + ', ' + xGoal + ' ) = ' + str( D.alreadyConnected( xOther1, xGoal, Connected ) ) + 'D.reachesInChain( ' + xOther1 + ', ' + xOther2 + ' ) = ' + str( D.reachesInChain( xOther1, xOther2 ) ) ) 
       for xLo,xMd,xHi in [ (xLowest,xOther1,xOther2), (xLowest,xOther2,xOther1) ]:
         if D.alreadyConnected( xHi, xGoal, Connected ) and not D.reachesInChain( xHi, xMd ):
           if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 3 ' + xLo + ' under ' + xMd + ' under ' + xHi + ' under goal ' + xGoal )
@@ -291,7 +295,8 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 
     ## If trinary and higher predicates...
     else:
-      complain( 'no support for super-binary predicates: ' + ' '.join(ptup) )
+      complain( 'no support for super-binary predicates: ' + ' '.join(ptup) + ' -- unable to build complete expression!' )
+      return [(None,None)]
 
 
   def constrainDeepestReft( D, xTarg, step, Connected, isFull=False, xOrigin=None ):
@@ -350,12 +355,16 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
           l = D.constrainDeepestReft( xTarget, step+1, [ x  for s,x in RecencyConnected ], isFull )
           if VERBOSE: print( '  '*step + str(step) + '  l=' + str(l) )
           for xLo,xHi in sets.Set(l):
+            if xLo == None:
+#              complain( 'ERROR: unable to process discourse' )
+              return False
             if VERBOSE: print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
             D.Scopes[ D.ceiling(xLo) ] = xHi
 #            D.PredRecency[ ptup ] = step
             RecencyConnected = [ (step,x) for x in D.Chains.get(xLo,[]) ] + RecencyConnected
           if l!=[]:
-            D.tryScope( RecencyConnected, isFull, step+1 )
+            outFlag = D.tryScope( RecencyConnected, isFull, step+1 )
+            if outFlag == False: return False
 #            active = True
 
 

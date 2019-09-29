@@ -78,7 +78,7 @@ discctr = 0
 for line in sys.stdin:
 
   discctr += 1
-  print( '#DISCOURSE ' + str(discctr) )
+  print( '#DISCOURSE ' + str(discctr) + '...' )
 
   #### I. READ IN AND PREPROCESS DISCOURSE GRAPH...
 
@@ -121,7 +121,8 @@ for line in sys.stdin:
 #  D.tryScope( RecencyConnected, False )
 #  if VERBOSE: print( 're-running tryScope...' )
 #  RecencyConnected = [ (0,x)  for x in D.Referents  if D.ceiling(x) in D.AnnotatedCeilings ]
-  D.tryScope( RecencyConnected, True )
+  out = D.tryScope( RecencyConnected, True )
+  if out == False: continue
   if VERBOSE: print( D.Scopes )
   if VERBOSE: print( 'GRAPH: ' + D.strGraph() )
 
