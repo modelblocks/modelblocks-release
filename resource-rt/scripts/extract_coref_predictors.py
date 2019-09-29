@@ -220,6 +220,7 @@ class CorefPredictors:
                 isanaphpro = "y" if self.is_pro(word) else "n" #don't need to check category because already restricted to anaphoric instances. i.e., already excludes relativizers, determiners, etc.
 
             else:
+                word = self.get_word(line)
                 binary_coref_indic = 0
                 word_dist = "nan"
                 ref_dist = "nan"
