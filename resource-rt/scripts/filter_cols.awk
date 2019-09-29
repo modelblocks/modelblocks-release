@@ -1,10 +1,14 @@
+#!/bin/awk -f
+# roll_cols.awk
+# inputs .tokdecs, outputs .tokmeasures
+
 BEGIN {
-    FS = "[ ]";
-    split(cols,out,":")
+    FS = "[ ]"; # define input field separator
+    split(cols,out,":") #split string "cols" by ":" delim, saving output in array "out"
 }
-NR==1 {
-    for (i=1; i<=NF; i++)
-        ix[$i] = i;
+NR==1 { #for first line, or record number 1
+    for (i=1; i<=NF; i++) #iterate over number of fields
+        ix[$i] = i; #store field values of first line in "ix"
 }
 
 NR > 0 {
