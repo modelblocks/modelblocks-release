@@ -14,7 +14,7 @@ for line in sys.stdin:
   line = line.rstrip()
 
 #  print( 'digraph G {' )   ## dot
-  print( '\\begin{tikzpicture}[x=1cm,y=3cm,scale=3]' )
+  print( '\\begin{tikzpicture}[x=1mm,y=3mm,scale=30]' )
 
   Nodes = sets.Set()
   Ctrs  = collections.defaultdict( int )

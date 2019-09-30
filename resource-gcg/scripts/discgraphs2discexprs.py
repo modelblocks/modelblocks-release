@@ -87,11 +87,13 @@ for line in sys.stdin:
   line = line.rstrip()
   if VERBOSE: print( 'GRAPH: ' + line )
 
+  D = discgraph.DiscGraph( line )
+  if not D.check(): continue
+
   D = induciblediscgraph.InducibleDiscGraph( line )
 
   #### II. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
 
-  D.check()
   D.normForm()
 
   #### III. INDUCE UNANNOTATED SCOPES AND EXISTENTIAL QUANTS...

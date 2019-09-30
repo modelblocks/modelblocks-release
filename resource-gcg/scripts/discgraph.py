@@ -144,16 +144,17 @@ class DiscGraph:
       return checkScopeCyclesFromSup( x, L ) or checkScopeCyclesFromSub( x, L )
     ## Check for inheritance cycles...
     for x in D.Referents:
-      if checkInhCycles( x ): return
+      if checkInhCycles( x ): return False
     ## Check for scopecycles...
     for x in D.Referents:
-      if checkScopeCyclesInChain( x ): return
+      if checkScopeCyclesInChain( x ): return False
     ## Check for multiple outscopings...
     for x in D.Referents:
       if len( D.getBossesInChain(x) ) > 1:
         sys.stderr.write( 'WARNING: ' + x + ' has multiple outscopings in inheritance chain: ' + str( D.getBossesInChain(x) ) + '\n' )
         print(           '#WARNING: ' + x + ' has multiple outscopings in inheritance chain: ' + str( D.getBossesInChain(x) ) )
       if VERBOSE: print( 'Bosses of ' + x + ': ' + str(D.getBossesInChain(x)) )
+    return True
 
 
   def normForm( D ):
