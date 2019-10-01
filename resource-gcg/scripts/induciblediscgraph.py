@@ -248,6 +248,9 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       if D.alreadyConnected( xOther1, xLowest, Connected ):
         complain( 'elementary predication ' + ptup[0] + ' ' + xLowest + ' should not outscope argument ' + xOther1 + ' -- unable to build complete expression!' )
         return [(None,None)]
+      if xLowest==ptup[1] and D.alreadyConnected( xOther1, D.ceiling(xLowest), Connected ):
+        complain( 'elementary predication ' + ptup[0] + ' ' + xLowest + ' in separate branch from argument ' + xOther1 + ' -- unable to build complete expression!' )
+        return [(None,None)]
       if D.reachesInChain( xGoal, xOther1 ):
         if VERBOSE: print( ' ' + '  '*step + str(step) + ': case a' )
         return ( [ (xLowest,xGoal) ] if xLowest == ptup[1] else [] )
@@ -389,6 +392,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
             D.Scopes[ D.ceiling(xLo) ] = xHi
 #            D.PredRecency[ ptup ] = step
             RecencyConnected = [ (step,x) for x in D.Chains.get(xLo,[]) ] + RecencyConnected
+          if VERBOSE: D.check()
           if l!=[]:
             outFlag = D.tryScope( RecencyConnected, isFull, step+1 )
             if outFlag == False: return False
