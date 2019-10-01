@@ -29,7 +29,9 @@ import discgraph
 ## For each discourse graph...
 for discnum,line in enumerate( sys.stdin ):
 
-  print( '#DISCOURSE ' + str(discnum+1) + '...' )
+  DiscTitle = sorted([ asc  for asc in line.split(' ')  if ',0,' in asc and asc.startswith('000') ])
+  print(            '#DISCOURSE ' + str(discnum+1) + '... (' + ' '.join(DiscTitle) + ')' )
+  sys.stderr.write( '#DISCOURSE ' + str(discnum+1) + '... (' + ' '.join(DiscTitle) + ')\n' )
 
   ## Read in line and check...
   line = line.rstrip()

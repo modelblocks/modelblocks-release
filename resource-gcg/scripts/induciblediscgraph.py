@@ -189,6 +189,10 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       if xO not in D.Chains.get(xT,[xT]) and D.Inhs.get(xO,{}).get('r','') not in D.Chains.get(xT,[xT]): return True
       return  xO in D.Chains.get(xS,[xS])                          or D.Inhs.get(xO,{}).get('r','') in D.Chains.get(xS,[xS]) or xO in D.Chains.get(D.Inhs.get(xS,{}).get('r',''),[]) or D.Inhs.get(xO,{}).get('r','') in D.Chains.get(D.Inhs.get(xS,{}).get('r',''),[])
 
+    def possible( xLo, xMd, xHi ):
+      return ( ( not D.alreadyConnected( xHi, xMd, Connected ) or D.alreadyConnected( xMd, xHi, Connected ) ) and
+               ( not D.alreadyConnected( xLo, xHi, Connected ) or D.alreadyConnected( xMd, xHi, Connected ) ) )
+
     L = [ sco  for xSub in D.Subs.get( xTarget, [] )  if notOffOriginChain(xTarget,xSub,xOrigin)  for sco in D.scopesToConnect( xSub, xGoal, step+1, Connected, xOrigin ) ]
     if L != []: return L
 #    if [] != [ xSub  for xSub in D.Subs.get(xTarget,[])  if D.Inhs.get(xSub,{}).get('r','') != xTarget ]:
@@ -282,11 +286,11 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 #        return ( [ (xLowest,xOther1) ] if xLowest == ptup[1] else [] ) + ( D.scopesToConnect( xOther1, xGoal,   step+1, Connected ) if xOther1 != ptup[1] else [ (xOther1,xGoal) ] )
 #      print( 'D.alreadyConnected( ' + xOther1 + ', ' + xGoal + ' ) = ' + str( D.alreadyConnected( xOther1, xGoal, Connected ) ) + 'D.reachesInChain( ' + xOther1 + ', ' + xOther2 + ' ) = ' + str( D.reachesInChain( xOther1, xOther2 ) ) ) 
       for xLo,xMd,xHi in [ (xLowest,xOther1,xOther2), (xLowest,xOther2,xOther1) ]:
-        if D.alreadyConnected( xHi, xGoal, Connected ) and not D.reachesInChain( xHi, xMd ):
+        if D.alreadyConnected( xHi, xGoal, Connected ) and not D.reachesInChain( xHi, xMd ) and possible( xLo, xMd, xHi ):
           if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 2 -- ' + xLo + ' under ' + xMd + ' under ' + xHi + ' under goal ' + xGoal )
           return ( [ (xLowest,xMd) ] if xLo == ptup[1] else [] ) + ( D.scopesToConnect( xMd, xHi, step+1, Connected, xOrigin ) if xMd != ptup[1] else [ (xMd,xHi) ] )
       for xLo,xMd,xHi in [ (xLowest,xOther1,xOther2), (xLowest,xOther2,xOther1) ]:
-        if D.weaklyConnected( xHi, xGoal, Connected ) and not D.reachesInChain( xHi, xMd ):
+        if D.weaklyConnected( xHi, xGoal, Connected ) and not D.reachesInChain( xHi, xMd ) and possible( xLo, xMd, xHi ):
           if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 3 -- ' + xLo + ' under ' + xMd + ' under ' + xHi + ' under goal ' + xGoal )
           return ( [ (xLowest,xMd) ] if xLo == ptup[1] else [] ) + ( D.scopesToConnect( xMd, xHi, step+1, Connected, xOrigin ) if xMd != ptup[1] else [ (xMd,xHi) ] )
 #      if D.alreadyConnected( xOther1, xGoal, Connected ) and not D.reachesInChain( xOther1, xOther2 ):
@@ -299,11 +303,15 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
         if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 4 -- no goal' )
         return ( [ (xLowest,xOther2) ] if xLowest == ptup[1] else [] ) + ( D.scopesToConnect( xOther2, xOther1, step+1, Connected, xOrigin ) if xOther2 != ptup[1] else [ (xOther2,xOther1) ] )
       if xGoal == '':
-        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 5 -- no goal' )
-        return ( [ (xLowest,xOther1) ] if xLowest == ptup[1] else [] ) + ( D.scopesToConnect( xOther1, xOther2, step+1, Connected, xOrigin ) if xOther1 != ptup[1] else [ (xOther1,xOther2) ] )
+        for xLo,xMd,xHi in [ (xLowest,xOther1,xOther2), (xLowest,xOther2,xOther1) ]:
+          if possible( xLo, xMd, xHi ):
+            if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 5 -- no goal' )
+            return ( [ (xLo,xMd) ] if xLo == ptup[1] else [] ) + ( D.scopesToConnect( xMd, xHi, step+1, Connected, xOrigin ) if xMd != ptup[1] else [ (xMd,xHi) ] )
       else:
-        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 6 -- no constraints' )
-        return ( [ (xLowest,xOther1) ] if xLowest == ptup[1] else [] ) + ( D.scopesToConnect( xOther1, xOther2, step+1, Connected, xOrigin ) if xOther1 != ptup[1] else [ (xOther1,xOther2) ] ) + ( D.scopesToConnect( xOther2, xGoal, step+1, Connected, xOrigin ) if xOther2 != ptup[1] else [ (xOther2,xGoal) ] )
+        for xLo,xMd,xHi in [ (xLowest,xOther1,xOther2), (xLowest,xOther2,xOther1) ]:
+          if possible( xLo, xMd, xHi ):
+            if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 6 -- no constraints' )
+            return ( [ (xLo,xMd) ] if xLo == ptup[1] else [] ) + ( D.scopesToConnect( xMd, xHi, step+1, Connected, xOrigin ) if xMd != ptup[1] else [ (xMd,xHi) ] ) + ( D.scopesToConnect( xHi, xGoal, step+1, Connected, xOrigin ) if xHi != ptup[1] else [ (xHi,xGoal) ] )
 #complain( 'predicate ' + xLowest + ' with goal ' + xGoal + ' not sufficiently constrained; danger of garden-pathing' )
 
     ## If trinary and higher predicates...
@@ -368,9 +376,9 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
           l = D.constrainDeepestReft( xTarget, step+1, [ x  for s,x in RecencyConnected ], isFull )
           if VERBOSE: print( '  '*step + str(step) + '  l=' + str(l) )
           for xLo,xHi in sets.Set(l):
-            if xLo == None:
+            if xLo == None: return False
 #              complain( 'ERROR: unable to process discourse' )
-              return False
+            if D.alreadyConnected( xLo, xHi, [ x  for s,x in RecencyConnected ] ): continue
             if VERBOSE: print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
             D.Scopes[ D.ceiling(xLo) ] = xHi
 #            D.PredRecency[ ptup ] = step
