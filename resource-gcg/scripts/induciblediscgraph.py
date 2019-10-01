@@ -99,12 +99,17 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
         Out += orderTuplesFromSubs( src )
 #        Out += [ (ptup,src) for ptup in D.PredTuples if src in ptup[2:] ]
       return Out
-    D.FullRefToPredTuples = { x : orderTuplesFromSubs(x) + orderTuplesFromSups(x)  for x in D.Referents }
+    D.FullRefToPredTuples = { x : sets.Set( orderTuplesFromSubs(x) + orderTuplesFromSups(x) )  for x in D.Referents }
     D.WeakRefToPredTuples = { x : orderTuplesFromSubs( D.Inhs.get(x,{}).get('r',x) )  for x in D.Referents }
     D.BareRefToPredTuples = { x : [ (ptup,x)  for ptup in D.PredTuples  if x in ptup[2:] ]  for x in D.Referents }
     if VERBOSE: print( 'FullRefToPredTuples = ' + str(D.FullRefToPredTuples) )
     if VERBOSE: print( 'WeakRefToPredTuples = ' + str(D.WeakRefToPredTuples) )
     if VERBOSE: print( 'BareRefToPredTuples = ' + str(D.BareRefToPredTuples) )
+    def constrainingTuplesFromSups( x ):
+      return [ ptup  for ptup in D.PredTuples  if x in ptup[1:] ] + [ ptup  for _,xHi in D.Inhs.get(x,{}).items()  for ptup in constrainingTuplesFromSups( xHi ) ]
+    def constrainingTuplesFromSubs( x ):
+      return [ ptup  for ptup in D.PredTuples  if x in ptup[1:] ] + [ ptup  for xLo in D.Subs.get(x,[])  for ptup in constrainingTuplesFromSubs( xLo ) ]
+    D.ConstrainingTuples = { x : sets.Set( constrainingTuplesFromSups(x) + constrainingTuplesFromSubs(x) )  for x in D.Referents }
     ## Calculate ceilings of scoped refts...
     D.AnnotatedCeilings = sets.Set([ y  for y in D.Referents  for x in D.Scopes.keys()  if D.ceiling(x) in D.Chains[y] ]) #D.Chains[D.ceiling(x)]  for x in D.Scopes.keys() ])
     if len(D.AnnotatedCeilings) == 0:
@@ -244,13 +249,16 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
             if xScopeParent != xOther1:
               D.Scopes[ xScopeChild ] = xOther1
               if VERBOSE: print( '  '*step + str(step) + ': changing heir scope ' + xScopeChild + ' ' + xScopeParent + ' to legator scope ' + xScopeChild + ' ' + xOther1 )
-      ## Recommend scopes...
       if D.alreadyConnected( xOther1, xLowest, Connected ):
         complain( 'elementary predication ' + ptup[0] + ' ' + xLowest + ' should not outscope argument ' + xOther1 + ' -- unable to build complete expression!' )
         return [(None,None)]
       if xLowest==ptup[1] and D.alreadyConnected( xOther1, D.ceiling(xLowest), Connected ):
         complain( 'elementary predication ' + ptup[0] + ' ' + xLowest + ' in separate branch from argument ' + xOther1 + ' -- unable to build complete expression!' )
         return [(None,None)]
+      if xLowest==ptup[1] and D.alreadyConnected( xLowest, '', Connected ) and not D.alreadyConnected( xLowest, xOther1, Connected ):
+        complain( 'elementary predication ' + ptup[0] + ' ' + xLowest + ' already connected, but excludes argument ' + xOther1 + ' -- unable to build complete expression!' )
+        return [(None,None)]
+      ## Recommend scopes...
       if D.reachesInChain( xGoal, xOther1 ):
         if VERBOSE: print( ' ' + '  '*step + str(step) + ': case a' )
         return ( [ (xLowest,xGoal) ] if xLowest == ptup[1] else [] )

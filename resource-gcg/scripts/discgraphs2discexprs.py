@@ -101,7 +101,7 @@ for line in sys.stdin:
   ## Add dummy args below eventualities...
   for xt in D.PredTuples:
     for x in xt[2:]:
-      if x.startswith(xt[1][0:4] + 's') and x.endswith('\''):
+      if len( D.ConstrainingTuples.get(x,[]) )==1 and x.endswith('\''):   #x.startswith(xt[1][0:4] + 's') and x.endswith('\''):
         D.Scopes[x] = xt[1]
         if VERBOSE: print( 'Scoping dummy argument ' + x + ' to predicate ' + xt[1] )
 
