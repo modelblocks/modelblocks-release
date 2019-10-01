@@ -108,6 +108,8 @@ class DiscGraph:
   ## Check that no reft has multiple outscopers...
   def getBossesFromSup( D, xLo ):
 #      print( 'now getting sup ' + xLo )
+    L = sets.Set([ xBoss  for xNusco in D.Nuscos.get(xLo,[])  if xNusco in D.Scopes  for xBoss in D.getBossesInChain( D.Scopes[xNusco] ) ])  ## Outscoper of nusco is outscoper of restrictor.
+    if L != []: return L
     if xLo in D.Scopes: return D.getBossesInChain( D.Scopes[xLo] )
     return sets.Set( [ y  for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o'  for y in D.getBossesFromSup(xHi) ] )
   def getBossesFromSub( D, xHi ):
@@ -134,6 +136,7 @@ class DiscGraph:
         sys.stderr.write( 'ERROR: scope cycle: ' + str(L+[xLo]) + '\n' )
         print(           '#ERROR: scope cycle: ' + str(L+[xLo]) )
         return True
+      if any([ checkScopeCyclesInChain( D.Scopes[xNusco], L+[xLo] )  for xNusco in D.Nuscos.get(xLo,[])  if xNusco in D.Scopes ]): return True  ## Outscoper of nusco is outscoper of restrictor.
       return ( checkScopeCyclesInChain(D.Scopes[xLo],L+[xLo]) if xLo in D.Scopes else False ) or any([ checkScopeCyclesFromSup(xHi,L+[xLo]) for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' ])
     def checkScopeCyclesFromSub( xHi, L=[] ):
 #      print( 'checking sub ' + xHi + ' with L=' + ' '.join(L) )

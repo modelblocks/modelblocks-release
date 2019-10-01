@@ -156,6 +156,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
   ## Helper function to determine if one ref state outscopes another...
   def reachesFromSup( D, xLo, xHi ):
 #    print( 'reachesFromSup ' + xLo + ' ' + xHi )
+    if any([ D.reachesInChain( D.Scopes[xNusco], xHi )  for xNusco in D.Nuscos.get(xLo,[])  if xNusco in D.Scopes ]): return True  ## Outscoper of nusco is outscoper of restrictor.
     return True if xLo in D.Chains.get(xHi,[]) else D.reachesInChain( D.Scopes[xLo], xHi ) if xLo in D.Scopes else any( [ D.reachesFromSup(xSup,xHi) for l,xSup in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' ] )
   def reachesFromSub( D, xLo, xHi ):
 #    print( 'reachesFromSub ' + xLo + ' ' + xHi )
@@ -267,7 +268,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
         if VERBOSE: print( ' ' + '  '*step + str(step) + ': case a' )
         return ( [ (xLowest,xGoal) ] if xLowest == ptup[1] else [] )
       else:
-        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case b' )
+        if VERBOSE: print( ' ' + '  '*step + str(step) + ': case b -- ' + xLowest + ' under ' + xOther1 + ' under goal ' + xGoal )
         return ( [ (xLowest,xOther1) ] if xLowest == ptup[1] else [] ) + ( D.scopesToConnect( xOther1, xGoal, step+1, Connected, xOrigin ) if xOther1 != ptup[1] else [ (xOther1,xGoal) ] )
 
     ## If binary predicate...
