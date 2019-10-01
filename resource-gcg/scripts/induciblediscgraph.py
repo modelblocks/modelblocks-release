@@ -219,6 +219,12 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       if D.reachesInChain( x, xLowest ) and not x.endswith('\''):
         complain( 'elementary predication ' + ptup[0] + ' ' + xLowest + ' should not outscope argument ' + x + ' -- unable to build complete expression!' ) 
         return [(None,None)]
+#    if len(ptup) > 2 and D.alreadyConnected( xLowest, '', Connected ) and D.alreadyConnected( xOther1, '', Connected ):
+#      complain( 'elementary predication ' + ptup[0] + ' ' + ptup[1] + ' has (top-level) scope annotation but argument ' + xOther1 + ' does not -- unable to build complete expression!' )
+#      return [(None,None)]
+#    if len(ptup) > 2 and D.reachesInChain( xLowest, D.ceiling(xOther1) ) and not D.alreadyConnected( xLowest, xOther1, Connected ) and not D.alreadyConnected( xOther1, xLowest, Connected ):
+#      complain( 'arguments ' + xLowest + ' and ' + xOther1 + ' of elementary predication ' + ptup[0] + ' ' + ptup[1] + ' outscoped in different branches or components -- possibly due to disconnected scope annotations' + ' -- unable to build complete expression!' )
+#      return [(None,None)]
     ## If all participants reachable from elem pred, nothing to do...
     if any([ all([ D.reachesInChain(xLo,xHi)  for xHi in ptup[1:]  if xHi != xLo ])  for xLo in ptup[1:] ]):   #all([ D.reachesInChain( xLowest, x )  for x in ptup[2:] ]):
 #      if VERBOSE: print( '  '*step + str(step) + ': all args of pred ' + ptup[0] + ' ' + ptup[1] + ' are reachable' )

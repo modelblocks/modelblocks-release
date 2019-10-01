@@ -129,18 +129,21 @@ class DiscGraph:
       return any([ checkInhCycles( xHi, L + [xLo] )  for l,xHi in D.Inhs.get(xLo,{}).items() ])
     ## Check for scope cycles...
     def checkScopeCyclesFromSup( xLo, L=[] ):
+#      print( 'checking sup ' + xLo + ' with L=' + ' '.join(L) )
       if xLo in L:
         sys.stderr.write( 'ERROR: scope cycle: ' + str(L+[xLo]) + '\n' )
         print(           '#ERROR: scope cycle: ' + str(L+[xLo]) )
         return True
-      return checkScopeCyclesInChain(D.Scopes[xLo],L+[xLo]) if xLo in D.Scopes else any([ checkScopeCyclesFromSup(xHi,L+[xLo]) for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' ])
+      return ( checkScopeCyclesInChain(D.Scopes[xLo],L+[xLo]) if xLo in D.Scopes else False ) or any([ checkScopeCyclesFromSup(xHi,L+[xLo]) for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' ])
     def checkScopeCyclesFromSub( xHi, L=[] ):
+#      print( 'checking sub ' + xHi + ' with L=' + ' '.join(L) )
       if xHi in L:
         sys.stderr.write( 'ERROR: scope cycle: ' + str(L+[xHi]) + '\n' )
         print(           '#ERROR: scope cycle: ' + str(L+[xHi]) )
         return True
-      return checkScopeCyclesInChain(D.Scopes[xHi],L+[xHi]) if xHi in D.Scopes else any([ checkScopeCyclesFromSub(xLo,L+[xHi]) for xLo in D.Subs.get(xHi,[]) ])
+      return ( checkScopeCyclesInChain(D.Scopes[xHi],L+[xHi]) if xHi in D.Scopes else False ) or any([ checkScopeCyclesFromSub(xLo,L+[xHi]) for xLo in D.Subs.get(xHi,[]) ])
     def checkScopeCyclesInChain( x, L=[] ):
+#      print( 'checking ch ' + x + ' with L=' + ' '.join(L) )
       return checkScopeCyclesFromSup( x, L ) or checkScopeCyclesFromSub( x, L )
     ## Check for inheritance cycles...
     for x in D.Referents:
