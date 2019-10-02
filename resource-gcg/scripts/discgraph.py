@@ -108,6 +108,8 @@ class DiscGraph:
   ## Check that no reft has multiple outscopers...
   def getBossesFromSup( D, xLo ):
 #      print( 'now getting sup ' + xLo )
+    L = sets.Set([ xBoss  for xNusco in D.Nuscos.get(xLo,[])  if xNusco in D.Scopes  for xBoss in D.getBossesInChain( D.Scopes[xNusco] ) ])  ## Outscoper of nusco is outscoper of restrictor.
+    if L != []: return L
     if xLo in D.Scopes: return D.getBossesInChain( D.Scopes[xLo] )
     return sets.Set( [ y  for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o'  for y in D.getBossesFromSup(xHi) ] )
   def getBossesFromSub( D, xHi ):
@@ -129,37 +131,43 @@ class DiscGraph:
       return any([ checkInhCycles( xHi, L + [xLo] )  for l,xHi in D.Inhs.get(xLo,{}).items() ])
     ## Check for scope cycles...
     def checkScopeCyclesFromSup( xLo, L=[] ):
+#      print( 'checking sup ' + xLo + ' with L=' + ' '.join(L) )
       if xLo in L:
         sys.stderr.write( 'ERROR: scope cycle: ' + str(L+[xLo]) + '\n' )
         print(           '#ERROR: scope cycle: ' + str(L+[xLo]) )
         return True
-      return checkScopeCyclesInChain(D.Scopes[xLo],L+[xLo]) if xLo in D.Scopes else any([ checkScopeCyclesFromSup(xHi,L+[xLo]) for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' ])
+      if any([ checkScopeCyclesInChain( D.Scopes[xNusco], L+[xLo] )  for xNusco in D.Nuscos.get(xLo,[])  if xNusco in D.Scopes ]): return True  ## Outscoper of nusco is outscoper of restrictor.
+      return ( checkScopeCyclesInChain(D.Scopes[xLo],L+[xLo]) if xLo in D.Scopes else False ) or any([ checkScopeCyclesFromSup(xHi,L+[xLo]) for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' ])
     def checkScopeCyclesFromSub( xHi, L=[] ):
+#      print( 'checking sub ' + xHi + ' with L=' + ' '.join(L) )
       if xHi in L:
         sys.stderr.write( 'ERROR: scope cycle: ' + str(L+[xHi]) + '\n' )
         print(           '#ERROR: scope cycle: ' + str(L+[xHi]) )
         return True
-      return checkScopeCyclesInChain(D.Scopes[xHi],L+[xHi]) if xHi in D.Scopes else any([ checkScopeCyclesFromSub(xLo,L+[xHi]) for xLo in D.Subs.get(xHi,[]) ])
+      return ( checkScopeCyclesInChain(D.Scopes[xHi],L+[xHi]) if xHi in D.Scopes else False ) or any([ checkScopeCyclesFromSub(xLo,L+[xHi]) for xLo in D.Subs.get(xHi,[]) ])
     def checkScopeCyclesInChain( x, L=[] ):
+#      print( 'checking ch ' + x + ' with L=' + ' '.join(L) )
       return checkScopeCyclesFromSup( x, L ) or checkScopeCyclesFromSub( x, L )
     ## Check for inheritance cycles...
     for x in D.Referents:
-      if checkInhCycles( x ): return
+      if checkInhCycles( x ): return False
     ## Check for scopecycles...
     for x in D.Referents:
-      if checkScopeCyclesInChain( x ): return
+      if checkScopeCyclesInChain( x ): return False
     ## Check for multiple outscopings...
     for x in D.Referents:
       if len( D.getBossesInChain(x) ) > 1:
         sys.stderr.write( 'WARNING: ' + x + ' has multiple outscopings in inheritance chain: ' + str( D.getBossesInChain(x) ) + '\n' )
         print(           '#WARNING: ' + x + ' has multiple outscopings in inheritance chain: ' + str( D.getBossesInChain(x) ) )
       if VERBOSE: print( 'Bosses of ' + x + ': ' + str(D.getBossesInChain(x)) )
+    return True
 
 
   def normForm( D ):
     ## Smite redundant nuscos of predicative noun phrases out of Subs...
-    for xHi,l in D.Subs.items():
-      for xLo in l:
+    for xHi,L in D.Subs.items():
+      for xLo in L:
+        ## Diagnose as redundant if reft xLo has rin which also has rin...
         if 'r' in D.Inhs.get(D.Inhs.get(xLo,[]).get('r',''),[]):
           if VERBOSE: print( 'Smiting ' + xLo + ' out of Subs, for being redundant.' )
           D.Subs[xHi].remove(xLo)
@@ -170,9 +178,18 @@ class DiscGraph:
           if xLo in D.Scopes.values():
             sys.stderr.write( 'ERROR: scope should not be annotated to redundant predicative referent: ' + xLo + '\n' )
             print(           '#ERROR: scope should not be annotated to redundant predicative referent: ' + xLo )
-          if xLo in [ x  for x in D.Subs  for l,y in D.Inhs.get(x,{}).items()  if y == xLo and l != 'c' ]:
-            sys.stderr.write( 'ERROR: inheritance should not be annotated from ' + str(D.Subs[xLo]) + ' to redundant predicative referent: ' + xLo + '\n' )
-            print(           '#ERROR: inheritance should not be annotated from ' + str(D.Subs[xLo]) + ' to redundant predicative referent: ' + xLo )
+          BadSubs = [ x  for x in D.Subs.get(xLo,[])  for l,y in D.Inhs.get(x,{}).items()  if y == xLo and l != 'c' ]
+          if BadSubs != []:
+            sys.stderr.write( 'ERROR: inheritance should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo + '\n' )
+            print(           '#ERROR: inheritance should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo )
+            ## Modify bad subs to point to ...
+            for x in BadSubs:
+              for l,y in D.Inhs.get(x,{}).items():
+                if y == xLo and l != 'c':
+                  D.Inhs[x][l] = D.Inhs[xLo]['r']
+                  #D.Subs[xLo].remove(x)
+                  D.Subs[ D.Inhs[xLo]['r'] ].append( x )
+                  if VERBOSE: print( '#NOTE: moving ' + l + ' inheritance of ' + x + ' from ' + xLo + ' to ' + D.Inhs[x][l] )
           if xLo in [ s  for q,e,r,s,n in D.QuantTuples ]:
             sys.stderr.write( 'ERROR: quantifier should not be annotated on redundant predicative referent: ' + xLo + '\n' )
             print(           '#ERROR: quantifier should not be annotated on redundant predicative referent: ' + xLo )

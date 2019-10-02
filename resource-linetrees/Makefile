@@ -291,6 +291,9 @@ endef
 %.nopunc.linetoks: %.linetoks
 	cat $<  |  perl -pe "s/ (,|\.|\`\`|\`|--|-RRB-|-LRB-|-LCB-|-RCB-|''|'|\.\.\.|\?|\!|\:|\;|\(|\))//g" > $@
 
+#%.blankfail.linetrees: %.linetrees
+#	cat $< | sed 's/^.*FAIL.*$$//g' > $@
+
 %.nocurr.linetrees: %.linetrees $(LTREES-SCRIPTS)/make-trees-nounary.pl
 	cat $< | sed 's/\(\$$ \+[^ ()]\+\)//g;' | perl $(word 2, $^) > $@
 

@@ -78,18 +78,22 @@ discctr = 0
 for line in sys.stdin:
 
   discctr += 1
-  print( '#DISCOURSE ' + str(discctr) )
+  DiscTitle = sorted([ asc  for asc in line.split(' ')  if ',0,' in asc and asc.startswith('000') ])
+  print(            '#DISCOURSE ' + str(discctr) + '... (' + ' '.join(DiscTitle) + ')' )
+  sys.stderr.write( '#DISCOURSE ' + str(discctr) + '... (' + ' '.join(DiscTitle) + ')\n' )
 
   #### I. READ IN AND PREPROCESS DISCOURSE GRAPH...
 
   line = line.rstrip()
   if VERBOSE: print( 'GRAPH: ' + line )
 
+  D = discgraph.DiscGraph( line )
+  if not D.check(): continue
+
   D = induciblediscgraph.InducibleDiscGraph( line )
 
   #### II. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
 
-  D.check()
   D.normForm()
 
   #### III. INDUCE UNANNOTATED SCOPES AND EXISTENTIAL QUANTS...
@@ -97,7 +101,7 @@ for line in sys.stdin:
   ## Add dummy args below eventualities...
   for xt in D.PredTuples:
     for x in xt[2:]:
-      if x.startswith(xt[1][0:4] + 's') and x.endswith('\''):
+      if len( D.ConstrainingTuples.get(x,[]) )==1 and x.endswith('\''):   #x.startswith(xt[1][0:4] + 's') and x.endswith('\''):
         D.Scopes[x] = xt[1]
         if VERBOSE: print( 'Scoping dummy argument ' + x + ' to predicate ' + xt[1] )
 
@@ -117,8 +121,12 @@ for line in sys.stdin:
 
 
   if VERBOSE: print( 'running tryScope...' )
-#  D.Scopes = tryScope( D.Scopes, RecencyConnected )
-  D.tryScope( RecencyConnected )
+##  D.Scopes = tryScope( D.Scopes, RecencyConnected )
+#  D.tryScope( RecencyConnected, False )
+#  if VERBOSE: print( 're-running tryScope...' )
+#  RecencyConnected = [ (0,x)  for x in D.Referents  if D.ceiling(x) in D.AnnotatedCeilings ]
+  out = D.tryScope( RecencyConnected, True )
+  if out == False: continue
   if VERBOSE: print( D.Scopes )
   if VERBOSE: print( 'GRAPH: ' + D.strGraph() )
 
