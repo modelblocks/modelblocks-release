@@ -154,12 +154,20 @@ class DiscGraph:
     ## Check for scopecycles...
     for x in D.Referents:
       if checkScopeCyclesInChain( x ): return False
+    def getScopersFromSup( xLo ):
+      return ( [ (xLo,D.Scopes[xLo]) ] if xLo in D.Scopes else [] ) + [ x for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' for x in getScopersFromSup(xHi) ]
+    def getScopersFromSub( xHi ):
+      return ( [ (xHi,D.Scopes[xHi]) ] if xHi in D.Scopes else [] ) + [ x for xLo in D.Subs.get(xHi,[]) for x in getScopersFromSub(xLo) ]
+    ## Obtain inheritance chain for each reft...
+    Scopers = { x : sets.Set( getScopersFromSup(x) + getScopersFromSub(x) ) for x in D.Referents }
     ## Check for multiple outscopings...
     for x in D.Referents:
-      if len( D.getBossesInChain(x) ) > 1:
-        sys.stderr.write( 'WARNING: ' + x + ' has multiple outscopings in inheritance chain: ' + str( D.getBossesInChain(x) ) + '\n' )
-        print(           '#WARNING: ' + x + ' has multiple outscopings in inheritance chain: ' + str( D.getBossesInChain(x) ) )
-      if VERBOSE: print( 'Bosses of ' + x + ': ' + str(D.getBossesInChain(x)) )
+      if len( Scopers[x] ) > 1:
+        sys.stderr.write( 'WARNING: multiple outscopings found in same inheritance chain: ' + str( sorted(Scopers.get(x,[])) ) + '\n' )
+        print(           '#WARNING: multiple outscopings found in same inheritance chain: ' + str( sorted(Scopers.get(x,[])) ) )
+#        sys.stderr.write( 'WARNING: chain ' + str( sorted(Chains.get(x,[])) ) + ' has multiple outscopings: ' + str( D.getBossesInChain(x) ) + '\n' )
+#        print(           '#WARNING: chain ' + str( sorted(Chains.get(x,[])) ) + ' has multiple outscopings: ' + str( D.getBossesInChain(x) ) )
+#      if VERBOSE: print( 'Bosses of ' + x + ': ' + str(D.getBossesInChain(x)) )
     return True
 
 
