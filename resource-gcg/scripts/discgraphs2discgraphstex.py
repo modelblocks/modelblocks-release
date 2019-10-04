@@ -29,11 +29,14 @@ for line in sys.stdin:
       if x not in Nodes:
 
         def hoff( x, ctr ):
-          return str( (4 if len(x)==5 else 2) + (2 if x[-1]=='r' else 4) + (0 if len(x)==5 else -ctr if x[4] in 'abu' else ctr) )
+#          return str( (4 if len(x)==5 else 2) + (2 if x[-1]=='r' else 4) + (0 if len(x)==5 else -ctr if x[4] in 'abu' else ctr) )
+          return str( (4 if x[4:]=='r' or x[4:]=='s' else 2) + (2 if x[-1]=='r' else 4) + (0 if x[4:]=='r' or x[4:]=='s' else -ctr if x[4] in 'abu' else ctr) )
         def voff( x, ctr ):
-          return str( 4 if len(x)==5 else (4 - ctr) if x[4] in 'abu' else (4 + ctr) )
+#          return str( 4 if len(x)==5 else (4 - ctr) if x[4] in 'abu' else (4 + ctr) )
+          return str( 4 if x[4:]=='r' or x[4:]=='s' else (4 - ctr) if x[4] in 'abu' else (4 + ctr) )
 
-        if len(x)>5 and x[-1]!='r': Ctrs[ x[0:4] ] += 1
+#        if len(x)>5 and x[-1]!='r': Ctrs[ x[0:4] ] += 1
+        if x[4:]!='r' and x[4:]!='s' and x[-1]!='r': Ctrs[ x[0:4] ] += 1
         ctr = Ctrs[ x[0:4] ]
 
         Nodes.add( x )
