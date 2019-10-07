@@ -163,7 +163,7 @@ class DiscGraph:
     def getScopersFromSub( xHi ):
       return ( [ (xHi,D.Scopes[xHi]) ] if xHi in D.Scopes else [] ) + [ x for xLo in D.Subs.get(xHi,[]) for x in getScopersFromSub(xLo) ]
     ## Obtain inheritance chain for each reft...
-    Scopers = { x : sets.Set( getScopersFromSup(x) + getScopersFromSub(x) ) for x in D.Referents }
+    Scopers = { x : sets.Set( getScopersFromSup(x) ) for x in D.Referents }   #+ getScopersFromSub(x)
     ## Check for multiple outscopings...
     for x in D.Referents:
       if len( Scopers[x] ) > 1:

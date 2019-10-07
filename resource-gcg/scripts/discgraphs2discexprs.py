@@ -121,14 +121,17 @@ for line in sys.stdin:
 
 
   L1 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
-  if L1 == []:
+  if len(L1) > 1:
+    print(           '#WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + str(L1) + ' -- possibly due to missing anaphora between sentences' )
+    sys.stderr.write( 'WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + str(L1) + ' -- possibly due to missing anaphora between sentences\n' ) 
+  elif L1 == []:
     L2 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
     print(           '#NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + str(L2) )
     sys.stderr.write( 'NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + str(L2) + '\n' ) 
     if L2 == []:
 #      L = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
-      print(           '#WARNING: No explicit quantifiers -- defaulting to early legators: ' + str(L) )
-      sys.stderr.write( 'WARNING: No explicit quantifiers -- defaulting to early legators: ' + str(L) )
+      print(           '#WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents' )
+      sys.stderr.write( 'WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents' )
 
   ## List of original (dominant) refts...
 #  RecencyConnected = sorted( [ ((0 if x not in D.Subs else -1) + (0 if x in ScopeLeaves else -2),x)  for x in D.Referents  if D.ceiling(x) in D.Chains.get(L[0],[]) ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
@@ -136,7 +139,6 @@ for line in sys.stdin:
   if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
 
 
-  if VERBOSE: print( 'running tryScope...' )
 ##  D.Scopes = tryScope( D.Scopes, RecencyConnected )
 #  D.tryScope( RecencyConnected, False )
 #  if VERBOSE: print( 're-running tryScope...' )
@@ -145,16 +147,15 @@ for line in sys.stdin:
   Complete = []
   while ok:
     L =           [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
-    print( 'L1 = ' + str(L) )
     if L==[]: L = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
-    print( 'L2 = ' + str(L) )
     if L==[]: L = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
-    print( 'L3 = ' + str(L) )
     if L == []: break
-    print( 'Target x = ' + L[0] )
+
+    if VERBOSE: print( 'Trying to induce scopes below ' + L[0] + '...' )
     RecencyConnected += [ (0,x) for x in D.Chains.get(L[0],[]) ]
     ok = D.tryScope( L[0], RecencyConnected, True )
     Complete.append( L[0] )
+
   if not ok: continue
 #  out = D.tryScope( RecencyConnected, True )
 #  if out == False: continue
@@ -166,10 +167,10 @@ for line in sys.stdin:
 #    print(           '#WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences: ' + str(DisjointPreds) )
 #    sys.stderr.write( 'WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences: ' + str(DisjointPreds) + '\n' )
 
-  DisjointRefts = sets.Set([ ( D.ceiling(x), D.ceiling(y) )  for xt in D.PredTuples  for x in xt[1:]  for yt in D.PredTuples  for y in yt[1:]  if x < y and not D.reachesInChain( x, D.ceiling(y) ) ])
-  if len(DisjointRefts) > 0:
-    print(           '#WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences or unscoped argument of scoped predicate: ' + str(DisjointRefts) )
-    sys.stderr.write( 'WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences or unscoped argument of scoped predicate: ' + str(DisjointRefts) + '\n' )
+#  DisjointRefts = sets.Set([ ( D.ceiling(x), D.ceiling(y) )  for xt in D.PredTuples  for x in xt[1:]  for yt in D.PredTuples  for y in yt[1:]  if x < y and not D.reachesInChain( x, D.ceiling(y) ) ])
+#  if len(DisjointRefts) > 0:
+#    print(           '#WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences or unscoped argument of scoped predicate: ' + str(DisjointRefts) )
+#    sys.stderr.write( 'WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences or unscoped argument of scoped predicate: ' + str(DisjointRefts) + '\n' )
 
 
   ## Induce low existential quants when only scope annotated...
