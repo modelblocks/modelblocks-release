@@ -89,6 +89,9 @@ for line in sys.stdin:
 
   D = discgraph.DiscGraph( line )
   if not D.check(): continue
+  D.checkMultipleOutscopers()
+
+  OrigScopes = D.Scopes
 
   D = induciblediscgraph.InducibleDiscGraph( line )
 
@@ -116,17 +119,45 @@ for line in sys.stdin:
   for x in D.Referents:
     if not outscopingInChain(x): ScopeLeaves.append( x )
 
+
+  L1 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
+  if L1 == []:
+    L2 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
+    print(           '#NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + str(L2) )
+    sys.stderr.write( 'NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + str(L2) + '\n' ) 
+    if L2 == []:
+#      L = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
+      print(           '#WARNING: No explicit quantifiers -- defaulting to early legators: ' + str(L) )
+      sys.stderr.write( 'WARNING: No explicit quantifiers -- defaulting to early legators: ' + str(L) )
+
   ## List of original (dominant) refts...
-  RecencyConnected = sorted( [ ((0 if x not in D.Subs else -1) + (0 if x in ScopeLeaves else -2),x)  for x in D.Referents  if D.ceiling(x) in D.AnnotatedCeilings ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
+#  RecencyConnected = sorted( [ ((0 if x not in D.Subs else -1) + (0 if x in ScopeLeaves else -2),x)  for x in D.Referents  if D.ceiling(x) in D.Chains.get(L[0],[]) ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
+  RecencyConnected = [ (0,y)  for x in L1  for y in D.Referents  if D.ceiling(y) in D.Chains.get(x,[]) ]
+  if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
 
 
   if VERBOSE: print( 'running tryScope...' )
 ##  D.Scopes = tryScope( D.Scopes, RecencyConnected )
 #  D.tryScope( RecencyConnected, False )
 #  if VERBOSE: print( 're-running tryScope...' )
-#  RecencyConnected = [ (0,x)  for x in D.Referents  if D.ceiling(x) in D.AnnotatedCeilings ]
-  out = D.tryScope( RecencyConnected, True )
-  if out == False: continue
+#  RecencyConnected = [ (0,x)  for x in D.Referents  if D.ceiling(x) in L ]
+  ok = True
+  Complete = []
+  while ok:
+    L =           [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
+    print( 'L1 = ' + str(L) )
+    if L==[]: L = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
+    print( 'L2 = ' + str(L) )
+    if L==[]: L = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
+    print( 'L3 = ' + str(L) )
+    if L == []: break
+    print( 'Target x = ' + L[0] )
+    RecencyConnected += [ (0,x) for x in D.Chains.get(L[0],[]) ]
+    ok = D.tryScope( L[0], RecencyConnected, True )
+    Complete.append( L[0] )
+  if not ok: continue
+#  out = D.tryScope( RecencyConnected, True )
+#  if out == False: continue
   if VERBOSE: print( D.Scopes )
   if VERBOSE: print( 'GRAPH: ' + D.strGraph() )
 

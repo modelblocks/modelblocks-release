@@ -111,18 +111,18 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       return [ ptup  for ptup in D.PredTuples  if x in ptup[1:] ] + [ ptup  for xLo in D.Subs.get(x,[])  for ptup in constrainingTuplesFromSubs( xLo ) ]
     D.ConstrainingTuples = { x : sets.Set( constrainingTuplesFromSups(x) + constrainingTuplesFromSubs(x) )  for x in D.Referents }
     ## Calculate ceilings of scoped refts...
-    D.AnnotatedCeilings = sets.Set([ y  for y in D.Referents  for x in D.Scopes.keys()  if D.ceiling(x) in D.Chains[y] ]) #D.Chains[D.ceiling(x)]  for x in D.Scopes.keys() ])
-    if len(D.AnnotatedCeilings) == 0:
-      D.AnnotatedCeilings = sets.Set( sorted([ (len(chain),chain)  for x,chain in D.Chains.items()  if x.startswith('000') ])[-1][1] )   # sets.Set(D.Chains['0001s'])
-      print(           '#NOTE: Discourse contains no scope annotations -- defining root as longest chain through first sentence: ' + str(sorted(D.AnnotatedCeilings)) )
-      sys.stderr.write( 'NOTE: Discourse contains no scope annotations -- defining root as longest chain through first sentence: ' + str(sorted(D.AnnotatedCeilings)) + '\n' )
-    DisjointCeilingPairs = [ (x,y)  for x in D.AnnotatedCeilings  for y in D.AnnotatedCeilings  if x<y and not D.reachesInChain( x, y ) ]
-    if len(DisjointCeilingPairs) > 0:
-      print(           '#WARNING: Maxima of scopal annotations are disjoint: ' + str(DisjointCeilingPairs) + ' -- disconnected annotations cannot all be assumed dominant.' )
-      sys.stderr.write( 'WARNING: Maxima of scopal annotations are disjoint: ' + str(DisjointCeilingPairs) + ' -- disconnected annotations cannot all be assumed dominant.\n' )
-    if VERBOSE: print( 'AnnotatedCeilings = ' + str(D.AnnotatedCeilings) )
-    D.NotOutscopable = [ x for x in D.Referents if D.ceiling(x) in D.AnnotatedCeilings ]
-    if VERBOSE: print( 'NotOutscopable = ' + str(D.NotOutscopable) )
+#    D.AnnotatedCeilings = sets.Set([ y  for y in D.Referents  for x in D.Scopes.keys()  if D.ceiling(x) in D.Chains[y] ]) #D.Chains[D.ceiling(x)]  for x in D.Scopes.keys() ])
+#    if len(D.AnnotatedCeilings) == 0:
+#      D.AnnotatedCeilings = sets.Set( sorted([ (len(chain),chain)  for x,chain in D.Chains.items()  if x.startswith('000') ])[-1][1] )   # sets.Set(D.Chains['0001s'])
+#      print(           '#NOTE: Discourse contains no scope annotations -- defining root as longest chain through first sentence: ' + str(sorted(D.AnnotatedCeilings)) )
+#      sys.stderr.write( 'NOTE: Discourse contains no scope annotations -- defining root as longest chain through first sentence: ' + str(sorted(D.AnnotatedCeilings)) + '\n' )
+#    DisjointCeilingPairs = [ (x,y)  for x in D.AnnotatedCeilings  for y in D.AnnotatedCeilings  if x<y and not D.reachesInChain( x, y ) ]
+#    if len(DisjointCeilingPairs) > 0:
+#      print(           '#WARNING: Maxima of scopal annotations are disjoint: ' + str(DisjointCeilingPairs) + ' -- disconnected annotations cannot all be assumed dominant.' )
+#      sys.stderr.write( 'WARNING: Maxima of scopal annotations are disjoint: ' + str(DisjointCeilingPairs) + ' -- disconnected annotations cannot all be assumed dominant.\n' )
+#    if VERBOSE: print( 'AnnotatedCeilings = ' + str(D.AnnotatedCeilings) )
+#    D.NotOutscopable = [ x for x in D.Referents if D.ceiling(x) in D.AnnotatedCeilings ]
+#    if VERBOSE: print( 'NotOutscopable = ' + str(D.NotOutscopable) )
     D.PredToTuple = { xOrig : ptup  for ptup in D.PredTuples  for xOrig in D.Chains[ ptup[1] ] }
     if VERBOSE: print( 'PredToTuple = ' + str(D.PredToTuple) )
     def allInherited( src ):
@@ -374,7 +374,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 
 
   ## Method to fill in deterministic or truth-functionally indistinguishable scope associations (e.g. for elementary predications) that are not explicitly annotated...
-  def tryScope( D, RecencyConnected, isFull, step=1 ):
+  def tryScope( D, xTarget, RecencyConnected, isFull, step=1 ):
         if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
 #      active = False
 #      l = []
@@ -401,7 +401,9 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 #      while active:
 #          active = False
         if VERBOSE: print( '  '*step + 'GRAPH: ' + D.strGraph() )
-        for xTarget in [ x  for x in D.AnnotatedCeilings  if not any([ y  for y in D.AnnotatedCeilings  if x != y and x in D.Heirs.get(y,[]) ]) ]:
+#        for xTarget in [ x  for x in D.AnnotatedCeilings  if not any([ y  for y in D.AnnotatedCeilings  if x != y and x in D.Heirs.get(y,[]) ]) ]:
+        if True:
+#          D.AnnotatedCeilings = [ xTarget ]
           l = D.constrainDeepestReft( xTarget, step+1, [ x  for s,x in RecencyConnected ], isFull )
           if VERBOSE: print( '  '*step + str(step) + '  l=' + str(l) )
           for xLo,xHi in sets.Set(l):
@@ -411,11 +413,12 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
             if VERBOSE: print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
             D.Scopes[ D.ceiling(xLo) ] = xHi
 #            D.PredRecency[ ptup ] = step
-            RecencyConnected = [ (step,x) for x in D.Chains.get(xLo,[]) ] + [ (step,x) for x in D.Chains.get( D.Inhs.get(xLo,{}).get('r',''), [] ) ] + RecencyConnected
+#            RecencyConnected = [ (step,x) for x in D.Chains.get(xLo,[]) ] + [ (step,x) for x in D.Chains.get( D.Inhs.get(xLo,{}).get('r',''), [] ) ] + RecencyConnected
+            RecencyConnected.extend( [ (step,x) for x in D.Chains.get(xLo,[]) ] + [ (step,x) for x in D.Chains.get( D.Inhs.get(xLo,{}).get('r',''), [] ) ] )
           if VERBOSE: D.check()
           if l!=[]:
-            outFlag = D.tryScope( RecencyConnected, isFull, step+1 )
+            outFlag = D.tryScope( xTarget, RecencyConnected, isFull, step+1 )
             if outFlag == False: return False
 #            active = True
-
+        return True
 

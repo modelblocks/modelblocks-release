@@ -77,7 +77,7 @@ class DiscGraph:
     if VERBOSE: print( 'Subs = ' + str(D.Subs) )
 
     ## List of referents that are or participate in elementary predications...
-    D.Referents = sets.Set( [ x for pred in D.PredTuples for x in pred[1:] ] + D.Inhs.keys() )
+    D.Referents = sorted( sets.Set( [ x for pred in D.PredTuples for x in pred[1:] ] + D.Inhs.keys() ) )
 
 
   def strGraph( D, HypScopes = None ):  # PredTuples, QuantTuples, Inhs, Scopes ):
@@ -154,6 +154,10 @@ class DiscGraph:
     ## Check for scopecycles...
     for x in D.Referents:
       if checkScopeCyclesInChain( x ): return False
+    return True
+
+
+  def checkMultipleOutscopers( D ):
     def getScopersFromSup( xLo ):
       return ( [ (xLo,D.Scopes[xLo]) ] if xLo in D.Scopes else [] ) + [ x for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' for x in getScopersFromSup(xHi) ]
     def getScopersFromSub( xHi ):
@@ -168,7 +172,6 @@ class DiscGraph:
 #        sys.stderr.write( 'WARNING: chain ' + str( sorted(Chains.get(x,[])) ) + ' has multiple outscopings: ' + str( D.getBossesInChain(x) ) + '\n' )
 #        print(           '#WARNING: chain ' + str( sorted(Chains.get(x,[])) ) + ' has multiple outscopings: ' + str( D.getBossesInChain(x) ) )
 #      if VERBOSE: print( 'Bosses of ' + x + ': ' + str(D.getBossesInChain(x)) )
-    return True
 
 
   def normForm( D ):

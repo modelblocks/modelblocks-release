@@ -37,5 +37,5 @@ for discnum,line in enumerate( sys.stdin ):
   line = line.rstrip()
   D = discgraph.DiscGraph( line )
   D.check()
- 
+  D.checkMultipleOutscopers() 
 
