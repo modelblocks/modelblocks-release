@@ -135,7 +135,7 @@ for line in sys.stdin:
 
   ## List of original (dominant) refts...
 #  RecencyConnected = sorted( [ ((0 if x not in D.Subs else -1) + (0 if x in ScopeLeaves else -2),x)  for x in D.Referents  if D.ceiling(x) in D.Chains.get(L[0],[]) ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
-  RecencyConnected = [ (0,y)  for x in L1  for y in D.Referents  if D.ceiling(y) in D.Chains.get(x,[]) ]
+  RecencyConnected = [ y  for x in L1  for y in D.Referents  if D.ceiling(y) in D.Chains.get(x,[]) ]
   if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
 
 
@@ -152,7 +152,7 @@ for line in sys.stdin:
     if L == []: break
 
     if VERBOSE: print( 'Trying to induce scopes below ' + L[0] + '...' )
-    RecencyConnected += [ (0,x) for x in D.Chains.get(L[0],[]) ]
+    RecencyConnected += D.Chains.get(L[0],[])
     ok = D.tryScope( L[0], RecencyConnected, True )
     Complete.append( L[0] )
 

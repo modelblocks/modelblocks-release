@@ -404,17 +404,17 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 #        for xTarget in [ x  for x in D.AnnotatedCeilings  if not any([ y  for y in D.AnnotatedCeilings  if x != y and x in D.Heirs.get(y,[]) ]) ]:
 #        if True:
 #          D.AnnotatedCeilings = [ xTarget ]
-          l = D.constrainDeepestReft( xTarget, step+1, [ x  for s,x in RecencyConnected ], isFull )
+          l = D.constrainDeepestReft( xTarget, step+1, RecencyConnected, isFull )
           if VERBOSE: print( '  '*step + str(step) + '  l=' + str(l) )
           for xLo,xHi in sets.Set(l):
             if xLo == None: return False
 #              complain( 'ERROR: unable to process discourse' )
-            if D.alreadyConnected( xLo, xHi, [ x  for s,x in RecencyConnected ] ): continue
+            if D.alreadyConnected( xLo, xHi, RecencyConnected ): continue
             if VERBOSE: print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
             D.Scopes[ D.ceiling(xLo) ] = xHi
 #            D.PredRecency[ ptup ] = step
 #            RecencyConnected = [ (step,x) for x in D.Chains.get(xLo,[]) ] + [ (step,x) for x in D.Chains.get( D.Inhs.get(xLo,{}).get('r',''), [] ) ] + RecencyConnected
-            RecencyConnected.extend( [ (step,x) for x in D.Chains.get(xLo,[]) ] + [ (step,x) for x in D.Chains.get( D.Inhs.get(xLo,{}).get('r',''), [] ) ] )
+            RecencyConnected.extend( D.Chains.get(xLo,sets.Set([])) | D.Chains.get( D.Inhs.get(xLo,{}).get('r',''), sets.Set([]) ) )
             active = True
           if VERBOSE: D.check()
 #          if l!=[]:
