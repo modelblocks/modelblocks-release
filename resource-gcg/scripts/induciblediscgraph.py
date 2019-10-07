@@ -375,7 +375,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 
   ## Method to fill in deterministic or truth-functionally indistinguishable scope associations (e.g. for elementary predications) that are not explicitly annotated...
   def tryScope( D, xTarget, RecencyConnected, isFull, step=1 ):
-        if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
+      if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
 #      active = False
 #      l = []
 ##      RecencyConnected = sorted( [ ( s if not any([y in D.Scopes.values()  for y in D.Chains.get(x,[]) ]) else -1, x )  for (s,x) in RecencyConnected ] )
@@ -384,7 +384,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 #        if VERBOSE: print( '  '*step + 'GRAPH: ' + D.strGraph() )
 #        if VERBOSE: print( '  '*step + str(step) + ': working on refstate ' + str(xHiOrig) + '...' )
 
-        '''
+      '''
 #      TupList = sorted([ (0 if any([ xHi in D.Scopes  for xLo in ptup  for xHi in D.Legators[xLo] ]) else -1,ptup)  for ptup in D.PredTuples ], reverse = True)
       TupList = sorted( [ ( D.PredRecency.get(ptup,0) if any([ xHi in D.Scopes  for xLo in ptup[1:]  for xHi in D.Legators[xLo] ]) and not any([ xHi in D.Scopes.values()  for xLo in ptup[1:]  for xHi in D.Legators[xLo] ]) else 
                             D.PredRecency.get(ptup,0)-1 if any([ xHi in D.Scopes  for xLo in ptup[1:]  for xHi in D.Chains[xLo] ]) and not any([ xHi in D.Scopes.values()  for xLo in ptup[1:]  for xHi in D.Chains[xLo] ]) else 
@@ -393,16 +393,16 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
                             D.PredRecency.get(ptup,0)-4,ptup)  for ptup in D.PredTuples ], reverse = True )
       if VERBOSE: print( 'TUP LIST: ' + str(TupList) )
       for _,ptup in TupList:
-        '''
+      '''
 #        for ptup,xGoal in D.RefToPredTuples.get( xHiOrig, [] ) + ( [ ( D.PredToTuple[xHiOrig], '' ) ] if xHiOrig in D.PredToTuple else [] ):
 #          l = D.scopesToConnect( ptup[1], '', step+1, [ x  for s,x in RecencyConnected ] )
 
-#      active = True
-#      while active:
-#          active = False
-        if VERBOSE: print( '  '*step + 'GRAPH: ' + D.strGraph() )
+      active = True
+      while active:
+          active = False
+          if VERBOSE: print( '  '*step + 'GRAPH: ' + D.strGraph() )
 #        for xTarget in [ x  for x in D.AnnotatedCeilings  if not any([ y  for y in D.AnnotatedCeilings  if x != y and x in D.Heirs.get(y,[]) ]) ]:
-        if True:
+#        if True:
 #          D.AnnotatedCeilings = [ xTarget ]
           l = D.constrainDeepestReft( xTarget, step+1, [ x  for s,x in RecencyConnected ], isFull )
           if VERBOSE: print( '  '*step + str(step) + '  l=' + str(l) )
@@ -415,10 +415,10 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 #            D.PredRecency[ ptup ] = step
 #            RecencyConnected = [ (step,x) for x in D.Chains.get(xLo,[]) ] + [ (step,x) for x in D.Chains.get( D.Inhs.get(xLo,{}).get('r',''), [] ) ] + RecencyConnected
             RecencyConnected.extend( [ (step,x) for x in D.Chains.get(xLo,[]) ] + [ (step,x) for x in D.Chains.get( D.Inhs.get(xLo,{}).get('r',''), [] ) ] )
+            active = True
           if VERBOSE: D.check()
-          if l!=[]:
-            outFlag = D.tryScope( xTarget, RecencyConnected, isFull, step+1 )
-            if outFlag == False: return False
-#            active = True
-        return True
+#          if l!=[]:
+#            outFlag = D.tryScope( xTarget, RecencyConnected, isFull, step+1 )
+#            if outFlag == False: return False
+      return True
 
