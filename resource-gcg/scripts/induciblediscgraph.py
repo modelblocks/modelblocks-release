@@ -374,21 +374,24 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 
 
   ## Method to fill in deterministic or truth-functionally indistinguishable scope associations (e.g. for elementary predications) that are not explicitly annotated...
-  def tryScope( D, xTarget, RecencyConnected, isFull, step=1 ):
-      if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
-      active = True
-      while active:
-          active = False
-          if VERBOSE: print( '  '*step + 'GRAPH: ' + D.strGraph() )
-          l = D.constrainDeepestReft( xTarget, step+1, RecencyConnected, isFull )
-          if VERBOSE: print( '  '*step + str(step) + '  l=' + str(l) )
-          for xLo,xHi in sets.Set(l):
-            if xLo == None: return False
-            if D.alreadyConnected( xLo, xHi, RecencyConnected ): continue
-            if VERBOSE: print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
-            D.Scopes[ D.ceiling(xLo) ] = xHi
-            RecencyConnected.extend( D.Chains.get(xLo,sets.Set([])) | D.Chains.get( D.Inhs.get(xLo,{}).get('r',''), sets.Set([]) ) )
-            active = True
-          if VERBOSE: D.check()
-      return True
+  def tryScope( D, xTarget, Connected, isFull, step=1 ):
+    if VERBOSE: print( 'Connected = ' + str(Connected) )
+    active = True
+    while active:
+      active = False
+      if VERBOSE: print( '  '*step + 'GRAPH: ' + D.strGraph() )
+      ## Calculate recommended scopings...
+      l = D.constrainDeepestReft( xTarget, step+1, Connected, isFull )
+      if VERBOSE: print( '  '*step + str(step) + '  l=' + str(l) )
+      ## Add recommended scopings...
+      for xLo,xHi in sets.Set(l):
+        if xLo == None: return False
+        if D.alreadyConnected( xLo, xHi, Connected ): continue
+        if VERBOSE: print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
+        D.Scopes[ D.ceiling(xLo) ] = xHi
+        ## Update recently connected...
+        Connected.extend( D.Chains.get(xLo,sets.Set([])) | D.Chains.get( D.Inhs.get(xLo,{}).get('r',''), sets.Set([]) ) )
+        active = True
+      if VERBOSE: D.check()
+    return True
 

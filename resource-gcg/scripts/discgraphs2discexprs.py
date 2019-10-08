@@ -131,7 +131,7 @@ for line in sys.stdin:
     if L2 == []:
 #      L = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
       print(           '#WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents' )
-      sys.stderr.write( 'WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents' )
+      sys.stderr.write( 'WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents\n' )
 
   ## List of original (dominant) refts...
 #  RecencyConnected = sorted( [ ((0 if x not in D.Subs else -1) + (0 if x in ScopeLeaves else -2),x)  for x in D.Referents  if D.ceiling(x) in D.Chains.get(L[0],[]) ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
@@ -161,6 +161,11 @@ for line in sys.stdin:
 #  if out == False: continue
   if VERBOSE: print( D.Scopes )
   if VERBOSE: print( 'GRAPH: ' + D.strGraph() )
+
+  for xTarget in sets.Set( D.Scopes.values() ):
+    if not any([ x in D.Scopes  for x in D.Chains.get(xTarget,[]) ]) and not any([ s in D.Chains.get(xTarget,[])  for q,e,r,s,n in D.QuantTuples ]):
+      print(           '#ERROR: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!' )
+      sys.stderr.write( 'ERROR: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!\n' )
 
 #  DisjointPreds = sets.Set([ ( D.ceiling(xt[1]), D.ceiling(yt[1]) )  for xt in D.PredTuples  for yt in D.PredTuples  if xt[1] < yt[1] and not D.reachesInChain( xt[1], D.ceiling(yt[1]) ) ])
 #  if len(DisjointPreds) > 0:
