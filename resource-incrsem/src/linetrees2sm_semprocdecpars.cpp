@@ -43,7 +43,7 @@ bool INTERSENTENTIAL = true;
 #include <BerkUnkWord.hpp>
 #include <Tree.hpp>
 #include <ZeroPad.hpp>
-int COREF_WINDOW = 50;
+int COREF_WINDOW = INT_MAX;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -166,8 +166,8 @@ JModel modJ;
 ////////////////////////////////////////////////////////////////////////////////
 
 void calcContext ( Tree<L>& tr, 
-                   map<string,int>& annot2tdisc, vector<Sign>& antecedentCandidates, int& tDisc, const int sentnum, map<string,HVec>& annot2kset,
-		   int& wordnum, bool failtree, std::set<int>& excludedIndices,   // coref related: 
+                   map<string,int>& annot2tdisc, vector<trip<Sign,W,K>>& antecedentCandidates, int& tDisc, const int sentnum, map<string,HVec>& annot2kset,
+		   int& wordnum, bool isFailTree, std::set<int>& excludedIndices,   // coref related: 
 		   int s=1, int d=0, string e="", L l=L() ) {                     // side, depth, unary (e.g. extraction) operators, ancestor label.
   static F          f;
   static string     eF;
@@ -198,82 +198,105 @@ void calcContext ( Tree<L>& tr,
     }
     annot2kset[currentloc] = HVec(k, matE, funcO); //add current k
     annot2tdisc[currentloc] = tDisc; //map current sent,word index to discourse word counter
-    if (not failtree) {
+    W histword(""); //histword will track most recent observed word whose k is unk. will be stored for correct antecedent only.
+    if (not isFailTree) {
       // Print preterminal / fork-phase predictors...
       FPredictorVec lfp( modF, hvAnt, nullAnt, q );
       cout<<"----"<<q<<endl;
-#ifdef DENSE_VECTORS
-      cout << "F " << lfp << " " << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);
-      cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) /*getCat(l)*/     << endl;
-      cout << "W " << e << " " << k << " " << getCat(removeLink(l)) /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
-#else
-      cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : f" << f << "&" << e << "&" << k << endl;  modF.getResponseIndex(f,e.c_str(),k);
-      cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) << endl;
-      cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " : " << removeLink(tr.front())  << endl;
-#endif
 
       // Print antecedent list...
       for( int i = tDisc; (i > 0 and tDisc-i <= COREF_WINDOW); i-- ) {  //only look back COREF_WINDOW antecedents at max
-        if( excludedIndices.find(i) != excludedIndices.end() ) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs.
+        if( excludedIndices.find(i) != excludedIndices.end() ) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs. //TODO Could also try making multiple positive examples, creating positive for each pair in chain
           continue; 
         }
         else {
-          Sign candidate;
-          int isCoref = 0;
+          trip<Sign,W,K> candidate; //represents the candidate's Sign (used for features generation), histword, aka most recent observed word where k was unk (antunk or unk), and the k of the candidate
+          int nLabel = 0; //correct/incorrect label for N model
           if (i < tDisc) {
             candidate = antecedentCandidates[i-1]; //there are one fewer candidates than tDisc value.  e.g., second word only has one previous candidate.
           }
           else {
-            candidate = Sign(/*hvBot*/HVec(),cTop,S_A); //Sign(hvTop, "NONE", "/"); //null antecedent generated at first iteration, where i=tDisc. Sign consists of: kset, type (syncat), side (A/B)
-
-            if (annot == "") isCoref = 1; //null antecedent is correct choice, "1" when no annotation TODO fix logic for filtering intra/inter?
+            candidate = trip<Sign,W,K>(Sign(/*hvBot*/HVec(),cTop,S_A), W(""), k); //Sign(hvTop, "NONE", "/"); //null antecedent generated at first iteration, where i=tDisc. Sign consists of: kset, type (syncat), side (A/B)
+            if (annot == "") {
+              nLabel = 1; //null antecedent is correct choice, "1" when no annotation 
+            }
           }
           
           //check for non-null coreference 
           if ((i == annot2tdisc[annot]) and (annot != "")) {
-            isCoref = 1;
+            nLabel = 1;
             excludedIndices.insert(annot2tdisc[annot]); //add blocking index here once find true, annotated coref. e.g. word 10 is coref with word 5. add annot2tdisc[annot] (5) to list of excluded.
+            //set k to kAntUnk if is coreferent, and most recent antecedent unk k in chain has observed word (histword) that matches w_t
+            //actually can store unk k logic by storing obsword as histword (candidate.second()) only following valid unk k conditions.
+            //that is, store obsword as histword if current candidate isUnk, else store most recent non-empty histword in chain as histword. else store empty string as histword
+
+            if (not k.isUnk()) {
+              histword = candidate.second(); //inherit histword as most recent unk obsword
+            }
+            if (candidate.second() == W(removeLink(tr.front()).c_str())) { // and candidate.third().isUnk()) {  
+              k = kAntUnk;
+            }
           }
 
+
           bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
-          NPredictorVec npv( modN, candidate, corefON, tDisc - i, q );
-          cout << "N " << pair<const NModel&,const NPredictorVec&>(modN,npv) << " : " << isCoref << endl; //i-1 because that's candidate index 
+          NPredictorVec npv( modN, candidate.first(), corefON, tDisc - i, q );
+          cout << "N " << pair<const NModel&,const NPredictorVec&>(modN,npv) << " : " << nLabel << endl; //i-1 because that's candidate index 
         } //single candidate output
       } //all previous antecedent candidates output
 
+#ifdef DENSE_VECTORS
+      cout << "F " << lfp << "|" << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);
+      cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << aPretrm.getCat() /*getCat(l)*/     << endl;
+      if (k != kAntUnk) { 
+        cout << "W " << e << " " << k << " " << aPretrm.getCat() /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+      }
+#else
+      cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : f" << f << "&" << e << "&" << k << endl;  modF.getResponseIndex(f,e.c_str(),k);
+      cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) << endl;
+      if (k != kAntUnk) { 
+        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " : " << removeLink(tr.front())  << endl;
+      }
+#endif
       q = StoreState( q, hvAnt, eF.c_str(), k, getCat(removeLink(l)), matE, funcO );
       aPretrm = q.back().apex().back();
     } else {
       aPretrm = Sign();
     }
-
-    antecedentCandidates.emplace_back(aPretrm); //append current prtrm to candidate list for future coref decisions 
+    //current candidate is stored, along with histword, which is most recent (ant)unk k's observed word. if current k is (ant)unk, use w_t as histword.  elseif not coreferent with anything (not corefON), store empty string as histword. else store antecedent's histword.
+   
+    //cout << "k is: " << k << " and isUnk() is: " << k.isUnk() << endl;
+    if (k.isUnk()) {
+      histword = W(removeLink(tr.front()).c_str()); //store current unk k's observed word. overrides inherit case above.
+    }
+    //cout << "saving histword: " << histword << " for word: " << removeLink(tr.front()) << endl;
+    antecedentCandidates.emplace_back(trip<Sign,W,K>(aPretrm, histword, k)); //append current prtrm to candidate list for future coref decisions 
   }
 
   // At unary identity nonpreterminal...
   else if ( tr.size()==1 and getCat(tr)==getCat(tr.front()) ) {
-    calcContext( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, s, d, e, l );
+    calcContext( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, s, d, e, l );
   }
 
   // At unary nonpreterminal...
   else if ( tr.size()==1 ) {
     //// cerr<<"#U"<<getCat(tr)<<" "<<getCat(tr.front())<<endl;
     e = e + getUnaryOp( tr );
-    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, s, d, e, l );
+    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, s, d, e, l );
   }
 
   // At binary nonterminal...
   else if ( tr.size()==2 ) {
     //// cerr<<"#B "<<getCat(tr)<<" "<<getCat(tr.front())<<" "<<getCat(tr.back())<<endl;
 
-    if (failtree) {
-      calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 0, d+s );
-      calcContext ( tr.back(),  annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 1, d );
+    if (isFailTree) {
+      calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, 0, d+s );
+      calcContext ( tr.back(),  annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, 1, d );
       return;
     }
 
     // Traverse left child...
-    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 0, d+s );
+    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, 0, d+s );
 
     J j          = s;
     cout << "~~~~ " << q.back().apex() << endl;
@@ -299,7 +322,7 @@ void calcContext ( Tree<L>& tr,
     q = StoreState ( q, j, e.c_str(), oL, oR, getCat(removeLink(l)), getCat(removeLink(tr.back())) );
 
     // Traverse right child...
-    calcContext ( tr.back(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, failtree, excludedIndices, 1, d );
+    calcContext ( tr.back(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, 1, d );
   }
 
   // At abrupt terminal (e.g. 'T' discourse)...
@@ -340,7 +363,7 @@ int main ( int nArgs, char* argv[] ) {
   int linenum = 0;  int discourselinenum = 0; //increments on sentence in discourse/article
   map<string,HVec> annot2kset;
   int tDisc = 0; //increments on word in discourse/article
-  vector<Sign> antecedentCandidates;
+  vector<trip<Sign,W,K>> antecedentCandidates;
   map<string,int> annot2tdisc;
   std::set<int> excludedIndices; //init indices of positive coreference to exclude.  prevents negative examples in training data when they're really positive coreference.
   while ( cin && EOF!=cin.peek() ) {
@@ -364,8 +387,8 @@ int main ( int nArgs, char* argv[] ) {
       }
       else {
 	int wordnum = 0;
-        bool failtree = (removeLink(t.front()) == "FAIL") ? true : false;
-        if( t.front().size() > 0 ) calcContext( t, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, failtree, excludedIndices);
+        bool isFailTree = (removeLink(t.front()) == "FAIL") ? true : false;
+        if( t.front().size() > 0 ) calcContext( t, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, isFailTree, excludedIndices);
       }
     }
     else {cin.get();}
