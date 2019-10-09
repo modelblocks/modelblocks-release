@@ -41,7 +41,7 @@ uint FEATCONFIG = 0;
 #include <SemProcModels_sparse.hpp>
 #endif
 #include <Beam.hpp>
-int COREF_WINDOW = 50;
+int COREF_WINDOW = INT_MAX;
 
 #define SERIAL_IO
 
@@ -96,7 +96,7 @@ class Trellis : public vector<Beam<HiddState>> {
         // does lbe here consist of a single sentence or of the whole article?
       }
       // For each element of MLE after first dummy element...
-      for ( auto& be : lbe ) { cerr << "beam element hidd: " << be.getHidd() << endl; } //TODO confirm includes all words, count initial/final dummies
+      //for ( auto& be : lbe ) { cerr << "beam element hidd: " << be.getHidd() << endl; } //TODO confirm includes all words, count initial/final dummies
       int u=-1; for( auto& be : lbe ) if( ++u>0 and u<int(size()) ) {
         // Calc surprisal as diff in exp of beam totals of successive elements, minus constant...
         double probPrevTot = 0.0;
@@ -118,6 +118,34 @@ class Trellis : public vector<Beam<HiddState>> {
    };
    */
 
+const BeamElement<HiddState>* getNextAntecedent (const BeamElement<HiddState>* antPtr) {
+    //updates antPtr to point to next antecedent back, using i index to count back that many words/timesteps
+    int i = antPtr->getHidd().getI(); //offset to antecedent timestep
+    i = abs(i);
+    for (; i != 0; i--) {
+      antPtr = &antPtr->getBack();
+    }
+    return antPtr;
+  }
+
+W getHistWord ( const BeamElement<HiddState>* antPtr ) {
+  //cout << "getHistWord started with antPtr: " << antPtr->getHidd() << " located at: " << antPtr << " with original k: " << antPtr->getHidd().getForkK() << endl;
+  W histword = W(""); //default case - no unk, no coreference, histword is ""
+  if (antPtr->getHidd().getForkK().isUnk()) { //unk case - unk, histword is word, short-circuits inheritance case
+    histword = antPtr->getHidd().getWord();
+    return histword;  
+  } 
+  for ( ; (antPtr->getHidd().getI() != 0) ; antPtr = getNextAntecedent(antPtr) ) { //inheritance case - break upon finding most recent unk in antecedent chain, word is that unk's word
+    //cout << "getHistWord looping, at antPtr's hidd: " << antPtr->getHidd() << " located at: " << antPtr << "with k: " << antPtr->getHidd().getForkK() << endl;
+    if (antPtr->getHidd().getForkK().isUnk()) { 
+      histword = antPtr->getHidd().getWord(); //at most recent unk, get observed word and return
+      break;
+    }
+  }
+  return histword;
+}
+
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 int main ( int nArgs, char* argv[] ) {
@@ -207,7 +235,7 @@ int main ( int nArgs, char* argv[] ) {
   mutex mutexMLSList;
   vector<thread> vtWorkers;  vtWorkers.reserve( numThreads );
 
-  if( OUTPUT_MEASURES ) cout << "word pos f j store totsurp" << endl;
+  if( OUTPUT_MEASURES ) cout << "word pos f j store ndec totsurp" << endl;
 
 #ifdef SERIAL_IO
   // List of articles, which are pairs of lists of lists of words and lists of lists of hidd states...
@@ -360,13 +388,18 @@ int main ( int nArgs, char* argv[] ) {
               if ( VERBOSE>1 ) cout << "    N ... : 1 = " << numerator << "/" << ndenom << "=" << nprob << "  tAnt: " << (t - tAnt) << endl;
 
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
-
                 FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );
 //                if( VERBOSE>1 ) cout << "     f predictors: " << pair<const FModel&,const FPredictorVec&>( modF, lfpredictors ) << endl;
                 arma::vec fresponses = modF.calcResponses( lfpredictors );
+              
+                //get most recent observed word for which k of fek F decision was 'unk'.
+                const BeamElement<HiddState>* antPtr = pbeAnt; 
+                //cout << "main semproc got ptr loc: " << antPtr << endl;
+                W histword = getHistWord(antPtr);
+                //cout << "main semproc got histword: " << histword << endl;
 
                 // For each possible lemma (context + label + prob) for preterminal of current word...
-                for ( auto& ektpr_p_t : modW.calcPredictorLikelihoods(w_t) ) {
+                for ( auto& ektpr_p_t : modW.calcPredictorLikelihoods(w_t, histword) ) { //ektpr_p_t is a pair of (Wpredictor, prob)
                   if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(ektpr_p_t.second) > beams[t].rbegin()->getProb() ) {
                     EVar  e_p_t       = ektpr_p_t.first.first();
                     K     k_p_t       = (FEATCONFIG & 8 && ektpr_p_t.first.second().getString()[2]!='y') ? K::kBot : ektpr_p_t.first.second();   // context of current preterminal
@@ -449,7 +482,7 @@ int main ( int nArgs, char* argv[] ) {
                                         // Calculate probability and storestate and add to beam...
                                         StoreState ss( qTermPhase, j, e, opL, opR, cpA.first, cpB.first );
                                         if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
-                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second), be_tdec1 ) ); 
+                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t, w_t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second), be_tdec1 ) ); 
                                           if( VERBOSE>1 ) cout << "                send (" << be_tdec1.getHidd() << ") to (" << ss << ") with "
                                             << (lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second)) << endl;
                                         } //closes if ( (t<lwSent
@@ -490,24 +523,24 @@ int main ( int nArgs, char* argv[] ) {
 #else
 #endif 
           if( numThreads > 1 ) cerr << "Finished line " << currline << " (" << beams[t].size() << ")..." << endl;
-          cerr << "Worker: " << numt << " attempting to set mls on beams..." << endl;
+          //cerr << "Worker: " << numt << " attempting to set mls on beams..." << endl;
           beams.setMostLikelySequence( mls, modJ );
-          cerr << "length lbeWholeArticle: " << lbeWholeArticle.size() << endl;
+          //cerr << "length lbeWholeArticle: " << lbeWholeArticle.size() << endl;
           mls.pop_back(); //remove dummy element before adding to lbe 
           lbeWholeArticle.insert(lbeWholeArticle.end(), next(mls.begin()), mls.end()); //insert mls at end of lbe
-          cerr << "length lbeWholeArticle after insertion: " << lbeWholeArticle.size() << endl;
+          //cerr << "length lbeWholeArticle after insertion: " << lbeWholeArticle.size() << endl;
           //iterate over lbeWholeArticle, having each item backpoint to the previous
           for (auto it = lbeWholeArticle.begin(); it != lbeWholeArticle.end(); it++) {
             if ( it != lbeWholeArticle.begin() ) {
               it->setBack(*prev(it));
             }
           }
-          cerr << "lbeWholeArticle.back().getBack().getHidd(): " << lbeWholeArticle.back().getBack().getHidd() << endl;
+          //cerr << "lbeWholeArticle.back().getBack().getHidd(): " << lbeWholeArticle.back().getBack().getHidd() << endl;
         }
       } //close loop lwSent over sents
 
       { lock_guard<mutex> guard( mutexMLSList );
-        cerr << "concbug: checking to print..." << endl;
+        //cerr << "concbug: checking to print..." << endl;
         //finished sent, now looping over global data and see whether it's ready to print
         //see if articles is not empty and first article is not empty and first sentence of first article is done, then print it.
 #ifdef SERIAL_IO
@@ -545,8 +578,8 @@ int main ( int nArgs, char* argv[] ) {
             articles.pop_front();
           } 
         } //closes while articleMLSs 
+        //cerr << "concbug: done checking to print." << endl;
 #endif
-        cerr << "concbug: done checking to print." << endl;
       } //closes lock guard for print loop  
     } //closes while(True)
   }, numtglobal )); //brace closes for numtglobal

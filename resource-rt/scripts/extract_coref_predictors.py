@@ -12,7 +12,7 @@ To run:
 
 Output format:
 Column 1: word_id, in sentenceid_wordid format
-Column 2: word string
+Column 2: word, as string
 Column 3: binary corefence indicator
 Column 4: distance in words to antecedent
 Column 5: distance in nouns,verbs to antecedent
@@ -205,6 +205,7 @@ class CorefPredictors:
             story_pos = self.get_story_pos(sentidx)
             storypos13bin, storypos23bin, storypos33bin, storypos12bin, storypos22bin  = self.get_story_pos_bins(story_pos)
             max_chain_size = self.get_max_chain_size(curr_id)
+            word = self.get_word(line)
 
             #check for anaphoricity
             match = re.search(r".*-[nm]([0-9]+) ", line)
@@ -215,7 +216,7 @@ class CorefPredictors:
                 ref_dist = self.get_dist("ref", curr_id, ante_id)
                 chain_size = self.get_chain_size(curr_id, ante_id)
                 #self.predictors.append([curr_id, str(binary_coref_indic), str(word_dist), str(ref_dist), str(chain_size), str(ispro)]) #list of lists
-                word = self.get_word(line)
+            
                 isanaphpro = "y" if self.is_pro(word) else "n" #don't need to check category because already restricted to anaphoric instances. i.e., already excludes relativizers, determiners, etc.
 
             else:
