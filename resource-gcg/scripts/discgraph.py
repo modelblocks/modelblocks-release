@@ -43,7 +43,7 @@ class DiscGraph:
     ## For each assoc...
     for assoc in sorted( line.split(' ') ):
       src,lbl,dst = assoc.split( ',', 2 )
-      D.Referents += [ src, dst ]
+      D.Referents += [ src ] if lbl=='0' else [ src, dst ]
       if lbl.isdigit():  D.PorQs  [src].insert( int(lbl), dst )   ## Add preds and quants.
       elif lbl == 's':   D.Scopes [src]      = dst                ## Add scopes.
       elif lbl == 't':   D.Traces [src]      = dst                ## Add traces.

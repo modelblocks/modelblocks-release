@@ -146,13 +146,26 @@ for line in sys.stdin:
   ok = True
   Complete = []
   while ok:
-    L =           [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
-    if L==[]: L = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
-    if L==[]: L = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
+    ## Try using increasingly coarse sets of top-level scopes, starting with top of annotated scopes (preferred)...
+    L = [ x  for x in sorted(sets.Set(D.Referents) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
+    if VERBOSE and L != []: print( 'Legators as roots of annotated scope: ' + str(L) )
+    ## Back off to explicitly annotated quantifiers (preferred)...
+    if L == []:
+      L = [ x  for x in sorted(sets.Set(D.Referents) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in D.Scopes ]) ]
+
+      if VERBOSE and L != []: print( 'Legators as explicit quantifiers: ' + str(L) )
+    ## Back off to any legator (dispreferred)...
+    if L == []:
+      L = [ x  for x in sorted(sets.Set(D.Referents) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for tup in D.PredTuples  for y in tup[1:] ]) and not any([ y in D.Chains.get(x,[])  for y in D.Scopes ]) ]
+      if VERBOSE and L != []: print( 'Legators as explicit quantifiers: ' + str(L) )
+      if L != []:
+        print(           '#WARNING: Insufficient explicitly annotated quantifiers, backing off to full set of legators: ' + str(L) )
+        sys.stderr.write( 'WARNING: Insufficient explicitly annotated quantifiers, backing off to full set of legators: ' + str(L) + '\n' )
+    ## Exit if no uncompleted legators...
     if L == []: break
 
     if VERBOSE: print( 'Trying to induce scopes below ' + L[0] + '...' )
-    RecencyConnected += D.Chains.get(L[0],[])
+    RecencyConnected += D.Chains.get(L[0],[])    ## Account target as connected (root).
     ok = D.tryScope( L[0], RecencyConnected, True )
     Complete.append( L[0] )
 
