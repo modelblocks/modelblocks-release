@@ -38,10 +38,12 @@ class DiscGraph:
     D.Nuscos = collections.defaultdict( list )                                     ## Key is restrictor.
     D.NuscoValues = { }
     D.Inheriteds = { }
-   
+    D.Referents = [ ]
+ 
     ## For each assoc...
     for assoc in sorted( line.split(' ') ):
       src,lbl,dst = assoc.split( ',', 2 )
+      D.Referents += [ src, dst ]
       if lbl.isdigit():  D.PorQs  [src].insert( int(lbl), dst )   ## Add preds and quants.
       elif lbl == 's':   D.Scopes [src]      = dst                ## Add scopes.
       elif lbl == 't':   D.Traces [src]      = dst                ## Add traces.
@@ -76,9 +78,9 @@ class DiscGraph:
           D.Subs[ xHi ].append( xLo )
     if VERBOSE: print( 'Subs = ' + str(D.Subs) )
 
-    ## List of referents that are or participate in elementary predications...
-    D.Referents = sorted( sets.Set( [ x for pred in D.PredTuples for x in pred[1:] ] + D.Inhs.keys() ) )
-
+#    ## List of referents that are or participate in elementary predications...
+#    D.Referents = sorted( sets.Set( [ x for pred in D.PredTuples for x in pred[1:] ] + D.Inhs.keys() ) )
+    D.Referents = sorted( sets.Set( D.Referents ) )
 
   def strGraph( D, HypScopes = None ):  # PredTuples, QuantTuples, Inhs, Scopes ):
     if HypScopes == None: HypScopes = D.Scopes

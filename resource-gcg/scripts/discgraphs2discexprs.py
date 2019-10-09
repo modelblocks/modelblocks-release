@@ -221,10 +221,28 @@ for line in sys.stdin:
       print( 'A = ' + str(sorted(Abstractions.items())) )
       print( 'E = ' + str(sorted(Expressions.items())) )
 
+    '''
     ## P rule...
     for ptup in list(D.PredTuples):
-      for x in ptup[1:]:
-        if x not in D.Scopes.values() and x not in D.Inhs:
+      for x in ptup[1:]:                                  ## extended here below
+        if x not in D.Scopes.values() and x not in D.Inhs: # and not any([ y in D.Scopes.values() for y in D.Chains.get(x,[]) ]):
+          if VERBOSE: print( 'applying P to make \\' + x + '. ' + lambdaFormat(ptup) )
+          Abstractions[ x ].append( ptup )
+          if ptup in D.PredTuples: D.PredTuples.remove( ptup )
+          active = True
+    '''
+    ## P1 rule...
+    for ptup in list(D.PredTuples):
+      x = ptup[1]  
+      if x not in D.Scopes.values() and x not in D.Inhs:
+        if VERBOSE: print( 'applying P to make \\' + x + '. ' + lambdaFormat(ptup) )
+        Abstractions[ x ].append( ptup )
+        if ptup in D.PredTuples: D.PredTuples.remove( ptup )
+        active = True
+    ## P2 rule...
+    for ptup in list(D.PredTuples):
+      for x in ptup[2:]:
+        if D.Scopes.get(x,'')==ptup[1] and x not in D.Scopes.values() and x not in D.Inhs:
           if VERBOSE: print( 'applying P to make \\' + x + '. ' + lambdaFormat(ptup) )
           Abstractions[ x ].append( ptup )
           if ptup in D.PredTuples: D.PredTuples.remove( ptup )
@@ -299,6 +317,7 @@ for line in sys.stdin:
   print( lambdaFormat(expr) )
 #  for expr in Translations:
   findUnboundVars( expr )
+  if VERBOSE: print( 'D.OrigConsts = ' + str(D.OrigConsts) )
   checkConstsUsed( expr, D.OrigConsts )
   for k in D.OrigConsts:
     print(           '#    DOWNSTREAM LAMBDA EXPRESSION WARNING: const does not appear in translations: ' + k )
