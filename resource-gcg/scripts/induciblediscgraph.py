@@ -305,6 +305,9 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       if ( D.reachesInChain( xOther2, D.ceiling(xGoal) ) or D.reachesInChain( xGoal, D.ceiling(xOther2) ) ) and not D.alreadyConnected( xOther2, xGoal, Connected ) and not D.alreadyConnected( xGoal, xOther2, Connected ):
         complain( 'argument ' + xOther2 + ' and goal ' + xGoal + ' of elementary predication ' + ptup[0] + ' ' + ptup[1] + ' outscoped in different branches or components -- possibly due to disconnected scope annotations' + ' -- unable to build complete expression!' )
         return [(None,None)]
+      if ( D.reachesInChain( xOther1, D.ceiling(xOther2) ) or D.reachesInChain( xOther1, D.ceiling(xOther2) ) ) and not D.alreadyConnected( xOther2, xOther1, Connected ) and not D.alreadyConnected( xOther1, xOther2, Connected ):
+        complain( 'arguments ' + xOther1 + ' and ' + xOther2 + ' of elementary predication ' + ptup[0] + ' ' + ptup[1] + ' outscoped in different branches or components -- possibly due to disconnected scope annotations' + ' -- unable to build complete expression!' )
+        return [(None,None)]
       ## Recommend scopes...
       ## Try short-circuit to refine inherited scope...
       for xLo,xMd,xHi in [ (xLowest,xOther2,xOther1), (xLowest,xOther1,xOther2) ]:     #if xLegMd != xMd
@@ -409,6 +412,9 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
           if VERBOSE: print( '  '*step + str(step) + '  multi-scoping ' + D.ceiling(xLo) + ' to ' + xHi )
           D.Scopes[ xLo ] = xHi
         if D.alreadyConnected( xLo, xHi, Connected ): continue
+        if D.reachesInChain( xHi, D.ceiling(xLo) ):
+          complain( 'combination of scopes involving ' + xLo + ' with ceiling ' + D.ceiling(xLo) + ' to ' + xHi + ' creates cycle -- unable to build complete expression' )
+          return False
         ## Report and construct scope association...
         if VERBOSE: print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
         D.Scopes[ D.ceiling(xLo) ] = xHi

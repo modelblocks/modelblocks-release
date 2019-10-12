@@ -57,6 +57,7 @@ for line in sys.stdin:
         else:                                       print( '\\node(x' + x + ') at (' + x[2:4] + '.' + hoff(x,ctr) + ',-' + x[0:2] + '.' + voff(x,ctr) + ') [reft]{' + x[4:] + '};' ) 
 
     if lbl == '0':
+      dst = dst.replace('%','\\%').replace('{','\\{').replace('}','\\}').replace('&','\\&').replace('$','\\$').replace('~','$\sim$')
       print( '\\node(k' + src[0:4] + ')[below of=x' + src + ',pred] {' + dst + '};' )
       print( '\\draw(x' + src + ') -- node[left]{0} (k' + src[0:4] + ');' )
     elif lbl == 's':
