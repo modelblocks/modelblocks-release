@@ -76,6 +76,7 @@ class DiscGraph:
       for l,xHi in lxHi.items():
         if l!='w' and l!='o':
           D.Subs[ xHi ].append( xLo )
+    D.normForm()  # only does smiting now.
     if VERBOSE: print( 'Subs = ' + str(D.Subs) )
 
 #    ## List of referents that are or participate in elementary predications...
@@ -208,6 +209,7 @@ class DiscGraph:
             print(           '#ERROR: quantifier should not be annotated on redundant predicative referent: ' + xLo )
 
 
+    '''
     ## Propagate scopes down inheritance chains...
     active = True
     while active:
@@ -218,6 +220,8 @@ class DiscGraph:
             if VERBOSE: print( 'Inheriting scope parent ' + D.Scopes[xHi] + ' from ' + xHi + ' to ' + xLo + '.' )
             D.Scopes[ xLo ] = D.Scopes[ xHi ]
             active = True
+    '''
+    '''
     ## Propagate quants down inheritance chains...
     active = True
     while active:
@@ -238,12 +242,12 @@ class DiscGraph:
       if s in D.Subs:
         if VERBOSE: print( 'Removing redundant abstract quant ' + q + ' from ' + s + ' because of inheritance at ' + D.Subs[s][0] )
         D.QuantTuples.remove( (q,e,r,s,n) )
-
     ## Report items...
     if VERBOSE: 
       print( 'P = ' + str(sorted(D.PredTuples)) )
       print( 'Q = ' + str(sorted(D.QuantTuples)) )
       print( 'S = ' + str(sorted(D.Scopes.items())) )
+    '''
 
 
   ## Scope ceiling...

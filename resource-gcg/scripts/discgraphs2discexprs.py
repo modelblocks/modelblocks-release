@@ -98,6 +98,16 @@ for line in sys.stdin:
   #### II. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
 
   D.normForm()
+  ## Copy quants down to final heirs -- NOTE: this is the same as using inheritance in Q rules...
+  for q,e,r,x,n in D.QuantTuples[:]:
+    for xFin in D.Heirs.get(x,[]):
+      if xFin not in D.Subs  and  xFin not in [s for _,_,_,s,_ in D.QuantTuples]:
+        D.QuantTuples.append( (q,e,r,xFin,n) )
+  ## Copy scopes down to final heirs -- NOTE: this is the same as using inheritance in S rules...
+  for x in D.Scopes.keys():
+    for xFin in D.Heirs.get(x,[]):
+      if xFin not in D.Subs  and  xFin not in D.Scopes:
+        D.Scopes[ xFin ] = D.Scopes[ x ]
 
   #### III. INDUCE UNANNOTATED SCOPES AND EXISTENTIAL QUANTS...
 
@@ -190,6 +200,20 @@ for line in sys.stdin:
 #    print(           '#WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences or unscoped argument of scoped predicate: ' + str(DisjointRefts) )
 #    sys.stderr.write( 'WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences or unscoped argument of scoped predicate: ' + str(DisjointRefts) + '\n' )
 
+  ## Copy lowest (if multiple) scopes down chain to final heirs -- NOTE: this is the same as using inheritance in S rules...
+  for x in D.Scopes.keys():
+    if not any([ y in D.Scopes  for y in D.Heirs.get(x,[])  if y != x ]):
+      for xFin in D.Heirs.get(x,[]):
+        if xFin not in D.Subs  and  xFin not in D.Scopes:
+          D.Scopes[ xFin ] = D.Scopes[ x ]
+          print( 'cucumber ' + xFin + ' ' + D.Scopes[xFin] )
+  ## Copy quants down to final heirs -- NOTE: this is the same as using inheritance in Q rules...
+  for q,e,r,x,n in D.QuantTuples[:]:
+    if not any([ y in D.Scopes  for y in D.Heirs.get(x,[])  if y != x ]):
+      for xFin in D.Heirs.get(x,[]):
+        if xFin not in D.Subs  and  xFin not in [s for _,_,_,s,_ in D.QuantTuples]:
+          D.QuantTuples.append( (q,e,r,xFin,n) )
+  if VERBOSE: print( 'GRAPH: ' + D.strGraph() )
 
   ## Induce low existential quants when only scope annotated...
 #  for xCh in sorted([x if x in NuscoValues else Nuscos[x] for x in Scopes.keys()] + [x for x in Scopes.values() if x in NuscoValues]):  #sorted([ s for s in NuscoValues if 'r' not in Inhs.get(Inhs.get(s,{}).get('r',''),{}) ]): #Scopes:
@@ -209,6 +233,11 @@ for line in sys.stdin:
   #### IV. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
 
   D.normForm()
+  ## Remove redundant non-terminal quants with no scope parent...
+  for q,e,r,s,n in D.QuantTuples[:]:
+    if s in D.Subs and s not in D.Scopes and any([ x in D.Heirs.get(s,[])  for _,_,_,x,_ in D.QuantTuples if x!=s ]):
+      D.QuantTuples.remove( (q,e,r,s,n) )
+      if VERBOSE: print( 'Removing non-terminal quantifier ' + q + ' ' + e + ' ' + r + ' ' + s + ' ' + n )
 
   #### V. TRANSLATE TO LAMBDA CALCULUS...
 
@@ -248,7 +277,7 @@ for line in sys.stdin:
     for ptup in list(D.PredTuples):
       x = ptup[1]  
       if x not in D.Scopes.values() and x not in D.Inhs:
-        if VERBOSE: print( 'applying P to make \\' + x + '. ' + lambdaFormat(ptup) )
+        if VERBOSE: print( 'applying P to move from P to A: \\' + x + '. ' + lambdaFormat(ptup) )
         Abstractions[ x ].append( ptup )
         if ptup in D.PredTuples: D.PredTuples.remove( ptup )
         active = True
@@ -256,7 +285,7 @@ for line in sys.stdin:
     for ptup in list(D.PredTuples):
       for x in ptup[2:]:
         if D.Scopes.get(x,'')==ptup[1] and x not in D.Scopes.values() and x not in D.Inhs:
-          if VERBOSE: print( 'applying P to make \\' + x + '. ' + lambdaFormat(ptup) )
+          if VERBOSE: print( 'applying P to move from P to A: \\' + x + '. ' + lambdaFormat(ptup) )
           Abstractions[ x ].append( ptup )
           if ptup in D.PredTuples: D.PredTuples.remove( ptup )
           active = True
@@ -264,14 +293,14 @@ for line in sys.stdin:
     ## C rule...
     for var,Structs in Abstractions.items():
       if len(Structs) > 1:
-        if VERBOSE: print( 'applying C to make \\' + var + '. ' + lambdaFormat( tuple( ['and'] + Structs ) ) )
+        if VERBOSE: print( 'applying C to add from A to A: \\' + var + '. ' + lambdaFormat( tuple( ['and'] + Structs ) ) )
         Abstractions[var] = [ tuple( ['and'] + Structs ) ]
         active = True
 
     ## M rule...
     for var,Structs in Abstractions.items():
       if len(Structs) == 1 and var not in D.Scopes.values() and var not in D.Inhs:
-        if VERBOSE: print( 'applying M to make \\' + var + '. ' + lambdaFormat(Structs[0]) )
+        if VERBOSE: print( 'applying M to move from A to E: \\' + var + '. ' + lambdaFormat(Structs[0]) )
         Expressions[var] = Structs[0]
         del Abstractions[var]
         active = True
@@ -279,7 +308,7 @@ for line in sys.stdin:
     ## Q rule...
     for q,e,r,s,n in list(D.QuantTuples):
       if r in Expressions and s in Expressions:
-        if VERBOSE: print( 'applying Q to make ' + lambdaFormat( ( q, n, ( 'lambda', r, Expressions[r] ), ( 'lambda', s, Expressions[s] ) ) ) )   ## (' + q + ' (\\' + r + '. ' + str(Expressions[r]) + ') (\\' + s + '. ' + str(Expressions[s]) + '))' )
+        if VERBOSE: print( 'applying Q to move from Q to T: ' + lambdaFormat( ( q, n, ( 'lambda', r, Expressions[r] ), ( 'lambda', s, Expressions[s] ) ) ) )   ## (' + q + ' (\\' + r + '. ' + str(Expressions[r]) + ') (\\' + s + '. ' + str(Expressions[s]) + '))' )
         Translations.append( ( q, n, ( 'lambda', r, Expressions[r] ), ( 'lambda', s, Expressions[s] ) ) )
         D.QuantTuples.remove( (q, e, r, s, n) )
         active = True
@@ -288,7 +317,7 @@ for line in sys.stdin:
     for src,lbldst in D.Inhs.items():
       for lbl,dst in lbldst.items():
         if dst not in D.Inhs and dst not in Abstractions and dst not in Expressions and dst not in D.Scopes.values() and dst not in [ x for ptup in D.PredTuples for x in ptup ]:
-          if VERBOSE: print( 'applying I1 to make \\' + dst + ' True' )
+          if VERBOSE: print( 'applying I1 to add to A: \\' + dst + ' True' )
           Abstractions[ dst ].append( () )
           active = True
 
@@ -298,16 +327,16 @@ for line in sys.stdin:
         if dst in Expressions:
           if src in D.Scopes and dst in D.Traces and D.Scopes[src] in D.Scopes and D.Traces[dst] in D.Traces:
             Abstractions[ src ].append( replaceVarName( replaceVarName( replaceVarName( Expressions[dst], dst, src ), D.Traces[dst], D.Scopes[src] ), D.Traces[D.Traces[dst]], D.Scopes[D.Scopes[src]] ) )    ## I4 rule.
-            if VERBOSE: print( 'applying I4 to replace ' + dst + ' with ' + src + ' and ' + D.Traces[dst] + ' with ' + D.Scopes[src] + ' and ' + D.Traces[D.Traces[dst]] + ' with ' + D.Scopes[D.Scopes[src]] + ' to make \\' + src + ' ' + lambdaFormat(Abstractions[src][-1]) )
+            if VERBOSE: print( 'applying I4 to add from A to A replacing ' + dst + ' with ' + src + ' and ' + D.Traces[dst] + ' with ' + D.Scopes[src] + ' and ' + D.Traces[D.Traces[dst]] + ' with ' + D.Scopes[D.Scopes[src]] + ' to make \\' + src + ' ' + lambdaFormat(Abstractions[src][-1]) )
 #            del Traces[dst]
           elif src in D.Scopes and dst in D.Traces:
             Abstractions[ src ].append( replaceVarName( replaceVarName( Expressions[dst], dst, src ), D.Traces[dst], D.Scopes[src] ) )    ## I4 rule.
-            if VERBOSE: print( 'applying I4 to replace ' + dst + ' with ' + src + ' and ' + D.Traces[dst] + ' with ' + D.Scopes[src] + ' to make \\' + src + ' ' + lambdaFormat(Abstractions[src][-1]) )
+            if VERBOSE: print( 'applying I4 to add from A to A replacing ' + dst + ' with ' + src + ' and ' + D.Traces[dst] + ' with ' + D.Scopes[src] + ' to make \\' + src + ' ' + lambdaFormat(Abstractions[src][-1]) )
 #            del Traces[dst]
           else:
-            if VERBOSE: print( 'applying I2/I3 to replace ' + dst + ' with ' + src + ' to make \\' + src + ' ' + lambdaFormat(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
+            if VERBOSE: print( 'applying I2/I3 to add from A to A replacing ' + dst + ' with ' + src + ' to make \\' + src + ' ' + lambdaFormat(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
             Abstractions[ src ].append( replaceVarName( Expressions[dst], dst, src ) )
-            if dst in D.Scopes and src in [s for q,e,r,s,n in D.QuantTuples] + [r for q,e,r,s,n in D.QuantTuples]:  D.Scopes[src if src in D.NuscoValues else D.Nuscos[src][0]] = D.Scopes[dst]     ## I3 rule.
+            if dst in D.Scopes and src not in D.Scopes and D.Nuscos.get(src,[''])[0] not in D.Scopes and src in [s for q,e,r,s,n in D.QuantTuples] + [r for q,e,r,s,n in D.QuantTuples]:  D.Scopes[src if src in D.NuscoValues else D.Nuscos[src][0]] = D.Scopes[dst]     ## I3 rule.
           del D.Inhs[src][lbl]
           if len(D.Inhs[src])==0: del D.Inhs[src]
           active = True
@@ -319,7 +348,7 @@ for line in sys.stdin:
     ## S1 rule...
     for q,n,R,S in list(Translations):
       if S[1] in D.Scopes:
-        if VERBOSE: print( 'applying S1 to make (\\' + D.Scopes[ S[1] ] + ' ' + q + ' ' + str(R) + ' ' + str(S) + ')' )
+        if VERBOSE: print( 'applying S1 to move from T to A: (\\' + D.Scopes[ S[1] ] + ' ' + q + ' ' + str(R) + ' ' + str(S) + ')' )
         Abstractions[ D.Scopes[ S[1] ] ].append( (q, n, R, S) )
         del D.Scopes[ S[1] ]
 #        if R[1] in Scopes: del Scopes[ R[1] ]   ## Should use 't' trace assoc.

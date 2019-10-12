@@ -380,6 +380,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         if (x,    'S') in G: G.rename( x+'s', G[x,    'S'] )
         if (x+'s','r') in G: G.rename( x+'r', G[x+'s','r'] )
         ## apply -n, -m, and -s tags...
+        if len( re.findall( '-n',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -n tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-s',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -s tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         for dep in re.findall( '-[mntsw][0-9]+', G[x,'0'] ):
           dest = dep[2:] if len(dep)>4 else sentnumprefix+dep[2:]
           if dep[1]=='m': G.equate( dest+'r', 'n', x+'r' )
@@ -462,8 +466,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
               G.equate( xrhs, lhs[-1]+'\'' if lhs[-1].isdigit() and xlhs[-1] in 'sS\'' else lhs[-1], xlhs )
             if VERBOSE: G.dump()
         if VERBOSE:
-          G.dump( )
           print( x, l, G[x,l] )
+          G.dump( )
         '''
 #        while( '-x' in s ):
 #          s1           = re.sub( '^.((?:(?!-x).)*)-x.%:(\\S*)%(\\S*)\|(\\S*)%(\\S*):([^% ]*)%([^-: ]*)([^: ]*):\\2(\\S*)\\3', '\\4\\1\\5\\8:\\6\\9\\7', s )
