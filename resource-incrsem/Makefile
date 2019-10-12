@@ -191,7 +191,7 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 			$$(basename %).lemmacounts  \
 			#$$(basename %).nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
 	#cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
-	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/wsj_emat_omodel_40mat.txt  >  $@
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/wsj_cue2vec_vectorrel_bceloss_40dim_500epochs_nodes_emat_omodel.txt  >  $@
 
 .PRECIOUS: %sm_corefsemprocdecpars
 %sm_corefsemprocdecpars:     $$(basename %).linetrees  \

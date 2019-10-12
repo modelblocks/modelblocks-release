@@ -227,8 +227,8 @@ class FModel {
 
     // Matrix dimensions could be different; how to accommodate for this?
 //    7+2*sem+syn
+//    DelimitedMat<psX, double, psComma, 57, 57, psX> fwf;  // weights for F model
     DelimitedMat<psX, double, psComma, 97, 97, psX> fwf;  // weights for F model
-//    DelimitedMat<psX, double, psComma, 107, 107, psX> fwf;  // weights for F model
     DelimitedVector<psX, double, psComma, psX> fws;
 
   public:
@@ -278,8 +278,8 @@ class FModel {
     arma::vec calcResponses( FPredictorVec& lfpredictors ) const {
 // return distribution over FEK indices
 // vectorize predictors: one-hot for depth, two hvecs, one cat-embed
+//      arma::vec flogresponses = arma::zeros( 57 );
       arma::vec flogresponses = arma::zeros( 97 );
-//      arma::vec flogresponses = arma::zeros( 107 );
       CVar catB = lfpredictors.getCatBase();
       const HVec& hvB = lfpredictors.getHvB();
       const HVec& hvF = lfpredictors.getHvF();
@@ -301,8 +301,8 @@ class FModel {
 
 // implementation of MLP
       mat fwsm(fws);
+//      fwsm.reshape(fws.size()/57, 57);
       fwsm.reshape(fws.size()/97, 97);
-//      fwsm.reshape(fws.size()/107, 107);
       arma::vec flogscores = fwsm * relu(Mat<double>(fwf)*flogresponses);
       arma::vec fscores = arma::exp(flogscores);
       double fnorm = arma::accu(fscores);
@@ -393,8 +393,8 @@ class JModel {
 
     // Matrix dimensions could be different; how to accommodate for this?
 //    7+3*sem+2*syn
+//    DelimitedMat<psX, double, psComma, 87, 87, psX> jwf;  // weights for J model
     DelimitedMat<psX, double, psComma, 147, 147, psX> jwf;  // weights for J model
-//    DelimitedMat<psX, double, psComma, 187, 187, psX> jwf;  // weights for J model
     DelimitedVector<psX, double, psComma, psX> jws;
 
   public:
@@ -453,8 +453,8 @@ class JModel {
     arma::vec calcResponses( JPredictorVec& ljpredictors ) const {
 // return distribution over JEOO indices
 // vectorize predictors: one-hot for depth, three hvecs, two cat-embeds
+//      arma::vec jlogresponses = arma::zeros( 87 );
       arma::vec jlogresponses = arma::zeros( 147 );
-//      arma::vec jlogresponses = arma::zeros( 187 );
       CVar catA = ljpredictors.getCatAncstr();
       const HVec& hvA = ljpredictors.getHvAncstr();
       const HVec& hvF = ljpredictors.getHvFiller();
@@ -485,8 +485,8 @@ class JModel {
 
 // implementation of MLP
       mat jwsm(jws);
+//      jwsm.reshape(jws.size()/87, 87);
       jwsm.reshape(jws.size()/147, 147);
-//      jwsm.reshape(jws.size()/187, 187);
       arma::vec jlogscores = jwsm * relu(Mat<double>(jwf)*jlogresponses);
       arma::vec jscores = arma::exp(jlogscores);
       double jnorm = arma::accu(jscores);
