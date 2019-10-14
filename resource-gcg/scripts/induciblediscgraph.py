@@ -314,7 +314,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
         if any([ D.Scopes.get(xLegMd,'') == xLegHi  for xLegMd in D.Heirs.get(xMd,[])  for xLegHi in D.Heirs.get(xHi,[]) ]):
           for x in D.Nuscos.get(xMd,[]) + ( [ xMd ] if not xMd in D.Nuscos else [] ):
             if x in D.Subs:  # if not redundant nusco.
-              print( ' ' + '  '*step + str(step) + ': case 2a -- short-circuit to refine scope ' + x + ' to '  + xHi )
+              if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 2a -- short-circuit to refine scope ' + x + ' to '  + xHi )
               D.Scopes[ x ] = xHi  #return [ (xMd,xHi) ]  # D.Scopes[ xMd ] = xHi
       ## Try low, goal, mid, hi...
       if D.reachesInChain( xGoal, xOther1 ) and D.reachesInChain( xGoal, xOther2 ):

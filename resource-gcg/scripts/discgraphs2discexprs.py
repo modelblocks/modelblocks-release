@@ -21,6 +21,7 @@ import sys
 import os
 import collections
 import sets
+import copy
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import discgraph
 import induciblediscgraph
@@ -206,7 +207,6 @@ for line in sys.stdin:
       for xFin in D.Heirs.get(x,[]):
         if xFin not in D.Subs  and  xFin not in D.Scopes:
           D.Scopes[ xFin ] = D.Scopes[ x ]
-          print( 'cucumber ' + xFin + ' ' + D.Scopes[xFin] )
   ## Copy quants down to final heirs -- NOTE: this is the same as using inheritance in Q rules...
   for q,e,r,x,n in D.QuantTuples[:]:
     if not any([ y in D.Scopes  for y in D.Heirs.get(x,[])  if y != x ]):
@@ -349,7 +349,11 @@ for line in sys.stdin:
     for q,n,R,S in list(Translations):
       if S[1] in D.Scopes:
         if VERBOSE: print( 'applying S1 to move from T to A: (\\' + D.Scopes[ S[1] ] + ' ' + q + ' ' + str(R) + ' ' + str(S) + ')' )
-        Abstractions[ D.Scopes[ S[1] ] ].append( (q, n, R, S) )
+        Expr = copy.deepcopy( (q,n,R,S) )
+        for x in D.Heirs.get( D.Scopes[ S[1] ], [] ):
+          if x != D.Scopes[ S[1] ]:
+            Expr = replaceVarName( Expr, x, D.Scopes[ S[1] ] )
+        Abstractions[ D.Scopes[ S[1] ] ].append( Expr )
         del D.Scopes[ S[1] ]
 #        if R[1] in Scopes: del Scopes[ R[1] ]   ## Should use 't' trace assoc.
         Translations.remove( (q, n, R, S) )
