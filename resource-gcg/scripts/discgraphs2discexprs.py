@@ -350,7 +350,7 @@ for line in sys.stdin:
       if S[1] in D.Scopes:
         if VERBOSE: print( 'applying S1 to move from T to A: (\\' + D.Scopes[ S[1] ] + ' ' + q + ' ' + str(R) + ' ' + str(S) + ')' )
         Expr = copy.deepcopy( (q,n,R,S) )
-        for x in D.Heirs.get( D.Scopes[ S[1] ], [] ):
+        for x in D.Chains.get( D.Scopes[ S[1] ], [] ):
           if x != D.Scopes[ S[1] ]:
             Expr = replaceVarName( Expr, x, D.Scopes[ S[1] ] )
         Abstractions[ D.Scopes[ S[1] ] ].append( Expr )
