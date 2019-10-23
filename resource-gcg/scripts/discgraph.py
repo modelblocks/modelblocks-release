@@ -124,6 +124,10 @@ class DiscGraph:
     return out if len(out)>0 else sets.Set( [x] )
 
 
+  def getCeil( D, xHi ):
+    return D.getCeil( D.Scopes[xHi] ) if xHi in D.Scopes else sets.Set([ y  for xLo in D.Subs.get(xHi,[])  for y in D.getCeil(xLo) ]) if len(D.Subs.get(xHi,[]))>0 else [ xHi ]
+
+
   def check( D ):
     ## Check for inheritance cycles...
     def checkInhCycles( xLo, L=[] ):
@@ -147,7 +151,8 @@ class DiscGraph:
         sys.stderr.write( 'ERROR: scope cycle: ' + str(L+[xHi]) + '\n' )
         print(           '#ERROR: scope cycle: ' + str(L+[xHi]) )
         return True
-      return ( checkScopeCyclesInChain(D.Scopes[xHi],L+[xHi]) if xHi in D.Scopes else False ) or any([ checkScopeCyclesFromSub(xLo,L+[xHi]) for xLo in D.Subs.get(xHi,[]) ])
+#      return ( checkScopeCyclesInChain(D.Scopes[xHi],L+[xHi]) if xHi in D.Scopes else False ) or any([ checkScopeCyclesFromSub(xLo,L+[xHi]) for xLo in D.Subs.get(xHi,[]) ])
+      return ( checkScopeCyclesFromSub(D.Scopes[xHi],L+[xHi]) if xHi in D.Scopes else False ) or any([ checkScopeCyclesFromSub(xLo,L+[xHi]) for xLo in D.Subs.get(xHi,[]) ])
     def checkScopeCyclesInChain( x, L=[] ):
 #      print( 'checking ch ' + x + ' with L=' + ' '.join(L) )
       return checkScopeCyclesFromSup( x, L ) or checkScopeCyclesFromSub( x, L )
@@ -156,7 +161,8 @@ class DiscGraph:
       if checkInhCycles( x ): return False
     ## Check for scopecycles...
     for x in D.Scopes.values(): #D.Referents:
-      if checkScopeCyclesInChain( x ): return False
+#      if checkScopeCyclesInChain( x ): return False
+      if checkScopeCyclesFromSub( x ): return False
     return True
 
 
