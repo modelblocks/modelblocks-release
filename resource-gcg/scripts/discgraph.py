@@ -155,7 +155,7 @@ class DiscGraph:
     for x in D.Referents:
       if checkInhCycles( x ): return False
     ## Check for scopecycles...
-    for x in D.Referents:
+    for x in D.Scopes.values(): #D.Referents:
       if checkScopeCyclesInChain( x ): return False
     return True
 
