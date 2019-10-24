@@ -170,6 +170,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 
   ## Reach by traversing backward to heirs, then forward along scopes...
   def reaches( D, xLo, xHi ):
+#    print( 'reaches ' + xLo + ' ' + xHi )
     return True if xLo in D.Legators.get(xHi,[]) else D.reaches( D.Scopes[xLo], xHi ) if xLo in D.Scopes else any( [ D.reaches(xSub,xHi) for xSub in D.Subs.get(xLo,[]) ] )
 
   '''
@@ -382,14 +383,16 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 #    if [] != [ xSub  for xSub in D.Subs.get( xTarg, [] ) ]:
 #      return [ sco   for xSub in D.Subs.get( xTarg, [] )  for sco in D.constrainDeepestReft( xSub, step+1, Connected, isFull ) ]
     for xSub in D.Subs.get( xTarg, [] ):
-      if xOrigin == None or xOrigin in D.Chains.get(xSub,[xSub]) or D.Inhs.get(xOrigin,{}).get('r','') in D.Chains.get(xSub,[xSub]):
+#      if xOrigin == None or xOrigin in D.Chains.get(xSub,[xSub]) or D.Inhs.get(xOrigin,{}).get('r','') in D.Chains.get(xSub,[xSub]):
+      if xOrigin == None or xOrigin in D.Chains.get(xSub,[xSub]):
         l = D.constrainDeepestReft( xSub, step+1, Connected, isFull, xOrigin )
         if l != []: return l
     ## First, recurse down scope tree...
 #    for x in D.Chains.get( D.Inhs.get(xTarg,{}).get('r',xTarg), D.Chains[xTarg] ):
     for xLo,xHi in D.Scopes.items():
       if xHi == xTarg:
-        for xLeg in D.TopLegators.get( xLo, sets.Set([xLo]) ) | D.TopLegators.get( D.Inhs.get(xLo,{}).get('r',''), sets.Set([]) ) if isFull else D.TopUnaryLegators.get( xLo, [xLo] ):
+#        for xLeg in D.TopLegators.get( xLo, sets.Set([xLo]) ) | D.TopLegators.get( D.Inhs.get(xLo,{}).get('r',''), sets.Set([]) ) if isFull else D.TopUnaryLegators.get( xLo, [xLo] ):
+        for xLeg in D.TopLegators.get( xLo, sets.Set([xLo]) ):
           l = D.constrainDeepestReft( xLeg, step+1, Connected, isFull, xLo ) #D.Inhs.get(xLo,{}).get('r',xLo) )
           if l != []: return l
     ## Second, try all preds...

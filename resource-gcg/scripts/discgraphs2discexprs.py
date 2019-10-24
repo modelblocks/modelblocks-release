@@ -109,6 +109,8 @@ for line in sys.stdin:
     for xFin in D.Heirs.get(x,[]):
       if xFin not in D.Subs  and  xFin not in D.Scopes:
         D.Scopes[ xFin ] = D.Scopes[ x ]
+  ## Skip sentence if cycle...
+  if not D.check(): continue
 
   #### III. INDUCE UNANNOTATED SCOPES AND EXISTENTIAL QUANTS...
 
@@ -143,6 +145,10 @@ for line in sys.stdin:
 #      L = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
       print(           '#WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents' )
       sys.stderr.write( 'WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents\n' )
+
+
+  if VERBOSE: print( 'GRAPH: ' + D.strGraph() )
+
 
   ## List of original (dominant) refts...
 #  RecencyConnected = sorted( [ ((0 if x not in D.Subs else -1) + (0 if x in ScopeLeaves else -2),x)  for x in D.Referents  if D.ceiling(x) in D.Chains.get(L[0],[]) ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
