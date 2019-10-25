@@ -207,34 +207,23 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       return ( ( not D.alreadyConnected( xHi, xMd, Connected ) or D.alreadyConnected( xMd, xHi, Connected ) ) and
                ( not D.alreadyConnected( xLo, xHi, Connected ) or D.alreadyConnected( xMd, xHi, Connected ) ) )
 
-    ## If zero-ary (non-predicate)...
-    if xTarget not in D.PredToTuple:
-      if xGoal == '' or D.reaches( xTarget, xGoal ): return []
-      else:
-        if D.alreadyConnected( xTarget, '', Connected ):
-          complain( 'target ' + xTarget + ' and goal ' + xGoal + ' outscoped in different branches or components -- possibly due to disconnected scope annotations -- unable to build complete expression!' )
-          return [(None,None)]      
-        else:
-          if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 0 -- non-predicate ' + xTarget + ' under goal ' + xGoal )
-          return [ (xTarget,xGoal) ]
-#      else: complain( xTarget + ' is not already connected to goal and is not predicate, so cannot be outscoped by ' + xGoal )
-
-    ptup = D.PredToTuple[ xTarget ]
+    ptup = D.PredToTuple.get( xTarget, () ) #[ xTarget ]
 
 #    ## Sanity check...
 #    if ptup[1] != xTarget:
 #      complain( 'too weird -- elem pred ' + xTarget + ' not equal to ptup[1]: ' + ptup[1] )
-    xLowest = ptup[1]
-    if len(ptup) > 2: xOther1 = ptup[2]
-    if len(ptup) > 3: xOther2 = ptup[3]
-    if len(ptup) > 2 and D.Scopes.get(ptup[2],'') == ptup[1]: xLowest,xOther1 = ptup[2],ptup[1]
-    if len(ptup) > 3 and D.Scopes.get(ptup[2],'') == ptup[1]: xLowest,xOther1,xOther2 = ptup[2],ptup[1],ptup[3]
-    if len(ptup) > 3 and D.Scopes.get(ptup[3],'') == ptup[1]: xLowest,xOther1,xOther2 = ptup[3],ptup[1],ptup[2]
-    ## Report any cycles from participant to elementary predicate...
-    for x in ptup[2:]:
-      if D.reaches( x, xLowest ) and not x.endswith('\''):
-        complain( 'elementary predication ' + ptup[0] + ' ' + xLowest + ' should not outscope argument ' + x + ' -- unable to build complete expression!' ) 
-        return [(None,None)]
+    if len(ptup) > 0:
+      xLowest = ptup[1]
+      if len(ptup) > 2: xOther1 = ptup[2]
+      if len(ptup) > 3: xOther2 = ptup[3]
+      if len(ptup) > 2 and D.Scopes.get(ptup[2],'') == ptup[1]: xLowest,xOther1 = ptup[2],ptup[1]
+      if len(ptup) > 3 and D.Scopes.get(ptup[2],'') == ptup[1]: xLowest,xOther1,xOther2 = ptup[2],ptup[1],ptup[3]
+      if len(ptup) > 3 and D.Scopes.get(ptup[3],'') == ptup[1]: xLowest,xOther1,xOther2 = ptup[3],ptup[1],ptup[2]
+      ## Report any cycles from participant to elementary predicate...
+      for x in ptup[2:]:
+        if D.reaches( x, xLowest ) and not x.endswith('\''):
+          complain( 'elementary predication ' + ptup[0] + ' ' + xLowest + ' should not outscope argument ' + x + ' -- unable to build complete expression!' ) 
+          return [(None,None)]
 #    if len(ptup) > 2 and D.alreadyConnected( xLowest, '', Connected ) and D.alreadyConnected( xOther1, '', Connected ):
 #      complain( 'elementary predication ' + ptup[0] + ' ' + ptup[1] + ' has (top-level) scope annotation but argument ' + xOther1 + ' does not -- unable to build complete expression!' )
 #      return [(None,None)]
@@ -256,6 +245,18 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
     if L != []: return L
 #    if [] != [ xSub  for xSub in D.Subs.get(xTarget,[])  if D.Inhs.get(xSub,{}).get('r','') != xTarget ]:
 #      return [ sco  for xSub in D.Subs.get( xTarget, [] )  if D.Inhs.get(xSub,{}).get('r','') != xTarget  for sco in D.scopesToConnect( xSub, xGoal, step+1 ) ]
+
+    ## If zero-ary (non-predicate)...
+    if xTarget not in D.PredToTuple:
+      if xGoal == '' or D.reaches( xTarget, xGoal ): return []
+      else:
+        if D.alreadyConnected( xTarget, '', Connected ):
+          complain( 'target ' + xTarget + ' and goal ' + xGoal + ' outscoped in different branches or components -- possibly due to disconnected scope annotations -- unable to build complete expression!' )
+          return [(None,None)]      
+        else:
+          if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 0 -- non-predicate ' + xTarget + ' under goal ' + xGoal )
+          return [ (xTarget,xGoal) ]
+#      else: complain( xTarget + ' is not already connected to goal and is not predicate, so cannot be outscoped by ' + xGoal )
 
     ## If unary predicate...
 #    if len( ptup ) == 3:
@@ -428,10 +429,12 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
           continue
         if D.reaches( xHi, D.ceiling(xLo) ):
           complain( 'combination of scopes involving ' + xLo + ' with ceiling ' + D.ceiling(xLo) + ' to ' + xHi + ' creates cycle -- unable to build complete expression' )
+          if VERBOSE: print( '  '*step + 'GRAPH: ' + D.strGraph() )
           return False
         ## Report and construct scope association...
-        if VERBOSE: print( '  '*step + str(step) + '  scoping ' + D.ceiling(xLo) + ' to ' + xHi )
+        if VERBOSE: print( '  '*step + str(step) + '  intended scoping ' + xLo + ' w ceiling ' + D.ceiling(xLo) + ' to ' + xHi )
         for x in D.getCeil(xLo):
+          if VERBOSE: print( '  '*step + str(step) + '  actual scoping ' + x + ' to ' + xHi )
           D.Scopes[ x ] = xHi
 #        D.Scopes[ D.ceiling(xLo) ] = xHi
         ## Update recently connected...
