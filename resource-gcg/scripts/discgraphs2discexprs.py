@@ -194,8 +194,8 @@ for line in sys.stdin:
 
   for xTarget in sets.Set( D.Scopes.values() ):
     if not any([ x in D.Scopes  for x in D.Chains.get(xTarget,[]) ]) and not any([ s in D.Chains.get(xTarget,[])  for q,e,r,s,n in D.QuantTuples ]):
-      print(           '#ERROR: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!' )
-      sys.stderr.write( 'ERROR: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!\n' )
+      print(           '#WARNING: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!' )
+      sys.stderr.write( 'WARNING: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!\n' )
 
 #  DisjointPreds = sets.Set([ ( D.ceiling(xt[1]), D.ceiling(yt[1]) )  for xt in D.PredTuples  for yt in D.PredTuples  if xt[1] < yt[1] and not D.reachesInChain( xt[1], D.ceiling(yt[1]) ) ])
 #  if len(DisjointPreds) > 0:

@@ -194,15 +194,15 @@ class DiscGraph:
           D.Subs[xHi].remove(xLo)
           if len(D.Subs[xHi])==0: del D.Subs[xHi]
           if xLo in D.Scopes:
-            sys.stderr.write( 'ERROR: scope should not be annotated on redundant predicative referent: ' + xLo + '\n' )
-            print(           '#ERROR: scope should not be annotated on redundant predicative referent: ' + xLo )
+            sys.stderr.write( 'WARNING: scope should not be annotated on redundant predicative referent: ' + xLo + '\n' )
+            print(           '#WARNING: scope should not be annotated on redundant predicative referent: ' + xLo )
           if xLo in D.Scopes.values():
-            sys.stderr.write( 'ERROR: scope should not be annotated to redundant predicative referent: ' + xLo + '\n' )
-            print(           '#ERROR: scope should not be annotated to redundant predicative referent: ' + xLo )
+            sys.stderr.write( 'WARNING: scope should not be annotated to redundant predicative referent: ' + xLo + '\n' )
+            print(           '#WARNING: scope should not be annotated to redundant predicative referent: ' + xLo )
           BadSubs = [ x  for x in D.Subs.get(xLo,[])  for l,y in D.Inhs.get(x,{}).items()  if y == xLo and l != 'c' ]
           if BadSubs != []:
-            sys.stderr.write( 'ERROR: inheritance should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo + '\n' )
-            print(           '#ERROR: inheritance should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo )
+            sys.stderr.write( 'WARNING: inheritance should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo + '\n' )
+            print(           '#WARNING: inheritance should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo )
             '''
             ## Modify bad subs to point to ...
             for x in BadSubs:
@@ -214,8 +214,8 @@ class DiscGraph:
                   if VERBOSE: print( '#NOTE: moving ' + l + ' inheritance of ' + x + ' from ' + xLo + ' to ' + D.Inhs[x][l] )
             '''
           if xLo in [ s  for q,e,r,s,n in D.QuantTuples ]:
-            sys.stderr.write( 'ERROR: quantifier should not be annotated on redundant predicative referent: ' + xLo + '\n' )
-            print(           '#ERROR: quantifier should not be annotated on redundant predicative referent: ' + xLo )
+            sys.stderr.write( 'WARNING: quantifier should not be annotated on redundant predicative referent: ' + xLo + '\n' )
+            print(           '#WARNING: quantifier should not be annotated on redundant predicative referent: ' + xLo )
 
 
     '''
