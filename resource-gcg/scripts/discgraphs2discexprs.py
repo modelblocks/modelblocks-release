@@ -137,6 +137,9 @@ for line in sys.stdin:
   if len(L1) > 1:
     print(           '#WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences' )
     sys.stderr.write( 'WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences\n' ) 
+    for xHi in L1:
+      print(           '#    ' + xHi + ' subsumes ' + ' '.join(sorted(sets.Set([ xLo  for xLo in D.Referents  if D.reaches(xLo,xHi) ]))) )
+      sys.stderr.write( '    ' + xHi + ' subsumes ' + ' '.join(sorted(sets.Set([ xLo  for xLo in D.Referents  if D.reaches(xLo,xHi) ]))) + '\n' )
   elif L1 == []:
     L2 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
     print(           '#NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + ' '.join(L2) )
