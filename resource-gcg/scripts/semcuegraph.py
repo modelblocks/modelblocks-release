@@ -440,7 +440,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 #          G.dump()
           if VERBOSE: print( 'Inducing default equation: ' + eqns )
 
-        if '-x' in G[x,'0'] and '=' not in eqns:
+        if '-x' in G[x,'0'] and eqns != '' and '=' not in eqns:
           sys.stderr.write( 'WARNING: rewrite rules in: ' + G[x,'0'] + ' specify no graph equations: "' + eqns + '" -- will have no effect!\n' )
 
         ## if lexical rules produce equations, build appropriate graph...
