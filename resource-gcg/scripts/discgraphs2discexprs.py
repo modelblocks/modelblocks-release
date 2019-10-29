@@ -186,7 +186,7 @@ for line in sys.stdin:
 
     if VERBOSE: print( 'Trying to induce scopes below ' + L[0] + '...' )
     RecencyConnected += D.Chains.get(L[0],[])    ## Account target as connected (root).
-    ok = D.tryScope( L[0], RecencyConnected, True )
+    ok = D.tryScope( L[0], RecencyConnected )
     Complete.append( L[0] )
 
   if not ok: continue

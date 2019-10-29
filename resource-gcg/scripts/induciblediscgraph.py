@@ -379,7 +379,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       return [(None,None)]
 
 
-  def constrainDeepestReft( D, xTarg, step, Connected, isFull=False, xOrigin=None ):
+  def constrainDeepestReft( D, xTarg, step, Connected, xOrigin=None ):
     if VERBOSE: print( '  '*step + str(step) + ': recursing to ' + xTarg + '...' )
     ## If any non-'r' heirs, return results for heirs (elementary predicates are always final heirs)...
 #    if [] != [ xSub  for xSub in D.Subs.get( xTarg, [] ) ]:
@@ -387,7 +387,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
     for xSub in D.Subs.get( xTarg, [] ):
 #      if xOrigin == None or xOrigin in D.Chains.get(xSub,[xSub]) or D.Inhs.get(xOrigin,{}).get('r','') in D.Chains.get(xSub,[xSub]):
       if xOrigin == None or xOrigin in D.Chains.get(xSub,[xSub]):
-        l = D.constrainDeepestReft( xSub, step+1, Connected, isFull, xOrigin )
+        l = D.constrainDeepestReft( xSub, step+1, Connected, xOrigin )
         if l != []: return l
     ## First, recurse down scope tree...
 #    for x in D.Chains.get( D.Inhs.get(xTarg,{}).get('r',xTarg), D.Chains[xTarg] ):
@@ -395,7 +395,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       if xHi == xTarg:
 #        for xLeg in D.TopLegators.get( xLo, sets.Set([xLo]) ) | D.TopLegators.get( D.Inhs.get(xLo,{}).get('r',''), sets.Set([]) ) if isFull else D.TopUnaryLegators.get( xLo, [xLo] ):
         for xLeg in D.TopLegators.get( xLo, sets.Set([xLo]) ):
-          l = D.constrainDeepestReft( xLeg, step+1, Connected, isFull, xLo ) #D.Inhs.get(xLo,{}).get('r',xLo) )
+          l = D.constrainDeepestReft( xLeg, step+1, Connected, xLo ) #D.Inhs.get(xLo,{}).get('r',xLo) )
           if l != []: return l
     ## Second, try all preds...
 #    for x in D.Chains[ xTarg ]:
@@ -407,14 +407,14 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 
 
   ## Method to fill in deterministic or truth-functionally indistinguishable scope associations (e.g. for elementary predications) that are not explicitly annotated...
-  def tryScope( D, xTarget, Connected, isFull, step=1 ):
+  def tryScope( D, xTarget, Connected, step=1 ):
     if VERBOSE: print( 'Connected = ' + str(sorted(Connected)) )
     active = True
     while active:
       active = False
       if VERBOSE: print( '  '*step + 'GRAPH: ' + D.strGraph() )
       ## Calculate recommended scopings...
-      l = D.constrainDeepestReft( xTarget, step+1, Connected, isFull )
+      l = D.constrainDeepestReft( xTarget, step+1, Connected )
       if VERBOSE: print( '  '*step + str(step) + '  l=' + str(l) )
       ## Add recommended scopings...
       for xLo,xHi in sets.Set(l):
