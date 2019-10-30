@@ -381,6 +381,26 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 
   def constrainDeepestReft( D, xTarg, step, Connected, xOrigin=None ):
     if VERBOSE: print( '  '*step + str(step) + ': recursing to ' + xTarg + '...' )
+    ## First, recurse down scopes...
+    for xLo,xHi in D.Scopes.items():
+      if xHi == xTarg:
+        l = D.constrainDeepestReft( xLo, step+1, Connected, xLo )
+        if l != []: return l
+    ## Second, try all preds...
+    for ptup,_ in D.BareRefToPredTuples.get( xTarg, [] ):   #D.FullRefToPredTuples.get( xTarg, [] ) if isFull else D.WeakRefToPredTuples.get( xTarg, [] ):
+      if ptup[1] not in Connected:
+        l = D.scopesToConnect( ptup[1], '', step+1, Connected, xOrigin )
+        if l != []: return l
+    ## Third, recurse up inheritances...
+    for lbl,xLeg in D.Inhs.get(xTarg,{}).items():
+      if lbl != 't':
+        l = D.constrainDeepestReft( xLeg, step+1, Connected, xOrigin )
+        if l != []: return l
+    return []
+
+  '''
+  def constrainDeepestReft( D, xTarg, step, Connected, xOrigin=None ):
+    if VERBOSE: print( '  '*step + str(step) + ': recursing to ' + xTarg + '...' )
     ## If any non-'r' heirs, return results for heirs (elementary predicates are always final heirs)...
 #    if [] != [ xSub  for xSub in D.Subs.get( xTarg, [] ) ]:
 #      return [ sco   for xSub in D.Subs.get( xTarg, [] )  for sco in D.constrainDeepestReft( xSub, step+1, Connected, isFull ) ]
@@ -404,7 +424,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
         l = D.scopesToConnect( ptup[1], '', step+1, Connected, xOrigin )
         if l != []: return l
     return []
-
+  '''
 
   ## Method to fill in deterministic or truth-functionally indistinguishable scope associations (e.g. for elementary predications) that are not explicitly annotated...
   def tryScope( D, xTarget, Connected, step=1 ):
@@ -414,7 +434,14 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       active = False
       if VERBOSE: print( '  '*step + 'GRAPH: ' + D.strGraph() )
       ## Calculate recommended scopings...
+      l = []
+      for xFinHeir in D.Heirs.get( xTarget, [] ):
+        if xFinHeir not in D.Subs:
+          l = D.constrainDeepestReft( xFinHeir, step+1, Connected )
+          if l != []: break
+      '''
       l = D.constrainDeepestReft( xTarget, step+1, Connected )
+      '''
       if VERBOSE: print( '  '*step + str(step) + '  l=' + str(l) )
       ## Add recommended scopings...
       for xLo,xHi in sets.Set(l):
@@ -427,7 +454,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
         if D.alreadyConnected( xLo, xHi, Connected ):
           if VERBOSE: print( 'CODE REVIEW: WHY SUGGEST SCOPES ALREADY CONNECTED: ' + xLo + ' ' + xHi )
           continue
-        if D.reaches( xHi, D.ceiling(xLo) ):
+        if any([ D.reaches( xHi, x )  for x in D.getCeil(xLo) ]): #D.reaches( xHi, D.ceiling(xLo) ):
           complain( 'combination of scopes involving ' + xLo + ' with ceiling ' + D.ceiling(xLo) + ' to ' + xHi + ' creates cycle -- unable to build complete expression' )
           if VERBOSE: print( '  '*step + 'GRAPH: ' + D.strGraph() )
           return False

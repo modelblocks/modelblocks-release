@@ -39,12 +39,12 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       cat = re.sub('\{[^\{\}]*\}','X',cat)
     return len(re.findall('-[ab]',cat))
 
-
+  ## match nolos back to front in cat and bottom up on store...
   def findNolos( G, nolos, n ):
     while True:
-      if (n,'0') in G and G[n,'0']==nolos[-1]: nolos.pop()
-      if (n,'0') in G and not G[n,'0'].startswith('-') and len(nolos)>0 and nolos[-1] not in G[n,'0']: return ''
-      if nolos == []: return n
+      if (n,'0') in G and G[n,'0']==nolos[-1]: nolos.pop()                                                        ## remove last nolo if n matches it
+      if (n,'0') in G and not G[n,'0'].startswith('-') and len(nolos)>0 and nolos[-1] not in G[n,'0']: return ''  ## fail if reach full apex or base that does not contain last nolo
+      if nolos == []: return n                                                                                    ## if removed nolo was leftmost, report n
       if   (n,'A') in G: n = G[n,'A']  ## advance n if A is next on store
       elif (n,'B') in G: n = G[n,'B']  ## advance n if B is next on store
       else: return ''

@@ -98,7 +98,9 @@ for line in sys.stdin:
 
   #### II. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
 
-  D.normForm()
+#  D.normForm()
+#SMITING BREAKS CYCLES WHICH... SHOULD BE REPORTED?
+  if not D.check(): continue
   ## Copy quants down to final heirs -- NOTE: this is the same as using inheritance in Q rules...
   for q,e,r,x,n in D.QuantTuples[:]:
     for xFin in D.Heirs.get(x,[]):
@@ -241,7 +243,7 @@ for line in sys.stdin:
 
   #### IV. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
 
-  D.normForm()
+#  D.normForm()
   ## Remove redundant non-terminal quants with no scope parent...
   for q,e,r,s,n in D.QuantTuples[:]:
     if s in D.Subs and s not in D.Scopes and any([ x in D.Heirs.get(s,[])  for _,_,_,x,_ in D.QuantTuples if x!=s ]):

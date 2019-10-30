@@ -35,8 +35,6 @@ class DiscGraph:
     D.Scopes = { }                                                                 ## Key is outscoped.
     D.Traces = { }                                                                 ## Key is outscoped.
     D.Inhs   = collections.defaultdict( lambda : collections.defaultdict(float) )  ## Key is inheritor.
-    D.Nuscos = collections.defaultdict( list )                                     ## Key is restrictor.
-    D.NuscoValues = { }
     D.Inheriteds = { }
     D.Referents = [ ]
  
@@ -48,8 +46,8 @@ class DiscGraph:
       elif lbl == 's':   D.Scopes [src]      = dst                ## Add scopes.
       elif lbl == 't':   D.Traces [src]      = dst                ## Add traces.
       else:              D.Inhs   [src][lbl] = dst                ## Add inheritances.
-      if lbl == 'r':     D.Nuscos [dst].append( src )             ## Index nusco of each restr.
-      if lbl == 'r':     D.NuscoValues[src]  = True
+#      if lbl == 'r':     D.Nuscos [dst].append( src )             ## Index nusco of each restr.
+#      if lbl == 'r':     D.NuscoValues[src]  = True
       if lbl == 'e':     D.Inheriteds[dst]   = True
 
     D.PredTuples  = [ ]
@@ -76,8 +74,18 @@ class DiscGraph:
       for l,xHi in lxHi.items():
         if l!='w' and l!='o':
           D.Subs[ xHi ].append( xLo )
-    D.normForm()  # only does smiting now.
+    D.smite()  # only does smiting now.
     if VERBOSE: print( 'Subs = ' + str(D.Subs) )
+
+    D.Nuscos = collections.defaultdict( list )                                     ## Key is restrictor.
+    D.NuscoValues = { }
+
+    ## Define nuscos after smiting...
+    for xLo,lxHi in D.Inhs.items():
+      for lbl,xHi in lxHi.items():
+        if lbl=='r':
+          D.Nuscos[xHi].append( xLo )
+          D.NuscoValues[xLo] = True
 
 #    ## List of referents that are or participate in elementary predications...
 #    D.Referents = sorted( sets.Set( [ x for pred in D.PredTuples for x in pred[1:] ] + D.Inhs.keys() ) )
@@ -106,6 +114,42 @@ class DiscGraph:
       G.append( xLo + ',s,' + xHi )
     ## print out...
     return ' '.join( sorted( G ) )
+
+
+  def smite( D ):
+    ## Smite redundant nuscos of predicative noun phrases out of Subs...
+    for xHi,L in D.Subs.items():
+      for xLo in L:
+        ## Diagnose as redundant if reft xLo has rin which also has rin...
+        if 'r' in D.Inhs.get(D.Inhs.get(xLo,[]).get('r',''),[]):
+          if VERBOSE: print( 'Smiting ' + xLo + ' out of Subs, for being redundant.' )
+          D.Subs[xHi].remove(xLo)
+          if len(D.Subs[xHi])==0: del D.Subs[xHi]
+          del D.Inhs[xLo]['r']
+          if len(D.Inhs[xLo])==0: del D.Inhs[xLo]
+          if xLo in D.Scopes:
+            sys.stderr.write( 'WARNING: scope should not be annotated on redundant predicative referent: ' + xLo + '\n' )
+            print(           '#WARNING: scope should not be annotated on redundant predicative referent: ' + xLo )
+          if xLo in D.Scopes.values():
+            sys.stderr.write( 'WARNING: scope should not be annotated to redundant predicative referent: ' + xLo + '\n' )
+            print(           '#WARNING: scope should not be annotated to redundant predicative referent: ' + xLo )
+          BadSubs = [ x  for x in D.Subs.get(xLo,[])  for l,y in D.Inhs.get(x,{}).items()  if y == xLo and l != 'c' ]
+          if BadSubs != []:
+            sys.stderr.write( 'WARNING: inheritance should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo + '\n' )
+            print(           '#WARNING: inheritance should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo )
+            '''
+            ## Modify bad subs to point to ...
+            for x in BadSubs:
+              for l,y in D.Inhs.get(x,{}).items():
+                if y == xLo and l != 'c':
+                  D.Inhs[x][l] = D.Inhs[xLo]['r']
+                  #D.Subs[xLo].remove(x)
+                  D.Subs[ D.Inhs[xLo]['r'] ].append( x )
+                  if VERBOSE: print( '#NOTE: moving ' + l + ' inheritance of ' + x + ' from ' + xLo + ' to ' + D.Inhs[x][l] )
+            '''
+          if xLo in [ s  for q,e,r,s,n in D.QuantTuples ]:
+            sys.stderr.write( 'WARNING: quantifier should not be annotated on redundant predicative referent: ' + xLo + '\n' )
+            print(           '#WARNING: quantifier should not be annotated on redundant predicative referent: ' + xLo )
 
 
   ## Check that no reft has multiple outscopers...
@@ -157,6 +201,7 @@ class DiscGraph:
     def checkScopeCyclesInChain( x, L=[] ):
 #      print( 'checking ch ' + x + ' with L=' + ' '.join(L) )
       return checkScopeCyclesFromSup( x, L ) or checkScopeCyclesFromSub( x, L )
+
     ## Check for inheritance cycles...
     for x in D.Referents:
       if checkInhCycles( x ): return False
@@ -164,6 +209,7 @@ class DiscGraph:
     for x in D.Scopes.values(): #D.Referents:
 #      if checkScopeCyclesInChain( x ): return False
       if checkScopeCyclesFromSub( x ): return False
+
     return True
 
 
@@ -185,37 +231,6 @@ class DiscGraph:
 
 
   def normForm( D ):
-    ## Smite redundant nuscos of predicative noun phrases out of Subs...
-    for xHi,L in D.Subs.items():
-      for xLo in L:
-        ## Diagnose as redundant if reft xLo has rin which also has rin...
-        if 'r' in D.Inhs.get(D.Inhs.get(xLo,[]).get('r',''),[]):
-          if VERBOSE: print( 'Smiting ' + xLo + ' out of Subs, for being redundant.' )
-          D.Subs[xHi].remove(xLo)
-          if len(D.Subs[xHi])==0: del D.Subs[xHi]
-          if xLo in D.Scopes:
-            sys.stderr.write( 'WARNING: scope should not be annotated on redundant predicative referent: ' + xLo + '\n' )
-            print(           '#WARNING: scope should not be annotated on redundant predicative referent: ' + xLo )
-          if xLo in D.Scopes.values():
-            sys.stderr.write( 'WARNING: scope should not be annotated to redundant predicative referent: ' + xLo + '\n' )
-            print(           '#WARNING: scope should not be annotated to redundant predicative referent: ' + xLo )
-          BadSubs = [ x  for x in D.Subs.get(xLo,[])  for l,y in D.Inhs.get(x,{}).items()  if y == xLo and l != 'c' ]
-          if BadSubs != []:
-            sys.stderr.write( 'WARNING: inheritance should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo + '\n' )
-            print(           '#WARNING: inheritance should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo )
-            '''
-            ## Modify bad subs to point to ...
-            for x in BadSubs:
-              for l,y in D.Inhs.get(x,{}).items():
-                if y == xLo and l != 'c':
-                  D.Inhs[x][l] = D.Inhs[xLo]['r']
-                  #D.Subs[xLo].remove(x)
-                  D.Subs[ D.Inhs[xLo]['r'] ].append( x )
-                  if VERBOSE: print( '#NOTE: moving ' + l + ' inheritance of ' + x + ' from ' + xLo + ' to ' + D.Inhs[x][l] )
-            '''
-          if xLo in [ s  for q,e,r,s,n in D.QuantTuples ]:
-            sys.stderr.write( 'WARNING: quantifier should not be annotated on redundant predicative referent: ' + xLo + '\n' )
-            print(           '#WARNING: quantifier should not be annotated on redundant predicative referent: ' + xLo )
 
 
     '''
