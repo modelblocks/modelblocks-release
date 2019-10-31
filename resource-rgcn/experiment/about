@@ -1,0 +1,34 @@
+achievement unlocked: make the R-GCN code run without failure from beginning to end
+
+ten.cuegraphs is the head of the wsj and I can confirm that the RGCN code runs and completes some kind of output with it. 
+
+I have a conda environment in which this stuff works: source activate rgcn
+
+the .dict and train.txt files are created by ../scripts/cue2vec_preprocessor.py or something like that
+	there are things that can make it run forever, probably cycles in the cuegraph
+	that's going to be a very unfortunate limitation
+
+the .pt files are created next by ../scripts/cuegraphs2vectors.py or whatever it's called
+	minimum mandatory arguments: 
+	--dataset= a directory name
+	--rel-type= either vector or matrix
+	--loss= either bcc or cos
+
+We have an unheralded infinite loop (in utils.py) if the --graph-batch-size parameter (default 1000?)
+is so large that the trainer cannot sample that many edges out of the graph
+
+working for ten.cuegraphs: --rel-type=vector --loss=cos --graph-batch-size=10
+	I didn't say it was useful, just that it works
+
+it would be good if possible to check the edge count against that param before the loop
+then let's look into improving the preprocessor
+
+---------------
+
+the first 100ish sentences of wikisem have been de-cycled, can maybe run on...casp.discgraphs
+
+make of .cuegraphs is currently broken
+cue2vec preprocessor might be able to run on .discgraphs, try it
+
+unclear if preproc is looping infinitely on de-cycled cuegraphs, or looping infinitely on cycles, or just taking a really long time
+
