@@ -51,37 +51,28 @@ def sample_edge_neighborhood(adj_list, degrees, n_triplets, sample_size):
             weights = np.ones_like(weights)
 
         # samples a node
-#        sys.stderr.write("sum: " + str(np.sum(weights)) + "\n") 
-#        sys.stderr.write("weights: " + str((weights)) + "\n")
         probabilities = (weights) / np.sum(weights)
-#        sys.stderr.write("probabilities: " + str((probabilities)) + "\n")
         chosen_vertex = np.random.choice(np.arange(degrees.shape[0]),
                                          p=probabilities)
         chosen_adj_list = adj_list[chosen_vertex]
         seen[chosen_vertex] = True
-        sys.stderr.write("yay we sampled a node\n")
 
         # and then an edge associated with that node
         chosen_edge = np.random.choice(np.arange(chosen_adj_list.shape[0]))
         chosen_edge = chosen_adj_list[chosen_edge]
         edge_number = chosen_edge[0]
-        sys.stderr.write("we started sampling edges\n")
 
         while picked[edge_number]:
-            sys.stderr.write("\tbut had to pick again\n")
             chosen_edge = np.random.choice(np.arange(chosen_adj_list.shape[0]))
             chosen_edge = chosen_adj_list[chosen_edge]
             edge_number = chosen_edge[0]
 
-        sys.stderr.write("we finally got an unpicked edge\n")
         edges[i] = edge_number
         other_vertex = chosen_edge[1]
         picked[edge_number] = True
         sample_counts[chosen_vertex] -= 1
         sample_counts[other_vertex] -= 1
         seen[other_vertex] = True
-        sys.stderr.write("yay we sampled an edge!\n\n")
-    sys.stderr.write("we successfully completed that function, dawg\n\n\n")
     # 1-dim array of edge IDs
     return edges
 
