@@ -134,7 +134,6 @@ for line in sys.stdin:
   for x in D.Referents:
     if not outscopingInChain(x): ScopeLeaves.append( x )
 
-
   L1 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
   if len(L1) > 1:
     print(           '#WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences' )
@@ -157,7 +156,7 @@ for line in sys.stdin:
 
   ## List of original (dominant) refts...
 #  RecencyConnected = sorted( [ ((0 if x not in D.Subs else -1) + (0 if x in ScopeLeaves else -2),x)  for x in D.Referents  if D.ceiling(x) in D.Chains.get(L[0],[]) ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
-  RecencyConnected = [ y  for x in L1  for y in D.Referents  if D.ceiling(y) in D.Chains.get(x,[]) ]
+  RecencyConnected = [ y  for x in L1  for y in D.Referents  if any([ z in D.Chains.get(x,[]) for z in D.getCeil(y) ]) ]  #D.ceiling(y) in D.Chains.get(x,[]) ]
   if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
 
 

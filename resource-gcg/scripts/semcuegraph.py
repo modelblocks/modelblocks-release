@@ -132,6 +132,15 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       else: G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('S',n), '1\'', G.result('S',dUpper) )
       G.equate( G.result('S',dUpper), 'e', G.result('r',G.result('S',dLower)) )
+    elif '-lF' in sD:                                        ## F (I?)
+      sN = re.findall('-i(?:[^-{}]|{[^{}]*})',sD)[-1]
+      n = G.findNolo( sN, d )
+      if n=='':
+        n = G.result( l, d+'u' )
+        G.equate( sN, '0', n )
+        G.equate( G.result(l,d), l, n )
+      else: G.equate( G.result(l,d), l, d+'u' )
+      G.equate( G.result('S',dUpper), 'S', n )
     elif '-lQ' in sD:                                        ## Q
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('1\'',G.result('S',d)), '2\'', G.result('S',d+'u') )  ## switch 1' & 2' arguments (same process top-down as bottom-up)
@@ -335,7 +344,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('S',c), 'S', e )
     else:
       if sC != 'FAIL':   #sC != sD != sE != 'FAIL':
-        sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + '.\n' )
+        sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + ' in ' + str(id) + '.\n' )
 
 
   def convert( G, t, sentnumprefix='', s=0, i=0 ):
@@ -384,15 +393,15 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           sys.stderr.write( 'ERROR: multiple -n tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         if len( re.findall( '-s',G[x,'0'] ) ) > 1:
           sys.stderr.write( 'ERROR: multiple -s tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
-        for dep in re.findall( '-[mntsw][0-9]+', G[x,'0'] ):
-          dest = dep[2:] if len(dep)>4 else sentnumprefix+dep[2:]
-          if dep[1]=='m': G.equate( dest+'r', 'n', x+'r' )
-          if dep[1]=='n': G.equate( dest+'s', 'n', x+'r' )
-          if dep[1]=='t': G.equate( dest+'r', 's', x+'s' )
-          if dep[1]=='s': G.equate( dest+'s', 's', x+'s' )
+        for dep in re.findall( '-[mntsw][0-9]+r?', G[x,'0'] ):
+          dest = dep[2:6] if len(dep)>5 else sentnumprefix+dep[2:4]
+          if   dep[1]=='m' or dep[1]=='n' and dep[-1]=='r': G.equate( dest+'r', 'n', x+'r' )
+          elif dep[1]=='n':                                 G.equate( dest+'s', 'n', x+'r' )
+          elif dep[1]=='t' or dep[1]=='s' and dep[-1]=='r': G.equate( dest+'r', 's', x+'s' )
+          elif dep[1]=='s':                                 G.equate( dest+'s', 's', x+'s' )
 #          if dep[1]=='w': G.equate( dest+'s', 'W', x+'s' )
           if dep[1]=='w': G.equate( dest+'s', 'W', x )
-        G[x,'0'] = re.sub( '-[mntsw][0-9]+', '', G[x,'0'] )
+        G[x,'0'] = re.sub( '-[mntsw][0-9]+r?', '', G[x,'0'] )
         ## obtain pred by applying lex rules to word token...
         s = re.sub('-l.','',G[x,'0']) + ':' + G[x,'X'].lower()
         eqns = re.sub( '-x.*:', ':', s )
@@ -526,7 +535,7 @@ class SemCueGraph( StoreStateCueGraph ):
     if t is not None:
       G = StoreStateCueGraph( t )
       for x,l in sorted( G.keys() ):
-        if l!='A' and l!='B' and l!='S' and l!='X' and l not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' and (l!='0' or x[-1] in 'erABCDEFGHIJKLMNOPQRSTUVWXYZ') and l[-1]!='\'':
+        if l!='A' and l!='B' and l!='S' and l!='X' and l not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' and (l!='0' or x[-1] in 'ersABCDEFGHIJKLMNOPQRSTUVWXYZ') and l[-1]!='\'':
           H[x,l] = G[x,l]
 
 #  def add( H, t, sentnumprefix ):
@@ -538,7 +547,7 @@ class SemCueGraph( StoreStateCueGraph ):
 
   def finalize( G ):
     for x,l in sorted( G.keys() ):
-      if l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'erCDEFGHIJKLMNOPQRSTUVWXYZ': 
+      if l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'ersCDEFGHIJKLMNOPQRSTUVWXYZ': 
         del G[x,l]
       '''
       if l in 's' and (G[x,l],'r') not in G:
