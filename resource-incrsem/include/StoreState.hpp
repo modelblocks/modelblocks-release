@@ -67,6 +67,7 @@ class W : public Delimited<DiscreteDomainRV<int,domW>> {
 };
 
 typedef W ObsWord;
+const ObsWord nonWord("");
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -709,7 +710,7 @@ char psAmpersand[]    = "&";
 class HiddState : public DelimitedOct<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Delimited<int>,psSpace,ObsWord,psX> {
   public:
     HiddState ( )                                                                    : DelimitedOct<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Delimited<int>,psSpace,ObsWord,psX>()             { }
-    HiddState ( const Sign& a, F f, EVar e, K k, JResponse jr, const StoreState& q , int i=0, ObsWord w="") : DelimitedOct<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Delimited<int>,psSpace,W,psX>(a,f,e,k,jr,q,i,w) { }
+    HiddState ( const Sign& a, F f, EVar e, K k, JResponse jr, const StoreState& q , int i=0, ObsWord w=nonWord) : DelimitedOct<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Delimited<int>,psSpace,W,psX>(a,f,e,k,jr,q,i,w) { }
     const Sign& getPrtrm ()           const { return first(); }
     F getF ()                         const { return second(); }
     EVar getForkE ()                  const { return third(); }
