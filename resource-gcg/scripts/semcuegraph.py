@@ -344,7 +344,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('S',c), 'S', e )
     else:
       if sC != 'FAIL':   #sC != sD != sE != 'FAIL':
-        sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + ' in ' + str(id) + '.\n' )
+        sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + ' at ' + str(id) + '.\n' )
 
 
   def convert( G, t, sentnumprefix='', s=0, i=0 ):
@@ -450,7 +450,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           if VERBOSE: print( 'Inducing default equation: ' + eqns )
 
         if '-x' in G[x,'0'] and eqns != '' and '=' not in eqns:
-          sys.stderr.write( 'WARNING: rewrite rules in: ' + G[x,'0'] + ' specify no graph equations: "' + eqns + '" -- will have no effect!\n' )
+          sys.stderr.write( 'WARNING: rewrite rules in: ' + G[x,'0'] + ' specify no graph equations: "' + eqns + '" -- will have no effect at ' + x + '\n' )
 
         ## if lexical rules produce equations, build appropriate graph...
         if '=' in eqns:

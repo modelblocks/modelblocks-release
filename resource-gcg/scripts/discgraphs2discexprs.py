@@ -26,10 +26,13 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gc
 import discgraph
 import induciblediscgraph
 
-VERBOSE = False
+VERBOSE  = False    ## print debugging info.
+ENDGRAPH = False    ## print last graph for each discourse.
 for a in sys.argv:
   if a=='-d':
     VERBOSE = True
+  if a=='-g':
+    ENDGRAPH = True
 
 ################################################################################
 
@@ -190,6 +193,8 @@ for line in sys.stdin:
     ok = D.tryScope( L[0], RecencyConnected )
     Complete.append( L[0] )
 
+  if ENDGRAPH: print( 'GRAPH: ' + D.strGraph() )
+
   if not ok: continue
 #  out = D.tryScope( RecencyConnected, True )
 #  if out == False: continue
@@ -200,6 +205,9 @@ for line in sys.stdin:
     if not any([ x in D.Scopes  for x in D.Chains.get(xTarget,[]) ]) and not any([ s in D.Chains.get(xTarget,[])  for q,e,r,s,n in D.QuantTuples ]):
       print(           '#WARNING: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!' )
       sys.stderr.write( 'WARNING: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!\n' )
+
+
+  #### IV. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
 
 #  DisjointPreds = sets.Set([ ( D.ceiling(xt[1]), D.ceiling(yt[1]) )  for xt in D.PredTuples  for yt in D.PredTuples  if xt[1] < yt[1] and not D.reachesInChain( xt[1], D.ceiling(yt[1]) ) ])
 #  if len(DisjointPreds) > 0:
@@ -238,9 +246,6 @@ for line in sys.stdin:
       if D.Inhs[xCh].get('r','') == '': D.Inhs[xCh]['r'] = xCh+'r'
       if VERBOSE: print( 'Inducing existential quantifier: ' + str([ 'D:someQ', xCh+'P', D.Inhs[xCh]['r'], xCh, '_' ]) )
       D.QuantTuples.append( ( 'D:someQ', xCh+'P', D.Inhs[xCh]['r'], xCh, '_' ) )
-
-
-  #### IV. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
 
 #  D.normForm()
   ## Remove redundant non-terminal quants with no scope parent...
