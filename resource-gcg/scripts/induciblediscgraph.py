@@ -393,15 +393,15 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       if xHi == xTarg:
         l = D.constrainDeepestReft( xLo, step+1, Connected, xLo )
         if l != []: return l
-    ## Second, try all preds...
-    for ptup,_ in D.BareRefToPredTuples.get( xTarg, [] ):   #D.FullRefToPredTuples.get( xTarg, [] ) if isFull else D.WeakRefToPredTuples.get( xTarg, [] ):
-      if ptup[1] not in Connected:
-        l = D.scopesToConnect( ptup[1], '', step+1, Connected, xOrigin )
-        if l != []: return l
-    ## Third, recurse up inheritances...
+    ## Second, recurse up inheritances...
     for lbl,xLeg in D.Inhs.get(xTarg,{}).items():
       if lbl != 't':
         l = D.constrainDeepestReft( xLeg, step+1, Connected, xOrigin )
+        if l != []: return l
+    ## Third, try all preds...
+    for ptup,_ in D.BareRefToPredTuples.get( xTarg, [] ):   #D.FullRefToPredTuples.get( xTarg, [] ) if isFull else D.WeakRefToPredTuples.get( xTarg, [] ):
+      if ptup[1] not in Connected:
+        l = D.scopesToConnect( ptup[1], '', step+1, Connected, xOrigin )
         if l != []: return l
     return []
 

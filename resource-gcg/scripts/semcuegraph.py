@@ -140,7 +140,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         G.equate( sN, '0', n )
         G.equate( G.result(l,d), l, n )
       else: G.equate( G.result(l,d), l, d+'u' )
-      G.equate( G.result('S',dUpper), 'S', n )
+      G.equate( G.result('r',G.result('S',dUpper)), 'S', n )
     elif '-lQ' in sD:                                        ## Q
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('1\'',G.result('S',d)), '2\'', G.result('S',d+'u') )  ## switch 1' & 2' arguments (same process top-down as bottom-up)
@@ -444,6 +444,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif eqns.startswith('A-aN-rN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
           elif eqns.startswith('A'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif eqns.startswith('B'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^rh=SH'
+          elif eqns.startswith('N-iN'):          eqns = 'Er0=' + eqns + '^Er1=^1='
           elif eqns.startswith('N-rN'):          eqns = 'Er0=' + eqns + '^Er1=^1='
           elif eqns.startswith('N'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
 #          G.dump()
