@@ -16,14 +16,40 @@ the .pt files are created next by ../scripts/cuegraphs2vectors.py or whatever it
 
 We have an unheralded infinite loop (in utils.py) if the --graph-batch-size parameter (default 1000?)
 is so large that the trainer cannot sample that many edges out of the graph
+	(larger than train.txt is long, which is 2x edges because it has forward and reverse)
 
 working for ten.cuegraphs: --rel-type=vector --loss=cos --graph-batch-size=10
 	I didn't say it was useful, just that it works
 
+torch.save(obj, "path") is used to record the nodes and rels in .pt files
+torch.load("path") will pull them back as torch.Tensor objects
+the Tensor for nodes has same length as entities.dict and I presume is 1-to-1
+ditto for rels and relations.dict
+
+------------------------------
+
+now, how do we use them to do link prediction? check the training code for hints
+
 it would be good if possible to check the edge count against that param before the loop
 then let's look into improving the preprocessor
 
+---------------------
+
+Confirmed: the edge count is as simple as the number of lines in train.txt
+also available as n_triplets RIGHT IN the edge sampler 
+and --graph-batch-size can be that big but no bigger, or boom
+
+Disturbing question: Why DOESN'T it infinite-loop on smaller batch sizes?
+	As written, it appears to be selecting edge adjacent to random node
+	Surely some of those nodes will run out of unpicked edges before the graph does
+	I'd better read the paper for the intended behavior. BRB.
+
 ---------------
+
+Let's de-suck the preprocessor.
+	infinite loops
+
+-------------------
 
 the first 100ish sentences of wikisem have been de-cycled, can maybe run on...casp.discgraphs
 
