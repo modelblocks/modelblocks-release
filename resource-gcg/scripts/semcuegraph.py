@@ -179,27 +179,32 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         G.equate( G.result(l,d), l, n )
       else: G.equate( G.result(l,d), l, d+'u' )
       if len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN.endswith('-rN}'):  ## Ee
+        if VERBOSE: print( 'using rule Ee' )
         G.equate( G.result('S',n), 'e', G.result('r',G.result('S',dLower)) )
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN == '-g{V-aN}':  ## Ef
+        if VERBOSE: print( 'using rule Ef' )
 #      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
         G.equate( G.result('1\'',G.result('S',n)), 'e', G.result('S',dLower) )
 #        G.equate( G.result('s',G.result('S',dLower)), 's', G.result('1\'',G.result('S',n)) )    ## sent7
 #        G.equate( G.result('r',G.result('S',dLower)), '1\'', id+'y' )
 #        G.equate( G.result('S',n), 'e', id+'y' )
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN == '-g{V-gN}':  ## Eg
+        if VERBOSE: print( 'using rule Eg' )
         G.equate( G.result('S',dLower), 's', G.result('S',n) )
         G.equate( 'D:someQ',                     '0', G.result('Q',G.result('S',n)) )
         G.equate( G.result('r',G.result('S',n)), '1', G.result('Q',G.result('S',n)) )
         G.equate( G.result('S',n),               '2', G.result('Q',G.result('S',n)) )
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ):  ## Ec,Ed
+        if VERBOSE: print( 'using rule Ec/Ed' )
 #      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
         G.equate( G.result('1\'',G.result('S',n)), 'e', G.result('r',G.result('S',dLower)) )
 #        G.equate( G.result('s',G.result('S',dLower)), 's', G.result('1\'',G.result('S',n)) )    ## sent7
 #        G.equate( G.result('r',G.result('S',dLower)), '1\'', id+'y' )
 #        G.equate( G.result('S',n), 'e', id+'y' )
-      else:
+      else:                                                    ## Ea,Eb
+        if VERBOSE: print( 'using rule Ea/Eb' )
 ## should not add 'e'       G.equate( G.result('S',n), 'e', G.result( str(G.getArity(sD))+'\'', G.result('S',dLower) ) )
-         G.equate( G.result('S',n), str(G.getArity(sD))+'\'', G.result('S',dLower) )
+        G.equate( G.result('S',n), str(G.getArity(sD))+'\'', G.result('S',dLower) )
 #        if '-g' in sN:                                       ## Ea,Eb
 #          G.equate( G.result('r',G.result('S',n)), str(G.getArity(sD))+'\'', G.result('S',dLower) )
 #        else:                                                ## Eh?,Ei? don't get restrictor for passive
@@ -440,6 +445,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         if EQN_DEFAULTS and ':' in eqns and '=' not in eqns:
           if   eqns.startswith('N-b{N-aD}:'):    eqns = 'r0='  + eqns + 'Q^r1=1r^r2=1'
           elif eqns.startswith('N-aD-b{N-aD}:'): eqns = 'r0='  + eqns + 'Q^r1=2r^r2=2'
+          elif eqns.startswith('N-bN:'):         eqns = 'r0='  + eqns + 'Q^r1=2r^r2=2'
+          elif eqns.startswith('N-bO:'):         eqns = 'r0='  + eqns + 'Q^r1=2r^r2=2'
           elif eqns.startswith('A-aN-iN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
           elif eqns.startswith('A-aN-rN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
           elif eqns.startswith('A'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )

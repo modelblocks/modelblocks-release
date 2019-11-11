@@ -351,7 +351,7 @@ for line in sys.stdin:
           else:
             if VERBOSE: print( 'applying I2/I3 to add from A to A replacing ' + dst + ' with ' + src + ' to make \\' + src + ' ' + lambdaFormat(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
             Abstractions[ src ].append( replaceVarName( Expressions[dst], dst, src ) )
-            if dst in D.Scopes and src not in D.Scopes and D.Nuscos.get(src,[''])[0] not in D.Scopes and src in [s for q,e,r,s,n in D.QuantTuples] + [r for q,e,r,s,n in D.QuantTuples]:  D.Scopes[src if src in D.NuscoValues else D.Nuscos[src][0]] = D.Scopes[dst]     ## I3 rule.
+#            if dst in D.Scopes and src not in D.Scopes and D.Nuscos.get(src,[''])[0] not in D.Scopes and src in [s for q,e,r,s,n in D.QuantTuples] + [r for q,e,r,s,n in D.QuantTuples]:  D.Scopes[src if src in D.NuscoValues else D.Nuscos[src][0]] = D.Scopes[dst]     ## I3 rule.
           del D.Inhs[src][lbl]
           if len(D.Inhs[src])==0: del D.Inhs[src]
           active = True
