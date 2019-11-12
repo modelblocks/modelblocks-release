@@ -36,6 +36,7 @@ for a in sys.argv:
 
 ################################################################################
 
+discctr = 0
 finished = False
 
 ## For each discourse...
@@ -49,6 +50,10 @@ while not finished:
   for line in sys.stdin:
 
     if '!ARTICLE' in line: break
+
+    if sentctr == 0:
+      discctr += 1
+      sys.stderr.write( 'Discourse ' + str(discctr) + ': ' + line )
 
     ## Initialize new tree with or without tree-lengthening...
     if RELABEL:

@@ -26,10 +26,13 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gc
 import discgraph
 import induciblediscgraph
 
-VERBOSE = False
+VERBOSE  = False    ## print debugging info.
+ENDGRAPH = False    ## print last graph for each discourse.
 for a in sys.argv:
   if a=='-d':
     VERBOSE = True
+  if a=='-g':
+    ENDGRAPH = True
 
 ################################################################################
 
@@ -98,7 +101,9 @@ for line in sys.stdin:
 
   #### II. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
 
-  D.normForm()
+#  D.normForm()
+#SMITING BREAKS CYCLES WHICH... SHOULD BE REPORTED?
+  if not D.check(): continue
   ## Copy quants down to final heirs -- NOTE: this is the same as using inheritance in Q rules...
   for q,e,r,x,n in D.QuantTuples[:]:
     for xFin in D.Heirs.get(x,[]):
@@ -109,6 +114,8 @@ for line in sys.stdin:
     for xFin in D.Heirs.get(x,[]):
       if xFin not in D.Subs  and  xFin not in D.Scopes:
         D.Scopes[ xFin ] = D.Scopes[ x ]
+  ## Skip sentence if cycle...
+  if not D.check(): continue
 
   #### III. INDUCE UNANNOTATED SCOPES AND EXISTENTIAL QUANTS...
 
@@ -130,11 +137,13 @@ for line in sys.stdin:
   for x in D.Referents:
     if not outscopingInChain(x): ScopeLeaves.append( x )
 
-
   L1 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
   if len(L1) > 1:
     print(           '#WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences' )
     sys.stderr.write( 'WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences\n' ) 
+    for xHi in L1:
+      print(           '#    ' + xHi + ' subsumes ' + ' '.join(sorted(sets.Set([ xLo  for xLo in D.Referents  if D.reaches(xLo,xHi) ]))) )
+      sys.stderr.write( '    ' + xHi + ' subsumes ' + ' '.join(sorted(sets.Set([ xLo  for xLo in D.Referents  if D.reaches(xLo,xHi) ]))) + '\n' )
   elif L1 == []:
     L2 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
     print(           '#NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + ' '.join(L2) )
@@ -144,9 +153,13 @@ for line in sys.stdin:
       print(           '#WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents' )
       sys.stderr.write( 'WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents\n' )
 
+
+  if VERBOSE: print( 'GRAPH: ' + D.strGraph() )
+
+
   ## List of original (dominant) refts...
 #  RecencyConnected = sorted( [ ((0 if x not in D.Subs else -1) + (0 if x in ScopeLeaves else -2),x)  for x in D.Referents  if D.ceiling(x) in D.Chains.get(L[0],[]) ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
-  RecencyConnected = [ y  for x in L1  for y in D.Referents  if D.ceiling(y) in D.Chains.get(x,[]) ]
+  RecencyConnected = [ y  for x in L1  for y in D.Referents  if any([ z in D.Chains.get(x,[]) for z in D.getCeil(y) ]) ]  #D.ceiling(y) in D.Chains.get(x,[]) ]
   if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
 
 
@@ -177,8 +190,10 @@ for line in sys.stdin:
 
     if VERBOSE: print( 'Trying to induce scopes below ' + L[0] + '...' )
     RecencyConnected += D.Chains.get(L[0],[])    ## Account target as connected (root).
-    ok = D.tryScope( L[0], RecencyConnected, True )
+    ok = D.tryScope( L[0], RecencyConnected )
     Complete.append( L[0] )
+
+  if ENDGRAPH: print( 'GRAPH: ' + D.strGraph() )
 
   if not ok: continue
 #  out = D.tryScope( RecencyConnected, True )
@@ -188,8 +203,11 @@ for line in sys.stdin:
 
   for xTarget in sets.Set( D.Scopes.values() ):
     if not any([ x in D.Scopes  for x in D.Chains.get(xTarget,[]) ]) and not any([ s in D.Chains.get(xTarget,[])  for q,e,r,s,n in D.QuantTuples ]):
-      print(           '#ERROR: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!' )
-      sys.stderr.write( 'ERROR: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!\n' )
+      print(           '#WARNING: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!' )
+      sys.stderr.write( 'WARNING: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!\n' )
+
+
+  #### IV. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
 
 #  DisjointPreds = sets.Set([ ( D.ceiling(xt[1]), D.ceiling(yt[1]) )  for xt in D.PredTuples  for yt in D.PredTuples  if xt[1] < yt[1] and not D.reachesInChain( xt[1], D.ceiling(yt[1]) ) ])
 #  if len(DisjointPreds) > 0:
@@ -229,10 +247,7 @@ for line in sys.stdin:
       if VERBOSE: print( 'Inducing existential quantifier: ' + str([ 'D:someQ', xCh+'P', D.Inhs[xCh]['r'], xCh, '_' ]) )
       D.QuantTuples.append( ( 'D:someQ', xCh+'P', D.Inhs[xCh]['r'], xCh, '_' ) )
 
-
-  #### IV. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
-
-  D.normForm()
+#  D.normForm()
   ## Remove redundant non-terminal quants with no scope parent...
   for q,e,r,s,n in D.QuantTuples[:]:
     if s in D.Subs and s not in D.Scopes and any([ x in D.Heirs.get(s,[])  for _,_,_,x,_ in D.QuantTuples if x!=s ]):
@@ -336,7 +351,7 @@ for line in sys.stdin:
           else:
             if VERBOSE: print( 'applying I2/I3 to add from A to A replacing ' + dst + ' with ' + src + ' to make \\' + src + ' ' + lambdaFormat(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
             Abstractions[ src ].append( replaceVarName( Expressions[dst], dst, src ) )
-            if dst in D.Scopes and src not in D.Scopes and D.Nuscos.get(src,[''])[0] not in D.Scopes and src in [s for q,e,r,s,n in D.QuantTuples] + [r for q,e,r,s,n in D.QuantTuples]:  D.Scopes[src if src in D.NuscoValues else D.Nuscos[src][0]] = D.Scopes[dst]     ## I3 rule.
+#            if dst in D.Scopes and src not in D.Scopes and D.Nuscos.get(src,[''])[0] not in D.Scopes and src in [s for q,e,r,s,n in D.QuantTuples] + [r for q,e,r,s,n in D.QuantTuples]:  D.Scopes[src if src in D.NuscoValues else D.Nuscos[src][0]] = D.Scopes[dst]     ## I3 rule.
           del D.Inhs[src][lbl]
           if len(D.Inhs[src])==0: del D.Inhs[src]
           active = True
@@ -350,7 +365,7 @@ for line in sys.stdin:
       if S[1] in D.Scopes:
         if VERBOSE: print( 'applying S1 to move from T to A: (\\' + D.Scopes[ S[1] ] + ' ' + q + ' ' + str(R) + ' ' + str(S) + ')' )
         Expr = copy.deepcopy( (q,n,R,S) )
-        for x in D.Heirs.get( D.Scopes[ S[1] ], [] ):
+        for x in D.Chains.get( D.Scopes[ S[1] ], [] ):
           if x != D.Scopes[ S[1] ]:
             Expr = replaceVarName( Expr, x, D.Scopes[ S[1] ] )
         Abstractions[ D.Scopes[ S[1] ] ].append( Expr )
