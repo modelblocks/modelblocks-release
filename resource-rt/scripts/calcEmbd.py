@@ -385,7 +385,7 @@ with open(args.decpars[0], 'rb') as decpars:
     i, prev, preds = process_tok(decpars, dpars_line, i, prev, debug=args.debug)
     while ltoks_line and dpars_line:
         for wrd in ltoks_line.strip().split():
-            if wrd == preds[0]:
+            if preds is not None and wrd == preds[0]:
                 print(' '.join([str(P) for P in preds]))
                 if dpars_line:
                     i, prev, preds = process_tok(decpars, dpars_line, i, prev, debug=args.debug)

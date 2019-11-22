@@ -164,6 +164,10 @@ endef
 %.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py
 	cat $(word 1, $^) | python $(word 2, $^) > $@
 
+# TO SPEC
+%.bysent.all-itemmeasures: %.all-itemmeasures $(FMRI-SCRIPTS)/reducesents.py
+	cat $(word 1, $^) | python $(word 2, $^) > $@
+
 .PRECIOUS: %.hrf.core.evmeasures
 %.hrf.core.evmeasures : %.hrf.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
@@ -173,10 +177,27 @@ $(RT-SCRIPTS)/merge_tables.py
 %.tiled.core.evmeasures: $(FMRI-SCRIPTS)/tile_stimuli.py %.itemmeasures $$(word 1,$$(subst ., ,%)).evmeasures
 	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
 
-.PRECIOUS: %.bysent.core.evmeasures
-%.bysent.core.evmeasures : %.bysent.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
+# TO SPEC
+.PRECIOUS: %.fmri-bywrd.prdmeasures
+%.fmri-bywrd.prdmeasures: $(FMRI-SCRIPTS)/tile_stimuli.py %.all-itemmeasures $$(word 1,$$(subst ., ,%)).evmeasures
+	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+
+# TO SPEC
+.PRECIOUS: %.fmri-bysent.prdmeasures
+%.fmri-bysent.prdmeasures: %.bysent.all-itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
 	cat $< | python $(word 3, $^) $< $(word 2, $^) sentid > $@
+
+%.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py
+	cat $(word 1, $^) | python $(word 2, $^) > $@
+
+# TO SPEC
+%.fmri-bywrd.resmeasures: %.resmeasures
+	ln -sf $^ $@
+
+# TO SPEC
+%.fmri-sent.resmeasures: %.resmeasures
+	ln -sf $^ $@
 
 %.nm1.evmeasures: %.evmeasures $(FMRI-SCRIPTS)/average_nm1.py
 	cat $< | python $(word 2, $^) - > $@

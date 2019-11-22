@@ -14,7 +14,7 @@ for line in sys.stdin:
   line = line.rstrip()
 
 #  print( 'digraph G {' )   ## dot
-  print( '\\begin{tikzpicture}[x=1cm,y=3cm,scale=3]' )
+  print( '\\begin{tikzpicture}[x=1mm,y=3mm,scale=30]' )
 
   Nodes = sets.Set()
   Ctrs  = collections.defaultdict( int )
@@ -29,11 +29,14 @@ for line in sys.stdin:
       if x not in Nodes:
 
         def hoff( x, ctr ):
-          return str( (4 if len(x)==5 else 2) + (2 if x[-1]=='r' else 4) + (0 if len(x)==5 else -ctr if x[4] in 'abu' else ctr) )
+#          return str( (4 if len(x)==5 else 2) + (2 if x[-1]=='r' else 4) + (0 if len(x)==5 else -ctr if x[4] in 'abu' else ctr) )
+          return str( (4 if x[4:]=='r' or x[4:]=='s' else 2) + (2 if x[-1]=='r' else 4) + (0 if x[4:]=='r' or x[4:]=='s' else -ctr if x[4] in 'abu' else ctr) )
         def voff( x, ctr ):
-          return str( 4 if len(x)==5 else (4 - ctr) if x[4] in 'abu' else (4 + ctr) )
+#          return str( 4 if len(x)==5 else (4 - ctr) if x[4] in 'abu' else (4 + ctr) )
+          return str( 4 if x[4:]=='r' or x[4:]=='s' else (4 - ctr) if x[4] in 'abu' else (4 + ctr) )
 
-        if len(x)>5 and x[-1]!='r': Ctrs[ x[0:4] ] += 1
+#        if len(x)>5 and x[-1]!='r': Ctrs[ x[0:4] ] += 1
+        if x[4:]!='r' and x[4:]!='s' and x[-1]!='r': Ctrs[ x[0:4] ] += 1
         ctr = Ctrs[ x[0:4] ]
 
         Nodes.add( x )
@@ -54,6 +57,7 @@ for line in sys.stdin:
         else:                                       print( '\\node(x' + x + ') at (' + x[2:4] + '.' + hoff(x,ctr) + ',-' + x[0:2] + '.' + voff(x,ctr) + ') [reft]{' + x[4:] + '};' ) 
 
     if lbl == '0':
+      dst = dst.replace('%','\\%').replace('{','\\{').replace('}','\\}').replace('&','\\&').replace('$','\\$').replace('~','$\sim$')
       print( '\\node(k' + src[0:4] + ')[below of=x' + src + ',pred] {' + dst + '};' )
       print( '\\draw(x' + src + ') -- node[left]{0} (k' + src[0:4] + ');' )
     elif lbl == 's':
