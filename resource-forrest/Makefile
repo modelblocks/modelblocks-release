@@ -80,7 +80,7 @@ endif
 endif
 
 %/user-forrest-directory.txt: | %   
-	echo '/home/corpora/original/german/forrest_gump_audio' > $@
+	echo '/data/corpora/original/german/forrest_gump_audio' > $@
 
 ################################################################################
 #

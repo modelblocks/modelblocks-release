@@ -100,7 +100,7 @@ endif
 endif
 
 %/user-alice-directory.txt: | %   
-	echo '/home/corpora/original/english/brennan_2016_fmri' > $@
+	echo '/data/corpora/original/english/brennan_2016_fmri' > $@
 
 ################################################################################
 #

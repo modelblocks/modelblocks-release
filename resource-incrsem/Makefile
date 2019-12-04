@@ -103,7 +103,7 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 ################################################################################
 
 ## obtain auto-parsed simplewiki corpus...
-%simplewikiFULLAUTO.gcg15.linetrees:  /home/corpora/original/english/simplewiki20140903/simplewiki-20140903-pages-articles.wsj02to21-comparativized-gcg15-4sm.berk.parsed.linetrees
+%simplewikiFULLAUTO.gcg15.linetrees:  /data/corpora/original/english/simplewiki20140903/simplewiki-20140903-pages-articles.wsj02to21-comparativized-gcg15-4sm.berk.parsed.linetrees
 	ln -s $< $@
 
 ## remove % comments

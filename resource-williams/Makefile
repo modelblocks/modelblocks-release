@@ -83,7 +83,7 @@ endif
 
 
 %/user-williams-directory.txt: | %   
-	echo '/home/corpora/original/english/williams' > $@
+	echo '/data/corpora/original/english/williams' > $@
 
 ################################################################################
 #
