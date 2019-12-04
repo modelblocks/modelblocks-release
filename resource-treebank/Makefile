@@ -76,9 +76,9 @@ endif
 
 
 %/user-treebank-directory.txt: | %   
-	echo '/home/corpora/original/english/penn_treebank_3' > $@
+	echo '/data/corpora/original/english/penn_treebank_3' > $@
 %/user-treebank-vadas-directory.txt: | %
-	echo '/home/corpora/original/english/penn_treebank_3_vadas_np_bracketing' > $@
+	echo '/data/corpora/original/english/penn_treebank_3_vadas_np_bracketing' > $@
 
 ################################################################################
 #

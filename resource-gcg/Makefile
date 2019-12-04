@@ -256,6 +256,8 @@ endef
 	cat $<  |  python $(word 3,$^) -d  |  $(word 4,$^)  >  $@
 %.verbose-discexprs.last.discgraphs:  %.verbose-discexprs
 	cat $<  |  grep 'GRAPH:'  |  tail -n1  |  perl -pe 's/ *GRAPH: *//'  >  $@
+%.autoinduced.discgraphs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py
+	cat $<  |  python $(word 3,$^) -g  |  grep 'GRAPH:'  |  perl -pe 's/ *GRAPH: *//'  >  $@
 
 
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies

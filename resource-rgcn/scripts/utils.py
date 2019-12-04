@@ -8,6 +8,7 @@ https://github.com/MichSchli/RelationPrediction
 import numpy as np
 import torch
 import dgl
+import sys
 
 #######################################################################
 #
@@ -45,7 +46,9 @@ def sample_edge_neighborhood(adj_list, degrees, n_triplets, sample_size):
 
         if np.sum(weights) == 0:
             weights = np.ones_like(weights)
-            weights[np.where(sample_counts == 0)] = 0
+            weights[np.where(sample_counts == 0)] = 0 
+        if np.sum(weights) == 0: # and if that didn't fix it, flat distribution
+            weights = np.ones_like(weights)
 
         # samples a node
         probabilities = (weights) / np.sum(weights)

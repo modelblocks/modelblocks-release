@@ -204,8 +204,13 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       return  xO in D.Chains.get(xS,[xS])                          or D.Inhs.get(xO,{}).get('r','') in D.Chains.get(xS,[xS]) or xO in D.Chains.get(D.Inhs.get(xS,{}).get('r',''),[]) or D.Inhs.get(xO,{}).get('r','') in D.Chains.get(D.Inhs.get(xS,{}).get('r',''),[])
 
     def possible( xLo, xMd, xHi ):
+      '''
       return ( ( not D.alreadyConnected( xHi, xMd, Connected ) or D.alreadyConnected( xMd, xHi, Connected ) ) and
                ( not D.alreadyConnected( xLo, xHi, Connected ) or D.alreadyConnected( xMd, xHi, Connected ) ) )
+      '''
+      return ( ( not D.alreadyConnected( xMd, '' , Connected ) or D.alreadyConnected( xMd, xHi, Connected ) and D.alreadyConnected( xHi, '' , Connected ) ) and
+               ( not D.alreadyConnected( xHi, xMd, Connected ) or D.alreadyConnected( xMd, xHi, Connected ) ) and
+               ( not D.alreadyConnected( xLo, xHi, Connected ) or D.alreadyConnected( xLo, xMd, Connected ) and D.alreadyConnected( xMd, xHi, Connected ) ) )
 
     ptup = D.PredToTuple.get( xTarget, () ) #[ xTarget ]
 
@@ -372,6 +377,8 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
             if VERBOSE: print( ' ' + '  '*step + str(step) + ': case 2g -- no goal, no constraints ' + xLo + ' under ' + xMd + ' under ' + xHi )
             return ( [ (xLo,xMd) ] if xLo == ptup[1] else [] ) + ( [ (xMd,xHi) ] if xMd == ptup[1] else D.scopesToConnect( xMd, xHi, step+1, Connected, xOrigin ) ) + ( D.scopesToConnect( xHi, xGoal, step+1, Connected, xOrigin ) if xHi != ptup[1] else [ (xHi,xGoal) ] )
 #complain( 'predicate ' + xLowest + ' with goal ' + xGoal + ' not sufficiently constrained; danger of garden-pathing' )
+      complain( 'found no way to order ' + xLowest + ' ' + xOther1 + ' ' + xOther2 + ' -- unable to build complete expression!' )
+      return [(None,None)]
 
     ## If trinary and higher predicates...
     else:
@@ -381,9 +388,9 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 
   def constrainDeepestReft( D, xTarg, step, Connected, xOrigin=None ):
     if VERBOSE: print( '  '*step + str(step) + ': recursing to ' + xTarg + '...' )
-    ## First, recurse down scopes...
-    for xLo,xHi in D.Scopes.items():
-      if xHi == xTarg:
+    ## First, recurse down scopes (sorting children from last to first)...
+    for xLo,xHi in sorted( D.Scopes.items(), reverse=True ):
+      if xHi in D.Legators.get(xTarg,[]):  #xHi == xTarg:
         l = D.constrainDeepestReft( xLo, step+1, Connected, xLo )
         if l != []: return l
     ## Second, try all preds...
