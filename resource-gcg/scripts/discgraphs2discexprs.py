@@ -159,7 +159,7 @@ for line in sys.stdin:
 
   ## List of original (dominant) refts...
 #  RecencyConnected = sorted( [ ((0 if x not in D.Subs else -1) + (0 if x in ScopeLeaves else -2),x)  for x in D.Referents  if D.ceiling(x) in D.Chains.get(L[0],[]) ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
-  RecencyConnected = [ y  for x in L1  for y in D.Referents  if any([ z in D.Chains.get(x,[]) for z in D.getCeil(y) ]) ]  #D.ceiling(y) in D.Chains.get(x,[]) ]
+  RecencyConnected = [ y  for x in L1  for y in D.Referents  if any([ z in D.Chains.get(x,[]) for z in D.getCeils(y) ]) ]  #D.ceiling(y) in D.Chains.get(x,[]) ]
   if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
 
 

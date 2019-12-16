@@ -28,6 +28,7 @@ for a in sys.argv:
 
 class DiscGraph:
 
+  #### Translate string representation into dict representation...
   def __init__( D, line ):
 
     ## Initialize associations...
@@ -91,6 +92,8 @@ class DiscGraph:
 #    D.Referents = sorted( sets.Set( [ x for pred in D.PredTuples for x in pred[1:] ] + D.Inhs.keys() ) )
     D.Referents = sorted( sets.Set( D.Referents ) )
 
+
+  #### Translate dict representation back into string representation...
   def strGraph( D, HypScopes = None ):  # PredTuples, QuantTuples, Inhs, Scopes ):
     if HypScopes == None: HypScopes = D.Scopes
     G = []
@@ -116,8 +119,8 @@ class DiscGraph:
     return ' '.join( sorted( G ) )
 
 
+  #### Remove redundant nuclear scopes of predicative noun phrases from Subs and Inhs...
   def smite( D ):
-    ## Smite redundant nuscos of predicative noun phrases out of Subs...
     for xHi,L in D.Subs.items():
       for xLo in L:
         ## Diagnose as redundant if reft xLo has rin which also has rin...
@@ -152,6 +155,7 @@ class DiscGraph:
             print(           '#WARNING: quantifier should not be annotated on redundant predicative referent: ' + xLo )
 
 
+  '''
   ## Check that no reft has multiple outscopers...
   def getBossesFromSup( D, xLo ):
 #      print( 'now getting sup ' + xLo )
@@ -166,13 +170,10 @@ class DiscGraph:
   def getBossesInChain( D, x ):
     out = D.getBossesFromSup(x) | D.getBossesFromSub(x)
     return out if len(out)>0 else sets.Set( [x] )
+  '''
 
 
-  def getCeil( D, xHi ):
-#    print( 'ceil of ' + xHi )
-    return D.getCeil( D.Scopes[xHi] ) if xHi in D.Scopes else sets.Set([ y  for xLo in D.Subs.get(xHi,[])  for y in D.getCeil(xLo) ]) if len(D.Subs.get(xHi,[]))>0 else [ xHi ]
-
-
+  #### Validate disc graph against inheritance and scope cycles...
   def check( D ):
     ## Check for inheritance cycles...
     def checkInhCycles( xLo, L=[] ):
@@ -213,6 +214,7 @@ class DiscGraph:
     return True
 
 
+  #### Validate discgraph against mulitple outscopers...
   def checkMultipleOutscopers( D ):
     def getScopersFromSup( xLo ):
       return ( [ (xLo,D.Scopes[xLo]) ] if xLo in D.Scopes else [] ) + [ x for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' for x in getScopersFromSup(xHi) ]
