@@ -36,12 +36,12 @@ for a in sys.argv:
 
 ################################################################################
 
-## variable replacement
+## Variable replacement...
 def replaceVarName( struct, xOld, xNew ):
   if type(struct)==str: return xNew if struct==xOld else struct
   return tuple( [ replaceVarName(x,xOld,xNew) for x in struct ] )
 
-## lambda expression format...
+## Lambda expression format...
 def lambdaFormat( expr, inAnd = False ):
   if len( expr ) == 0:                 return 'T'
   elif isinstance( expr, str ):        return expr
@@ -50,19 +50,27 @@ def lambdaFormat( expr, inAnd = False ):
   elif expr[0] == 'and' and inAnd:     return                         ' '.join( [ lambdaFormat(subexpr,True ) for subexpr in expr[1:] if len(subexpr)>0 ] )
   else:                                return '('   + expr[0] + ' ' + ' '.join( [ lambdaFormat(subexpr,False) for subexpr in expr[1:] ] ) + ')'
 
-## find unbound vars...
-def findUnboundVars( expr, bound = [] ):
+## Find unbound vars...
+def findUnboundVars( expr, Unbound, Bound = [] ):
   if   len( expr ) == 0: return
   elif isinstance( expr, str ):
-    if expr not in bound and expr != '_':
-      sys.stderr.write( '    DOWNSTREAM LAMBDA EXPRESSION ERROR: unbound var: ' + expr + '\n' )
-      print(           '#    DOWNSTREAM LAMBDA EXPRESSION ERROR: unbound var: ' + expr  )
+    if expr not in Bound and expr != '_':
+      if expr not in Unbound: Unbound.append( expr )
   elif expr[0] == 'lambda':
     for subexpr in expr[2:]:
-      findUnboundVars( subexpr, bound + [ expr[1] ] )
+      findUnboundVars( subexpr, Unbound, Bound + [ expr[1] ] )
   else:
     for subexpr in expr[1:]:
-      findUnboundVars( subexpr, bound )
+      findUnboundVars( subexpr, Unbound, Bound )
+
+## Convert expr to existentialized discourse anaphor antecedent...
+def makeDiscAntec( expr, dst, OrigUnbound ):
+#  print( 'mDA ' + dst + ' ' + str(expr[3][1] if len(expr)>3 and len(expr[3])>2 else '') )
+  if len( expr ) > 3 and expr[0].endswith('Q') and len( expr[2] ) > 2 and expr[2][1] == dst: return expr[2][2]
+  if len( expr ) > 3 and expr[0].endswith('Q') and len( expr[3] ) > 2 and expr[3][1] == dst: return expr[3][2]
+  if len( expr ) > 3 and expr[0].endswith('Q') and len( expr[3] ) > 0 and expr[3][1] in OrigUnbound: return ('D:supersomeQ', '_', expr[2], makeDiscAntec( expr[3], dst, OrigUnbound ) )
+  if isinstance( expr, str ): return expr
+  return tuple([ makeDiscAntec( subexpr, dst, OrigUnbound )  for subexpr in expr ])
 
 ## Check off consts used in expr...
 def checkConstsUsed( expr, OrigConsts ):
@@ -291,7 +299,7 @@ for line in sys.stdin:
     ## P1 rule...
     for ptup in list(D.PredTuples):
       x = ptup[1]  
-      if x not in D.Scopes.values() and x not in D.Inhs:
+      if x not in D.Scopes.values() and x not in D.Inhs and x not in D.DiscInhs:
         if VERBOSE: print( 'applying P to move from P to A: \\' + x + '. ' + lambdaFormat(ptup) )
         Abstractions[ x ].append( ptup )
         if ptup in D.PredTuples: D.PredTuples.remove( ptup )
@@ -299,7 +307,7 @@ for line in sys.stdin:
     ## P2 rule...
     for ptup in list(D.PredTuples):
       for x in ptup[2:]:
-        if D.Scopes.get(x,'')==ptup[1] and x not in D.Scopes.values() and x not in D.Inhs:
+        if D.Scopes.get(x,'')==ptup[1] and x not in D.Scopes.values() and x not in D.Inhs and x not in D.DiscInhs:
           if VERBOSE: print( 'applying P to move from P to A: \\' + x + '. ' + lambdaFormat(ptup) )
           Abstractions[ x ].append( ptup )
           if ptup in D.PredTuples: D.PredTuples.remove( ptup )
@@ -314,7 +322,7 @@ for line in sys.stdin:
 
     ## M rule...
     for var,Structs in Abstractions.items():
-      if len(Structs) == 1 and var not in D.Scopes.values() and var not in D.Inhs:
+      if len(Structs) == 1 and var not in D.Scopes.values() and var not in D.Inhs and var not in D.DiscInhs:
         if VERBOSE: print( 'applying M to move from A to E: \\' + var + '. ' + lambdaFormat(Structs[0]) )
         Expressions[var] = Structs[0]
         del Abstractions[var]
@@ -328,10 +336,36 @@ for line in sys.stdin:
         D.QuantTuples.remove( (q, e, r, s, n) )
         active = True
 
+    ## D rule -- discourse anaphora...
+    for src,dst in D.DiscInhs.items():
+      if dst in Expressions:
+#        expr = replaceVarName( Expressions[dst], dst, src )
+        expr = Expressions[dst]
+        DstUnbound = [ ]
+        findUnboundVars( expr, DstUnbound )
+#        print( 'yyyy ' + str(DstUnbound) )
+        for var in DstUnbound:
+          if var in Expressions:
+#            outscopingExpr = replaceVarName( Expressions[dst], dst, src )
+            outscopingExpr = Expressions[var]
+            OutscopingUnbound = [ ]
+            findUnboundVars( outscopingExpr, OutscopingUnbound, [var] )
+            if len( OutscopingUnbound ) == 0: break
+        else: continue 
+
+#        print( 'ayayay ' + str(OutscopingUnbound) )
+#        print( lambdaFormat(outscopingExpr) )
+        expr = replaceVarName( makeDiscAntec( ('D:prevosomeQ', '_', ('lambda', var+'x', ()), ('lambda', var, outscopingExpr)), dst, DstUnbound ), dst, src )
+#        for var in Unbound:
+#          expr = ('D:supersomeQ', '_', ('lambda', var, ()), ('lambda', var, expr) )
+        Abstractions[ src ].append( expr )
+        if VERBOSE: print( 'applying D to add from A to A replacing: ' + dst + ' with ' + src + ' and existentializing to make \\' + src + ' ' + lambdaFormat(expr) )
+        del D.DiscInhs[ src ]
+
     ## I1 rule...
     for src,lbldst in D.Inhs.items():
       for lbl,dst in lbldst.items():
-        if dst not in D.Inhs and dst not in Abstractions and dst not in Expressions and dst not in D.Scopes.values() and dst not in [ x for ptup in D.PredTuples for x in ptup ]:
+        if dst not in D.Inhs and dst not in D.DiscInhs and dst not in Abstractions and dst not in Expressions and dst not in D.Scopes.values() and dst not in [ x for ptup in D.PredTuples for x in ptup ]:
           if VERBOSE: print( 'applying I1 to add to A: \\' + dst + ' True' )
           Abstractions[ dst ].append( () )
           active = True
@@ -377,7 +411,11 @@ for line in sys.stdin:
   expr = tuple( ['and'] + Translations )
   print( lambdaFormat(expr) )
 #  for expr in Translations:
-  findUnboundVars( expr )
+  Unbound = [ ]
+  findUnboundVars( expr, Unbound )
+  for v in Unbound:
+    print(           '#    DOWNSTREAM LAMBDA EXPRESSION ERROR: unbound var: ' + v  )
+    sys.stderr.write( '    DOWNSTREAM LAMBDA EXPRESSION ERROR: unbound var: ' + v + '\n' )
   if VERBOSE: print( 'D.OrigConsts = ' + str(D.OrigConsts) )
   checkConstsUsed( expr, D.OrigConsts )
   for k in D.OrigConsts:

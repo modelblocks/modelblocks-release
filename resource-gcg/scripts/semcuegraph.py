@@ -400,10 +400,14 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           sys.stderr.write( 'ERROR: multiple -s tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         for dep in re.findall( '-[mntsw][0-9]+r?', G[x,'0'] ):
           dest = dep[2:6] if len(dep)>5 else sentnumprefix+dep[2:4]
-          if   dep[1]=='m' or dep[1]=='n' and dep[-1]=='r': G.equate( dest+'r', 'n', x+'r' )
-          elif dep[1]=='n':                                 G.equate( dest+'s', 'n', x+'r' )
-          elif dep[1]=='t' or dep[1]=='s' and dep[-1]=='r': G.equate( dest+'r', 's', x+'s' )
-          elif dep[1]=='s':                                 G.equate( dest+'s', 's', x+'s' )
+          if   dep[1]=='m' and dep[-1]=='r': G.equate( dest+'r', 'm', x+'r' )
+          elif dep[1]=='m':                  G.equate( dest+'s', 'm', x+'r' )
+          #if   dep[1]=='m' or 
+          elif dep[1]=='n' and dep[-1]=='r': G.equate( dest+'r', 'n', x+'r' )
+          elif dep[1]=='n':                  G.equate( dest+'s', 'n', x+'r' )
+          #elif dep[1]=='t' or 
+          elif dep[1]=='s' and dep[-1]=='r': G.equate( dest+'r', 's', x+'s' )
+          elif dep[1]=='s':                  G.equate( dest+'s', 's', x+'s' )
 #          if dep[1]=='w': G.equate( dest+'s', 'W', x+'s' )
           if dep[1]=='w': G.equate( dest+'s', 'W', x )
         G[x,'0'] = re.sub( '-[mntsw][0-9]+r?', '', G[x,'0'] )

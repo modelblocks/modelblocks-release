@@ -32,21 +32,23 @@ class DiscGraph:
   def __init__( D, line ):
 
     ## Initialize associations...
-    D.PorQs  = collections.defaultdict( list )                                     ## Key is elem pred.
-    D.Scopes = { }                                                                 ## Key is outscoped.
-    D.Traces = { }                                                                 ## Key is outscoped.
-    D.Inhs   = collections.defaultdict( lambda : collections.defaultdict(float) )  ## Key is inheritor.
+    D.PorQs      = collections.defaultdict( list )                                     ## Key is elem pred.
+    D.Scopes     = { }                                                                 ## Key is outscoped.
+    D.Traces     = { }                                                                 ## Key is outscoped.
+    D.Inhs       = collections.defaultdict( lambda : collections.defaultdict(float) )  ## Key is inheritor.
     D.Inheriteds = { }
-    D.Referents = [ ]
+    D.DiscInhs   = { }
+    D.Referents  = [ ]
  
     ## For each assoc...
     for assoc in sorted( line.split(' ') ):
       src,lbl,dst = assoc.split( ',', 2 )
       D.Referents += [ src ] if lbl=='0' else [ src, dst ]
-      if lbl.isdigit():  D.PorQs  [src].insert( int(lbl), dst )   ## Add preds and quants.
-      elif lbl == 's':   D.Scopes [src]      = dst                ## Add scopes.
-      elif lbl == 't':   D.Traces [src]      = dst                ## Add traces.
-      else:              D.Inhs   [src][lbl] = dst                ## Add inheritances.
+      if lbl.isdigit():  D.PorQs    [src].insert( int(lbl), dst )   ## Add preds and quants.
+      elif lbl == 's':   D.Scopes   [src]      = dst                ## Add scopes.
+      elif lbl == 't':   D.Traces   [src]      = dst                ## Add traces.
+      elif lbl == 'm':   D.DiscInhs [src]      = dst                ## Add discource anaphor.
+      else:              D.Inhs     [src][lbl] = dst                ## Add inheritances.
 #      if lbl == 'r':     D.Nuscos [dst].append( src )             ## Index nusco of each restr.
 #      if lbl == 'r':     D.NuscoValues[src]  = True
       if lbl == 'e':     D.Inheriteds[dst]   = True
@@ -232,7 +234,7 @@ class DiscGraph:
 #      if VERBOSE: print( 'Bosses of ' + x + ': ' + str(D.getBossesInChain(x)) )
 
 
-  def normForm( D ):
+#  def normForm( D ):
 
 
     '''
