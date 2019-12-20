@@ -71,7 +71,7 @@ endif
 
 
 %/user-ccl-directory.txt: | %
-	echo '/home/compling/cclparser' > $@
+	echo '/data/compling/cclparser' > $@
 
 ################################################################################
 #

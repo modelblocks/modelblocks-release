@@ -18,7 +18,7 @@ def formula2predictorstr(lines):
     for line in lines:
         fields = line.split(" ")
         #remove ~,|,(1 etc.
-        fields = [x for x in fields if (x not in ["~","(","(1","|","subject)",")"])]
+        fields = [x for x in fields if (x not in ["~","(","(1","|","subject)",")","+"])]
         #remove z.() circumfix
         fields = [removez(x) for x in fields]
         #strip leading/trailing space, paren

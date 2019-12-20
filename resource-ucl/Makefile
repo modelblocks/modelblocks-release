@@ -138,13 +138,13 @@ endif
 
 
 %/user-ucl-directory.txt: | %
-	echo '/home/corpora/original/english/ucl_novels' > $@
+	echo '/data/corpora/original/english/ucl_novels' > $@
 
 %/user-esn-directory.txt: | %
-	echo '/home/corpora/original/english/dundee/echo_state' > $@
+	echo '/data/corpora/original/english/dundee/echo_state' > $@
 
 %/user-geniatagger-directory.txt: | %
-	echo '/home/compling/geniatagger-2.0.2' > $@
+	echo '/data/compling/geniatagger-2.0.2' > $@
 
 
 ################################################################################

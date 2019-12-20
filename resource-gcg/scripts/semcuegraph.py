@@ -140,7 +140,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         G.equate( sN, '0', n )
         G.equate( G.result(l,d), l, n )
       else: G.equate( G.result(l,d), l, d+'u' )
-      G.equate( G.result('S',dUpper), 'S', n )
+      G.equate( G.result('r',G.result('S',dUpper)), 'S', n )
     elif '-lQ' in sD:                                        ## Q
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('1\'',G.result('S',d)), '2\'', G.result('S',d+'u') )  ## switch 1' & 2' arguments (same process top-down as bottom-up)
@@ -179,27 +179,32 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         G.equate( G.result(l,d), l, n )
       else: G.equate( G.result(l,d), l, d+'u' )
       if len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN.endswith('-rN}'):  ## Ee
+        if VERBOSE: print( 'using rule Ee' )
         G.equate( G.result('S',n), 'e', G.result('r',G.result('S',dLower)) )
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN == '-g{V-aN}':  ## Ef
+        if VERBOSE: print( 'using rule Ef' )
 #      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
         G.equate( G.result('1\'',G.result('S',n)), 'e', G.result('S',dLower) )
 #        G.equate( G.result('s',G.result('S',dLower)), 's', G.result('1\'',G.result('S',n)) )    ## sent7
 #        G.equate( G.result('r',G.result('S',dLower)), '1\'', id+'y' )
 #        G.equate( G.result('S',n), 'e', id+'y' )
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ) and sN == '-g{V-gN}':  ## Eg
+        if VERBOSE: print( 'using rule Eg' )
         G.equate( G.result('S',dLower), 's', G.result('S',n) )
         G.equate( 'D:someQ',                     '0', G.result('Q',G.result('S',n)) )
         G.equate( G.result('r',G.result('S',n)), '1', G.result('Q',G.result('S',n)) )
         G.equate( G.result('S',n),               '2', G.result('Q',G.result('S',n)) )
       elif len( gcgtree.deps(sC) ) > len( gcgtree.deps(sD) ):  ## Ec,Ed
+        if VERBOSE: print( 'using rule Ec/Ed' )
 #      if sN.endswith('-aN}') or sN.endswith('-iN}') or sN.endswith('-rN}'):  ## Eb,Ed
         G.equate( G.result('1\'',G.result('S',n)), 'e', G.result('r',G.result('S',dLower)) )
 #        G.equate( G.result('s',G.result('S',dLower)), 's', G.result('1\'',G.result('S',n)) )    ## sent7
 #        G.equate( G.result('r',G.result('S',dLower)), '1\'', id+'y' )
 #        G.equate( G.result('S',n), 'e', id+'y' )
-      else:
+      else:                                                    ## Ea,Eb
+        if VERBOSE: print( 'using rule Ea/Eb' )
 ## should not add 'e'       G.equate( G.result('S',n), 'e', G.result( str(G.getArity(sD))+'\'', G.result('S',dLower) ) )
-         G.equate( G.result('S',n), str(G.getArity(sD))+'\'', G.result('S',dLower) )
+        G.equate( G.result('S',n), str(G.getArity(sD))+'\'', G.result('S',dLower) )
 #        if '-g' in sN:                                       ## Ea,Eb
 #          G.equate( G.result('r',G.result('S',n)), str(G.getArity(sD))+'\'', G.result('S',dLower) )
 #        else:                                                ## Eh?,Ei? don't get restrictor for passive
@@ -344,7 +349,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('S',c), 'S', e )
     else:
       if sC != 'FAIL':   #sC != sD != sE != 'FAIL':
-        sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + ' in ' + str(id) + '.\n' )
+        sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + ' at ' + str(id) + '.\n' )
 
 
   def convert( G, t, sentnumprefix='', s=0, i=0 ):
@@ -395,10 +400,14 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           sys.stderr.write( 'ERROR: multiple -s tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         for dep in re.findall( '-[mntsw][0-9]+r?', G[x,'0'] ):
           dest = dep[2:6] if len(dep)>5 else sentnumprefix+dep[2:4]
-          if   dep[1]=='m' or dep[1]=='n' and dep[-1]=='r': G.equate( dest+'r', 'n', x+'r' )
-          elif dep[1]=='n':                                 G.equate( dest+'s', 'n', x+'r' )
-          elif dep[1]=='t' or dep[1]=='s' and dep[-1]=='r': G.equate( dest+'r', 's', x+'s' )
-          elif dep[1]=='s':                                 G.equate( dest+'s', 's', x+'s' )
+          if   dep[1]=='m' and dep[-1]=='r': G.equate( dest+'r', 'm', x+'r' )
+          elif dep[1]=='m':                  G.equate( dest+'s', 'm', x+'r' )
+          #if   dep[1]=='m' or 
+          elif dep[1]=='n' and dep[-1]=='r': G.equate( dest+'r', 'n', x+'r' )
+          elif dep[1]=='n':                  G.equate( dest+'s', 'n', x+'r' )
+          #elif dep[1]=='t' or 
+          elif dep[1]=='s' and dep[-1]=='r': G.equate( dest+'r', 's', x+'s' )
+          elif dep[1]=='s':                  G.equate( dest+'s', 's', x+'s' )
 #          if dep[1]=='w': G.equate( dest+'s', 'W', x+'s' )
           if dep[1]=='w': G.equate( dest+'s', 'W', x )
         G[x,'0'] = re.sub( '-[mntsw][0-9]+r?', '', G[x,'0'] )
@@ -440,17 +449,20 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         if EQN_DEFAULTS and ':' in eqns and '=' not in eqns:
           if   eqns.startswith('N-b{N-aD}:'):    eqns = 'r0='  + eqns + 'Q^r1=1r^r2=1'
           elif eqns.startswith('N-aD-b{N-aD}:'): eqns = 'r0='  + eqns + 'Q^r1=2r^r2=2'
+          elif eqns.startswith('N-bN:'):         eqns = 'r0='  + eqns + 'Q^r1=2r^r2=2'
+          elif eqns.startswith('N-bO:'):         eqns = 'r0='  + eqns + 'Q^r1=2r^r2=2'
           elif eqns.startswith('A-aN-iN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
           elif eqns.startswith('A-aN-rN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
           elif eqns.startswith('A'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif eqns.startswith('B'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^rh=SH'
+          elif eqns.startswith('N-iN'):          eqns = 'Er0=' + eqns + '^Er1=^1='
           elif eqns.startswith('N-rN'):          eqns = 'Er0=' + eqns + '^Er1=^1='
           elif eqns.startswith('N'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
 #          G.dump()
           if VERBOSE: print( 'Inducing default equation: ' + eqns )
 
         if '-x' in G[x,'0'] and eqns != '' and '=' not in eqns:
-          sys.stderr.write( 'WARNING: rewrite rules in: ' + G[x,'0'] + ' specify no graph equations: "' + eqns + '" -- will have no effect!\n' )
+          sys.stderr.write( 'WARNING: rewrite rules in: ' + G[x,'0'] + ' specify no graph equations: "' + eqns + '" -- will have no effect at ' + x + '\n' )
 
         ## if lexical rules produce equations, build appropriate graph...
         if '=' in eqns:

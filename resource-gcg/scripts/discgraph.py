@@ -28,24 +28,27 @@ for a in sys.argv:
 
 class DiscGraph:
 
+  #### Translate string representation into dict representation...
   def __init__( D, line ):
 
     ## Initialize associations...
-    D.PorQs  = collections.defaultdict( list )                                     ## Key is elem pred.
-    D.Scopes = { }                                                                 ## Key is outscoped.
-    D.Traces = { }                                                                 ## Key is outscoped.
-    D.Inhs   = collections.defaultdict( lambda : collections.defaultdict(float) )  ## Key is inheritor.
+    D.PorQs      = collections.defaultdict( list )                                     ## Key is elem pred.
+    D.Scopes     = { }                                                                 ## Key is outscoped.
+    D.Traces     = { }                                                                 ## Key is outscoped.
+    D.Inhs       = collections.defaultdict( lambda : collections.defaultdict(float) )  ## Key is inheritor.
     D.Inheriteds = { }
-    D.Referents = [ ]
+    D.DiscInhs   = { }
+    D.Referents  = [ ]
  
     ## For each assoc...
     for assoc in sorted( line.split(' ') ):
       src,lbl,dst = assoc.split( ',', 2 )
       D.Referents += [ src ] if lbl=='0' else [ src, dst ]
-      if lbl.isdigit():  D.PorQs  [src].insert( int(lbl), dst )   ## Add preds and quants.
-      elif lbl == 's':   D.Scopes [src]      = dst                ## Add scopes.
-      elif lbl == 't':   D.Traces [src]      = dst                ## Add traces.
-      else:              D.Inhs   [src][lbl] = dst                ## Add inheritances.
+      if lbl.isdigit():  D.PorQs    [src].insert( int(lbl), dst )   ## Add preds and quants.
+      elif lbl == 's':   D.Scopes   [src]      = dst                ## Add scopes.
+      elif lbl == 't':   D.Traces   [src]      = dst                ## Add traces.
+      elif lbl == 'm':   D.DiscInhs [src]      = dst                ## Add discource anaphor.
+      else:              D.Inhs     [src][lbl] = dst                ## Add inheritances.
 #      if lbl == 'r':     D.Nuscos [dst].append( src )             ## Index nusco of each restr.
 #      if lbl == 'r':     D.NuscoValues[src]  = True
       if lbl == 'e':     D.Inheriteds[dst]   = True
@@ -91,6 +94,8 @@ class DiscGraph:
 #    D.Referents = sorted( sets.Set( [ x for pred in D.PredTuples for x in pred[1:] ] + D.Inhs.keys() ) )
     D.Referents = sorted( sets.Set( D.Referents ) )
 
+
+  #### Translate dict representation back into string representation...
   def strGraph( D, HypScopes = None ):  # PredTuples, QuantTuples, Inhs, Scopes ):
     if HypScopes == None: HypScopes = D.Scopes
     G = []
@@ -116,8 +121,8 @@ class DiscGraph:
     return ' '.join( sorted( G ) )
 
 
+  #### Remove redundant nuclear scopes of predicative noun phrases from Subs and Inhs...
   def smite( D ):
-    ## Smite redundant nuscos of predicative noun phrases out of Subs...
     for xHi,L in D.Subs.items():
       for xLo in L:
         ## Diagnose as redundant if reft xLo has rin which also has rin...
@@ -152,6 +157,7 @@ class DiscGraph:
             print(           '#WARNING: quantifier should not be annotated on redundant predicative referent: ' + xLo )
 
 
+  '''
   ## Check that no reft has multiple outscopers...
   def getBossesFromSup( D, xLo ):
 #      print( 'now getting sup ' + xLo )
@@ -166,13 +172,10 @@ class DiscGraph:
   def getBossesInChain( D, x ):
     out = D.getBossesFromSup(x) | D.getBossesFromSub(x)
     return out if len(out)>0 else sets.Set( [x] )
+  '''
 
 
-  def getCeil( D, xHi ):
-#    print( 'ceil of ' + xHi )
-    return D.getCeil( D.Scopes[xHi] ) if xHi in D.Scopes else sets.Set([ y  for xLo in D.Subs.get(xHi,[])  for y in D.getCeil(xLo) ]) if len(D.Subs.get(xHi,[]))>0 else [ xHi ]
-
-
+  #### Validate disc graph against inheritance and scope cycles...
   def check( D ):
     ## Check for inheritance cycles...
     def checkInhCycles( xLo, L=[] ):
@@ -213,6 +216,7 @@ class DiscGraph:
     return True
 
 
+  #### Validate discgraph against mulitple outscopers...
   def checkMultipleOutscopers( D ):
     def getScopersFromSup( xLo ):
       return ( [ (xLo,D.Scopes[xLo]) ] if xLo in D.Scopes else [] ) + [ x for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o' for x in getScopersFromSup(xHi) ]
@@ -230,7 +234,7 @@ class DiscGraph:
 #      if VERBOSE: print( 'Bosses of ' + x + ': ' + str(D.getBossesInChain(x)) )
 
 
-  def normForm( D ):
+#  def normForm( D ):
 
 
     '''

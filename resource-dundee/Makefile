@@ -105,7 +105,7 @@ endif
 
     
 %/user-dundee-directory.txt: | %
-	echo '/home/corpora/original/english/dundee' > $@
+	echo '/data/corpora/original/english/dundee' > $@
     
 ################################################################################
 #
