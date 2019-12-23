@@ -337,8 +337,9 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( gcgtree.lastdep(sD), '0', G.result('B',d) )
     elif 'I-aN-g{R-aN}-lR' == sE:                   ## Rc (off-spec)
       G.equate( G.result('S',d),     'S', c )
-      G.equate( 'A-aN-bN:support',   '0', G.result('r',G.result('S',G.result('A',e))) )
-      G.equate( G.result('S',d),     '2', G.result('r',G.result('S',G.result('A',e))) )
+      G.equate( 'A-aN-bN:support',                             '0', G.result('r',G.result('S',G.result('A',e))) )
+      G.equate( G.result('1\'',G.result('S',G.result('A',e))), '1', G.result('r',G.result('S',G.result('A',e))) )
+      G.equate( G.result('r',G.result('S',d)),                 '2', G.result('r',G.result('S',G.result('A',e))) )
       G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
     elif '-lR' in sE:                               ## R
       G.equate( G.result('S',d), 'S', c )
@@ -456,7 +457,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif eqns.startswith('A'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif eqns.startswith('B'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^rh=SH'
           elif eqns.startswith('N-iN'):          eqns = 'Er0=' + eqns + '^Er1=^1='
-          elif eqns.startswith('N-rN'):          eqns = 'Er0=' + eqns + '^Er1=^1='
+          elif eqns.startswith('N-rN'):          eqns = 'Er0=' + eqns + '^Er1=^1='   ## NOTE: FIRST SYNARG IS ITSELF -- PROBLEMATIC FOR RELCLAUSE ON DEVERBAL NOUN
           elif eqns.startswith('N'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
 #          G.dump()
           if VERBOSE: print( 'Inducing default equation: ' + eqns )

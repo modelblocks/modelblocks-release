@@ -114,6 +114,9 @@ class DiscGraph:
     for xLo,lxHi in D.Inhs.items():
       for l,xHi in lxHi.items():
         G.append( xLo + ',' + l +',' + xHi )
+    ## List discourse anaphor inheritancess...
+    for xLo,xHi in D.DiscInhs.items():
+      G.append( xLo + ',m,' + xHi )
     ## List scopes...
     for xLo,xHi in HypScopes.items():
       G.append( xLo + ',s,' + xHi )
