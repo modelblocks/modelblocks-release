@@ -123,7 +123,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     dUpper,dLower = (G.a+'u',G.a) if s==0 else (G.b,G.b+'u')  ## bottom-up on left child, top-down on right child
 
     if '-lV' in sD:                                          ## V
-      sN = re.findall('-v(?:[^-{}]|{[^{}]*})',sD)[-1]
+      sN = re.findall('-v(?:[^-\{\}]|\{[^\{\}]*\})',sD)[-1]
       n = G.findNolo( sN, d )
       if n=='':
         n = G.result( l, d+'u' )
@@ -133,7 +133,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('S',n), '1\'', G.result('S',dUpper) )
       G.equate( G.result('S',dUpper), 'e', G.result('r',G.result('S',dLower)) )
     elif '-lF' in sD:                                        ## F (I?)
-      sN = re.findall('-i(?:[^-{}]|{[^{}]*})',sD)[-1]
+      sN = re.findall('-i(?:[^-\{\}]|\{[^\{\}]*\})',sD)[-1]
       n = G.findNolo( sN, d )
       if n=='':
         n = G.result( l, d+'u' )
@@ -247,7 +247,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     G.equate( sE, '0', G.b )
     if j==0:
       c = id + 'a'
-      G.equate( c, 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or re.match('.*-[ri]N-lH$',sE)!=None or re.match('.*-g{.-aN}-lH$',sE)!=None or sE.endswith('-g{V-gN}-lC') else G.b )
+#      G.equate( c, 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or re.match('.*-[ri]N-lH$',sE)!=None or re.match('.*-g{.-aN}-lH$',sE)!=None or sE.endswith('-g{V-gN}-lC') else G.b )
+      G.equate( c, 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or ('-lH' in sE and re.match('.*-h\{[^\}]*-[ri]N\}$',sD)!=None) or re.match('.*-g\{.-aN\}-lH$',sE)!=None or sE.endswith('-g{V-gN}-lC') else G.b )
       G.equate( sC, '0', c )
       ## add all nonlocal dependencies with no nolo on store...
       b = c
@@ -259,7 +260,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     if j==1:
       c = G.result( 'B', G.a )
       while (c,'B') in G: c = G[c,'B']            ## if there are non-local dependencies on B
-      G.equate( G.result('A',c), 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or re.match('.*-[ri]N-lH$',sE)!=None or re.match('.*{.-aN}-lH$',sE)!=None or sE.endswith('-g{V-gN}-lC') else G.b )
+#      G.equate( G.result('A',c), 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or re.match('.*-[ri]N-lH$',sE)!=None or re.match('.*{.-aN}-lH$',sE)!=None or sE.endswith('-g{V-gN}-lC') else G.b )
+      G.equate( G.result('A',c), 'A', G.result('A',G.b) if '-lG' in sD or '-lI' in sE or '-lR' in sE or ('-lH' in sE and re.match('.*-h\{[^\}]*-[ri]N\}$',sD)!=None) or re.match('.*\{.-aN\}-lH$',sE)!=None or sE.endswith('-g{V-gN}-lC') else G.b )
 
     d,e = G.a,G.b
     if   '-lD' in sD:                               ## Da
@@ -312,7 +314,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('S',d), 'S', c )
       n = G.findNolo( gcgtree.lastdep(sD), d )
       if n!='':
-        if re.match('.*-[ri]N-lH$',sE)!=None:       ## Hb
+#        if re.match('.*-[ri]N-lH$',sE)!=None:       ## Hb
+        if '-lH' in sE and re.match('.*-h\{[^\}]*-[ri]N\}$',sD)!=None:       ## Hb
           G.equate( G.result('r',G.result('S',n)), 'S', G.result('A',e) )
           G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
         elif re.match('.*-g\{.-aN\}-lH$',sE)!=None:   ## Hc
