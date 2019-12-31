@@ -8,7 +8,6 @@ https://github.com/MichSchli/RelationPrediction
 import numpy as np
 import torch
 import dgl
-import sys
 
 #######################################################################
 #
@@ -44,6 +43,7 @@ def sample_edge_neighborhood(adj_list, degrees, n_triplets, sample_size):
     for i in range(0, sample_size):
         weights = sample_counts * seen
 
+        # uniformly sample a new node if end is reached
         if np.sum(weights) == 0:
             weights = np.ones_like(weights)
             weights[np.where(sample_counts == 0)] = 0 
@@ -155,6 +155,34 @@ def my_sampling(triplets, sample_size, split_size,
     g, rel, norm = build_graph_from_triplets(len(uniq_v), num_rels,
                                              (src, rel, dst))
     return g, uniq_v, rel, norm, relabeled_edges
+
+# move sampling to main code
+def generate_graph_and_labels(array, split_size, num_rels, negative_rate, loss):
+
+    src, rel, dst = array.transpose()
+    uniq_v, edges = np.unique((src, dst), return_inverse=True)
+    src, dst = np.reshape(edges, (2, -1))
+    relabeled_edges = np.stack((src, rel, dst)).transpose()
+
+    # negative sampling
+    samples, labels = negative_sampling(relabeled_edges, len(uniq_v),
+                                        negative_rate, loss)
+
+    # further split graph, only half of the edges will be used as graph
+    # structure, while the rest half is used as unseen positive samples
+    split_size = int(len(array) * split_size)
+    graph_split_ids = np.random.choice(np.arange(len(array)),
+                                       size=split_size, replace=False)
+    src = src[graph_split_ids]
+    dst = dst[graph_split_ids]
+    rel = rel[graph_split_ids]
+
+    # build DGL graph
+    print("# sampled nodes: {}".format(len(uniq_v)))
+    print("# sampled edges: {}".format(len(src) * 2))
+    g, rel, norm = build_graph_from_triplets(len(uniq_v), num_rels,
+                                             (src, rel, dst))
+    return g, uniq_v, rel, norm, samples, labels
 
 def comp_deg_norm(g):
     in_deg = g.in_degrees(range(g.number_of_nodes())).float().numpy()
