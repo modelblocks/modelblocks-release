@@ -21,6 +21,7 @@ from layers import RGCNBlockLayer as RGCNLayer
 from model import BaseRGCN
 
 import utils
+import os
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -132,9 +133,18 @@ class LinkPredict(nn.Module):
 
 def main(args):
     # load graph data
-    data = knwlgrh.load_link(args.dataset)
+    if args.sampling == "neighborhood":
+        data = knwlgrh.load_link(args.dataset)
+        train_data = data.train
+    elif args.sampling == "batch":
+        data = knwlgrh.load_sent_link(args.dataset)
+        train_data = data.sent_train
+        edge_train_data = data.edge_train
+    else:
+        raise NameError("sampling method not defined")
     num_nodes = data.num_nodes
-    train_data = data.train # np.array (n, 3)
+    # np.array (n, 3) for neighborhood, nested triplet list for batch
+
     num_rels = data.num_rels
 
     # check cuda
@@ -150,7 +160,12 @@ def main(args):
         print(foo.size())
 
     # build test graph
-    test_graph, test_rel, test_norm = utils.build_test_graph(num_nodes, num_rels, train_data)
+    if args.sampling == "batch":
+        test_graph, test_rel, test_norm = utils.build_test_graph(num_nodes, num_rels, np.array(edge_train_data))
+
+    elif args.sampling == "neighborhood":
+        test_graph, test_rel, test_norm = utils.build_test_graph(num_nodes, num_rels, train_data)
+
     test_node_id = torch.arange(0, num_nodes, dtype=torch.long).view(-1, 1)
     test_rel = torch.from_numpy(test_rel)
     test_norm = torch.from_numpy(test_norm).view(-1, 1)
@@ -163,7 +178,8 @@ def main(args):
         model.cuda()
 
     # build adj list and calculate degrees for sampling
-    adj_list, degrees = utils.get_adj_and_degrees(num_nodes, train_data)
+    if args.sampling == "neighborhood":
+        adj_list, degrees = utils.get_adj_and_degrees(num_nodes, train_data)
 
     # optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -175,51 +191,106 @@ def main(args):
         model.train()
         epoch += 1
 
-        # perform edge neighborhood sampling to generate training graph and data
-        # return g, uniq_v, rel, norm, samples, labels
-        g, node_id, edge_type, node_norm, data, labels = utils.generate_sampled_graph_and_labels(
+        if args.sampling == "neighborhood":
+            # perform edge neighborhood sampling to generate training graph and data
+            # return g, uniq_v, rel, norm, samples, labels
+            g, node_id, edge_type, node_norm, data, labels = utils.generate_sampled_graph_and_labels(
                 train_data, args.graph_batch_size, args.graph_split_size,
                 num_rels, adj_list, degrees, args.negative_sample, args.loss)
-        # only half of the sampled data is used to create g
-        # but "data" is all of the sampled data
-        print("Done edge sampling")
+            # only half of the sampled data is used to create g
+            # but "data" is all of the sampled data
+            print("Done edge sampling")
 
-        # set node/edge feature
-        node_id = torch.from_numpy(node_id).view(-1, 1)
-        edge_type = torch.from_numpy(edge_type)
-        node_norm = torch.from_numpy(node_norm).view(-1, 1)
-        data, labels = torch.from_numpy(data), torch.from_numpy(labels)
-        deg = g.in_degrees(range(g.number_of_nodes())).float().view(-1, 1)
-        if use_cuda:
-            node_id, deg = node_id.cuda(), deg.cuda()
-            edge_type, node_norm = edge_type.cuda(), node_norm.cuda()
-            data, labels = data.cuda(), labels.cuda()
-        # assigns node IDs
-        g.ndata.update({'id': node_id, 'norm': node_norm})
-        # assigns node types
-        g.edata['type'] = edge_type
+            # set node/edge feature
+            node_id = torch.from_numpy(node_id).view(-1, 1)
+            edge_type = torch.from_numpy(edge_type)
+            node_norm = torch.from_numpy(node_norm).view(-1, 1)
+            data, labels = torch.from_numpy(data), torch.from_numpy(labels)
+            deg = g.in_degrees(range(g.number_of_nodes())).float().view(-1, 1)
+            if use_cuda:
+                node_id, deg = node_id.cuda(), deg.cuda()
+                edge_type, node_norm = edge_type.cuda(), node_norm.cuda()
+                data, labels = data.cuda(), labels.cuda()
 
-        # perform propagation using half the sampled data only (g)
-        # but evaluate the learned embedding using all of the sampled data (data)
-        if args.loss == "bce":
-            loss = model.bce_loss(g, data, labels)
-        elif args.loss == "cos":
-            loss = model.cos_loss(g, data, labels)
+            # assigns node IDs
+            g.ndata.update({'id': node_id, 'norm': node_norm})
+            # assigns node types
+            g.edata['type'] = edge_type
+
+            # perform propagation using half the sampled data only (g)
+            # but evaluate the learned embedding using all of the sampled data (data)
+            if args.loss == "bce":
+                loss = model.bce_loss(g, data, labels)
+            elif args.loss == "cos":
+                loss = model.cos_loss(g, data, labels)
+            else:
+                raise NameError("loss function not specified")
+
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_norm)  # clip gradients
+            optimizer.step()
+
+            eprint("Epoch {:04d} | Loss {:.4f}".format(epoch, loss.item()))
+
+            optimizer.zero_grad()
+
+        elif args.sampling == "batch":
+            # sample by sentence number and stack
+            permutation = torch.randperm(len(train_data))
+            for i in range(0, len(train_data), args.graph_batch_size):
+                indices = permutation[i:i+args.graph_batch_size]
+                # break
+                # for index in indices:
+                #     print(train_data[index])
+                #     break
+                sentences = [train_data[index] for index in indices]
+                array = np.concatenate(sentences)
+                # array = train_data[indices]
+                g, node_id, edge_type, node_norm, data, labels = utils.generate_graph_and_labels(array, args.graph_split_size,
+                num_rels, args.negative_sample, args.loss)
+                # only half of the sampled data is used to create g
+                # but "data" is all of the sampled data
+
+                # set node/edge feature
+                node_id = torch.from_numpy(node_id).view(-1, 1)
+                edge_type = torch.from_numpy(edge_type)
+                node_norm = torch.from_numpy(node_norm).view(-1, 1)
+                data, labels = torch.from_numpy(data), torch.from_numpy(labels)
+                deg = g.in_degrees(range(g.number_of_nodes())).float().view(-1, 1)
+                if use_cuda:
+                    node_id, deg = node_id.cuda(), deg.cuda()
+                    edge_type, node_norm = edge_type.cuda(), node_norm.cuda()
+                    data, labels = data.cuda(), labels.cuda()
+
+                # assigns node IDs
+                g.ndata.update({'id': node_id, 'norm': node_norm})
+                # assigns node types
+                g.edata['type'] = edge_type
+
+                # perform propagation using half the sampled data only (g)
+                # but evaluate the learned embedding using all of the sampled data (data)
+                if args.loss == "bce":
+                    loss = model.bce_loss(g, data, labels)
+                elif args.loss == "cos":
+                    loss = model.cos_loss(g, data, labels)
+                else:
+                    raise NameError("loss function not specified")
+
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_norm) # clip gradients
+                optimizer.step()
+                eprint("Epoch {:04d} | Batch {:04d}/{:04d} | Loss {:.4f}".format(epoch, i//args.graph_batch_size+1, len(train_data)//args.graph_batch_size+1, loss.item()))
+                eprint("="*40)
+                optimizer.zero_grad()
+
         else:
-            raise NameError("loss function not specified")
-
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_norm) # clip gradients
-        optimizer.step()
-
-        eprint("Epoch {:04d} | Loss {:.4f}".format(epoch, loss.item()))
-
-        optimizer.zero_grad()
+            raise NameError("sampling method not specified")
 
         if epoch % args.save_every == 0:
-            node_vec = model(test_graph)
-            torch.save(node_vec, args.dataset + "_" + args.rel_type + "rel_" + args.loss + "loss_" + str(args.n_hidden) + "dim_" + str(epoch) + "epochs_nodes" + ".pt")
-            torch.save(list(model.parameters())[0].data, args.dataset + "_" + args.rel_type + "rel_" + args.loss + "loss_" + str(args.n_hidden) + "dim_" + str(epoch) + "epochs_rels" + ".pt")
+            model.eval()
+            node_vec, rel_vec = model.evaluate(test_graph)
+            torch.save(node_vec, args.dataset + "_" + args.rel_type + "rel_" + args.loss + "loss_" + str(args.n_hidden) + "dim_" + str(args.negative_sample) + "samples_" + str(epoch) + "epochs_nodes" + ".pt")
+            torch.save(rel_vec, args.dataset + "_" + args.rel_type + "rel_" + args.loss + "loss_" + str(args.n_hidden) + "dim_" + str(args.negative_sample) + "samples_" + str(epoch) + "epochs_rels" + ".pt")
 
         if epoch == args.n_epochs:
             break
@@ -230,40 +301,42 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='RGCN')
     # default dropout rate = 0.2
     parser.add_argument("--dropout", type=float, default=0.2,
-            help="dropout probability")
+                        help="dropout probability")
     parser.add_argument("--n-hidden", type=int, default=20,
-            help="number of hidden units")
+                        help="number of hidden units")
     parser.add_argument("--gpu", type=int, default=-1,
-            help="gpu")
-    parser.add_argument("--lr", type=float, default=1e-2,
-            help="learning rate")
+                        help="gpu")
+    parser.add_argument("--lr", type=float, default=1e-3,
+                        help="learning rate")
     # if using blocklayer, n-hidden needs to be divisible by n-bases
     parser.add_argument("--n-bases", type=int, default=1,
-            help="number of weight blocks for each relation")
-    parser.add_argument("--n-layers", type=int, default=5,
-            help="number of propagation rounds")
+                        help="number of weight blocks for each relation")
+    parser.add_argument("--n-layers", type=int, default=2,
+                        help="number of propagation rounds")
     parser.add_argument("--n-epochs", type=int, default=1000,
-            help="number of minimum training epochs")
+                        help="number of minimum training epochs")
     parser.add_argument("-d", "--dataset", type=str, required=True,
-            help="dataset to use")
+                        help="dataset to use")
     parser.add_argument("-r", "--rel-type", type=str, required=True,
-                        help="type of relation to learn, vector (diagonal matrix) or matrix")
+                        help="type of relation to learn, 'vector' (diagonal matrix) or 'matrix'")
     parser.add_argument("-l", "--loss", type=str, required=True,
-                        help="loss function to use")
+                        help="loss function to use, 'bce' or 'cos'")
+    parser.add_argument("-s", "--sampling", type=str, required=True,
+                        help="sampling method, 'neighborhood' or 'batch'")
     parser.add_argument("--eval-batch-size", type=int, default=1000,
-            help="batch size when evaluating")
+                        help="batch size when evaluating")
     parser.add_argument("--regularization", type=float, default=0.01,
-            help="regularization weight")
+                        help="regularization weight")
     parser.add_argument("--grad-norm", type=float, default=1.0,
-            help="norm to clip gradient to")
-    parser.add_argument("--graph-batch-size", type=int, default=10000,
-            help="number of edges to sample in each iteration")
+                        help="norm to clip gradient to")
+    parser.add_argument("--graph-batch-size", type=int, default=1024,
+                        help="number of edges to sample in each iteration for neighborhood sampling, and number of sentences to sample for batch sampling")
     parser.add_argument("--graph-split-size", type=float, default=0.5,
-            help="portion of edges used as positive sample")
+                        help="portion of edges used as positive sample")
     parser.add_argument("--negative-sample", type=int, default=2,
-            help="number of negative samples per positive sample")
-    parser.add_argument("--save-every", type=int, default=100,
-            help="save node/relationship representations every n epochs")
+                        help="number of negative samples per positive sample")
+    parser.add_argument("--save-every", type=int, default=1000,
+                        help="save node/relationship representations every n epochs")
     args = parser.parse_args()
     print(args)
     main(args)

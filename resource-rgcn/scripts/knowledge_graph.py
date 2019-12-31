@@ -195,6 +195,29 @@ class RGCNLinkDataset(object):
         print("# edges: {}".format(len(self.train)))
 
 
+class RGCNSentenceLinkDataset(object):
+
+    def __init__(self, dir):
+        self.dir = dir
+
+    def load(self):
+        entity_path = os.path.join(self.dir, 'entities.dict')
+        relation_path = os.path.join(self.dir, 'relations.dict')
+        sentence_path = os.path.join(self.dir, 'sentences.dict')
+        train_path = os.path.join(self.dir, 'train.txt')
+        entity_dict = _read_dictionary(entity_path)
+        relation_dict = _read_dictionary(relation_path)
+        sentence_dict = _read_dictionary(sentence_path)
+        # returns [[subID, relID, objID], [subID, relID, objID], ...]
+        self.sent_train = _read_sent_triplets_as_list(train_path, entity_dict, relation_dict, sentence_dict)
+        self.edge_train = _read_triplets_as_list(train_path, entity_dict, relation_dict)
+        self.num_nodes = len(entity_dict)
+        print("# entities: {}".format(self.num_nodes))
+        self.num_rels = len(relation_dict)
+        print("# relations: {}".format(self.num_rels))
+        print("# sentences: {}".format(len(self.sent_train)))
+        print("# edges: {}".format(len(self.edge_train)))
+
 def load_entity(dataset, bfs_level, relabel):
     data = RGCNEntityDataset(dataset)
     data.load(bfs_level, relabel)
@@ -205,6 +228,10 @@ def load_link(dataset):
     data.load()
     return data
 
+def load_sent_link(dataset):
+    data = RGCNSentenceLinkDataset(dataset)
+    data.load()
+    return data
 
 def _sp_row_vec_from_idx_list(idx_list, dim):
     """Create sparse vector of dimensionality dim from a list of indices."""
@@ -520,4 +547,13 @@ def _read_triplets_as_list(filename, entity_dict, relation_dict):
         r = relation_dict[triplet[1]]
         o = entity_dict[triplet[2]]
         l.append([s, r, o])
+    return l
+
+def _read_sent_triplets_as_list(filename, entity_dict, relation_dict, sentence_dict):
+    l = [[] for i in range(len(sentence_dict))]
+    for triplet in _read_triplets(filename):
+        s = entity_dict[triplet[0]]
+        r = relation_dict[triplet[1]]
+        o = entity_dict[triplet[2]]
+        l[sentence_dict[triplet[3]]].append([s, r, o])
     return l
