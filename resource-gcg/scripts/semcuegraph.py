@@ -409,7 +409,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           #if   dep[1]=='m' or 
           elif dep[1]=='n' and dep[-1]=='r': G.equate( dest+'r', 'n', x+'r' )
           elif dep[1]=='n':                  G.equate( dest+'s', 'n', x+'r' )
-          #elif dep[1]=='t' or 
+          elif dep[1]=='t':                  G.equate( dest+'s', 's', x+'s' )  ## scotch tape (suggested scope for lambda expressions, but not to be used for scoring) 
           elif dep[1]=='s' and dep[-1]=='r': G.equate( dest+'r', 's', x+'s' )
           elif dep[1]=='s':                  G.equate( dest+'s', 's', x+'s' )
 #          if dep[1]=='w': G.equate( dest+'s', 'W', x+'s' )
