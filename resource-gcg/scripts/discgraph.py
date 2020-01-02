@@ -136,15 +136,15 @@ class DiscGraph:
           del D.Inhs[xLo]['r']
           if len(D.Inhs[xLo])==0: del D.Inhs[xLo]
           if xLo in D.Scopes:
-            sys.stderr.write( 'WARNING: scope should not be annotated on redundant predicative referent: ' + xLo + '\n' )
-            print(           '#WARNING: scope should not be annotated on redundant predicative referent: ' + xLo )
+            sys.stderr.write( 'WARNING: scope (-s) should not be annotated on redundant predicative referent: ' + xLo + '\n' )
+            print(           '#WARNING: scope (-s) should not be annotated on redundant predicative referent: ' + xLo )
           if xLo in D.Scopes.values():
-            sys.stderr.write( 'WARNING: scope should not be annotated to redundant predicative referent: ' + xLo + '\n' )
-            print(           '#WARNING: scope should not be annotated to redundant predicative referent: ' + xLo )
+            sys.stderr.write( 'WARNING: scope (-s) should not be annotated *to* redundant predicative referent: ' + xLo + '\n' )
+            print(           '#WARNING: scope (-s) should not be annotated *to* redundant predicative referent: ' + xLo )
           BadSubs = [ x  for x in D.Subs.get(xLo,[])  for l,y in D.Inhs.get(x,{}).items()  if y == xLo and l != 'c' ]
           if BadSubs != []:
-            sys.stderr.write( 'WARNING: inheritance should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo + '\n' )
-            print(           '#WARNING: inheritance should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo )
+            sys.stderr.write( 'WARNING: inheritance (-n) should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo + '\n' )
+            print(           '#WARNING: inheritance (-n) should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo )
             '''
             ## Modify bad subs to point to ...
             for x in BadSubs:
