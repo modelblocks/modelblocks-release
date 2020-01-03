@@ -291,12 +291,16 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('S',c), 'S', e )
       G.equate( G.result('r',G.result('S',e)), 'c', G.result('r',G.result('S',d)) )
       G.equate( G.result('S',e), 'c', G.result('S',d) )
+      G.equate( G.result('H',G.result('S',d)), 'H', G.result('S',c) )
+      G.equate( G.result('H',G.result('S',c)), 'H', G.result('S',e) )
       for i in range( 1, len(gcgtree.deps(sC,'ab'))+1 ): #G.getArity(sC)+1 ):
         G.equate( G.result(str(i)+'\'',G.result('S',c)), str(i)+'\'', G.result('S',d) )
     elif '-lC' in sE:                               ## Cc
       G.equate( G.result('S',d), 'S', c )
       G.equate( G.result('r',G.result('S',d)), 'c', G.result('r',G.result('S',e)) )
       G.equate( G.result('S',d), 'c', G.result('S',e) )
+      G.equate( G.result('H',G.result('S',d)), 'H', G.result('S',c) )
+      G.equate( G.result('H',G.result('S',c)), 'H', G.result('S',e) )
       for i in range( 1, len(gcgtree.deps(sC,'ab'))+1 ):  #G.getArity(sC)+1 ):
         G.equate( G.result(str(i)+'\'',G.result('S',c)), str(i)+'\'', G.result('S',e) )
       if sE.endswith('-g{V-gN}-lC'):                ## Cd
@@ -429,7 +433,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif xrule == 'NORDSUP' :  xrule = '%|Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^31=2^3r1h=SH^Pr0=3r0^Pr1=r^Rr0=A:gt^Rr1=3r2^Rr2=Pr2'
           elif xrule == 'NCOMP' :  xrule = '%|Er0=%^Er1=r^Er2=2^2w=^t=s' #^Q0=D:someDummyQ^Q1=31r^Q2=31'
           elif xrule == 'NOUN'  :  xrule = '%|Er0=%^Er1=r' + ''.join( [ '^Er' +str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
-          elif xrule == 'NREL'  :  xrule = '%|Qr0=D:someQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er' +str(i+1)+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
+          elif xrule == 'NRELEXI'  :  xrule = '%|Qr0=D:someQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er' +str(i+1)+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
+          elif xrule == 'NREL'  :  xrule = '%|Er0=%^Er1=r' + ''.join( [ '^Er' +str(i+1)+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
           elif xrule == 'NREL2' :  xrule = '%|Er0=%^Er1=r^Er2=2'
           elif xrule == 'PGEN'  :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2=^r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'PRED12':  xrule = '%|r0=%^r1=1^r2=2'
@@ -487,14 +492,14 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 #            for num,lbl in enumerate(lhs[:-1]):
 #              xlhs = G.result( lbl+'\'' if lbl.isdigit() and num==0 else lbl, xlhs )
             for lbl in lhs[:-1]:
-              xlhs = G.result( lbl+'\'' if lbl.isdigit() and xlhs[-1] in 'sS\'' else lbl, xlhs )
-            if ':' in rhs: G.equate( rhs, lhs[-1]+'\'' if lhs[-1].isdigit() and xlhs[-1] in 'sS\'' else lhs[-1], xlhs )
+              xlhs = G.result( lbl+'\'' if lbl.isdigit() and xlhs[-1] in 'sSH\'' else lbl, xlhs )
+            if ':' in rhs: G.equate( rhs, lhs[-1]+'\'' if lhs[-1].isdigit() and xlhs[-1] in 'sSH\'' else lhs[-1], xlhs )
             else:
 #              for num,lbl in enumerate(rhs):
 #                xrhs = G.result( lbl+'\'' if lbl.isdigit() and num==0 else lbl, xrhs )
               for lbl in rhs:
-                xrhs = G.result( lbl+'\'' if lbl.isdigit() and xrhs[-1] in 'sS\'' else lbl, xrhs )
-              G.equate( xrhs, lhs[-1]+'\'' if lhs[-1].isdigit() and xlhs[-1] in 'sS\'' else lhs[-1], xlhs )
+                xrhs = G.result( lbl+'\'' if lbl.isdigit() and xrhs[-1] in 'sSH\'' else lbl, xrhs )
+              G.equate( xrhs, lhs[-1]+'\'' if lhs[-1].isdigit() and xlhs[-1] in 'sSH\'' else lhs[-1], xlhs )
             if VERBOSE: G.dump()
         if VERBOSE:
           print( x, l, G[x,l] )
