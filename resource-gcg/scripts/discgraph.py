@@ -124,6 +124,53 @@ class DiscGraph:
     return ' '.join( sorted( G ) )
 
 
+  def smiteRecursively( D, x ):
+    ## Recurse to all conjuncts...
+    for xConjunct in D.Subs.get(x,[])[:]:
+      if D.Inhs.get(xConjunct,{}).get('c','') == x:
+        D.smiteRecursively( xConjunct )
+    ## Remove all inheritances and subs immediately above smitten...
+    for l,xHi in D.Inhs[x].items():
+      D.Subs[xHi].remove(x)
+      if len(D.Subs[xHi])==0: del D.Subs[xHi]
+    del D.Inhs[x]
+    ## Complain about subs immediately below smitten...
+    for xLo in D.Subs[x]:
+      sys.stderr.write( 'WARNING: inheritance -n should not be annotated from ' + xLo + ' to redundant predicative referent: ' + x + '\n' )
+      print(           '#WARNING: inheritance -n should not be annotated from ' + xLo + ' to redundant predicative referent: ' + x )
+    ## Complain about scopes immediately above smitten...
+    if x in D.Scopes:
+      sys.stderr.write( 'WARNING: scope -s should not be annotated on redundant predicative referent: ' + x + '\n' )
+      print(           '#WARNING: scope -s should not be annotated on redundant predicative referent: ' + x )
+    ## Complain about scopes immediately below smitten...
+    if x in D.Scopes.values():
+      sys.stderr.write( 'WARNING: scope -s should not be annotated *to* redundant predicative referent: ' + x + '\n' )
+      print(           '#WARNING: scope -s should not be annotated *to* redundant predicative referent: ' + x )
+    ## Complain about quants/preds connected to smitten...
+    for tup in D.PredTuples:
+      if x in tup:
+        sys.stderr.write( 'WARNING: predicate ' + tup[0] + ' ' + tup[1] + ' should not include redundant predicative referent: ' + x + '\n' )
+        print(           '#WARNING: predicate ' + tup[0] + ' ' + tup[1] + ' should not include redundant predicative referent: ' + x )
+    ## Complain about quants/preds connected to smitten...
+    for tup in D.QuantTuples:
+      if x in tup:
+        sys.stderr.write( 'WARNING: quantifier ' + tup[0] + ' ' + tup[1] + ' should not include redundant predicative referent: ' + x + '\n' )
+        print(           '#WARNING: quantifier ' + tup[0] + ' ' + tup[1] + ' should not include redundant predicative referent: ' + x )
+ 
+
+  '''
+        del D.Inhs[xConjunct]['c']
+        if len(D.Inhs[xConjunct])==0: del D.Inhs[xConjunct]
+        D.Subs[x].remove(xConjunct)
+        if len(D.Subs[x])==0: del D.Subs[x]
+    for xHi,lxLo in D.Subs.items():
+      for l,xLo in lxLo.items():
+        if xLo == x:
+          del lxLo[l]
+          if xHi
+    del D.Subs[x]
+  '''
+
   #### Remove redundant nuclear scopes of predicative noun phrases from Subs and Inhs...
   def smite( D ):
     for xHi,L in D.Subs.items():
@@ -131,10 +178,12 @@ class DiscGraph:
         ## Diagnose as redundant if reft xLo has rin which also has rin...
         if 'r' in D.Inhs.get(D.Inhs.get(xLo,[]).get('r',''),[]):
           if VERBOSE: print( 'Smiting ' + xLo + ' out of Subs, for being redundant.' )
-          D.Subs[xHi].remove(xLo)
+          D.smiteRecursively( xLo )
+#          D.Subs[xHi].remove(xLo)
           if len(D.Subs[xHi])==0: del D.Subs[xHi]
-          del D.Inhs[xLo]['r']
+#          del D.Inhs[xLo]['r']
           if len(D.Inhs[xLo])==0: del D.Inhs[xLo]
+          '''
           if xLo in D.Scopes:
             sys.stderr.write( 'WARNING: scope (-s) should not be annotated on redundant predicative referent: ' + xLo + '\n' )
             print(           '#WARNING: scope (-s) should not be annotated on redundant predicative referent: ' + xLo )
@@ -145,7 +194,8 @@ class DiscGraph:
           if BadSubs != []:
             sys.stderr.write( 'WARNING: inheritance (-n) should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo + '\n' )
             print(           '#WARNING: inheritance (-n) should not be annotated from ' + ' '.join(BadSubs) + ' to redundant predicative referent: ' + xLo )
-            '''
+          '''
+          '''
             ## Modify bad subs to point to ...
             for x in BadSubs:
               for l,y in D.Inhs.get(x,{}).items():
@@ -154,7 +204,7 @@ class DiscGraph:
                   #D.Subs[xLo].remove(x)
                   D.Subs[ D.Inhs[xLo]['r'] ].append( x )
                   if VERBOSE: print( '#NOTE: moving ' + l + ' inheritance of ' + x + ' from ' + xLo + ' to ' + D.Inhs[x][l] )
-            '''
+          '''
           if xLo in [ s  for q,e,r,s,n in D.QuantTuples ]:
             sys.stderr.write( 'WARNING: quantifier should not be annotated on redundant predicative referent: ' + xLo + '\n' )
             print(           '#WARNING: quantifier should not be annotated on redundant predicative referent: ' + xLo )

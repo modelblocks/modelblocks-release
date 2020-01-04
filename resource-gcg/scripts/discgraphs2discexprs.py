@@ -36,6 +36,11 @@ for a in sys.argv:
 
 ################################################################################
 
+## Contains...
+def contains( struct, x ):
+  if type(struct)==str: return True if struct==x else False
+  return any( [ contains(substruct,x) for substruct in struct ] )
+
 ## Variable replacement...
 def replaceVarName( struct, xOld, xNew ):
   if type(struct)==str: return xNew if struct==xOld else struct
@@ -282,6 +287,7 @@ for line in sys.stdin:
       print( 'S = ' + str(sorted(D.Scopes.items())) )
       print( 't = ' + str(sorted(D.Traces.items())) )
       print( 'I = ' + str(sorted(D.Inhs.items())) )
+      print( 'DI = ' + str(sorted(D.DiscInhs.items())) )
       print( 'T =  ' + str(sorted(Translations)) )
       print( 'A = ' + str(sorted(Abstractions.items())) )
       print( 'E = ' + str(sorted(Expressions.items())) )
@@ -340,10 +346,27 @@ for line in sys.stdin:
     for src,dst in D.DiscInhs.items():
       if dst in Expressions:
 #        expr = replaceVarName( Expressions[dst], dst, src )
+        ## Find expr subsuming antecedent (dst) containing no unbound vars...
         expr = Expressions[dst]
         DstUnbound = [ ]
         findUnboundVars( expr, DstUnbound )
 #        print( 'yyyy ' + str(DstUnbound) )
+
+
+        EverUnbound = sets.Set()
+        while len(DstUnbound)>0 and expr!=None:
+          var = DstUnbound.pop()
+          expr = Expressions.get(var,None)
+          if expr == None: break
+          findUnboundVars( expr, DstUnbound, [var] )
+          EverUnbound |= sets.Set(DstUnbound)
+        if expr == None: continue
+
+#        for expr in Translations:
+#          if contains( expr, dst ): break
+#        else: continue
+
+        '''
         for var in DstUnbound:
           if var in Expressions:
 #            outscopingExpr = replaceVarName( Expressions[dst], dst, src )
@@ -351,13 +374,14 @@ for line in sys.stdin:
             OutscopingUnbound = [ ]
             findUnboundVars( outscopingExpr, OutscopingUnbound, [var] )
             if len( OutscopingUnbound ) == 0: break
-        else: continue 
+        else:
+          if VERBOSE: print( 'tried to attach discourse anaphor, but none of ' + ' '.join(DstUnbound) + ' had no unbound variables in Expression set' )
+          continue 
+         '''
 
-#        print( 'ayayay ' + str(OutscopingUnbound) )
-#        print( lambdaFormat(outscopingExpr) )
-        expr = replaceVarName( makeDiscAntec( ('D:prevosomeQ', '_', ('lambda', var+'x', ()), ('lambda', var, outscopingExpr)), dst, DstUnbound ), dst, src )
-#        for var in Unbound:
-#          expr = ('D:supersomeQ', '_', ('lambda', var, ()), ('lambda', var, expr) )
+        expr = replaceVarName( makeDiscAntec( ('D:prevosomeQ', '_', ('lambda', var+'x', ()), ('lambda', var, expr)), dst, EverUnbound ), dst, src )
+#        expr = replaceVarName( makeDiscAntec( expr, dst, EverUnbound ), dst, src )
+
         Abstractions[ src ].append( expr )
         if VERBOSE: print( 'applying D to add from A to A replacing: ' + dst + ' with ' + src + ' and existentializing to make \\' + src + ' ' + lambdaFormat(expr) )
         del D.DiscInhs[ src ]
