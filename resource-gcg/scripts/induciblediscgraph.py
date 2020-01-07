@@ -135,9 +135,14 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
     if VERBOSE: print( 'AllInherited = ' + str(D.AllInherited) )
 
 
+  def getCeils( D, xHi ):
+#    print( 'ceil of ' + xHi )
+    return D.getCeils( D.Scopes[xHi] ) if xHi in D.Scopes else sets.Set([ y  for xLo in D.Subs.get(xHi,[])  for y in D.getCeils(xLo) ]) if len(D.Subs.get(xHi,[]))>0 else [ xHi ]
+
+
   def ceiling( D, x ):
 #    X = sorted( D.getBossesInChain(x) )
-    Y = sorted( D.getCeil(x) )   #D.getBossesInChain(x) )[0]
+    Y = sorted( D.getCeils(x) )   #D.getBossesInChain(x) )[0]
 #    print( x + ' for ' + str(X) + ' vs ' + str(Y) )
 #    if len(Y) == 0: Y = [ x ]
     return Y[0] if Y[0] in D.NuscoValues or Y[0] not in D.Nuscos else D.Nuscos[Y[0]][0]
@@ -461,13 +466,13 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
         if D.alreadyConnected( xLo, xHi, Connected ):
           if VERBOSE: print( 'CODE REVIEW: WHY SUGGEST SCOPES ALREADY CONNECTED: ' + xLo + ' ' + xHi )
           continue
-        if any([ D.reaches( xHi, x )  for x in D.getCeil(xLo) ]): #D.reaches( xHi, D.ceiling(xLo) ):
+        if any([ D.reaches( xHi, x )  for x in D.getCeils(xLo) ]): #D.reaches( xHi, D.ceiling(xLo) ):
           complain( 'combination of scopes involving ' + xLo + ' with ceiling ' + D.ceiling(xLo) + ' to ' + xHi + ' creates cycle -- unable to build complete expression' )
           if VERBOSE: print( '  '*step + 'GRAPH: ' + D.strGraph() )
           return False
         ## Report and construct scope association...
         if VERBOSE: print( '  '*step + str(step) + '  intended scoping ' + xLo + ' w ceiling ' + D.ceiling(xLo) + ' to ' + xHi )
-        for x in D.getCeil(xLo):
+        for x in D.getCeils(xLo):
           if VERBOSE: print( '  '*step + str(step) + '  actual scoping ' + x + ' to ' + xHi )
           D.Scopes[ x ] = xHi
 #        D.Scopes[ D.ceiling(xLo) ] = xHi

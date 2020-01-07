@@ -191,7 +191,7 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 			$$(basename %).lemmacounts  \
 			#$$(basename %).nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
 	#cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
-	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/wsj_cue2vec_vectorrel_bceloss_40dim_500epochs_nodes_emat_omodel.txt  >  $@
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/wsj_cue2vec_reduced_sents_vectorrel_bceloss_20dim_2samples_300epochs_nodes_emat_omodel.txt  >  $@
 
 .PRECIOUS: %sm_corefsemprocdecpars
 %sm_corefsemprocdecpars:     $$(basename %).linetrees  \
@@ -574,10 +574,6 @@ endef
 	cat $(word 2,$^)  |  $(word 1,$^) -p$(shell cat $|) $(subst _, ,$(subst +,-,$(subst .,,$(suffix $(subst -,.,$*))))) $(word 3,$^)  >  $@  2>  $@.log
 
 ### obtain parsed token states for sem proc model...
-##.PRECIOUS: %semproc-parsed.tokdecs
-##%semproc-parsed.tokdecs:  bin/semproc  $$(basename %).linetoks  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*)))).semprocmodel
-##	cat $(word 2,$^)  |  $(word 1,$^) $(word 3,$^)  >  $@
-##.PRECIOUS: %ss-semproc-parsed.tokdecs
 ##%ss-semproc-parsed.tokdecs:  bin/semproc  $$(basename %).linetoks  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))ss.semprocmodel
 ##	cat $(word 2,$^)  |  $(word 1,$^) $(subst .,,$(suffix $(subst -,.,$*))) $(word 3,$^)  >  $@
 ##.PRECIOUS: %semproctorch-parsed.tokdecs
