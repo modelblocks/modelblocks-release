@@ -118,7 +118,7 @@ fit <- fitModel(data, output, params$bformfile, params$fitmode,
                      params$groupingfactor, params$indicatorlevel, params$crossfactor,
                      params$interact, params$corpus, params$suppress_nlminb)
 
-residuals <- resid(fit)
+residuals <- resid(fit$m)
 saveRDS(residuals, file = paste("residuals",format(Sys.time()),"rds", sep = "."))
 
 
