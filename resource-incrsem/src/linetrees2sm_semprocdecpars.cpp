@@ -71,6 +71,7 @@ L removeLink( L l ) {
 
 map<L,double> mldLemmaCounts;
 int MINCOUNTS = 100;
+bool ABLATE_UNARY = false;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -167,8 +168,10 @@ JModel modJ;
 
 void calcContext ( Tree<L>& tr, 
                    map<string,int>& annot2tdisc, vector<trip<Sign,W,K>>& antecedentCandidates, int& tDisc, const int sentnum, map<string,HVec>& annot2kset,
-		   int& wordnum, bool isFailTree, std::set<int>& excludedIndices,   // coref related: 
+		   int& wordnum, bool isFailTree, std::set<int>& excludedIndices, // coref related: 
+       bool ABLATE_UNARY,                                             // whether or not to remove unary features for n,f,j submodels
 		   int s=1, int d=0, string e="", L l=L() ) {                     // side, depth, unary (e.g. extraction) operators, ancestor label.
+       
   static F          f;
   static string     eF;
   static Sign       aPretrm;
@@ -201,7 +204,7 @@ void calcContext ( Tree<L>& tr,
     W histword(""); //histword will track most recent observed word whose k is unk. will be stored for correct antecedent only.
     if (not isFailTree) {
       // Print preterminal / fork-phase predictors...
-      FPredictorVec lfp( modF, hvAnt, nullAnt, q );
+      FPredictorVec lfp( modF, hvAnt, nullAnt, q ); 
       cout<<"----"<<q<<endl;
 
       // Print antecedent list...
@@ -240,7 +243,7 @@ void calcContext ( Tree<L>& tr,
 
 
           bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
-          NPredictorVec npv( modN, candidate.first(), corefON, tDisc - i, q );
+          NPredictorVec npv( modN, candidate.first(), corefON, tDisc - i, q, ABLATE_UNARY ); 
           cout << "N " << pair<const NModel&,const NPredictorVec&>(modN,npv) << " : " << nLabel << endl; //i-1 because that's candidate index 
         } //single candidate output
       } //all previous antecedent candidates output
@@ -275,14 +278,14 @@ void calcContext ( Tree<L>& tr,
 
   // At unary identity nonpreterminal...
   else if ( tr.size()==1 and getCat(tr)==getCat(tr.front()) ) {
-    calcContext( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, s, d, e, l );
+    calcContext( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, ABLATE_UNARY, s, d, e, l );
   }
 
   // At unary nonpreterminal...
   else if ( tr.size()==1 ) {
     //// cerr<<"#U"<<getCat(tr)<<" "<<getCat(tr.front())<<endl;
     e = e + getUnaryOp( tr );
-    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, s, d, e, l );
+    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, ABLATE_UNARY, s, d, e, l );
   }
 
   // At binary nonterminal...
@@ -290,13 +293,13 @@ void calcContext ( Tree<L>& tr,
     //// cerr<<"#B "<<getCat(tr)<<" "<<getCat(tr.front())<<" "<<getCat(tr.back())<<endl;
 
     if (isFailTree) {
-      calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, 0, d+s );
-      calcContext ( tr.back(),  annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, 1, d );
+      calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, ABLATE_UNARY, 0, d+s );
+      calcContext ( tr.back(),  annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, ABLATE_UNARY, 1, d );
       return;
     }
 
     // Traverse left child...
-    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, 0, d+s );
+    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, ABLATE_UNARY, 0, d+s );
 
     J j          = s;
     cout << "~~~~ " << q.back().apex() << endl;
@@ -307,7 +310,7 @@ void calcContext ( Tree<L>& tr,
     O oR         = getOp ( removeLink(tr.back()),  removeLink(tr.front()), removeLink(tr) );
 
     // Print binary / join-phase predictors...
-    JPredictorVec ljp( modJ, f, eF.c_str(), aLchild, q );
+    JPredictorVec ljp( modJ, f, eF.c_str(), aLchild, q ); 
     cout << "==== " << q.getApex() << "   " << removeLink(tr) << " -> " << removeLink(tr.front()) << " " << removeLink(tr.back()) << endl;
 #ifdef DENSE_VECTORS
 //    cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;  modJ.getResponseIndex(j,e.c_str(),oL,oR);
@@ -322,7 +325,7 @@ void calcContext ( Tree<L>& tr,
     q = StoreState ( q, j, e.c_str(), oL, oR, getCat(removeLink(l)), getCat(removeLink(tr.back())) );
 
     // Traverse right child...
-    calcContext ( tr.back(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, 1, d );
+    calcContext ( tr.back(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, ABLATE_UNARY, 1, d );
   }
 
   // At abrupt terminal (e.g. 'T' discourse)...
@@ -342,6 +345,7 @@ int main ( int nArgs, char* argv[] ) {
     if(      '-'==argv[a][0] && 'f'==argv[a][1] ) FEATCONFIG   = atoi( argv[a]+2 );
     else if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS    = atoi( argv[a]+2 );
     else if( '-'==argv[a][0] && 'c'==argv[a][1] ) COREF_WINDOW = atoi( argv[a]+2 );
+    else if( '-'==argv[a][0] && 'a'==argv[a][1] ) ABLATE_UNARY = true;
     else {
       cerr << "Loading model " << argv[a] << "..." << endl;
       // Open file...
@@ -388,7 +392,7 @@ int main ( int nArgs, char* argv[] ) {
       else {
 	int wordnum = 0;
         bool isFailTree = (removeLink(t.front()) == "FAIL") ? true : false;
-        if( t.front().size() > 0 ) calcContext( t, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, isFailTree, excludedIndices);
+        if( t.front().size() > 0 ) calcContext( t, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, isFailTree, excludedIndices, ABLATE_UNARY);
       }
     }
     else {cin.get();}
