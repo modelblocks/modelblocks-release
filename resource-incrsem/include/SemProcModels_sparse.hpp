@@ -23,7 +23,7 @@
 
 class NPredictorVec {
 //need to be able to output real-valued distance integers, NPreds
-//TODO maybe try quadratic distance
+//TODO try adding non-linear (log or quadratic) distance as feature, or even nested bins <3,<5 etc.
   private:
 
      int mdist;
@@ -33,9 +33,10 @@ class NPredictorVec {
 
     //constructor
     template<class LM>
-    NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss ) : mdist(antdist), mnpreds() {
+    NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss, bool ABLATE_UNARY) : mdist(antdist), mnpreds() {
       //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
       //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
+      //TODO also dependence for W model? this might be related to referring expression type generation?
 
 //      mdist = antdist;
       mnpreds.emplace_back( lm.getPredictorIndex( "bias" ) ); //add bias term
@@ -44,18 +45,20 @@ class NPredictorVec {
       const HVec& hvB = ss.getBase().getHVec(); //contexts of lowest b (bdbar)
       int j;
       for( unsigned int iA=0; iA<hvA.size(); iA++ )  for( auto& antk : hvA[iA] ) {
-        if( 0 != ( j=lm.getPredictorIndex( antk.project(-iA), kNil ) ) ) mnpreds.emplace_back(j); //add unary antecedent k feat, using kxk template
+        if (not ABLATE_UNARY) { if( 0 != ( j=lm.getPredictorIndex( antk.project(-iA), kNil ) ) ) mnpreds.emplace_back(j); } //add unary antecedent k feat, using kxk template
         for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
           if( 0 != ( j=lm.getPredictorIndex( antk.project(-iA), currk.project(-iB) ) ) ) mnpreds.emplace_back(j); //pairwise kxk feat
         }
       }
       for( unsigned int iB=0; iB<hvB.size(); iB++ )  for( auto& currk : hvB[iB] ) {
-        if( 0 != ( j=lm.getPredictorIndex( kNil, currk.project(-iB) ) ) ) mnpreds.emplace_back(j); //unary ancestor k feat
+        if (not ABLATE_UNARY) { if( 0 != ( j=lm.getPredictorIndex( kNil, currk.project(-iB) ) ) ) mnpreds.emplace_back(j); } //unary ancestor k feat
       }
 
       CVar cAnt = ( antdist ) ? candidate.getCat() : cNone;
-      if( 0 != ( j=lm.getPredictorIndex( cAnt,   N_NONE                      ) ) ) mnpreds.emplace_back(j);; // antecedent CVar
-      if( 0 != ( j=lm.getPredictorIndex( N_NONE, ss.getBase().getCat() ) ) ) mnpreds.emplace_back(j);; // ancestor CVar
+      if (not ABLATE_UNARY) {
+        if( 0 != ( j=lm.getPredictorIndex( cAnt,   N_NONE                      ) ) ) mnpreds.emplace_back(j);; // antecedent CVar
+        if( 0 != ( j=lm.getPredictorIndex( N_NONE, ss.getBase().getCat() ) ) ) mnpreds.emplace_back(j);; // ancestor CVar
+      }
       if( 0 != ( j=lm.getPredictorIndex( cAnt,   ss.getBase().getCat() ) ) ) mnpreds.emplace_back(j);; // pairwise T
 
       //corefON feature
@@ -178,7 +181,7 @@ class FPredictorVec : public list<unsigned int> {
       emplace_back( fm.getPredictorIndex( "Bias" ) );  // add bias
       int j;
       if( STORESTATE_TYPE ) if( 0 != ( j=fm.getPredictorIndex( d, ss.getBase().getCat() ) ) ) emplace_back(j); 
-      if( !(FEATCONFIG & 2) ) {
+      if( !(FEATCONFIG & 2) ) { 
         for( uint iB=0; iB<hvB.size();   iB++ )  for( auto& kB : hvB[iB] )   if( 0 != ( j=fm.getPredictorIndex( d, kNil,            kB.project(-iB), kNil            ) ) ) emplace_back(j);
         for( uint iF=0; iF<hvF.size();   iF++ )  for( auto& kF : hvF[iF] )   if( 0 != ( j=fm.getPredictorIndex( d, kF.project(-iF), kNil,            kNil            ) ) ) emplace_back(j);
         for( uint iA=0; iA<hvAnt.size(); iA++ )  for( auto& kA : hvAnt[iA] ) if( 0 != ( j=fm.getPredictorIndex( d, kNil,            kNil,            kA.project(-iA) ) ) ) emplace_back(j);
@@ -321,7 +324,7 @@ class JPredictorVec : public list<unsigned int> {
       emplace_back( jm.getPredictorIndex( "Bias" ) );  // add bias
       int j;
       if( STORESTATE_TYPE ) if( 0 != ( j=jm.getPredictorIndex( d, aAncstr.getCat(), aLchild. getCat() ) ) ) emplace_back(j);
-      if( !(FEATCONFIG & 32) ) {
+      if( !(FEATCONFIG & 32) ) { //these all look pairwise
         for( uint iA=0; iA<hvAncstr.size(); iA++ ) for( auto& kA : hvAncstr[iA] )
           for( uint iL=0; iL<hvLchild.size(); iL++ ) for( auto& kL : hvLchild[iL] ) if( 0 != ( j=jm.getPredictorIndex( d, kNil, kA.project(-iA), kL.project(-iL) ) ) ) emplace_back(j);
         for( uint iF=0; iF<hvFiller.size(); iF++ ) for( auto& kF : hvFiller[iF] )
