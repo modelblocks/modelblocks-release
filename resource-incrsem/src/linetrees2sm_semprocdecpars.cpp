@@ -22,6 +22,7 @@
 #include <fstream>
 #include <list>
 #include <regex>
+#include <assert.h>
 using namespace std;
 #include <armadillo>
 using namespace arma;
@@ -44,6 +45,9 @@ bool INTERSENTENTIAL = true;
 #include <Tree.hpp>
 #include <ZeroPad.hpp>
 int COREF_WINDOW = INT_MAX;
+bool ABLATE_UNARY = false;
+bool NO_ENTITY_BLOCKING = false;
+bool WINDOW_REDUCE = false;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -71,7 +75,7 @@ L removeLink( L l ) {
 
 map<L,double> mldLemmaCounts;
 int MINCOUNTS = 100;
-bool ABLATE_UNARY = false;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -166,9 +170,44 @@ JModel modJ;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+class Mapped {
+  public:
+    map<int,std::set<int>> mapped; //init map from index to positive coreference indices (not just annotated)
+
+    //Mapped() { } //empty constructor allowed or required?
+    Mapped() { //default constructor
+      mapped = {{-1, std::set<int>()}};
+    }
+
+    void clear() {
+      this->mapped = {{-1, std::set<int>()}};
+    }
+
+    void update(pair<int,int> mpair) {
+      assert (mpair.first < mpair.second); //usage assumes (i,tDisc) where i is the index of the candidate antecedent and tDisc is the current timestep
+      //if (mapped.contains(mpair.first)) { //contains only added in c++ 20
+      if (this->mapped.find(mpair.second) != this->mapped.end()) {
+        //int myints[] = {mpair.second};
+        //std::set<int> munion (myints,myints+1); //I can't believe there's no set union in c++ smh. or constructor that takes an int.
+        std::set<int> munion;
+        munion.insert(mpair.first);
+        munion.insert(this->mapped[mpair.second].begin(),this->mapped[mpair.second].end());
+        this->mapped[mpair.second] = munion;
+      } else {
+        //int myints[] = {mpair.first};
+        //std::set<int> newset (myints,myints+1);
+        std::set<int> newset;
+        newset.insert(mpair.first);
+        this->mapped[mpair.second] =  newset;
+      }
+    }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 void calcContext ( Tree<L>& tr, 
                    map<string,int>& annot2tdisc, vector<trip<Sign,W,K>>& antecedentCandidates, int& tDisc, const int sentnum, map<string,HVec>& annot2kset,
-		   int& wordnum, bool isFailTree, std::set<int>& excludedIndices, // coref related: 
+		   int& wordnum, bool isFailTree, std::set<int>& excludedIndices, Mapped& corefchains, // coref related: //TODO add corefchains to calcContext calls? 
        bool ABLATE_UNARY,                                             // whether or not to remove unary features for n,f,j submodels
 		   int s=1, int d=0, string e="", L l=L() ) {                     // side, depth, unary (e.g. extraction) operators, ancestor label.
        
@@ -208,8 +247,8 @@ void calcContext ( Tree<L>& tr,
       cout<<"----"<<q<<endl;
 
       // Print antecedent list...
-      for( int i = tDisc; (i > 0 and tDisc-i <= COREF_WINDOW); i-- ) {  //only look back COREF_WINDOW antecedents at max
-        if( excludedIndices.find(i) != excludedIndices.end() ) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs. //TODO Could also try making multiple positive examples, creating positive for each pair in chain
+      for( int i = tDisc; (i > 0 and tDisc-i <= COREF_WINDOW); i-- ) {  //only look back COREF_WINDOW antecedents at max. TODO make window smaller
+        if( excludedIndices.find(i) != excludedIndices.end() && NO_ENTITY_BLOCKING==false) {  //skip indices which have already been found as coreference indices.  this prevents negative examples for non most recent corefs. 
           continue; 
         }
         else {
@@ -225,22 +264,30 @@ void calcContext ( Tree<L>& tr,
             }
           }
           
-          //check for non-null coreference 
+          //check for non-null annotated coreference 
           if ((i == annot2tdisc[annot]) and (annot != "")) {
             nLabel = 1;
             excludedIndices.insert(annot2tdisc[annot]); //add blocking index here once find true, annotated coref. e.g. word 10 is coref with word 5. add annot2tdisc[annot] (5) to list of excluded.
             //set k to kAntUnk if is coreferent, and most recent antecedent unk k in chain has observed word (histword) that matches w_t
             //actually can store unk k logic by storing obsword as histword (candidate.second()) only following valid unk k conditions.
             //that is, store obsword as histword if current candidate isUnk, else store most recent non-empty histword in chain as histword. else store empty string as histword
-
             if (not k.isUnk()) {
               histword = candidate.second(); //inherit histword as most recent unk obsword
             }
             if (candidate.second() == W(removeLink(tr.front()).c_str())) { // and candidate.third().isUnk()) {  
               k = kAntUnk;
             }
+            pair<int,int> newpair(i,tDisc);
+            //Mapped::update(newpair);
+            corefchains.update(newpair);
           }
 
+          //check for non-null transitive closure coreference (not directly annotated)
+          //if (Mapped::mapped[tDisc].contains(i)) { //could be a c++ version error; contains is only in since c++20...
+          //if (Mapped::mapped[tDisc].find(i) != Mapped::mapped[tDisc].end()) { 
+          if (corefchains.mapped[tDisc].find(i) != corefchains.mapped[tDisc].end()) { 
+            nLabel = 1; //correct non-annotated coref, given transitive closure of coref annotations
+          }
 
           bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
           NPredictorVec npv( modN, candidate.first(), corefON, tDisc - i, q, ABLATE_UNARY ); 
@@ -278,14 +325,14 @@ void calcContext ( Tree<L>& tr,
 
   // At unary identity nonpreterminal...
   else if ( tr.size()==1 and getCat(tr)==getCat(tr.front()) ) {
-    calcContext( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, ABLATE_UNARY, s, d, e, l );
+    calcContext( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, s, d, e, l );
   }
 
   // At unary nonpreterminal...
   else if ( tr.size()==1 ) {
     //// cerr<<"#U"<<getCat(tr)<<" "<<getCat(tr.front())<<endl;
     e = e + getUnaryOp( tr );
-    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, ABLATE_UNARY, s, d, e, l );
+    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, s, d, e, l );
   }
 
   // At binary nonterminal...
@@ -293,13 +340,13 @@ void calcContext ( Tree<L>& tr,
     //// cerr<<"#B "<<getCat(tr)<<" "<<getCat(tr.front())<<" "<<getCat(tr.back())<<endl;
 
     if (isFailTree) {
-      calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, ABLATE_UNARY, 0, d+s );
-      calcContext ( tr.back(),  annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, ABLATE_UNARY, 1, d );
+      calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, 0, d+s );
+      calcContext ( tr.back(),  annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, 1, d );
       return;
     }
 
     // Traverse left child...
-    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, ABLATE_UNARY, 0, d+s );
+    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, 0, d+s );
 
     J j          = s;
     cout << "~~~~ " << q.back().apex() << endl;
@@ -325,7 +372,7 @@ void calcContext ( Tree<L>& tr,
     q = StoreState ( q, j, e.c_str(), oL, oR, getCat(removeLink(l)), getCat(removeLink(tr.back())) );
 
     // Traverse right child...
-    calcContext ( tr.back(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, ABLATE_UNARY, 1, d );
+    calcContext ( tr.back(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, 1, d );
   }
 
   // At abrupt terminal (e.g. 'T' discourse)...
@@ -346,6 +393,8 @@ int main ( int nArgs, char* argv[] ) {
     else if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS    = atoi( argv[a]+2 );
     else if( '-'==argv[a][0] && 'c'==argv[a][1] ) COREF_WINDOW = atoi( argv[a]+2 );
     else if( '-'==argv[a][0] && 'a'==argv[a][1] ) ABLATE_UNARY = true;
+    else if( '-'==argv[a][0] && 'n'==argv[a][1] && 'b'==argv[a][2]) NO_ENTITY_BLOCKING = true;
+    else if( '-'==argv[a][0] && 'w'==argv[a][1] ) WINDOW_REDUCE = true; //TODO implement this
     else {
       cerr << "Loading model " << argv[a] << "..." << endl;
       // Open file...
@@ -364,12 +413,16 @@ int main ( int nArgs, char* argv[] ) {
   }
   for( auto& l : lLC ) mldLemmaCounts[l.second] = l.first;
 //  cout << matE << endl;
-  int linenum = 0;  int discourselinenum = 0; //increments on sentence in discourse/article
+  int linenum = 0;  
+  int discourselinenum = 0; //increments on sentence in discourse/article
   map<string,HVec> annot2kset;
   int tDisc = 0; //increments on word in discourse/article
   vector<trip<Sign,W,K>> antecedentCandidates;
   map<string,int> annot2tdisc;
   std::set<int> excludedIndices; //init indices of positive coreference to exclude.  prevents negative examples in training data when they're really positive coreference.
+  std::set<int> emptyset;
+  //map<int,std::set<int>> 
+  Mapped corefchains; //init coref chain tracker for positive non-most recent antecedent tracking
   while ( cin && EOF!=cin.peek() ) {
     linenum++;
     discourselinenum++;
@@ -388,11 +441,13 @@ int main ( int nArgs, char* argv[] ) {
         antecedentCandidates.clear();
         annot2tdisc.clear();
         excludedIndices.clear();
+        //Mapped::mapped.clear();
+        corefchains.clear();
       }
       else {
 	int wordnum = 0;
         bool isFailTree = (removeLink(t.front()) == "FAIL") ? true : false;
-        if( t.front().size() > 0 ) calcContext( t, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, isFailTree, excludedIndices, ABLATE_UNARY);
+        if( t.front().size() > 0 ) calcContext( t, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY);
       }
     }
     else {cin.get();}
