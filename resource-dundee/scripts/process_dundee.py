@@ -275,6 +275,9 @@ if __name__ == '__main__':
     out = pd.DataFrame(out)
     out.docid += 1
 
+    out['prevwasfix'] = (out['wdelta'] == 1).astype('int')
+    out['nextwasfix'] = (out['wdelta'] == -1).astype('int')
+
     if args.verbose:
         sys.stderr.write('Writing output...\n')
         sys.stderr.flush()
@@ -286,6 +289,9 @@ if __name__ == '__main__':
         'sentpos',
         'sentid',
         'time',
+        'wdelta',
+        'prevwasfix',
+        'nextwasfix',
         'startoffile',
         'endoffile',
         'startofscreen',
