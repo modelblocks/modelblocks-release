@@ -85,4 +85,4 @@ if __name__ == '__main__':
             select_new = select[i]
         else:
             select_new |= select[i]
-    df[select_new].to_csv(sys.stdout, sep=' ', index=False, na_rep='nan', columns=cols)
+    df[select_new].to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN', columns=cols)

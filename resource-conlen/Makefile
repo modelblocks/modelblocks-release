@@ -83,7 +83,7 @@ endif
 
 
 %/user-conlen-directory.txt: | %   
-	echo '/home/corpora/original/english/constituent_length' > $@
+	echo '/data/corpora/original/english/constituent_length' > $@
 
 ################################################################################
 #

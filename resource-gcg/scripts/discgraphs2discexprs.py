@@ -26,19 +26,27 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gc
 import discgraph
 import induciblediscgraph
 
-VERBOSE = False
+VERBOSE  = False    ## print debugging info.
+ENDGRAPH = False    ## print last graph for each discourse.
 for a in sys.argv:
   if a=='-d':
     VERBOSE = True
+  if a=='-g':
+    ENDGRAPH = True
 
 ################################################################################
 
-## variable replacement
+## Contains...
+def contains( struct, x ):
+  if type(struct)==str: return True if struct==x else False
+  return any( [ contains(substruct,x) for substruct in struct ] )
+
+## Variable replacement...
 def replaceVarName( struct, xOld, xNew ):
   if type(struct)==str: return xNew if struct==xOld else struct
   return tuple( [ replaceVarName(x,xOld,xNew) for x in struct ] )
 
-## lambda expression format...
+## Lambda expression format...
 def lambdaFormat( expr, inAnd = False ):
   if len( expr ) == 0:                 return 'T'
   elif isinstance( expr, str ):        return expr
@@ -47,19 +55,27 @@ def lambdaFormat( expr, inAnd = False ):
   elif expr[0] == 'and' and inAnd:     return                         ' '.join( [ lambdaFormat(subexpr,True ) for subexpr in expr[1:] if len(subexpr)>0 ] )
   else:                                return '('   + expr[0] + ' ' + ' '.join( [ lambdaFormat(subexpr,False) for subexpr in expr[1:] ] ) + ')'
 
-## find unbound vars...
-def findUnboundVars( expr, bound = [] ):
+## Find unbound vars...
+def findUnboundVars( expr, Unbound, Bound = [] ):
   if   len( expr ) == 0: return
   elif isinstance( expr, str ):
-    if expr not in bound and expr != '_':
-      sys.stderr.write( '    DOWNSTREAM LAMBDA EXPRESSION ERROR: unbound var: ' + expr + '\n' )
-      print(           '#    DOWNSTREAM LAMBDA EXPRESSION ERROR: unbound var: ' + expr  )
+    if expr not in Bound and expr != '_':
+      if expr not in Unbound: Unbound.append( expr )
   elif expr[0] == 'lambda':
     for subexpr in expr[2:]:
-      findUnboundVars( subexpr, bound + [ expr[1] ] )
+      findUnboundVars( subexpr, Unbound, Bound + [ expr[1] ] )
   else:
     for subexpr in expr[1:]:
-      findUnboundVars( subexpr, bound )
+      findUnboundVars( subexpr, Unbound, Bound )
+
+## Convert expr to existentialized discourse anaphor antecedent...
+def makeDiscAntec( expr, dst, OrigUnbound ):
+#  print( 'mDA ' + dst + ' ' + str(expr[3][1] if len(expr)>3 and len(expr[3])>2 else '') )
+  if len( expr ) > 3 and expr[0].endswith('Q') and len( expr[2] ) > 2 and expr[2][1] == dst: return expr[2][2]
+  if len( expr ) > 3 and expr[0].endswith('Q') and len( expr[3] ) > 2 and expr[3][1] == dst: return expr[3][2]
+  if len( expr ) > 3 and expr[0].endswith('Q') and len( expr[3] ) > 0 and expr[3][1] in OrigUnbound: return ('D:supersomeQ', '_', expr[2], makeDiscAntec( expr[3], dst, OrigUnbound ) )
+  if isinstance( expr, str ): return expr
+  return tuple([ makeDiscAntec( subexpr, dst, OrigUnbound )  for subexpr in expr ])
 
 ## Check off consts used in expr...
 def checkConstsUsed( expr, OrigConsts ):
@@ -98,7 +114,9 @@ for line in sys.stdin:
 
   #### II. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
 
-  D.normForm()
+#  D.normForm()
+#SMITING BREAKS CYCLES WHICH... SHOULD BE REPORTED?
+  if not D.check(): continue
   ## Copy quants down to final heirs -- NOTE: this is the same as using inheritance in Q rules...
   for q,e,r,x,n in D.QuantTuples[:]:
     for xFin in D.Heirs.get(x,[]):
@@ -109,6 +127,8 @@ for line in sys.stdin:
     for xFin in D.Heirs.get(x,[]):
       if xFin not in D.Subs  and  xFin not in D.Scopes:
         D.Scopes[ xFin ] = D.Scopes[ x ]
+  ## Skip sentence if cycle...
+  if not D.check(): continue
 
   #### III. INDUCE UNANNOTATED SCOPES AND EXISTENTIAL QUANTS...
 
@@ -130,11 +150,13 @@ for line in sys.stdin:
   for x in D.Referents:
     if not outscopingInChain(x): ScopeLeaves.append( x )
 
-
   L1 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
   if len(L1) > 1:
     print(           '#WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences' )
     sys.stderr.write( 'WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences\n' ) 
+    for xHi in L1:
+      print(           '#    ' + xHi + ' subsumes ' + ' '.join(sorted(sets.Set([ xLo  for xLo in D.Referents  if D.reaches(xLo,xHi) ]))) )
+      sys.stderr.write( '    ' + xHi + ' subsumes ' + ' '.join(sorted(sets.Set([ xLo  for xLo in D.Referents  if D.reaches(xLo,xHi) ]))) + '\n' )
   elif L1 == []:
     L2 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
     print(           '#NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + ' '.join(L2) )
@@ -144,9 +166,13 @@ for line in sys.stdin:
       print(           '#WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents' )
       sys.stderr.write( 'WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents\n' )
 
+
+  if VERBOSE: print( 'GRAPH: ' + D.strGraph() )
+
+
   ## List of original (dominant) refts...
 #  RecencyConnected = sorted( [ ((0 if x not in D.Subs else -1) + (0 if x in ScopeLeaves else -2),x)  for x in D.Referents  if D.ceiling(x) in D.Chains.get(L[0],[]) ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
-  RecencyConnected = [ y  for x in L1  for y in D.Referents  if D.ceiling(y) in D.Chains.get(x,[]) ]
+  RecencyConnected = [ y  for x in L1  for y in D.Referents  if any([ z in D.Chains.get(x,[]) for z in D.getCeils(y) ]) ]  #D.ceiling(y) in D.Chains.get(x,[]) ]
   if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
 
 
@@ -177,8 +203,10 @@ for line in sys.stdin:
 
     if VERBOSE: print( 'Trying to induce scopes below ' + L[0] + '...' )
     RecencyConnected += D.Chains.get(L[0],[])    ## Account target as connected (root).
-    ok = D.tryScope( L[0], RecencyConnected, True )
+    ok = D.tryScope( L[0], RecencyConnected )
     Complete.append( L[0] )
+
+  if ENDGRAPH: print( 'GRAPH: ' + D.strGraph() )
 
   if not ok: continue
 #  out = D.tryScope( RecencyConnected, True )
@@ -188,8 +216,11 @@ for line in sys.stdin:
 
   for xTarget in sets.Set( D.Scopes.values() ):
     if not any([ x in D.Scopes  for x in D.Chains.get(xTarget,[]) ]) and not any([ s in D.Chains.get(xTarget,[])  for q,e,r,s,n in D.QuantTuples ]):
-      print(           '#ERROR: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!' )
-      sys.stderr.write( 'ERROR: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!\n' )
+      print(           '#WARNING: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!' )
+      sys.stderr.write( 'WARNING: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!\n' )
+
+
+  #### IV. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
 
 #  DisjointPreds = sets.Set([ ( D.ceiling(xt[1]), D.ceiling(yt[1]) )  for xt in D.PredTuples  for yt in D.PredTuples  if xt[1] < yt[1] and not D.reachesInChain( xt[1], D.ceiling(yt[1]) ) ])
 #  if len(DisjointPreds) > 0:
@@ -229,10 +260,7 @@ for line in sys.stdin:
       if VERBOSE: print( 'Inducing existential quantifier: ' + str([ 'D:someQ', xCh+'P', D.Inhs[xCh]['r'], xCh, '_' ]) )
       D.QuantTuples.append( ( 'D:someQ', xCh+'P', D.Inhs[xCh]['r'], xCh, '_' ) )
 
-
-  #### IV. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
-
-  D.normForm()
+#  D.normForm()
   ## Remove redundant non-terminal quants with no scope parent...
   for q,e,r,s,n in D.QuantTuples[:]:
     if s in D.Subs and s not in D.Scopes and any([ x in D.Heirs.get(s,[])  for _,_,_,x,_ in D.QuantTuples if x!=s ]):
@@ -259,6 +287,7 @@ for line in sys.stdin:
       print( 'S = ' + str(sorted(D.Scopes.items())) )
       print( 't = ' + str(sorted(D.Traces.items())) )
       print( 'I = ' + str(sorted(D.Inhs.items())) )
+      print( 'DI = ' + str(sorted(D.DiscInhs.items())) )
       print( 'T =  ' + str(sorted(Translations)) )
       print( 'A = ' + str(sorted(Abstractions.items())) )
       print( 'E = ' + str(sorted(Expressions.items())) )
@@ -276,7 +305,7 @@ for line in sys.stdin:
     ## P1 rule...
     for ptup in list(D.PredTuples):
       x = ptup[1]  
-      if x not in D.Scopes.values() and x not in D.Inhs:
+      if x not in D.Scopes.values() and x not in D.Inhs and x not in D.DiscInhs:
         if VERBOSE: print( 'applying P to move from P to A: \\' + x + '. ' + lambdaFormat(ptup) )
         Abstractions[ x ].append( ptup )
         if ptup in D.PredTuples: D.PredTuples.remove( ptup )
@@ -284,7 +313,7 @@ for line in sys.stdin:
     ## P2 rule...
     for ptup in list(D.PredTuples):
       for x in ptup[2:]:
-        if D.Scopes.get(x,'')==ptup[1] and x not in D.Scopes.values() and x not in D.Inhs:
+        if D.Scopes.get(x,'')==ptup[1] and x not in D.Scopes.values() and x not in D.Inhs and x not in D.DiscInhs:
           if VERBOSE: print( 'applying P to move from P to A: \\' + x + '. ' + lambdaFormat(ptup) )
           Abstractions[ x ].append( ptup )
           if ptup in D.PredTuples: D.PredTuples.remove( ptup )
@@ -299,7 +328,7 @@ for line in sys.stdin:
 
     ## M rule...
     for var,Structs in Abstractions.items():
-      if len(Structs) == 1 and var not in D.Scopes.values() and var not in D.Inhs:
+      if len(Structs) == 1 and var not in D.Scopes.values() and var not in D.Inhs and var not in D.DiscInhs:
         if VERBOSE: print( 'applying M to move from A to E: \\' + var + '. ' + lambdaFormat(Structs[0]) )
         Expressions[var] = Structs[0]
         del Abstractions[var]
@@ -313,10 +342,54 @@ for line in sys.stdin:
         D.QuantTuples.remove( (q, e, r, s, n) )
         active = True
 
+    ## D rule -- discourse anaphora...
+    for src,dst in D.DiscInhs.items():
+      if dst in Expressions:
+#        expr = replaceVarName( Expressions[dst], dst, src )
+        ## Find expr subsuming antecedent (dst) containing no unbound vars...
+        expr = Expressions[dst]
+        DstUnbound = [ ]
+        findUnboundVars( expr, DstUnbound )
+#        print( 'yyyy ' + str(DstUnbound) )
+
+
+        EverUnbound = sets.Set()
+        while len(DstUnbound)>0 and expr!=None:
+          var = DstUnbound.pop()
+          expr = Expressions.get(var,None)
+          if expr == None: break
+          findUnboundVars( expr, DstUnbound, [var] )
+          EverUnbound |= sets.Set(DstUnbound)
+        if expr == None: continue
+
+#        for expr in Translations:
+#          if contains( expr, dst ): break
+#        else: continue
+
+        '''
+        for var in DstUnbound:
+          if var in Expressions:
+#            outscopingExpr = replaceVarName( Expressions[dst], dst, src )
+            outscopingExpr = Expressions[var]
+            OutscopingUnbound = [ ]
+            findUnboundVars( outscopingExpr, OutscopingUnbound, [var] )
+            if len( OutscopingUnbound ) == 0: break
+        else:
+          if VERBOSE: print( 'tried to attach discourse anaphor, but none of ' + ' '.join(DstUnbound) + ' had no unbound variables in Expression set' )
+          continue 
+         '''
+
+        expr = replaceVarName( makeDiscAntec( ('D:prevosomeQ', '_', ('lambda', var+'x', ()), ('lambda', var, expr)), dst, EverUnbound ), dst, src )
+#        expr = replaceVarName( makeDiscAntec( expr, dst, EverUnbound ), dst, src )
+
+        Abstractions[ src ].append( expr )
+        if VERBOSE: print( 'applying D to add from A to A replacing: ' + dst + ' with ' + src + ' and existentializing to make \\' + src + ' ' + lambdaFormat(expr) )
+        del D.DiscInhs[ src ]
+
     ## I1 rule...
     for src,lbldst in D.Inhs.items():
       for lbl,dst in lbldst.items():
-        if dst not in D.Inhs and dst not in Abstractions and dst not in Expressions and dst not in D.Scopes.values() and dst not in [ x for ptup in D.PredTuples for x in ptup ]:
+        if dst not in D.Inhs and dst not in D.DiscInhs and dst not in Abstractions and dst not in Expressions and dst not in D.Scopes.values() and dst not in [ x for ptup in D.PredTuples for x in ptup ]:
           if VERBOSE: print( 'applying I1 to add to A: \\' + dst + ' True' )
           Abstractions[ dst ].append( () )
           active = True
@@ -336,7 +409,7 @@ for line in sys.stdin:
           else:
             if VERBOSE: print( 'applying I2/I3 to add from A to A replacing ' + dst + ' with ' + src + ' to make \\' + src + ' ' + lambdaFormat(replaceVarName( Expressions[dst], dst, src )) )   #' in ' + str(Expressions[dst]) )
             Abstractions[ src ].append( replaceVarName( Expressions[dst], dst, src ) )
-            if dst in D.Scopes and src not in D.Scopes and D.Nuscos.get(src,[''])[0] not in D.Scopes and src in [s for q,e,r,s,n in D.QuantTuples] + [r for q,e,r,s,n in D.QuantTuples]:  D.Scopes[src if src in D.NuscoValues else D.Nuscos[src][0]] = D.Scopes[dst]     ## I3 rule.
+#            if dst in D.Scopes and src not in D.Scopes and D.Nuscos.get(src,[''])[0] not in D.Scopes and src in [s for q,e,r,s,n in D.QuantTuples] + [r for q,e,r,s,n in D.QuantTuples]:  D.Scopes[src if src in D.NuscoValues else D.Nuscos[src][0]] = D.Scopes[dst]     ## I3 rule.
           del D.Inhs[src][lbl]
           if len(D.Inhs[src])==0: del D.Inhs[src]
           active = True
@@ -362,7 +435,11 @@ for line in sys.stdin:
   expr = tuple( ['and'] + Translations )
   print( lambdaFormat(expr) )
 #  for expr in Translations:
-  findUnboundVars( expr )
+  Unbound = [ ]
+  findUnboundVars( expr, Unbound )
+  for v in Unbound:
+    print(           '#    DOWNSTREAM LAMBDA EXPRESSION ERROR: unbound var: ' + v  )
+    sys.stderr.write( '    DOWNSTREAM LAMBDA EXPRESSION ERROR: unbound var: ' + v + '\n' )
   if VERBOSE: print( 'D.OrigConsts = ' + str(D.OrigConsts) )
   checkConstsUsed( expr, D.OrigConsts )
   for k in D.OrigConsts:

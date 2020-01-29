@@ -42,6 +42,8 @@ uint FEATCONFIG = 0;
 #endif
 #include <Beam.hpp>
 int COREF_WINDOW = INT_MAX;
+bool ABLATE_UNARY = false;
+bool NO_ENTITY_BLOCKING = false;
 
 #define SERIAL_IO
 
@@ -177,6 +179,8 @@ int main ( int nArgs, char* argv[] ) {
       else if ( 0==strncmp(argv[a],"-f",2) ) FEATCONFIG = atoi(argv[a]+2);
       else if( '-'==argv[a][0] && 'c'==argv[a][1] && '\0'!=argv[a][2] ) COREF_WINDOW = atoi( argv[a]+2 );
       //else if ( string(argv[a]) == "t" ) STORESTATE_TYPE = true;
+      else if( '-'==argv[a][0] && 'a'==argv[a][1] ) ABLATE_UNARY = true;
+      else if( '-'==argv[a][0] && 'n'==argv[a][1] && 'b'==argv[a][2]) NO_ENTITY_BLOCKING = true;
       else {
         cerr << "Loading model " << argv[a] << "..." << endl;
         // Open file...
@@ -356,11 +360,13 @@ int main ( int nArgs, char* argv[] ) {
                 if (VERBOSE > 1) cout << "    adding index to exclude for blocking: " << tAnt+pbeAnt->getHidd().getI() << " pbeAnt...get(): " << pbeAnt->getHidd().getI() << endl;
                 excludedIndices.push_back(tAnt+pbeAnt->getHidd().getI()); //add excluded index if there's a non-null coref decision
               }
-              if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
-                continue; //skip excluded indices
+              if (NO_ENTITY_BLOCKING == false) {
+                if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
+                  continue; //skip excluded indices
+                }
               }
               bool corefON = (tAnt==int(t)) ? 0 : 1;
-              NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1 );
+              NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1, ABLATE_UNARY );
               arma::vec nlogresponses = modN.calcLogResponses( npv ); //nps.NLogResponses(matN);
               ndenom += exp( nlogresponses(1) - nlogresponses(0) );
             } //closes for tAnt
@@ -378,7 +384,7 @@ int main ( int nArgs, char* argv[] ) {
 
               //Calculate antecedent N model predictors 
               bool corefON = (tAnt==int(t)) ? 0 : 1;
-              NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1 );
+              NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1, ABLATE_UNARY );
               if (VERBOSE>1) { cout << "    " << pair<const NModel&, const NPredictorVec&>(modN,npv) << endl; } //npv.printOut(cout); }
               arma::vec nlogresponses = modN.calcLogResponses( npv );
 

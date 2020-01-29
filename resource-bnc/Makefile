@@ -81,7 +81,7 @@ endif
 
 
 %/user-bnc-directory.txt: | %   
-	echo '/home/corpora/original/english/bnc' > $@
+	echo '/data/corpora/original/english/bnc' > $@
 
 ################################################################################
 #

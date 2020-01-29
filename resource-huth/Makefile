@@ -71,7 +71,7 @@ endif
 endif
     
 %/user-huth-directory.txt: | %   
-	echo '/home/compling/speechmodeltutorial' > $@
+	echo '/data/compling/speechmodeltutorial' > $@
 
 ################################################################################
 #

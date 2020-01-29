@@ -101,7 +101,7 @@ endif
 
 
 %/user-naturalstories-fmri-directory.txt: | %   
-	echo '/home/corpora/original/english/naturalstories_fmri' > $@
+	echo '/data/corpora/original/english/naturalstories_fmri' > $@
 
 ################################################################################
 #

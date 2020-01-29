@@ -103,7 +103,7 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 ################################################################################
 
 ## obtain auto-parsed simplewiki corpus...
-%simplewikiFULLAUTO.gcg15.linetrees:  /home/corpora/original/english/simplewiki20140903/simplewiki-20140903-pages-articles.wsj02to21-comparativized-gcg15-4sm.berk.parsed.linetrees
+%simplewikiFULLAUTO.gcg15.linetrees:  /data/corpora/original/english/simplewiki20140903/simplewiki-20140903-pages-articles.wsj02to21-comparativized-gcg15-4sm.berk.parsed.linetrees
 	ln -s $< $@
 
 ## remove % comments
@@ -180,9 +180,14 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 %sm_semprocdecpars:     $$(basename %).linetrees  \
 			$(BIN)/linetrees2sm_semprocdecpars  \
 			$$(basename %).lemmacounts  \
+			$(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py \
+	    #TODO push this filtering further upstream to resource
 			#$$(basename %).nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
 	#cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
-	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
+	###################################
+	### generating training data... ###
+	###################################
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) | python $(word 4,$^) >  $@
 
 ## obtain predictors and responses for all semantic processing models...
 .PRECIOUS: %densemprocdecpars
@@ -191,7 +196,7 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 			$$(basename %).lemmacounts  \
 			#$$(basename %).nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
 	#cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
-	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/wsj_cue2vec_vectorrel_bceloss_40dim_500epochs_nodes_emat_omodel.txt  >  $@
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/wsj_cue2vec_reduced_sents_vectorrel_bceloss_20dim_2samples_300epochs_nodes_emat_omodel.txt  >  $@
 
 .PRECIOUS: %sm_corefsemprocdecpars
 %sm_corefsemprocdecpars:     $$(basename %).linetrees  \
@@ -250,10 +255,8 @@ endef
 ## pull apart predictor/responses for training...
 %.nmlrdecpars:  %semprocdecpars
 	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
-#%.fmlrdecpars:  %semprocdecpars
-%.fmlrdecpars:  %semprocdecpars $(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py 
-	#cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
-	cat $(word 1, $^)  |  grep '^F'  |  sed 's/^. //' | python $(word 2, $^) >  $@
+%.fmlrdecpars:  %semprocdecpars 
+	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
 %.jmlrdecpars:  %semprocdecpars
 	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
 %.pcptdecpars:  %semprocdecpars
@@ -269,7 +272,7 @@ endef
 %.nmlrdecpars:  %densemprocdecpars
 	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
 #%.fmlrdecpars:  %semprocdecpars
-%.fgcndecpars:  %densemprocdecpars  $(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py 
+%.fgcndecpars:  %densemprocdecpars  $(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py #TODO this won't work - remove and confirm filtering is done earlier
 	#cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
 	cat $(word 1, $^)  |  grep '^F'  |  sed 's/^. //' | python $(word 2, $^) >  $@
 %.jgcndecpars:  %densemprocdecpars
@@ -574,10 +577,6 @@ endef
 	cat $(word 2,$^)  |  $(word 1,$^) -p$(shell cat $|) $(subst _, ,$(subst +,-,$(subst .,,$(suffix $(subst -,.,$*))))) $(word 3,$^)  >  $@  2>  $@.log
 
 ### obtain parsed token states for sem proc model...
-##.PRECIOUS: %semproc-parsed.tokdecs
-##%semproc-parsed.tokdecs:  bin/semproc  $$(basename %).linetoks  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*)))).semprocmodel
-##	cat $(word 2,$^)  |  $(word 1,$^) $(word 3,$^)  >  $@
-##.PRECIOUS: %ss-semproc-parsed.tokdecs
 ##%ss-semproc-parsed.tokdecs:  bin/semproc  $$(basename %).linetoks  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))ss.semprocmodel
 ##	cat $(word 2,$^)  |  $(word 1,$^) $(subst .,,$(suffix $(subst -,.,$*))) $(word 3,$^)  >  $@
 ##.PRECIOUS: %semproctorch-parsed.tokdecs
