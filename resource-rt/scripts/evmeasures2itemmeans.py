@@ -39,5 +39,5 @@ for col in events.columns.values:
 
 #events.drop_duplicates(['word','sentid','sentpos'],keep='first',inplace=True)
 
-items.to_csv(sys.stdout, ' ', na_rep='nan', index=False)
+items.to_csv(sys.stdout, ' ', na_rep='NaN', index=False)
 

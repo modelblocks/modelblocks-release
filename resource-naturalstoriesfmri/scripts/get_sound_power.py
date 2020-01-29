@@ -130,5 +130,5 @@ if args.convolve:
 
     df['soundPowerHRF'] = soundPowerHRF
 
-df.to_csv(sys.stdout, sep=' ', na_rep='nan', index=False)
+df.to_csv(sys.stdout, sep=' ', na_rep='NaN', index=False)
     

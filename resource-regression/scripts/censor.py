@@ -81,4 +81,4 @@ if __name__ == '__main__':
 
     df = df[select]
 
-    df.to_csv(sys.stdout, sep=' ', index=False, na_rep='nan')
+    df.to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN')

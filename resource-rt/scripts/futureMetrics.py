@@ -45,6 +45,6 @@ def main():
 
     for col in cols:
         data['fut' + col] = grouped[col].shift(-1)
-    data.to_csv(sys.stdout, ' ', index=False, na_rep='nan')
+    data.to_csv(sys.stdout, ' ', index=False, na_rep='NaN')
            
 main()
