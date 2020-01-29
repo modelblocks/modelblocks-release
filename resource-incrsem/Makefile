@@ -180,9 +180,14 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 %sm_semprocdecpars:     $$(basename %).linetrees  \
 			$(BIN)/linetrees2sm_semprocdecpars  \
 			$$(basename %).lemmacounts  \
+			$(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py \
+	    #TODO push this filtering further upstream to resource
 			#$$(basename %).nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
 	#cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
-	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
+	###################################
+	### generating training data... ###
+	###################################
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) | python $(word 4,$^) >  $@
 
 ## obtain predictors and responses for all semantic processing models...
 .PRECIOUS: %densemprocdecpars
@@ -250,10 +255,8 @@ endef
 ## pull apart predictor/responses for training...
 %.nmlrdecpars:  %semprocdecpars
 	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
-#%.fmlrdecpars:  %semprocdecpars
-%.fmlrdecpars:  %semprocdecpars $(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py 
-	#cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
-	cat $(word 1, $^)  |  grep '^F'  |  sed 's/^. //' | python $(word 2, $^) >  $@
+%.fmlrdecpars:  %semprocdecpars 
+	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
 %.jmlrdecpars:  %semprocdecpars
 	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
 %.pcptdecpars:  %semprocdecpars
@@ -269,7 +272,7 @@ endef
 %.nmlrdecpars:  %densemprocdecpars
 	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
 #%.fmlrdecpars:  %semprocdecpars
-%.fgcndecpars:  %densemprocdecpars  $(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py 
+%.fgcndecpars:  %densemprocdecpars  $(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py #TODO this won't work - remove and confirm filtering is done earlier
 	#cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
 	cat $(word 1, $^)  |  grep '^F'  |  sed 's/^. //' | python $(word 2, $^) >  $@
 %.jgcndecpars:  %densemprocdecpars

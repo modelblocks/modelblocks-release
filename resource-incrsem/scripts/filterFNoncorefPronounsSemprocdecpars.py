@@ -13,6 +13,7 @@ count = 0
 for line in sys.stdin:
     #match null-antecedent predicting pronounk F training data
     rem = re.match(r'F.*acorefOFF=1.* : f[01]&&N-PRTRM:([hH]e|[hH]im|[Hh]is|[Ss]he|[Hh]er|[Tt]hey|[Tt]hem|[Tt]heir|[Ii]t|[Ii]ts)_1.*', line)
+    #rem = re.match(r'F.*acorefOFF=1.* : f[01]&&N-PRTRM:([tT]hey|he)_1.*', line)
     if rem is not None:
         logfile.write("found non-coreferent pronoun line to omit: {}\n".format(rem.group(0)))
         count += 1
