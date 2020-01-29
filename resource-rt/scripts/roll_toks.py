@@ -55,7 +55,7 @@ def main():
     gkey = gold[0].index(args.key)
     skip = [skey] + [header.index(col) for col in args.skip_cols if col in header]
     row = None
-    for line in sys.stdin:
+    for i, line in enumerate(sys.stdin):
         line = line.rstrip()
         row_next = line.split(' ')
         assert len(row_next) == rlen, 'Incorrect row length: %d columns expected, %d provided.\n%s' % (rlen, len(row_next), ' '.join(row_next))
@@ -63,7 +63,7 @@ def main():
             row = row_next + ['0']
         else:
             row = roll(row, row_next, skip, skey)
-        assert len(row[skey]) <= len(gold[g][gkey]), 'Roll failure : %s expected, %s provided.' % (gold[g][gkey].encode(args.enc), row[skey].encode(args.enc))
+        assert len(row[skey]) <= len(gold[g][gkey]), 'Roll failure : %s expected, %s provided. Token line %d, item line %d.' % (gold[g][gkey].encode(args.enc), row[skey].encode(args.enc), i, g)
         if row[skey] == gold[g][gkey]:
             print(' '.join(row))
             row = None

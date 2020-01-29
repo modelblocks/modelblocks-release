@@ -70,6 +70,8 @@ if __name__ == '__main__':
         names = ['fit', 'expl', 'held']
     elif arity == 2:
         names = ['fit', 'held']
+    elif arity == 1:
+        names = ['fit']
     else:
         names = [str(x) for x in range(args.n)]
 

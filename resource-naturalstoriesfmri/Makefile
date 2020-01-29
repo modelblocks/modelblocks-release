@@ -109,6 +109,19 @@ endif
 #
 ################################################################################
 
+## copy partition params into genmodel
+genmodel/%.ini: $(NATSTORIESFMRI-SCRIPTS)/%.ini
+	cp $< $@
+
+genmodel/%_Lang.part_params.ini: genmodel/%.part_params.ini
+	cp $< $@
+
+genmodel/%_MD.part_params.ini: genmodel/%.part_params.ini
+	cp $< $@
+
+genmodel/%_Lang_MD.part_params.ini: genmodel/%.part_params.ini
+	cp $< $@
+
 # Link fMRI data to NatStor text preprocessing pipeline
 
 %naturalstoriesfmri.linetoks: %naturalstories.linetoks
