@@ -88,6 +88,6 @@ def main():
     out.sampleid = out.groupby(['docid']).sampleid.cumsum()
     sampleid_format = '{0:05d}'
     out.sampleid = out.docid.astype('str').str.cat(out.sampleid.apply(sampleid_format.format), sep='-')
-    out.to_csv(sys.stdout, ' ', index=False, na_rep='nan')
+    out.to_csv(sys.stdout, ' ', index=False, na_rep='NaN')
 
 main()   

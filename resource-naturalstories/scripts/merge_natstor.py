@@ -26,6 +26,6 @@ def main():
     merged['startofsentence'] = (merged.sentpos == 1).astype('int')
     merged['endofsentence'] = merged.startofsentence.shift(-1).fillna(1).astype('int')
     merged['wlen'] = merged.word.str.len()
-    merged.to_csv(sys.stdout, ' ', index=False, na_rep='nan')
+    merged.to_csv(sys.stdout, ' ', index=False, na_rep='NaN')
       
 main()   

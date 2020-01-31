@@ -63,6 +63,6 @@ for col in cols:
             else:
                 data[s_name] = grouped[col].shift(i, fill_value=0)
 
-data.to_csv(sys.stdout, sep=' ', index=False, na_rep='nan')
+data.to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN')
             
 

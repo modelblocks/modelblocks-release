@@ -11,4 +11,4 @@ for t in args.tables:
     data.append(pd.read_csv(t, sep=' ', skipinitialspace=True))
 
 out = pd.concat(data)
-out.to_csv(sys.stdout, ' ', na_rep='nan', index=False)
+out.to_csv(sys.stdout, ' ', na_rep='NaN', index=False)
