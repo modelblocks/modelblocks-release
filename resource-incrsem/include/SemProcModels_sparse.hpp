@@ -23,7 +23,7 @@
 
 class NPredictorVec {
 //need to be able to output real-valued distance integers, NPreds
-//TODO try adding non-linear (log or quadratic) distance as feature, or even nested bins <3,<5 etc.
+//TODO try adding additional non-linear (log) distance as feature, or even nested bins <3,<5 etc.
   private:
 
      int mdist;
@@ -67,8 +67,9 @@ class NPredictorVec {
       }
     }
 
-    const list<unsigned int>& getList    ( ) const { return mnpreds; }
-    int                       getAntDist ( ) const { return mdist;   }
+    const list<unsigned int>& getList      ( ) const { return mnpreds; }
+    int                       getAntDist   ( ) const { return mdist;   }
+    int                       getAntDistSq ( ) const { return mdist*mdist;}
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -140,6 +141,7 @@ class NModel {
     arma::vec calcLogResponses( const NPredictorVec& npv ) const {
       arma::vec nlogresponses = arma::zeros( matN.n_rows );
       nlogresponses += npv.getAntDist() * matN.col(getPredictorIndex("ntdist"));
+      nlogresponses += npv.getAntDistSq() * matN.col(getPredictorIndix("ntdistsq"));
       for ( auto& npredr : npv.getList() ) {
         if ( npredr < matN.n_cols ) { 
           nlogresponses += matN.col( npredr ); 
@@ -150,6 +152,7 @@ class NModel {
 
     friend ostream& operator<<( ostream& os, const pair< const NModel&, const NPredictorVec& >& mv ) {
       os << "antdist=" << mv.second.getAntDist();
+      os << "antdistsq="<< mv.second.getAntDistSq();
       for( const auto& i : mv.second.getList() ) {
         // if( &i != &mv.second.getList().front() )
         os << ",";

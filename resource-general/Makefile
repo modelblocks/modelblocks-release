@@ -84,6 +84,9 @@ CHILDES-SCRIPTS := $(RESOURCE-CHILDES)/scripts
 RESOURCE-CONLEN := $(abspath $(MBDIR)/resource-conlen)
 CONLEN-SCRIPTS := $(RESOURCE-CONLEN)/scripts
 
+RESOURCE-COREF-CONLL := $(abspath $(MBDIR)/resource-coref-conll)
+CONLL-SCRIPTS := $(RESOURCE-COREF-CONLL)/scripts
+
 RESOURCE-DMV := $(abspath $(MBDIR)/resource-dmv)
 DMV-SCRIPTS := $(RESOURCE-DMV)/scripts
 
@@ -208,6 +211,8 @@ WORDNET-SCRIPTS := $(RESOURCE-WORDNET)/scripts
 RESOURCE-XLSX2CSV := $(abspath $(MBDIR)/resource-xlsx2csv)
 XLSX2CSV-SCRIPTS := $(RESOURCE-XLSX2CSV)/scripts
 
+RESOURCE-CONLLSCORER := $(abspath $(MBDIR)/resource-conllscorer)
+
 BIN      := bin
 GENMODEL := genmodel
 
@@ -253,6 +258,8 @@ include $(RESOURCE-UPPARSE)/Makefile
 include $(RESOURCE-WILLIAMS)/Makefile
 include $(RESOURCE-WORD2VEC)/Makefile
 include $(RESOURCE-WORDNET)/Makefile
+include $(RESOURCE-COREF-CONLL)/Makefile
+include $(RESOURCE-CONLLSCORER)/Makefile
 endef
 
 ################################################################################
