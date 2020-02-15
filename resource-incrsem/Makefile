@@ -381,41 +381,41 @@ endef
 # $(PROJECT-SCRIPTS)/%.ini : $(INCRSEM-SCRIPTS)/%.ini  |  $(PROJECT-SCRIPTS)
 # 	cp $^ $@
 
-## Induce predicate vectors and cued association transition model...
+## Induce predicate vectors and cued association transition model (% contains gcn ini filename)...
 %_emat_omodel : $$(basename %).casp.discgraphs  \
                 $(INCRSEM-SCRIPTS)/../../resource-rgcn/scripts/cuegraphs2vectors.py  \
-                scripts/$$(word 1,$$(subst _, ,$$(subst .,,$$(suffix $$*)))).ini
+                scripts/$$(subst .,,$$(suffix $$*)).ini
 	cat $<  |  $(word 2,$^) $(word 3,$^)  >  $@
 
-## Create training example file from training corpus...
+## Create training example file from training corpus (% contains gcn ini filename and decpar flags)...
 %_dspdecpars : $$(basename %).casp.linetrees  \
                $(BIN)/linetrees2densemprocdecpars  \
-               %_emat_omodel
-	cat $<  |  $(word 2,$^) $(word 3,$^)  >  $@
+               $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
+	cat $<  |  $(word 2,$^) $(wordlist 2,99,$(subst _, ,$(suffix $*))) $(word 3,$^)  >  $@
 
-## Create component model file from training example file...
+## Create component model file from training example file (% contains gcn ini filename and decpar flags and dsp ini filename)...
 %_ndspmodel : 
 	echo ''  >  $@
-%_fdspmodel : $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_dspdecpars  \
+%_fdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/train_f_models_gpu.py  \
-              scripts/$$(word 2,$$(subst _, ,$$(suffix $$*)))f.ini  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini  \
               $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
 	cat $<  |  grep '^F'  |  python $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@
-%_pdspmodel : $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_dspdecpars  \
+%_pdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^P'  |  python $(word 2,$^)  >  $@
-%_wdspmodel : $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_dspdecpars  \
+%_wdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^W'  |  python $(word 2,$^)  >  $@
-%_jdspmodel : $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_dspdecpars  \
+%_jdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/train_j_models_gpu.py  \
-              scripts/$$(word 2,$$(subst _, ,$$(suffix $$*)))j.ini  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini  \
               $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
 	cat $<  |  grep '^J'  |  python $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@
-%_adspmodel : $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_dspdecpars  \
+%_adspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^A'  |  python $(word 2,$^)  >  $@
-%_bdspmodel : $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_dspdecpars  \
+%_bdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^B'  |  python $(word 2,$^)  >  $@
 
