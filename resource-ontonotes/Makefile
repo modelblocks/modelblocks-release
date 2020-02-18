@@ -170,7 +170,7 @@ genmodel/corconllwsjdev.casp.prtrm.linked.linetrees: $(foreach sect,00 01 22 24,
 
 .PRECIOUS: corconllwsjdev.toktrees
 corconllwsjdev.toktrees: genmodel/corconllwsjdev.casp.prtrm.linked.fromlinetrees.numbered.editabletrees
-	cp $^ > $@
+	cp $^ $@
 
 #.PRECIOUS: genmodel/corconllwsjdev.casp.linked.linetrees
 #genmodel/corconllwsjdev.casp.linked.linetrees: $(foreach sect,00 01 22 24,genmodel/corontowsj$(sect).casp.linked.linetrees)
