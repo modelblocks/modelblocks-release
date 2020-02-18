@@ -17,4 +17,4 @@ for col in args.c:
             prev_name = col + 'lag' + str(i-1)
             data[name] = data.groupby(['subject','sentid'])[prev_name].shift().fillna(0)
 
-data.to_csv(sys.stdout, sep=' ', index=False, na_rep='nan')
+data.to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN')

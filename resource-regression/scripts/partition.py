@@ -70,6 +70,8 @@ if __name__ == '__main__':
         names = ['fit', 'expl', 'held']
     elif arity == 2:
         names = ['fit', 'held']
+    elif arity == 1:
+        names = ['fit']
     else:
         names = [str(x) for x in range(args.n)]
 
@@ -83,4 +85,4 @@ if __name__ == '__main__':
             select_new = select[i]
         else:
             select_new |= select[i]
-    df[select_new].to_csv(sys.stdout, sep=' ', index=False, na_rep='nan', columns=cols)
+    df[select_new].to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN', columns=cols)

@@ -55,6 +55,6 @@ def main():
     else:
         sys.stderr.write('Nothing to accumulate. Returning input table.\n')
         cols = data.columns.values
-    data.to_csv(sys.stdout, ' ', index=False, na_rep='nan', columns=cols)
+    data.to_csv(sys.stdout, ' ', index=False, na_rep='NaN', columns=cols)
            
 main()

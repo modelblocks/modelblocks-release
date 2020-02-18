@@ -421,15 +421,14 @@ RTCoreEvmeasures:
       innerdelim: .
 endef
 
-%.itemmeasures: %.lineitems
-	echo word  >  $@
-	cat $<  |  perl -pe 's/ /\n/g'  >>  $@
+%.itemmeasures: %.lineitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
+	cat $<  |  python $(word 2, $^) >  $@
 
 %parsed.itemmeasures: %parsed.tokmeasures  $$(basename %).itemmeasures  $(RT-SCRIPTS)/roll_toks.py
 	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1  >  $@
 
 %.itemmeasures: %.tokmeasures $$(basename %).itemmeasures $(RT-SCRIPTS)/roll_toks.py
-	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 > $@ 
+	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 > $@
 
 %.all-itemmeasures:  $(RT-SCRIPTS)/evmeas2uniqcols.py  $(RT-SCRIPTS)/filter_cols.py  $(RT-SCRIPTS)/addCols.r  $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
                          $$(patsubst $$(pc),$$(word 1,$$(subst ., ,$$*)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,$$*)),$$(subst ., ,%))) \

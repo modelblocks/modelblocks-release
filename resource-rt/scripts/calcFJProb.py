@@ -11,6 +11,6 @@ def main():
     data['noFprob'] = data['F-L+'] + data['F-L-']
 #    data['fjprob'] = data['F-L-B+'] + data['F-L+B+'] + data['F+L-B+'] + data['F+L+B+'] \
 #                   + data['F-L+BNil'] + data['F-L+Badd'] + data['F-L+Bcdr']
-    data.to_csv(sys.stdout, ' ', na_rep='nan', index=False)
+    data.to_csv(sys.stdout, ' ', na_rep='NaN', index=False)
     
 main()
