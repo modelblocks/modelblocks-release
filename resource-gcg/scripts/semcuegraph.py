@@ -160,11 +160,16 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('S',dUpper), 'H', G.result('S',dLower) )    ## hypothetical world inheritance
 # after 'S'      G.equate( G.result('S',dUpper), 'H', dLower )    ## hypothetical world inheritance
 #      G.equate( G.result('S',dUpper), 'h', G.result('r',G.result('E',G.result('S',dLower))) )    ## hypothetical world inheritance
-    elif '-lZ' in sD and sC.startswith('R-a'):               ## Zb
+    elif '-lZ' in sD and sC.startswith('R-a'):               ## Zb (during)
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('S',dLower),                 '2', G.result('r',G.result('S',dUpper)) )
       G.equate( G.result('1\'',G.result('S',dUpper)), '1', G.result('r',G.result('S',dUpper)) )
       G.equate( 'A-aN-bN:during',                     '0', G.result('r',G.result('S',dUpper)) )
+    elif '-lz' in sD:                                        ## Zb (contain)
+      G.equate( G.result(l,d), l, d+'u' )
+      G.equate( G.result('S',dLower),                 '2', G.result('r',G.result('S',dUpper)) )
+      G.equate( G.result('1\'',G.result('S',dUpper)), '1', G.result('r',G.result('S',dUpper)) )
+      G.equate( 'B-aN-bN:contain',                    '0', G.result('r',G.result('S',dUpper)) )
     elif '-lE' in sD:
       nolos = gcgtree.deps( sC, 'ghirv' )
       if len(nolos)<1:

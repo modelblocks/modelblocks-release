@@ -23,6 +23,8 @@ SHELL := /bin/bash
 .SUFFIXES:
 .SECONDEXPANSION:
 
+VPATH += $(RESOURCE-INCRSEM)
+
 #### directories used by included items...
 BIN := bin
 GENMODEL := genmodel
@@ -317,21 +319,21 @@ endef
 .PRECIOUS: %_densemprocmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e4_1e-6_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e-1_1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
-%_densemprocmodel: $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(basename $$(basename $$(subst _,.,$$*))))_100_nmlrmodel \
+#%_densemprocmodel: $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(basename $$(basename $$(subst _,.,$$*))))_100_nmlrmodel \
  								$$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(basename $$(subst _,.,$$*)))_100_fgcnmodel \
                 $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(subst _,.,$$*))_100_jgcnmodel \
                 $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.pcptmodel \
                 $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.acptmodel \
                 $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.bcptmodel \
                 $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.wcptmodel 
-	cat $(word 1,$^)  |  sed 's/^/N /'   >  $@
-	cat $(word 2,$^)                    >>  $@
-	cat $(word 3,$^)                    >>  $@
-	cat $(word 4,$^)  |  sed 's/^/P /'  >>  $@
-	cat $(word 5,$^)  |  sed 's/^/A /'  >>  $@
-	cat $(word 6,$^)  |  sed 's/^/B /'  >>  $@
-	cat $(word 7,$^)  |  sed 's/^/W /'  >>  $@
-	cat genmodel/wsj_emat_omodel_40mat.txt >> $@
+#	cat $(word 1,$^)  |  sed 's/^/N /'   >  $@
+#	cat $(word 2,$^)                    >>  $@
+#	cat $(word 3,$^)                    >>  $@
+#	cat $(word 4,$^)  |  sed 's/^/P /'  >>  $@
+#	cat $(word 5,$^)  |  sed 's/^/A /'  >>  $@
+#	cat $(word 6,$^)  |  sed 's/^/B /'  >>  $@
+#	cat $(word 7,$^)  |  sed 's/^/W /'  >>  $@
+#	cat genmodel/wsj_emat_omodel_40mat.txt >> $@
 
 .PRECIOUS: %_corefsemprocmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e4_1e-6_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
@@ -366,6 +368,66 @@ endef
 ##	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
 ##	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
 ##	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
+
+
+################################################################################
+#
+#  config(ini)-based dsp (densesemproc)
+#
+################################################################################
+
+# WS: don't need this bc of VPATH, which is dangerous
+# ## Copy learning hyperparameter file from incrsem srcmodel...
+# $(PROJECT-SCRIPTS)/%.ini : $(INCRSEM-SCRIPTS)/%.ini  |  $(PROJECT-SCRIPTS)
+# 	cp $^ $@
+
+## Induce predicate vectors and cued association transition model (% contains gcn ini filename)...
+%_emat_omodel : $$(basename %).casp.discgraphs  \
+                $(INCRSEM-SCRIPTS)/../../resource-rgcn/scripts/cuegraphs2vectors.py  \
+                scripts/$$(subst .,,$$(suffix $$*)).ini
+	cat $<  |  $(word 2,$^) $(word 3,$^)  >  $@
+
+## Create training example file from training corpus (% contains gcn ini filename and decpar flags)...
+%_dspdecpars : $$(basename %).casp.linetrees  \
+               $(BIN)/linetrees2densemprocdecpars  \
+               $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
+	cat $<  |  $(word 2,$^) $(wordlist 2,99,$(subst _, ,$(suffix $*))) $(word 3,$^)  >  $@
+
+## Create component model file from training example file (% contains gcn ini filename and decpar flags and dsp ini filename)...
+%_ndspmodel : 
+	echo ''  >  $@
+%_fdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
+              $(INCRSEM-SCRIPTS)/train_f_models_gpu.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini  \
+              $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
+	cat $<  |  grep '^F'  |  python $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@
+%_pdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^P'  |  python $(word 2,$^)  >  $@
+%_wdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^W'  |  python $(word 2,$^)  >  $@
+%_jdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
+              $(INCRSEM-SCRIPTS)/train_j_models_gpu.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini  \
+              $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
+	cat $<  |  grep '^J'  |  python $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@
+%_adspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^A'  |  python $(word 2,$^)  >  $@
+%_bdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^B'  |  python $(word 2,$^)  >  $@
+
+
+## Create dsp model out of component models...
+%_densemprocmodel : %_ndspmodel  %_fdspmodel  %_pdspmodel  %_wdspmodel  %_jdspmodel  %_adspmodel  %_bdspmodel  $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
+	cat $^  >  $@
+
+## Parse with: wsj02.wsj02to21-bestgcn_bestdsp_densemproc-parsed.tokdecs
+
+################################################################################
+
 
 ### Get training and test data
 
