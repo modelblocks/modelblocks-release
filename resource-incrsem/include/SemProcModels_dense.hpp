@@ -30,56 +30,43 @@ class TVec : public DelimitedCol<psLBrack, double, psComma, 20, psRBrack> {
 const TVec foo   ( arma::zeros<Col<double>>(20) );
 
 class NPredictorVec {
-//need to be able to output real-valued distance integers, NPreds
-//TODO maybe try quadratic distance
   private:
-
      int mdist;
-     list<unsigned int> mnpreds;
+     const HVec& basesem;
+     const HVec& antecedentsem;
+     CVar        basec;
+     CVar        antecedentc;
+     bool corefON;
 
   public:
-
     //constructor
     template<class LM>
     NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss ) : mdist(antdist), mnpreds() {
-//      //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
-//      //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
-//
-// //     mdist = antdist;
-//      mnpreds.emplace_back( lm.getPredictorIndex( "bias" ) ); //add bias term
-//
-//      const HVec& hvB = ss.at(ss.size()-1).getHVec(); //contexts of lowest b (bdbar)
-//      for( unsigned int iA=0; iA<candidate.getHVec().size(); iA++ )  for( auto& antk : candidate.getHVec()[iA] ) {
-//        mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), kNil ) ); //add unary antecedent k feat, using kxk template
-//        for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
-//          mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), currk.project(-iB) ) ); //pairwise kxk feat
-//        }
-//      }
-//      for( unsigned int iB=0; iB<hvB.size(); iB++ )  for( auto& currk : hvB[iB] ) {
-//        mnpreds.emplace_back( lm.getPredictorIndex( kNil, currk.project(-iB) ) ); //unary ancestor k feat
-//      }
-//
-//      mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), N_NONE                      ) ); // antecedent CVar
-//      mnpreds.emplace_back( lm.getPredictorIndex( N_NONE,             ss.at(ss.size()-1).getCat() ) ); // ancestor CVar
-//      mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), ss.at(ss.size()-1).getCat() ) ); // pairwise T
-//
-//      //corefON feature
-//      if (bcorefON == true) {
-//        mnpreds.emplace_back( lm.getPredictorIndex( "corefON" ) );
-//      }
+      mdist = antdist;
+      basesem = ss.getBase().getHVec(); //contexts of lowest b (bdbar)
+      antecedentsem = candidate.getHVec();
+      antecedentc = candidate.getCat();
+      basec = ss.getBase().getCat();
+      corefON = bcorefON;
     }
 
-    const list<unsigned int>& getList    ( ) const { return mnpreds; }
     int                       getAntDist ( ) const { return mdist;   }
+    int                       getAntDistSq( ) const { return mdist * mdist; }
+    //TODO add getters for all privates
+
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
 class NModel {
 
+  typedef DelimitedCol<psLBrack, double, psComma, 10, psRBrack> CVec;
+
   private:
 
-    arma::mat matN;                              // matrix itself
+    DelimitedMat<psX, double, psComma, NMATDIM, NMATDIM, psX> nw;                              // matrix itself
+
+    map<CVar,CVec> mcv; //map between cat and 10d embeddings
 
     unsigned int iNextPredictor = 0;             // predictor and response next-pointers
     unsigned int iNextResponse  = 0;
@@ -87,11 +74,6 @@ class NModel {
     map<unsigned int,string>    mis;
     map<string,unsigned int>    msi;
 
-    map<pair<K,K>,unsigned int>       mkki; 
-    map<unsigned int,pair<K,K>>       mikk;
-
-    map<pair<CVar,CVar>,unsigned int> mcci; //pairwise CVarCVar? probably too sparse...
-    map<unsigned int,pair<CVar,CVar>> micc;
 
   public:
 
@@ -139,19 +121,25 @@ class NModel {
       const auto& it = mcci.find( pair<CVar,CVar>(cA,cB) );  return( ( it != mcci.end() ) ? it->second : 0 );
     }
 
+    const CVec& getCatEmbed( CVar i ) const {
+      auto it = mcv.find( i );
+      assert( it != mcv.end() );
+      return it->second;
+    }
+
     arma::vec calcLogResponses( const NPredictorVec& npv ) const {
-      arma::vec nlogresponses = arma::ones( 2 );
-//      nlogresponses += npv.getAntDist() * matN.col(getPredictorIndex("ntdist"));
-//      for ( auto& npredr : npv.getList() ) {
-//        if ( npredr < matN.n_cols ) {
-//          nlogresponses += matN.col( npredr );
-//        }
-//      }
+      arma::vec nlogresponses = arma::zeros( NPREDDIM ); //TODO declare this constant somwhere above
+      //2x hvec(40?) + 2x cvec(20) + antdist(1) + antdistsq(1) + corefON(1)
+      //TODO create predictor vec by assembling looked-up dense feats for npv data, append dist, sqdist, corefon separately.
+      ////TODO potentially add gender animacy etc features
+      //TODO push through weight matrix ala FModel, norm and return score
+      
       return nlogresponses;
     }
 
     friend ostream& operator<<( ostream& os, const pair< const NModel&, const NPredictorVec& >& mv ) {
       os << "antdist=" << mv.second.getAntDist();
+      os << "antdistsq=" << mv.second.getAntDistSq();
       for( const auto& i : mv.second.getList() ) {
         // if( &i != &mv.second.getList().front() )
         os << ",";
