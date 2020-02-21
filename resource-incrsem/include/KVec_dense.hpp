@@ -20,19 +20,14 @@
 const uint KVEC_SIZE = 20;
 
 class KVec : public DelimitedCol<psLBrack, double, psComma, KVEC_SIZE, psRBrack> {
-//class KVec : public DelimitedCol<psLBrack, double, psComma, 40, psRBrack> {
   public:
     KVec ( ) { }
     KVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, KVEC_SIZE, psRBrack>(kv) { }
-//    KVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, 40, psRBrack>(kv) { }
     KVec& add( const KVec& kv ) { *this += kv; return *this; }
 };
 const KVec kvTop   ( arma::ones<Col<double>>(KVEC_SIZE)  );
 const KVec kvBot   ( arma::zeros<Col<double>>(KVEC_SIZE) );
 const KVec kvDitto ( arma::randn<Col<double>>(KVEC_SIZE) );
-//const KVec kvTop   ( arma::ones<Col<double>>(40)  );
-//const KVec kvBot   ( arma::zeros<Col<double>>(40) );
-//const KVec kvDitto ( arma::randn<Col<double>>(40) );
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -67,10 +62,13 @@ arma::mat relu( const arma::mat& km ) {
 }
 
 class OFunc {
+  // MLP weights
   map<int,DelimitedMat<psX, double, psComma, 2*KVEC_SIZE, KVEC_SIZE, psX>> mrwf;
   map<int,DelimitedMat<psX, double, psComma, KVEC_SIZE, 2*KVEC_SIZE, psX>> mrws;
-//  map<int,DelimitedMat<psX, double, psComma, 80, 40, psX>> mrwf;
-//  map<int,DelimitedMat<psX, double, psComma, 40, 80, psX>> mrws;
+  // MLP bias terms
+  map<int,DelimitedCol<psX, double, psComma, 2*KVEC_SIZE, psX>> mrbf;
+  map<int,DelimitedCol<psX, double, psComma, KVEC_SIZE, psX>> mrbs;
+
   public:
     OFunc() {}
     OFunc(istream& is) {
@@ -79,7 +77,9 @@ class OFunc {
         Delimited<char> c;
         is >> "O " >> k >> " " >> c >> " ";
         if (c == 'F') is >> mrwf[k] >> "\n";
+        if (c == 'f') is >> mrbf[k] >> "\n";
         if (c == 'S') is >> mrws[k] >> "\n";
+        if (c == 's') is >> mrbs[k] >> "\n";
       }
     }
 
@@ -87,30 +87,10 @@ class OFunc {
     arma::vec operator() ( int rel, const Col<double>& kv ) const {
 //                          (20x40) * (40x20) * (20x1)
       auto its = mrws.find(rel);
+      auto itbs = mrbs.find(rel);
       auto itf = mrwf.find(rel);
-      assert (its != mrws.end() && itf != mrwf.end());
-      return Mat<double>(its->second) * relu(Mat<double>(itf->second)*kv);
+      auto itbf = mrbf.find(rel);
+      assert (its != mrws.end() && itf != mrwf.end() && itbs != mrbs.end() && itbf != mrbf.end());
+      return Mat<double>(its->second) * relu(Mat<double>(itf->second)*kv + Col<double>(itbf->second)) + Col<double>(itbs->second);
     }
 };
-
-//class OFunc {
-//  map<int,DelimitedMat<psX, double, psComma, 40, 40, psX>> mrwf;
-//  public:
-//    OFunc() {}
-//    OFunc(istream& is) {
-//      while ( is.peek()=='O' ) {
-//        Delimited<int> k;
-//        is >> "O " >> k >> " ";
-//        is >> mrwf[k] >> "\n";
-//      }
-//    }
-//
-////  implementation of MLP; apply appropriate weights via matmul
-//    arma::vec operator() ( int rel, const Col<double>& kv ) const {
-////                          (20x40) * (40x20) * (20x1)
-//      auto itf = mrwf.find(rel);
-//      assert (itf != mrwf.end());
-////      return Mat<double>(itf->second) % kv;
-//      return Mat<double>(itf->second) * kv;
-//    }
-//};
