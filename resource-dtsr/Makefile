@@ -72,7 +72,7 @@ endif
 
 
 %/user-dtsr-directory.txt: | %   
-	echo '/home/compling/dtsr' > $@
+	echo '/data/compling/dtsr' > $@
 
 PYTHONPATH= $(shell cat $(CONFIGDIR)/user-dtsr-directory.txt)
 export PYTHONPATH

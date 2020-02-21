@@ -97,7 +97,7 @@ endif
 
 
 %/user-naturalstories-directory.txt: | %   
-	echo '/home/corpora/original/english/naturalstories' > $@
+	echo '/data/corpora/original/english/naturalstories' > $@
 
 ################################################################################
 #
@@ -174,3 +174,5 @@ $(DTSR-SCRIPTS)/compute_timestamps_from_RT.py $(CONFIGDIR)/user-naturalstories-d
 %naturalstories.coref.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.coref.linetrees %naturalstories.linetoks
 	python $^ > $@
 
+genmodel/naturalstories.toktrees: genmodel/naturalstories.coref.fromlinetrees.numbered.editabletrees
+	cp $^ > $@

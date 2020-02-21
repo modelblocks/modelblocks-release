@@ -75,7 +75,7 @@ endif
 
 
 %/user-ontonotes-directory.txt: | %   
-	echo '/home/corpora/original/english/ontonotes5' > $@
+	echo '/data/corpora/original/english/ontonotes5' > $@
 
 ################################################################################
 #
@@ -167,6 +167,10 @@ genmodel/corontowsjdev.casp.prtrm.linked.linetrees: $(foreach sect,01 22 24,genm
 .PRECIOUS: genmodel/corconllwsjdev.casp.prtrm.linked.linetrees
 genmodel/corconllwsjdev.casp.prtrm.linked.linetrees: $(foreach sect,00 01 22 24,genmodel/corontowsj$(sect).casp.prtrm.linked.linetrees)
 	cat $^  >  $@
+
+.PRECIOUS: corconllwsjdev.toktrees
+corconllwsjdev.toktrees: genmodel/corconllwsjdev.casp.prtrm.linked.fromlinetrees.numbered.editabletrees
+	cp $^ $@
 
 #.PRECIOUS: genmodel/corconllwsjdev.casp.linked.linetrees
 #genmodel/corconllwsjdev.casp.linked.linetrees: $(foreach sect,00 01 22 24,genmodel/corontowsj$(sect).casp.linked.linetrees)

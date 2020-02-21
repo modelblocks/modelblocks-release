@@ -70,7 +70,7 @@ if __name__ == '__main__':
         to_drop = filter_names(df[args.var_name].unique(), args.to_drop)
         df = df[~df[args.var_name].isin(to_drop)]
 
-    df.to_csv(sys.stdout, index=False, sep=' ', na_rep='nan')
+    df.to_csv(sys.stdout, index=False, sep=' ', na_rep='NaN')
 
 
 

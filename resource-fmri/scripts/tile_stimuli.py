@@ -33,4 +33,4 @@ for i in range(len(subj_doc_pairs)):
 
 out = pd.concat(out, axis=0)
 
-out.to_csv(sys.stdout, sep=' ', index=False, na_rep='nan')
+out.to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN')

@@ -74,7 +74,7 @@ JAVAFLAGS := $(shell cat $(CONFIG))
 endif
 
 %/user-berkeleyparserjar-directory.txt: | %
-	echo '/home/compling/berkeleyparser' > $@
+	echo '/data/compling/berkeleyparser' > $@
 
 %/user-javaflags.txt: | %
 	echo '-Xmx8g' > $@
@@ -183,6 +183,10 @@ $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees $$(b
 #	cat $<  |  $(word 2,$^)  $(subst _, ,$(subst .,,$(suffix $*)))  $(word 3,$^)  >  $@
 ## this is to spec; above is deprecated
 %parsed.output: $(BIN)/parser-$$(subst .,,$$(suffix $$(basename $$(subst +,-,$$(subst -,.,$$*))))) \
+		$$(basename %).senttoks \
+		$(GENMODEL)/$$(basename $$(subst +,-,$$(subst -,.,$$(subst .,,$$(suffix $$*))))).model
+	cat $(word 2,$^)  |  $(word 1,$^) $(subst _, ,$(subst +,-,$(subst .,,$(suffix $(subst -,.,$*))))) $(word 3,$^)  >  $@
+%parsed.output: $(BIN)/parser-$$(subst .,,$$(suffix $$(basename $$(subst +,-,$$(subst -,.,$$*))))) \
 		$$(basename %).linetoks \
 		$(GENMODEL)/$$(basename $$(subst +,-,$$(subst -,.,$$(subst .,,$$(suffix $$*))))).model
 	cat $(word 2,$^)  |  $(word 1,$^) $(subst _, ,$(subst +,-,$(subst .,,$(suffix $(subst -,.,$*))))) $(word 3,$^)  >  $@
@@ -199,6 +203,8 @@ $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees $$(b
 %berk.parsed.linetrees:  %berk.parsed.output
 	cat $<  |  perl -pe 's/\+(?=[^\)]* )/\-/g'  |  perl -pe 's/^ *\( *//;s/ *\) *$$//;s/-\d+ / /g'  >  $@
 ## this is to spec; above is deprecated
+%berk-parsed.senttrees:  %berk-parsed.output
+	cat $<  |  perl -pe 's/\+(?=[^\)]* )/\-/g'  |  perl -pe 's/^ *\( *//;s/ *\) *$$//;s/-\d+ / /g'  >  $@
 %berk-parsed.linetrees:  %berk-parsed.output
 	cat $<  |  perl -pe 's/\+(?=[^\)]* )/\-/g'  |  perl -pe 's/^ *\( *//;s/ *\) *$$//;s/-\d+ / /g'  >  $@
 

@@ -41,7 +41,7 @@ for i in range(len(args.files)):
     sys.stderr.write('\rProcessing audio file "%s" (%d/%d)        ' %(n, i + 1, 10))
     y, sr = librosa.load(path)
     support = np.arange(0, len(y), 50)
-    rmse = librosa.feature.rmse(y, hop_length=50)
+    rmse = librosa.feature.rms(y, hop_length=50)
     rmse = rmse[0]
     power[n] = rmse
     max_len = max(max_len, len(rmse))
@@ -130,5 +130,5 @@ if args.convolve:
 
     df['soundPowerHRF'] = soundPowerHRF
 
-df.to_csv(sys.stdout, sep=' ', na_rep='nan', index=False)
+df.to_csv(sys.stdout, sep=' ', na_rep='NaN', index=False)
     

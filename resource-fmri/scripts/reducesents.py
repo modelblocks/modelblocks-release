@@ -15,6 +15,6 @@ dataSum = dataGrouped.agg('sum').rename(columns = lambda x: x + 'Sum')
 dataMax = dataGrouped.agg('max').rename(columns = lambda x: x + 'Max')
 data = pd.concat([dataSentID, dataNwords, dataMean, dataSum, dataMax], axis=1)
 
-data.to_csv(sys.stdout, ' ', index=False, na_rep='nan')
+data.to_csv(sys.stdout, ' ', index=False, na_rep='NaN')
 
 

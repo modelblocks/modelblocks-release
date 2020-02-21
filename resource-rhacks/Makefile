@@ -71,7 +71,7 @@ endif
 endif
     
 %/user-rhacks-directory.txt: | %   
-	echo '/home/compling/R-hacks' > $@
+	echo '/data/compling/R-hacks' > $@
 
 ################################################################################
 #

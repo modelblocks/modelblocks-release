@@ -19,15 +19,18 @@
 
 #include <typeinfo>
 
+const uint SEM_SIZE = 20;
+const uint SYN_SIZE = 10;
+
 // for semantic ablation
-class TVec : public DelimitedCol<psLBrack, double, psComma, 20, psRBrack> {
+class TVec : public DelimitedCol<psLBrack, double, psComma, SEM_SIZE, psRBrack> {
   public:
     TVec ( ) { }
-    TVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, 20, psRBrack>(kv) { }
+    TVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, SEM_SIZE, psRBrack>(kv) { }
     TVec& add( const TVec& kv ) { *this += kv; return *this; }
 };
 
-const TVec foo   ( arma::zeros<Col<double>>(20) );
+const TVec foo   ( arma::zeros<Col<double>>(SEM_SIZE) );
 
 class NPredictorVec {
 //need to be able to output real-valued distance integers, NPreds
@@ -41,7 +44,7 @@ class NPredictorVec {
 
     //constructor
     template<class LM>
-    NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss ) : mdist(antdist), mnpreds() {
+    NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss, bool ABLATE_UNARY) : mdist(antdist), mnpreds() {
 //      //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
 //      //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
 //
@@ -212,8 +215,8 @@ class FPredictorVec {
 class FModel {
 
   typedef DelimitedTrip<psX,F,psAmpersand,Delimited<EVar>,psAmpersand,Delimited<K>,psX> FEK;
-  typedef DelimitedCol<psLBrack, double, psComma, 10, psRBrack> CVec;
-//  typedef DelimitedCol<psLBrack, double, psComma, 60, psRBrack> CVec;
+  typedef DelimitedCol<psLBrack, double, psComma, SYN_SIZE, psRBrack> CVec;
+//  typedef DelimitedCol<psLBrack, double, psComma, 20, psRBrack> CVec;
 
 
   private:
@@ -227,9 +230,10 @@ class FModel {
 
     // Matrix dimensions could be different; how to accommodate for this?
 //    7+2*sem+syn
+    DelimitedVector<psX, double, psComma, psX> fwf;  // weights for F model
 //    DelimitedMat<psX, double, psComma, 57, 57, psX> fwf;  // weights for F model
-    DelimitedMat<psX, double, psComma, 97, 97, psX> fwf;  // weights for F model
     DelimitedVector<psX, double, psComma, psX> fws;
+//    DelimitedVector<psX, double, psComma, psX> fwt;
 
   public:
     FModel( ) { }
@@ -239,6 +243,7 @@ class FModel {
         is >> "F " >> c >> " ";
         if (c == 'F') is >> fwf >> "\n";
         if (c == 'S') is >> fws >> "\n";
+//        if (c == 'T') is >> fwt >> "\n";
       }
       while ( is.peek()=='C' ) {
         Delimited<CVar> c;
@@ -278,8 +283,9 @@ class FModel {
     arma::vec calcResponses( FPredictorVec& lfpredictors ) const {
 // return distribution over FEK indices
 // vectorize predictors: one-hot for depth, two hvecs, one cat-embed
-//      arma::vec flogresponses = arma::zeros( 57 );
-      arma::vec flogresponses = arma::zeros( 97 );
+      arma::vec flogresponses = arma::zeros( 7 + 2*SEM_SIZE + SYN_SIZE );
+//      arma::vec flogresponses = arma::zeros( 67 );
+//      arma::vec flogresponses = arma::zeros( 97 );
       CVar catB = lfpredictors.getCatBase();
       const HVec& hvB = lfpredictors.getHvB();
       const HVec& hvF = lfpredictors.getHvF();
@@ -300,23 +306,32 @@ class FModel {
       flogresponses(catBEmb.n_elem+hvB.at(0).n_elem+hvF.at(0).n_elem+d) = 1;
 
 // implementation of MLP
+      mat fwfm(fwf);
       mat fwsm(fws);
-//      fwsm.reshape(fws.size()/57, 57);
-      fwsm.reshape(fws.size()/97, 97);
-      arma::vec flogscores = fwsm * relu(Mat<double>(fwf)*flogresponses);
+//      fwfm.reshape(fwf.size()/97, 97);
+//      fwsm.reshape(fws.size()/(fwf.size()/97), (fwf.size()/97));
+      fwfm.reshape(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE), 7 + 2*SEM_SIZE + SYN_SIZE);
+      fwsm.reshape(fws.size()/(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)), (fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)));
+      arma::vec flogscores = fwsm * relu(fwfm*flogresponses);
+//      mat fwtm(fwt);
+//      fwtm.reshape(fwt.size()/57, 57);
+//      arma::vec flogscores = fwtm * relu(fwsm * relu(Mat<double>(fwf)*flogresponses));
       arma::vec fscores = arma::exp(flogscores);
       double fnorm = arma::accu(fscores);
-
       return fscores/fnorm;
     }
 
   arma::vec testCalcResponses( arma::vec testvec ) const {
+      mat fwfm(fwf);
       mat fwsm(fws);
-      fwsm.reshape(fws.size()/57, 57);
-      arma::vec flogscores = fwsm * relu(Mat<double>(fwf)*testvec);
+      fwfm.reshape(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE), 7 + 2*SEM_SIZE + SYN_SIZE);
+      fwsm.reshape(fws.size()/(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)), (fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)));
+      arma::vec flogscores = fwsm * relu(fwfm*testvec);
+//      mat fwtm(fwt);
+//      fwtm.reshape(fwt.size()/57, 57);
+//      arma::vec flogscores = fwtm * relu(fwsm * relu(Mat<double>(fwf)*testvec));
       arma::vec fscores = arma::exp(flogscores);
       double fnorm = arma::accu(fscores);
-
       return fscores/fnorm;
     }
 };
@@ -377,8 +392,8 @@ class JPredictorVec {
 class JModel {
 
   typedef DelimitedQuad<psX,J,psAmpersand,Delimited<EVar>,psAmpersand,O,psAmpersand,O,psX> JEOO;
-  typedef DelimitedCol<psLBrack, double, psComma, 10, psRBrack> CVec;
-//  typedef DelimitedCol<psLBrack, double, psComma, 60, psRBrack> CVec;
+  typedef DelimitedCol<psLBrack, double, psComma, SYN_SIZE, psRBrack> CVec;
+//  typedef DelimitedCol<psLBrack, double, psComma, 20, psRBrack> CVec;
   unsigned int jr0;
   unsigned int jr1;
 
@@ -393,8 +408,8 @@ class JModel {
 
     // Matrix dimensions could be different; how to accommodate for this?
 //    7+3*sem+2*syn
-//    DelimitedMat<psX, double, psComma, 87, 87, psX> jwf;  // weights for J model
-    DelimitedMat<psX, double, psComma, 147, 147, psX> jwf;  // weights for J model
+    DelimitedVector<psX, double, psComma, psX> jwf;  // weights for J model
+//    DelimitedMat<psX, double, psComma, 107, 107, psX> jwf;  // weights for J model
     DelimitedVector<psX, double, psComma, psX> jws;
 
   public:
@@ -453,8 +468,9 @@ class JModel {
     arma::vec calcResponses( JPredictorVec& ljpredictors ) const {
 // return distribution over JEOO indices
 // vectorize predictors: one-hot for depth, three hvecs, two cat-embeds
-//      arma::vec jlogresponses = arma::zeros( 87 );
-      arma::vec jlogresponses = arma::zeros( 147 );
+      arma::vec jlogresponses = arma::zeros( 7 + 3*SEM_SIZE + 2*SYN_SIZE );
+//      arma::vec jlogresponses = arma::zeros( 107 );
+//      arma::vec jlogresponses = arma::zeros( 147 );
       CVar catA = ljpredictors.getCatAncstr();
       const HVec& hvA = ljpredictors.getHvAncstr();
       const HVec& hvF = ljpredictors.getHvFiller();
@@ -484,20 +500,25 @@ class JModel {
       jlogresponses(catAEmb.n_elem+hvA.at(0).n_elem+hvF.at(0).n_elem+catLEmb.n_elem+hvL.at(0).n_elem+d) = 1;
 
 // implementation of MLP
+      mat jwfm(jwf);
       mat jwsm(jws);
-//      jwsm.reshape(jws.size()/87, 87);
-      jwsm.reshape(jws.size()/147, 147);
-      arma::vec jlogscores = jwsm * relu(Mat<double>(jwf)*jlogresponses);
+//      jwfm.reshape(jwf.size()/147, 147);
+//      jwsm.reshape(jws.size()/(jwf.size()/147), (jwf.size()/147));
+      jwfm.reshape(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE), (7 + 3*SEM_SIZE + 2*SYN_SIZE));
+      jwsm.reshape(jws.size()/(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)), (jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)));
+      arma::vec jlogscores = jwsm * relu(jwfm*jlogresponses);
+//      jwsm.reshape(jws.size()/107, 107);
       arma::vec jscores = arma::exp(jlogscores);
       double jnorm = arma::accu(jscores);
-
       return jscores/jnorm;
     }
 
   arma::vec testCalcResponses( arma::vec testvec ) const {
+      mat jwfm(jwf);
       mat jwsm(jws);
-      jwsm.reshape(jws.size()/87, 87);
-      arma::vec jlogscores = jwsm * relu(Mat<double>(jwf)*testvec);
+      jwfm.reshape(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE), (7 + 3*SEM_SIZE + 2*SYN_SIZE));
+      jwsm.reshape(jws.size()/(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)), (jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)));
+      arma::vec jlogscores = jwsm * relu(jwfm*testvec);
       arma::vec jscores = arma::exp(jlogscores);
       double jnorm = arma::accu(jscores);
       return jscores/jnorm;

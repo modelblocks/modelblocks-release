@@ -1,4 +1,4 @@
-import os, sys, torch
+import os, sys, re, torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -71,53 +71,87 @@ def train(path, vectors, rel):
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
-        print('Relation %s, Epoch %d, Trng_loss: %.4f' % (rel, epoch, loss.item()))
+        print('Relation %s, Epoch %d, Loss: %.4f' % (rel, epoch, loss.item()))
         epoch += 1
         if loss.item() < current_loss:
-            if current_loss-loss.item() < 0.1:
+            if current_loss-loss.item() < 0.0001:
                 print("Stopping criterion met")
                 break
             else:
                 current_loss = loss.item()
 
-    return model, subjects, objects
+    print("Training model", "-"+rel)
+    neg_model = OModel(objects.size()[1])
+    neg_optimizer = optim.Adam(neg_model.parameters(), lr=0.01)
+    current_loss = 100
+    epoch = 1
+    while True:
+        trng_pred = neg_model(objects)
+        neg_loss = criterion(trng_pred, subjects)
+        neg_loss.backward()
+        neg_optimizer.step()
+        neg_optimizer.zero_grad()
+        print('Relation %s, Epoch %d, Loss: %.4f' % ("-"+rel, epoch, neg_loss.item()))
+        epoch += 1
+        if neg_loss.item() < current_loss:
+            if current_loss - neg_loss.item() < 0.0001:
+                print("Stopping criterion met")
+                break
+            else:
+                current_loss = neg_loss.item()
+
+    return model, neg_model, subjects, objects
 
 def main(path, vectorfile):
     vectors = torch.load(vectorfile)
     vectors.requires_grad = False
     entity_path = os.path.join(path, 'entities.dict')
     relation_path = os.path.join(path, 'relations.dict')
-    train_path = os.path.join(path, 'train.txt')
+    # train_path = os.path.join(path, 'train.txt')
     entity_dict = read_dictionary(entity_path)
     relation_dict = read_dictionary(relation_path)
-    train_data = np.array(read_triplets_as_list(train_path, entity_dict, relation_dict))
-    ix_to_entity = {v: k for k, v in entity_dict.items()}
-    print("Begin training O model -0")
-    neg_zero_model, _, _ = train(path, vectors, "-0")
+    # train_data = np.array(read_triplets_as_list(train_path, entity_dict, relation_dict))
+    # ix_to_entity = {v: k for k, v in entity_dict.items()}
+    # print("Begin training O model -0")
+    # neg_zero_model, _, _ = train(path, vectors, "-0")
     terminals = []
-    neg_zero_applied = neg_zero_model(vectors).detach().numpy()
+    # neg_zero_applied = neg_zero_model(vectors).detach().numpy()
 
-    for i in range(train_data.shape[0]):
-        if train_data[i, 1]==relation_dict["-0"]:
-            terminals.append(ix_to_entity[train_data[i, 0]])
-    terminals = set(terminals)
+    for i in entity_dict:
+        if not re.match("[0-9]", i):
+            terminals.append(i)
+
+    # for i in range(train_data.shape[0]):
+    #     if train_data[i, 1]==relation_dict["-0"]:
+    #         terminals.append(ix_to_entity[train_data[i, 0]])
+    # terminals = set(terminals)
 
     first_weights = {}
     second_weights = {}
     for rel in relation_dict:
-        if rel == "-0" or rel == "0":
-            continue
-        print("Begin training O model", rel)
-        model, _, _ = train(path, vectors, rel)
+        # if rel == "-0" or rel == "0":
+        #     continue
+        # print("Begin training O model", rel)
+        model, neg_model, _, _ = train(path, vectors, rel)
         first_weights[rel] = list(model.parameters())[0].data.numpy()
         second_weights[rel] = list(model.parameters())[1].data.numpy()
+        first_weights["-"+rel] = list(neg_model.parameters())[0].data.numpy()
+        second_weights["-"+rel] = list(neg_model.parameters())[1].data.numpy()
 
     with open(vectorfile[:-3] + "_emat_omodel.txt", "w") as f:
         for terminal in terminals:
-            f.write("E "+str(terminal)+" ["+",".join(map(str, neg_zero_applied[entity_dict[terminal]]))+"]\n")
+            # f.write("E "+str(terminal)+" ["+",".join(map(str, neg_zero_applied[entity_dict[terminal]]))+"]\n")
+            f.write("E " + str(terminal) + " [" + ",".join(map(str, vectors[entity_dict[terminal]].data.numpy())) + "]\n")
         for rel in first_weights:
             f.write("O "+str(rel)+" F "+",".join(map(str, first_weights[rel].flatten().tolist()))+"\n")
             f.write("O "+str(rel)+" S "+",".join(map(str, second_weights[rel].flatten().tolist()))+"\n")
+        # temporary hack
+        for rel in [4, 5, 6, 7, 8]:
+            f.write("O "+str(rel)+" F "+",".join(map(str, first_weights["3"].flatten().tolist()))+"\n")
+            f.write("O "+str(rel)+" S "+",".join(map(str, second_weights["3"].flatten().tolist()))+"\n")
+        for rel in [-4, -5, -6, -7, -8]:
+            f.write("O "+str(rel)+" F "+",".join(map(str, first_weights["-3"].flatten().tolist()))+"\n")
+            f.write("O "+str(rel)+" S "+",".join(map(str, second_weights["-3"].flatten().tolist()))+"\n")
 
 if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2])

@@ -105,7 +105,7 @@ endif
 
 ## Default version of Gigaword is Gigaword 4, FYI
 %/user-gigaword-directory.txt: | %
-	echo '/home/corpora/original/english/gigaword-4' > $@
+	echo '/data/corpora/original/english/gigaword-4' > $@
 
 %/user-gigaword-sects.txt: | %
 	echo $(GIGA4SECTS) > $@

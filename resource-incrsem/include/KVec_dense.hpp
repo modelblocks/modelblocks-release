@@ -17,20 +17,22 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-//class KVec : public DelimitedCol<psLBrack, double, psComma, 20, psRBrack> {
-class KVec : public DelimitedCol<psLBrack, double, psComma, 40, psRBrack> {
+const uint KVEC_SIZE = 20;
+
+class KVec : public DelimitedCol<psLBrack, double, psComma, KVEC_SIZE, psRBrack> {
+//class KVec : public DelimitedCol<psLBrack, double, psComma, 40, psRBrack> {
   public:
     KVec ( ) { }
-//    KVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, 20, psRBrack>(kv) { }
-    KVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, 40, psRBrack>(kv) { }
+    KVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, KVEC_SIZE, psRBrack>(kv) { }
+//    KVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, 40, psRBrack>(kv) { }
     KVec& add( const KVec& kv ) { *this += kv; return *this; }
 };
-//const KVec kvTop   ( arma::ones<Col<double>>(20)  );
-//const KVec kvBot   ( arma::zeros<Col<double>>(20) );
-//const KVec kvDitto ( arma::randn<Col<double>>(20) );
-const KVec kvTop   ( arma::ones<Col<double>>(40)  );
-const KVec kvBot   ( arma::zeros<Col<double>>(40) );
-const KVec kvDitto ( arma::randn<Col<double>>(40) );
+const KVec kvTop   ( arma::ones<Col<double>>(KVEC_SIZE)  );
+const KVec kvBot   ( arma::zeros<Col<double>>(KVEC_SIZE) );
+const KVec kvDitto ( arma::randn<Col<double>>(KVEC_SIZE) );
+//const KVec kvTop   ( arma::ones<Col<double>>(40)  );
+//const KVec kvBot   ( arma::zeros<Col<double>>(40) );
+//const KVec kvDitto ( arma::randn<Col<double>>(40) );
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -65,10 +67,10 @@ arma::mat relu( const arma::mat& km ) {
 }
 
 class OFunc {
-//  map<int,DelimitedMat<psX, double, psComma, 40, 20, psX>> mrwf;
-//  map<int,DelimitedMat<psX, double, psComma, 20, 40, psX>> mrws;
-  map<int,DelimitedMat<psX, double, psComma, 80, 40, psX>> mrwf;
-  map<int,DelimitedMat<psX, double, psComma, 40, 80, psX>> mrws;
+  map<int,DelimitedMat<psX, double, psComma, 2*KVEC_SIZE, KVEC_SIZE, psX>> mrwf;
+  map<int,DelimitedMat<psX, double, psComma, KVEC_SIZE, 2*KVEC_SIZE, psX>> mrws;
+//  map<int,DelimitedMat<psX, double, psComma, 80, 40, psX>> mrwf;
+//  map<int,DelimitedMat<psX, double, psComma, 40, 80, psX>> mrws;
   public:
     OFunc() {}
     OFunc(istream& is) {
