@@ -231,18 +231,22 @@ class FModel {
     // Matrix dimensions could be different; how to accommodate for this?
 //    7+2*sem+syn
     DelimitedVector<psX, double, psComma, psX> fwf;  // weights for F model
-//    DelimitedMat<psX, double, psComma, 57, 57, psX> fwf;  // weights for F model
     DelimitedVector<psX, double, psComma, psX> fws;
+    DelimitedVector<psX, double, psComma, psX> fbf;  // biases for F model
+    DelimitedVector<psX, double, psComma, psX> fbs;
 //    DelimitedVector<psX, double, psComma, psX> fwt;
 
   public:
+
     FModel( ) { }
     FModel( istream& is ) {
       while ( is.peek()=='F' ) {
         Delimited<char> c;
         is >> "F " >> c >> " ";
         if (c == 'F') is >> fwf >> "\n";
+        if (c == 'f') is >> fbf >> "\n";
         if (c == 'S') is >> fws >> "\n";
+        if (c == 's') is >> fbs >> "\n";
 //        if (c == 'T') is >> fwt >> "\n";
       }
       while ( is.peek()=='C' ) {
@@ -284,8 +288,6 @@ class FModel {
 // return distribution over FEK indices
 // vectorize predictors: one-hot for depth, two hvecs, one cat-embed
       arma::vec flogresponses = arma::zeros( 7 + 2*SEM_SIZE + SYN_SIZE );
-//      arma::vec flogresponses = arma::zeros( 67 );
-//      arma::vec flogresponses = arma::zeros( 97 );
       CVar catB = lfpredictors.getCatBase();
       const HVec& hvB = lfpredictors.getHvB();
       const HVec& hvF = lfpredictors.getHvF();
@@ -308,14 +310,11 @@ class FModel {
 // implementation of MLP
       mat fwfm(fwf);
       mat fwsm(fws);
-//      fwfm.reshape(fwf.size()/97, 97);
-//      fwsm.reshape(fws.size()/(fwf.size()/97), (fwf.size()/97));
+      vec fbfv(fbf);
+      vec fbsv(fbs);
       fwfm.reshape(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE), 7 + 2*SEM_SIZE + SYN_SIZE);
       fwsm.reshape(fws.size()/(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)), (fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)));
-      arma::vec flogscores = fwsm * relu(fwfm*flogresponses);
-//      mat fwtm(fwt);
-//      fwtm.reshape(fwt.size()/57, 57);
-//      arma::vec flogscores = fwtm * relu(fwsm * relu(Mat<double>(fwf)*flogresponses));
+      arma::vec flogscores = fwsm * relu(fwfm*flogresponses + fbfv) + fbsv;
       arma::vec fscores = arma::exp(flogscores);
       double fnorm = arma::accu(fscores);
       return fscores/fnorm;
@@ -324,12 +323,11 @@ class FModel {
   arma::vec testCalcResponses( arma::vec testvec ) const {
       mat fwfm(fwf);
       mat fwsm(fws);
+      vec fbfv(fbf);
+      vec fbsv(fbs);
       fwfm.reshape(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE), 7 + 2*SEM_SIZE + SYN_SIZE);
       fwsm.reshape(fws.size()/(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)), (fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)));
-      arma::vec flogscores = fwsm * relu(fwfm*testvec);
-//      mat fwtm(fwt);
-//      fwtm.reshape(fwt.size()/57, 57);
-//      arma::vec flogscores = fwtm * relu(fwsm * relu(Mat<double>(fwf)*testvec));
+      arma::vec flogscores = fwsm * relu(fwfm*testvec + fbfv) + fbsv;
       arma::vec fscores = arma::exp(flogscores);
       double fnorm = arma::accu(fscores);
       return fscores/fnorm;
@@ -393,7 +391,6 @@ class JModel {
 
   typedef DelimitedQuad<psX,J,psAmpersand,Delimited<EVar>,psAmpersand,O,psAmpersand,O,psX> JEOO;
   typedef DelimitedCol<psLBrack, double, psComma, SYN_SIZE, psRBrack> CVec;
-//  typedef DelimitedCol<psLBrack, double, psComma, 20, psRBrack> CVec;
   unsigned int jr0;
   unsigned int jr1;
 
@@ -409,8 +406,9 @@ class JModel {
     // Matrix dimensions could be different; how to accommodate for this?
 //    7+3*sem+2*syn
     DelimitedVector<psX, double, psComma, psX> jwf;  // weights for J model
-//    DelimitedMat<psX, double, psComma, 107, 107, psX> jwf;  // weights for J model
     DelimitedVector<psX, double, psComma, psX> jws;
+    DelimitedVector<psX, double, psComma, psX> jbf;  // biases for J model
+    DelimitedVector<psX, double, psComma, psX> jbs;
 
   public:
 
@@ -424,7 +422,9 @@ class JModel {
         Delimited<char> c;
         is >> "J " >> c >> " ";
         if (c == 'F') is >> jwf >> "\n";
+        if (c == 'f') is >> jbf >> "\n";
         if (c == 'S') is >> jws >> "\n";
+        if (c == 's') is >> jbs >> "\n";
       }
       while ( is.peek()=='C' ) {
         Delimited<CVar> c;
@@ -502,12 +502,11 @@ class JModel {
 // implementation of MLP
       mat jwfm(jwf);
       mat jwsm(jws);
-//      jwfm.reshape(jwf.size()/147, 147);
-//      jwsm.reshape(jws.size()/(jwf.size()/147), (jwf.size()/147));
+      vec jbfv(jbf);
+      vec jbsv(jbs);
       jwfm.reshape(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE), (7 + 3*SEM_SIZE + 2*SYN_SIZE));
       jwsm.reshape(jws.size()/(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)), (jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)));
-      arma::vec jlogscores = jwsm * relu(jwfm*jlogresponses);
-//      jwsm.reshape(jws.size()/107, 107);
+      arma::vec jlogscores = jwsm * relu(jwfm*jlogresponses + jbfv) + jbsv;
       arma::vec jscores = arma::exp(jlogscores);
       double jnorm = arma::accu(jscores);
       return jscores/jnorm;
@@ -516,9 +515,11 @@ class JModel {
   arma::vec testCalcResponses( arma::vec testvec ) const {
       mat jwfm(jwf);
       mat jwsm(jws);
+      vec jbfv(jbf);
+      vec jbsv(jbs);
       jwfm.reshape(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE), (7 + 3*SEM_SIZE + 2*SYN_SIZE));
       jwsm.reshape(jws.size()/(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)), (jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)));
-      arma::vec jlogscores = jwsm * relu(jwfm*testvec);
+      arma::vec jlogscores = jwsm * relu(jwfm*testvec + jbfv) + jbsv;
       arma::vec jscores = arma::exp(jlogscores);
       double jnorm = arma::accu(jscores);
       return jscores/jnorm;
