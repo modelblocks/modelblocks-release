@@ -221,8 +221,8 @@ int main ( int nArgs, char* argv[] ) {
   const BModel& modB  = modBmutable;
 
 //  const vec& test = arma::ones<vec>(40);
-//  const vec& testf = arma::ones<vec>(57);
-//  const vec& testj = arma::ones<vec>(87);
+//  const vec& testf = arma::ones<vec>(7+SYN_SIZE+2*SEM_SIZE);
+//  const vec& testj = arma::ones<vec>(7+2*SYN_SIZE+3*SEM_SIZE);
   cerr<<"Models ready."<<endl;
 //  cerr << "Experiments with 1s" << endl;
 //  cerr << "OFunc(1) " << funcO(1, test) << endl;
