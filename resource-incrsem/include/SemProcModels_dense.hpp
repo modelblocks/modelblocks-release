@@ -23,10 +23,10 @@ const uint SEM_SIZE = 20;
 const uint SYN_SIZE = 10;
 
 // for semantic ablation
-class TVec : public DelimitedCol<psLBrack, double, psComma, SEM_SIZE, psRBrack> {
+class TVec : public DelimitedCol<psLBrack, double, psComma, psRBrack> {
   public:
-    TVec ( ) { }
-    TVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, SEM_SIZE, psRBrack>(kv) { }
+    TVec ( )                       : DelimitedCol<psLBrack, double, psComma, psRBrack>(SEM_SIZE) { }
+    TVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, psRBrack>(kv)       { }
     TVec& add( const TVec& kv ) { *this += kv; return *this; }
 };
 
@@ -215,7 +215,7 @@ class FPredictorVec {
 class FModel {
 
   typedef DelimitedTrip<psX,F,psAmpersand,Delimited<EVar>,psAmpersand,Delimited<K>,psX> FEK;
-  typedef DelimitedCol<psLBrack, double, psComma, SYN_SIZE, psRBrack> CVec;
+  typedef DelimitedCol<psLBrack, double, psComma, psRBrack> CVec;
 //  typedef DelimitedCol<psLBrack, double, psComma, 20, psRBrack> CVec;
 
 
@@ -252,7 +252,7 @@ class FModel {
       while ( is.peek()=='C' ) {
         Delimited<CVar> c;
         is >> "C " >> c >> " ";
-        is >> mcv[c] >> "\n";
+        is >> mcv.try_emplace(c,SYN_SIZE).first->second >> "\n";
       }
       while ( is.peek()=='f' ) {
         unsigned int i;
@@ -390,7 +390,7 @@ class JPredictorVec {
 class JModel {
 
   typedef DelimitedQuad<psX,J,psAmpersand,Delimited<EVar>,psAmpersand,O,psAmpersand,O,psX> JEOO;
-  typedef DelimitedCol<psLBrack, double, psComma, SYN_SIZE, psRBrack> CVec;
+  typedef DelimitedCol<psLBrack, double, psComma, psRBrack> CVec;
   unsigned int jr0;
   unsigned int jr1;
 
@@ -429,7 +429,7 @@ class JModel {
       while ( is.peek()=='C' ) {
         Delimited<CVar> c;
         is >> "C " >> c >> " ";
-        is >> mcv[c] >> "\n";
+        is >> mcv.try_emplace(c,SYN_SIZE).first->second >> "\n";
       }
       while ( is.peek()=='j' ) {
         Delimited<int> k;

@@ -19,10 +19,10 @@
 
 const uint KVEC_SIZE = 20;
 
-class KVec : public DelimitedCol<psLBrack, double, psComma, KVEC_SIZE, psRBrack> {
+class KVec : public DelimitedCol<psLBrack, double, psComma, psRBrack> {
   public:
-    KVec ( ) { }
-    KVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, KVEC_SIZE, psRBrack>(kv) { }
+    KVec ( )                       : DelimitedCol<psLBrack, double, psComma, psRBrack>(KVEC_SIZE) { }
+    KVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, psRBrack>(kv)        { }
     KVec& add( const KVec& kv ) { *this += kv; return *this; }
 };
 const KVec kvTop   ( arma::ones<Col<double>>(KVEC_SIZE)  );
@@ -63,11 +63,11 @@ arma::mat relu( const arma::mat& km ) {
 
 class OFunc {
   // MLP weights
-  map<int,DelimitedMat<psX, double, psComma, 2*KVEC_SIZE, KVEC_SIZE, psX>> mrwf;
-  map<int,DelimitedMat<psX, double, psComma, KVEC_SIZE, 2*KVEC_SIZE, psX>> mrws;
+  map<int,DelimitedMat<psX, double, psComma, psX>> mrwf;
+  map<int,DelimitedMat<psX, double, psComma, psX>> mrws;
   // MLP bias terms
-  map<int,DelimitedCol<psX, double, psComma, 2*KVEC_SIZE, psX>> mrbf;
-  map<int,DelimitedCol<psX, double, psComma, KVEC_SIZE, psX>> mrbs;
+  map<int,DelimitedCol<psX, double, psComma, psX>> mrbf;
+  map<int,DelimitedCol<psX, double, psComma, psX>> mrbs;
 
   public:
     OFunc() {}
@@ -76,10 +76,10 @@ class OFunc {
         Delimited<int> k;
         Delimited<char> c;
         is >> "O " >> k >> " " >> c >> " ";
-        if (c == 'F') is >> mrwf[k] >> "\n";
-        if (c == 'f') is >> mrbf[k] >> "\n";
-        if (c == 'S') is >> mrws[k] >> "\n";
-        if (c == 's') is >> mrbs[k] >> "\n";
+        if (c == 'F') is >> mrwf.try_emplace(k,2*KVEC_SIZE,KVEC_SIZE).first->second >> "\n";
+        if (c == 'f') is >> mrbf.try_emplace(k,2*KVEC_SIZE).first->second >> "\n";
+        if (c == 'S') is >> mrws.try_emplace(k,KVEC_SIZE,2*KVEC_SIZE).first->second >> "\n";
+        if (c == 's') is >> mrbs.try_emplace(k,KVEC_SIZE).first->second >> "\n";
       }
     }
 
