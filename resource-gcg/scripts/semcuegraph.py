@@ -353,6 +353,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('1\'',G.result('S',G.result('A',e))), '1', G.result('r',G.result('S',G.result('A',e))) )
       G.equate( G.result('r',G.result('S',d)),                 '2', G.result('r',G.result('S',G.result('A',e))) )
       G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
+    elif sE.endswith('-g{R-aN}-lR'):                ## Rd (off-spec: "the only/furthest north I can go")
+      G.equate( G.result('S',d), 'S', c )
+      G.equate( G.result('S',d), 'S', G.result('A',e) )  # grab nusco
+      G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
     elif '-lR' in sE:                               ## R
       G.equate( G.result('S',d), 'S', c )
 #      G.equate( G.result('S',d), 'S', G.result('A',e) )
