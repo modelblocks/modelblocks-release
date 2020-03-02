@@ -169,11 +169,12 @@ def main(graph_file, config):
     fg, src_ids, dst_ids = utils.generate_full_graph(all_edges, relation_dict)
     utils.eprint("Preprocessing finished")
 
+    
+    if use_cuda:
+        model.cpu()
+
     with torch.no_grad():
         fg_embedding = model(fg)
-
-    if use_cuda:
-        fg_embedding = fg_embedding.cpu()
 
     # training loop
     omodel_config = config["OModel"]
