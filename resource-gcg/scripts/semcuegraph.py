@@ -97,6 +97,9 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 
     ## attach rel pro / interrog pro antecedent...
     for i,psi in enumerate( gcgtree.deps(sD) ):
+      if psi[1] in 'ir':
+        G.equate( G.result('S',G.findNolo(psi,id)), str(G.getArity(sD)+1)+'\'',G.result('S',id) )
+      '''
       if psi[1] in 'ir' and sD[0] in 'AR':
 ## should be on restr:        G.equate( G.result('S',G.findNolo(psi,id)), 'e', G.result('2\'',G.result('S',id)) )                ## adverbial relpro
 ## no 'e':         G.equate( G.result('r',G.result('S',G.findNolo(psi,id))), 'e', G.result('2\'',G.result('S',id)) )                ## adverbial relpro
@@ -111,7 +114,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 #### don't directly identify:       G.equate( G.result('r',G.result('S',G.findNolo(psi,id))), 'S', id )    ## restrictive nominal relpro
 #      if VERBOSE: print( 'relpro')
 #      if VERBOSE: G.dump()
-
+      '''
   def updateUna( G, s, sC, sD, id ):
 
     if VERBOSE:
