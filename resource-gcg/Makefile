@@ -140,10 +140,10 @@ endef
 ## casp currently set to gcg15 + long + morphed...
 .PRECIOUS: %casp.linetrees
 %casp.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).gcg15.long.linetrees
-	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+	cat $(word 2,$^)  |  perl $(word 1,$^) -x $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 .PRECIOUS: %caspu.linetrees
 %caspu.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).gcg16.long.linetrees
-	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+	cat $(word 2,$^)  |  perl $(word 1,$^) -x $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 
 #### remove entries with no reannotation
 %.noempty.linetrees:  %.linetrees
