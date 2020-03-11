@@ -213,7 +213,12 @@ class DelimitedVector : public vector<T> {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+//
+//  Delimited column vector -- statically sized
+//
+////////////////////////////////////////////////////////////////////////////////
 
+#ifdef STATIC_DELIM_VEC
 template<const char* psD1,class T,const char* psD2,size_t iSize,const char* psD3>
 class DelimitedCol : public Col<T> {
  public:
@@ -249,9 +254,57 @@ class DelimitedCol : public Col<T> {
     return os;
   }
 };
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
+//
+//  Delimited column vector -- dynamically sized
+//
+////////////////////////////////////////////////////////////////////////////////
 
+template<const char* psD1,class T,const char* psD2,const char* psD3>
+class DelimitedCol : public Col<T> {
+ public:
+  DelimitedCol<psD1,T,psD2,psD3> ( size_t iSize     ) : Col<T>(iSize,fill::zeros) { }
+  DelimitedCol<psD1,T,psD2,psD3> ( const Col<T>& ct ) : Col<T>(ct) { }
+  //operator Col<T>() { return *this; }
+  bool operator<( const DelimitedCol<psD1,T,psD2,psD3>& c1 ) const {
+    for( size_t i=0; i<c1.n_elem; i++ ) {
+      if( this->at(i) < c1.at(i) ) return true;
+      if( this->at(i) > c1.at(i) ) return false;
+    }
+    return false;
+  }
+  bool operator==(const DelimitedCol<psD1,T,psD2,psD3>& c1) const {
+    for( size_t i=0; i<c1.n_elem; i++ ) if( this->at(i)!=c1.at(i) ) return false;
+    return true;
+//    return approx_equal(*this, c1, "absdiff", 0.002);
+//    return Col<T>(*this)==Col<T>(c1);
+//    return (*this).Col<T>::operator==(c1);
+  }
+  friend pair<istream&,DelimitedCol<psD1,T,psD2,psD3>&> operator>> ( istream& is, DelimitedCol<psD1,T,psD2,psD3>& t ) {
+    return pair<istream&,DelimitedCol<psD1,T,psD2,psD3>&>(is,t);
+  }
+  friend istream& operator>> ( pair<istream&,DelimitedCol<psD1,T,psD2,psD3>&> ist, const char* psDelim ) {
+    if ( psD1[0] != '\0' ) ist.first >> psD1;
+    if ( psD3[0] == '\0' ) for ( size_t t=0; t<ist.second.n_elem && (ist.first >> reinterpret_cast<Delimited<T>&>(ist.second(t)) >> vector<const char*>{psD2,psDelim}); t++ );
+    else for ( size_t t=0; t<ist.second.n_elem && (ist.first >> reinterpret_cast<Delimited<T>&>(ist.second(t)) >> vector<const char*>{psD2,psD3}); t++ );
+    if ( psD3[0] != '\0' ) ist.first >> psDelim;
+    return ist.first;
+  }
+  friend ostream& operator<< ( ostream& os, const DelimitedCol<psD1,T,psD2,psD3>& vt ) {
+    os<<psD1; for ( size_t t=0; t<vt.n_elem; t++ ) os << vt(t) << ((t==vt.n_elem-1) ? "":psD2); os<<psD3;
+    return os;
+  }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Delimited matrix -- statically sized
+//
+////////////////////////////////////////////////////////////////////////////////
+
+#ifdef STATIC_DELIM_VEC
 template<const char* psD1,class T,const char* psD2,size_t rSize,size_t cSize,const char* psD3>
 class DelimitedMat : public Mat<T> {
 public:
@@ -281,6 +334,47 @@ public:
       os<<psD1;
       for ( size_t r=0; r<rSize; r++ )
         for ( size_t c=0; c<cSize; c++ ) os << vt(r,c) << ((r==rSize-1 && c==cSize-1) ? "":psD2);
+      os<<psD3;
+      return os;
+    }
+};
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Delimited matrix -- dynamically sized
+//
+////////////////////////////////////////////////////////////////////////////////
+
+template<const char* psD1,class T,const char* psD2,const char* psD3>
+class DelimitedMat : public Mat<T> {
+public:
+    DelimitedMat<psD1,T,psD2,psD3> ( size_t rSize, size_t cSize ) : Mat<T>(rSize, cSize) { }
+    DelimitedMat<psD1,T,psD2,psD3> ( const Mat<T>& ct )           : Mat<T>(ct)           { }
+    //operator Col<T>() { return *this; }
+//    bool operator==(const DelimitedCol<psD1,T,psD2,iSize,psD3>& c1) const {
+//      return approx_equal(*this, c1, "absdiff", 0.002);
+//    return Col<T>(*this)==Col<T>(c1);
+//    return (*this).Col<T>::operator==(c1);
+//    }
+    friend pair<istream&,DelimitedMat<psD1,T,psD2,psD3>&> operator>> ( istream& is, DelimitedMat<psD1,T,psD2,psD3>& t ) {
+      return pair<istream&,DelimitedMat<psD1,T,psD2,psD3>&>(is,t);
+    }
+    friend istream& operator>> ( pair<istream&,DelimitedMat<psD1,T,psD2,psD3>&> ist, const char* psDelim ) {
+      if ( psD1[0] != '\0' ) ist.first >> psD1;
+      bool b = true;
+      for ( size_t r=0; r<ist.second.n_rows; r++ )
+        for ( size_t c=0; c<ist.second.n_cols && b; c++ ){
+          if ( psD3[0] != '\0' ) b = ist.first >> reinterpret_cast<Delimited<T>&>(ist.second(r,c)) >> vector<const char*>{psD2,psD3};
+          else b = ist.first >> reinterpret_cast<Delimited<T>&>(ist.second(r,c)) >> vector<const char*>{psD2,psDelim};
+        }
+      if ( psD3[0] != '\0' ) ist.first >> psD3;
+      return ist.first;
+    }
+    friend ostream& operator<< ( ostream& os, const DelimitedMat<psD1,T,psD2,psD3>& vt ) {
+      os<<psD1;
+      for ( size_t r=0; r<vt.n_rows; r++ )
+        for ( size_t c=0; c<vt.n_cols; c++ ) os << vt(r,c) << ((r==vt.n_rows-1 && c==vt.n_cols-1) ? "":psD2);
       os<<psD3;
       return os;
     }

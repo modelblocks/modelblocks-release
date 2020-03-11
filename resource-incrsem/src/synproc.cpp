@@ -39,6 +39,8 @@ uint VERBOSE         = 0;
 uint OUTPUT_MEASURES = 0;
 bool BERKUNK         = false;
 
+#define SERIAL_IO
+
 ////////////////////////////////////////////////////////////////////////////////
 
 char psSpcColonSpc[]  = " : ";
@@ -203,10 +205,25 @@ int main ( int nArgs, char* argv[] ) {
 
   cerr<<"Models ready."<<endl;
 
+#ifdef SERIAL_IO
+  // List of sentences, which are pairs of lists of words and lists of hidd states...
+  list< pair< DelimitedList<psX,ObsWord,psSpace,psX>, DelimitedVector<psX,DelimitedTrip<psX,ObsWord,psSpace,HiddState,psSpace,double,psX>,psLine,psX> > > corpus;
+  uint linenum = 0;
+  // Read in list of sentences...
+  while( cin.peek() != EOF ) {
+    corpus.emplace_back();
+    cin >> corpus.back().first >> "\n";
+    cerr<<"I read a sentence with " << corpus.back().first.size() << " words." << endl;
+  }
+  // Pointers to 
+  auto isentNextToProc = corpus.begin();
+  auto isentNextToDump = corpus.begin();
+#else
   list<DelimitedVector<psX,DelimitedTrip<psX,ObsWord,psSpace,HiddState,psSpace,double,psX>,psLine,psX>> MLSs;  // list of most-likely-sequence vectors
+  uint           linenum = 1;   // line number read
+#endif
   mutex          mutexMLSList;  // mutex for MLS list
   vector<thread> vtWorkers;     // vector of worker threads
-  uint           linenum = 1;   // line number read
   StoreState     ssLongFail( StoreState(), 1, 0, "FAIL", "FAIL", "FAIL" );
 
   if( OUTPUT_MEASURES ) cout << "word pos f j store totsurp" << endl;
@@ -220,12 +237,26 @@ int main ( int nArgs, char* argv[] ) {
 
     Trellis                                beams;  // sequence of beams
     uint                                   t=0;    // time step
-    DelimitedList<psX,ObsWord,psSpace,psX> lwSent; // input list
 
     // Create initial beam element...
     StoreState ssInit; ssInit.emplace_back(Sign("S"),Sign("."));    //Sign("S-lS^g_0"),Sign("."));
     beams[0].tryAdd( HiddState(Sign("."),0,1,ssInit), ProbBack<HiddState>() );
  
+#ifdef SERIAL_IO
+    decltype(corpus)::iterator isent;
+    uint                       currline;
+    { lock_guard<mutex> guard( mutexMLSList );
+      if( isentNextToProc == corpus.end() ) break;
+      isent = isentNextToProc++;
+      currline = linenum++;
+      // Report sentence...
+      cerr << "Worker " << numt << " processing sentence " << currline << ": " << isent->first << " ..." << endl;
+    }
+    const auto& lwSent = isent->first;
+    auto&       mls    = isent->second;
+#else
+    DelimitedList<psX,ObsWord,psSpace,psX> lwSent; // input list
+
     // Lock...
     mutexMLSList.lock( );
     // Unlock and bail if end of input...
@@ -241,6 +272,7 @@ int main ( int nArgs, char* argv[] ) {
     auto& mls = MLSs.back( );
     // Unlock...
     mutexMLSList.unlock( );
+#endif
 
 //    vector<double> vdSurp(lwSent.size()+1); // vector for surprisal at each time step
 
@@ -380,8 +412,14 @@ int main ( int nArgs, char* argv[] ) {
           probCurrTot += exp(be_t.getProb()     - beams[t-1].begin()->getProb());
         mls[t-1].third() = log2(probPrevTot) - log2(probCurrTot);
       }
+#ifdef SERIAL_IO
+      for( ; isentNextToDump != corpus.end() and isentNextToDump->first.size() == isentNextToDump->second.size(); isentNextToDump++ ) {
+        cout << isentNextToDump->second << endl;
+      }
+#else
       // Dump all consecutive lines that are finished...
       while( MLSs.size()>0 && MLSs.front().size()>0 ) { cout << MLSs.front() << endl; MLSs.pop_front(); }
+#endif
     }
 
 //    auto& mls = beams.getMostLikelySequence();

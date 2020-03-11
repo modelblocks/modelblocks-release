@@ -223,6 +223,8 @@ int main ( int nArgs, char* argv[] ) {
 //  const vec& test = arma::ones<vec>(40);
 //  const vec& testf = arma::ones<vec>(52);
 //  const vec& testj = arma::ones<vec>(87);
+//  const vec& testf = arma::ones<vec>(7+SYN_SIZE+2*SEM_SIZE);
+//  const vec& testj = arma::ones<vec>(7+2*SYN_SIZE+3*SEM_SIZE);
   cerr<<"Models ready."<<endl;
 //  cerr << "Experiments with 1s" << endl;
 //  cerr << "OFunc(1) " << funcO(1, test) << endl;
@@ -233,7 +235,7 @@ int main ( int nArgs, char* argv[] ) {
 //  cerr << "OFunc(-3) " << funcO(-3, test) << endl;
 //  cerr << "OFunc(4) " << funcO(4, test) << endl;
 //  cerr << "OFunc(-4) " << funcO(-4, test) << endl;
-  //cerr << "F " << modF.testCalcResponses(testf) << endl;
+//  cerr << "F " << modF.testCalcResponses(testf) << endl;
 //  cerr << "J " << modJ.testCalcResponses(testj) << endl;
 
   mutex mutexMLSList;

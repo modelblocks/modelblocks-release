@@ -156,7 +156,7 @@ pair<K,CVar> getPred ( const L& lP, const L& lW ) {
   if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end() || mldLemmaCounts[sLemma]<MINCOUNTS ) sLemma = "!unk!";
   if ( isdigit(lW[0]) )                                                                        sLemma = "!num!";
 
-  return pair<K,CVar>( ( sCat + ':' + sLemma + '_' + ((lP[0]=='N') ? '1' : '0') ).c_str(), c );
+  return pair<K,CVar>( ( sCat + ':' + sLemma + '_' + ((lP[0]=='N' or lP[0]=='U') ? '1' : '0') ).c_str(), c );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

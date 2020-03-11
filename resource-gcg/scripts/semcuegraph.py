@@ -97,6 +97,9 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 
     ## attach rel pro / interrog pro antecedent...
     for i,psi in enumerate( gcgtree.deps(sD) ):
+      if psi[1] in 'ir':
+        G.equate( G.result('S',G.findNolo(psi,id)), str(G.getArity(sD)+1)+'\'',G.result('S',id) )
+      '''
       if psi[1] in 'ir' and sD[0] in 'AR':
 ## should be on restr:        G.equate( G.result('S',G.findNolo(psi,id)), 'e', G.result('2\'',G.result('S',id)) )                ## adverbial relpro
 ## no 'e':         G.equate( G.result('r',G.result('S',G.findNolo(psi,id))), 'e', G.result('2\'',G.result('S',id)) )                ## adverbial relpro
@@ -111,7 +114,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 #### don't directly identify:       G.equate( G.result('r',G.result('S',G.findNolo(psi,id))), 'S', id )    ## restrictive nominal relpro
 #      if VERBOSE: print( 'relpro')
 #      if VERBOSE: G.dump()
-
+      '''
   def updateUna( G, s, sC, sD, id ):
 
     if VERBOSE:
@@ -353,12 +356,19 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('1\'',G.result('S',G.result('A',e))), '1', G.result('r',G.result('S',G.result('A',e))) )
       G.equate( G.result('r',G.result('S',d)),                 '2', G.result('r',G.result('S',G.result('A',e))) )
       G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
+    elif sE.endswith('-g{R-aN}-lR'):                ## Rd (off-spec: "the only/furthest north I can go")
+      G.equate( G.result('S',d), 'S', c )
+      G.equate( G.result('S',d), 'S', G.result('A',e) )  # grab nusco
+      G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
     elif '-lR' in sE:                               ## R
       G.equate( G.result('S',d), 'S', c )
 #      G.equate( G.result('S',d), 'S', G.result('A',e) )
       G.equate( G.result('r',G.result('S',d)), 'S', G.result('A',e) )  # grab restrictor, tho 'which' gets put on restrictor of nolo
       G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
     elif sD==',' and sE.endswith('-pPc') or sD==';' and sE.endswith('-pPs'):
+      G.equate( G.result('S',c), 'S', e )
+    elif sD=='U' and sE=='U':
+      G.equate( G.result('S',d), 'S', c )
       G.equate( G.result('S',c), 'S', e )
     else:
       if sC != 'FAIL':   #sC != sD != sE != 'FAIL':
@@ -413,8 +423,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           sys.stderr.write( 'ERROR: multiple -s tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         for dep in re.findall( '-[mntsw][0-9]+r?', G[x,'0'] ):
           dest = dep[2:6] if len(dep)>5 else sentnumprefix+dep[2:4]
-          if   dep[1]=='m' and dep[-1]=='r': G.equate( dest+'r', 'm', x+'r' )
-          elif dep[1]=='m':                  G.equate( dest+'s', 'm', x+'r' )
+          if   dep[1]=='m' and dep[-1]=='r': G.equate( dest+'r', 'm', x+'r' )  ## discourse anaphor
+          elif dep[1]=='m':                  G.equate( dest+'s', 'm', x+'r' )  ## discourse anaphor
           #if   dep[1]=='m' or 
           elif dep[1]=='n' and dep[-1]=='r': G.equate( dest+'r', 'n', x+'r' )
           elif dep[1]=='n':                  G.equate( dest+'s', 'n', x+'r' )
@@ -434,14 +444,15 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif xrule == 'NOTHAVE' : xrule = '%|r0=D:noneQ^r1=Er^r2=E^Er0=B-aN-bN:have^Er1=1^Er2=2'
           elif xrule == 'NGEN'  :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'NEXI'  :  xrule = '%|Qr0=D:someQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
-          elif xrule == 'NORD'  :  xrule = '%|Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r^Rrh=SH'
-          elif xrule == 'NORDSUP' :  xrule = '%|Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^31=2^3r1h=SH^Pr0=3r0^Pr1=r^Rr0=A:gt^Rr1=3r2^Rr2=Pr2'
+          elif xrule == 'NORD'  :  xrule = '%|Qr0=%DecOne^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r^Rrh=SH'
+          elif xrule == 'NORDSUP' :  xrule = '%|Qr0=%DecOne^Qr1=2r^Qr2=2^ro=2r^31=2^3r1h=SH^Pr0=3r0^Pr1=r^Rr0=A:gt^Rr1=3r2^Rr2=Pr2'
           elif xrule == 'NCOMP' :  xrule = '%|Er0=%^Er1=r^Er2=2^2w=^t=s' #^Q0=D:someDummyQ^Q1=31r^Q2=31'
           elif xrule == 'NOUN'  :  xrule = '%|Er0=%^Er1=r' + ''.join( [ '^Er' +str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
           elif xrule == 'NRELEXI'  :  xrule = '%|Qr0=D:someQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er' +str(i+1)+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
           elif xrule == 'NREL'  :  xrule = '%|Er0=%^Er1=r' + ''.join( [ '^Er' +str(i+1)+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
           elif xrule == 'NREL2' :  xrule = '%|Er0=%^Er1=r^Er2=2'
           elif xrule == 'PGEN'  :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2=^r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
+          elif xrule == 'PRED1' :  xrule = '%|r0=%^r1=1'
           elif xrule == 'PRED12':  xrule = '%|r0=%^r1=1^r2=2'
           elif xrule == 'PRED'  :  xrule = '%|r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'QGEN'  :  xrule = '%|r0=D:genQ^r1=1r^r2=1'
@@ -465,10 +476,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 
         ## apply default lex sems...
         if EQN_DEFAULTS and ':' in eqns and '=' not in eqns:
-          if   eqns.startswith('N-b{N-aD}:'):    eqns = 'r0='  + eqns + 'Q^r1=1r^r2=1'
-          elif eqns.startswith('N-aD-b{N-aD}:'): eqns = 'r0='  + eqns + 'Q^r1=2r^r2=2'
-          elif eqns.startswith('N-bN:'):         eqns = 'r0='  + eqns + 'Q^r1=2r^r2=2'
-          elif eqns.startswith('N-bO:'):         eqns = 'r0='  + eqns + 'Q^r1=2r^r2=2'
+          if   eqns.startswith('N-b{N-aD}:'):    eqns = 'r0='  + eqns + '^r1=1r^r2=1'
+          elif eqns.startswith('N-aD-b{N-aD}:'): eqns = 'r0='  + eqns + '^r1=2r^r2=2'
+          elif eqns.startswith('N-bN:'):         eqns = 'r0='  + eqns + '^r1=2r^r2=2'
+          elif eqns.startswith('N-bO:'):         eqns = 'r0='  + eqns + '^r1=2r^r2=2'
           elif eqns.startswith('A-aN-iN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
           elif eqns.startswith('A-aN-rN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
           elif eqns.startswith('A'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
@@ -476,6 +487,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif eqns.startswith('N-iN'):          eqns = 'Er0=' + eqns + '^Er1=^1='
           elif eqns.startswith('N-rN'):          eqns = 'Er0=' + eqns + '^Er1=^1='   ## NOTE: FIRST SYNARG IS ITSELF -- PROBLEMATIC FOR RELCLAUSE ON DEVERBAL NOUN
           elif eqns.startswith('N'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
+          elif eqns.startswith('U'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
 #          G.dump()
           if VERBOSE: print( 'Inducing default equation: ' + eqns )
 
@@ -577,8 +589,12 @@ class SemCueGraph( StoreStateCueGraph ):
 
   def finalize( G ):
     for x,l in sorted( G.keys() ):
+      if l in 'mns' and ( (G[x,l][0:4],'S') not in G or (G[G[x,l][0:4],'S'],'r') not in G ):
+        sys.stderr.write( 'WARNING: destination ' + G[x,l] + ' of dependency ' + l + ' in ' + x + ' not complete referential state in graph!\n' )
+    for x,l in sorted( G.keys() ):
       if l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'ersCDEFGHIJKLMNOPQRSTUVWXYZ': 
         del G[x,l]
+
       '''
       if l in 's' and (G[x,l],'r') not in G:
         del G[x,l]   ## remove spurious scopes that result from coindexation
