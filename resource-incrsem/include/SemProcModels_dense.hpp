@@ -18,6 +18,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <typeinfo>
+const int CVECDIM = 10;
+const int KVECDIM = 20;
+const int NPREDDIM = 2*KVECDIM+2*CVECDIM+3; //ancestor and antecedent sem and syn, and antdist(1) + antdistsq(1) + corefON(1)
 
 // for semantic ablation
 class TVec : public DelimitedCol<psLBrack, double, psComma, 20, psRBrack> {
@@ -41,85 +44,96 @@ class NPredictorVec {
   public:
     //constructor
     template<class LM>
-    NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss ) : mdist(antdist), mnpreds() {
+    NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss, bool ABLATE_UNARY ) :
+      basesem (( ss.getBase().getHVec().size() > 0 ) ? ss.getBase().getHVec() : hvBot ), 
+      antecedentsem ((candidate.getHVec().size() > 0 ) ? candidate.getHVec() : hvBot ) { 
       mdist = antdist;
-      basesem = ss.getBase().getHVec(); //contexts of lowest b (bdbar)
-      antecedentsem = candidate.getHVec();
       antecedentc = candidate.getCat();
       basec = ss.getBase().getCat();
       corefON = bcorefON;
+      //ABLATE_UNARY not defined for dense semproc since NN implicitly captures/can capture joint feature relations
     }
 
-    int                       getAntDist ( ) const { return mdist;   }
-    int                       getAntDistSq( ) const { return mdist * mdist; }
-    //TODO add getters for all privates
+    //accessors
+    int   getAntDist()   const { return mdist;   }
+    int   getAntDistSq() const { return mdist * mdist; }
+    const HVec& getBaseSem()   const { return basesem; }
+    const HVec& getAnteSem()   const { return antecedentsem; }
+    CVar  getBaseC()           { return basec; }
+    CVar  getAnteC()           { return antecedentc; }
+    bool  getCorefOn()         { return corefON; }
 
+    friend ostream& operator<< ( ostream& os, const NPredictorVec& mv ) {
+      os << " " << mv.getBaseC() << " " << mv.getAnteC() << " " << mv.getBaseSem() << " " << mv.getAnteSem() << " " << mv.getAntDist() << " " << mv.getAntDistSq() << " " << mv.getCorefOn();
+      return os;
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
 class NModel {
 
-  typedef DelimitedCol<psLBrack, double, psComma, 10, psRBrack> CVec;
+  typedef DelimitedCol<psLBrack, double, psComma, CVECDIM, psRBrack> CVec;
 
   private:
 
-    DelimitedMat<psX, double, psComma, NMATDIM, NMATDIM, psX> nw;                              // matrix itself
+    DelimitedMat<psX, double, psComma, NPREDDIM, NPREDDIM, psX> nw;                              // n model weights. square for now, doesn't have to be
+    DelimitedVector<psX, double, psComma, psX> nws; // n model weights (second layer), vector for reading in, to be unsqueezed before use
 
     map<CVar,CVec> mcv; //map between cat and 10d embeddings
 
     unsigned int iNextPredictor = 0;             // predictor and response next-pointers
-    unsigned int iNextResponse  = 0;
 
-    map<unsigned int,string>    mis;
-    map<string,unsigned int>    msi;
+    //map<unsigned int,string>    mis;
+    //map<string,unsigned int>    msi;
 
 
   public:
 
     NModel( ) { }
     NModel( istream& is ) {
+      //rewrite how to read in N model learned weights, crib off of J model
       list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
       while( is.peek()=='N' ) {
-        auto& prw = *l.emplace( l.end() );
-        is >> "N ";
-        if( is.peek()=='a' )   { Delimited<string> s;   is >> "a" >> s >> " : ";                 prw.first()  = getPredictorIndex( s );      }
-        else{
-          if( is.peek()=='t' ) { Delimited<CVar> cA,cB; is >> "t" >> cA >> "&t" >> cB >> " : ";  prw.first()  = getPredictorIndex( cA, cB ); }
-          else                 { Delimited<K>    kA,kB; is >> kA >> "&" >> kB >> " : ";          prw.first()  = getPredictorIndex( kA, kB ); }
-        }
-        Delimited<int> n;                               is >> n >> " = ";                        prw.second() = n;
-        Delimited<double> w;                            is >> w >> "\n";                         prw.third()  = w;
+        Delimited<char> c;
+        is >> "N " >> c >> " ";
+        if (c == 'F') is >> nw >> "\n";
+        if (c == 'S') is >> nws >> "\n";
       }
-
-      if( l.size()==0 ) cerr << "ERROR: No N items found." << endl;
-      matN.zeros ( 2, iNextPredictor );
-      for( auto& prw : l ) { matN( prw.second(), prw.first() ) = prw.third(); }
+      while ( is.peek()=='C' ) {
+        Delimited<CVar> c;
+        is >> "C " >> c >> " ";
+        is >> mcv[c] >> "\n";
+      }
     }
 
-    unsigned int getPredictorIndex( const string& s ) {
-      const auto& it = msi.find( s );  if( it != msi.end() ) return( it->second );
-      msi[ s ] = iNextPredictor;  mis[ iNextPredictor ] = s;  return( iNextPredictor++ );
-    }
-    unsigned int getPredictorIndex( const string& s ) const {                  // const version with closed predictor domain
-      const auto& it = msi.find( s );  return( ( it != msi.end() ) ? it->second : 0 );
-    }
+      //if( l.size()==0 ) cerr << "ERROR: No N items found." << endl;
+      //matN.zeros ( 2, iNextPredictor );
+      //for( auto& prw : l ) { matN( prw.second(), prw.first() ) = prw.third(); }
 
-    unsigned int getPredictorIndex( K kA, K kB ) {
-      const auto& it = mkki.find( pair<K,K>(kA,kB) );  if( it != mkki.end() ) return( it->second );
-      mkki[ pair<K,K>(kA,kB) ] = iNextPredictor;  mikk[ iNextPredictor ] = pair<K,K>(kA,kB);  return( iNextPredictor++ );
-    }
-    unsigned int getPredictorIndex( K kA, K kB ) const {                       // const version with closed predictor domain
-      const auto& it = mkki.find( pair<K,K>(kA,kB) );  return( ( it != mkki.end() ) ? it->second : 0 );
-    }
+    //unsigned int getPredictorIndex( const string& s ) {
+     // const auto& it = msi.find( s );  if( it != msi.end() ) return( it->second );
+     // msi[ s ] = iNextPredictor;  mis[ iNextPredictor ] = s;  return( iNextPredictor++ );
+   // }
+    //unsigned int getPredictorIndex( const string& s ) const {                  // const version with closed predictor domain
+    // const auto& it = msi.find( s );  return( ( it != msi.end() ) ? it->second : 0 );
+   // }
 
-    unsigned int getPredictorIndex( CVar cA, CVar cB ) {
-      const auto& it = mcci.find( pair<CVar,CVar>(cA,cB) );  if( it != mcci.end() ) return( it->second );
-      mcci[ pair<CVar,CVar>(cA,cB) ] = iNextPredictor;  micc[ iNextPredictor ] = pair<CVar,CVar>(cA,cB);  return( iNextPredictor++ );
-    }
-    unsigned int getPredictorIndex( CVar cA, CVar cB ) const {                 // const version with closed predictor domain
-      const auto& it = mcci.find( pair<CVar,CVar>(cA,cB) );  return( ( it != mcci.end() ) ? it->second : 0 );
-    }
+    //unsigned int getPredictorIndex( K kA, K kB ) {
+    //  const auto& it = mkki.find( pair<K,K>(kA,kB) );  if( it != mkki.end() ) return( it->second );
+    //  mkki[ pair<K,K>(kA,kB) ] = iNextPredictor;  mikk[ iNextPredictor ] = pair<K,K>(kA,kB);  return( iNextPredictor++ );
+   // }
+   // unsigned int getPredictorIndex( K kA, K kB ) const {                       // const version with closed predictor domain
+   //   const auto& it = mkki.find( pair<K,K>(kA,kB) );  return( ( it != mkki.end() ) ? it->second : 0 );
+   // }
+
+   // unsigned int getPredictorIndex( CVar cA, CVar cB ) {
+   //   const auto& it = mcci.find( pair<CVar,CVar>(cA,cB) );  if( it != mcci.end() ) return( it->second );
+   //   mcci[ pair<CVar,CVar>(cA,cB) ] = iNextPredictor;  micc[ iNextPredictor ] = pair<CVar,CVar>(cA,cB);  return( iNextPredictor++ );
+   // }
+   // unsigned int getPredictorIndex( CVar cA, CVar cB ) const {                 // const version with closed predictor domain
+   //   const auto& it = mcci.find( pair<CVar,CVar>(cA,cB) );  return( ( it != mcci.end() ) ? it->second : 0 );
+   // }
 
     const CVec& getCatEmbed( CVar i ) const {
       auto it = mcv.find( i );
@@ -128,33 +142,43 @@ class NModel {
     }
 
     arma::vec calcLogResponses( const NPredictorVec& npv ) const {
-      arma::vec nlogresponses = arma::zeros( NPREDDIM ); //TODO declare this constant somwhere above
-      //2x hvec(40?) + 2x cvec(20) + antdist(1) + antdistsq(1) + corefON(1)
-      //TODO create predictor vec by assembling looked-up dense feats for npv data, append dist, sqdist, corefon separately.
-      ////TODO potentially add gender animacy etc features
-      //TODO push through weight matrix ala FModel, norm and return score
+      arma::vec nlogresponses = arma::zeros( NPREDDIM ); 
       
-      return nlogresponses;
+      CVar catB = npv.getBaseC();
+      CVar catA = npv.getAnteC();
+      const HVec& hvB = npv.getBaseSem();
+      const HVec& hvA = npv.getAnteSem();
+      int antdist = npv.getAntDist();
+      int antdistsq = npv.getAntDistSq();
+      bool corefon = npv.getCorefOn();
+
+      const CVec& catBEmb = getCatEmbed(catB);
+      const CVec& catAEmb = getCatEmbed(catA);
+
+      //populate predictor vec by catting vecs or else filling in nlogresponses' values
+      for(unsigned int i = 0; i < catBEmb.n_elem; i++){ nlogresponses(i) = catBEmb(i); }
+      for(unsigned int i = 0; i < catAEmb.n_elem; i++){ nlogresponses(catBEmb.n_elem+i) = catAEmb(i); }
+      for(unsigned int i = 0; i < hvB.at(0).n_elem; i++){ nlogresponses(catBEmb.n_elem+catAEmb.n_elem+i) = hvB.at(0)(i); }
+      for(unsigned int i = 0; i < hvA.at(0).n_elem; i++){ nlogresponses(catBEmb.n_elem+catAEmb.n_elem+hvB.at(0).n_elem+i) = hvA.at(0)(i); }
+      int denseendind = catBEmb.n_elem+catAEmb.n_elem+hvB.at(0).n_elem+hvA.at(0).n_elem+1; 
+      nlogresponses(denseendind+1) = antdist;
+      nlogresponses(denseendind+2) = antdistsq;
+      nlogresponses(denseendind+3) = corefon;
+      ////TODO later potentially add gender animacy etc features, if continue to have inconsistency issues with number, gender, etc.
+
+      //push through weight matrix, norm and return score
+      mat nwsm(nws);
+      nwsm.reshape(nws.size()/NPREDDIM, NPREDDIM); //unsqueeze vector to matrix
+      arma::vec nlogscores = nwsm * relu(Mat<double>(nw)*nlogresponses);
+      arma::vec nscores = arma::exp(nlogscores);
+      double nnorm = arma::accu(nscores);
+
+      return nscores/nnorm;
     }
 
-    friend ostream& operator<<( ostream& os, const pair< const NModel&, const NPredictorVec& >& mv ) {
-      os << "antdist=" << mv.second.getAntDist();
-      os << "antdistsq=" << mv.second.getAntDistSq();
-      for( const auto& i : mv.second.getList() ) {
-        // if( &i != &mv.second.getList().front() )
-        os << ",";
-        const auto& itK = mv.first.mikk.find(i);
-       	if( itK != mv.first.mikk.end() ) { os << itK->second.first << "&" << itK->second.second << "=1"; continue; }
-        const auto& itC = mv.first.micc.find(i);
-        if( itC != mv.first.micc.end() ) { os << "t" << itC->second.first << "&t" << itC->second.second << "=1"; continue; }
-        const auto& itS = mv.first.mis.find(i);
-        if( itS != mv.first.mis.end()  ) { os << "a" << itS->second << "=1"; }
-      }
-      return os;
-    }
+    
 
     unsigned int getNumPredictors( ) { return iNextPredictor; }
-    unsigned int getNumResponses(  ) { return iNextResponse;  }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -200,13 +224,12 @@ class FPredictorVec {
 class FModel {
 
   typedef DelimitedTrip<psX,F,psAmpersand,Delimited<EVar>,psAmpersand,Delimited<K>,psX> FEK;
-  typedef DelimitedCol<psLBrack, double, psComma, 10, psRBrack> CVec;
-//  typedef DelimitedCol<psLBrack, double, psComma, 60, psRBrack> CVec;
+  typedef DelimitedCol<psLBrack, double, psComma, CVECDIM, psRBrack> CVec;
 
 
   private:
 
-    map<CVar,CVec> mcv;                     // map between cat and 10-dim embeds
+    map<CVar,CVec> mcv;                     // map between cat and embeds
 
     map<FEK,unsigned int> mfeki;               // response indices
     map<unsigned int,FEK> mifek;

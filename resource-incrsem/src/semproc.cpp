@@ -221,7 +221,7 @@ int main ( int nArgs, char* argv[] ) {
   const BModel& modB  = modBmutable;
 
 //  const vec& test = arma::ones<vec>(40);
-  const vec& testf = arma::ones<vec>(52);
+//  const vec& testf = arma::ones<vec>(52);
 //  const vec& testj = arma::ones<vec>(87);
   cerr<<"Models ready."<<endl;
 //  cerr << "Experiments with 1s" << endl;
@@ -233,7 +233,7 @@ int main ( int nArgs, char* argv[] ) {
 //  cerr << "OFunc(-3) " << funcO(-3, test) << endl;
 //  cerr << "OFunc(4) " << funcO(4, test) << endl;
 //  cerr << "OFunc(-4) " << funcO(-4, test) << endl;
-  cerr << "F " << modF.testCalcResponses(testf) << endl;
+  //cerr << "F " << modF.testCalcResponses(testf) << endl;
 //  cerr << "J " << modJ.testCalcResponses(testj) << endl;
 
   mutex mutexMLSList;
@@ -385,7 +385,7 @@ int main ( int nArgs, char* argv[] ) {
               //Calculate antecedent N model predictors 
               bool corefON = (tAnt==int(t)) ? 0 : 1;
               NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1, ABLATE_UNARY );
-              if (VERBOSE>1) { cout << "    " << pair<const NModel&, const NPredictorVec&>(modN,npv) << endl; } //npv.printOut(cout); }
+              //if (VERBOSE>1) { cout << "    " << pair<const NModel&, const NPredictorVec&>(modN,npv) << endl; } //npv.printOut(cout); }
               arma::vec nlogresponses = modN.calcLogResponses( npv );
 
               double numerator = exp( nlogresponses(1) - nlogresponses(0) );
