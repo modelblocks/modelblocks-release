@@ -383,7 +383,7 @@ endef
 
 ## Induce predicate vectors and cued association transition model (% contains gcn ini filename)...
 # wsj requires artdelim for !ARTICLE delimiters
-.PRECIOUS: %_emat_omodel
+.PRECIOUS: %_emat_omodeld
 %_emat_omodel : $$(basename %).casp.-x_morphed.discgraphs  \
                 $(INCRSEM-SCRIPTS)/discgraphs2omodel.py  \
                 scripts/$$(subst .,,$$(suffix $$*)).ini
@@ -400,7 +400,7 @@ endef
 	echo ''  >  $@
 %_fdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/dspdecpars2fmodel.py  \
-              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*))).ini  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini  \
               $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
 	cat $<  |  grep '^F'  |  sed 's/^F//'  |  python3 $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@
 %_pdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
@@ -411,7 +411,7 @@ endef
 	cat $<  |  grep '^W'  |  python3 $(word 2,$^)  >  $@
 %_jdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/dspdecpars2jmodel.py  \
-              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*))).ini  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini  \
               $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
 	cat $<  |  grep '^J'  |  sed 's/^J//'  |  python3 $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@
 %_adspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
