@@ -36,7 +36,9 @@ class RGCN(BaseRGCN):
 class WordPredict(nn.Module):
     def __init__(self, in_dim, h_dim, num_rels, num_preds, num_bases=-1, num_hidden_layers=1, dropout=0, self_loop=False, use_cuda=False, reg_param=0):
         super(WordPredict, self).__init__()
-        self.target_emb = nn.Parameter(torch.Tensor(num_preds, h_dim))
+        # declare vt vectors for all nodes or just predicates
+        # self.target_emb = nn.Parameter(torch.Tensor(num_preds, h_dim))
+        self.target_emb = nn.Parameter(torch.Tensor(in_dim, h_dim))
         nn.init.xavier_uniform_(self.target_emb, gain=nn.init.calculate_gain('relu'))
         self.rgcn = RGCN(in_dim, h_dim, h_dim, num_rels, num_bases, num_hidden_layers, dropout, self_loop, use_cuda)
         self.reg_param = reg_param
@@ -169,7 +171,7 @@ def main(graph_file, config):
     fg, src_ids, dst_ids = utils.generate_full_graph(all_edges, relation_dict)
     utils.eprint("Preprocessing finished")
 
-    
+    # calculate h_vectors on CPU due to memory concerns
     if use_cuda:
         model.cpu()
 

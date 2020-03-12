@@ -198,7 +198,7 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 			$$(basename %).lemmacounts  \
 			#$$(basename %).nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
 	#cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
-	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/wsj_discgraphs_20dim_3samples_30epochs0.001lr_nodes_emat_omodel.txt  >  $@
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/emat_omodel_1unkedcasp_noq_h1nonpred_128_tiednorm_500epochs.txt  >  $@
 
 .PRECIOUS: %sm_corefsemprocdecpars
 %sm_corefsemprocdecpars:     $$(basename %).linetrees  \
@@ -382,8 +382,9 @@ endef
 # 	cp $^ $@
 
 ## Induce predicate vectors and cued association transition model (% contains gcn ini filename)...
+# wsj requires artdelim for !ARTICLE delimiters
 .PRECIOUS: %_emat_omodel
-%_emat_omodel : $$(basename %).casp.-x_morphed.artdelim.discgraphs  \
+%_emat_omodel : $$(basename %).casp.-x_morphed.discgraphs  \
                 $(INCRSEM-SCRIPTS)/discgraphs2omodel.py  \
                 scripts/$$(subst .,,$$(suffix $$*)).ini
 	python3 $(word 2,$^) $< $(word 3,$^)  >  $@
@@ -398,27 +399,27 @@ endef
 %_ndspmodel : 
 	echo ''  >  $@
 %_fdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
-              $(INCRSEM-SCRIPTS)/train_f_models_gpu.py  \
-              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini  \
+              $(INCRSEM-SCRIPTS)/dspdecpars2fmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*))).ini  \
               $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
-	cat $<  |  grep '^F'  |  python $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@
+	cat $<  |  grep '^F'  |  sed 's/^F//'  |  python3 $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@
 %_pdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
-	cat $<  |  grep '^P'  |  python $(word 2,$^)  >  $@
+	cat $<  |  grep '^P'  |  python3 $(word 2,$^)  >  $@
 %_wdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
-	cat $<  |  grep '^W'  |  python $(word 2,$^)  >  $@
+	cat $<  |  grep '^W'  |  python3 $(word 2,$^)  >  $@
 %_jdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
-              $(INCRSEM-SCRIPTS)/train_j_models_gpu.py  \
-              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini  \
+              $(INCRSEM-SCRIPTS)/dspdecpars2jmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*))).ini  \
               $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
-	cat $<  |  grep '^J'  |  python $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@
+	cat $<  |  grep '^J'  |  sed 's/^J//'  |  python3 $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@
 %_adspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
-	cat $<  |  grep '^A'  |  python $(word 2,$^)  >  $@
+	cat $<  |  grep '^A'  |  python3 $(word 2,$^)  >  $@
 %_bdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
-	cat $<  |  grep '^B'  |  python $(word 2,$^)  >  $@
+	cat $<  |  grep '^B'  |  python3 $(word 2,$^)  >  $@
 
 
 ## Create dsp model out of component models...
