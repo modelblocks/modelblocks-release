@@ -383,7 +383,7 @@ endef
 
 ## Induce predicate vectors and cued association transition model (% contains gcn ini filename)...
 # wsj requires artdelim for !ARTICLE delimiters
-.PRECIOUS: %_emat_omodeld
+.PRECIOUS: %_emat_omodel
 %_emat_omodel : $$(basename %).discgraphs  \
                 $(INCRSEM-SCRIPTS)/discgraphs2omodel.py  \
                 scripts/$$(subst .,,$$(suffix $$*)).ini
