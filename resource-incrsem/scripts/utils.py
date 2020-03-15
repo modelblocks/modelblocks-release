@@ -189,16 +189,17 @@ def generate_batched_graph(array_list, pred_list, use_cuda):
         src, rel, dst = array.transpose()
         uniq_v, edges = np.unique((src, dst), return_inverse=True)
         src, dst = np.reshape(edges, (2, -1))
-        g, rel = build_graph_from_triplets(len(uniq_v), (src, rel, dst))
+        g, rel, norm = build_graph_from_triplets(len(uniq_v), (src, rel, dst))
         is_pred = torch.LongTensor([1 if node in preds else 0 for node in uniq_v]).view(-1, 1)
         node_id = torch.from_numpy(uniq_v).view(-1, 1)
+        node_norm = torch.from_numpy(norm).view(-1, 1)
         edge_type = torch.from_numpy(rel)
 
         if use_cuda:
-            node_id, edge_type, is_pred = node_id.cuda(), edge_type.cuda(), is_pred.cuda()
+            node_id, edge_type, is_pred, node_norm = node_id.cuda(), edge_type.cuda(), is_pred.cuda(), node_norm.cuda()
 
         # assigns node IDs
-        g.ndata.update({'id': node_id, 'is_pred': is_pred})
+        g.ndata.update({'id': node_id, 'is_pred': is_pred, 'norm': node_norm})
         # assigns node types
         g.edata['type'] = edge_type
         graphs.append(g)
@@ -210,7 +211,7 @@ def generate_batched_graph(array_list, pred_list, use_cuda):
     return bg, pred_graph_nodes
 
 
-def generate_full_graph(array_list, relation_dict):
+def generate_full_graph(array_list, pred_list, relation_dict):
     """
     Takes a nested list and the relation dictionary and returns a BatchedDGLGraph object
     and relation-specific source and destination ID tensors
@@ -219,16 +220,18 @@ def generate_full_graph(array_list, relation_dict):
     src_ids = {}
     dst_ids = {}
 
-    for array in array_list:
+    for array, preds in zip(array_list, pred_list):
         src, rel, dst = array.transpose()
         uniq_v, edges = np.unique((src, dst), return_inverse=True)
         src, dst = np.reshape(edges, (2, -1))
-        g, rel = build_graph_from_triplets(len(uniq_v), (src, rel, dst))
+        g, rel, norm = build_graph_from_triplets(len(uniq_v), (src, rel, dst))
+        is_pred = torch.FloatTensor([1 if node in preds else 0 for node in uniq_v]).view(-1, 1)
         node_id = torch.from_numpy(uniq_v).view(-1, 1)
+        node_norm = torch.from_numpy(norm).view(-1, 1)
         edge_type = torch.from_numpy(rel)
 
         # assigns node IDs
-        g.ndata.update({'id': node_id})
+        g.ndata.update({'id': node_id, 'is_pred': is_pred, 'norm': node_norm})
         # assigns node types
         g.edata['type'] = edge_type
         graphs.append(g)
@@ -242,16 +245,24 @@ def generate_full_graph(array_list, relation_dict):
     return fg, src_ids, dst_ids
 
 
+def comp_deg_norm(g):
+    in_deg = g.in_degrees(range(g.number_of_nodes())).float().numpy()
+    norm = 1.0 / in_deg
+    norm[np.isinf(norm)] = 0
+    return norm
+
+
 def build_graph_from_triplets(num_nodes, triplets):
     """
-    Create a DGL graph with edge types
+    Create a DGL graph with edge types and normalization factor
     """
     g = dgl.DGLGraph()
     g.add_nodes(num_nodes)
     src, rel, dst = triplets
     g.add_edges(src, dst)
+    norm = comp_deg_norm(g)
 
-    return g, rel
+    return g, rel, norm
 
 
 def group_similarity(model, entity_dict):
