@@ -18,6 +18,7 @@ while ( <> ) {
 #  s/ ((?!-)[^\(\)]*)\)/ \L\1\E\)/gi;
 
  if ( $XTRA ) {
+
   ######## N -> N:
 
   #### irregular nouns:
@@ -351,6 +352,7 @@ while ( <> ) {
   s/\((N)([^ ]*) $NOMINALS()()\)/\(B\2-o\1%\4\5|BNOM%\4 \3\4\)/gi;
 
   s/BNOM/B/g;
+
  }
 
   ######## B -> V|B|L|G:
@@ -710,6 +712,14 @@ while ( <> ) {
 
   # #### remove empty morphemes
   # s/ \([^ ]* \*\)//gi;
+
+#  if ( $XTRA ) {
+#
+#    ######## QUANT SUFFIX:
+#
+#    s/\((N-b\{N-aD\}|N-bO|N-bN|N-aD-b\{N-aD\})([^ ]*)/\(\1\2-xN%|N%Q/gi;
+#
+#  }
 
   print $_;
 }
