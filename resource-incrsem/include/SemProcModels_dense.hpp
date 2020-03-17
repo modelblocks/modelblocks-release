@@ -76,11 +76,13 @@ class NPredictorVec {
 
 class NModel {
 
-  typedef DelimitedCol<psLBrack, double, psComma, CVECDIM, psRBrack> CVec;
+  //typedef DelimitedCol<psLBrack, double, psComma, CVECDIM, psRBrack> CVec;
+  typedef DelimitedCol<psLBrack, double, psComma, psRBrack> CVec;
 
   private:
 
-    DelimitedMat<psX, double, psComma, NPREDDIM, NPREDDIM, psX> nw;                              // n model weights. square for now, doesn't have to be
+    //DelimitedMat<psX, double, psComma, NPREDDIM, NPREDDIM, psX> nw;                              // n model weights. square for now, doesn't have to be
+    DelimitedMat<psX, double, psComma, psX> nw;                              // n model weights. square for now, doesn't have to be
     DelimitedVector<psX, double, psComma, psX> nws; // n model weights (second layer), vector for reading in, to be unsqueezed before use
 
     map<CVar,CVec> mcv; //map between cat and 10d embeddings
@@ -93,8 +95,8 @@ class NModel {
 
   public:
 
-    NModel( ) { }
-    NModel( istream& is ) {
+    NModel( ) : nw(NPREDDIM,NPREDDIM) { }
+    NModel( istream& is ) : nw(NPREDDIM,NPREDDIM) {
       //rewrite how to read in N model learned weights, crib off of J model
       list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
       while( is.peek()=='N' ) {
@@ -106,7 +108,7 @@ class NModel {
       while ( is.peek()=='C' ) {
         Delimited<CVar> c;
         is >> "C " >> c >> " ";
-        is >> mcv[c] >> "\n";
+        is >> mcv.try_emplace(c,SYN_SIZE).first->second >> "\n"; //mcv[c]
       }
     }
 
@@ -227,9 +229,9 @@ class FPredictorVec {
 class FModel {
 
   typedef DelimitedTrip<psX,F,psAmpersand,Delimited<EVar>,psAmpersand,Delimited<K>,psX> FEK;
-  typedef DelimitedCol<psLBrack, double, psComma, CVECDIM, psRBrack> CVec;
-  //typedef DelimitedCol<psLBrack, double, psComma, psRBrack> CVec;
-//  typedef DelimitedCol<psLBrack, double, psComma, 20, psRBrack> CVec;
+  //typedef DelimitedCol<psLBrack, double, psComma, CVECDIM, psRBrack> CVec;
+  typedef DelimitedCol<psLBrack, double, psComma, psRBrack> CVec;
+  //  typedef DelimitedCol<psLBrack, double, psComma, 20, psRBrack> CVec;
 
 
   private:

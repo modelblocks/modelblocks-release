@@ -47,7 +47,7 @@ for line in coreffile: #coref file passed as argument
 
   if line.startswith('<DOC'):
     if '!ARTICLE' not in treestring: sys.stderr.write ( 'ERROR: instead of "...!ARTICLE..." I got: ' + treestring + '\n')
-    print '(U !ARTICLE)'
+    print '!ARTICLE'
     linenum = 0
     PrevMention = { }
     continue
@@ -75,7 +75,7 @@ for line in coreffile: #coref file passed as argument
       if ('-d','') in optlist:
         print '  i think ' + str(mentionbegin) + ' ' + str(toknum) + ' is ' + str(head)
       if mentionid in PrevMention: head.c += '-n' + PrevMention[mentionid]
-      PrevMention[mentionid] = str(linenum) + ('0' if head.r<9 else '') + str(head.r+1)
+      PrevMention[mentionid] = ('0' if linenum<10 else '') + str(linenum) + ('0' if head.r+1<10 else '') + str(head.r+1)
       if ('-d','') in optlist:
         print '  pop ' + mentionid + ' -> ' + PrevMention[mentionid]
   print str(t)

@@ -44,14 +44,14 @@ while not finished:
 
   ## Define discourse graph...
   G = semcuegraph.SemCueGraph( )
-  sentctr = 0
+  sentctr = 1 
 
   ## For each sentence...
   for line in sys.stdin:
 
     if '!ARTICLE' in line: break
 
-    if sentctr == 0:
+    if sentctr == 1:
       discctr += 1
       sys.stderr.write( 'Discourse ' + str(discctr) + ': ' + line )
 

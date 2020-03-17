@@ -385,13 +385,13 @@ endef
 
 ## Induce predicate vectors and cued association transition model (% contains gcn ini filename)...
 .PRECIOUS: %_emat_omodel
-%_emat_omodel : $$(basename %).casp.-x_morphed.artdelim.discgraphs  \
+%_emat_omodel : $$(basename %).discgraphs  \
                 $(INCRSEM-SCRIPTS)/discgraphs2omodel.py  \
                 scripts/$$(subst .,,$$(suffix $$*)).ini
 	python3 $(word 2,$^) $< $(word 3,$^)  >  $@
 
 ## Create training example file from training corpus (% contains gcn ini filename and decpar flags)...
-%_dspdecpars : $$(basename %).casp.linetrees  \
+%_dspdecpars : $$(basename %).linetrees  \
                $(BIN)/linetrees2densemprocdecpars  \
                $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
 	cat $<  |  $(word 2,$^) $(wordlist 2,99,$(subst _, ,$(suffix $*))) $(word 3,$^)  >  $@

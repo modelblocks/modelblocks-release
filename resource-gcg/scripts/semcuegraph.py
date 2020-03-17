@@ -487,6 +487,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif eqns.startswith('N-iN'):          eqns = 'Er0=' + eqns + '^Er1=^1='
           elif eqns.startswith('N-rN'):          eqns = 'Er0=' + eqns + '^Er1=^1='   ## NOTE: FIRST SYNARG IS ITSELF -- PROBLEMATIC FOR RELCLAUSE ON DEVERBAL NOUN
           elif eqns.startswith('N'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
+          elif eqns.startswith('D'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
           elif eqns.startswith('U'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
 #          G.dump()
           if VERBOSE: print( 'Inducing default equation: ' + eqns )
