@@ -476,17 +476,26 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 
         ## apply default lex sems...
         if EQN_DEFAULTS and ':' in eqns and '=' not in eqns:
+          ## quantifier semantics...
           if   eqns.startswith('N-b{N-aD}:'):    eqns = 'r0='  + eqns + '^r1=1r^r2=1'
           elif eqns.startswith('N-aD-b{N-aD}:'): eqns = 'r0='  + eqns + '^r1=2r^r2=2'
           elif eqns.startswith('N-bN:'):         eqns = 'r0='  + eqns + '^r1=2r^r2=2'
           elif eqns.startswith('N-bO:'):         eqns = 'r0='  + eqns + '^r1=2r^r2=2'
+          ## relative/interrogative pronoun semantics...
           elif eqns.startswith('A-aN-iN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
           elif eqns.startswith('A-aN-rN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
+          elif eqns.startswith('R-aN-iN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
+          elif eqns.startswith('R-aN-rN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
+          ## elementary predications...
           elif eqns.startswith('A'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
+          elif eqns.startswith('R'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif eqns.startswith('B'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^rh=SH'
+          ## relative/interrogative pronoun semantics...
           elif eqns.startswith('N-iN'):          eqns = 'Er0=' + eqns + '^Er1=^1='
           elif eqns.startswith('N-rN'):          eqns = 'Er0=' + eqns + '^Er1=^1='   ## NOTE: FIRST SYNARG IS ITSELF -- PROBLEMATIC FOR RELCLAUSE ON DEVERBAL NOUN
+          ## relational/nonrelational nouns...
           elif eqns.startswith('N'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
+          ## unanalyzed labels...
           elif eqns.startswith('U'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
 #          G.dump()
           if VERBOSE: print( 'Inducing default equation: ' + eqns )

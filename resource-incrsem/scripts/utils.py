@@ -274,6 +274,12 @@ def group_similarity(model, entity_dict):
         embedding = model.target_emb
 
     currency = ["N-aD:dollar", "N-aD:euro", "N-aD:pound", "N-aD:lira", "N-aD:franc", "N-aD:yen"]
+#    # caspu (gcg16) style
+#    time = ["N-aD:day", "N-aD:month", "N-aD:year", "U:january", "U:july", "U:december"]
+#    business = ["U:co.", "U:corp.", "U:inc.", "U:l.p.", "U:ltd.", "N-aD:business"]
+#    jobs = ["N-aD:president", "N-aD:officer", "U:ceo", "N-aD:director", "N-aD:minister", "N-aD:chairman"]
+#    countries = ["U:u.s.", "U:china", "U:japan", "U:germany", "U:india", "U:u.k."]
+    # casp (gcg15) style
     time = ["N-aD:day", "N-aD:month", "N-aD:year", "N-aD:january", "N-aD:july", "N-aD:december"]
     business = ["N-aD:co.", "N-aD:corp.", "N-aD:inc.", "N-aD:l.p.", "N-aD:ltd.", "N-aD:business"]
     jobs = ["N-aD:president", "N-aD:officer", "N-aD:ceo", "N-aD:director", "N-aD:minister", "N-aD:chairman"]

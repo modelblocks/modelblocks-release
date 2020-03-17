@@ -387,7 +387,7 @@ endef
 %_emat_omodel : $$(basename %).discgraphs  \
                 $(INCRSEM-SCRIPTS)/discgraphs2omodel.py  \
                 scripts/$$(subst .,,$$(suffix $$*)).ini
-	python3 $(word 2,$^) $< $(word 3,$^)  >  $@
+	python3 -u $(word 2,$^) $< $(word 3,$^)  >  $@  2>  $@.log
 
 ## Create training example file from training corpus (% contains gcn ini filename and decpar flags)...
 %_dspdecpars : $$(basename %).linetrees  \
@@ -402,7 +402,7 @@ endef
               $(INCRSEM-SCRIPTS)/dspdecpars2fmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini  \
               $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
-	cat $<  |  grep '^F'  |  sed 's/^F//'  |  python3 $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@
+	cat $<  |  grep '^F'  |  sed 's/^F//'  |  python3 -u $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
 %_pdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^P'  |  python3 $(word 2,$^)  >  $@
@@ -413,7 +413,7 @@ endef
               $(INCRSEM-SCRIPTS)/dspdecpars2jmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini  \
               $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
-	cat $<  |  grep '^J'  |  sed 's/^J//'  |  python3 $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@
+	cat $<  |  grep '^J'  |  sed 's/^J//'  |  python3 -u $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
 %_adspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^A'  |  python3 $(word 2,$^)  >  $@
