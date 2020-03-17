@@ -80,10 +80,6 @@ def discgraphs_to_cues(graph_file):
             if cues[1] not in ["0", "1", "2", "3", "c", "e", "h", "r"]:
                 continue
 
-            if cues[1] in ["c", "e", "h", "r"]:
-                inh_chains.append([cues[0], cues[2]])
-                continue
-
             # append sentence ID
             sentence_num = ''.join(filter(lambda i: i.isdigit(), cues[0]))[:-2]
             cues.append(str(discourse_num).zfill(5)+str(sentence_num).zfill(3))
@@ -92,6 +88,10 @@ def discgraphs_to_cues(graph_file):
             # for i in [0, 2]:
             #     if re.match("[0-9]", cues[i]):
             #         cues[i] = str(discourse_num).zfill(5)+str(sentence_num).zfill(3) + cues[i]
+
+            if cues[1] in ["c", "e", "h", "r"]:
+                inh_chains.append([cues[0], cues[2]])
+                continue
 
             sentence_cues.append(cues)
 
