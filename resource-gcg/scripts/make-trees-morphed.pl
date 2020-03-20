@@ -713,13 +713,16 @@ while ( <> ) {
   # #### remove empty morphemes
   # s/ \([^ ]* \*\)//gi;
 
-#  if ( $XTRA ) {
-#
+  if ( $XTRA ) {
+
+    ####### DELETE UN-MORPHED NON-{A,B,N} PREDS
+    s/\(([^ABDNU](?![^ ]*-x)[^ ]*)( [^\(\)]*)\)/\(\1-x%\|\2\)/gi;
+
 #    ######## QUANT SUFFIX:
 #
 #    s/\((N-b\{N-aD\}|N-bO|N-bN|N-aD-b\{N-aD\})([^ ]*)/\(\1\2-xN%|N%Q/gi;
-#
-#  }
+
+  }
 
   print $_;
 }

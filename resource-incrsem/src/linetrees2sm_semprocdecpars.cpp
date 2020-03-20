@@ -45,6 +45,7 @@ bool INTERSENTENTIAL = true;
 #include <Tree.hpp>
 #include <ZeroPad.hpp>
 int COREF_WINDOW = INT_MAX;
+bool RELAX_NOPUNC = false;
 bool ABLATE_UNARY = false;
 bool NO_ENTITY_BLOCKING = false;
 bool WINDOW_REDUCE = false;
@@ -130,8 +131,9 @@ string getUnaryOp ( const Tree<L>& tr ) {
 pair<K,CVar> getPred ( const L& lP, const L& lW ) {
   CVar c = getCat ( lP );
 
+  // CODE REVIEW: DEACTIVATE THE BELOW PUNCT LIQUIDATOR TO ALLOW THE MORPH SCRIPT TO DETERMINE SET OF PREDICATES (THOUGH SIMPLE PUNCT CATS HAVE NO SYNTACTIC ARGS, SO DON'T DO MUCH)...
   // If punct, but not special !-delimited label...
-  if ( ispunct(lW[0]) && ('!'!=lW[0] || lW.size()==1) ) return pair<K,CVar>(K::kBot,c);
+  if ( (not RELAX_NOPUNC) and ispunct(lW[0]) and ('!'!=lW[0] or lW.size()==1) ) return pair<K,CVar>(K::kBot,c);
 
   cout<<"reducing "<<lP<<" now "<<c;
   string sLemma = lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -143,12 +145,16 @@ pair<K,CVar> getPred ( const L& lP, const L& lW ) {
     string sX = m[2];
     smatch mX;
     cout<<"applying "<<sX<<" to "<<sPred;
-    if( regex_match( sX, mX, regex("^(.*)%(.*)%(.*)[|](.*)%(.*)%(.*)$") ) )        // transfix (prefix+infix+suffix) rule application
+    if( regex_match( sX, mX, regex("^(.*)%(.*)%(.*)[|](.*)%(.*)%(.*)$") ) )             // transfix (prefix+infix+suffix) rule application
       sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"(.*)"+regex_escape(mX[3])+"$"), string(mX[4])+"$1"+string(mX[5])+"$2"+string(mX[6]) );
-    if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)[%](.*)$") ) )              // circumfix (prefix+suffix) rule application
+    else if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)[%](.*)$") ) )              // circumfix (prefix+suffix) rule application
       sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"$"), string(mX[3])+"$1"+string(mX[4]) );
+    else if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)$") ) )                     // annihilator rule application
+      sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"$"), string(mX[3]) );
     cout<<" obtains "<<sPred<<endl;
   }
+
+  if ( sPred.size() == 0 ) return pair<K,CVar>(K::kBot,c);
 
   int iSplit = sPred.find( ":", 1 );
   sCat  = sPred.substr( 0, iSplit );
@@ -392,6 +398,7 @@ int main ( int nArgs, char* argv[] ) {
     if(      '-'==argv[a][0] && 'f'==argv[a][1] ) FEATCONFIG   = atoi( argv[a]+2 );
     else if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS    = atoi( argv[a]+2 );
     else if( '-'==argv[a][0] && 'c'==argv[a][1] ) COREF_WINDOW = atoi( argv[a]+2 );
+    else if( '-'==argv[a][0] && 'r'==argv[a][1] ) RELAX_NOPUNC = true;
     else if( '-'==argv[a][0] && 'a'==argv[a][1] ) ABLATE_UNARY = true;
     else if( '-'==argv[a][0] && 'n'==argv[a][1] && 'b'==argv[a][2]) NO_ENTITY_BLOCKING = true;
     else if( '-'==argv[a][0] && 'w'==argv[a][1] ) WINDOW_REDUCE = true; //TODO implement this
