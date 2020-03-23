@@ -37,6 +37,8 @@ uint FEATCONFIG = 0;
 #include <StoreState.hpp>
 #ifdef DENSE_VECTORS
 #include <SemProcModels_dense.hpp>
+#elif defined MLP
+#include <SemProcModels_mlp.hpp>
 #else
 #include <SemProcModels_sparse.hpp>
 #endif
