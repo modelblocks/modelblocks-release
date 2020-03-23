@@ -37,6 +37,8 @@ bool INTERSENTENTIAL = true;
 #include <StoreState.hpp>
 #ifdef DENSE_VECTORS
 #include <SemProcModels_dense.hpp>
+#elif defined MLP
+#include <SemProcModels_mlp.hpp>
 #else
 #include <SemProcModels_sparse.hpp>
 #endif
@@ -45,6 +47,7 @@ bool INTERSENTENTIAL = true;
 #include <Tree.hpp>
 #include <ZeroPad.hpp>
 int COREF_WINDOW = INT_MAX;
+bool RELAX_NOPUNC = false;
 bool ABLATE_UNARY = false;
 bool NO_ENTITY_BLOCKING = false;
 bool WINDOW_REDUCE = false;
@@ -130,8 +133,9 @@ string getUnaryOp ( const Tree<L>& tr ) {
 pair<K,CVar> getPred ( const L& lP, const L& lW ) {
   CVar c = getCat ( lP );
 
+  // CODE REVIEW: DEACTIVATE THE BELOW PUNCT LIQUIDATOR TO ALLOW THE MORPH SCRIPT TO DETERMINE SET OF PREDICATES (THOUGH SIMPLE PUNCT CATS HAVE NO SYNTACTIC ARGS, SO DON'T DO MUCH)...
   // If punct, but not special !-delimited label...
-  if ( ispunct(lW[0]) && ('!'!=lW[0] || lW.size()==1) ) return pair<K,CVar>(K::kBot,c);
+  if ( (not RELAX_NOPUNC) and ispunct(lW[0]) and ('!'!=lW[0] or lW.size()==1) ) return pair<K,CVar>(K::kBot,c);
 
   cout<<"reducing "<<lP<<" now "<<c;
   string sLemma = lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -143,12 +147,16 @@ pair<K,CVar> getPred ( const L& lP, const L& lW ) {
     string sX = m[2];
     smatch mX;
     cout<<"applying "<<sX<<" to "<<sPred;
-    if( regex_match( sX, mX, regex("^(.*)%(.*)%(.*)[|](.*)%(.*)%(.*)$") ) )        // transfix (prefix+infix+suffix) rule application
+    if( regex_match( sX, mX, regex("^(.*)%(.*)%(.*)[|](.*)%(.*)%(.*)$") ) )             // transfix (prefix+infix+suffix) rule application
       sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"(.*)"+regex_escape(mX[3])+"$"), string(mX[4])+"$1"+string(mX[5])+"$2"+string(mX[6]) );
-    if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)[%](.*)$") ) )              // circumfix (prefix+suffix) rule application
+    else if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)[%](.*)$") ) )              // circumfix (prefix+suffix) rule application
       sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"$"), string(mX[3])+"$1"+string(mX[4]) );
+    else if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)$") ) )                     // annihilator rule application
+      sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"$"), string(mX[3]) );
     cout<<" obtains "<<sPred<<endl;
   }
+
+  if ( sPred.size() == 0 ) return pair<K,CVar>(K::kBot,c);
 
   int iSplit = sPred.find( ":", 1 );
   sCat  = sPred.substr( 0, iSplit );
@@ -156,7 +164,7 @@ pair<K,CVar> getPred ( const L& lP, const L& lW ) {
   if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end() || mldLemmaCounts[sLemma]<MINCOUNTS ) sLemma = "!unk!";
   if ( isdigit(lW[0]) )                                                                        sLemma = "!num!";
 
-  return pair<K,CVar>( ( sCat + ':' + sLemma + '_' + ((lP[0]=='N') ? '1' : '0') ).c_str(), c );
+  return pair<K,CVar>( ( sCat + ':' + sLemma + '_' + ((lP[0]=='N' or lP[0]=='U') ? '1' : '0') ).c_str(), c );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -301,6 +309,12 @@ void calcContext ( Tree<L>& tr,
       if (k != kAntUnk) { 
         cout << "W " << e << " " << k << " " << getCat(removeLink(l)) /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
       }
+#elif defined MLP
+      cout << "F " << lfp << " " << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);
+      cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) /*getCat(l)*/     << endl;
+      if (k != kAntUnk) {
+        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+      }
 #else
       cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : f" << f << "&" << e << "&" << k << endl;  modF.getResponseIndex(f,e.c_str(),k);
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) << endl;
@@ -362,6 +376,8 @@ void calcContext ( Tree<L>& tr,
 #ifdef DENSE_VECTORS
 //    cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;  modJ.getResponseIndex(j,e.c_str(),oL,oR);
     cout << "J " << ljp << " " << j << "&" << e << "&" << oL << "&" << oR << endl;  // modJ.getResponseIndex(j,e.c_str(),oL,oR);
+#elif defined MLP
+    cout << "J " << ljp << " " << j << "&" << e << "&" << oL << "&" << oR << endl;  // modJ.getResponseIndex(j,e.c_str(),oL,oR);
 #else
     cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;  modJ.getResponseIndex(j,e.c_str(),oL,oR);
 #endif
@@ -392,6 +408,7 @@ int main ( int nArgs, char* argv[] ) {
     if(      '-'==argv[a][0] && 'f'==argv[a][1] ) FEATCONFIG   = atoi( argv[a]+2 );
     else if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS    = atoi( argv[a]+2 );
     else if( '-'==argv[a][0] && 'c'==argv[a][1] ) COREF_WINDOW = atoi( argv[a]+2 );
+    else if( '-'==argv[a][0] && 'r'==argv[a][1] ) RELAX_NOPUNC = true;
     else if( '-'==argv[a][0] && 'a'==argv[a][1] ) ABLATE_UNARY = true;
     else if( '-'==argv[a][0] && 'n'==argv[a][1] && 'b'==argv[a][2]) NO_ENTITY_BLOCKING = true;
     else if( '-'==argv[a][0] && 'w'==argv[a][1] ) WINDOW_REDUCE = true; //TODO implement this

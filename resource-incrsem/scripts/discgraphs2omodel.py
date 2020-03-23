@@ -36,7 +36,9 @@ class RGCN(BaseRGCN):
 class WordPredict(nn.Module):
     def __init__(self, in_dim, h_dim, num_rels, num_preds, num_bases=-1, num_hidden_layers=1, dropout=0, self_loop=False, use_cuda=False, reg_param=0):
         super(WordPredict, self).__init__()
+        # declare vt vectors for all nodes or just predicates
         self.target_emb = nn.Parameter(torch.Tensor(num_preds, h_dim))
+        # self.target_emb = nn.Parameter(torch.Tensor(in_dim, h_dim))
         nn.init.xavier_uniform_(self.target_emb, gain=nn.init.calculate_gain('relu'))
         self.rgcn = RGCN(in_dim, h_dim, h_dim, num_rels, num_bases, num_hidden_layers, dropout, self_loop, use_cuda)
         self.reg_param = reg_param
@@ -55,10 +57,12 @@ class WordPredict(nn.Module):
         score = self.get_norm_score(embedding, pred_graph_nodes)
         _, prediction = torch.max(score, 1)
         predict_loss = F.nll_loss(score, gold_pred_index)
-        target_reg_loss = torch.mean(self.target_emb.pow(2))
+        target_reg_loss = torch.mean(self.target_emb[gold_pred_index].pow(2))
+        h_reg_loss = torch.mean(embedding[pred_graph_nodes].pow(2))
+        norm_diff_loss = (torch.mean(self.target_emb[gold_pred_index].pow(2)) - torch.mean(embedding.pow(2))).pow(2)
         num_pred_nodes = len(pred_graph_nodes)
         correct = (prediction == gold_pred_index).sum().item()
-        return predict_loss + self.reg_param * target_reg_loss, correct, num_pred_nodes
+        return predict_loss + self.reg_param * (target_reg_loss + h_reg_loss + norm_diff_loss), correct, num_pred_nodes
 
 
 def main(graph_file, config):
@@ -93,24 +97,23 @@ def main(graph_file, config):
         model.cuda()
 
     # optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=rgcn_config.getfloat("LearningRate"))
+    optimizer = torch.optim.Adam(model.parameters(), lr=rgcn_config.getfloat("LearningRate"), weight_decay=rgcn_config.getfloat("WeightDecay"))
 
     # training loop
     utils.eprint("Start RGCN training loop...")
-    epoch = 0
+    epoch = 1
 
     # model loading
     if rgcn_config.get("ModelPath") != "":
         checkpoint = torch.load(rgcn_config.get("ModelPath"))
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        epoch = checkpoint['epoch']
+        epoch = checkpoint['epoch'] + 1
         loss = checkpoint['loss']
         utils.eprint("Loading model {} from Epoch {}".format(rgcn_config.get("ModelPath"), epoch))
 
     while True:
         model.train()
-        epoch += 1
         total_train_nodes = 0
         total_train_correct = 0
         total_train_loss = 0
@@ -163,18 +166,25 @@ def main(graph_file, config):
         if epoch == rgcn_config.getint("NEpochs"):
             break
 
+        epoch += 1
+
     utils.eprint("RGCN training finished")
     utils.eprint("Preprocessing for OModel trainer")
     all_edges = [np.array(sent) for sent in sent_edges]
-    fg, src_ids, dst_ids = utils.generate_full_graph(all_edges, relation_dict)
+    fg, src_ids, dst_ids = utils.generate_full_graph(all_edges, sent_unique_preds, relation_dict)
     utils.eprint("Preprocessing finished")
 
-    
+    # calculate h_vectors on CPU due to memory concerns
     if use_cuda:
         model.cpu()
 
-    with torch.no_grad():
-        fg_embedding = model(fg)
+    fg_embedding = model(fg)
+    fg_embedding_first = model.rgcn.forward_first(fg)
+    fg_embedding = fg_embedding.detach()
+
+    is_pred = fg.ndata["is_pred"].detach()
+    omodel_embedding = fg_embedding * is_pred + fg_embedding_first * (is_pred == 0).float()
+    omodel_embedding = omodel_embedding.detach()
 
     # training loop
     omodel_config = config["OModel"]
@@ -186,7 +196,7 @@ def main(graph_file, config):
 
     for rel in sorted(relation_dict):
         utils.eprint("Training model {}".format(rel))
-        src, dst = fg_embedding[src_ids[rel]], fg_embedding[dst_ids[rel]]
+        src, dst = omodel_embedding[src_ids[rel]], omodel_embedding[dst_ids[rel]]
         omodel = OModel(rgcn_config.getint("VecSize"))
         optimizer = torch.optim.Adam(omodel.parameters(), omodel_config.getfloat("LearningRate"))
         criterion = nn.MSELoss(reduction="mean")

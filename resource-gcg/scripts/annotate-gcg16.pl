@@ -61,6 +61,8 @@ while ( <> ) {
   # use CC for CONJP
   s/\(CONJP/\(CC/g;
 #  s/\((NNPS|NNP|NNS|NN)/\(NN/g;
+#  use NN for NML
+  s/\(NML/\(NN/g;
 
 
   $INIT_PUNCT = '-LRB-|-LCB-|``|`|--|-|,|;|\.|!|\?|\.\.\.|\'|\'\'|-RCB-|-RRB-';

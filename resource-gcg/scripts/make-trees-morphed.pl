@@ -1,9 +1,10 @@
 
 use Getopt::Std;
 
-getopts("sx");
+getopts("sxr");
 $SEM  = $opt_s;
 $XTRA = $opt_x;
+$REUN = $opt_r;
 print( $SEM );
 
 $SHORT = '(?!<[aeiou])(?:[aeiou])';
@@ -17,6 +18,7 @@ while ( <> ) {
 #  s/ ((?!-)[^\(\)]*)\)/ \L\1\E\)/gi;
 
  if ( $XTRA ) {
+
   ######## N -> N:
 
   #### irregular nouns:
@@ -128,10 +130,12 @@ while ( <> ) {
 
   ######## A -> A NEGATIVE
 
-  $NOTUN = '(?!canny|der\)|dercut|derlie|derline|derly|derpin|derscore|derstand|dertake|ited?\)|iversal|til\)|less\)|iqu)';
-
-  ## un%
-  s/\((A)([^ ]*) ([Uu]n)$NOTUN([^ ]*?)()\)/\(\1\2-o\1%:\3%|\1NEG%:% \4\)/gi;
+  if ( $REUN ) {
+    $NOTUN = '(?!canny|der\)|dercut|derlie|derline|derly|derpin|derscore|derstand|dertake|ited?\)|iversal|til\)|less\)|iqu)';
+  
+    ## un%
+    s/\((A)([^ ]*) ([Uu]n)$NOTUN([^ ]*?)()\)/\(\1\2-o\1%:\3%|\1NEG%:% \4\)/gi;
+  }
 
   ######## DEVERBAL NOMINALIZATIONS B -> N:
 
@@ -348,6 +352,7 @@ while ( <> ) {
   s/\((N)([^ ]*) $NOMINALS()()\)/\(B\2-o\1%\4\5|BNOM%\4 \3\4\)/gi;
 
   s/BNOM/B/g;
+
  }
 
   ######## B -> V|B|L|G:
@@ -605,19 +610,19 @@ while ( <> ) {
   ## X*
   s/\(([BVLG])([^ %]*) ([^ ]*?)(|s|ed|ing)\)/\(B\2-o\1%\4|B% \3\)/gi;
 
- if ( $XTRA ) {
-  ######## NEGATIVE FOR VERBS
+  if ( $REUN ) {
+    ######## NEGATIVE FOR VERBS
 
-  ## un%
-  s/\((B)([^ ]*) ([Uu]n)$NOTUN([^ ]*?)()\)/\(\1\2-o\1%:\L\3\E%|\1NEG%:% \4\)/gi;
+    ## un%
+    s/\((B)([^ ]*) ([Uu]n)$NOTUN([^ ]*?)()\)/\(\1\2-o\1%:\L\3\E%|\1NEG%:% \4\)/gi;
 
-  ######## REPETITIVE
+    ######## REPETITIVE
 
-  $NORE = '(?!ach|act|ad|alize|ap|ason|bel|buff|buke|call|cede|cess|ceive|cite|cogni[sz]e|commend|cord|cruit|ctify|deem|duce|fer|flect|fresh|fund|fuse|gard|gist|ly|gulate|inforce|ject|late|lease|main|mark|member|mind|move|new|novate|pel|plicate|ply|port|present|prove|pulse|pute|quest|quire|sign|sist|solve|sonate|spond|st|store|strict|sult|sume|tain|taliate|tard|tire|tort|turn|veal|view|vise|vive|volve|ward)';
+    $NORE = '(?!ach|act|ad|alize|ap|ason|bel|buff|buke|call|cede|cess|ceive|cite|cogni[sz]e|commend|cord|cruit|ctify|deem|duce|fer|flect|fresh|fund|fuse|gard|gist|ly|gulate|inforce|ject|late|lease|main|mark|member|mind|move|new|novate|pel|plicate|ply|port|present|prove|pulse|pute|quest|quire|sign|sist|solve|sonate|spond|st|store|strict|sult|sume|tain|taliate|tard|tire|tort|turn|veal|view|vise|vive|volve|ward)';
 
-  ## re%
-  s/\((B)([^ ]*) ([Rr]e-?)$NORE([^ ]*?)()\)/\(B\2-o\1%:\L\3\E%|\1REP%:% \4\)/gi;
- }
+    ## re%
+    s/\((B)([^ ]*) ([Rr]e-?)$NORE([^ ]*?)()\)/\(B\2-o\1%:\L\3\E%|\1REP%:% \4\)/gi;
+  }
 
   ######## CAUSAL, INCHOATIVE, STATIVE
   if( $SEM ) {
@@ -707,6 +712,17 @@ while ( <> ) {
 
   # #### remove empty morphemes
   # s/ \([^ ]* \*\)//gi;
+
+  if ( $XTRA ) {
+
+    ####### DELETE UN-MORPHED NON-{A,B,N} PREDS
+    s/\(([^ABDNU](?![^ ]*-x)[^ ]*)( [^\(\)]*)\)/\(\1-x%\|\2\)/gi;
+
+#    ######## QUANT SUFFIX:
+#
+#    s/\((N-b\{N-aD\}|N-bO|N-bN|N-aD-b\{N-aD\})([^ ]*)/\(\1\2-xN%|N%Q/gi;
+
+  }
 
   print $_;
 }
