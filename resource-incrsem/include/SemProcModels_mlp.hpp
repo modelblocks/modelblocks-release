@@ -287,7 +287,6 @@ class FModel {
     const KDenseVec getKVecEmbed( HVec hv ) const {
       KDenseVec KVecEmbed = KDenseVec(arma::zeros(SEM_SIZE));
       for ( auto& kV : hv.at(0) ) {
-        cerr << kV << endl;
         if ( kV == K::kTop) {
           KVecEmbed += KDenseVec(arma::ones(SEM_SIZE));
           continue;
@@ -493,7 +492,6 @@ class JModel {
     const KDenseVec getKVecEmbed( HVec hv ) const {
       KDenseVec KVecEmbed = KDenseVec(arma::zeros(SEM_SIZE));
       for ( auto& kV : hv.at(0) ) {
-        cerr << kV << endl;
         if ( kV == K::kTop) {
           KVecEmbed += KDenseVec(arma::ones(SEM_SIZE));
           continue;
