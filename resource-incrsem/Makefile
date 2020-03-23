@@ -198,7 +198,13 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 			$$(basename %).lemmacounts  \
 			#$$(basename %).nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
 	#cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
-	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/emat_omodel_1unkedcasp_noq_h1nonpred_128_tiednorm_500epochs.txt  >  $@
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/test_20dim_2samples_1500epochs0.01lr_nodes_emat_omodel.txt  >  $@
+
+.PRECIOUS: %mlpsemprocdecpars
+%mlpsemprocdecpars:     $$(basename %).linetrees  \
+			$(BIN)/linetrees2mlpsemprocdecpars  \
+			$$(basename %).lemmacounts
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
 
 .PRECIOUS: %sm_corefsemprocdecpars
 %sm_corefsemprocdecpars:     $$(basename %).linetrees  \
@@ -268,6 +274,22 @@ endef
 %.bcptdecpars:  %semprocdecpars
 	cat $<  |  grep '^B'  |  sed 's/^. //'  >  $@
 %.wcptdecpars:  %semprocdecpars
+	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
+
+## pull apart predictor/responses for training...
+%.nmlrdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
+%.fmlpdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
+%.jmlpdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
+%.pcptdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^P'  |  sed 's/^. //'  >  $@
+%.acptdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^A'  |  sed 's/^. //'  >  $@
+%.bcptdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^B'  |  sed 's/^. //'  >  $@
+%.wcptdecpars:  %mlpsemprocdecpars
 	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
 
 ## pull apart predictor/responses for training...

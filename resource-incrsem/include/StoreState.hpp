@@ -390,6 +390,8 @@ typedef Delimited<int> D;
 
 #ifdef DENSE_VECTORS
 #include<KVec_dense.hpp>
+#elif defined MLP
+#include<KVec_mlp.hpp>
 #else
 #include<KVec_sparse.hpp>
 #endif

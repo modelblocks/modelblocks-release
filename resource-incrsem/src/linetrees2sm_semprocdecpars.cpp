@@ -37,6 +37,8 @@ bool INTERSENTENTIAL = true;
 #include <StoreState.hpp>
 #ifdef DENSE_VECTORS
 #include <SemProcModels_dense.hpp>
+#elif defined MLP
+#include <SemProcModels_mlp.hpp>
 #else
 #include <SemProcModels_sparse.hpp>
 #endif
@@ -307,6 +309,12 @@ void calcContext ( Tree<L>& tr,
       if (k != kAntUnk) { 
         cout << "W " << e << " " << k << " " << getCat(removeLink(l)) /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
       }
+#elif defined MLP
+      cout << "F " << lfp << " " << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);
+      cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) /*getCat(l)*/     << endl;
+      if (k != kAntUnk) {
+        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+      }
 #else
       cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : f" << f << "&" << e << "&" << k << endl;  modF.getResponseIndex(f,e.c_str(),k);
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) << endl;
@@ -367,6 +375,8 @@ void calcContext ( Tree<L>& tr,
     cout << "==== " << q.getApex() << "   " << removeLink(tr) << " -> " << removeLink(tr.front()) << " " << removeLink(tr.back()) << endl;
 #ifdef DENSE_VECTORS
 //    cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;  modJ.getResponseIndex(j,e.c_str(),oL,oR);
+    cout << "J " << ljp << " " << j << "&" << e << "&" << oL << "&" << oR << endl;  // modJ.getResponseIndex(j,e.c_str(),oL,oR);
+#elif defined MLP
     cout << "J " << ljp << " " << j << "&" << e << "&" << oL << "&" << oR << endl;  // modJ.getResponseIndex(j,e.c_str(),oL,oR);
 #else
     cout << "J " << pair<const JModel&,const JPredictorVec&>(modJ,ljp) << " : j" << j << "&" << e << "&" << oL << "&" << oR << endl;  modJ.getResponseIndex(j,e.c_str(),oL,oR);
