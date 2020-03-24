@@ -190,15 +190,20 @@ int main ( int nArgs, char* argv[] ) {
         // Read model lists...
         int linenum = 0;
         while ( fin && EOF!=fin.peek() ) {
-          if ( fin.peek()=='E' ) matEmutable = EMat( fin );
-          if ( fin.peek()=='O' ) funcOmutable = OFunc( fin );
-          if ( fin.peek()=='N' ) modNmutable = NModel( fin );
-          if ( fin.peek()=='F' ) modFmutable = FModel( fin );
-          if ( fin.peek()=='P' ) modPmutable = PModel( fin );
-          if ( fin.peek()=='W' ) modWmutable = WModel( fin );  //fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
-          if ( fin.peek()=='J' ) modJmutable = JModel( fin );
-          if ( fin.peek()=='A' ) modAmutable = AModel( fin );
-          if ( fin.peek()=='B' ) modBmutable = BModel( fin );
+          if      ( fin.peek()=='E' ) matEmutable = EMat( fin );
+          else if ( fin.peek()=='O' ) funcOmutable = OFunc( fin );
+          else if ( fin.peek()=='N' ) modNmutable = NModel( fin );
+          else if ( fin.peek()=='F' ) modFmutable = FModel( fin );
+          else if ( fin.peek()=='P' ) modPmutable = PModel( fin );
+          else if ( fin.peek()=='W' ) modWmutable = WModel( fin );  //fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
+          else if ( fin.peek()=='J' ) modJmutable = JModel( fin );
+          else if ( fin.peek()=='A' ) modAmutable = AModel( fin );
+          else if ( fin.peek()=='B' ) modBmutable = BModel( fin );
+          else {
+            Delimited<string> sOffSpec;
+            fin >> sOffSpec >> "\n";
+            cerr << "WARNING: skipping off-spec input line: '" << sOffSpec << "'" << endl;
+          } 
           if ( ++linenum%1000000==0 ) cerr << "  " << linenum << " items loaded..." << endl;
         }
         cerr << "Model " << argv[a] << " loaded." << endl;

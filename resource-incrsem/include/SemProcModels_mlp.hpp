@@ -241,6 +241,10 @@ class FModel {
     DelimitedVector<psX, double, psComma, psX> fws;
     DelimitedVector<psX, double, psComma, psX> fbf;  // biases for F model
     DelimitedVector<psX, double, psComma, psX> fbs;
+    mat fwfm;
+    mat fwsm;
+    vec fbfv;
+    vec fbsv;
 
   public:
 
@@ -270,6 +274,12 @@ class FModel {
         is >> mifek[i] >> "\n";
         mfeki[mifek[i]] = i;
       }
+      fwfm = fwf;
+      fwsm = fws;
+      fbfv = fbf;
+      fbsv = fbs;
+      fwfm.reshape(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE), 7 + 2*SEM_SIZE + SYN_SIZE);
+      fwsm.reshape(fws.size()/(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)), (fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)));
     }
 
     const FEK& getFEK( unsigned int i ) const {
@@ -339,12 +349,6 @@ class FModel {
       flogresponses(catBEmb.n_elem+hvBEmb.n_elem+hvFEmb.n_elem+d) = 1;
 
 // implementation of MLP
-      mat fwfm(fwf);
-      mat fwsm(fws);
-      vec fbfv(fbf);
-      vec fbsv(fbs);
-      fwfm.reshape(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE), 7 + 2*SEM_SIZE + SYN_SIZE);
-      fwsm.reshape(fws.size()/(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)), (fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)));
       arma::vec flogscores = fwsm * relu(fwfm*flogresponses + fbfv) + fbsv;
       arma::vec fscores = arma::exp(flogscores);
       double fnorm = arma::accu(fscores);
@@ -352,12 +356,6 @@ class FModel {
     }
 
   arma::vec testCalcResponses( arma::vec testvec ) const {
-      mat fwfm(fwf);
-      mat fwsm(fws);
-      vec fbfv(fbf);
-      vec fbsv(fbs);
-      fwfm.reshape(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE), 7 + 2*SEM_SIZE + SYN_SIZE);
-      fwsm.reshape(fws.size()/(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)), (fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)));
       arma::vec flogscores = fwsm * relu(fwfm*testvec + fbfv) + fbsv;
       arma::vec fscores = arma::exp(flogscores);
       double fnorm = arma::accu(fscores);
@@ -440,6 +438,10 @@ class JModel {
     DelimitedVector<psX, double, psComma, psX> jws;
     DelimitedVector<psX, double, psComma, psX> jbf;  // biases for J model
     DelimitedVector<psX, double, psComma, psX> jbs;
+    mat jwfm;
+    mat jwsm;
+    vec jbfv;
+    vec jbsv;
 
   public:
 
@@ -475,6 +477,12 @@ class JModel {
       }
       jr0 = getResponseIndex( 0, EVar::eNil, 'N', O_I );
       jr1 = getResponseIndex( 1, EVar::eNil, 'N', O_I );
+      jwfm = jwf;
+      jwsm = jws;
+      jbfv = jbf;
+      jbsv = jbs;
+      jwfm.reshape(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE), (7 + 3*SEM_SIZE + 2*SYN_SIZE));
+      jwsm.reshape(jws.size()/(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)), (jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)));
     }
 
     const JEOO& getJEOO( unsigned int i ) const {
@@ -554,12 +562,6 @@ class JModel {
       jlogresponses(catAEmb.n_elem+hvAEmb.n_elem+hvFEmb.n_elem+catLEmb.n_elem+hvLEmb.n_elem+d) = 1;
 
 // implementation of MLP
-      mat jwfm(jwf);
-      mat jwsm(jws);
-      vec jbfv(jbf);
-      vec jbsv(jbs);
-      jwfm.reshape(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE), (7 + 3*SEM_SIZE + 2*SYN_SIZE));
-      jwsm.reshape(jws.size()/(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)), (jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)));
       arma::vec jlogscores = jwsm * relu(jwfm*jlogresponses + jbfv) + jbsv;
       arma::vec jscores = arma::exp(jlogscores);
       double jnorm = arma::accu(jscores);
@@ -567,12 +569,6 @@ class JModel {
     }
 
   arma::vec testCalcResponses( arma::vec testvec ) const {
-      mat jwfm(jwf);
-      mat jwsm(jws);
-      vec jbfv(jbf);
-      vec jbsv(jbs);
-      jwfm.reshape(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE), (7 + 3*SEM_SIZE + 2*SYN_SIZE));
-      jwsm.reshape(jws.size()/(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)), (jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)));
       arma::vec jlogscores = jwsm * relu(jwfm*testvec + jbfv) + jbsv;
       arma::vec jscores = arma::exp(jlogscores);
       double jnorm = arma::accu(jscores);
