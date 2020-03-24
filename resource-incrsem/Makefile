@@ -277,22 +277,6 @@ endef
 	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
 
 ## pull apart predictor/responses for training...
-%.nmlrdecpars:  %mlpsemprocdecpars
-	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
-%.fmlpdecpars:  %mlpsemprocdecpars
-	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
-%.jmlpdecpars:  %mlpsemprocdecpars
-	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
-%.pcptdecpars:  %mlpsemprocdecpars
-	cat $<  |  grep '^P'  |  sed 's/^. //'  >  $@
-%.acptdecpars:  %mlpsemprocdecpars
-	cat $<  |  grep '^A'  |  sed 's/^. //'  >  $@
-%.bcptdecpars:  %mlpsemprocdecpars
-	cat $<  |  grep '^B'  |  sed 's/^. //'  >  $@
-%.wcptdecpars:  %mlpsemprocdecpars
-	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
-
-## pull apart predictor/responses for training...
 %.nmlrdecpars:  %densemprocdecpars
 	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
 #%.fmlrdecpars:  %semprocdecpars
@@ -308,6 +292,22 @@ endef
 %.bcptdecpars:  %densemprocdecpars
 	cat $<  |  grep '^B'  |  sed 's/^. //'  >  $@
 %.wcptdecpars:  %densemprocdecpars
+	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
+
+## pull apart predictor/responses for training...
+%.nmlrdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
+%.fmlpdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
+%.jmlpdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
+%.pcptdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^P'  |  sed 's/^. //'  >  $@
+%.acptdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^A'  |  sed 's/^. //'  >  $@
+%.bcptdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^B'  |  sed 's/^. //'  >  $@
+%.wcptdecpars:  %mlpsemprocdecpars
 	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
 
 ## push together semantic processing models...
@@ -329,34 +329,7 @@ endef
 	cat $(word 6,$^)  |  sed 's/^/B /'  >>  $@
 	cat $(word 7,$^)  |  sed 's/^/W /'  >>  $@
 
-.PRECIOUS: %fgcnmodel
-%fgcnmodel:  $$(basename %).fgcndecpars  # dependencies here
-	echo "add model builder code here"  >  $@
-
-.PRECIOUS: %jgcnmodel
-%jgcnmodel:  $$(basename %).jgcndecpars  # dependencies here
-	echo "add model builder code here"  >  $@
-
 ## push together semantic processing models...
-.PRECIOUS: %_densemprocmodel
-#%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e4_1e-6_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
-#%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e-1_1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
-#%_densemprocmodel: $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(basename $$(basename $$(subst _,.,$$*))))_100_nmlrmodel \
- 								$$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(basename $$(subst _,.,$$*)))_100_fgcnmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(subst _,.,$$*))_100_jgcnmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.pcptmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.acptmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.bcptmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.wcptmodel 
-#	cat $(word 1,$^)  |  sed 's/^/N /'   >  $@
-#	cat $(word 2,$^)                    >>  $@
-#	cat $(word 3,$^)                    >>  $@
-#	cat $(word 4,$^)  |  sed 's/^/P /'  >>  $@
-#	cat $(word 5,$^)  |  sed 's/^/A /'  >>  $@
-#	cat $(word 6,$^)  |  sed 's/^/B /'  >>  $@
-#	cat $(word 7,$^)  |  sed 's/^/W /'  >>  $@
-#	cat genmodel/wsj_emat_omodel_40mat.txt >> $@
-
 .PRECIOUS: %_corefsemprocmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e4_1e-6_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e-1_1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
@@ -394,7 +367,7 @@ endef
 
 ################################################################################
 #
-#  config(ini)-based dsp (densesemproc)
+#  config(ini)-based dsp (densemproc/mlpsemproc)
 #
 ################################################################################
 
@@ -412,10 +385,18 @@ endef
 	python3 -u $(word 2,$^) $< $(word 3,$^)  >  $@  2>  $@.log
 
 ## Create training example file from training corpus (% contains gcn ini filename and decpar flags)...
+.PRECIOUS: %_dspdecpars
 %_dspdecpars : $$(basename %).linetrees  \
                $(BIN)/linetrees2densemprocdecpars  \
                $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
 	cat $<  |  $(word 2,$^) $(wordlist 2,99,$(subst _, ,$(suffix $*))) $(word 3,$^)  >  $@
+
+## Create training example file from training corpus (% contains decpar flags)...
+.PRECIOUS: %_mlpdecpars
+%_mlpdecpars : $$(basename %).linetrees  \
+               $(BIN)/linetrees2mlpsemprocdecpars  \
+               $$(basename %).lemmacounts
+	cat $<  |  $(word 2,$^) $(wordlist 1,99,$(subst _, ,$(subst .,,$(suffix $*)))) $(word 3,$^)  >  $@
 
 ## Create component model file from training example file (% contains gcn ini filename and decpar flags and dsp ini filename)...
 %_ndspmodel : 
@@ -443,9 +424,39 @@ endef
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^B'  |  python3 $(word 2,$^)  >  $@
 
+## Create component model file from training example file (% contains decpar flags and mlp ini filename)...
+%_nmlpmodel :
+	echo ''  >  $@
+%_fmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/mlpdecpars2fmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini
+	cat $<  |  grep '^F'  |  sed 's/^F//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+%_pmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^P'  |  python3 $(word 2,$^)  >  $@
+%_wmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^W'  |  python3 $(word 2,$^)  >  $@
+%_jmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/mlpdecpars2jmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini
+	cat $<  |  grep '^J'  |  sed 's/^J//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+%_amlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^A'  |  python3 $(word 2,$^)  >  $@
+%_bmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^B'  |  python3 $(word 2,$^)  >  $@
 
 ## Create dsp model out of component models...
+.PRECIOUS: %_densemprocmodel
 %_densemprocmodel : %_ndspmodel  %_fdspmodel  %_pdspmodel  %_wdspmodel  %_jdspmodel  %_adspmodel  %_bdspmodel  $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
+	cat $^  >  $@
+
+## Create mlp model out of component models...
+.PRECIOUS: %_mlpsemprocmodel
+#%_mlpsemprocmodel : %_nmlpmodel  %_fmlpmodel  %_pmlpmodel  %_wmlpmodel  %_jmlpmodel  %_amlpmodel  %_bmlpmodel
+%_mlpsemprocmodel : %_fmlpmodel  %_pmlpmodel  %_wmlpmodel  %_jmlpmodel  %_amlpmodel  %_bmlpmodel
 	cat $^  >  $@
 
 ## Parse with: wsj02.wsj02to21-bestgcn_bestdsp_densemproc-parsed.tokdecs
