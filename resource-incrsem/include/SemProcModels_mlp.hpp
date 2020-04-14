@@ -42,143 +42,170 @@ class TVec : public DelimitedCol<psLBrack, double, psComma, psRBrack> {
 const TVec foo   ( arma::zeros<Col<double>>(SEM_SIZE) );
 
 class NPredictorVec {
-//need to be able to output real-valued distance integers, NPreds
-//TODO maybe try quadratic distance
   private:
-
      int mdist;
-     list<unsigned int> mnpreds;
+     const HVec& basesem;
+     const HVec& antecedentsem;
+     CVar        basec;
+     CVar        antecedentc;
+     bool corefON;
 
   public:
-
     //constructor
     template<class LM>
-    NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss, bool ABLATE_UNARY) : mdist(antdist), mnpreds() {
-//      //probably will look like Join model feature generation.ancestor is a sign, sign has T and Kset.
-//      //TODO add dependence to P model.  P category should be informed by which antecedent category was chosen here
-//
-// //     mdist = antdist;
-//      mnpreds.emplace_back( lm.getPredictorIndex( "bias" ) ); //add bias term
-//
-//      const HVec& hvB = ss.at(ss.size()-1).getHVec(); //contexts of lowest b (bdbar)
-//      for( unsigned int iA=0; iA<candidate.getHVec().size(); iA++ )  for( auto& antk : candidate.getHVec()[iA] ) {
-//        mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), kNil ) ); //add unary antecedent k feat, using kxk template
-//        for( unsigned int iB=0; iB<hvB.size(); iB++)  for( auto& currk : hvB[iB] ) {
-//          mnpreds.emplace_back( lm.getPredictorIndex( antk.project(-iA), currk.project(-iB) ) ); //pairwise kxk feat
-//        }
-//      }
-//      for( unsigned int iB=0; iB<hvB.size(); iB++ )  for( auto& currk : hvB[iB] ) {
-//        mnpreds.emplace_back( lm.getPredictorIndex( kNil, currk.project(-iB) ) ); //unary ancestor k feat
-//      }
-//
-//      mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), N_NONE                      ) ); // antecedent CVar
-//      mnpreds.emplace_back( lm.getPredictorIndex( N_NONE,             ss.at(ss.size()-1).getCat() ) ); // ancestor CVar
-//      mnpreds.emplace_back( lm.getPredictorIndex( candidate.getCat(), ss.at(ss.size()-1).getCat() ) ); // pairwise T
-//
-//      //corefON feature
-//      if (bcorefON == true) {
-//        mnpreds.emplace_back( lm.getPredictorIndex( "corefON" ) );
-//      }
+    NPredictorVec( LM& lm, const Sign& candidate, bool bcorefON, int antdist, const StoreState& ss, bool ABLATE_UNARY ) :
+      basesem (( ss.getBase().getHVec().size() > 0 ) ? ss.getBase().getHVec() : hvBot ), 
+      antecedentsem ((candidate.getHVec().size() > 0 ) ? candidate.getHVec() : hvBot ) { 
+      mdist = antdist;
+      antecedentc = candidate.getCat();
+      basec = ss.getBase().getCat();
+      corefON = bcorefON;
+      //ABLATE_UNARY not defined for dense semproc since NN implicitly captures/can capture joint feature relations
     }
 
-    const list<unsigned int>& getList    ( ) const { return mnpreds; }
-    int                       getAntDist ( ) const { return mdist;   }
+    //accessors
+    int   getAntDist()   const { return mdist;   }
+    int   getAntDistSq() const { return mdist * mdist; }
+    const HVec& getBaseSem()   const { return basesem; }
+    const HVec& getAnteSem()   const { return antecedentsem; }
+    CVar  getBaseC()     const { return basec; }
+    CVar  getAnteC()     const { return antecedentc; }
+    bool  getCorefOn()   const { return corefON; }
+
+    friend ostream& operator<< ( ostream& os, const NPredictorVec& mv ) {
+      os << " " << mv.getBaseC() << " " << mv.getAnteC() << " " << mv.getBaseSem() << " " << mv.getAnteSem() << " " << mv.getAntDist() << " " << mv.getAntDistSq() << " " << mv.getCorefOn();
+      return os;
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
 class NModel {
+  typedef DelimitedCol<psLBrack, double, psComma, psRBrack> KDenseVec;
+  typedef DelimitedCol<psLBrack, double, psComma, psRBrack> CVec;
 
   private:
-
-    arma::mat matN;                              // matrix itself
-
-    unsigned int iNextPredictor = 0;             // predictor and response next-pointers
-    unsigned int iNextResponse  = 0;
-
-    map<unsigned int,string>    mis;
-    map<string,unsigned int>    msi;
-
-    map<pair<K,K>,unsigned int>       mkki;
-    map<unsigned int,pair<K,K>>       mikk;
-
-    map<pair<CVar,CVar>,unsigned int> mcci; //pairwise CVarCVar? probably too sparse...
-    map<unsigned int,pair<CVar,CVar>> micc;
+    mat nwm;
+    mat nwsm;
+    DelimitedVector<psX, double, psComma, psX> nwb; // n model weights (first layer), biases
+    DelimitedVector<psX, double, psComma, psX> nwsb; // n model weights (second layer), biases
+    map<CVar,CVec> mcv; //map between cat and 10d embeddings
+    CVec zeroCatEmb;
+    map<KVec,KDenseVec> mkdv;                  // map between KVec and embeds
 
   public:
+    NModel( ) : zeroCatEmb(SYN_SIZE) { }
+    NModel( istream& is ) : zeroCatEmb(SYN_SIZE) {
+      //DelimitedMat<psX, double, psComma, NPREDDIM, NPREDDIM, psX> nw;                              // n model weights. square for now, doesn't have to be
+      DelimitedVector<psX, double, psComma, psX> nw;                              // n model weights. square for now, doesn't have to be
+      DelimitedVector<psX, double, psComma, psX> nws; // n model weights (second layer), vector for reading in, to be unsqueezed before use
 
-    NModel( ) { }
-    NModel( istream& is ) {
-      list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
+      //rewrite how to read in N model learned weights, crib off of J model
       while( is.peek()=='N' ) {
-        auto& prw = *l.emplace( l.end() );
-        is >> "N ";
-        if( is.peek()=='a' )   { Delimited<string> s;   is >> "a" >> s >> " : ";                 prw.first()  = getPredictorIndex( s );      }
-        else{
-          if( is.peek()=='t' ) { Delimited<CVar> cA,cB; is >> "t" >> cA >> "&t" >> cB >> " : ";  prw.first()  = getPredictorIndex( cA, cB ); }
-          else                 { Delimited<K>    kA,kB; is >> kA >> "&" >> kB >> " : ";          prw.first()  = getPredictorIndex( kA, kB ); }
-        }
-        Delimited<int> n;                               is >> n >> " = ";                        prw.second() = n;
-        Delimited<double> w;                            is >> w >> "\n";                         prw.third()  = w;
+        Delimited<char> c;
+        is >> "N " >> c >> " ";
+        if (c == 'F') is >> nw >> "\n";
+        if (c == 'f') is >> nwb >> "\n";
+        if (c == 'S') is >> nws >> "\n";
+        if (c == 's') is >> nwsb >> "\n";
       }
-
-      if( l.size()==0 ) cerr << "ERROR: No N items found." << endl;
-      matN.zeros ( 2, iNextPredictor );
-      for( auto& prw : l ) { matN( prw.second(), prw.first() ) = prw.third(); }
+      while ( is.peek()=='C' ) {
+        Delimited<CVar> c;
+        is >> "C " >> c >> " ";
+        is >> mcv.try_emplace(c,SYN_SIZE).first->second >> "\n"; //mcv[c]
+      }
+      while ( is.peek()=='K' ) {
+        Delimited<K> k;
+        is >> "K " >> k >> " ";
+        is >> mkdv.try_emplace(k,SEM_SIZE).first->second >> "\n";
+      }
+      //save to private members
+      //cerr << "nw size: " << nw.size() << endl;
+      nwm = mat(nw);
+      //cerr << "nwm size: " << nwm.size() << endl;
+      nwm.reshape(nwm.size()/NPREDDIM, NPREDDIM);
+      //cerr << "nwm reshaped size: " << nwm.size() << endl;
+      //cerr << "nws size: " << nws.size() << endl;
+      nwsm = mat(nws);
+      //cerr << "nwsm size: " << nwsm.size() << endl;
+      nwsm.reshape(nws.size()/NPREDDIM, NPREDDIM); //unsqueeze vector to matrix
+      //cerr << "nwsm reshaped size: " << nwsm.size() << endl;
+      //cerr << "nwb: " << nwb.size() << endl;
+      //cerr << "nwsb: " << nwsb.size() << endl;
     }
 
-    unsigned int getPredictorIndex( const string& s ) {
-      const auto& it = msi.find( s );  if( it != msi.end() ) return( it->second );
-      msi[ s ] = iNextPredictor;  mis[ iNextPredictor ] = s;  return( iNextPredictor++ );
+    const CVec& getCatEmbed( CVar i ) const {
+      //cerr << "attempting to find cat with index i: " << i << endl;
+      //cerr << "mcv size: " << mcv.size() << endl;
+      auto it = mcv.find( i );
+      //assert( it != mcv.end() );
+      if (it == mcv.end()) {
+        //cerr << "WARNING: no emb for unkcat " << i << " using 0vec..." << endl;
+        return zeroCatEmb;
+      }
+      else {
+        return it->second;
+      }
     }
-    unsigned int getPredictorIndex( const string& s ) const {                  // const version with closed predictor domain
-      const auto& it = msi.find( s );  return( ( it != msi.end() ) ? it->second : 0 );
-    }
-
-    unsigned int getPredictorIndex( K kA, K kB ) {
-      const auto& it = mkki.find( pair<K,K>(kA,kB) );  if( it != mkki.end() ) return( it->second );
-      mkki[ pair<K,K>(kA,kB) ] = iNextPredictor;  mikk[ iNextPredictor ] = pair<K,K>(kA,kB);  return( iNextPredictor++ );
-    }
-    unsigned int getPredictorIndex( K kA, K kB ) const {                       // const version with closed predictor domain
-      const auto& it = mkki.find( pair<K,K>(kA,kB) );  return( ( it != mkki.end() ) ? it->second : 0 );
-    }
-
-    unsigned int getPredictorIndex( CVar cA, CVar cB ) {
-      const auto& it = mcci.find( pair<CVar,CVar>(cA,cB) );  if( it != mcci.end() ) return( it->second );
-      mcci[ pair<CVar,CVar>(cA,cB) ] = iNextPredictor;  micc[ iNextPredictor ] = pair<CVar,CVar>(cA,cB);  return( iNextPredictor++ );
-    }
-    unsigned int getPredictorIndex( CVar cA, CVar cB ) const {                 // const version with closed predictor domain
-      const auto& it = mcci.find( pair<CVar,CVar>(cA,cB) );  return( ( it != mcci.end() ) ? it->second : 0 );
+  
+    const KDenseVec getKVecEmbed( HVec hv ) const {
+      KDenseVec KVecEmbed = KDenseVec(arma::zeros(SEM_SIZE));
+      for ( auto& kV : hv.at(0) ) {
+        if ( kV == K::kTop) {
+          KVecEmbed += KDenseVec(arma::ones(SEM_SIZE));
+          continue;
+        }
+        auto it = mkdv.find( kV );
+        if ( it == mkdv.end() ) {
+          continue;
+        } else {
+          KVecEmbed += it->second;
+        }
+      }
+      return KVecEmbed;
     }
 
     arma::vec calcLogResponses( const NPredictorVec& npv ) const {
-      arma::vec nlogresponses = arma::ones( 2 );
-//      nlogresponses += npv.getAntDist() * matN.col(getPredictorIndex("ntdist"));
-//      for ( auto& npredr : npv.getList() ) {
-//        if ( npredr < matN.n_cols ) {
-//          nlogresponses += matN.col( npredr );
-//        }
-//      }
-      return nlogresponses;
-    }
+      //cerr << "entering calcLogResponses..." << endl;
+      arma::vec nlogresponses = arma::zeros( NPREDDIM ); 
+      
+      //cerr << "getting cat indices, hvecs, ad-hoc feat values..." << endl;
+      CVar catB = npv.getBaseC();
+      CVar catA = npv.getAnteC();
+      const HVec& hvB = npv.getBaseSem();
+      const HVec& hvA = npv.getAnteSem();
+      int antdist = npv.getAntDist();
+      int antdistsq = npv.getAntDistSq();
+      bool corefon = npv.getCorefOn();
 
-    friend ostream& operator<<( ostream& os, const pair< const NModel&, const NPredictorVec& >& mv ) {
-      os << "antdist=" << mv.second.getAntDist();
-      for( const auto& i : mv.second.getList() ) {
-        // if( &i != &mv.second.getList().front() )
-        os << ",";
-        const auto& itK = mv.first.mikk.find(i);
-       	if( itK != mv.first.mikk.end() ) { os << itK->second.first << "&" << itK->second.second << "=1"; continue; }
-        const auto& itC = mv.first.micc.find(i);
-        if( itC != mv.first.micc.end() ) { os << "t" << itC->second.first << "&t" << itC->second.second << "=1"; continue; }
-        const auto& itS = mv.first.mis.find(i);
-        if( itS != mv.first.mis.end()  ) { os << "a" << itS->second << "=1"; }
-      }
-      return os;
-    }
+      //cerr << "getting cat embeds..." << endl;
+      const CVec& catBEmb = getCatEmbed(catB);
+      const CVec& catAEmb = getCatEmbed(catA);
+      const KDenseVec& hvBEmb = getKVecEmbed(hvB);
+      const KDenseVec& hvAEmb = getKVecEmbed(hvA);
 
-    unsigned int getNumPredictors( ) { return iNextPredictor; }
-    unsigned int getNumResponses(  ) { return iNextResponse;  }
+      //populate predictor vec by catting vecs or else filling in nlogresponses' values
+      //cerr << "populating predictor vec with feats..." << endl;
+      for(unsigned int i = 0; i < catBEmb.n_elem; i++){ nlogresponses(i) = catBEmb(i); }
+      for(unsigned int i = 0; i < catAEmb.n_elem; i++){ nlogresponses(catBEmb.n_elem+i) = catAEmb(i); }
+      //cerr << "inserting hvec feats into predictor vec ..." << endl;
+      for(unsigned int i = 0; i < hvBEmb.n_elem; i++){ nlogresponses(catBEmb.n_elem+catAEmb.n_elem+i) = hvBEmb(i); }
+      for(unsigned int i = 0; i < hvAEmb.n_elem; i++){ nlogresponses(catBEmb.n_elem+catAEmb.n_elem+hvBEmb.n_elem+i) = hvAEmb(i); }
+      int denseendind = catBEmb.n_elem+catAEmb.n_elem+hvBEmb.n_elem+hvAEmb.n_elem; 
+      //cerr << "inserting ad-hoc feats into predictor vec ..." << endl;
+      nlogresponses(denseendind+0) = antdist;
+      nlogresponses(denseendind+1) = antdistsq;
+      nlogresponses(denseendind+2) = corefon;
+      ////later potentially add gender animacy etc features, if continue to have inconsistency issues with number, gender, etc.
+
+      //cerr << "feature multiplication by weights..." << endl;
+      //push through weight matrix, norm and return score
+      arma::vec nlogscores = nwsm * relu(nwm*nlogresponses);
+      arma::vec nscores = arma::exp(nlogscores);
+      double nnorm = arma::accu(nscores);
+
+      return nscores/nnorm;
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -225,7 +252,7 @@ class FModel {
   typedef DelimitedTrip<psX,F,psAmpersand,Delimited<EVar>,psAmpersand,Delimited<K>,psX> FEK;
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> CVec;
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> KDenseVec;
-
+  map<KVec,KDenseVec> mkdv;                  // map between KVec and embeds
   private:
 
     map<CVar,CVec> mcv;                        // map between syntactic category and embeds
