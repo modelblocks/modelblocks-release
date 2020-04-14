@@ -80,10 +80,6 @@ def discgraphs_to_cues(graph_file):
             if cues[1] not in ["0", "1", "2", "3", "c", "e", "h", "r"]:
                 continue
 
-            if cues[1] in ["c", "e", "h", "r"]:
-                inh_chains.append([cues[0], cues[2]])
-                continue
-
             # append sentence ID
             sentence_num = ''.join(filter(lambda i: i.isdigit(), cues[0]))[:-2]
             cues.append(str(discourse_num).zfill(5)+str(sentence_num).zfill(3))
@@ -92,6 +88,10 @@ def discgraphs_to_cues(graph_file):
             # for i in [0, 2]:
             #     if re.match("[0-9]", cues[i]):
             #         cues[i] = str(discourse_num).zfill(5)+str(sentence_num).zfill(3) + cues[i]
+
+            if cues[1] in ["c", "e", "h", "r"]:
+                inh_chains.append([cues[0], cues[2]])
+                continue
 
             sentence_cues.append(cues)
 
@@ -274,6 +274,12 @@ def group_similarity(model, entity_dict):
         embedding = model.target_emb
 
     currency = ["N-aD:dollar", "N-aD:euro", "N-aD:pound", "N-aD:lira", "N-aD:franc", "N-aD:yen"]
+#    # caspu (gcg16) style
+#    time = ["N-aD:day", "N-aD:month", "N-aD:year", "U:january", "U:july", "U:december"]
+#    business = ["U:co.", "U:corp.", "U:inc.", "U:l.p.", "U:ltd.", "N-aD:business"]
+#    jobs = ["N-aD:president", "N-aD:officer", "U:ceo", "N-aD:director", "N-aD:minister", "N-aD:chairman"]
+#    countries = ["U:u.s.", "U:china", "U:japan", "U:germany", "U:india", "U:u.k."]
+    # casp (gcg15) style
     time = ["N-aD:day", "N-aD:month", "N-aD:year", "N-aD:january", "N-aD:july", "N-aD:december"]
     business = ["N-aD:co.", "N-aD:corp.", "N-aD:inc.", "N-aD:l.p.", "N-aD:ltd.", "N-aD:business"]
     jobs = ["N-aD:president", "N-aD:officer", "N-aD:ceo", "N-aD:director", "N-aD:minister", "N-aD:chairman"]
