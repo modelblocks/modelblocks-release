@@ -153,6 +153,7 @@ pair<K,CVar> getPred ( const L& lP, const L& lW ) {
   int iSplit = sPred.find( ":", 1 );
   sCat  = sPred.substr( 0, iSplit );
   sLemma = sPred.substr( iSplit+1 );
+  if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end()) { cerr << "couldn't find " << sLemma << " in lemmacounts - unking." << endl; }
   if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end() || mldLemmaCounts[sLemma]<MINCOUNTS ) sLemma = "!unk!";
   if ( isdigit(lW[0]) )                                                                        sLemma = "!num!";
 

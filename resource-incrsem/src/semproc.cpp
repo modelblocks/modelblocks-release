@@ -377,9 +377,12 @@ int main ( int nArgs, char* argv[] ) {
 
             //numerator loop over candidate antecedents. specific choice.
             for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers. 
+
+              if (NO_ENTITY_BLOCKING == false) {
               //block indices as read from previous storestate's excludedIndices
-              if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
-                continue;
+                if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
+                  continue;
+                }
               }
               
               const HVec& hvAnt = pbeAnt->getHidd().getPrtrm().getHVec();

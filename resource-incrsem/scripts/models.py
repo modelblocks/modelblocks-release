@@ -73,6 +73,13 @@ class BaseRGCN(nn.Module):
             layer(g)
         return g.ndata.pop('h')
 
+    def forward_first(self, g):
+        if self.features is not None:
+            g.ndata['id'] = self.features
+        for layer in self.layers[:-1]:
+            layer(g)
+        return g.ndata.pop('h')
+
 
 class RGCNLayer(nn.Module):
     def __init__(self, in_feat, out_feat, num_rels, activation=None, self_loop=False, dropout=0.0):
@@ -151,7 +158,7 @@ class RGCNBlockLayer(RGCNLayer):
         g.update_all(self.msg_func, fn.sum(msg='msg', out='h'), self.apply_func)
 
     def apply_func(self, nodes):
-        return {'h': nodes.data['h']}
+        return {'h': nodes.data['h'] * nodes.data['norm']}
 
 
 #######################################################################

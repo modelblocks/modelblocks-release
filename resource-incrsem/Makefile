@@ -201,6 +201,7 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 	#cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/wsj_cue2vec_reduced_sents_vectorrel_bceloss_20dim_2samples_300epochs_nodes_emat_omodel.txt  >  $@
 	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/corontowsj_pruned_20dim_2samples_3000epochs0.01lr_nodes_emat_omodel.txt >  $@
 	#cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/wsj_discgraphs_20dim_3samples_30epochs0.001lr_nodes_emat_omodel.txt  >  $@
+	#cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/emat_omodel_1unkedcasp_noq_h1nonpred_128_tiednorm_500epochs.txt  >  $@
 
 .PRECIOUS: %sm_corefsemprocdecpars
 %sm_corefsemprocdecpars:     $$(basename %).linetrees  \
@@ -384,43 +385,55 @@ endef
 # 	cp $^ $@
 
 ## Induce predicate vectors and cued association transition model (% contains gcn ini filename)...
+# wsj requires artdelim for !ARTICLE delimiters
 .PRECIOUS: %_emat_omodel
 %_emat_omodel : $$(basename %).discgraphs  \
                 $(INCRSEM-SCRIPTS)/discgraphs2omodel.py  \
                 scripts/$$(subst .,,$$(suffix $$*)).ini
-	python3 $(word 2,$^) $< $(word 3,$^)  >  $@
+	python3 -u $(word 2,$^) $< $(word 3,$^)  >  $@  2>  $@.log
 
 ## Create training example file from training corpus (% contains gcn ini filename and decpar flags)...
 %_dspdecpars : $$(basename %).linetrees  \
                $(BIN)/linetrees2densemprocdecpars  \
+			         $$(basename %).lemmacounts  \
                $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
-	cat $<  |  $(word 2,$^) $(wordlist 2,99,$(subst _, ,$(suffix $*))) $(word 3,$^)  >  $@
+	cat $<  |  $(word 2,$^) $(wordlist 2,99,$(subst _, ,$(suffix $*))) $(word 3,$^) $(word 4,$^)  >  $@
 
 ## Create component model file from training example file (% contains gcn ini filename and decpar flags and dsp ini filename)...
-%_ndspmodel : 
-	echo ''  >  $@
+.PRECIOUS: %_ndspmodel
+%_ndspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
+							$(INCRSEM-SCRIPTS)/dspdecpars2nmodel.py \
+							scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))n.ini \
+              $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
+	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 -u $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
+.PRECIOUS: %_fdspmodel
 %_fdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
-              $(INCRSEM-SCRIPTS)/train_f_models_gpu.py  \
+              $(INCRSEM-SCRIPTS)/dspdecpars2fmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini  \
               $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
-	cat $<  |  grep '^F'  |  python $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@
+	cat $<  |  grep '^F'  |  sed 's/^F//'  |  python3 -u $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
+.PRECIOUS: %_pdspmodel
 %_pdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
-	cat $<  |  grep '^P'  |  python $(word 2,$^)  >  $@
+	cat $<  |  grep '^P'  |  python3 $(word 2,$^)  >  $@
+.PRECIOUS:  %_wdspmodel
 %_wdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
-	cat $<  |  grep '^W'  |  python $(word 2,$^)  >  $@
+	cat $<  |  grep '^W'  |  python3 $(word 2,$^)  >  $@
+.PRECIOUS: %_jdspmodel
 %_jdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
-              $(INCRSEM-SCRIPTS)/train_j_models_gpu.py  \
+              $(INCRSEM-SCRIPTS)/dspdecpars2jmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini  \
               $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
-	cat $<  |  grep '^J'  |  python $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@
+	cat $<  |  grep '^J'  |  sed 's/^J//'  |  python3 -u $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
+.PRECIOUS: %_adspmodel
 %_adspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
-	cat $<  |  grep '^A'  |  python $(word 2,$^)  >  $@
+	cat $<  |  grep '^A'  |  python3 $(word 2,$^)  >  $@
+.PRECIOUS: %_bdspmodel
 %_bdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
-	cat $<  |  grep '^B'  |  python $(word 2,$^)  >  $@
+	cat $<  |  grep '^B'  |  python3 $(word 2,$^)  >  $@
 
 
 ## Create dsp model out of component models...

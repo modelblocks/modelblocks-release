@@ -62,9 +62,9 @@ class NPredictorVec {
     int   getAntDistSq() const { return mdist * mdist; }
     const HVec& getBaseSem()   const { return basesem; }
     const HVec& getAnteSem()   const { return antecedentsem; }
-    CVar  getBaseC()           { return basec; }
-    CVar  getAnteC()           { return antecedentc; }
-    bool  getCorefOn()         { return corefON; }
+    CVar  getBaseC()     const { return basec; }
+    CVar  getAnteC()     const { return antecedentc; }
+    bool  getCorefOn()   const { return corefON; }
 
     friend ostream& operator<< ( ostream& os, const NPredictorVec& mv ) {
       os << " " << mv.getBaseC() << " " << mv.getAnteC() << " " << mv.getBaseSem() << " " << mv.getAnteSem() << " " << mv.getAntDist() << " " << mv.getAntDistSq() << " " << mv.getCorefOn();
@@ -75,41 +75,53 @@ class NPredictorVec {
 ////////////////////////////////////////////////////////////////////////////////
 
 class NModel {
-
   //typedef DelimitedCol<psLBrack, double, psComma, CVECDIM, psRBrack> CVec;
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> CVec;
 
   private:
-
-    //DelimitedMat<psX, double, psComma, NPREDDIM, NPREDDIM, psX> nw;                              // n model weights. square for now, doesn't have to be
-    DelimitedMat<psX, double, psComma, psX> nw;                              // n model weights. square for now, doesn't have to be
-    DelimitedVector<psX, double, psComma, psX> nws; // n model weights (second layer), vector for reading in, to be unsqueezed before use
-
+    mat nwm;
+    mat nwsm;
+    DelimitedVector<psX, double, psComma, psX> nwb; // n model weights (first layer), biases
+    DelimitedVector<psX, double, psComma, psX> nwsb; // n model weights (second layer), biases
     map<CVar,CVec> mcv; //map between cat and 10d embeddings
-
     unsigned int iNextPredictor = 0;             // predictor and response next-pointers
-
-    //map<unsigned int,string>    mis;
-    //map<string,unsigned int>    msi;
-
+    CVec zeroCatEmb;
 
   public:
+    NModel( ) : zeroCatEmb(SYN_SIZE) { }
+    NModel( istream& is ) : zeroCatEmb(SYN_SIZE) {
+      //DelimitedMat<psX, double, psComma, NPREDDIM, NPREDDIM, psX> nw;                              // n model weights. square for now, doesn't have to be
+      DelimitedVector<psX, double, psComma, psX> nw;                              // n model weights. square for now, doesn't have to be
+      DelimitedVector<psX, double, psComma, psX> nws; // n model weights (second layer), vector for reading in, to be unsqueezed before use
 
-    NModel( ) : nw(NPREDDIM,NPREDDIM) { }
-    NModel( istream& is ) : nw(NPREDDIM,NPREDDIM) {
       //rewrite how to read in N model learned weights, crib off of J model
-      list< trip< unsigned int, unsigned int, double > > l;    // store elements on list until we know dimensions of matrix
       while( is.peek()=='N' ) {
         Delimited<char> c;
         is >> "N " >> c >> " ";
         if (c == 'F') is >> nw >> "\n";
+        if (c == 'f') is >> nwb >> "\n";
         if (c == 'S') is >> nws >> "\n";
+        if (c == 's') is >> nwsb >> "\n";
       }
       while ( is.peek()=='C' ) {
         Delimited<CVar> c;
         is >> "C " >> c >> " ";
         is >> mcv.try_emplace(c,SYN_SIZE).first->second >> "\n"; //mcv[c]
       }
+
+      //save to private members
+      //cerr << "nw size: " << nw.size() << endl;
+      nwm = mat(nw);
+      //cerr << "nwm size: " << nwm.size() << endl;
+      nwm.reshape(nwm.size()/NPREDDIM, NPREDDIM);
+      //cerr << "nwm reshaped size: " << nwm.size() << endl;
+      //cerr << "nws size: " << nws.size() << endl;
+      nwsm = mat(nws);
+      //cerr << "nwsm size: " << nwsm.size() << endl;
+      nwsm.reshape(nws.size()/NPREDDIM, NPREDDIM); //unsqueeze vector to matrix
+      //cerr << "nwsm reshaped size: " << nwsm.size() << endl;
+      //cerr << "nwb: " << nwb.size() << endl;
+      //cerr << "nwsb: " << nwsb.size() << endl;
     }
 
       //if( l.size()==0 ) cerr << "ERROR: No N items found." << endl;
@@ -141,14 +153,24 @@ class NModel {
    // }
 
     const CVec& getCatEmbed( CVar i ) const {
+      //cerr << "attempting to find cat with index i: " << i << endl;
+      //cerr << "mcv size: " << mcv.size() << endl;
       auto it = mcv.find( i );
-      assert( it != mcv.end() );
-      return it->second;
+      //assert( it != mcv.end() );
+      if (it == mcv.end()) {
+        //cerr << "WARNING: no emb for unkcat " << i << " using 0vec..." << endl;
+        return zeroCatEmb;
+      }
+      else {
+        return it->second;
+      }
     }
 
     arma::vec calcLogResponses( const NPredictorVec& npv ) const {
+      //cerr << "entering calcLogResponses..." << endl;
       arma::vec nlogresponses = arma::zeros( NPREDDIM ); 
       
+      //cerr << "getting cat indices, hvecs, ad-hoc feat values..." << endl;
       CVar catB = npv.getBaseC();
       CVar catA = npv.getAnteC();
       const HVec& hvB = npv.getBaseSem();
@@ -157,24 +179,27 @@ class NModel {
       int antdistsq = npv.getAntDistSq();
       bool corefon = npv.getCorefOn();
 
+      //cerr << "getting cat embeds..." << endl;
       const CVec& catBEmb = getCatEmbed(catB);
       const CVec& catAEmb = getCatEmbed(catA);
 
       //populate predictor vec by catting vecs or else filling in nlogresponses' values
+      //cerr << "populating predictor vec with feats..." << endl;
       for(unsigned int i = 0; i < catBEmb.n_elem; i++){ nlogresponses(i) = catBEmb(i); }
       for(unsigned int i = 0; i < catAEmb.n_elem; i++){ nlogresponses(catBEmb.n_elem+i) = catAEmb(i); }
+      //cerr << "inserting hvec feats into predictor vec ..." << endl;
       for(unsigned int i = 0; i < hvB.at(0).n_elem; i++){ nlogresponses(catBEmb.n_elem+catAEmb.n_elem+i) = hvB.at(0)(i); }
       for(unsigned int i = 0; i < hvA.at(0).n_elem; i++){ nlogresponses(catBEmb.n_elem+catAEmb.n_elem+hvB.at(0).n_elem+i) = hvA.at(0)(i); }
-      int denseendind = catBEmb.n_elem+catAEmb.n_elem+hvB.at(0).n_elem+hvA.at(0).n_elem+1; 
-      nlogresponses(denseendind+1) = antdist;
-      nlogresponses(denseendind+2) = antdistsq;
-      nlogresponses(denseendind+3) = corefon;
+      int denseendind = catBEmb.n_elem+catAEmb.n_elem+hvB.at(0).n_elem+hvA.at(0).n_elem; 
+      //cerr << "inserting ad-hoc feats into predictor vec ..." << endl;
+      nlogresponses(denseendind+0) = antdist;
+      nlogresponses(denseendind+1) = antdistsq;
+      nlogresponses(denseendind+2) = corefon;
       ////TODO later potentially add gender animacy etc features, if continue to have inconsistency issues with number, gender, etc.
 
+      //cerr << "feature multiplication by weights..." << endl;
       //push through weight matrix, norm and return score
-      mat nwsm(nws);
-      nwsm.reshape(nws.size()/NPREDDIM, NPREDDIM); //unsqueeze vector to matrix
-      arma::vec nlogscores = nwsm * relu(Mat<double>(nw)*nlogresponses);
+      arma::vec nlogscores = nwsm * relu(nwm*nlogresponses);
       arma::vec nscores = arma::exp(nlogscores);
       double nnorm = arma::accu(nscores);
 
