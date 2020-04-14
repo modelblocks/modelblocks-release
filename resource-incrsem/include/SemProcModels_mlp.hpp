@@ -21,6 +21,7 @@
 
 const uint SEM_SIZE = 20;
 const uint SYN_SIZE = 10;
+const uint NPREDDIM = 2*SEM_SIZE+2*SYN_SIZE+3;
 
 arma::mat relu( const arma::mat& km ) {
   arma::mat A(km.n_rows, 1);
@@ -252,7 +253,7 @@ class FModel {
   typedef DelimitedTrip<psX,F,psAmpersand,Delimited<EVar>,psAmpersand,Delimited<K>,psX> FEK;
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> CVec;
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> KDenseVec;
-  map<KVec,KDenseVec> mkdv;                  // map between KVec and embeds
+
   private:
 
     map<CVar,CVec> mcv;                        // map between syntactic category and embeds

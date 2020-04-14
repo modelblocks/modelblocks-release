@@ -392,7 +392,7 @@ int main ( int nArgs, char* argv[] ) {
               //Calculate antecedent N model predictors 
               bool corefON = (tAnt==int(t)) ? 0 : 1;
               NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1, ABLATE_UNARY );
-              if (VERBOSE>1) { cout << "    " << pair<const NModel&, const NPredictorVec&>(modN,npv) << endl; } //npv.printOut(cout); }
+              //if (VERBOSE>1) { cout << "    " << pair<const NModel&, const NPredictorVec&>(modN,npv) << endl; } //npv.printOut(cout); }
               arma::vec nlogresponses = modN.calcLogResponses( npv );
 
               double numerator = exp( nlogresponses(1) - nlogresponses(0) );
