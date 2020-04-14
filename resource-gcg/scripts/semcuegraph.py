@@ -394,6 +394,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.updateBin( s, t.c, t.ch[0].c, t.ch[1].c, sentnumprefix+('0' if i<10 else '')+str(i) )
       i = G.convert( t.ch[1], sentnumprefix, 1, i )
 
+    ## unsupported n-ary branch...
+    else:
+      sys.stderr.write( 'ERROR: No analysis for super-binary branch: ' + str(t) + '\n' )
+
     return i
 
 
@@ -447,6 +451,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif xrule == 'NORD'  :  xrule = '%|Qr0=%DecOne^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r^Rrh=SH'
           elif xrule == 'NORDSUP' :  xrule = '%|Qr0=%DecOne^Qr1=2r^Qr2=2^ro=2r^31=2^3r1h=SH^Pr0=3r0^Pr1=r^Rr0=A:gt^Rr1=3r2^Rr2=Pr2'
           elif xrule == 'NSUP'  :  xrule = '%|Qr0=D:moreQ^Er0=%ness^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2'
+          elif xrule == 'NSUP3' :  xrule = '%|Qr0=D:moreQ^Er0=3r0^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2'
           elif xrule == 'NCOMP' :  xrule = '%|Er0=%^Er1=r^Er2=2^2w=^t=s' #^Q0=D:someDummyQ^Q1=31r^Q2=31'
           elif xrule == 'NOUN'  :  xrule = '%|Er0=%^Er1=r' + ''.join( [ '^Er' +str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
           elif xrule == 'NRELEXI'  :  xrule = '%|Qr0=D:someQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er' +str(i+1)+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
