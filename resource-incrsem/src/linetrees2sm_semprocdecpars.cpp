@@ -299,7 +299,14 @@ void calcContext ( Tree<L>& tr,
 
           bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
           NPredictorVec npv( modN, candidate.first(), corefON, tDisc - i, q, ABLATE_UNARY ); 
+          //cout << "N " << pair<const NModel&,const NPredictorVec&>(modN,npv) << " : " << nLabel << endl; //i-1 because that's candidate index 
+#ifdef DENSE_VECTORS
+          cout << "N " << npv << " : " << nLabel << endl;
+#elif defined MLP
+          cout << "N " << npv << " : " << nLabel << endl;
+#else
           cout << "N " << pair<const NModel&,const NPredictorVec&>(modN,npv) << " : " << nLabel << endl; //i-1 because that's candidate index 
+#endif
         } //single candidate output
       } //all previous antecedent candidates output
 

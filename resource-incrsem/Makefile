@@ -425,8 +425,10 @@ endef
 	cat $<  |  grep '^B'  |  python3 $(word 2,$^)  >  $@
 
 ## Create component model file from training example file (% contains decpar flags and mlp ini filename)...
-%_nmlpmodel :
-	echo ''  >  $@
+%_nmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/mlpdecpars2nmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))n.ini
+	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
 %_fmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/mlpdecpars2fmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini
@@ -455,8 +457,7 @@ endef
 
 ## Create mlp model out of component models...
 .PRECIOUS: %_mlpsemprocmodel
-#%_mlpsemprocmodel : %_nmlpmodel  %_fmlpmodel  %_pmlpmodel  %_wmlpmodel  %_jmlpmodel  %_amlpmodel  %_bmlpmodel
-%_mlpsemprocmodel : %_fmlpmodel  %_pmlpmodel  %_wmlpmodel  %_jmlpmodel  %_amlpmodel  %_bmlpmodel
+%_mlpsemprocmodel : %_nmlpmodel  %_fmlpmodel  %_pmlpmodel  %_wmlpmodel  %_jmlpmodel  %_amlpmodel  %_bmlpmodel
 	cat $^  >  $@
 
 ## Parse with: wsj02.wsj02to21-bestgcn_bestdsp_densemproc-parsed.tokdecs
