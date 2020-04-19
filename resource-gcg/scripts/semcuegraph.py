@@ -365,7 +365,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 #      G.equate( G.result('S',d), 'S', G.result('A',e) )
       G.equate( G.result('r',G.result('S',d)), 'S', G.result('A',e) )  # grab restrictor, tho 'which' gets put on restrictor of nolo
       G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
-    elif sD==',' and sE.endswith('-pPc') or sD==';' and sE.endswith('-pPs'):
+    elif sD.startswith(',') and sE.endswith('-pPc') or sD==';' and sE.endswith('-pPs'):
       G.equate( G.result('S',c), 'S', e )
     elif sD=='U' and sE=='U':
       G.equate( G.result('S',d), 'S', c )
