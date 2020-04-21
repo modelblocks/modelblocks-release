@@ -30,6 +30,7 @@ for line in sys.stdin:
 
         def hoff( x, ctr ):
 #          return str( (4 if len(x)==5 else 2) + (2 if x[-1]=='r' else 4) + (0 if len(x)==5 else -ctr if x[4] in 'abu' else ctr) )
+          if len(x)<=4: sys.stderr.write( 'ERROR -- illegal node id: ' + x + '\n' )
           return str( (4 if x[4:]=='r' or x[4:]=='s' else 2) + (2 if x[-1]=='r' else 4) + (0 if x[4:]=='r' or x[4:]=='s' else -ctr if x[4] in 'abu' else ctr) )
         def voff( x, ctr ):
 #          return str( 4 if len(x)==5 else (4 - ctr) if x[4] in 'abu' else (4 + ctr) )
