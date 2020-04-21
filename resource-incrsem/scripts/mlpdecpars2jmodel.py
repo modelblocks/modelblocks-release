@@ -153,7 +153,7 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, jdecs_to_ix, hvec_to_ix):
         for hvec in sublist:
             if hvec == "Top":
                 top_count += 1
-            elif hvec == "" or hvec == "Bot":
+            elif hvec == "" or hvec == "Bot" or hvec not in hvec_to_ix:
                 continue
             else:
                 hva_row.append(i)
@@ -167,7 +167,7 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, jdecs_to_ix, hvec_to_ix):
         for hvec in sublist:
             if hvec == "Top":
                 top_count += 1
-            elif hvec == "" or hvec == "Bot":
+            elif hvec == "" or hvec == "Bot" or hvec not in hvec_to_ix:
                 continue
             else:
                 hvf_row.append(i)
@@ -181,7 +181,7 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, jdecs_to_ix, hvec_to_ix):
         for hvec in sublist:
             if hvec == "Top":
                 top_count += 1
-            elif hvec == "" or hvec == "Bot":
+            elif hvec == "" or hvec == "Bot" or hvec not in hvec_to_ix:
                 continue
             else:
                 hvl_row.append(i)
@@ -194,40 +194,51 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, jdecs_to_ix, hvec_to_ix):
 
 
 class JModel(nn.Module):
-    def __init__(self, cat_vocab_size, hvec_vocab_size, syn_size, sem_size, hidden_dim, output_dim):
+    def __init__(self, cat_vocab_size, hvec_vocab_size, syn_size, sem_size, hidden_dim, output_dim, dropout_prob):
         super(JModel, self).__init__()
         self.hvec_vocab_size = hvec_vocab_size
+        self.syn_size = syn_size
         self.sem_size = sem_size
         self.cat_embeds = nn.Embedding(cat_vocab_size, syn_size)
         self.hvec_embeds = nn.Embedding(hvec_vocab_size, sem_size)
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
+        self.dropout_prob = dropout_prob
         self.fc1 = nn.Linear(7 + 2 * syn_size + 3 * sem_size, self.hidden_dim, bias=True)
+        self.dropout = nn.Dropout(self.dropout_prob)
         self.relu = F.relu
         self.fc2 = nn.Linear(self.hidden_dim, self.output_dim, bias=True)
 
     def forward(self, d_onehot, cat_a_ix, hva_mat, hvf_mat, cat_l_ix, hvl_mat, hva_top, hvf_top, hvl_top, use_gpu,
-                ablate_sem):
-        cat_a_embed = self.cat_embeds(cat_a_ix)
-        cat_l_embed = self.cat_embeds(cat_l_ix)
+                ablate_syn, ablate_sem):
         hva_top = torch.FloatTensor(hva_top)
         hvf_top = torch.FloatTensor(hvf_top)
         hvl_top = torch.FloatTensor(hvl_top)
 
+        if ablate_syn:
+            cat_a_embed = torch.zeros([len(cat_a_ix), self.syn_size], dtype=torch.float)
+            cat_l_embed = torch.zeros([len(cat_l_ix), self.syn_size], dtype=torch.float)
+
+        else:
+            cat_a_embed = self.cat_embeds(cat_a_ix)
+            cat_l_embed = self.cat_embeds(cat_l_ix)
+
         if use_gpu >= 0:
-            cat_a_embed = cat_a_embed.to("cuda")
-            cat_l_embed = cat_l_embed.to("cuda")
-            hva_mat = hva_mat.to("cuda")
-            hvf_mat = hvf_mat.to("cuda")
-            hvl_mat = hvl_mat.to("cuda")
             hva_top = hva_top.to("cuda")
             hvf_top = hvf_top.to("cuda")
             hvl_top = hvl_top.to("cuda")
+            cat_a_embed = cat_a_embed.to("cuda")
+            cat_l_embed = cat_l_embed.to("cuda")
 
         if ablate_sem:
             hva_embed = torch.zeros([hva_top.shape[0], self.sem_size], dtype=torch.float) + hva_top
             hvf_embed = torch.zeros([hvf_top.shape[0], self.sem_size], dtype=torch.float) + hvf_top
             hvl_embed = torch.zeros([hvl_top.shape[0], self.sem_size], dtype=torch.float) + hvl_top
+
+            if use_gpu >= 0:
+                hva_embed = hva_embed.to("cuda")
+                hvf_embed = hvf_embed.to("cuda")
+                hvl_embed = hvl_embed.to("cuda")
 
         else:
             hva_mat = hva_mat.tocoo()
@@ -242,25 +253,31 @@ class JModel(nn.Module):
             hvl_mat = torch.sparse.FloatTensor(torch.LongTensor([hvl_mat.row.tolist(), hvl_mat.col.tolist()]),
                                                torch.FloatTensor(hvl_mat.data.astype(np.float32)),
                                                torch.Size(hvl_mat.shape))
+            if use_gpu >= 0:
+                hva_mat = hva_mat.to("cuda")
+                hvf_mat = hvf_mat.to("cuda")
+                hvl_mat = hvl_mat.to("cuda")
+
             hva_embed = torch.sparse.mm(hva_mat, self.hvec_embeds.weight) + hva_top
             hvf_embed = torch.sparse.mm(hvf_mat, self.hvec_embeds.weight) + hvf_top
             hvl_embed = torch.sparse.mm(hvl_mat, self.hvec_embeds.weight) + hvl_top
 
         x = torch.cat((cat_a_embed, hva_embed, hvf_embed, cat_l_embed, hvl_embed, d_onehot), 1)
         x = self.fc1(x)
+        x = self.dropout(x)
         x = self.relu(x)
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
 
 
-def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, num_epochs, batch_size, learning_rate,
-          weight_decay, l2_reg, ablate_sem):
+def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dropout_prob, num_epochs, batch_size,
+          learning_rate, weight_decay, l2_reg, ablate_syn, ablate_sem):
     depth, cat_a_ix, hva_mat, hvf_mat, cat_l_ix, hvl_mat, cat_to_ix, jdecs_ix, jdecs_to_ix, hvec_to_ix, hva_top, hvf_top, hvl_top = prepare_data()
     depth = F.one_hot(torch.LongTensor(depth), 7).float()
     cat_a_ix = torch.LongTensor(cat_a_ix)
     cat_l_ix = torch.LongTensor(cat_l_ix)
     target = torch.LongTensor(jdecs_ix)
-    model = JModel(len(cat_to_ix), len(hvec_to_ix), syn_size, sem_size, hidden_dim, len(jdecs_to_ix))
+    model = JModel(len(cat_to_ix), len(hvec_to_ix), syn_size, sem_size, hidden_dim, len(jdecs_to_ix), dropout_prob)
 
     if use_gpu >= 0:
         depth = depth.to("cuda")
@@ -318,7 +335,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, nu
                 l2_loss += torch.mean(param.pow(2))
 
             output = model(batch_d, batch_a, batch_hva_mat, batch_hvf_mat, batch_l, batch_hvl_mat, batch_hva_top,
-                           batch_hvf_top, batch_hvl_top, use_gpu, ablate_sem)
+                           batch_hvf_top, batch_hvl_top, use_gpu, ablate_syn, ablate_sem)
             _, jdec = torch.max(output.data, 1)
             train_correct = (jdec == batch_target).sum().item()
             total_train_correct += train_correct
@@ -332,7 +349,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, nu
         if use_dev >= 0:
             with torch.no_grad():
                 dev_pred = model(dev_depth, dev_cat_a_ix, dev_hva_mat, dev_hvf_mat, dev_cat_l_ix, dev_hvl_mat,
-                                 dev_hva_top, dev_hvf_top, dev_hvl_top, use_gpu, ablate_sem)
+                                 dev_hva_top, dev_hvf_top, dev_hvl_top, use_gpu, ablate_syn, ablate_sem)
                 _, dev_jdec = torch.max(dev_pred.data, 1)
                 dev_correct = (dev_jdec == dev_target).sum().item()
                 dev_loss = criterion(dev_pred, dev_target)
@@ -356,10 +373,10 @@ def main(config):
     model, cat_to_ix, jdecs_to_ix, hvec_to_ix = train(j_config.getint("Dev"), j_config.get("DevFile"),
                                                       j_config.getint("GPU"), j_config.getint("SynSize"),
                                                       j_config.getint("SemSize"), j_config.getint("HiddenSize"),
-                                                      j_config.getint("NEpochs"), j_config.getint("BatchSize"),
-                                                      j_config.getfloat("LearningRate"),
+                                                      j_config.getfloat("DropoutProb"), j_config.getint("NEpochs"),
+                                                      j_config.getint("BatchSize"), j_config.getfloat("LearningRate"),
                                                       j_config.getfloat("WeightDecay"), j_config.getfloat("L2Reg"),
-                                                      j_config.getboolean("AblateSem"))
+                                                      j_config.getboolean("AblateSyn"), j_config.getboolean("AblateSem"))
 
     if j_config.getint("GPU") >= 0:
         cat_embeds = list(model.parameters())[0].data.cpu().numpy()
@@ -381,8 +398,9 @@ def main(config):
     print("J f " + ",".join(map(str, first_biases.flatten('F').tolist())))
     print("J S " + ",".join(map(str, second_weights.flatten('F').tolist())))
     print("J s " + ",".join(map(str, second_biases.flatten('F').tolist())))
-    for cat, ix in sorted(cat_to_ix.items()):
-        print("C " + str(cat) + " [" + ",".join(map(str, cat_embeds[ix])) + "]")
+    if not j_config.getboolean("AblateSyn"):
+        for cat, ix in sorted(cat_to_ix.items()):
+            print("C " + str(cat) + " [" + ",".join(map(str, cat_embeds[ix])) + "]")
     if not j_config.getboolean("AblateSem"):
         for hvec, ix in sorted(hvec_to_ix.items()):
             print("K " + str(hvec) + " [" + ",".join(map(str, hvec_embeds[ix])) + "]")
