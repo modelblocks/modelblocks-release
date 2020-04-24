@@ -288,10 +288,9 @@ class FModel {
       return it->second;
     }
 
-    const CVec& getCatEmbed( CVar i ) const {
+    const CVec getCatEmbed( CVar i ) const {
       auto it = mcv.find( i );
-      assert( it != mcv.end() );
-      return it->second;
+      return ( ( it != mcv.end() ) ? it->second : CVec(arma::zeros(SYN_SIZE)) );
     }
 
     const KDenseVec getKVecEmbed( HVec hv ) const {
@@ -491,10 +490,9 @@ class JModel {
       return it->second;
     }
 
-    const CVec& getCatEmbed( CVar i ) const {
+    const CVec getCatEmbed( CVar i ) const {
       auto it = mcv.find( i );
-      assert( it != mcv.end() );
-      return it->second;
+      return ( ( it != mcv.end() ) ? it->second : CVec(arma::zeros(SYN_SIZE)) );
     }
 
     const KDenseVec getKVecEmbed( HVec hv ) const {
