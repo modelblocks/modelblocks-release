@@ -97,6 +97,9 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 
     ## attach rel pro / interrog pro antecedent...
     for i,psi in enumerate( gcgtree.deps(sD) ):
+      if psi[1] in 'ir':
+        G.equate( G.result('S',G.findNolo(psi,id)), str(G.getArity(sD)+1)+'\'',G.result('S',id) )
+      '''
       if psi[1] in 'ir' and sD[0] in 'AR':
 ## should be on restr:        G.equate( G.result('S',G.findNolo(psi,id)), 'e', G.result('2\'',G.result('S',id)) )                ## adverbial relpro
 ## no 'e':         G.equate( G.result('r',G.result('S',G.findNolo(psi,id))), 'e', G.result('2\'',G.result('S',id)) )                ## adverbial relpro
@@ -111,7 +114,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 #### don't directly identify:       G.equate( G.result('r',G.result('S',G.findNolo(psi,id))), 'S', id )    ## restrictive nominal relpro
 #      if VERBOSE: print( 'relpro')
 #      if VERBOSE: G.dump()
-
+      '''
   def updateUna( G, s, sC, sD, id ):
 
     if VERBOSE:
@@ -362,7 +365,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 #      G.equate( G.result('S',d), 'S', G.result('A',e) )
       G.equate( G.result('r',G.result('S',d)), 'S', G.result('A',e) )  # grab restrictor, tho 'which' gets put on restrictor of nolo
       G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
-    elif sD==',' and sE.endswith('-pPc') or sD==';' and sE.endswith('-pPs'):
+    elif sD.startswith(',') and sE.endswith('-pPc') or sD.startswith(';') and sE.endswith('-pPs'):
+      G.equate( G.result('S',c), 'S', e )
+    elif sD=='U' and sE=='U':
+      G.equate( G.result('S',d), 'S', c )
       G.equate( G.result('S',c), 'S', e )
     else:
       if sC != 'FAIL':   #sC != sD != sE != 'FAIL':
@@ -387,6 +393,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       i = G.convert( t.ch[0], sentnumprefix, 0, i )
       G.updateBin( s, t.c, t.ch[0].c, t.ch[1].c, sentnumprefix+('0' if i<10 else '')+str(i) )
       i = G.convert( t.ch[1], sentnumprefix, 1, i )
+
+    ## unsupported n-ary branch...
+    else:
+      sys.stderr.write( 'ERROR: No analysis for super-binary branch: ' + str(t) + '\n' )
 
     return i
 
@@ -438,8 +448,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif xrule == 'NOTHAVE' : xrule = '%|r0=D:noneQ^r1=Er^r2=E^Er0=B-aN-bN:have^Er1=1^Er2=2'
           elif xrule == 'NGEN'  :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'NEXI'  :  xrule = '%|Qr0=D:someQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
-          elif xrule == 'NORD'  :  xrule = '%|Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r^Rrh=SH'
-          elif xrule == 'NORDSUP' :  xrule = '%|Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^31=2^3r1h=SH^Pr0=3r0^Pr1=r^Rr0=A:gt^Rr1=3r2^Rr2=Pr2'
+          elif xrule == 'NORD'  :  xrule = '%|Qr0=%DecOne^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r^Rrh=SH'
+          elif xrule == 'NORDSUP' :  xrule = '%|Qr0=%DecOne^Qr1=2r^Qr2=2^ro=2r^31=2^3r1h=SH^Pr0=3r0^Pr1=r^Rr0=A:gt^Rr1=3r2^Rr2=Pr2'
+          elif xrule == 'NSUP'  :  xrule = '%|Qr0=D:moreQ^Er0=%ness^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2'
+          elif xrule == 'NSUP3' :  xrule = '%|Qr0=D:moreQ^Er0=3r0^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2'
           elif xrule == 'NCOMP' :  xrule = '%|Er0=%^Er1=r^Er2=2^2w=^t=s' #^Q0=D:someDummyQ^Q1=31r^Q2=31'
           elif xrule == 'NOUN'  :  xrule = '%|Er0=%^Er1=r' + ''.join( [ '^Er' +str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
           elif xrule == 'NRELEXI'  :  xrule = '%|Qr0=D:someQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er' +str(i+1)+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
@@ -470,17 +482,31 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 
         ## apply default lex sems...
         if EQN_DEFAULTS and ':' in eqns and '=' not in eqns:
-          if   eqns.startswith('N-b{N-aD}:'):    eqns = 'r0='  + eqns + 'Q^r1=1r^r2=1'
-          elif eqns.startswith('N-aD-b{N-aD}:'): eqns = 'r0='  + eqns + 'Q^r1=2r^r2=2'
-          elif eqns.startswith('N-bN:'):         eqns = 'r0='  + eqns + 'Q^r1=2r^r2=2'
-          elif eqns.startswith('N-bO:'):         eqns = 'r0='  + eqns + 'Q^r1=2r^r2=2'
+          ## quantifier semantics...
+          if   eqns.startswith('N-b{N-aD}:'):    eqns = 'r0='  + eqns + '^r1=1r^r2=1'
+          elif eqns.startswith('N-aD-b{N-aD}:'): eqns = 'r0='  + eqns + '^r1=2r^r2=2'
+          elif eqns.startswith('N-bN:'):         eqns = 'r0='  + eqns + '^r1=2r^r2=2'
+          elif eqns.startswith('N-bO:'):         eqns = 'r0='  + eqns + '^r1=2r^r2=2'
+          ## relative/interrogative pronoun semantics...
           elif eqns.startswith('A-aN-iN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
           elif eqns.startswith('A-aN-rN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
+          elif eqns.startswith('R-aN-iN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
+          elif eqns.startswith('R-aN-rN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
+          ## elementary predications...
           elif eqns.startswith('A'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
+          elif eqns.startswith('R'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif eqns.startswith('B'):             eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^rh=SH'
+          ## relative/interrogative pronoun semantics...
           elif eqns.startswith('N-iN'):          eqns = 'Er0=' + eqns + '^Er1=^1='
           elif eqns.startswith('N-rN'):          eqns = 'Er0=' + eqns + '^Er1=^1='   ## NOTE: FIRST SYNARG IS ITSELF -- PROBLEMATIC FOR RELCLAUSE ON DEVERBAL NOUN
+          ## possessive pronouns (not in discgraph spec, but handled if extended morph not used)...
+          elif eqns.startswith('D'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
+          ## relational/nonrelational nouns...
           elif eqns.startswith('N'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
+          ## unanalyzed labels...
+          elif eqns.startswith('U'):             eqns = 'Er0=' + eqns + '^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
+          ## other function words, treating as predicate (not in discgraph spec, but handled if extended morph not used)...
+          else:                                  eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
 #          G.dump()
           if VERBOSE: print( 'Inducing default equation: ' + eqns )
 

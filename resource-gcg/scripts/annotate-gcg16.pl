@@ -61,6 +61,8 @@ while ( <> ) {
   # use CC for CONJP
   s/\(CONJP/\(CC/g;
 #  s/\((NNPS|NNP|NNS|NN)/\(NN/g;
+#  use NN for NML
+  s/\(NML/\(NN/g;
 
 
   $INIT_PUNCT = '-LRB-|-LCB-|``|`|--|-|,|;|\.|!|\?|\.\.\.|\'|\'\'|-RCB-|-RRB-';
@@ -228,8 +230,8 @@ debug("p-rule ", "$_");
         ## 1. UNARY REANNOTATIONS
 
         #### U
-        # re-reannotate failed nodes as 'U'
-        (s/\^([^a-z]*) ([^\*0].*)\^/<U-f\1 \2>/ && ($j=0.9)) ||
+#        # re-reannotate failed nodes as 'U'
+#        (s/\^([^a-z]*) ([^\*0].*)\^/<U-f\1 \2>/ && ($j=0.9)) ||
 
         #### remove empty NP from S turned to [VIBLAR]P
         (s/\^([VIBLAR]-aN(?!-x)[^ ]*.*) <NP[^ ]*-SBJ[^ ]* \[-NONE- \*[^A-Z ]*\]>(.*)\^/<\1\2>/ && ($j=1)) ||
