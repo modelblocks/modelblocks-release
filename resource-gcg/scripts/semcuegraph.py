@@ -373,6 +373,13 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     else:
       if sC != 'FAIL':   #sC != sD != sE != 'FAIL':
         sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + ' at ' + str(id) + '.\n' )
+    if ( '-lE' in sD or '-lE' in sE or
+         '-lZ' in sD or '-lZ' in sE or
+         '-lz' in sD or '-lz' in sE or
+         '-lQ' in sD or '-lQ' in sE or
+         '-lF' in sD or '-lF' in sE or
+         '-lV' in sD or '-lV' in sE ):
+      sys.stderr.write( 'WARNING: Illegal unary operator in binary expansion ' + sC + ' -> ' + sD + ' ' + sE + ' at ' + str(id) + '.\n' )
 
 
   def convert( G, t, sentnumprefix='', s=0, i=0 ):
