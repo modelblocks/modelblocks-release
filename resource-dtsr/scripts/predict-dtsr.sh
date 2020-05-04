@@ -22,5 +22,5 @@ export PYTHONPATH=$PYTHONPATH:dtsr_dir
 
 python3 -m dtsr.bin.predict $config_path -p $pred_partition
 
-cat "$1_outdir/DTSR/mse_losses_$pred_partition.txt"
+cat "$1_outdir/DTSR/losses_mse_$pred_partition.txt"
 
