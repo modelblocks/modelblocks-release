@@ -374,8 +374,14 @@ int main ( int nArgs, char* argv[] ) {
               }
               bool corefON = (tAnt==int(t)) ? 0 : 1;
               NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1, ABLATE_UNARY );
-              arma::vec nlogresponses = modN.calcLogResponses( npv ); //nps.NLogResponses(matN);
-              ndenom += exp( nlogresponses(1) - nlogresponses(0) );
+              arma::vec nresponses = modN.calcResponses( npv ); //nps.NLogResponses(matN);
+
+              //if (VERBOSE > 1) {
+              //  cout << "added 1 hypoth to ndenom with score for 1: " << nlogresponses(1) << " score for 0: " << nlogresponses(0) << endl;
+              //  cout << "    basec: " << npv.getBaseC() << " antec: " << npv.getAnteC() << " basesem: " << npv.getBaseSem() << " antesem: " << npv.getAnteSem() << " antdist: " << npv.getAntDist() << "sqantdist: " << npv.getAntDistSq() << " corefOn: " << npv.getCorefOn() << endl;
+              //}
+              
+              ndenom += nresponses(1) / nresponses(0) ;
             } //closes for tAnt
 
             pbeAnt = &beDummy; //reset pbiAnt pointer after calculating denominator
@@ -393,9 +399,13 @@ int main ( int nArgs, char* argv[] ) {
               bool corefON = (tAnt==int(t)) ? 0 : 1;
               NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1, ABLATE_UNARY );
               //if (VERBOSE>1) { cout << "    " << pair<const NModel&, const NPredictorVec&>(modN,npv) << endl; } //npv.printOut(cout); }
-              arma::vec nlogresponses = modN.calcLogResponses( npv );
-
-              double numerator = exp( nlogresponses(1) - nlogresponses(0) );
+              arma::vec nresponses = modN.calcResponses( npv );
+              if (VERBOSE>1) {
+                cout << "considering basec: " << npv.getBaseC() << " antec: " << npv.getAnteC() << " basesem: " << npv.getBaseSem() << " antesem: " << npv.getAnteSem() << " antdist: " << npv.getAntDist() << " sqantdist: " << npv.getAntDistSq() << " corefOn: " << npv.getCorefOn() << endl;
+                cout << "  with nresponses: " << nresponses << " nresponses(1): " << nresponses(1) << " nresponses(0): " << nresponses(0) << endl;
+                cout << "  nr(1) / nr(0): " << nresponses(1) / nresponses(0) << endl;
+              }
+              double numerator = nresponses(1) / nresponses(0) ;
               double nprob = numerator / ndenom;
 
               if ( VERBOSE>1 ) cout << "    N ... : 1 = " << numerator << "/" << ndenom << "=" << nprob << "  tAnt: " << (t - tAnt) << endl;

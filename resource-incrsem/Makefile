@@ -277,7 +277,7 @@ endef
 	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
 
 ## pull apart predictor/responses for training...
-%.nmlrdecpars:  %densemprocdecpars
+%.ngcndecpars:  %densemprocdecpars
 	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
 #%.fmlrdecpars:  %semprocdecpars
 %.fgcndecpars:  %densemprocdecpars  $(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py #TODO this won't work - remove and confirm filtering is done earlier
@@ -295,7 +295,7 @@ endef
 	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
 
 ## pull apart predictor/responses for training...
-%.nmlrdecpars:  %mlpsemprocdecpars
+%.nmlpdecpars:  %mlpsemprocdecpars
 	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
 %.fmlpdecpars:  %mlpsemprocdecpars
 	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
@@ -425,27 +425,34 @@ endef
 	cat $<  |  grep '^B'  |  python3 $(word 2,$^)  >  $@
 
 ## Create component model file from training example file (% contains decpar flags and mlp ini filename)...
+.PRECIOUS: %_nmlpmodel
 %_nmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/mlpdecpars2nmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))n.ini
 	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+.PRECIOUS: %_fmlpmodel
 %_fmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/mlpdecpars2fmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini
 	cat $<  |  grep '^F'  |  sed 's/^F//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+.PRECIOUS: %_pmlpmodel
 %_pmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^P'  |  python3 $(word 2,$^)  >  $@
+.PRECIOUS: %_wmlpmodel
 %_wmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^W'  |  python3 $(word 2,$^)  >  $@
+.PRECIOUS: %_jmlpmodel
 %_jmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/mlpdecpars2jmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini
 	cat $<  |  grep '^J'  |  sed 's/^J//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+.PRECIOUS: %_amlpmodel
 %_amlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^A'  |  python3 $(word 2,$^)  >  $@
+.PRECIOUS: %_bmlpmodel
 %_bmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^B'  |  python3 $(word 2,$^)  >  $@

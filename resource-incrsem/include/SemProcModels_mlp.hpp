@@ -88,8 +88,12 @@ class NModel {
   private:
     mat nwm;
     mat nwsm;
+    vec nwbv;
+    vec nwsbv;
     DelimitedVector<psX, double, psComma, psX> nwb; // n model weights (first layer), biases
     DelimitedVector<psX, double, psComma, psX> nwsb; // n model weights (second layer), biases
+    DelimitedVector<psX, double, psComma, psX> nw;                              // n model weights. square for now, doesn't have to be
+    DelimitedVector<psX, double, psComma, psX> nws; // n model weights (second layer), vector for reading in, to be unsqueezed before use
     map<CVar,CVec> mcv; //map between cat and 10d embeddings
     CVec zeroCatEmb;
     map<KVec,KDenseVec> mkdv;                  // map between KVec and embeds
@@ -98,8 +102,6 @@ class NModel {
     NModel( ) : zeroCatEmb(SYN_SIZE) { }
     NModel( istream& is ) : zeroCatEmb(SYN_SIZE) {
       //DelimitedMat<psX, double, psComma, NPREDDIM, NPREDDIM, psX> nw;                              // n model weights. square for now, doesn't have to be
-      DelimitedVector<psX, double, psComma, psX> nw;                              // n model weights. square for now, doesn't have to be
-      DelimitedVector<psX, double, psComma, psX> nws; // n model weights (second layer), vector for reading in, to be unsqueezed before use
 
       //rewrite how to read in N model learned weights, crib off of J model
       while( is.peek()=='N' ) {
@@ -120,33 +122,39 @@ class NModel {
         is >> "K " >> k >> " ";
         is >> mkdv.try_emplace(k,SEM_SIZE).first->second >> "\n";
       }
-      //save to private members
-      //cerr << "nw size: " << nw.size() << endl;
-      nwm = mat(nw);
-      //cerr << "nwm size: " << nwm.size() << endl;
-      nwm.reshape(nwm.size()/NPREDDIM, NPREDDIM);
-      //cerr << "nwm reshaped size: " << nwm.size() << endl;
-      //cerr << "nws size: " << nws.size() << endl;
-      nwsm = mat(nws);
-      //cerr << "nwsm size: " << nwsm.size() << endl;
-      nwsm.reshape(nws.size()/NPREDDIM, NPREDDIM); //unsqueeze vector to matrix
-      //cerr << "nwsm reshaped size: " << nwsm.size() << endl;
-      //cerr << "nwb: " << nwb.size() << endl;
-      //cerr << "nwsb: " << nwsb.size() << endl;
+      //Reshape read-in model params to correct dimensions, save to private members
+      //first layer
+      nwm = nw;
+      nwm.reshape(nwm.size()/NPREDDIM, NPREDDIM); //hidden x input. converts input dim to hidden dim
+      cerr << "nwm reshaped n_rows, ncols, size: " << nwm.n_rows << " " << nwm.n_cols << " " << nwm.size() << endl;
+      nwbv = nwb;
+      cerr << "nwbv size: " << nwbv.size() << endl;
+
+      //second layer
+      nwsm = nws;
+      nwsm.reshape(nwsm.size()/(nwm.size()/NPREDDIM), nwm.size()/NPREDDIM); //unsqueeze vector to matrix.  //outputdim, hidden. converts hidden dim to outputdim
+      cerr << "nwsm reshaped n_rows, n_cols, size: " << nwsm.n_rows << " " << nwsm.n_cols << " " << nwsm.size() << endl;
+      nwsbv = nwsb;
+      cerr << "nwsbv size: " << nwsbv.size() << endl;
+      
+      //print out first row
+      cerr << "first nwm matrix col: " << endl;
+      for (uint i = 0; i < nwm.n_rows; i++) { cerr << nwm(i,0) << ","; }
+      cerr << endl;
     }
 
     const CVec& getCatEmbed( CVar i ) const {
       //cerr << "attempting to find cat with index i: " << i << endl;
       //cerr << "mcv size: " << mcv.size() << endl;
       auto it = mcv.find( i );
-      //assert( it != mcv.end() );
-      if (it == mcv.end()) {
+      assert( it != mcv.end() );
+      //if (it == mcv.end()) {
         //cerr << "WARNING: no emb for unkcat " << i << " using 0vec..." << endl;
-        return zeroCatEmb;
-      }
-      else {
-        return it->second;
-      }
+      //  return zeroCatEmb;
+      //}
+      //else {
+      return it->second;
+      //}
     }
   
     const KDenseVec getKVecEmbed( HVec hv ) const {
@@ -166,7 +174,7 @@ class NModel {
       return KVecEmbed;
     }
 
-    arma::vec calcLogResponses( const NPredictorVec& npv ) const {
+    arma::vec calcResponses( const NPredictorVec& npv ) const {
       //cerr << "entering calcLogResponses..." << endl;
       arma::vec nlogresponses = arma::zeros( NPREDDIM ); 
       
@@ -198,10 +206,16 @@ class NModel {
       nlogresponses(denseendind+1) = antdistsq;
       nlogresponses(denseendind+2) = corefon;
       ////later potentially add gender animacy etc features, if continue to have inconsistency issues with number, gender, etc.
-
+      cerr << "catB: " << catB << " catA: " << catA << " hvB: " << hvB << " hvA: " << hvA << " antdist: " << antdist << " sqantdist: " << antdistsq << " corefon: " << corefon << endl;
+      //cerr << "catBEmb: catBEmb << catAEmb << hvBEmb << hvAEmb << endl;
+      //cerr << nlogresponses << endl;
       //cerr << "feature multiplication by weights..." << endl;
       //push through weight matrix, norm and return score
-      arma::vec nlogscores = nwsm * relu(nwm*nlogresponses);
+      //cout << "NPREDDIM: " << NPREDDIM << endl;
+      //cerr << "nlogresponses size: " << nlogresponses.size() << endl;
+      //cerr << "nwm row,cols: " << nwm.n_rows << "," << nwm.n_cols << endl;
+      //cerr << "nwsm row,cols: " << nwsm.n_rows << "," << nwsm.n_cols << endl;
+      arma::vec nlogscores = nwsm * relu(nwm*nlogresponses+nwbv) + nwsbv;
       arma::vec nscores = arma::exp(nlogscores);
       double nnorm = arma::accu(nscores);
 
@@ -377,6 +391,7 @@ class FModel {
       flogresponses(catBEmb.n_elem+hvBEmb.n_elem+hvFEmb.n_elem+d) = 1;
 
 // implementation of MLP
+      //cout << "trying f model matmul..." << endl;
       arma::vec flogscores = fwsm * relu(fwfm*flogresponses + fbfv) + fbsv;
       arma::vec fscores = arma::exp(flogscores);
       double fnorm = arma::accu(fscores);

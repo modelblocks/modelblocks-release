@@ -70,7 +70,7 @@ endif
 
 ################################################################################
 
-%.key.conll: $(CONLL-SCRIPTS)/numberededitabletrees2conllcoref.py %.toktrees
+%.key.conll: $(CONLL-SCRIPTS)/numberededitabletrees2conllcoref.py %.fromlinetrees.numbered.editabletrees
 	python3 $< $(word 2, $^) > $@
 
 %.preds.conll: $(CONLL-SCRIPTS)/tokdecs2conllcoref.py %.tokdecs 

@@ -6,7 +6,10 @@ import torch.optim as optim
 import numpy as np
 from scipy.sparse import csr_matrix
 import pdb
+np.set_printoptions(threshold=sys.maxsize)
 
+BASEKVOCABSIZE = 0
+ANTEKVOCABSIZE = 0
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -39,11 +42,15 @@ def prepare_data():
         match = re.findall(r"^\[(.*?)\]", hvec)
         hvBaseFirsts.append(match[0].split(","))
     eprint("hvBaseFirsts ready")
+    global BASEKVOCABSIZE 
+    BASEKVOCABSIZE = len(hvBaseFirsts)
 
     for hvec in hvAntes:
         match = re.findall(r"^\[(.*?)\]", hvec)
         hvAnteFirsts.append(match[0].split(","))
     eprint("hvAnteFirsts ready")
+    global ANTEKVOCABSIZE
+    ANTEKVOCABSIZE = len(hvAnteFirsts)
 
     # Mapping from category & HVec to index
     flat_hvB = [hvec for sublist in hvBaseFirsts for hvec in sublist if hvec not in ["", "Bot", "Top"]]
@@ -97,39 +104,41 @@ def prepare_data():
     #return depth, cat_b_ix, hvb_mat, hvf_mat, cat_to_ix, fdecs_ix, fdecs_to_ix, hvec_to_ix, hvb_top, hvf_top
 
 
-def prepare_data_dev(dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix):
-    #TODO not supported yet
+def prepare_data_dev(dev_decpars_file, cat_to_ix, hvec_to_ix):
     with open(dev_decpars_file, "r") as f:
         data = f.readlines()
         data = [line.strip() for line in data]
 
-    depth, catBase, hvBase, hvFiller, fDecs, hvBFirst, hvFFirst = ([] for _ in range(7))
+    catBases, catAntes, hvBases, hvAntes, hvBaseFirsts, hvAnteFirsts, wordDists, sqWordDists, corefOns, labels = ([] for _ in range(10))
 
     for line in data:
-        d, cb, hvb, hvf, fd = line.split(" ")
-        if cb not in cat_to_ix or fd not in fdecs_to_ix:
+        catBase, catAnte, hvBase, hvAnte, wordDist, sqWordDist, corefOn, _, label = line.split(" ")
+        if catBase not in cat_to_ix or catAnte not in cat_to_ix:
             continue
-        depth.append(int(d))
-        catBase.append(cb)
-        hvBase.append(hvb)
-        hvFiller.append(hvf)
-        fDecs.append(fd)
+        catBases.append(catBase)
+        catAntes.append(catAnte)
+        hvBases.append(hvBase)
+        hvAntes.append(hvAnte)
+        wordDists.append(int(wordDist))
+        sqWordDists.append(int(sqWordDist))
+        corefOns.append(int(corefOn))
+        labels.append(int(label))
 
-    for kvec in hvBase:
+    for kvec in hvBases:
         match = re.findall(r"^\[(.*?)\]", kvec)
-        hvBFirst.append(match[0].split(","))
+        hvBaseFirsts.append(match[0].split(","))
 
-    for kvec in hvFiller:
+    for kvec in hvAntes:
         match = re.findall(r"^\[(.*?)\]", kvec)
-        hvFFirst.append(match[0].split(","))
+        hvAnteFirsts.append(match[0].split(","))
 
-    cat_b_ix = [cat_to_ix[cat] for cat in catBase]
-    fdecs_ix = [fdecs_to_ix[fdecs] for fdecs in fDecs]
+    cat_b_ix = [cat_to_ix[cat] for cat in catBases]
+    cat_a_ix = [cat_to_ix[cat] for cat in catAntes]
 
-    hvb_row, hvb_col, hvf_row, hvf_col, hvb_top, hvf_top = ([] for _ in range(6))
+    hvb_row, hvb_col, hva_row, hva_col, hvb_top, hva_top = ([] for _ in range(6))
 
     # KVec indices and "Top" KVec counts
-    for i, sublist in enumerate(hvBFirst):
+    for i, sublist in enumerate(hvBaseFirsts):
         top_count = 0
         for hvec in sublist:
             if hvec == "Top":
@@ -141,9 +150,9 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix):
                 hvb_col.append(hvec_to_ix[hvec])
         hvb_top.append([top_count])
     hvb_mat = csr_matrix((np.ones(len(hvb_row), dtype=np.int32), (hvb_row, hvb_col)),
-                         shape=(len(hvBFirst), len(hvec_to_ix)))
+                         shape=(len(hvBaseFirsts), len(hvec_to_ix)))
 
-    for i, sublist in enumerate(hvFFirst):
+    for i, sublist in enumerate(hvAnteFirsts):
         top_count = 0
         for hvec in sublist:
             if hvec == "Top":
@@ -151,13 +160,13 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix):
             elif hvec == "" or hvec == "Bot":
                 continue
             else:
-                hvf_row.append(i)
-                hvf_col.append(hvec_to_ix[hvec])
-        hvf_top.append([top_count])
-    hvf_mat = csr_matrix((np.ones(len(hvf_row), dtype=np.int32), (hvf_row, hvf_col)),
-                         shape=(len(hvFFirst), len(hvec_to_ix)))
+                hva_row.append(i)
+                hva_col.append(hvec_to_ix[hvec])
+        hva_top.append([top_count])
+    hva_mat = csr_matrix((np.ones(len(hva_row), dtype=np.int32), (hva_row, hva_col)),
+                         shape=(len(hvAnteFirsts), len(hvec_to_ix)))
 
-    return depth, cat_b_ix, hvb_mat, hvf_mat, fdecs_ix, hvb_top, hvf_top
+    return cat_b_ix, cat_a_ix, hvb_mat, hva_mat, hvb_top, hva_top, wordDists, sqWordDists, corefOns, labels 
 
 
 class NModel(nn.Module):
@@ -174,7 +183,6 @@ class NModel(nn.Module):
         self.relu = F.relu
         self.fc2 = nn.Linear(self.hidden_dim, self.output_dim, bias=True)
 
-    #def forward(self, cat_base_ixs, cat_ante_ixs, hvbases, hvantes, worddists, sqworddists, corefons, use_gpu):
     def forward(self, cat_base_ixs, cat_ante_ixs, hvb_mat, hva_mat, hvb_top, hva_top, worddists, sqworddists, corefons, use_gpu, ablate_sem):
     #def forward(self, d_onehot, cat_b_ix, hvb_mat, hvf_mat, hvb_top, hvf_top, use_gpu, ablate_sem):
         cat_base_embed = self.cat_embeds(cat_base_ixs)
@@ -206,9 +214,15 @@ class NModel(nn.Module):
             hvb_embed = torch.sparse.mm(hvb_mat, self.hvec_embeds.weight) + hvb_top
             hva_embed = torch.sparse.mm(hva_mat, self.hvec_embeds.weight) + hva_top
         x = torch.cat((cat_base_embed, cat_ante_embed, hvb_embed, hva_embed, worddists.unsqueeze(dim=1), sqworddists.unsqueeze(dim=1), corefons.unsqueeze(dim=1)), 1)
+
+        np.set_printoptions(threshold=sys.maxsize)
+        torch.set_printoptions(threshold=sys.maxsize)
+        #eprint(x)
+        #eprint(hvb_mat[0,:])
         x = self.fc1(x)
         x = self.relu(x)
         x = self.fc2(x)
+        
         return F.log_softmax(x, dim=1)
 
 
@@ -249,16 +263,17 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim,
         #model = model.cuda()
 
     if use_dev >= 0:
-        #TODO not implemented yet
-        dev_depth, dev_cat_b_mat, dev_hvb_mat, dev_hvf_mat, dev_fdecs_ix, dev_hvb_top, dev_hvf_top = prepare_data_dev(
-            dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix)
-        dev_depth = F.one_hot(torch.LongTensor(dev_depth), 7).float()
+        #dev_depth, dev_cat_b_mat, dev_hvb_mat, dev_hvf_mat, dev_fdecs_ix, dev_hvb_top, dev_hvf_top = prepare_data_dev(
+        #    dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix)
+        dev_cat_b_mat, dev_cat_a_mat, dev_hvb_mat, dev_hva_mat, dev_hvb_top, dev_hva_top, dev_worddists, dev_sqworddists, devcorefons, dev_labels = prepare_data_dev(dev_decpars_file, cat_to_ix, hvec_to_ix)
+        #dev_depth = F.one_hot(torch.LongTensor(dev_depth), 7).float()
         dev_cat_b_ix = torch.LongTensor(dev_cat_b_ix)
-        dev_target = torch.LongTensor(dev_fdecs_ix)
+        dev_cat_a_ix = torch.LongTensor(dev_cat_a_ix)
+        dev_target = torch.LongTensor(dev_labels)
 
         if use_gpu >= 0:
-            dev_depth = dev_depth.to("cuda")
             dev_cat_b_ix = dev_cat_b_ix.to("cuda")
+            dev_cat_a_ix = dev_cat_a_ix.to("cuda")
             dev_target = dev_target.to("cuda")
 
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
@@ -280,6 +295,8 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim,
 
         for i in range(0, len(target), batch_size):
             indices = permutation[i:i + batch_size]
+            #indices = range(i,i+batch_size)
+            #eprint("using indices: {} to {}".format(i,i+batch_size))
 
             batch_catbase, batch_catante, batch_worddist, batch_sqworddist, batch_corefon, batch_target = cat_base_ixs[indices], cat_ante_ixs[indices], wordDists[indices], sqWordDists[indices], corefOns[indices], target[indices]
             #batch_d, batch_c, batch_target = depth[indices], cat_b_ix[indices], target[indices]
@@ -308,12 +325,14 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim,
             optimizer.zero_grad()
 
         if use_dev >= 0:
-            #TODO not implemented yet
             with torch.no_grad():
-                dev_pred = model(dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_hvb_top, dev_hvf_top, use_gpu,
-                                 ablate_sem)
-                _, dev_fdec = torch.max(dev_pred.data, 1)
-                dev_correct = (dev_fdec == dev_target).sum().item()
+                #dev_pred = model(dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_hvb_top, dev_hvf_top, use_gpu,
+                dev_pred = model(dev_cat_b_ix, dev_cat_a_ix, dev_hvb_mat, 
+                                 dev_hva_mat, dev_hvb_top, dev_hva_top, 
+                                 dev_worddist.float(), dev_sqworddists.float(),
+                                 dev_corefons.float(), use_gpu, ablate_sem)
+                _, dev_ndec = torch.max(dev_pred.data, 1)
+                dev_correct = (dev_ndec == dev_target).sum().item()
                 dev_loss = criterion(dev_pred, dev_target)
                 total_dev_loss += dev_loss.item()
                 dev_acc = 100 * (dev_correct / len(dev_depth))
@@ -321,13 +340,15 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim,
             dev_acc = 0
 
         eprint("Epoch {:04d} | AvgTrainLoss {:.4f} | TrainAcc {:.4f} | DevLoss {:.4f} | DevAcc {:.4f} | Time {:.4f}".
-               format(epoch, total_train_loss / (len(target) // batch_size), 100 * (total_train_correct / len(target)),
+               format(epoch, total_train_loss / ((len(target) // batch_size) + 1), 100 * (total_train_correct / len(target)),
                       total_dev_loss, dev_acc, time.time() - c0))
 
         if epoch == num_epochs:
             break
 
     #return model, cat_to_ix, fdecs_to_ix, hvec_to_ix
+    #print batch cat and hvembed and dist feats
+
     return model, cat_to_ix, hvec_to_ix
 
 
@@ -375,6 +396,37 @@ def main(config):
     #for fdec, ix in sorted(fdecs_to_ix.items()):
     #    print("f " + str(ix) + " " + str(fdec))
 
+    #run an arbitrary forward pass on trained model
+    model.eval()
+    #data = torch.randn(1, 3, 24, 24) # Load your data here, this is just dummy data
+    #data=np.array([[10,45],[11,12],[4,1]])
+    data = np.array([[0,0]])
+    rows = data[:,0]
+    cols = data[:,1]
+    
+    #hva_mat = csr_matrix((np.ones(len(hva_row), dtype=np.int32), (hva_row, hva_col)), shape=(len(hvAnteFirsts), len(hvec_to_ix)))
+    eprint("length of hvec_to_ix: "+ str(len(hvec_to_ix)))
+    #eprint("basekvocabsize: {}".format(BASEKVOCABSIZE))
+    #eprint("antekvocabsize: {}".format(ANTEKVOCABSIZE))
+    eprint(data)
+    eprint(rows)
+    eprint(cols)
+    #emptycsrbase = csr_matrix((np.zeros(len(rows),dtype=np.int32), (rows,cols)), shape=(BASEKVOCABSIZE, len(hvec_to_ix))) #batch x kvocab
+    #emptycsrante = csr_matrix((np.zeros(len(rows),dtype=np.int32), (rows,cols)), shape=(ANTEKVOCABSIZE, len(hvec_to_ix))) #batch x kvocab
+    emptycsr = csr_matrix((np.zeros(len(rows),dtype=np.int32), (rows,cols)), shape=(1, len(hvec_to_ix))) #batch x kvocab
+    #output = model([cat_to_ix["T"]],[cat_to_ix["T"]], emptycsrbase, emptycsrante, [0], [0], [0], [0], [0], False,False)
+    zero = torch.LongTensor([0])
+    zerofloat = torch.FloatTensor([0])
+    output = model(torch.LongTensor([cat_to_ix["V-aN"]]),torch.LongTensor([cat_to_ix["T"]]), emptycsr, emptycsr, zerofloat, zerofloat, zerofloat, zerofloat, zerofloat, -1, False)
+    #output = model(torch.LongTensor([cat_to_ix["T"]]),torch.LongTensor([cat_to_ix["T"]]), emptycsr, emptycsr, zerofloat, zerofloat, zerofloat, zerofloat, zerofloat, -1, False)
+    #def forward(self, cat_base_ixs, cat_ante_ixs, hvb_mat, hva_mat, hvb_top, hva_top, worddists, sqworddists, corefons, use_gpu, ablate_sem):
+    #output = model(data)
+    prediction = torch.argmax(output)
+    eprint("V-aN,T,bot,bot,0,0,0 output on trained model: ")
+    #eprint("T,T,bot,bot,0,0,0 output on trained model: ")
+    eprint(output)
+    eprint("prediction: ")
+    eprint(prediction)
 
 if __name__ == "__main__":
     config = configparser.ConfigParser(allow_no_value=True)
