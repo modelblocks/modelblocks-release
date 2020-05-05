@@ -354,8 +354,13 @@ for line in sys.stdin:
 
 
         EverUnbound = sets.Set()
+        AlreadyTriedVars = []
         while len(DstUnbound)>0 and expr!=None:
           var = DstUnbound.pop()
+          if var in AlreadyTriedVars:
+            sys.stderr.write('ERROR: unable to make discourse anaphor from ' + src + ' to ' + dst + ' without cycle in quantifying ' + ' '.join(AlreadyTriedVars) + '\n' )
+            break #exit(0)
+          AlreadyTriedVars += [ var ]
           expr = Expressions.get(var,None)
           if expr == None: break
           findUnboundVars( expr, DstUnbound, [var] )
