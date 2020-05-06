@@ -81,8 +81,8 @@ def makeDiscAntec( expr, dst, OrigUnbound ):
 def checkConstsUsed( expr, OrigConsts ):
   if len( expr ) == 0: return
   if isinstance( expr, str ): return
-  if expr[0] in OrigConsts:
-    OrigConsts.remove( expr[0] )
+  if (expr[0],expr[1]) in OrigConsts:
+    OrigConsts.remove( (expr[0],expr[1]) )
   for subexpr in expr:
     checkConstsUsed( subexpr, OrigConsts )
 
@@ -357,10 +357,10 @@ for line in sys.stdin:
         AlreadyTriedVars = []
         while len(DstUnbound)>0 and expr!=None:
           var = DstUnbound.pop()
-          if var in AlreadyTriedVars:
-            sys.stderr.write('ERROR: unable to make discourse anaphor from ' + src + ' to ' + dst + ' without cycle in quantifying ' + ' '.join(AlreadyTriedVars) + '\n' )
+          if (var,len(DstUnbound),len(EverUnbound)) in AlreadyTriedVars:
+            sys.stderr.write('ERROR: unable to make discourse anaphor from ' + src + ' to ' + dst + ' without cycle in quantifying ' + ' '.join([v for v,n,m in AlreadyTriedVars]) + '\n' )
             break #exit(0)
-          AlreadyTriedVars += [ var ]
+          AlreadyTriedVars += [ (var,len(DstUnbound),len(EverUnbound)) ]
           expr = Expressions.get(var,None)
           if expr == None: break
           findUnboundVars( expr, DstUnbound, [var] )
@@ -448,6 +448,6 @@ for line in sys.stdin:
   if VERBOSE: print( 'D.OrigConsts = ' + str(D.OrigConsts) )
   checkConstsUsed( expr, D.OrigConsts )
   for k in D.OrigConsts:
-    print(           '#    DOWNSTREAM LAMBDA EXPRESSION WARNING: const does not appear in translations: ' + k )
-    sys.stderr.write( '    DOWNSTREAM LAMBDA EXPRESSION WARNING: const does not appear in translations: ' + k + '\n' )
+    print(           '#    DOWNSTREAM LAMBDA EXPRESSION WARNING: const does not appear in translations: ' + ','.join(k) )
+    sys.stderr.write( '    DOWNSTREAM LAMBDA EXPRESSION WARNING: const does not appear in translations: ' + ','.join(k) + '\n' )
 
