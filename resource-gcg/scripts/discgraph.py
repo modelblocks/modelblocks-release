@@ -64,7 +64,7 @@ class DiscGraph:
       if Particips[0].endswith('Q'):  D.QuantTuples.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] + (['_'] if len(Particips)<4 else []) ) )
       else:                           D.PredTuples.append ( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
 
-    D.OrigConsts = [ (ep[0],ep[1]) for ep in D.PredTuples ] + [ (q[0],q[1]) for q in D.QuantTuples ]
+    D.OrigConsts = [ (ep[0],ep[1]) for ep in D.PredTuples ] + [ (q[0],'Q') for q in D.QuantTuples ]
 
     ## Report items...
     if VERBOSE: 

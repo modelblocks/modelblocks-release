@@ -83,6 +83,8 @@ def checkConstsUsed( expr, OrigConsts ):
   if isinstance( expr, str ): return
   if (expr[0],expr[1]) in OrigConsts:
     OrigConsts.remove( (expr[0],expr[1]) )
+  if (expr[0],'Q') in OrigConsts:
+    OrigConsts.remove( (expr[0],'Q') )
   for subexpr in expr:
     checkConstsUsed( subexpr, OrigConsts )
 
