@@ -2,7 +2,7 @@ import sys
 import os
 import configparser
 
-from dtsr.formula import Formula
+from cdr.formula import Formula
 
 X_path = sys.argv[1]
 y_path = sys.argv[2]
@@ -37,7 +37,7 @@ if 'impulse_to_transform' in config:
 
 baseline_found = False
 for name in config:
-    if name.startswith('model_DTSR') and name.endswith('_BASELINE'):
+    if (name.startswith('model_CDR') or name.startswith('model_DTSR')) and name.endswith('_BASELINE'):
         baseline_found = True
         new_name = name[:-9]
         model_template = config[name]
@@ -63,7 +63,7 @@ for name in config:
         del config[name]
 
 if not baseline_found and len(main_effects) > 0:
-    sys.stderr.write('No DTSR models in config file are flagged with suffix "_BASELINE". Effects %s will not be added/ablated in any models.\n' %main_effects)
+    sys.stderr.write('No CDR models in config file are flagged with suffix "_BASELINE". Effects %s will not be added/ablated in any models.\n' %main_effects)
 
 config['global_settings'] = {'outdir': outdir}
 

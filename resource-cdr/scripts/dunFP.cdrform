@@ -1,7 +1,7 @@
 [data]
 series_ids = subject docid
 
-[dtsr_settings]
+[cdr_settings]
 network_type = bayes
 declare_priors = False
 ranef_regularizer_name = l2_regularizer
@@ -28,6 +28,6 @@ default = ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2, ran=T)
 [newpred_rangf]
 rangf = subject
 
-[model_DTSR_BASELINE]
-formula = log(fdurGP) ~ s(trial) + s(sentpos) + C(rate + z(wdelta) + prevwasfix + z(wlen) + z(unigram) + z(fwprob5surp), ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2)) + (s(trial) + s(sentpos) + C(rate + z(wdelta) + prevwasfix + z(wlen) + z(unigram) + z(fwprob5surp), ShiftedGammaShapeGT1(ran=T)) | subject)
+[model_CDR_BASELINE]
+formula = log(fdurFP) ~ s(trial) + s(sentpos) + C(rate + z(wdelta) + prevwasfix + z(wlen) + z(unigram) + z(fwprob5surp), ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2)) + (s(trial) + s(sentpos) + C(rate + z(wdelta) + prevwasfix + z(wlen) + z(unigram) + z(fwprob5surp), ShiftedGammaShapeGT1(ran=T)) | subject)
 
