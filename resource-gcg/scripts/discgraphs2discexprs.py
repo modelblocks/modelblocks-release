@@ -81,7 +81,7 @@ def makeDiscAntec( expr, dst, OrigUnbound ):
 def checkConstsUsed( expr, OrigConsts ):
   if len( expr ) == 0: return
   if isinstance( expr, str ): return
-  if (expr[0],expr[1]) in OrigConsts:
+  if len(expr)>1 and (expr[0],expr[1]) in OrigConsts:
     OrigConsts.remove( (expr[0],expr[1]) )
   if (expr[0],'Q') in OrigConsts:
     OrigConsts.remove( (expr[0],'Q') )
