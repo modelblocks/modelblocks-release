@@ -206,7 +206,7 @@ class NModel {
       nlogresponses(denseendind+1) = antdistsq;
       nlogresponses(denseendind+2) = corefon;
       ////later potentially add gender animacy etc features, if continue to have inconsistency issues with number, gender, etc.
-      cerr << "catB: " << catB << " catA: " << catA << " hvB: " << hvB << " hvA: " << hvA << " antdist: " << antdist << " sqantdist: " << antdistsq << " corefon: " << corefon << endl;
+      //cerr << "catB: " << catB << " catA: " << catA << " hvB: " << hvB << " hvA: " << hvA << " antdist: " << antdist << " sqantdist: " << antdistsq << " corefon: " << corefon << endl;
       //cerr << "catBEmb: catBEmb << catAEmb << hvBEmb << hvAEmb << endl;
       //cerr << nlogresponses << endl;
       //cerr << "feature multiplication by weights..." << endl;
@@ -233,14 +233,22 @@ class FPredictorVec {
     const HVec& hvB;
     const HVec& hvF;
     CVar catBase;
+    const HVec& hvA;
+    bool nullA;
 
     public:
     template<class FM>  // J model is template variable to allow same behavior for const and non-const up until getting predictor indices
-    FPredictorVec( FM& fm, const HVec& hvAnt, bool nullAnt, const StoreState& ss ) : hvB (( ss.getBase().getHVec().size() > 0 ) ? ss.getBase().getHVec() : hvBot), hvF (( ss.getBase().getCat().getNoloArity() && ss.getNoloBack().getHVec().size() != 0 ) ? ss.getNoloBack().getHVec() : hvBot){
+    FPredictorVec( FM& fm, const HVec& hvAnt, bool nullAnt, const StoreState& ss ) : hvB (( ss.getBase().getHVec().size() > 0 ) ? ss.getBase().getHVec() : hvBot), hvF (( ss.getBase().getCat().getNoloArity() && ss.getNoloBack().getHVec().size() != 0 ) ? ss.getNoloBack().getHVec() : hvBot), hvA ((hvAnt.size() > 0) ? hvAnt : hvBot), nullA (nullAnt){
       d = (FEATCONFIG & 1) ? 0 : ss.getDepth();
       catBase = ss.getBase().getCat();
     }
 
+    bool getNullA() {
+      return nullA;
+    }
+    const HVec& getHvA() {
+      return hvA; //antecedent
+    }
     int getD() {
         return d;
     }
@@ -255,7 +263,7 @@ class FPredictorVec {
     }
 
     friend ostream& operator<< ( ostream& os, const FPredictorVec& fpv ) {
-      os << fpv.d << " " << fpv.catBase << " " << fpv.hvB << " " << fpv.hvF;
+      os << fpv.d << " " << fpv.catBase << " " << fpv.hvB << " " << fpv.hvF << " " << fpv.hvA << " " << fpv.nullA;
       return os;
     }
 };
@@ -320,8 +328,8 @@ class FModel {
       fwsm = fws;
       fbfv = fbf;
       fbsv = fbs;
-      fwfm.reshape(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE), 7 + 2*SEM_SIZE + SYN_SIZE);
-      fwsm.reshape(fws.size()/(fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)), (fwf.size()/(7 + 2*SEM_SIZE + SYN_SIZE)));
+      fwfm.reshape(fwf.size()/(8 + 3*SEM_SIZE + SYN_SIZE), 8 + 3*SEM_SIZE + SYN_SIZE);
+      fwsm.reshape(fws.size()/(fwf.size()/(8 + 3*SEM_SIZE + SYN_SIZE)), (fwf.size()/(8 + 3*SEM_SIZE + SYN_SIZE)));
     }
 
     const FEK& getFEK( unsigned int i ) const {
@@ -367,16 +375,19 @@ class FModel {
 
     arma::vec calcResponses( FPredictorVec& lfpredictors ) const {
 // return distribution over FEK indices
-// vectorize predictors: one-hot for depth, two hvecs, one cat-embed
-      arma::vec flogresponses = arma::zeros( 7 + 2*SEM_SIZE + SYN_SIZE );
+// vectorize predictors: one-hot for depth(7), three hvecs, one cat-embed - also 1bit for nullant
+      arma::vec flogresponses = arma::zeros( 8 + 3*SEM_SIZE + SYN_SIZE );
       CVar catB = lfpredictors.getCatBase();
       const HVec& hvB = lfpredictors.getHvB();
       const HVec& hvF = lfpredictors.getHvF();
       int d = lfpredictors.getD();
+      const HVec& hvA = lfpredictors.getHvA();
+      bool nullA = lfpredictors.getNullA();
 
       const CVec& catBEmb = getCatEmbed(catB);
       const KDenseVec& hvBEmb = getKVecEmbed(hvB);
       const KDenseVec& hvFEmb = getKVecEmbed(hvF);
+      const KDenseVec& hvAEmb = getKVecEmbed(hvA);
 
 // populate predictor vector
       for(unsigned int i = 0; i < catBEmb.n_elem; i++){
@@ -388,7 +399,11 @@ class FModel {
       for(unsigned int i = 0; i < hvFEmb.n_elem; i++){
         flogresponses(catBEmb.n_elem+hvBEmb.n_elem+i) = hvFEmb(i);
       }
-      flogresponses(catBEmb.n_elem+hvBEmb.n_elem+hvFEmb.n_elem+d) = 1;
+      for(unsigned int i = 0; i < hvAEmb.n_elem; i++){
+        flogresponses(catBEmb.n_elem+hvBEmb.n_elem+hvFEmb.n_elem+i) = hvAEmb(i);
+      }
+      if (nullA) flogresponses(catBEmb.n_elem+hvBEmb.n_elem+hvFEmb.n_elem+hvAEmb.n_elem) = 1;
+      flogresponses(catBEmb.n_elem+hvBEmb.n_elem+hvFEmb.n_elem+hvAEmb.n_elem+1+d) = 1;
 
 // implementation of MLP
       //cout << "trying f model matmul..." << endl;
