@@ -504,8 +504,10 @@ class JModel {
   public:
 
     JModel() {
-      jr0 = getResponseIndex( 0, EVar::eNil, 'N', O_I );
-      jr1 = getResponseIndex( 1, EVar::eNil, 'N', O_I );
+      //jr0 = getResponseIndex( 0, EVar::eNil, 'N', O_I );
+      //jr1 = getResponseIndex( 1, EVar::eNil, 'N', O_I );
+      jr0 = -1;
+      jr1 = -1;
     }
     // read in weights, embeddings, and JEOOs
     JModel(istream& is) {
@@ -532,7 +534,9 @@ class JModel {
         is >> "j " >> k >> " ";
         is >> mijeoo[k] >> "\n";
         mjeooi[mijeoo[k]] = k;
+        iNextResponse = k+1; //code review WS this should be handled more elegantly, since inextresponse is legacy
       }
+      cout << "finished reading in J model..." << endl;
       jr0 = getResponseIndex( 0, EVar::eNil, 'N', O_I );
       jr1 = getResponseIndex( 1, EVar::eNil, 'N', O_I );
       jwfm = jwf;
