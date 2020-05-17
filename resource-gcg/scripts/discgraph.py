@@ -139,6 +139,11 @@ class DiscGraph:
     for xLo in D.Subs[x]:
       sys.stderr.write( 'WARNING: inheritance -n should not be annotated from ' + xLo + ' to redundant predicative referent: ' + x + '\n' )
       print(           '#WARNING: inheritance -n should not be annotated from ' + xLo + ' to redundant predicative referent: ' + x )
+    ## Complain about disc inhs immediately below smitten...
+    for xLo in D.DiscInhs:
+      if D.DiscInhs[xLo] == x:
+        sys.stderr.write( 'WARNING: inheritance -m should not be annotated from ' + xLo + ' to redundant predicative referent: ' + x + '\n' )
+        print(           '#WARNING: inheritance -m should not be annotated from ' + xLo + ' to redundant predicative referent: ' + x )
     ## Complain about scopes immediately above smitten...
     if x in D.Scopes:
       sys.stderr.write( 'WARNING: scope -s should not be annotated on redundant predicative referent: ' + x + '\n' )
