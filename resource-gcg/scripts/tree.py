@@ -57,7 +57,18 @@ class Tree:
                 l += t.words()
             return l
 
-    
+
+    def syncats(self):
+        if len(self.ch) == 1 and len(self.ch[0].ch) == 0:
+            return [self.c]
+        else:
+            if type(self.ch[0]) is str:
+                return self.ch
+            l = []
+            for t in self.ch:
+                l += t.syncats()
+            return l
+
     # obtain tree from string
     def read(self,s,fIndex=0):
         self.ch = []

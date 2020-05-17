@@ -295,7 +295,7 @@ genmodel/rename_cols.params: | genmodel
     
 %.lc.tokmeasures: %.linetoks $(RT-SCRIPTS)/calcEmbd.py %.nopunc.0sm_semprocdecpars
 	cat $< | python $(word 2, $^) $(word 3, $^) > $@
-    
+
 # Pastes DLT predictors to existing identically tokenized tokmeasures file
 %.dlt.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).dlt.tokmeasures
 	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
@@ -360,6 +360,14 @@ $(RT-SCRIPTS)/filter_cols.py
 # Shortcut: Without co-ref features
 %.syn.tokmeasures: %_parsed.dlt.lc.100.1_2_3_inf.word2vec.tokmeasures
 	mv $^ $@
+
+# Returns syntactic categories from gold "nounary" linetrees
+%.syncat.tokmeasures: %.gold.nounary.linetrees $(RT-SCRIPTS)/getSyncat.py
+	cat $< | python $(word 2, $^) > $@
+
+# Pastes syntactic categories to existing identically tokenized tokmeasures file
+%.syncat.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).syncat.tokmeasures
+	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
 
 %.itemmeasures: $$(DEP-RHACKS) $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
@@ -450,7 +458,9 @@ endef
 %.prdmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
 	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  >  $@
 %.resmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
-	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
+	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  >  $@
+#	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
+
 
 ## TO SPEC
 %.filt-evmeasures: $$(basename %).core-evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \
