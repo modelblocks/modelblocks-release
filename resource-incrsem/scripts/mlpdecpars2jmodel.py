@@ -370,6 +370,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
 
 def main(config):
     j_config = config["JModel"]
+    torch.manual_seed(j_config.getint("Seed"))
     model, cat_to_ix, jdecs_to_ix, hvec_to_ix = train(j_config.getint("Dev"), j_config.get("DevFile"),
                                                       j_config.getint("GPU"), j_config.getint("SynSize"),
                                                       j_config.getint("SemSize"), j_config.getint("HiddenSize"),
