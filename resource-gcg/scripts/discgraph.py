@@ -43,7 +43,7 @@ class DiscGraph:
     ## For each assoc...
     for assoc in sorted( line.split(' ') ):
       src,lbl,dst = assoc.split( ',', 2 )
-      if dst.startswith('N-bO:') or dst.startswith('N-bN:') or dst.startswith('N-b{N-aD}:') or dst.startswith('N-aD-b{N-aD}:'): dst += 'Q'
+      if dst.startswith('N-bO:') or dst.startswith('N-bN:') or dst.startswith('N-b{N-aD}:') or dst.startswith('N-aD-b{N-aD}:') or dst.startswith('N-aD-b{N-aD}-bN:'): dst += 'Q'
       D.Referents += [ src ] if lbl=='0' else [ src, dst ]
       if lbl.isdigit():  D.PorQs    [src].insert( int(lbl), dst )   ## Add preds and quants.
       elif lbl == 's':   D.Scopes   [src]      = dst                ## Add scopes.

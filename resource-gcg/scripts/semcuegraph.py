@@ -149,6 +149,12 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('1\'',G.result('S',d)), '2\'', G.result('S',d+'u') )  ## switch 1' & 2' arguments (same process top-down as bottom-up)
       G.equate( G.result('2\'',G.result('S',d)), '1\'', G.result('S',d+'u') )
       G.equate( G.result('S',dUpper), 'e', G.result('r',G.result('S',dLower)) )
+    elif '-lZ' in sD and sC.startswith('N-aD-b{N-aD}'):      ## Zd (cardinal quant)
+      G.equate( G.result(l,d), l, d+'u' )
+      G.equate( G.result('S',dLower),                               '3', G.result('r',G.result('S',dUpper)) )
+      G.equate( G.result('2\'',G.result('S',dUpper)),               '2', G.result('r',G.result('S',dUpper)) )
+      G.equate( G.result('r',G.result('2\'',G.result('S',dUpper))), '1', G.result('r',G.result('S',dUpper)) )
+      G.equate( 'D:eqQ',                                            '0', G.result('r',G.result('S',dUpper)) )
     elif '-lZ' in sD and sC.startswith('A-aN-x'):            ## Zc
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('S',dLower),                 '2', G.result('r',G.result('S',dUpper)) )
@@ -493,6 +499,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           ## quantifier semantics...
           if   eqns.startswith('N-b{N-aD}:'):    eqns = 'r0='  + eqns + '^r1=1r^r2=1'
           elif eqns.startswith('N-aD-b{N-aD}:'): eqns = 'r0='  + eqns + '^r1=2r^r2=2'
+          elif eqns.startswith('N-aD-b{N-aD}-bN:'): eqns = 'r0='  + eqns + '^r1=2r^r2=2^r3=3'
           elif eqns.startswith('N-bN:'):         eqns = 'r0='  + eqns + '^r1=1r^r2=1'
           elif eqns.startswith('N-bO:'):         eqns = 'r0='  + eqns + '^r1=1r^r2=1'
           ## relative/interrogative pronoun semantics...
