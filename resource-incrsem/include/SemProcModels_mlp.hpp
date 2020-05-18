@@ -20,7 +20,7 @@
 #include <typeinfo>
 
 const uint SEM_SIZE = 20;
-const uint SYN_SIZE = 10;
+const uint SYN_SIZE = 20;
 
 arma::mat relu( const arma::mat& km ) {
   arma::mat A(km.n_rows, 1);

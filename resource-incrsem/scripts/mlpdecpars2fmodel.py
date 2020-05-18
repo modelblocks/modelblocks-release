@@ -302,6 +302,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
 
 def main(config):
     f_config = config["FModel"]
+    torch.manual_seed(f_config.getint("Seed"))
     model, cat_to_ix, fdecs_to_ix, hvec_to_ix = train(f_config.getint("Dev"), f_config.get("DevFile"),
                                                       f_config.getint("GPU"),
                                                       f_config.getint("SynSize"), f_config.getint("SemSize"),
