@@ -14,8 +14,29 @@ ANTEKVOCABSIZE = 0
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
+def ensure_binary(data):
+    '''confirms two labels are present.  if not, adds 1 additional training example with label flipped'''
+    labels = set()
+    for line in data:
+        _, _, _, _, _, _, _, _, label = line.split(" ")
+        labels.add(label)
+    if len(labels) == 1:
+        eprint("only one label found, adding fake training example...")
+        to_flip = data[0]
+        if to_flip[-1] == "1":
+            new_example = to_flip[:-1]+"0"
+        elif to_flip[-1] == "0":
+            new_example = to_flip[:-1]+"1"
+        else:
+            eprint("WARNING: data format not supported!")
+        eprint("adding: {}".format(new_example))
+        data.insert(0,new_example) #prepend new training example to data
+    return data
+
+
 def prepare_data():
     data = [line.strip() for line in sys.stdin]
+    data = ensure_binary(data)
 
     catBases, catAntes, hvBases, hvAntes, hvBaseFirsts, hvAnteFirsts, wordDists, sqWordDists, corefOns, labels = ([] for _ in range(10))
     #depth, catBase, hvBase, hvFiller, fDecs, hvBFirst, hvFFirst = ([] for _ in range(8))
@@ -110,7 +131,7 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, hvec_to_ix):
         data = [line.strip() for line in data]
 
     catBases, catAntes, hvBases, hvAntes, hvBaseFirsts, hvAnteFirsts, wordDists, sqWordDists, corefOns, labels = ([] for _ in range(10))
-
+    eprint("finished reading dev data. beginning processing...")
     for line in data:
         catBase, catAnte, hvBase, hvAnte, wordDist, sqWordDist, corefOn, _, label = line.split(" ")
         if catBase not in cat_to_ix or catAnte not in cat_to_ix:
@@ -143,11 +164,11 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, hvec_to_ix):
         for hvec in sublist:
             if hvec == "Top":
                 top_count += 1
-            elif hvec == "" or hvec == "Bot":
+            elif hvec == "" or hvec == "Bot" or hvec not in hvec_to_ix:
                 continue
             else:
                 hvb_row.append(i)
-                hvb_col.append(hvec_to_ix[hvec])
+                hvb_col.append(hvec_to_ix[hvec]) 
         hvb_top.append([top_count])
     hvb_mat = csr_matrix((np.ones(len(hvb_row), dtype=np.int32), (hvb_row, hvb_col)),
                          shape=(len(hvBaseFirsts), len(hvec_to_ix)))
@@ -157,11 +178,11 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, hvec_to_ix):
         for hvec in sublist:
             if hvec == "Top":
                 top_count += 1
-            elif hvec == "" or hvec == "Bot":
+            elif hvec == "" or hvec == "Bot" or hvec not in hvec_to_ix:
                 continue
             else:
                 hva_row.append(i)
-                hva_col.append(hvec_to_ix[hvec])
+                hva_col.append(hvec_to_ix[hvec]) 
         hva_top.append([top_count])
     hva_mat = csr_matrix((np.ones(len(hva_row), dtype=np.int32), (hva_row, hva_col)),
                          shape=(len(hvAnteFirsts), len(hvec_to_ix)))
@@ -265,15 +286,21 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim,
     if use_dev >= 0:
         #dev_depth, dev_cat_b_mat, dev_hvb_mat, dev_hvf_mat, dev_fdecs_ix, dev_hvb_top, dev_hvf_top = prepare_data_dev(
         #    dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix)
-        dev_cat_b_mat, dev_cat_a_mat, dev_hvb_mat, dev_hva_mat, dev_hvb_top, dev_hva_top, dev_worddists, dev_sqworddists, devcorefons, dev_labels = prepare_data_dev(dev_decpars_file, cat_to_ix, hvec_to_ix)
+        dev_cat_b_ix, dev_cat_a_ix, dev_hvb_mat, dev_hva_mat, dev_hvb_top, dev_hva_top, dev_worddists, dev_sqworddists, dev_corefons, dev_labels = prepare_data_dev(dev_decpars_file, cat_to_ix, hvec_to_ix)
         #dev_depth = F.one_hot(torch.LongTensor(dev_depth), 7).float()
-        dev_cat_b_ix = torch.LongTensor(dev_cat_b_ix)
+        dev_cat_b_ix = torch.LongTensor(dev_cat_b_ix) #TODO fix dev_cat_b_ix not assigned yet
         dev_cat_a_ix = torch.LongTensor(dev_cat_a_ix)
+        dev_worddists = torch.LongTensor(dev_worddists)
+        dev_sqworddists = torch.LongTensor(dev_sqworddists)
+        dev_corefons = torch.LongTensor(dev_corefons)
         dev_target = torch.LongTensor(dev_labels)
 
         if use_gpu >= 0:
             dev_cat_b_ix = dev_cat_b_ix.to("cuda")
             dev_cat_a_ix = dev_cat_a_ix.to("cuda")
+            dev_worddists = dev_worddists.to("cuda")
+            dev_sqworddists = dev_sqworddists.to("cuda")
+            dev_corefons = dev_corefons.to("cuda")
             dev_target = dev_target.to("cuda")
 
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
@@ -329,13 +356,13 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim,
                 #dev_pred = model(dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_hvb_top, dev_hvf_top, use_gpu,
                 dev_pred = model(dev_cat_b_ix, dev_cat_a_ix, dev_hvb_mat, 
                                  dev_hva_mat, dev_hvb_top, dev_hva_top, 
-                                 dev_worddist.float(), dev_sqworddists.float(),
+                                 dev_worddists.float(), dev_sqworddists.float(),
                                  dev_corefons.float(), use_gpu, ablate_sem)
                 _, dev_ndec = torch.max(dev_pred.data, 1)
                 dev_correct = (dev_ndec == dev_target).sum().item()
                 dev_loss = criterion(dev_pred, dev_target)
                 total_dev_loss += dev_loss.item()
-                dev_acc = 100 * (dev_correct / len(dev_depth))
+                dev_acc = 100 * (dev_correct / len(dev_target))
         else:
             dev_acc = 0
 
@@ -396,6 +423,7 @@ def main(config):
     #for fdec, ix in sorted(fdecs_to_ix.items()):
     #    print("f " + str(ix) + " " + str(fdec))
 
+    '''
     #run an arbitrary forward pass on trained model
     model.eval()
     #data = torch.randn(1, 3, 24, 24) # Load your data here, this is just dummy data
@@ -427,6 +455,7 @@ def main(config):
     eprint(output)
     eprint("prediction: ")
     eprint(prediction)
+    '''
 
 if __name__ == "__main__":
     config = configparser.ConfigParser(allow_no_value=True)

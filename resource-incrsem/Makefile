@@ -297,8 +297,8 @@ endef
 ## pull apart predictor/responses for training...
 %.nmlpdecpars:  %mlpsemprocdecpars
 	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
-%.fmlpdecpars:  %mlpsemprocdecpars
-	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
+%.fmlpdecpars:  %mlpsemprocdecpars $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py
+	cat $(word 1, $^)  |  grep '^F'  |  sed 's/^. //' | python $(word 2, $^) >  $@
 %.jmlpdecpars:  %mlpsemprocdecpars
 	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
 %.pcptdecpars:  %mlpsemprocdecpars
@@ -427,9 +427,10 @@ endef
 ## Create component model file from training example file (% contains decpar flags and mlp ini filename)...
 .PRECIOUS: %_nmlpmodel
 %_nmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/undersample_nmodel_noncorefs.py \
               $(INCRSEM-SCRIPTS)/mlpdecpars2nmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))n.ini
-	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 $(word 2,$^)  | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
 .PRECIOUS: %_fmlpmodel
 %_fmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/mlpdecpars2fmodel.py  \
@@ -703,4 +704,5 @@ endef
 ## obtain linetrees from token decisions...
 %.linetrees:  %.tokdecs  $(INCRSEM-SCRIPTS)/tokdecs2linetrees.py
 	cat $<  |  python $(word 2,$^)  |  perl -pe 's/\[[^\]]*\]://g'  >  $@
+
 

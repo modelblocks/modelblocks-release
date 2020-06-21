@@ -147,12 +147,11 @@ class NModel {
       //cerr << "attempting to find cat with index i: " << i << endl;
       //cerr << "mcv size: " << mcv.size() << endl;
       auto it = mcv.find( i );
+      if (it == mcv.end()) { 
+        cerr << "ERROR: CVar not defined in model: no embedding found for: " << i << endl; 
+        return zeroCatEmb;
+      }
       assert( it != mcv.end() );
-      //if (it == mcv.end()) {
-        //cerr << "WARNING: no emb for unkcat " << i << " using 0vec..." << endl;
-      //  return zeroCatEmb;
-      //}
-      //else {
       return it->second;
       //}
     }
@@ -195,6 +194,7 @@ class NModel {
 
       //populate predictor vec by catting vecs or else filling in nlogresponses' values
       //cerr << "populating predictor vec with feats..." << endl;
+      //arma::Col<double> feats = std::vector<double> {antdist, antdistsq, corefon}; 
       for(unsigned int i = 0; i < catBEmb.n_elem; i++){ nlogresponses(i) = catBEmb(i); }
       for(unsigned int i = 0; i < catAEmb.n_elem; i++){ nlogresponses(catBEmb.n_elem+i) = catAEmb(i); }
       //cerr << "inserting hvec feats into predictor vec ..." << endl;
@@ -205,6 +205,7 @@ class NModel {
       nlogresponses(denseendind+0) = antdist;
       nlogresponses(denseendind+1) = antdistsq;
       nlogresponses(denseendind+2) = corefon;
+      //arma::vec nlogresponses = arma::join_cols(catBEmb, catAEmb, hvBEmb, hvAEmb); //, feats);
       ////later potentially add gender animacy etc features, if continue to have inconsistency issues with number, gender, etc.
       //cerr << "catB: " << catB << " catA: " << catA << " hvB: " << hvB << " hvA: " << hvA << " antdist: " << antdist << " sqantdist: " << antdistsq << " corefon: " << corefon << endl;
       //cerr << "catBEmb: catBEmb << catAEmb << hvBEmb << hvAEmb << endl;
@@ -295,11 +296,12 @@ class FModel {
     mat fwsm;
     vec fbfv;
     vec fbsv;
+    CVec zeroCatEmb;
 
   public:
 
-    FModel( ) { }
-    FModel( istream& is ) {
+    FModel( ) : zeroCatEmb(SYN_SIZE) { }
+    FModel( istream& is ) : zeroCatEmb(SYN_SIZE) {
       while ( is.peek()=='F' ) {
         Delimited<char> c;
         is >> "F " >> c >> " ";
@@ -335,12 +337,19 @@ class FModel {
     const FEK& getFEK( unsigned int i ) const {
       auto it = mifek.find( i );
       assert( it != mifek.end() );
+      if (it == mifek.end()) { 
+        cerr << "ERROR: FEK not defined in model: no value found for: " << i << endl; 
+      }
       return it->second;
     }
 
     const CVec& getCatEmbed( CVar i ) const {
       auto it = mcv.find( i );
       assert( it != mcv.end() );
+      if (it == mcv.end()) { 
+        cerr << "ERROR: CVar not defined in model: no embedding found for: " << i << endl; 
+        return zeroCatEmb;
+      }
       return it->second;
     }
 
@@ -500,17 +509,18 @@ class JModel {
     mat jwsm;
     vec jbfv;
     vec jbsv;
+    CVec zeroCatEmb;
 
   public:
 
-    JModel() {
+    JModel() : zeroCatEmb(SYN_SIZE) {
       //jr0 = getResponseIndex( 0, EVar::eNil, 'N', O_I );
       //jr1 = getResponseIndex( 1, EVar::eNil, 'N', O_I );
       jr0 = -1;
       jr1 = -1;
     }
     // read in weights, embeddings, and JEOOs
-    JModel(istream& is) {
+    JModel(istream& is) : zeroCatEmb(SYN_SIZE) {
       while ( is.peek()=='J' ) {
         Delimited<char> c;
         is >> "J " >> c >> " ";
@@ -536,7 +546,7 @@ class JModel {
         mjeooi[mijeoo[k]] = k;
         iNextResponse = k+1; //code review WS this should be handled more elegantly, since inextresponse is legacy
       }
-      cout << "finished reading in J model..." << endl;
+      //cout << "finished reading in J model..." << endl;
       jr0 = getResponseIndex( 0, EVar::eNil, 'N', O_I );
       jr1 = getResponseIndex( 1, EVar::eNil, 'N', O_I );
       jwfm = jwf;
@@ -549,12 +559,19 @@ class JModel {
 
     const JEOO& getJEOO( unsigned int i ) const {
       auto it = mijeoo.find( i );
+      if (it == mijeoo.end()) {
+        cerr << "ERROR: no jeoo for " << i << endl;
+      }
       assert( it != mijeoo.end() );
       return it->second;
     }
 
     const CVec& getCatEmbed( CVar i ) const {
       auto it = mcv.find( i );
+      if (it == mcv.end()) { 
+        cerr << "ERROR: CVar not defined in model: no embedding found for: " << i << endl; 
+        return zeroCatEmb;
+      }
       assert( it != mcv.end() );
       return it->second;
     }
