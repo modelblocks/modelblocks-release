@@ -17,8 +17,6 @@ while ( <> ) {
 #  ## lowercase all words -- U (uppercase) category in gcg16 lets us reconstruct capitalization for proper names if we want it
 #  s/ ((?!-)[^\(\)]*)\)/ \L\1\E\)/gi;
 
- if ( $XTRA ) {
-
   ######## N -> N:
 
   #### irregular nouns:
@@ -51,6 +49,8 @@ while ( <> ) {
 
   #### regular nouns:
   s/\((N(?!-b\{N-aD}))([^ %]*) ([^ ]*?[^u])(|s)\)/\(\1\2-o\1%\4|N% \3\)/gi;
+
+ if ( $XTRA ) {
 
   ######## ADJECTIVAL NOMINALIZATION  A -> N:
 
@@ -713,16 +713,20 @@ while ( <> ) {
   # #### remove empty morphemes
   # s/ \([^ ]* \*\)//gi;
 
-  if ( $XTRA ) {
+#  if ( $XTRA ) {
 
-    ####### DELETE UN-MORPHED NON-{A,B,N} PREDS
-    s/\(([^ABDNU](?![^ ]*-x)[^ ]*)( [^\(\)]*)\)/\(\1-x%\|\2\)/gi;
+  ####### MARK ALL UN-MORPHED C/E/F (complementizer), H (hyph), O (of), P (particles), X (conjunction), and non-alpha (punctuation) PREDS FOR DELETION
+  s/\(([^ABDFGJKLMNQRSTUVWYZ](?![^ ]*-x)[^ ]*)( [^\(\)]*)\)/\(\1-x%\|\2\)/gi;
+  ####### MARK ALL GENITIVE MARKERS FOR DELETION
+  s/\((D-aN|F-bI) /\(\1-x%| /gi;
+  ####### MARK ALL COPULAS FOR DELETION
+  s/(\([^ ]*\|B%be) /\1-x%| /gi;
 
 #    ######## QUANT SUFFIX:
 #
 #    s/\((N-b\{N-aD\}|N-bO|N-bN|N-aD-b\{N-aD\})([^ ]*)/\(\1\2-xN%|N%Q/gi;
 
-  }
+#  }
 
   print $_;
 }

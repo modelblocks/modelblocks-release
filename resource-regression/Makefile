@@ -58,7 +58,6 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 ## apply predictor modifications: <data>.<predr>(_<predr>)*_<offset>_spilled.prdmeasures
 %_spilled.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/spilloverMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(subst .,,$(suffix $*))))) -n $(subst .,,$(suffix $(subst _,.,$(suffix $*)))) >  $@
-
 %_spilled.resmeasures:  $$(basename %).resmeasures
 	ln -sf $(abspath $<) $(abspath $@)
 
@@ -86,11 +85,15 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 %_futured.resmeasures:  $$(basename %).resmeasures
 	ln -sf $(abspath $<) $(abspath $@)
 
+## apply predictor modifications: <data>.<predr>_<predr>_delta.prdmeasures
+%_delta.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/deltaMetrics.py
+	cat $(word 1,$^)  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+%_delta.resmeasures:  $$(basename %).resmeasures
+	ln -sf $(abspath $<) $(abspath $@)
 
-## apply consorship (e.g. remove end-of-sentence responses) (prdmeasures unaffected)
+## apply censorship (e.g. remove end-of-sentence responses) (prdmeasures unaffected)
 %.prdmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/censor.py
 	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
-
 %.resmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/censor.py
 	cat $(word 2,$^)  |  python3 $(word 3,$^) -c $(word 1,$^)  >  $@
 
@@ -98,7 +101,6 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 ## apply partitioning (prdmeasures unaffected)
 %_part.prdmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/partition.py  |  genmodel
 	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
-
 %_part.resmeasures:  genmodel/$$(word 1, $$(subst ., ,$$*)).part_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/partition.py  |  genmodel
 	cat $(word 2,$^)  |  python3 $(word 3, $^) -c $(word 1, $^) -p $(subst +, ,$(subst .,,$(suffix $*)))  >  $@
 
@@ -112,7 +114,7 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 	$^ $(wordlist 3,100,$(subst ., ,$(basename $(subst _,.,$(suffix $*)))))  >  $@  2>  $@.log
 
 
-## generaic predicted errors file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
+## generic predicted errors file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
 %_predicted.errors:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
                      genmodel/$$(basename $$*).fitmodel  \
            	     genmodel/$$(basename $$(basename $$*))$$(suffix $$*)_part.prdmeasures \

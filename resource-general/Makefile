@@ -90,8 +90,8 @@ CONLL-SCRIPTS := $(RESOURCE-COREF-CONLL)/scripts
 RESOURCE-DMV := $(abspath $(MBDIR)/resource-dmv)
 DMV-SCRIPTS := $(RESOURCE-DMV)/scripts
 
-RESOURCE-DTSR := $(abspath $(MBDIR)/resource-dtsr)
-DTSR-SCRIPTS := $(RESOURCE-DTSR)/scripts
+RESOURCE-CDR := $(abspath $(MBDIR)/resource-cdr)
+CDR-SCRIPTS := $(RESOURCE-CDR)/scripts
 
 RESOURCE-DUNDEE := $(abspath $(MBDIR)/resource-dundee)
 DUNDEE-SCRIPTS := $(RESOURCE-DUNDEE)/scripts
@@ -234,7 +234,7 @@ include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
 include $(RESOURCE-RT)/Makefile
 include $(RESOURCE-REGRESSION)/Makefile
-include $(RESOURCE-DTSR)/Makefile
+include $(RESOURCE-CDR)/Makefile
 include $(RESOURCE-FEDECOG)/Makefile
 include $(RESOURCE-FMRI)/Makefile
 include $(RESOURCE-LMEFIT)/Makefile

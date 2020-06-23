@@ -37,7 +37,7 @@
 .SUFFIXES:
 .SECONDEXPANSION:
 
-VPATH += $(RESOURCE-DTSR)
+VPATH += $(RESOURCE-CDR)
 
 ################################################################################
 #
@@ -49,32 +49,32 @@ VPATH += $(RESOURCE-DTSR)
 ################################################################################
 
 ifndef MAKECONFIG
-CONFIG := $(CONFIGDIR)/user-dtsr-directory.txt
+CONFIG := $(CONFIGDIR)/user-cdr-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
 $(info $(call CONFIGWARN,$(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
-DTSRDIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(DTSRDIR))))
-RESOURCE-NAME := Deconvolutional Time Series Regression (DTSR)
+CDRDIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(CDRDIR))))
+RESOURCE-NAME := Deconvolutional Time Series Regression (CDR)
 define RESOURCE-DESCR =
 
-NAME: Deconvolutional Time Series Regression (DTSR)
-MB POINTER FILE: config/user-dtsr-directory.txt
+NAME: Deconvolutional Time Series Regression (CDR)
+MB POINTER FILE: config/user-cdr-directory.txt
 AVAILABILITY: Public
 DESCRIPTION: A toolkit for jointly learning effect estimates and
 temporal convolution shapes from time series data. 
 endef
-DTSR-ERROR := $(call DEPWARN, $(DTSR-NAME), $(CONFIG), $(RESOURCE-DESCR))
-DEP-DTSR = $(error $(DTSR-ERROR))
+CDR-ERROR := $(call DEPWARN, $(CDR-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-CDR = $(error $(CDR-ERROR))
 endif
 endif
 
 
-%/user-dtsr-directory.txt: | %   
-	echo '/data/compling/dtsr' > $@
+%/user-cdr-directory.txt: | %   
+	echo '/data/compling/cdr' > $@
 
-PYTHONPATH= $(shell cat $(CONFIGDIR)/user-dtsr-directory.txt)
+PYTHONPATH= $(shell cat $(CONFIGDIR)/user-cdr-directory.txt)
 export PYTHONPATH
 
 ################################################################################
@@ -83,24 +83,24 @@ export PYTHONPATH
 #
 ################################################################################
 
-bin/regress-dtsr: $(DTSR-SCRIPTS)/regress-dtsr.sh
+bin/regress-cdr: $(CDR-SCRIPTS)/regress-cdr.sh
 	cp $< $@
 
-bin/predict-dtsr: $(DTSR-SCRIPTS)/predict-dtsr.sh
+bin/predict-cdr: $(CDR-SCRIPTS)/predict-cdr.sh
 	cp $< $@
 
 .PRECIOUS: %.t.core.evmeasures
-%.t.core.evmeasures: %.core.evmeasures $$(DTSR-SCRIPTS)/compute_timestamps_from_RT.py
+%.t.core.evmeasures: %.core.evmeasures $$(CDR-SCRIPTS)/compute_timestamps_from_RT.py
 	cat $(word 1, $^) | python $(word 2, $^) > $@
 
 %.y.evmeasures: %.evmeasures $$(RT-SCRIPTS)/filter_cols.awk
 	cat $(word 1, $^) | awk -f $(word 2, $^) -v cols=fdur:fdurFP:fdurGP:time:subject:docid:sentid:word:correct:startofsentence:endofsentence:startofline:endofline:startofscreen:endofscreen:startoffile:endoffile:wdelta > $@
 
 ## TO SPEC
-%.filt-evmeasures: $$(DEP-DTSR) \
+%.filt-evmeasures: $$(DEP-CDR) \
 $$(basename $$(basename %)).core-evmeasures \
-scripts/$$(subst .,,$$(suffix $$(basename $$*))).dtsrform \
-$(DTSR-SCRIPTS)/infer_dtsr_predictors.py \
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).cdrform \
+$(CDR-SCRIPTS)/infer_cdr_predictors.py \
 $(RT-SCRIPTS)/filter_cols.awk \
 $(RT-SCRIPTS)/accumulateMetrics.py \
 $(RT-SCRIPTS)/rm_unfix_items.py \
@@ -108,7 +108,7 @@ $(RT-SCRIPTS)/futureMetrics.py \
 $(RT-SCRIPTS)/spilloverMetrics.py \
 $(RT-SCRIPTS)/parsePredictors.py \
 $(RT-SCRIPTS)/rm_na_items.py \
-$(CONFIGDIR)/user-dtsr-directory.txt
+$(CONFIGDIR)/user-cdr-directory.txt
 	$(eval CORECOLS := $(sort $(shell echo $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^))) $(shell echo $(subst +, ,$(subst _, ,$(subst .,,$(suffix $*))))) | python $(word 9, $^))))
 	$(eval COLS := $(sort $(shell echo $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^))) $(shell echo $(subst +, ,$(subst _, ,$(subst .,,$(suffix $*))))))))
 	@echo Extracting columns: $(CORECOLS)
@@ -121,10 +121,10 @@ $(CONFIGDIR)/user-dtsr-directory.txt
 	awk -f $(word 4, $^) -v cols=$(subst $(SPACE),:,$(strip $(COLS))) | \
 	python $(word 10, $^) > $@
 
-%.filt.evmeasures: $$(DEP-DTSR) \
+%.filt.evmeasures: $$(DEP-CDR) \
 $$(basename $$(basename %)).core.evmeasures \
-scripts/$$(subst .,,$$(suffix $$(basename $$*))).dtsrform \
-$(DTSR-SCRIPTS)/infer_dtsr_predictors.py \
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).cdrform \
+$(CDR-SCRIPTS)/infer_cdr_predictors.py \
 $(RT-SCRIPTS)/filter_cols.awk \
 $(RT-SCRIPTS)/accumulateMetrics.py \
 $(RT-SCRIPTS)/rm_unfix_items.py \
@@ -132,7 +132,7 @@ $(RT-SCRIPTS)/futureMetrics.py \
 $(RT-SCRIPTS)/spilloverMetrics.py \
 $(RT-SCRIPTS)/parsePredictors.py \
 $(RT-SCRIPTS)/rm_na_items.py \
-$(CONFIGDIR)/user-dtsr-directory.txt
+$(CONFIGDIR)/user-cdr-directory.txt
 	$(eval CORECOLS := $(sort $(shell echo $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^))) $(shell echo $(subst +, ,$(subst _, ,$(subst .,,$(suffix $*))))) | python $(word 9, $^))))
 	$(eval COLS := $(sort $(shell echo $(shell cat $(word 2, $^) | python3 $(word 3, $^) $(shell cat $(word 11, $^))) $(shell echo $(subst +, ,$(subst _, ,$(subst .,,$(suffix $*))))))))
 	@echo Extracting columns: $(CORECOLS)
@@ -146,36 +146,36 @@ $(CONFIGDIR)/user-dtsr-directory.txt
 	python $(word 10, $^) > $@
 
 ## TO SPEC
-.PRECIOUS: %_dtsr_outdir/finished.txt
-%_dtsr_outdir/finished.txt: $$(DEP-DTSR) \
+.PRECIOUS: %_cdr_outdir/finished.txt
+%_cdr_outdir/finished.txt: $$(DEP-CDR) \
 %.filt-evmeasures \
 $$(word 1,$$(subst ., ,%)).evmeasures \
-scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).dtsrform \
-$(CONFIGDIR)/user-dtsr-directory.txt \
-$(DTSR-SCRIPTS)/generate_config.py \
-$(DTSR-SCRIPTS)/get_split_id_fields.py \
-$(DTSRDIR)/dtsr/bin/partition.py \
-$(DTSRDIR)/dtsr/bin/train.py \
-$(DTSRDIR)/dtsr/dtsr.py \
-$(DTSRDIR)/dtsr/dtsrbayes.py
+scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).cdrform \
+$(CONFIGDIR)/user-cdr-directory.txt \
+$(CDR-SCRIPTS)/generate_config.py \
+$(CDR-SCRIPTS)/get_split_id_fields.py \
+$(CDRDIR)/cdr/bin/partition.py \
+$(CDRDIR)/cdr/bin/train.py \
+$(CDRDIR)/cdr/cdr.py \
+$(CDRDIR)/cdr/cdrbayes.py
 	mkdir -p $(dir $@)
 	python3 $(word 7, $^) $(word 2, $^) -m 4 -n 3 -f $(shell cat $(word 3, $^) | python $(word 6, $^))
 	cat $(word 3, $^) | python $(word 5, $^) $(word 1, $^) $(word 2, $^) $(dir $@) $(wordlist 2, $(words $(subst _, ,$(subst .,,$(suffix $*)))), $(subst _, ,$(subst .,,$(suffix $*))))
 	python3 $(word 8, $^) $(dir $@)/config.ini
 	echo "" > $@
 
-.PRECIOUS: %.dtsr_outdir/finished.txt
-%.dtsr_outdir/finished.txt: $$(DEP-DTSR) \
+.PRECIOUS: %.cdr_outdir/finished.txt
+%.cdr_outdir/finished.txt: $$(DEP-CDR) \
 %.filt.evmeasures \
 $$(word 1,$$(subst ., ,%)).evmeasures \
-scripts/$$(subst .,,$$(suffix $$(basename $$*))).dtsrform \
-$(CONFIGDIR)/user-dtsr-directory.txt \
-$(DTSR-SCRIPTS)/generate_config.py \
-$(DTSR-SCRIPTS)/get_split_id_fields.py \
-$(DTSRDIR)/dtsr/bin/partition.py \
-$(DTSRDIR)/dtsr/bin/train.py \
-$(DTSRDIR)/dtsr/dtsrbase.py \
-$(DTSRDIR)/dtsr/dtsrbayes.py
+scripts/$$(subst .,,$$(suffix $$(basename $$*))).cdrform \
+$(CONFIGDIR)/user-cdr-directory.txt \
+$(CDR-SCRIPTS)/generate_config.py \
+$(CDR-SCRIPTS)/get_split_id_fields.py \
+$(CDRDIR)/cdr/bin/partition.py \
+$(CDRDIR)/cdr/bin/train.py \
+$(CDRDIR)/cdr/cdrbase.py \
+$(CDRDIR)/cdr/cdrbayes.py
 	mkdir -p $(dir $@)
 	python3 $(word 7, $^) $(word 2, $^) -m 4 -n 3 -f $(shell cat $(word 3, $^) | python $(word 6, $^))
 	cat $(word 3, $^) | python $(word 5, $^) $(word 1, $^) $(word 2, $^) $(dir $@) $(subst _, ,$(subst .,,$(suffix $*)))
@@ -183,29 +183,29 @@ $(DTSRDIR)/dtsr/dtsrbayes.py
 	echo "" > $@
 
 ## TO SPEC
-%_dtsr: %_dtsr_outdir/finished.txt;
+%_cdr: %_cdr_outdir/finished.txt;
 
-%.dtsr: %.dtsr_outdir/finished.txt;
+%.cdr: %.cdr_outdir/finished.txt;
 
-#%_ptsignif: $$(DEP-DTSR) \
+#%_ptsignif: $$(DEP-CDR) \
 $$(basename $$(basename $$(basename %))).$$(subst .,,$$(suffix $$(basename $$*))).filt.evmeasures \
 $$(word 1,$$(subst ., ,%)).evmeasures \
 $$(basename $$(basename $$(basename %))).$$(subst .,,$$(suffix $$(basename $$*))).$$(subst .,,$$(suffix $$(basename $$(basename $$*)))) \
-$(DTSRDIR)/dtsr/bin/predict.py \
-$(DTSRDIR)/dtsr/bin/pt.py \
-$(DTSRDIR)/dtsr/bin/signif_table.py
+$(CDRDIR)/cdr/bin/predict.py \
+$(CDRDIR)/cdr/bin/pt.py \
+$(CDRDIR)/cdr/bin/signif_table.py
 #	python3 $(word 4, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -p $(subst .,,$(suffix $*))
 #	python3 $(word 5, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -a -M loglik -p $(subst .,,$(suffix $*))
 #	python3 $(word 6, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -H -M pt -p $(subst .,,$(suffix $*)) > $@
 
-%_2stepsignif: $$(DEP-DTSR) \
+%_2stepsignif: $$(DEP-CDR) \
 $$(basename $$(basename $$(basename %))).$$(subst .,,$$(suffix $$(basename $$*))).filt.evmeasures \
 $$(word 1,$$(subst ., ,%)).evmeasures \
 $$(basename $$(basename $$(basename %))).$$(subst .,,$$(suffix $$(basename $$*))).$$(subst .,,$$(suffix $$(basename $$(basename $$*)))) \
-$(DTSRDIR)/dtsr/bin/convolve.py \
-$(DTSRDIR)/dtsr/bin/lmer.py \
-$(DTSRDIR)/dtsr/bin/lrt.py \
-$(DTSRDIR)/dtsr/bin/signif_table.py
+$(CDRDIR)/cdr/bin/convolve.py \
+$(CDRDIR)/cdr/bin/lmer.py \
+$(CDRDIR)/cdr/bin/lrt.py \
+$(CDRDIR)/cdr/bin/signif_table.py
 	python3 $(word 4, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -p $(subst .,,$(suffix $*)) 
 	python3 $(word 5, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -z -p $(subst .,,$(suffix $*))
 	python3 $(word 6, $^) $(basename $(basename $(basename $*))).$(subst .,,$(suffix $(basename $*))).$(subst .,,$(suffix $(basename $(basename $*))))_outdir/config.ini -p $(subst .,,$(suffix $*)) -a

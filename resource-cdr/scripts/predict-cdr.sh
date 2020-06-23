@@ -16,11 +16,11 @@ pred_partition=$(get_suffix $pred_partition);
 pred_partition="${pred_partition/_part/}"
 pred_partition=$(echo $pred_partition | sed 's/fit/train/g' | sed 's/expl/dev/g' | sed 's/held/text/g')
 
-dtsr_dir=$(cat ../config/user-dtsr-directory.txt)
+cdr_dir=$(cat ../config/user-cdr-directory.txt)
 
-export PYTHONPATH=$PYTHONPATH:dtsr_dir
+export PYTHONPATH=$PYTHONPATH:cdr_dir
 
-python3 -m dtsr.bin.predict $config_path -p $pred_partition
+python3 -m cdr.bin.predict $config_path -p $pred_partition
 
-cat "$1_outdir/DTSR/mse_losses_$pred_partition.txt"
+cat "$1_outdir/CDR/losses_mse_$pred_partition.txt"
 

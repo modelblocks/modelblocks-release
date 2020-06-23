@@ -164,7 +164,7 @@ $(CONFIGDIR)/user-naturalstories-directory.txt
 
 %naturalstories.evmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.tsv \
 $(RT-SCRIPTS)/rename_cols.py $(NATSTORIES-SCRIPTS)/merge_natstor.py %naturalstories.mfields.itemmeasures \
-$(DTSR-SCRIPTS)/compute_timestamps_from_RT.py $(CONFIGDIR)/user-naturalstories-directory.txt
+$(CDR-SCRIPTS)/compute_timestamps_from_RT.py $(CONFIGDIR)/user-naturalstories-directory.txt
 	python $(word 3, $^) <(cat $(word 1, $^) | sed 's/\t/ /g;s/peaked/peeked/g;' | python $(word 2, $^) WorkerId subject RT fdur) \
 	$(word 4, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' | python $(word 5, $^) > $@
   
@@ -175,4 +175,4 @@ $(DTSR-SCRIPTS)/compute_timestamps_from_RT.py $(CONFIGDIR)/user-naturalstories-d
 	python $^ > $@
 
 genmodel/naturalstories.toktrees: genmodel/naturalstories.coref.fromlinetrees.numbered.editabletrees
-	cp $^ > $@
+	cat $^ > $@

@@ -43,7 +43,7 @@ class DiscGraph:
     ## For each assoc...
     for assoc in sorted( line.split(' ') ):
       src,lbl,dst = assoc.split( ',', 2 )
-      if dst.startswith('N-bO:') or dst.startswith('N-bN:') or dst.startswith('N-b{N-aD}:') or dst.startswith('N-aD-b{N-aD}:'): dst += 'Q'
+      if dst.startswith('N-bO:') or dst.startswith('N-bN:') or dst.startswith('N-b{N-aD}:') or dst.startswith('N-aD-b{N-aD}:') or dst.startswith('N-aD-b{N-aD}-bN:'): dst += 'Q'
       D.Referents += [ src ] if lbl=='0' else [ src, dst ]
       if lbl.isdigit():  D.PorQs    [src].insert( int(lbl), dst )   ## Add preds and quants.
       elif lbl == 's':   D.Scopes   [src]      = dst                ## Add scopes.
@@ -64,7 +64,7 @@ class DiscGraph:
       if Particips[0].endswith('Q'):  D.QuantTuples.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] + (['_'] if len(Particips)<4 else []) ) )
       else:                           D.PredTuples.append ( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
 
-    D.OrigConsts = [ ep[0] for ep in D.PredTuples ] + [ q[0] for q in D.QuantTuples ]
+    D.OrigConsts = [ (ep[0],ep[1]) for ep in D.PredTuples ] + [ (q[0],'Q') for q in D.QuantTuples ]
 
     ## Report items...
     if VERBOSE: 
@@ -139,6 +139,11 @@ class DiscGraph:
     for xLo in D.Subs[x]:
       sys.stderr.write( 'WARNING: inheritance -n should not be annotated from ' + xLo + ' to redundant predicative referent: ' + x + '\n' )
       print(           '#WARNING: inheritance -n should not be annotated from ' + xLo + ' to redundant predicative referent: ' + x )
+    ## Complain about disc inhs immediately below smitten...
+    for xLo in D.DiscInhs:
+      if D.DiscInhs[xLo] == x:
+        sys.stderr.write( 'WARNING: inheritance -m should not be annotated from ' + xLo + ' to redundant predicative referent: ' + x + '\n' )
+        print(           '#WARNING: inheritance -m should not be annotated from ' + xLo + ' to redundant predicative referent: ' + x )
     ## Complain about scopes immediately above smitten...
     if x in D.Scopes:
       sys.stderr.write( 'WARNING: scope -s should not be annotated on redundant predicative referent: ' + x + '\n' )

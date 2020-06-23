@@ -2,7 +2,7 @@ import sys
 import os
 import configparser
 
-from dtsr.formula import Formula
+from cdr.formula import Formula
 
 X_path = sys.argv[1]
 y_path = sys.argv[2]
@@ -16,9 +16,9 @@ config.readfp(sys.stdin)
 config['data']['X_train'] = X_path
 config['data']['X_dev'] = X_path
 config['data']['X_test'] = X_path
-config['data']['y_train'] = y_path
-config['data']['y_dev'] = y_path.replace('fit_part','expl_part')
-config['data']['y_test'] = y_path.replace('fit_part', 'held_part')
+config['data']['y_train'] = y_path + '.train'
+config['data']['y_dev'] = y_path + '.dev'
+config['data']['y_test'] = y_path + '.test'
 
 impulse_to_irf = {}
 if 'impulse_to_irf' in config:
@@ -35,45 +35,35 @@ if 'impulse_to_transform' in config:
     for key in config['impulse_to_transform']:
         impulse_to_transform[key] = config['impulse_to_transform'][key]
 
-newpred_rangf = ['subject']
-if 'newpred_rangf' in config:
-    newpred_rangf = config['newpred_rangf']['rangf'].strip().split()
-
 baseline_found = False
 for name in config:
-    if name.startswith('model_DTSR') and name.endswith('_BASELINE'):
+    if (name.startswith('model_CDR') or name.startswith('model_DTSR')) and name.endswith('_BASELINE'):
         baseline_found = True
         new_name = name[:-9]
         model_template = config[name]
         f = Formula(model_template['formula'])
 
         for effect in main_effects:
-            if effect.startswith('~'):
-                ablate = True
-                effect = effect[1:]
-            else:
-                ablate = False
-
             irf_str = impulse_to_irf.get(effect, default_irf_str)
             effect_name = effect
             transform = impulse_to_transform.get(effect, ['s'])
             if transform == 'None':
                 transform = []
-            elif isinstance(transform, str):
+            elif isinstance(transform, basestring):
                 transform = transform.strip().split()
             for t in reversed(transform):
                 effect_name = t + '(' + effect_name + ')'
            
-            f.insert_impulses(effect_name, irf_str, rangf=newpred_rangf)
-            if ablate:
-                f.ablate_impulses(effect)
+            f.insert_impulses(effect_name, irf_str, rangf=['subject'])
 
         config[new_name] = dict(config[name]).copy()
         config[new_name]['formula'] = str(f)
+        if len(main_effects) > 0:
+            config[new_name]['ablate'] = ' '.join(main_effects)
         del config[name]
 
 if not baseline_found and len(main_effects) > 0:
-    sys.stderr.write('No DTSR models in config file are flagged with suffix "_BASELINE". Effects %s will not be added/ablated in any models.\n' %main_effects)
+    sys.stderr.write('No CDR models in config file are flagged with suffix "_BASELINE". Effects %s will not be added/ablated in any models.\n' %main_effects)
 
 config['global_settings'] = {'outdir': outdir}
 
@@ -81,8 +71,6 @@ if 'impulse_to_irf' in config:
     del config['impulse_to_irf']
 if 'impulse_to_transform' in config:
     del config['impulse_to_transform']
-if 'newpred_rangf' in config:
-    del config['newpred_rangf']
 
 if not os.path.exists(outdir):
     os.makedirs(outdir)

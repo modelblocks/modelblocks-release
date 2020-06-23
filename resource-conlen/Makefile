@@ -104,7 +104,10 @@ genmodel/%_LANG_MD.ini: genmodel/%.ini
 genmodel/%_LANG_MD.ini: genmodel/%.ini
 	cp $< $@
 
-%conlen.itemmeasures: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length.itemmeasures $(CONLEN-SCRIPTS)/build_itemmeasures.py $(CONFIGDIR)/user-conlen-directory.txt | %
+%conlenfmri_beh.txt: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_beh.txt $(CONFIGDIR)/user-conlen-directory.txt | %
+	cp $< $@
+
+%conlen.itemmeasures: %conlenfmri_beh.txt $(CONLEN-SCRIPTS)/build_itemmeasures.py
 	cat $< | python $(word 2, $^) > $@
 
 %conlenc.itemmeasures: $(CONLEN-SCRIPTS)/filter_itemmeasures.py %conlen.itemmeasures
@@ -177,7 +180,10 @@ conlenncfilt%itemmeasures: $$(dir %)/conlennc.itemmeasures conlenncsents%itemmea
 conlenfmri%itemmeasures: $(CONLEN-SCRIPTS)/concat_itemmeasures.py conlenc%itemmeasures conlenncfilt%itemmeasures conlenjab%itemmeasures
 	python $^ > $@
 
-%conlenfmri.evmeasures: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_src.evmeasures $(CONLEN-SCRIPTS)/preprocess_conlen_fmri.py $(CONFIGDIR)/user-conlen-directory.txt | %
+%conlenfmri_bold.evmeasures: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_bold.csv $(CONFIGDIR)/user-conlen-directory.txt | %
+	cp $< $@
+
+%conlenfmri.evmeasures: $$(DEP-CONLEN) %conlenfmri_bold.evmeasures $(CONLEN-SCRIPTS)/preprocess_conlen_fmri.py
 	cat $(word 1, $^) | python $(word 2, $^) > $@
 
 %conlenfmri_LANG.evmeasures: %conlenfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(CONLEN-SCRIPTS)/add_network.py
@@ -189,7 +195,7 @@ conlenfmri%itemmeasures: $(CONLEN-SCRIPTS)/concat_itemmeasures.py conlenc%itemme
 %conlenfmri_LANG_MD.evmeasures: %conlenfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(CONLEN-SCRIPTS)/add_network.py
 	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k LANG.* MD.* | python $(word 3, $^)  > $@
 
-%conlenfmri.beh.evmeasures: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_beh.txt
+%conlenfmri.beh.evmeasures: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_beh.csv
 	cp $^ $@
 
 conlenfmri.%.evmeasures: $(CONLEN-SCRIPTS)/merge_itemmeasures_into_runs.py $$(dir %)conlenfmri.beh.evmeasures conlenfmri.%.all-itemmeasures
