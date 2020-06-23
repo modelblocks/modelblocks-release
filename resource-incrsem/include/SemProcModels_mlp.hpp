@@ -469,7 +469,9 @@ class WModel {
       ihbv = ihb;
       hhbv = hhb;
       fcbv = fcb;
+      cerr << "old ihwm size : " << ihwm.n_rows << " " << ihwm.n_cols << endl;
       ihwm.reshape(RNNH_SIZE, WPRED_SIZE + CHAR_SIZE);
+      cerr << "new ihwm size : " << ihwm.n_rows << " " << ihwm.n_cols << endl;
       hhwm.reshape(RNNH_SIZE, RNNH_SIZE);
       fcwm.reshape(fcw.size()/RNNH_SIZE, RNNH_SIZE);
       wpwm.reshape(WPRED_SIZE, mwpi.size());
@@ -482,7 +484,20 @@ class WModel {
       ihbm = repmat(ihbv, 1, mwpi.size());
       hhbm = repmat(hhbv, 1, mwpi.size());
       fcbm = repmat(fcbv, 1, mwpi.size());
+//      cerr << "wpwm size " << wpwm.n_rows << " " << wpwm.n_cols << endl;
+//      cerr << "<S> mat size " << (mcm.find("<S>")->second).n_rows << " " << (mcm.find("<S>")->second).n_cols << endl;
+//      mat h0 = join_cols(wpwm, mcm.find("<S>")->second);
+//      cerr << "h0 size " << h0.n_rows << " " << h0.n_cols << endl;
+//      mat h1b = ihwm * zeros(60,100);
+//      cerr << "h1b size " << h1b.n_rows << " " << h1b.n_cols << endl;
+//      mat h1a = ihwm * h0;
+//      cerr << "h1a size " << h1a.n_rows << " " << h1a.n_cols << endl;
+//      mat h2 = h1a + ihbm;
+//      cerr << "h2 size " << h2.n_rows << " " << h2.n_cols << endl;
+//      mat h3 = relu(h2);
+//      cerr << "h3 size " << h3.n_rows << " " << h3.n_cols << endl;
       h1 = relu(ihwm * join_cols(wpwm, mcm.find("<S>")->second) + ihbm);
+//      cerr << "joined mat size " << h1.n_rows << " " << h1.n_cols << endl;
       s1_scores = exp(fcwm * h1 + fcbm);
       s1_norm = sum(s1_scores, 0);
       s1_logprobs = log(s1_scores.each_row() / s1_norm);
@@ -496,7 +511,8 @@ class WModel {
 
     const mat getCharMat( string a ) const {
       auto it = mcm.find( a );
-      assert ( it != mcm.end() );
+      if (it == mcm.end()) cerr << "unknown char: " << a << endl;
+//      assert ( it != mcm.end() );
       return it->second;
     }
 
@@ -513,7 +529,7 @@ class WModel {
     }
 
 //    list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> calcPredictorLikelihoods( const W w_t ) const {
-    list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> calcPredictorLikelihoods( const W w_t, MapWP mymap ) const {
+    list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> calcPredictorLikelihoods( const W w_t, const MapWP& mymap ) const {
       auto it = mymap.find( w_t );
 //      cerr << "mymap size " << mymap.size() << endl;
       list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> results;
@@ -540,7 +556,17 @@ class WModel {
 //            cerr << w_t.getString().c_str() << endl;
 //            cerr << ct.c_str() << endl;
 //            cerr << ct1.c_str() << endl;
-            mat ht1 = relu(ihwm * join_cols(wpwm, getCharMat( ct.c_str() )) + ihbm + hhwm * ht + hhbm);
+//            mat ht1 = relu(ihwm * join_cols(wpwm, getCharMat( ct.c_str() )) + ihbm + hhwm * ht + hhbm);
+            mat a0 = getCharMat( ct.c_str() );
+            mat a1 = join_cols(wpwm, a0);
+            mat a4 = ihwm * zeros(60, 5700);
+            cerr << "calculated a4" << endl;
+            mat a2 = ihwm * a1;
+            mat a3 = a2 + ihbm;
+            mat b1 = hhwm * ht;
+            mat b2 = b1 + hhbm;
+            mat c1 = a3 + b2;
+            mat ht1 = relu(c1);
             mat st1_scores = exp(fcwm * ht1 + fcbm);
             rowvec st1_norm = sum(st1_scores, 0);
             if (i != strlen(w_t.getString().c_str())-1) {

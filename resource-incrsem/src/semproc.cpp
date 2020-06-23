@@ -245,7 +245,7 @@ int main ( int nArgs, char* argv[] ) {
 
   mutex mutexMLSList;
   vector<thread> vtWorkers;  vtWorkers.reserve( numThreads );
-  WModel::MapWP global_map;
+//  WModel::MapWP global_map;
 
   if( OUTPUT_MEASURES ) cout << "word pos f j store ndec totsurp" << endl;
 
@@ -271,10 +271,11 @@ int main ( int nArgs, char* argv[] ) {
 #endif
 
   // loop over threads (each thread gets an article)
-  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&corpus,&iartNextToProc,&iartNextToDump,/*&articleMLSs,&articles,&linenum,*/&mutexMLSList,numThreads,&matE,&funcO,&modN,&modF,&modP,&modW,&modJ,&modA,&modB,&global_map] (uint numt) {
+  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&corpus,&iartNextToProc,&iartNextToDump,/*&articleMLSs,&articles,&linenum,*/&mutexMLSList,numThreads,&matE,&funcO,&modN,&modF,&modP,&modW,&modJ,&modA,&modB] (uint numt) {
 
     auto tpLastReport = chrono::high_resolution_clock::now();  // clock for thread heartbeats
-    auto mymap = global_map;
+//    auto mymap = global_map;
+    WModel::MapWP mymap;
 
     // Loop over articles...
     while( true ) {
@@ -351,9 +352,11 @@ int main ( int nArgs, char* argv[] ) {
           cerr << "Thread number " << numt << " " << w_t << endl;
 
           auto wlikelihoods = modW.calcPredictorLikelihoods(w_t, mymap);
-          {lock_guard<mutex> guard( mutexMLSList );
           mymap.try_emplace(w_t, wlikelihoods);
-          cerr << "Thread number " << numt << " - mymap size : " << mymap.size() << endl;}
+          cerr << "Thread number " << numt << " - mymap size : " << mymap.size() << endl;
+//          {lock_guard<mutex> guard( mutexMLSList );
+//          mymap.try_emplace(w_t, wlikelihoods);
+//          cerr << "Thread number " << numt << " - mymap size : " << mymap.size() << endl;}
 
           // For each hypothesized storestate at previous time step...
           for( const BeamElement<HiddState>& be_tdec1 : beams[t-1] ) { //beams[t-1] is a Beam<ProbBack,BeamElement>, so be_tdec1 is a beam item, which is a pair<ProbBack,BeamElement>. first.first is the prob in the probback, and second is the beamelement, which is a sextuple of <sign, f, e, k, j, q>
