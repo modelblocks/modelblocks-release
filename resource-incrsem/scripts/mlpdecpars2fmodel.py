@@ -38,11 +38,15 @@ def prepare_data():
     # Mapping from category & HVec to index
     flat_hvB = [hvec for sublist in hvBFirst for hvec in sublist if hvec not in ["", "Bot", "Top"]]
     flat_hvF = [hvec for sublist in hvFFirst for hvec in sublist if hvec not in ["", "Bot", "Top"]]
-    cat_to_ix = {cat: i for i, cat in enumerate(sorted(set(catBase)))}
+    # cat_to_ix = {cat: i for i, cat in enumerate(sorted(set(catBase)))}
+    catb_to_ix = {cat: i for i, cat in enumerate(sorted(set(catBase)))}
     fdecs_to_ix = {fdecs: i for i, fdecs in enumerate(sorted(set(fDecs)))}
-    hvec_to_ix = {hvec: i for i, hvec in enumerate(sorted(set(flat_hvB + flat_hvF)))}
+    # hvec_to_ix = {hvec: i for i, hvec in enumerate(sorted(set(flat_hvB + flat_hvF)))}
+    hvecb_to_ix = {hvec: i for i, hvec in enumerate(sorted(set(flat_hvB)))}
+    hvecf_to_ix = {hvec: i for i, hvec in enumerate(sorted(set(flat_hvF)))}
 
-    cat_b_ix = [cat_to_ix[cat] for cat in catBase]
+    # cat_b_ix = [cat_to_ix[cat] for cat in catBase]
+    cat_b_ix = [catb_to_ix[cat] for cat in catBase]
     fdecs_ix = [fdecs_to_ix[fdecs] for fdecs in fDecs]
 
     hvb_row, hvb_col, hvb_top, hvf_row, hvf_col, hvf_top = ([] for _ in range(6))
@@ -57,10 +61,13 @@ def prepare_data():
                 continue
             else:
                 hvb_row.append(i)
-                hvb_col.append(hvec_to_ix[hvec])
+                # hvb_col.append(hvec_to_ix[hvec])
+                hvb_col.append(hvecb_to_ix[hvec])
         hvb_top.append([top_count])
+    # hvb_mat = csr_matrix((np.ones(len(hvb_row), dtype=np.int32), (hvb_row, hvb_col)),
+    #                      shape=(len(hvBFirst), len(hvec_to_ix)))
     hvb_mat = csr_matrix((np.ones(len(hvb_row), dtype=np.int32), (hvb_row, hvb_col)),
-                         shape=(len(hvBFirst), len(hvec_to_ix)))
+                         shape=(len(hvBFirst), len(hvecb_to_ix)))
     eprint("hvb_mat ready")
 
     for i, sublist in enumerate(hvFFirst):
@@ -72,19 +79,26 @@ def prepare_data():
                 continue
             else:
                 hvf_row.append(i)
-                hvf_col.append(hvec_to_ix[hvec])
+                # hvf_col.append(hvec_to_ix[hvec])
+                hvf_col.append(hvecf_to_ix[hvec])
         hvf_top.append([top_count])
+    # hvf_mat = csr_matrix((np.ones(len(hvf_row), dtype=np.int32), (hvf_row, hvf_col)),
+    #                      shape=(len(hvFFirst), len(hvec_to_ix)))
     hvf_mat = csr_matrix((np.ones(len(hvf_row), dtype=np.int32), (hvf_row, hvf_col)),
-                         shape=(len(hvFFirst), len(hvec_to_ix)))
+                         shape=(len(hvFFirst), len(hvecf_to_ix)))
     eprint("hvf_mat ready")
 
-    eprint("Number of input KVecs: {}".format(len(hvec_to_ix)))
+    eprint("Number of input base CVecs: {}".format(len(catb_to_ix)))
+    eprint("Number of input base KVecs: {}".format(len(hvecb_to_ix)))
+    eprint("Number of input filler KVecs: {}".format(len(hvecf_to_ix)))
     eprint("Number of output F categories: {}".format(len(fdecs_to_ix)))
 
-    return depth, cat_b_ix, hvb_mat, hvf_mat, cat_to_ix, fdecs_ix, fdecs_to_ix, hvec_to_ix, hvb_top, hvf_top
+    # return depth, cat_b_ix, hvb_mat, hvf_mat, cat_to_ix, fdecs_ix, fdecs_to_ix, hvec_to_ix, hvb_top, hvf_top
+    return depth, cat_b_ix, hvb_mat, hvf_mat, catb_to_ix, fdecs_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hvb_top, hvf_top
 
 
-def prepare_data_dev(dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix):
+# def prepare_data_dev(dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix):
+def prepare_data_dev(dev_decpars_file, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix):
     with open(dev_decpars_file, "r") as f:
         data = f.readlines()
         data = [line.strip() for line in data]
@@ -93,7 +107,8 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix):
 
     for line in data:
         d, cb, hvb, hvf, fd = line.split(" ")
-        if cb not in cat_to_ix or fd not in fdecs_to_ix:
+        # if cb not in cat_to_ix or fd not in fdecs_to_ix:
+        if cb not in catb_to_ix or fd not in fdecs_to_ix:
             continue
         depth.append(int(d))
         catBase.append(cb)
@@ -109,7 +124,8 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix):
         match = re.findall(r"^\[(.*?)\]", kvec)
         hvFFirst.append(match[0].split(","))
 
-    cat_b_ix = [cat_to_ix[cat] for cat in catBase]
+    # cat_b_ix = [cat_to_ix[cat] for cat in catBase]
+    cat_b_ix = [catb_to_ix[cat] for cat in catBase]
     fdecs_ix = [fdecs_to_ix[fdecs] for fdecs in fDecs]
 
     hvb_row, hvb_col, hvf_row, hvf_col, hvb_top, hvf_top = ([] for _ in range(6))
@@ -120,40 +136,52 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix):
         for hvec in sublist:
             if hvec == "Top":
                 top_count += 1
-            elif hvec == "" or hvec == "Bot" or hvec not in hvec_to_ix:
+            # elif hvec == "" or hvec == "Bot" or hvec not in hvec_to_ix:
+            elif hvec == "" or hvec == "Bot" or hvec not in hvecb_to_ix:
                 continue
             else:
                 hvb_row.append(i)
-                hvb_col.append(hvec_to_ix[hvec])
+                # hvb_col.append(hvec_to_ix[hvec])
+                hvb_col.append(hvecb_to_ix[hvec])
         hvb_top.append([top_count])
+    # hvb_mat = csr_matrix((np.ones(len(hvb_row), dtype=np.int32), (hvb_row, hvb_col)),
+    #                      shape=(len(hvBFirst), len(hvec_to_ix)))
     hvb_mat = csr_matrix((np.ones(len(hvb_row), dtype=np.int32), (hvb_row, hvb_col)),
-                         shape=(len(hvBFirst), len(hvec_to_ix)))
+                         shape=(len(hvBFirst), len(hvecb_to_ix)))
 
     for i, sublist in enumerate(hvFFirst):
         top_count = 0
         for hvec in sublist:
             if hvec == "Top":
                 top_count += 1
-            elif hvec == "" or hvec == "Bot" or hvec not in hvec_to_ix:
+            # elif hvec == "" or hvec == "Bot" or hvec not in hvec_to_ix:
+            elif hvec == "" or hvec == "Bot" or hvec not in hvecf_to_ix:
                 continue
             else:
                 hvf_row.append(i)
-                hvf_col.append(hvec_to_ix[hvec])
+                # hvf_col.append(hvec_to_ix[hvec])
+                hvf_col.append(hvecf_to_ix[hvec])
         hvf_top.append([top_count])
+    # hvf_mat = csr_matrix((np.ones(len(hvf_row), dtype=np.int32), (hvf_row, hvf_col)),
+    #                      shape=(len(hvFFirst), len(hvec_to_ix)))
     hvf_mat = csr_matrix((np.ones(len(hvf_row), dtype=np.int32), (hvf_row, hvf_col)),
-                         shape=(len(hvFFirst), len(hvec_to_ix)))
+                         shape=(len(hvFFirst), len(hvecf_to_ix)))
 
     return depth, cat_b_ix, hvb_mat, hvf_mat, fdecs_ix, hvb_top, hvf_top
 
 
 class FModel(nn.Module):
-    def __init__(self, cat_vocab_size, hvec_vocab_size, syn_size, sem_size, hidden_dim, output_dim, dropout_prob):
+    # def __init__(self, cat_vocab_size, hvec_vocab_size, syn_size, sem_size, hidden_dim, output_dim, dropout_prob):
+    def __init__(self, catb_vocab_size, hvecb_vocab_size, hvecf_vocab_size, syn_size, sem_size, hidden_dim, output_dim, dropout_prob):
         super(FModel, self).__init__()
-        self.hvec_vocab_size = hvec_vocab_size
+        # self.hvec_vocab_size = hvec_vocab_size
         self.syn_size = syn_size
         self.sem_size = sem_size
-        self.cat_embeds = nn.Embedding(cat_vocab_size, syn_size)
-        self.hvec_embeds = nn.Embedding(hvec_vocab_size, sem_size)
+        # self.cat_embeds = nn.Embedding(cat_vocab_size, syn_size)
+        self.catb_embeds = nn.Embedding(catb_vocab_size, syn_size)
+        # self.hvec_embeds = nn.Embedding(hvec_vocab_size, sem_size)
+        self.hvecb_embeds = nn.Embedding(hvecb_vocab_size, sem_size)
+        self.hvecf_embeds = nn.Embedding(hvecf_vocab_size, sem_size)
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
         self.dropout_prob = dropout_prob
@@ -170,7 +198,8 @@ class FModel(nn.Module):
             cat_b_embed = torch.zeros([len(cat_b_ix), self.syn_size], dtype=torch.float)
 
         else:
-            cat_b_embed = self.cat_embeds(cat_b_ix)
+            # cat_b_embed = self.cat_embeds(cat_b_ix)
+            cat_b_embed = self.catb_embeds(cat_b_ix)
 
         if use_gpu >= 0:
             hvb_top = hvb_top.to("cuda")
@@ -199,8 +228,10 @@ class FModel(nn.Module):
                 hvb_mat = hvb_mat.to("cuda")
                 hvf_mat = hvf_mat.to("cuda")
 
-            hvb_embed = torch.sparse.mm(hvb_mat, self.hvec_embeds.weight) + hvb_top
-            hvf_embed = torch.sparse.mm(hvf_mat, self.hvec_embeds.weight) + hvf_top
+            # hvb_embed = torch.sparse.mm(hvb_mat, self.hvec_embeds.weight) + hvb_top
+            # hvf_embed = torch.sparse.mm(hvf_mat, self.hvec_embeds.weight) + hvf_top
+            hvb_embed = torch.sparse.mm(hvb_mat, self.hvecb_embeds.weight) + hvb_top
+            hvf_embed = torch.sparse.mm(hvf_mat, self.hvecf_embeds.weight) + hvf_top
 
         x = torch.cat((cat_b_embed, hvb_embed, hvf_embed, d_onehot), 1)
         x = self.fc1(x)
@@ -212,11 +243,13 @@ class FModel(nn.Module):
 
 def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dropout_prob, num_epochs, batch_size, learning_rate,
           weight_decay, l2_reg, ablate_syn, ablate_sem):
-    depth, cat_b_ix, hvb_mat, hvf_mat, cat_to_ix, fdecs_ix, fdecs_to_ix, hvec_to_ix, hvb_top, hvf_top = prepare_data()
+    # depth, cat_b_ix, hvb_mat, hvf_mat, cat_to_ix, fdecs_ix, fdecs_to_ix, hvec_to_ix, hvb_top, hvf_top = prepare_data()
+    depth, cat_b_ix, hvb_mat, hvf_mat, catb_to_ix, fdecs_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hvb_top, hvf_top = prepare_data()
     depth = F.one_hot(torch.LongTensor(depth), 7).float()
     cat_b_ix = torch.LongTensor(cat_b_ix)
     target = torch.LongTensor(fdecs_ix)
-    model = FModel(len(cat_to_ix), len(hvec_to_ix), syn_size, sem_size, hidden_dim, len(fdecs_to_ix), dropout_prob)
+    # model = FModel(len(cat_to_ix), len(hvec_to_ix), syn_size, sem_size, hidden_dim, len(fdecs_to_ix), dropout_prob)
+    model = FModel(len(catb_to_ix), len(hvecb_to_ix), len(hvecf_to_ix), syn_size, sem_size, hidden_dim, len(fdecs_to_ix), dropout_prob)
 
     if use_gpu >= 0:
         depth = depth.to("cuda")
@@ -225,8 +258,10 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
         model = model.cuda()
 
     if use_dev >= 0:
+        # dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_fdecs_ix, dev_hvb_top, dev_hvf_top = prepare_data_dev(
+        #     dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix)
         dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_fdecs_ix, dev_hvb_top, dev_hvf_top = prepare_data_dev(
-            dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix)
+            dev_decpars_file, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix)
         dev_depth = F.one_hot(torch.LongTensor(dev_depth), 7).float()
         dev_cat_b_ix = torch.LongTensor(dev_cat_b_ix)
         dev_target = torch.LongTensor(dev_fdecs_ix)
@@ -297,49 +332,83 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
         if epoch == num_epochs:
             break
 
-    return model, cat_to_ix, fdecs_to_ix, hvec_to_ix
-
+    # return model, cat_to_ix, fdecs_to_ix, hvec_to_ix
+    return model, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix
 
 def main(config):
     f_config = config["FModel"]
     torch.manual_seed(f_config.getint("Seed"))
-    model, cat_to_ix, fdecs_to_ix, hvec_to_ix = train(f_config.getint("Dev"), f_config.get("DevFile"),
+    # model, cat_to_ix, fdecs_to_ix, hvec_to_ix = train(f_config.getint("Dev"), f_config.get("DevFile"),
+    #                                                   f_config.getint("GPU"),
+    #                                                   f_config.getint("SynSize"), f_config.getint("SemSize"),
+    #                                                   f_config.getint("HiddenSize"), f_config.getfloat("DropoutProb"),
+    #                                                   f_config.getint("NEpochs"), f_config.getint("BatchSize"),
+    #                                                   f_config.getfloat("LearningRate"),
+    #                                                   f_config.getfloat("WeightDecay"), f_config.getfloat("L2Reg"),
+    #                                                   f_config.getboolean("AblateSyn"), f_config.getboolean("AblateSem"))
+    model, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix = train(f_config.getint("Dev"), f_config.get("DevFile"),
                                                       f_config.getint("GPU"),
                                                       f_config.getint("SynSize"), f_config.getint("SemSize"),
                                                       f_config.getint("HiddenSize"), f_config.getfloat("DropoutProb"),
                                                       f_config.getint("NEpochs"), f_config.getint("BatchSize"),
                                                       f_config.getfloat("LearningRate"),
                                                       f_config.getfloat("WeightDecay"), f_config.getfloat("L2Reg"),
-                                                      f_config.getboolean("AblateSyn"), f_config.getboolean("AblateSem"))
+                                                      f_config.getboolean("AblateSyn"),
+                                                      f_config.getboolean("AblateSem"))
 
     model.eval()
 
+    # if f_config.getint("GPU") >= 0:
+    #     cat_embeds = list(model.parameters())[0].data.cpu().numpy()
+    #     hvec_embeds = list(model.parameters())[1].data.cpu().numpy()
+    #     first_weights = list(model.parameters())[2].data.cpu().numpy()
+    #     first_biases = list(model.parameters())[3].data.cpu().numpy()
+    #     second_weights = list(model.parameters())[4].data.cpu().numpy()
+    #     second_biases = list(model.parameters())[5].data.cpu().numpy()
+    # else:
+    #     cat_embeds = list(model.parameters())[0].data.numpy()
+    #     hvec_embeds = list(model.parameters())[1].data.numpy()
+    #     first_weights = list(model.parameters())[2].data.numpy()
+    #     first_biases = list(model.parameters())[3].data.numpy()
+    #     second_weights = list(model.parameters())[4].data.numpy()
+    #     second_biases = list(model.parameters())[5].data.numpy()
+
     if f_config.getint("GPU") >= 0:
-        cat_embeds = list(model.parameters())[0].data.cpu().numpy()
-        hvec_embeds = list(model.parameters())[1].data.cpu().numpy()
-        first_weights = list(model.parameters())[2].data.cpu().numpy()
-        first_biases = list(model.parameters())[3].data.cpu().numpy()
-        second_weights = list(model.parameters())[4].data.cpu().numpy()
-        second_biases = list(model.parameters())[5].data.cpu().numpy()
+        catb_embeds = list(model.parameters())[0].data.cpu().numpy()
+        hvecb_embeds = list(model.parameters())[1].data.cpu().numpy()
+        hvecf_embeds = list(model.parameters())[2].data.cpu().numpy()
+        first_weights = list(model.parameters())[3].data.cpu().numpy()
+        first_biases = list(model.parameters())[4].data.cpu().numpy()
+        second_weights = list(model.parameters())[5].data.cpu().numpy()
+        second_biases = list(model.parameters())[6].data.cpu().numpy()
     else:
-        cat_embeds = list(model.parameters())[0].data.numpy()
-        hvec_embeds = list(model.parameters())[1].data.numpy()
-        first_weights = list(model.parameters())[2].data.numpy()
-        first_biases = list(model.parameters())[3].data.numpy()
-        second_weights = list(model.parameters())[4].data.numpy()
-        second_biases = list(model.parameters())[5].data.numpy()
+        catb_embeds = list(model.parameters())[0].data.numpy()
+        hvecb_embeds = list(model.parameters())[1].data.numpy()
+        hvecf_embeds = list(model.parameters())[2].data.numpy()
+        first_weights = list(model.parameters())[3].data.numpy()
+        first_biases = list(model.parameters())[4].data.numpy()
+        second_weights = list(model.parameters())[5].data.numpy()
+        second_biases = list(model.parameters())[6].data.numpy()
 
     eprint(first_weights.shape, second_weights.shape)
     print("F F " + ",".join(map(str, first_weights.flatten('F').tolist())))
     print("F f " + ",".join(map(str, first_biases.flatten('F').tolist())))
     print("F S " + ",".join(map(str, second_weights.flatten('F').tolist())))
     print("F s " + ",".join(map(str, second_biases.flatten('F').tolist())))
+    # if not f_config.getboolean("AblateSyn"):
+    #     for cat, ix in sorted(cat_to_ix.items()):
+    #         print("C " + str(cat) + " [" + ",".join(map(str, cat_embeds[ix])) + "]")
+    # if not f_config.getboolean("AblateSem"):
+    #     for hvec, ix in sorted(hvec_to_ix.items()):
+    #         print("K " + str(hvec) + " [" + ",".join(map(str, hvec_embeds[ix])) + "]")
     if not f_config.getboolean("AblateSyn"):
-        for cat, ix in sorted(cat_to_ix.items()):
-            print("C " + str(cat) + " [" + ",".join(map(str, cat_embeds[ix])) + "]")
+        for cat, ix in sorted(catb_to_ix.items()):
+            print("C B " + str(cat) + " [" + ",".join(map(str, catb_embeds[ix])) + "]")
     if not f_config.getboolean("AblateSem"):
-        for hvec, ix in sorted(hvec_to_ix.items()):
-            print("K " + str(hvec) + " [" + ",".join(map(str, hvec_embeds[ix])) + "]")
+        for hvec, ix in sorted(hvecb_to_ix.items()):
+            print("K B " + str(hvec) + " [" + ",".join(map(str, hvecb_embeds[ix])) + "]")
+        for hvec, ix in sorted(hvecf_to_ix.items()):
+            print("K F " + str(hvec) + " [" + ",".join(map(str, hvecf_embeds[ix])) + "]")
     for fdec, ix in sorted(fdecs_to_ix.items()):
         print("f " + str(ix) + " " + str(fdec))
 
