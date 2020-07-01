@@ -435,8 +435,9 @@ endef
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^P'  |  python3 $(word 2,$^)  >  $@
 %_wmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
-              $(INCRSEM-SCRIPTS)/relfreq.py
-	cat $<  |  grep '^W'  |  python3 $(word 2,$^)  >  $@
+              $(INCRSEM-SCRIPTS)/mlpdecpars2wmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))w.ini
+	cat $<  |  grep '^W'  |  sed 's/^W //'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
 %_jmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/mlpdecpars2jmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini

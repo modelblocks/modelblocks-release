@@ -21,9 +21,9 @@
 
 const uint SEM_SIZE = 20;
 const uint SYN_SIZE = 20;
-const uint WPRED_SIZE = 40;
-const uint CHAR_SIZE = 20;
-const uint RNNH_SIZE = 60;
+const uint WPRED_SIZE = 20;
+const uint CHAR_SIZE = 10;
+const uint RNNH_SIZE = 30;
 
 vector<string> PUNCT = { "-LCB-", "-LRB-", "-RCB-", "-RRB-" };
 
@@ -402,7 +402,6 @@ class WModel {
   private:
 
     map<string,mat> mcm;
-    map<WPredictor,unsigned int> mwpi;
     map<string,unsigned int> mci;
 //    map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> mymap;
 
@@ -432,7 +431,11 @@ class WModel {
   public:
 
     // map between W and vector of P(W | WPredictor), each row represents a unique WPredictor
-    typedef map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> MapWP;
+    typedef map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> WPMap;
+    typedef map<W,rowvec> WPMapV;
+    typedef list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> WPList;
+    map<WPredictor,unsigned int> mwpi;
+
     WModel ( ) { }
     WModel ( istream& is ) {
       while( is.peek()=='W' ) {
@@ -469,12 +472,13 @@ class WModel {
       ihbv = ihb;
       hhbv = hhb;
       fcbv = fcb;
-      cerr << "old ihwm size : " << ihwm.n_rows << " " << ihwm.n_cols << endl;
+//      cerr << "old ihwm size : " << ihwm.n_rows << " " << ihwm.n_cols << endl;
       ihwm.reshape(RNNH_SIZE, WPRED_SIZE + CHAR_SIZE);
-      cerr << "new ihwm size : " << ihwm.n_rows << " " << ihwm.n_cols << endl;
+//      cerr << "new ihwm size : " << ihwm.n_rows << " " << ihwm.n_cols << endl;
       hhwm.reshape(RNNH_SIZE, RNNH_SIZE);
       fcwm.reshape(fcw.size()/RNNH_SIZE, RNNH_SIZE);
       wpwm.reshape(WPRED_SIZE, mwpi.size());
+//      cerr << wpwm.col(0) << endl;
 
 //      for ( const auto &myPair : mci ) {
 //        std::cerr << myPair.first << "\n";
@@ -496,11 +500,19 @@ class WModel {
 //      cerr << "h2 size " << h2.n_rows << " " << h2.n_cols << endl;
 //      mat h3 = relu(h2);
 //      cerr << "h3 size " << h3.n_rows << " " << h3.n_cols << endl;
-      h1 = relu(ihwm * join_cols(wpwm, mcm.find("<S>")->second) + ihbm);
+      h1 = relu(ihwm * join_cols(wpwm, mcm.find("<S>")->second) + ihbm + hhbm);
+//      cerr << mcm.find("<S>")->second.col(0) << endl;
+//      cerr << mcm.find("<S>")->second.col(1) << endl;
+//      h1 = fcwm * h1 + fcbm;
 //      cerr << "joined mat size " << h1.n_rows << " " << h1.n_cols << endl;
       s1_scores = exp(fcwm * h1 + fcbm);
       s1_norm = sum(s1_scores, 0);
       s1_logprobs = log(s1_scores.each_row() / s1_norm);
+//      cerr << s1_logprobs.col(0) << endl;
+//      cerr << s1_logprobs.col(1) << endl;
+//      cerr << s1_logprobs.col(2) << endl;
+//      cerr << s1_logprobs.col(3) << endl;
+//      cerr << s1_logprobs.col(4) << endl;
     }
 
 //    const vec getCharEmbed( string a ) const {
@@ -511,8 +523,7 @@ class WModel {
 
     const mat getCharMat( string a ) const {
       auto it = mcm.find( a );
-      if (it == mcm.end()) cerr << "unknown char: " << a << endl;
-//      assert ( it != mcm.end() );
+      assert ( it != mcm.end() );
       return it->second;
     }
 
@@ -529,17 +540,18 @@ class WModel {
     }
 
 //    list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> calcPredictorLikelihoods( const W w_t ) const {
-    list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> calcPredictorLikelihoods( const W w_t, const MapWP& mymap ) const {
+//    list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> calcPredictorLikelihoods( const W w_t, const MapWP& mymap ) const {
+//    void calcPredictorLikelihoods( const W& w_t, const WPMap& mymap, WPList& mylist ) const {
+    void calcPredictorLikelihoods( const W& w_t, const WPMapV& mymap, rowvec& seqlogprobs ) const {
       auto it = mymap.find( w_t );
-//      cerr << "mymap size " << mymap.size() << endl;
-      list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> results;
+//      list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> results;
       if ( it == mymap.end() ) {
-        rowvec seqlogprobs = zeros<mat>(1, mwpi.size());
+//        rowvec seqlogprobs = zeros<mat>(1, mwpi.size());
         mat ht = h1;
         rowvec st1_logprobs;
-        // if w_t in punct: word = w_t, else {
+
         if ( find( PUNCT.begin(), PUNCT.end(), w_t.getString().c_str() ) != PUNCT.end() ) {
-          cerr << "PUNCT found" << endl;
+//          cerr << "PUNCT found" << endl;
           seqlogprobs += s1_logprobs.row( getCharIndex( w_t.getString().c_str() ) );
           mat ht1 = relu(ihwm * join_cols(wpwm, getCharMat( w_t.getString().c_str() )) + ihbm + hhwm * ht + hhbm);
           mat st1_scores = exp(fcwm * ht1 + fcbm);
@@ -548,53 +560,43 @@ class WModel {
           seqlogprobs += st1_logprobs;
         } else {
           string c0(1, w_t.getString()[0]);
+//          cerr << "retrieving prob for " << c0 << endl;
           seqlogprobs += s1_logprobs.row( getCharIndex( c0.c_str() ));
-//          cerr << strlen(w_t.getString().c_str()) << endl;
-          for ( unsigned i = 1; i < strlen(w_t.getString().c_str()); ++i ){
+
+          for ( unsigned i = 0; i < strlen(w_t.getString().c_str()); ++i ){
             string ct(1, w_t.getString()[i]);
             string ct1(1, w_t.getString()[i+1]);
-//            cerr << w_t.getString().c_str() << endl;
-//            cerr << ct.c_str() << endl;
-//            cerr << ct1.c_str() << endl;
-//            mat ht1 = relu(ihwm * join_cols(wpwm, getCharMat( ct.c_str() )) + ihbm + hhwm * ht + hhbm);
-            mat a0 = getCharMat( ct.c_str() );
-            mat a1 = join_cols(wpwm, a0);
-            mat a4 = ihwm * zeros(60, 5700);
-            cerr << "calculated a4" << endl;
-            mat a2 = ihwm * a1;
-            mat a3 = a2 + ihbm;
-            mat b1 = hhwm * ht;
-            mat b2 = b1 + hhbm;
-            mat c1 = a3 + b2;
-            mat ht1 = relu(c1);
+//            cerr << "calculating with input " << ct << endl;
+            mat ht1 = relu(ihwm * join_cols(wpwm, getCharMat( ct.c_str() )) + ihbm + hhwm * ht + hhbm);
             mat st1_scores = exp(fcwm * ht1 + fcbm);
             rowvec st1_norm = sum(st1_scores, 0);
+
             if (i != strlen(w_t.getString().c_str())-1) {
+//              cerr << "retrieving prob for " << ct1 << endl;
               st1_logprobs = log(st1_scores.row(getCharIndex( ct1.c_str() )) / st1_norm);
-            }
-            else {
-//              cerr << "EOS reached" << endl;
+            } else {
+//              cerr << "retrieving prob for <E>" << endl;
               st1_logprobs = log(st1_scores.row(getCharIndex( "<E>" )) / st1_norm);
-            }
+              }
             seqlogprobs += st1_logprobs;
             ht = ht1;
           }
         }
-        rowvec seqprobs = exp(seqlogprobs);
-        for ( const auto &it: mwpi ) {
-          results.emplace_back(it.first,seqprobs(it.second));
-        }
-//        cerr << "emplacing results " << mymap.size() << endl;
-//        mymap[w_t] = results;
-//        mymap.emplace(w_t, results);
-//        cerr << "emplaced results " << mymap.size() << endl;
+//        rowvec seqprobs = exp(seqlogprobs);
+        seqlogprobs = exp(seqlogprobs);
+
+//        for ( const auto &it: mwpi ) {
+////          results.emplace_back(it.first,seqprobs(it.second));
+//          mylist.emplace_back(it.first,seqprobs(it.second));
+//        }
       }
       else {
-        cerr << "getting results" << endl;
-        results = it->second;
-        cerr << "got results" << endl;
+//        cerr << "getting results" << endl;
+//        mylist = it->second;
+        seqlogprobs = it->second;
+//        cerr << "got results" << endl;
       }
-      return results;
+//      return results;
     }
 };
 

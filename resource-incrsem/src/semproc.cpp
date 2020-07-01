@@ -245,7 +245,6 @@ int main ( int nArgs, char* argv[] ) {
 
   mutex mutexMLSList;
   vector<thread> vtWorkers;  vtWorkers.reserve( numThreads );
-//  WModel::MapWP global_map;
 
   if( OUTPUT_MEASURES ) cout << "word pos f j store ndec totsurp" << endl;
 
@@ -274,8 +273,8 @@ int main ( int nArgs, char* argv[] ) {
   for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&corpus,&iartNextToProc,&iartNextToDump,/*&articleMLSs,&articles,&linenum,*/&mutexMLSList,numThreads,&matE,&funcO,&modN,&modF,&modP,&modW,&modJ,&modA,&modB] (uint numt) {
 
     auto tpLastReport = chrono::high_resolution_clock::now();  // clock for thread heartbeats
-//    auto mymap = global_map;
-    WModel::MapWP mymap;
+    WModel::WPMapV mapWP;
+//    WModel::WPMap mapWP;
 
     // Loop over articles...
     while( true ) {
@@ -344,19 +343,21 @@ int main ( int nArgs, char* argv[] ) {
 
         // For each word... 
         for ( auto& w_t : lwSent ) {
-          if ( numThreads == 1 ) cerr << " " << w_t;
+//          if ( numThreads == 1 ) cerr << " " << w_t;
           if ( VERBOSE ) cout << "WORD:" << w_t << endl;
 
           // Create beam for current time step...
           beams[++t].clear();
-          cerr << "Thread number " << numt << " " << w_t << endl;
 
-          auto wlikelihoods = modW.calcPredictorLikelihoods(w_t, mymap);
-          mymap.try_emplace(w_t, wlikelihoods);
-          cerr << "Thread number " << numt << " - mymap size : " << mymap.size() << endl;
-//          {lock_guard<mutex> guard( mutexMLSList );
-//          mymap.try_emplace(w_t, wlikelihoods);
-//          cerr << "Thread number " << numt << " - mymap size : " << mymap.size() << endl;}
+//          WModel::WPList listWP;
+          rowvec seqprobs = zeros<mat>(1, modW.mwpi.size());
+          modW.calcPredictorLikelihoods(w_t, mapWP, seqprobs);
+          mapWP.try_emplace(w_t, seqprobs);
+//          cerr << "========== Processing word ========== " << w_t << endl;
+//          for ( const auto &it: modW.mwpi) {
+//            cerr << w_t << " " << it.second << " " << it.first << " : " << seqprobs(it.second) << endl;
+//          }
+          cerr << "Thread number " << numt << ", mapWP size : " << mapWP.size() << endl;
 
           // For each hypothesized storestate at previous time step...
           for( const BeamElement<HiddState>& be_tdec1 : beams[t-1] ) { //beams[t-1] is a Beam<ProbBack,BeamElement>, so be_tdec1 is a beam item, which is a pair<ProbBack,BeamElement>. first.first is the prob in the probback, and second is the beamelement, which is a sextuple of <sign, f, e, k, j, q>
@@ -364,8 +365,8 @@ int main ( int nArgs, char* argv[] ) {
             const StoreState& q_tdec1    = be_tdec1.getHidd().sixth();  // prev storestate
             if( VERBOSE>1 ) cout << "  from (" << be_tdec1.getHidd() << ")" << endl;
             const ProbBack<HiddState> pbDummy = ProbBack<HiddState>(0.0, be_tdec1); //dummy element for most recent timestep
-            const HiddState hsDummy = HiddState(Sign(/*hvTop,CVar(),S()*/),F(),EVar(),K(),JResponse(),StoreState(),0 ); //dummy hidden state with kTop semantics 
-            const BeamElement<HiddState> beDummy = BeamElement<HiddState>(pbDummy, hsDummy); //at timestep t, represents null antecedent 
+            const HiddState hsDummy = HiddState(Sign(/*hvTop,CVar(),S()*/),F(),EVar(),K(),JResponse(),StoreState(),0 ); //dummy hidden state with kTop semantics
+            const BeamElement<HiddState> beDummy = BeamElement<HiddState>(pbDummy, hsDummy); //at timestep t, represents null antecedent
             const BeamElement<HiddState>* pbeAnt = &beDummy;
             //calculate denominator / normalizing constant over all antecedent timesteps
             double ndenom = 0.0;
@@ -373,7 +374,7 @@ int main ( int nArgs, char* argv[] ) {
             vector<int> excludedIndices; //initialize blocking list
 
             //denominator loop over candidate antecedents
-            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { 
+            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) {
               if ( pbeAnt->getHidd().getI() != 0 ) {
                 if (VERBOSE > 1) cout << "    adding index to exclude for blocking: " << tAnt+pbeAnt->getHidd().getI() << " pbeAnt...get(): " << pbeAnt->getHidd().getI() << endl;
                 excludedIndices.push_back(tAnt+pbeAnt->getHidd().getI()); //add excluded index if there's a non-null coref decision
@@ -392,15 +393,15 @@ int main ( int nArgs, char* argv[] ) {
             pbeAnt = &beDummy; //reset pbiAnt pointer after calculating denominator
 
             //numerator loop over candidate antecedents. specific choice.
-            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers. 
+            for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers.
               //block indices as read from previous storestate's excludedIndices
               if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
                 continue;
               }
-              
+
               const HVec& hvAnt = pbeAnt->getHidd().getPrtrm().getHVec();
 
-              //Calculate antecedent N model predictors 
+              //Calculate antecedent N model predictors
               bool corefON = (tAnt==int(t)) ? 0 : 1;
               NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1, ABLATE_UNARY );
               if (VERBOSE>1) { cout << "    " << pair<const NModel&, const NPredictorVec&>(modN,npv) << endl; } //npv.printOut(cout); }
@@ -415,22 +416,29 @@ int main ( int nArgs, char* argv[] ) {
                 FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );
 //                if( VERBOSE>1 ) cout << "     f predictors: " << pair<const FModel&,const FPredictorVec&>( modF, lfpredictors ) << endl;
                 arma::vec fresponses = modF.calcResponses( lfpredictors );
-              
+
                 //get most recent observed word for which k of fek F decision was 'unk'.
-                const BeamElement<HiddState>* antPtr = pbeAnt; 
+                const BeamElement<HiddState>* antPtr = pbeAnt;
                 //cout << "main semproc got ptr loc: " << antPtr << endl;
                 W histword = getHistWord(antPtr);
                 //cout << "main semproc got histword: " << histword << endl;
 
                 // For each possible lemma (context + label + prob) for preterminal of current word...
 //                for ( auto& ektpr_p_t : modW.calcPredictorLikelihoods(w_t, histword) ) { //ektpr_p_t is a pair of (Wpredictor, prob)
-                for ( auto& ektpr_p_t : wlikelihoods ) { //ektpr_p_t is a pair of (Wpredictor, prob)
+//                for ( auto& ektpr_p_t : listWP ) { //ektpr_p_t is a pair of (Wpredictor, prob)
+                for ( auto& ektpr_p_t : modW.mwpi ) { //ektpr_p_t is a pair of (Wpredictor, prob)
 //                for ( auto& ektpr_p_t : modW.calcPredictorLikelihoods(w_t) ) { //ektpr_p_t is a pair of (Wpredictor, prob)
-                  if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(ektpr_p_t.second) > beams[t].rbegin()->getProb() ) {
+//                  if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(ektpr_p_t.second) > beams[t].rbegin()->getProb() ) {
+//                    EVar  e_p_t       = ektpr_p_t.first.first();
+//                    K     k_p_t       = (FEATCONFIG & 8 && ektpr_p_t.first.second().getString()[2]!='y') ? K::kBot : ektpr_p_t.first.second();   // context of current preterminal
+//                    CVar  c_p_t       = ektpr_p_t.first.third();                               // label of current preterminal
+//                    double probwgivkl = ektpr_p_t.second;                                     // probability of current word given current preterminal
+
+                  if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(seqprobs(ektpr_p_t.second)) > beams[t].rbegin()->getProb() ) {
                     EVar  e_p_t       = ektpr_p_t.first.first();
                     K     k_p_t       = (FEATCONFIG & 8 && ektpr_p_t.first.second().getString()[2]!='y') ? K::kBot : ektpr_p_t.first.second();   // context of current preterminal
                     CVar  c_p_t       = ektpr_p_t.first.third();                               // label of current preterminal
-                    double probwgivkl = ektpr_p_t.second;                                     // probability of current word given current preterminal
+                    double probwgivkl = seqprobs(ektpr_p_t.second);                                     // probability of current word given current preterminal
 
                     if ( VERBOSE>1 ) cout << "     W " << e_p_t << " " << k_p_t << " " << c_p_t << " : " << w_t << " = " << probwgivkl << endl;
 
@@ -445,7 +453,8 @@ int main ( int nArgs, char* argv[] ) {
                       if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
                         tpLastReport = chrono::high_resolution_clock::now();
                         lock_guard<mutex> guard( mutexMLSList );
-                        cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << endl;
+//                        cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << endl;
+                        cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t.first << seqprobs(ektpr_p_t.second) << endl;
                       } //closes if chrono
 
                       // If preterminal prob is nonzero...
@@ -503,12 +512,13 @@ int main ( int nArgs, char* argv[] ) {
                                         if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
                                           tpLastReport = chrono::high_resolution_clock::now();
                                           lock_guard<mutex> guard( mutexMLSList );
-                                          cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << " JRESP " << modJ.getJEOO(jresponse) << " A " << cpA.first << " B " << cpB.first << endl;
+//                                          cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << " JRESP " << modJ.getJEOO(jresponse) << " A " << cpA.first << " B " << cpB.first << endl;
+                                          cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t.first << seqprobs(ektpr_p_t.second) << " JRESP " << modJ.getJEOO(jresponse) << " A " << cpA.first << " B " << cpB.first << endl;
                                         } //closes if chrono
                                         // Calculate probability and storestate and add to beam...
                                         StoreState ss( qTermPhase, j, e, opL, opR, cpA.first, cpB.first );
                                         if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
-                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t, w_t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second), be_tdec1 ) ); 
+                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t, w_t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second), be_tdec1 ) );
                                           if( VERBOSE>1 ) cout << "                send (" << be_tdec1.getHidd() << ") to (" << ss << ") with "
                                             << (lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second)) << endl;
                                         } //closes if ( (t<lwSent
@@ -533,8 +543,8 @@ int main ( int nArgs, char* argv[] ) {
             for( auto& be : beams[t] )
               cout << be.getProb() << " " << be.getHidd().first() << " f" << be.getHidd().second() << "&" << be.getHidd().third() << "&" << be.getHidd().fourth() << " j" << modJ.getJEOO(be.getHidd().fifth()) << " " << be.getHidd().sixth() << " " << be.getHidd().seventh() << " me: " << &be << " myback: " << &be.getBack() << endl; //tokdecs output is: WORD HIDDSTATE PROB
           }
-          { lock_guard<mutex> guard( mutexMLSList ); 
-            cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << endl;	
+          { lock_guard<mutex> guard( mutexMLSList );
+            cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << endl;
           } //closes lock_guard
         } //closes for w lwSent  
         if ( numThreads == 1 ) cerr << endl;
