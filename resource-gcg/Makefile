@@ -232,6 +232,7 @@ endef
 .PRECIOUS: %.discgraphs
 %.discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
 	cat $<  |  sed 's/\^g//g' | python $(word 3,$^) -e  >  $@
+# not for end-users, just for debugging:
 %.verbose-discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
 	cat $<  |  sed 's/\^g//g' | python $(word 3,$^) -d -e  >  $@
 
@@ -254,11 +255,12 @@ endef
 #### obtain discourse-aligned lambda expressions
 %.discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
 	cat $<  |  python $(word 3,$^)  |  $(word 4,$^)  >  $@
-#### obtain discourse-aligned lambda expressions
+#### obtain discourse-aligned lambda expressions, debugging stuff
 %.verbose-discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
 	cat $<  |  python $(word 3,$^) -d  |  $(word 4,$^)  >  $@
 %.verbose-discexprs.last.discgraphs:  %.verbose-discexprs
 	cat $<  |  grep 'GRAPH:'  |  tail -n1  |  perl -pe 's/ *GRAPH: *//'  >  $@
+# also for debugging
 %.autoinduced.discgraphs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py
 	cat $<  |  python $(word 3,$^) -g  |  grep 'GRAPH:'  |  perl -pe 's/ *GRAPH: *//'  >  $@
 
