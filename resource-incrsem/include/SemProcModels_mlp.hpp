@@ -343,9 +343,9 @@ class FModel {
       return it->second;
     }
 
-    const CVec getCatEmbed( CVar i ) const { //TODO change this to reference to avoid unnecessary copying
+    const CVec& getCatEmbed( CVar i ) const { 
       auto it = mcv.find( i );
-      assert( it != mcv.end() );
+      //assert( it != mcv.end() );
       if (it == mcv.end()) { 
         cerr << "ERROR: CVar not defined in model: no embedding found for: " << i << endl; 
         return zeroCatEmb;
@@ -566,13 +566,13 @@ class JModel {
       return it->second;
     }
 
-    const CVec getCatEmbed( CVar i ) const { //TODO same copy issue as above
+    const CVec& getCatEmbed( CVar i ) const { 
       auto it = mcv.find( i );
       if (it == mcv.end()) { 
         cerr << "ERROR: CVar not defined in model: no embedding found for: " << i << endl; 
         return zeroCatEmb;
       }
-      assert( it != mcv.end() );
+      //assert( it != mcv.end() );
       return it->second;
     }
 

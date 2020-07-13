@@ -433,9 +433,10 @@ endef
 	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 $(word 2,$^)  | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
 .PRECIOUS: %_fmlpmodel
 %_fmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py \
               $(INCRSEM-SCRIPTS)/mlpdecpars2fmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini
-	cat $<  |  grep '^F'  |  sed 's/^F//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+	cat $<  |  grep '^F'  |  sed 's/^F //'  |  python $(word 2,$^) | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
 .PRECIOUS: %_pmlpmodel
 %_pmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py

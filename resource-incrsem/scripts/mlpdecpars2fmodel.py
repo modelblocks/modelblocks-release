@@ -112,30 +112,62 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix):
         data = f.readlines()
         data = [line.strip() for line in data]
 
-    depth, catBase, hvBase, hvFiller, fDecs, hvBFirst, hvFFirst = ([] for _ in range(7))
+    #depth, catBase, hvBase, hvFiller, fDecs, hvBFirst, hvFFirst = ([] for _ in range(7))
+    depth, catBase, hvBase, hvFiller, fDecs, hvBFirst, hvFFirst, hvAnte, hvAFirst, nullA = ([] for _ in range(10))
 
     for line in data:
-        d, cb, hvb, hvf, fd = line.split(" ")
+        d, cb, hvb, hvf, hva, nulla, fd = line.split(" ")
         if cb not in cat_to_ix or fd not in fdecs_to_ix:
             continue
         depth.append(int(d))
         catBase.append(cb)
         hvBase.append(hvb)
         hvFiller.append(hvf)
+        hvAnte.append(hva)
+        nullA.append(int(nulla))
         fDecs.append(fd)
+    eprint("Linesplit complete")
 
+    # Extract first KVec from sparse HVec
     for kvec in hvBase:
         match = re.findall(r"^\[(.*?)\]", kvec)
         hvBFirst.append(match[0].split(","))
+    eprint("hvBase ready")
 
     for kvec in hvFiller:
         match = re.findall(r"^\[(.*?)\]", kvec)
         hvFFirst.append(match[0].split(","))
+    eprint("hvFiller ready")
+
+    for kvec in hvAnte:
+        match = re.findall(r"^\[(.*?)\]", kvec)
+        hvAFirst.append(match[0].split(","))
+    eprint("hvAnte ready")
+
+    ## Mapping from category & HVec to index
+    #for line in data:
+    #    d, cb, hvb, hvf, fd = line.split(" ")
+    #    if cb not in cat_to_ix or fd not in fdecs_to_ix:
+    #        continue
+    #    depth.append(int(d))
+    #    catBase.append(cb)
+    #    hvBase.append(hvb)
+    #    hvFiller.append(hvf)
+    #    fDecs.append(fd)
+
+    #for kvec in hvBase:
+    #    match = re.findall(r"^\[(.*?)\]", kvec)
+    #    hvBFirst.append(match[0].split(","))
+#
+#    for kvec in hvFiller:
+#        match = re.findall(r"^\[(.*?)\]", kvec)
+#        hvFFirst.append(match[0].split(","))
 
     cat_b_ix = [cat_to_ix[cat] for cat in catBase]
     fdecs_ix = [fdecs_to_ix[fdecs] for fdecs in fDecs]
 
-    hvb_row, hvb_col, hvf_row, hvf_col, hvb_top, hvf_top = ([] for _ in range(6))
+    #hvb_row, hvb_col, hvf_row, hvf_col, hvb_top, hvf_top = ([] for _ in range(6))
+    hvb_row, hvb_col, hvb_top, hvf_row, hvf_col, hvf_top, hva_row, hva_col, hva_top = ([] for _ in range(9))
 
     # KVec indices and "Top" KVec counts
     for i, sublist in enumerate(hvBFirst):
@@ -166,7 +198,22 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix):
     hvf_mat = csr_matrix((np.ones(len(hvf_row), dtype=np.int32), (hvf_row, hvf_col)),
                          shape=(len(hvFFirst), len(hvec_to_ix)))
 
-    return depth, cat_b_ix, hvb_mat, hvf_mat, fdecs_ix, hvb_top, hvf_top
+    for i, sublist in enumerate(hvAFirst):
+        top_count = 0
+        for hvec in sublist:
+            if hvec == "Top":
+                top_count += 1
+            elif hvec == "" or hvec == "Bot" or hvec not in hvec_to_ix:
+                continue
+            else:
+                hva_row.append(i)
+                hva_col.append(hvec_to_ix[hvec])
+        hva_top.append([top_count])
+    hva_mat = csr_matrix((np.ones(len(hva_row), dtype=np.int32), (hva_row, hva_col)),
+                         shape=(len(hvAFirst), len(hvec_to_ix)))
+
+    return depth, cat_b_ix, hvb_mat, hvf_mat, fdecs_ix, hvb_top, hvf_top, hva_mat, hva_top, nullA 
+    #return depth, cat_b_ix, hvb_mat, hvf_mat, fdecs_ix, hvb_top, hvf_top
 
 
 class FModel(nn.Module):
@@ -190,6 +237,7 @@ class FModel(nn.Module):
         hvb_top = torch.FloatTensor(hvb_top)
         hvf_top = torch.FloatTensor(hvf_top)
         hva_top = torch.FloatTensor(hva_top)
+        nullA   = torch.FloatTensor(nullA)
 
         if ablate_syn:
             cat_b_embed = torch.zeros([len(cat_b_ix), self.syn_size], dtype=torch.float)
@@ -212,6 +260,7 @@ class FModel(nn.Module):
             if use_gpu >= 0:
                 hvb_embed = hvb_embed.to("cuda")
                 hvf_embed = hvf_embed.to("cuda")
+                hva_embed = hva_embed.to("cuda")
 
         else:
             hvb_mat = hvb_mat.tocoo()
@@ -260,7 +309,9 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
         model = model.cuda()
 
     if use_dev >= 0:
-        dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_fdecs_ix, dev_hvb_top, dev_hvf_top = prepare_data_dev(
+
+        #return depth, cat_b_ix, hvb_mat, hvf_mat, fdecs_ix, hvb_top, hvf_top, hva_mat, hva_top, nullA 
+        dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_fdecs_ix, dev_hvb_top, dev_hvf_top, dev_hva_mat, dev_hva_top, dev_nullA = prepare_data_dev(
             dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix)
         dev_depth = F.one_hot(torch.LongTensor(dev_depth), 7).float()
         dev_cat_b_ix = torch.LongTensor(dev_cat_b_ix)
@@ -317,7 +368,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
             #TODO dev support for n dependencies
             with torch.no_grad():
                 model.eval()
-                dev_pred = model(dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_hvb_top, dev_hvf_top, use_gpu,
+                dev_pred = model(dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_hvb_top, dev_hvf_top, dev_hva_mat, dev_hva_top, dev_nullA, use_gpu,
                                  ablate_syn, ablate_sem)
                 _, dev_fdec = torch.max(dev_pred.data, 1)
                 dev_correct = (dev_fdec == dev_target).sum().item()
