@@ -18,23 +18,26 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <typeinfo>
+#include <regex>
 
 const uint SEM_SIZE = 20;
 const uint SYN_SIZE = 20;
-const uint WPRED_SIZE = 20;
-const uint CHAR_SIZE = 10;
-const uint RNNH_SIZE = 30;
+
+// XModel E, K, P, Char, RNN hidden sizes
+const uint X_E_SIZE = 10;
+const uint X_K_SIZE = 10;
+const uint X_P_SIZE = 10;
+const uint X_C_SIZE = 10;
+const uint X_H_SIZE = 40;
+
+// MModel E, P, LCat, Char, RNN hidden sizes
+const uint M_E_SIZE = 10;
+const uint M_P_SIZE = 10;
+const uint M_L_SIZE = 10;
+const uint M_C_SIZE = 10;
+const uint M_H_SIZE = 40;
 
 vector<string> PUNCT = { "-LCB-", "-LRB-", "-RCB-", "-RRB-" };
-
-//arma::mat relu( const arma::mat& km ) {
-//  arma::mat A(km.n_rows, 1);
-//  for ( unsigned int c = 0; c<km.n_rows; c++ ) {
-//    if ( km(c,0) <= 0 ) {A(c,0)=(0.0);}
-//    else A(c,0) = (km(c));
-//  }
-//  return A;
-//}
 
 arma::mat relu( const arma::mat& km ) {
   return clamp(km, 0, km.max());
@@ -277,7 +280,7 @@ class FModel {
       while ( is.peek()=='K' ) {
         Delimited<char> c;
         Delimited<K> k;
-        DenseVec dv = DenseVec(SYN_SIZE);
+        DenseVec dv = DenseVec(SEM_SIZE);
         is >> "K " >> c >> " " >> k >> " " >> dv >> "\n";
         if (c == 'B') mkbdv.try_emplace(k, vec(dv));
         else if (c == 'F') mkfdv.try_emplace(k, vec(dv));
@@ -394,209 +397,457 @@ class WPredictor : public DelimitedTrip<psX,Delimited<EVar>,psSpace,Delimited<K>
     WPredictor ( EVar e, K k, CVar c ) : DelimitedTrip<psX,Delimited<EVar>,psSpace,Delimited<K>,psSpace,Delimited<CVar>,psX>(e,k,c){}
 };
 
-// map from W to WPredictors
+
 class WModel {
 
+  typedef DelimitedTrip<psX,Delimited<EVar>,psSlash,Delimited<K>,psSlash,Delimited<CVar>,psX> WPredictor;
+  typedef DelimitedTrip<psX,Delimited<EVar>,psSlash,Delimited<CVar>,psSlash,Delimited<string>,psX> MPredictor;
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> DenseVec;
 
   private:
 
-    map<string,mat> mcm;
-    map<string,unsigned int> mci;
-//    map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> mymap;
+    // map from pair<lemma, primcat> to list of compatible WPredictors and MPredictors (read in from WModel)
+    map<pair<string,string>,DelimitedList<psLBrack,WPredictor,psSpace,psRBrack>> mxwp;
+    map<pair<string,string>,DelimitedList<psLBrack,MPredictor,psSpace,psRBrack>> mxmp;
 
-    DelimitedVector<psX, double, psComma, psX> ihw;  // weights for SRN
-    DelimitedVector<psX, double, psComma, psX> hhw;
-    DelimitedVector<psX, double, psComma, psX> fcw;  // weights for FC layer
-    DelimitedVector<psX, double, psComma, psX> ihb;  // biases for SRN
-    DelimitedVector<psX, double, psComma, psX> hhb;
-    DelimitedVector<psX, double, psComma, psX> fcb;  // biases for FC layer
-    DelimitedVector<psX, double, psComma, psX> wpw;
-    mat ihwm;
-    mat hhwm;
-    mat fcwm;
-    mat wpwm;
-    vec ihbv;
-    vec hhbv;
-    vec fcbv;
+    // map from predictor components to dense vectors
+    // XModel (E, K, P, char to dense vector)
+    map<EVar,vec> mxev;
+    map<K,vec> mxkv;
+    map<CVar,vec> mxpv;
+    map<string,vec> mxcv;
+    // MModel (E, P, SK, char to dense vector)
+    map<EVar,vec> mmev;
+    map<CVar,vec> mmpv;
+    map<string,vec> mmlv;
+    map<string,vec> mmcv;
 
-    mat ihbm;
-    mat hhbm;
-    mat fcbm;
-    mat h1;
-    mat s1_scores;
-    rowvec s1_norm;
-    mat s1_logprobs;
+    map<string,unsigned int> mci; // map from character to index (required for indexing probabilities)
+    map<string,unsigned int> mmi; // map from morph rule to index (required for indexing probabilities)
+
+    // weights and biases for XModel
+    DelimitedVector<psX, double, psComma, psX> xihw;  // SRN i2h
+    DelimitedVector<psX, double, psComma, psX> xhhw;  // SRN h2h
+    DelimitedVector<psX, double, psComma, psX> xfcw;  // FC classifier
+    DelimitedVector<psX, double, psComma, psX> xihb;  // SRN i2h bias
+    DelimitedVector<psX, double, psComma, psX> xhhb;  // SRN h2h bias
+    DelimitedVector<psX, double, psComma, psX> xfcb;  // FC classifier bias
+    mat xihwm;
+    mat xhhwm;
+    mat xfcwm;
+    vec xihbv;
+    vec xhhbv;
+    vec xfcbv;
+
+    // weights and biases for MModel
+    DelimitedVector<psX, double, psComma, psX> mihw;  // SRN i2h
+    DelimitedVector<psX, double, psComma, psX> mhhw;  // SRN h2h
+    DelimitedVector<psX, double, psComma, psX> mfcw;  // FC classifier
+    DelimitedVector<psX, double, psComma, psX> mihb;  // SRN i2h bias
+    DelimitedVector<psX, double, psComma, psX> mhhb;  // SRN h2h bias
+    DelimitedVector<psX, double, psComma, psX> mfcb;  // FC classifier bias
+    mat mihwm;
+    mat mhhwm;
+    mat mfcwm;
+    vec mihbv;
+    vec mhhbv;
+    vec mfcbv;
 
   public:
 
-    // map between W and vector of P(W | WPredictor), each row represents a unique WPredictor
-    typedef map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> WPMap;
-    typedef map<W,rowvec> WPMapV;
-    typedef list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> WPList;
-    map<WPredictor,unsigned int> mwpi;
+    // map from W to map from WPredictor to P(W | WPredictor)
+    typedef map<WPredictor,double> WPPMap;
+    typedef map<W,WPPMap> WWPPMap;
+    // map from pair<lemma, primcat> to vector of P(lemma | WPredictor)
+    typedef map<pair<string,string>,rowvec> XPMap;
+    // map from pair<lemma, primcat> to matrix of P(M | WPredictor lemma)
+    typedef map<pair<string,string>,mat> MPMap;
 
     WModel ( ) { }
     WModel ( istream& is ) {
       while( is.peek()=='W' ) {
-        Delimited<char> c;
-        is >> "W " >> c >> " ";
-        if (c == 'I') is >> ihw >> "\n";
-        if (c == 'i') is >> ihb >> "\n";
-        if (c == 'H') is >> hhw >> "\n";
-        if (c == 'h') is >> hhb >> "\n";
-        if (c == 'F') is >> fcw >> "\n";
-        if (c == 'f') is >> fcb >> "\n";
-        if (c == 'P') is >> wpw >> "\n";
+        Delimited<char> i;
+        Delimited<char> j;
+        is >> "W " >> i >> " " >> j >> " ";
+        if (i == 'X') {
+          if (j == 'I') is >> xihw >> "\n";
+          if (j == 'i') is >> xihb >> "\n";
+          if (j == 'H') is >> xhhw >> "\n";
+          if (j == 'h') is >> xhhb >> "\n";
+          if (j == 'F') is >> xfcw >> "\n";
+          if (j == 'f') is >> xfcb >> "\n";
+        }
+        else if (i == 'M') {
+          if (j == 'I') is >> mihw >> "\n";
+          if (j == 'i') is >> mihb >> "\n";
+          if (j == 'H') is >> mhhw >> "\n";
+          if (j == 'h') is >> mhhb >> "\n";
+          if (j == 'F') is >> mfcw >> "\n";
+          if (j == 'f') is >> mfcb >> "\n";
+        }
       }
-      while ( is.peek()=='p' ) {
-        WPredictor wp;
-        is >> "p " >> wp >> " ";
-        is >> mwpi[wp] >> "\n";
+      while ( is.peek()=='E' ) {
+        Delimited<char> i;
+        Delimited<EVar> e;
+        is >> "E " >> i >> " " >> e >> " ";
+        if (i == 'X') {
+          DenseVec dv = DenseVec(X_E_SIZE);
+          is >> dv >> "\n";
+          mxev.try_emplace(e, vec(dv));
+        }
+        else if (i == 'M') {
+          DenseVec dv = DenseVec(M_E_SIZE);
+          is >> dv >> "\n";
+          mmev.try_emplace(e, vec(dv));
+        }
       }
-      while ( is.peek()=='A' ) {
-        string a;
-        DenseVec dv = DenseVec(CHAR_SIZE);
-        is >> "A " >> a >> " " >> dv >> "\n";
-        mcm.try_emplace(a, repmat(vec(dv), 1, mwpi.size()));
+      while ( is.peek()=='K' ) {
+        Delimited<K> k;
+        DenseVec dv = DenseVec(X_K_SIZE);
+        is >> "K " >> k >> " " >> dv >> "\n";
+        mxkv.try_emplace(k, vec(dv));
       }
-      while ( is.peek()=='a' ) {
-        string a;
-        is >> "a " >> a >> " ";
-        is >> mci[a] >> "\n";
+      while ( is.peek()=='P' ) {
+        Delimited<char> i;
+        Delimited<CVar> c;
+        is >> "P " >> i >> " " >> c >> " ";
+        if (i == 'X') {
+          DenseVec dv = DenseVec(X_P_SIZE);
+          is >> dv >> "\n";
+          mxpv.try_emplace(c, vec(dv));
+        }
+        else if (i == 'M') {
+          DenseVec dv = DenseVec(M_P_SIZE);
+          is >> dv >> "\n";
+          mmpv.try_emplace(c, vec(dv));
+        }
       }
-      ihwm = ihw;
-      hhwm = hhw;
-      fcwm = fcw;
-      wpwm = wpw;
-      ihbv = ihb;
-      hhbv = hhb;
-      fcbv = fcb;
-//      cerr << "old ihwm size : " << ihwm.n_rows << " " << ihwm.n_cols << endl;
-      ihwm.reshape(RNNH_SIZE, WPRED_SIZE + CHAR_SIZE);
-//      cerr << "new ihwm size : " << ihwm.n_rows << " " << ihwm.n_cols << endl;
-      hhwm.reshape(RNNH_SIZE, RNNH_SIZE);
-      fcwm.reshape(fcw.size()/RNNH_SIZE, RNNH_SIZE);
-      wpwm.reshape(WPRED_SIZE, mwpi.size());
-//      cerr << wpwm.col(0) << endl;
+      while ( is.peek()=='L' ) {
+        string l;
+        DenseVec dv = DenseVec(M_L_SIZE);
+        is >> "L " >> l >> " " >> dv >> "\n";
+        mmlv.try_emplace(l, vec(dv));
+      }
+      while ( is.peek()=='C' ) {
+        Delimited<char> i;
+        string c;
+        is >> "C " >> i >> " " >> c >> " ";
+        if (i == 'X') {
+          DenseVec dv = DenseVec(X_C_SIZE);
+          is >> dv >> "\n";
+          mxcv.try_emplace(c, vec(dv));
+        }
+        else if (i == 'M') {
+          DenseVec dv = DenseVec(M_C_SIZE);
+          is >> dv >> "\n";
+          mmcv.try_emplace(c, vec(dv));
+        }
+        else if (i == 'I') {
+          is >> mci[c] >> "\n";
+        }
+      }
+      while ( is.peek()=='R' ) {
+        string x;
+        is >> "R " >> x >> " ";
+        is >> mmi[x] >> "\n";
+      }
+      while ( is.peek()=='X' ) {
+        string x;
+        string p;
+        DelimitedList<psLBrack,WPredictor,psSpace,psRBrack> wp;
+        is >> "X " >> x >> " " >> p >> " " >> wp >> "\n";
+        pair<string,string> xppair (x,p);
+        mxwp.try_emplace(xppair, wp);
+      }
+      while ( is.peek()=='M' ) {
+        string x;
+        string p;
+        DelimitedList<psLBrack,MPredictor,psSpace,psRBrack> mp;
+        is >> "M " >> x >> " " >> p >> " " >> mp >> "\n";
+        pair<string,string> xppair (x,p);
+        mxmp.try_emplace(xppair, mp);
+      }
 
-//      for ( const auto &myPair : mci ) {
-//        std::cerr << myPair.first << "\n";
-//     }
+      // initialize armadillo mat/vecs
+      xihwm = xihw;
+      xhhwm = xhhw;
+      xfcwm = xfcw;
+      xihbv = xihb;
+      xhhbv = xhhb;
+      xfcbv = xfcb;
+      xihwm.reshape(X_H_SIZE, X_E_SIZE + X_K_SIZE + X_P_SIZE + X_C_SIZE);
+      xhhwm.reshape(X_H_SIZE, X_H_SIZE);
+      xfcwm.reshape(xfcw.size()/X_H_SIZE, X_H_SIZE);
 
-      // duplicated vectors for RNN batch processing
-      ihbm = repmat(ihbv, 1, mwpi.size());
-      hhbm = repmat(hhbv, 1, mwpi.size());
-      fcbm = repmat(fcbv, 1, mwpi.size());
-//      cerr << "wpwm size " << wpwm.n_rows << " " << wpwm.n_cols << endl;
-//      cerr << "<S> mat size " << (mcm.find("<S>")->second).n_rows << " " << (mcm.find("<S>")->second).n_cols << endl;
-//      mat h0 = join_cols(wpwm, mcm.find("<S>")->second);
-//      cerr << "h0 size " << h0.n_rows << " " << h0.n_cols << endl;
-//      mat h1b = ihwm * zeros(60,100);
-//      cerr << "h1b size " << h1b.n_rows << " " << h1b.n_cols << endl;
-//      mat h1a = ihwm * h0;
-//      cerr << "h1a size " << h1a.n_rows << " " << h1a.n_cols << endl;
-//      mat h2 = h1a + ihbm;
-//      cerr << "h2 size " << h2.n_rows << " " << h2.n_cols << endl;
-//      mat h3 = relu(h2);
-//      cerr << "h3 size " << h3.n_rows << " " << h3.n_cols << endl;
-      h1 = relu(ihwm * join_cols(wpwm, mcm.find("<S>")->second) + ihbm + hhbm);
-//      cerr << mcm.find("<S>")->second.col(0) << endl;
-//      cerr << mcm.find("<S>")->second.col(1) << endl;
-//      h1 = fcwm * h1 + fcbm;
-//      cerr << "joined mat size " << h1.n_rows << " " << h1.n_cols << endl;
-      s1_scores = exp(fcwm * h1 + fcbm);
-      s1_norm = sum(s1_scores, 0);
-      s1_logprobs = log(s1_scores.each_row() / s1_norm);
-//      cerr << s1_logprobs.col(0) << endl;
-//      cerr << s1_logprobs.col(1) << endl;
-//      cerr << s1_logprobs.col(2) << endl;
-//      cerr << s1_logprobs.col(3) << endl;
-//      cerr << s1_logprobs.col(4) << endl;
+      mihwm = mihw;
+      mhhwm = mhhw;
+      mfcwm = mfcw;
+      mihbv = mihb;
+      mhhbv = mhhb;
+      mfcbv = mfcb;
+      mihwm.reshape(M_H_SIZE, M_E_SIZE + M_P_SIZE + M_L_SIZE + M_C_SIZE);
+      mhhwm.reshape(M_H_SIZE, M_H_SIZE);
+      mfcwm.reshape(mfcw.size()/M_H_SIZE, M_H_SIZE);
+
     }
 
-//    const vec getCharEmbed( string a ) const {
-//      auto it = mcv.find( a );
-//      assert ( ( it != mcv.end() );
-//      return it->second;
-//    }
-
-    const mat getCharMat( string a ) const {
-      auto it = mcm.find( a );
-      assert ( it != mcm.end() );
-      return it->second;
+    // XModel: index input character embedding
+    const mat getXCharMat( string a, unsigned int i ) const {
+      auto it = mxcv.find( a );
+      assert ( it != mxcv.end() );
+      return repmat(it->second, 1, i);
     }
 
-    const unsigned int getCharIndex( string a ) const {
+    // XModel: index list of compatible WPredictors given pair<lemma, primcat>
+    const DelimitedList<psLBrack,WPredictor,psSpace,psRBrack> getWPredictorList( pair<string,string> xsp ) const {
+      if ( isdigit(xsp.first.at(0)) ) {
+//        cerr << "found number!" << endl;
+        pair<string,string> numpair ("NUM", "All");
+        return mxwp.find(numpair)->second;
+      } else {
+        auto it = mxwp.find( xsp );
+        if ( it != mxwp.end() ) {
+          return it->second;
+        } else {
+//          cerr << "found OOV lemma!" << endl;
+          pair<string,string> unkpair ("UNK", xsp.second);
+          return mxwp.find(unkpair)->second;
+        }
+      }
+    }
+
+    // XModel: index input WPredictor embedding given list of WPredictors
+    const mat getWPredictorMat( DelimitedList<psLBrack,WPredictor,psSpace,psRBrack> lwp ) const {
+      unsigned int idx = 0;
+      mat wpmat = mat(X_E_SIZE + X_K_SIZE + X_P_SIZE, lwp.size());
+      for ( auto& wp : lwp ) {
+        auto ite = mxev.find( wp.first() );
+        assert ( ite != mxev.end() );
+        auto itk = mxkv.find( wp.second() );
+        assert ( itk != mxkv.end() );
+        auto itp = mxpv.find( wp.third() );
+        assert ( itp != mxpv.end() );
+        wpmat.col(idx) = join_cols(join_cols(ite->second, itk->second), itp->second);
+        idx ++;
+      }
+      return wpmat;
+    }
+
+    // XModel: index input character index
+    const unsigned int getXCharIndex( string a ) const {
       auto it = mci.find( a );
       assert ( it != mci.end() );
       return it->second;
     }
 
-    const unsigned int getWPredictorIndex( WPredictor wp ) const {
-      auto it = mwpi.find( wp );
-      assert ( it != mwpi.end() );
+    // MModel: index input character embedding
+    const mat getMCharMat( string a, unsigned int i ) const {
+      auto it = mmcv.find( a );
+      assert ( it != mmcv.end() );
+      return repmat(it->second, 1, i);
+    }
+
+    // MModel: index list of compatible MPredictors given pair<lemma, primcat>
+    const DelimitedList<psLBrack,MPredictor,psSpace,psRBrack> getMPredictorList( pair<string,string> xsp ) const {
+      if ( isdigit(xsp.first.at(0)) ) {
+//        cerr << "found number!" << endl;
+        pair<string,string> numpair ("NUM", "All");
+        return mxmp.find(numpair)->second;
+      } else {
+        auto it = mxmp.find( xsp );
+        if ( it != mxmp.end() ) {
+          return it->second;
+        } else {
+//          cerr << "found OOV lemma!" << endl;
+          pair<string,string> unkpair ("UNK", xsp.second);
+          return mxmp.find(unkpair)->second;
+        }
+      }
+    }
+
+    // MModel: index input MPredictor embedding given list of MPredictors
+    const mat getMPredictorMat( DelimitedList<psLBrack,MPredictor,psSpace,psRBrack> lmp ) const {
+      unsigned int idx = 0;
+      mat mpmat = mat(M_E_SIZE + M_P_SIZE + M_L_SIZE, lmp.size());
+      for ( auto& mp : lmp ) {
+        auto ite = mmev.find( mp.first() );
+        assert ( ite != mmev.end() );
+        auto itp = mmpv.find( mp.second() );
+        assert ( itp != mmpv.end() );
+        auto itl = mmlv.find( mp.third() );
+        assert ( itp != mmlv.end() );
+        mpmat.col(idx) = join_cols(join_cols(ite->second, itp->second), itl->second);
+        idx ++;
+      }
+      return mpmat;
+    }
+
+    // MModel: index morph rule index
+    const unsigned int getMRuleIndex( string a ) const {
+      auto it = mmi.find( a );
+      assert ( it != mmi.end() );
       return it->second;
     }
 
-//    list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> calcPredictorLikelihoods( const W w_t ) const {
-//    list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> calcPredictorLikelihoods( const W w_t, const MapWP& mymap ) const {
-//    void calcPredictorLikelihoods( const W& w_t, const WPMap& mymap, WPList& mylist ) const {
-    void calcPredictorLikelihoods( const W& w_t, const WPMapV& mymap, rowvec& seqlogprobs ) const {
-      auto it = mymap.find( w_t );
-//      list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> results;
-      if ( it == mymap.end() ) {
-//        rowvec seqlogprobs = zeros<mat>(1, mwpi.size());
-        mat ht = h1;
+    // takes input word and iterates over morph rules that are read in as part of the WModel
+    // if morph rule can apply, generates <<lemma, primcat>, rule> and appends it to list
+    const list<pair<pair<string,string>,string>> applyMorphRules ( const W& w_t ) const {
+      list<pair<pair<string,string>,string>> lxmp;
+      string sW = w_t.getString().c_str();
+
+      // do not lowercase word if special punctuation token ("-LCB-", "-LRB-", "-RCB-", "-RRB-")
+      if ( find( PUNCT.begin(), PUNCT.end(), sW ) == PUNCT.end() ) transform(sW.begin(), sW.end(), sW.begin(), [](unsigned char c) { return std::tolower(c); });
+
+      // loop over morph rules
+      for ( const auto& mi : mmi ) {
+        smatch mM;
+        string sX;
+        string sP;
+
+        // for identity or annihilator rules, return the word itself as lemma
+        if ( mi.first == "%|%" || mi.first == "%|" ) {
+          sX = sW;
+          sP = "All";
+          lxmp.push_back(pair<pair<string,string>,string>(pair<string,string>(sX,sP),mi.first));
+        } else {
+          // otherwise, apply morph rule for lemma and primcat
+          if ( regex_match( mi.first, mM, regex("^(.*)[%](.*)[|](.*)[%](.*)$") ) ) {
+            smatch mW;
+            if ( regex_match(sW, mW, regex("^(.*)"+string(mM[2])+"$")) ) {
+              sX = string(mW[1])+string(mM[4]);
+              sP = string(mM[3]);
+              lxmp.push_back(pair<pair<string,string>,string>(pair<string,string>(sX,sP),mi.first));
+            }
+          }
+        }
+      }
+      return lxmp;
+    }
+
+    // XModel: calculate P(lemma | WPredictor)
+    // takes input pair<lemma, primcat> and calculates RNN probabilities
+    rowvec calcLemmaLikelihoods( const pair<string,string>& xsp, XPMap& xpmap ) const {
+      auto it = xpmap.find( xsp );
+      rowvec seqlogprobs;
+      if ( it == xpmap.end() ) {
+        // index list of compatible WPredictors
+        auto wplist = getWPredictorList( xsp );
+        string x_t = xsp.first;
+        seqlogprobs = zeros<mat>(1, wplist.size());
+        mat xihbm = repmat(xihbv, 1, wplist.size());
+        mat xhhbm = repmat(xhhbv, 1, wplist.size());
+        mat xfcbm = repmat(xfcbv, 1, wplist.size());
+        mat wpmat = getWPredictorMat(wplist);
+        // calculate first hidden state with start character <S>
+        mat ht = relu(xihwm * join_cols(wpmat, getXCharMat("<S>", wplist.size())) + xihbm + xhhbm);
+        mat st_scores = exp(xfcwm * ht + xfcbm);
+        rowvec st_norm = sum(st_scores, 0);
+        mat st_logprobs = log(st_scores.each_row() / st_norm);
         rowvec st1_logprobs;
 
-        if ( find( PUNCT.begin(), PUNCT.end(), w_t.getString().c_str() ) != PUNCT.end() ) {
-//          cerr << "PUNCT found" << endl;
-          seqlogprobs += s1_logprobs.row( getCharIndex( w_t.getString().c_str() ) );
-          mat ht1 = relu(ihwm * join_cols(wpwm, getCharMat( w_t.getString().c_str() )) + ihbm + hhwm * ht + hhbm);
-          mat st1_scores = exp(fcwm * ht1 + fcbm);
+        if ( find( PUNCT.begin(), PUNCT.end(), x_t ) != PUNCT.end() ) {
+          // if lemma is special punctuation token ("-LCB-", "-LRB-", "-RCB-", "-RRB-"), index probability using the token itself
+          seqlogprobs += st_logprobs.row( getXCharIndex( x_t ) );
+          mat ht1 = relu(xihwm * join_cols(wpmat, getXCharMat(x_t, wplist.size())) + xihbm + xhhwm * ht + xhhbm);
+          mat st1_scores = exp(xfcwm * ht1 + xfcbm);
           rowvec st1_norm = sum(st1_scores, 0);
-          st1_logprobs = log(st1_scores.row(getCharIndex( "<E>" )) / st1_norm);
+          st1_logprobs = log(st1_scores.row(getXCharIndex( "<E>" )) / st1_norm);
           seqlogprobs += st1_logprobs;
         } else {
-          string c0(1, w_t.getString()[0]);
-//          cerr << "retrieving prob for " << c0 << endl;
-          seqlogprobs += s1_logprobs.row( getCharIndex( c0.c_str() ));
+          string c0(1, x_t[0]);
+          // index probability for first character
+          seqlogprobs += st_logprobs.row( getXCharIndex( c0.c_str() ));
 
-          for ( unsigned i = 0; i < strlen(w_t.getString().c_str()); ++i ){
-            string ct(1, w_t.getString()[i]);
-            string ct1(1, w_t.getString()[i+1]);
-//            cerr << "calculating with input " << ct << endl;
-            mat ht1 = relu(ihwm * join_cols(wpwm, getCharMat( ct.c_str() )) + ihbm + hhwm * ht + hhbm);
-            mat st1_scores = exp(fcwm * ht1 + fcbm);
+          for ( unsigned i = 0; i < x_t.length(); ++i ){
+            string ct(1, x_t[i]);
+            string ct1(1, x_t[i+1]);
+            mat ht1 = relu(xihwm * join_cols(wpmat, getXCharMat(ct.c_str(), wplist.size())) + xihbm + xhhwm * ht + xhhbm);
+            mat st1_scores = exp(xfcwm * ht1 + xfcbm);
             rowvec st1_norm = sum(st1_scores, 0);
 
-            if (i != strlen(w_t.getString().c_str())-1) {
-//              cerr << "retrieving prob for " << ct1 << endl;
-              st1_logprobs = log(st1_scores.row(getCharIndex( ct1.c_str() )) / st1_norm);
+            if (i != x_t.length()-1) {
+              st1_logprobs = log(st1_scores.row(getXCharIndex( ct1.c_str() )) / st1_norm);
             } else {
-//              cerr << "retrieving prob for <E>" << endl;
-              st1_logprobs = log(st1_scores.row(getCharIndex( "<E>" )) / st1_norm);
-              }
+              st1_logprobs = log(st1_scores.row(getXCharIndex( "<E>" )) / st1_norm);
+            }
             seqlogprobs += st1_logprobs;
             ht = ht1;
           }
         }
-//        rowvec seqprobs = exp(seqlogprobs);
-        seqlogprobs = exp(seqlogprobs);
-
-//        for ( const auto &it: mwpi ) {
-////          results.emplace_back(it.first,seqprobs(it.second));
-//          mylist.emplace_back(it.first,seqprobs(it.second));
-//        }
+        xpmap.try_emplace(xsp, seqlogprobs);
       }
       else {
-//        cerr << "getting results" << endl;
-//        mylist = it->second;
         seqlogprobs = it->second;
-//        cerr << "got results" << endl;
       }
-//      return results;
+      return seqlogprobs;
+    }
+
+    // MModel: calculate P(M | WPredictor lemma)
+    // takes input pair<lemma, primcat> and calculates RNN probabilities
+    mat calcRuleLikelihoods( const pair<string,string>& xsp, MPMap& mpmap ) const {
+      auto it = mpmap.find( xsp );
+      mat rulelogprobs;
+      if ( it == mpmap.end() ) {
+        // index list of compatible MPredictors
+        auto mplist = getMPredictorList( xsp );
+        string x_t = xsp.first;
+        mat mihbm = repmat(mihbv, 1, mplist.size());
+        mat mhhbm = repmat(mhhbv, 1, mplist.size());
+        mat mfcbm = repmat(mfcbv, 1, mplist.size());
+        mat mpmat = getMPredictorMat(mplist);
+
+        if ( find( PUNCT.begin(), PUNCT.end(), x_t ) != PUNCT.end() ) {
+          // if lemma is special punctuation token ("-LCB-", "-LRB-", "-RCB-", "-RRB-"), calculate probability using the token itself
+          mat ht = relu(mihwm * join_cols(mpmat, getMCharMat(x_t, mplist.size())) + mihbm + mhhbm);
+          mat st_scores = exp(mfcwm * ht + mfcbm);
+          rowvec st_norm = sum(st_scores, 0);
+          rulelogprobs = log(st_scores.each_row() / st_norm);
+        } else {
+          string c0(1, x_t[0]);
+          // calculate probability using first character
+//          cerr << "word " << x_t << " c0 " << c0 << endl;
+          mat ht = relu(mihwm * join_cols(mpmat, getMCharMat(c0.c_str(), mplist.size())) + mihbm + mhhbm);
+
+          for ( unsigned i = 1; i < x_t.length(); ++i ){
+            string ct(1, x_t[i]);
+//            cerr << "word " << x_t << " c" << i << " " << ct << endl;
+            mat ht1 = relu(mihwm * join_cols(mpmat, getMCharMat(ct.c_str(), mplist.size())) + mihbm + mhhwm * ht + mhhbm);
+            ht = ht1;
+          }
+          mat st_scores = exp(mfcwm * ht + mfcbm);
+          rowvec st_norm = sum(st_scores, 0);
+          rulelogprobs = log(st_scores.each_row() / st_norm);
+        }
+        mpmap.try_emplace(xsp, rulelogprobs);
+      }
+      else {
+        rulelogprobs = it->second;
+      }
+      return rulelogprobs;
+    }
+
+    void calcPredictorLikelihoods( const W& w_t, const WWPPMap& wwppmap, XPMap& xpmap, MPMap& mpmap, WPPMap& wppmap ) const {
+      auto it = wwppmap.find( w_t );
+      if ( it == wwppmap.end() ) {
+        // generate list of <<lemma, primcat>, rule>
+        list<pair<pair<string,string>,string>> lxmp = applyMorphRules(w_t);
+        // loop over <<lemma, primcat>, rule>
+        for ( const auto& xmp : lxmp ) {
+          cerr << "generated word " << w_t << " from lemma " << xmp.first.first << ", primcat " << xmp.first.second << ", rule " << xmp.second << endl;
+          DelimitedList<psLBrack,WPredictor,psSpace,psRBrack> lwp = getWPredictorList(xmp.first);
+          rowvec xll = calcLemmaLikelihoods(xmp.first, xpmap);
+          mat mllall = calcRuleLikelihoods(xmp.first, mpmap);
+          rowvec mll = mllall.row(getMRuleIndex(xmp.second));
+          rowvec wprobs = exp(xll + mll);
+          unsigned int idx = 0;
+          for ( const auto& wp : lwp ) {
+            wppmap[wp] += wprobs(idx);
+            idx ++;
+          }
+        }
+      } else {
+        wppmap = it->second;
+      }
     }
 };
 

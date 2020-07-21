@@ -273,8 +273,10 @@ int main ( int nArgs, char* argv[] ) {
   for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&corpus,&iartNextToProc,&iartNextToDump,/*&articleMLSs,&articles,&linenum,*/&mutexMLSList,numThreads,&matE,&funcO,&modN,&modF,&modP,&modW,&modJ,&modA,&modB] (uint numt) {
 
     auto tpLastReport = chrono::high_resolution_clock::now();  // clock for thread heartbeats
-    WModel::WPMapV mapWP;
-//    WModel::WPMap mapWP;
+    // WModel-related maps for each thread
+    WModel::WWPPMap mapWWPP;
+    WModel::XPMap mapXP;
+    WModel::MPMap mapMP;
 
     // Loop over articles...
     while( true ) {
@@ -294,8 +296,8 @@ int main ( int nArgs, char* argv[] ) {
       mutexMLSList.lock( );
       if( not ( cin && EOF!=cin.peek() ) ) { mutexMLSList.unlock(); break; }
 
-      uint currline = linenum; 
-      articles.emplace_back(); 
+      uint currline = linenum;
+      articles.emplace_back();
       auto& sents = articles.back(); //a specific article becomes the thread's sents //returns reference
       articleMLSs.emplace_back();
       auto& MLSs = articleMLSs.back();
@@ -328,7 +330,7 @@ int main ( int nArgs, char* argv[] ) {
         // Add mls to list...
         MLSs.emplace_back( ); //establish placeholder for mls for this specific sentence
         auto& mls = MLSs.back();
-//        mutexMLSList.unlock(); 
+//        mutexMLSList.unlock();
 #endif
 
         Trellis   beams;  // sequence of beams - each beam is hypotheses at a given timestep
@@ -341,7 +343,7 @@ int main ( int nArgs, char* argv[] ) {
         beams[0].tryAdd( lbeWholeArticle.back().getHidd(), lbeWholeArticle.back().getProbBack() );
         //beams[0].tryAdd( HiddState(), ProbBack<HiddState>() );
 
-        // For each word... 
+        // For each word...
         for ( auto& w_t : lwSent ) {
 //          if ( numThreads == 1 ) cerr << " " << w_t;
           if ( VERBOSE ) cout << "WORD:" << w_t << endl;
@@ -349,15 +351,14 @@ int main ( int nArgs, char* argv[] ) {
           // Create beam for current time step...
           beams[++t].clear();
 
-//          WModel::WPList listWP;
-          rowvec seqprobs = zeros<mat>(1, modW.mwpi.size());
-          modW.calcPredictorLikelihoods(w_t, mapWP, seqprobs);
-          mapWP.try_emplace(w_t, seqprobs);
+          WModel::WPPMap mapWPP;
+          modW.calcPredictorLikelihoods(w_t, mapWWPP, mapXP, mapMP, mapWPP);
+          mapWWPP.try_emplace(w_t, mapWPP);
 //          cerr << "========== Processing word ========== " << w_t << endl;
 //          for ( const auto &it: modW.mwpi) {
 //            cerr << w_t << " " << it.second << " " << it.first << " : " << seqprobs(it.second) << endl;
 //          }
-          cerr << "Thread number " << numt << ", mapWP size : " << mapWP.size() << endl;
+//          cerr << "Thread number " << numt << ", mapWP size : " << mapWP.size() << endl;
 
           // For each hypothesized storestate at previous time step...
           for( const BeamElement<HiddState>& be_tdec1 : beams[t-1] ) { //beams[t-1] is a Beam<ProbBack,BeamElement>, so be_tdec1 is a beam item, which is a pair<ProbBack,BeamElement>. first.first is the prob in the probback, and second is the beamelement, which is a sextuple of <sign, f, e, k, j, q>
@@ -426,7 +427,7 @@ int main ( int nArgs, char* argv[] ) {
                 // For each possible lemma (context + label + prob) for preterminal of current word...
 //                for ( auto& ektpr_p_t : modW.calcPredictorLikelihoods(w_t, histword) ) { //ektpr_p_t is a pair of (Wpredictor, prob)
 //                for ( auto& ektpr_p_t : listWP ) { //ektpr_p_t is a pair of (Wpredictor, prob)
-                for ( auto& ektpr_p_t : modW.mwpi ) { //ektpr_p_t is a pair of (Wpredictor, prob)
+                for ( auto& ektpr_p_t : mapWPP ) { //ektpr_p_t is a pair of (Wpredictor, prob)
 //                for ( auto& ektpr_p_t : modW.calcPredictorLikelihoods(w_t) ) { //ektpr_p_t is a pair of (Wpredictor, prob)
 //                  if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(ektpr_p_t.second) > beams[t].rbegin()->getProb() ) {
 //                    EVar  e_p_t       = ektpr_p_t.first.first();
@@ -434,11 +435,11 @@ int main ( int nArgs, char* argv[] ) {
 //                    CVar  c_p_t       = ektpr_p_t.first.third();                               // label of current preterminal
 //                    double probwgivkl = ektpr_p_t.second;                                     // probability of current word given current preterminal
 
-                  if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(seqprobs(ektpr_p_t.second)) > beams[t].rbegin()->getProb() ) {
+                  if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(ektpr_p_t.second) > beams[t].rbegin()->getProb() ) {
                     EVar  e_p_t       = ektpr_p_t.first.first();
                     K     k_p_t       = (FEATCONFIG & 8 && ektpr_p_t.first.second().getString()[2]!='y') ? K::kBot : ektpr_p_t.first.second();   // context of current preterminal
                     CVar  c_p_t       = ektpr_p_t.first.third();                               // label of current preterminal
-                    double probwgivkl = seqprobs(ektpr_p_t.second);                                     // probability of current word given current preterminal
+                    double probwgivkl = ektpr_p_t.second;                                     // probability of current word given current preterminal
 
                     if ( VERBOSE>1 ) cout << "     W " << e_p_t << " " << k_p_t << " " << c_p_t << " : " << w_t << " = " << probwgivkl << endl;
 
@@ -454,7 +455,7 @@ int main ( int nArgs, char* argv[] ) {
                         tpLastReport = chrono::high_resolution_clock::now();
                         lock_guard<mutex> guard( mutexMLSList );
 //                        cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << endl;
-                        cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t.first << seqprobs(ektpr_p_t.second) << endl;
+                        cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t.first << ektpr_p_t.second << endl;
                       } //closes if chrono
 
                       // If preterminal prob is nonzero...
@@ -513,7 +514,7 @@ int main ( int nArgs, char* argv[] ) {
                                           tpLastReport = chrono::high_resolution_clock::now();
                                           lock_guard<mutex> guard( mutexMLSList );
 //                                          cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << " JRESP " << modJ.getJEOO(jresponse) << " A " << cpA.first << " B " << cpB.first << endl;
-                                          cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t.first << seqprobs(ektpr_p_t.second) << " JRESP " << modJ.getJEOO(jresponse) << " A " << cpA.first << " B " << cpB.first << endl;
+                                          cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t.first << ektpr_p_t.second << " JRESP " << modJ.getJEOO(jresponse) << " A " << cpA.first << " B " << cpB.first << endl;
                                         } //closes if chrono
                                         // Calculate probability and storestate and add to beam...
                                         StoreState ss( qTermPhase, j, e, opL, opR, cpA.first, cpB.first );
@@ -623,4 +624,3 @@ int main ( int nArgs, char* argv[] ) {
   for( auto& w : vtWorkers ) w.join();
 
 } //closes int main
-
