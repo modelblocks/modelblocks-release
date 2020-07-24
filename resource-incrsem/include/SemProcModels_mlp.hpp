@@ -148,7 +148,7 @@ class NModel {
       //cerr << "mcv size: " << mcv.size() << endl;
       auto it = mcv.find( i );
       if (it == mcv.end()) { 
-        cerr << "ERROR: CVar not defined in model: no embedding found for: " << i << endl; 
+        cerr << "ERROR: CVar not defined in nmodel: no embedding found for: " << i << endl; 
         return zeroCatEmb;
       }
       assert( it != mcv.end() );
@@ -338,7 +338,7 @@ class FModel {
       auto it = mifek.find( i );
       assert( it != mifek.end() );
       if (it == mifek.end()) { 
-        cerr << "ERROR: FEK not defined in model: no value found for: " << i << endl; 
+        cerr << "ERROR: FEK not defined in fmodel: no value found for: " << i << endl; 
       }
       return it->second;
     }
@@ -347,7 +347,7 @@ class FModel {
       auto it = mcv.find( i );
       //assert( it != mcv.end() );
       if (it == mcv.end()) { 
-        cerr << "ERROR: CVar not defined in model: no embedding found for: " << i << endl; 
+        cerr << "ERROR: CVar not defined in fmodel: no embedding found for: " << i << endl; 
         return zeroCatEmb;
       }
       return it->second;
@@ -569,7 +569,7 @@ class JModel {
     const CVec& getCatEmbed( CVar i ) const { 
       auto it = mcv.find( i );
       if (it == mcv.end()) { 
-        cerr << "ERROR: CVar not defined in model: no embedding found for: " << i << endl; 
+        cerr << "ERROR: CVar not defined in jmodel: no embedding found for: " << i << endl; 
         return zeroCatEmb;
       }
       //assert( it != mcv.end() );

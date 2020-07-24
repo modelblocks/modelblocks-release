@@ -369,6 +369,7 @@ int main ( int nArgs, char* argv[] ) {
             if (VERBOSE > 1) cout << "entering denom loop... " << &pbeAnt->getBack() << endl;
             //denominator loop over candidate antecedents
             for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { 
+              if (pbeAnt->getHidd().getPrtrm().getCat() == cFail) { continue; }
               if (VERBOSE > 1) cout << "entered denom loop... " << &pbeAnt->getBack() << endl;
               if ( pbeAnt->getHidd().getI() != 0 ) {
                 if (VERBOSE > 1) cout << "    adding index to exclude for blocking: " << tAnt+pbeAnt->getHidd().getI() << " pbeAnt...get(): " << pbeAnt->getHidd().getI() << endl;
@@ -400,6 +401,7 @@ int main ( int nArgs, char* argv[] ) {
             if (VERBOSE > 1) cout << "entering numerator loop..." << endl;
             //numerator loop over candidate antecedents. specific choice.
             for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers. 
+              if (pbeAnt->getHidd().getPrtrm().getCat() == cFail) { continue; }
               //block indices as read from previous storestate's excludedIndices
               if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
                 continue;

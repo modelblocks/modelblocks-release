@@ -18,7 +18,11 @@ def ensure_binary(data):
     '''confirms two labels are present.  if not, adds 1 additional training example with label flipped'''
     labels = set()
     for line in data:
-        _, _, _, _, _, _, _, _, label = line.split(" ")
+        try:
+            _, _, _, _, _, _, _, _, label = line.split(" ")
+        except:
+            print("WARNING: mlpdecpars spec not observed: {}".format(line))
+            continue
         labels.add(label)
     if len(labels) == 1:
         eprint("only one label found, adding fake training example...")
