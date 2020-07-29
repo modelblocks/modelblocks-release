@@ -21,7 +21,7 @@ def ensure_binary(data):
         try:
             _, _, _, _, _, _, _, _, label = line.split(" ")
         except:
-            print("WARNING: mlpdecpars spec not observed: {}".format(line))
+            eprint("WARNING: mlpdecpars spec not observed: {}".format(line))
             continue
         labels.add(label)
     if len(labels) == 1:
@@ -196,7 +196,7 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, hvec_to_ix):
 
 class NModel(nn.Module):
 
-    def __init__(self, cat_vocab_size, hvec_vocab_size, syn_size, sem_size, hidden_dim, output_dim):
+    def __init__(self, cat_vocab_size, hvec_vocab_size, syn_size, sem_size, hidden_dim, output_dim, dropout_prob):
         super(NModel, self).__init__()
         self.hvec_vocab_size = hvec_vocab_size
         self.sem_size = sem_size
@@ -204,7 +204,9 @@ class NModel(nn.Module):
         self.hvec_embeds = nn.Embedding(hvec_vocab_size, sem_size)
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
+        self.dropout_prob = dropout_prob
         self.fc1 = nn.Linear(2*syn_size+2*sem_size+3, self.hidden_dim, bias=True)
+        self.dropout = nn.Dropout(self.dropout_prob)
         self.relu = F.relu
         self.fc2 = nn.Linear(self.hidden_dim, self.output_dim, bias=True)
 
@@ -245,13 +247,14 @@ class NModel(nn.Module):
         #eprint(x)
         #eprint(hvb_mat[0,:])
         x = self.fc1(x)
+        x = self.dropout(x)
         x = self.relu(x)
         x = self.fc2(x)
         
         return F.log_softmax(x, dim=1)
 
 
-def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, 
+def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dropout_prob,
           num_epochs, batch_size, learning_rate, weight_decay, l2_reg, 
           ablate_sem, useClassFreqWeighting):
     #depth, cat_b_ix, hvb_mat, hvf_mat, cat_to_ix, fdecs_ix, fdecs_to_ix, hvec_to_ix, hvb_top, hvf_top = prepare_data()
@@ -270,7 +273,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim,
     target = torch.LongTensor(labels)
     outputdim = len(set(target.tolist())) 
     assert outputdim == 2
-    model = NModel(len(cat_to_ix), len(hvec_to_ix), syn_size, sem_size, hidden_dim, outputdim) #output_dim is last param
+    model = NModel(len(cat_to_ix), len(hvec_to_ix), syn_size, sem_size, hidden_dim, outputdim, dropout_prob) 
 
     if use_gpu >= 0:
         #depth = depth.to("cuda")
@@ -391,13 +394,15 @@ def main(config):
                                    n_config.getint("SynSize"), 
                                    n_config.getint("SemSize"), 
                                    n_config.getint("HiddenSize"), 
+                                   n_config.getfloat("DropoutProb"),
                                    n_config.getint("NEpochs"), 
                                    n_config.getint("BatchSize"), 
                                    n_config.getfloat("LearningRate"), 
                                    n_config.getfloat("WeightDecay"), 
                                    n_config.getfloat("L2Reg"), 
                                    n_config.getboolean("AblateSem"),
-                                   n_config.getboolean("UseClassFreqWeighting"))
+                                   n_config.getboolean("UseClassFreqWeighting")
+)
 
     if n_config.getint("GPU") >= 0:
         cat_embeds = list(model.parameters())[0].data.cpu().numpy()
