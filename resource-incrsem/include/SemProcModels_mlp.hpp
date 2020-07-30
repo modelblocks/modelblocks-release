@@ -24,23 +24,24 @@ const uint SEM_SIZE = 20;
 const uint SYN_SIZE = 20;
 
 // XModel E, K, P, Char, RNN hidden sizes
-const uint X_E_SIZE = 10;
-const uint X_K_SIZE = 10;
-const uint X_P_SIZE = 10;
-const uint X_C_SIZE = 10;
-const uint X_H_SIZE = 40;
+const uint X_E_SIZE = 20;
+const uint X_K_SIZE = 20;
+const uint X_P_SIZE = 20;
+const uint X_C_SIZE = 20;
+const uint X_H_SIZE = 80;
 
 // MModel E, P, LCat, Char, RNN hidden sizes
-const uint M_E_SIZE = 10;
-const uint M_P_SIZE = 10;
-const uint M_L_SIZE = 10;
-const uint M_C_SIZE = 10;
-const uint M_H_SIZE = 40;
+const uint M_E_SIZE = 20;
+const uint M_P_SIZE = 20;
+const uint M_L_SIZE = 20;
+const uint M_C_SIZE = 20;
+const uint M_H_SIZE = 80;
 
 vector<string> PUNCT = { "-LCB-", "-LRB-", "-RCB-", "-RRB-" };
 
 arma::mat relu( const arma::mat& km ) {
-  return clamp(km, 0, km.max());
+  if ( km.max() < 0 ) return zeros( size(km) );
+  else return clamp(km, 0, km.max());
 }
 
 // for semantic ablation
