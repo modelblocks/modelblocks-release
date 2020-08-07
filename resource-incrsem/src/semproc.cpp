@@ -366,11 +366,11 @@ int main ( int nArgs, char* argv[] ) {
             double ndenom = 0.0;
             vector<int> excludedIndices; //initialize blocking list
 
-            if (VERBOSE > 1) cout << "entering denom loop... " << &pbeAnt->getBack() << endl;
+            //if (VERBOSE > 1) cout << "entering denom loop... " << &pbeAnt->getBack() << endl;
             //denominator loop over candidate antecedents
             for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { 
               if (pbeAnt->getHidd().getPrtrm().getCat() == cFail) { continue; }
-              if (VERBOSE > 1) cout << "entered denom loop... " << &pbeAnt->getBack() << endl;
+              //if (VERBOSE > 1) cout << "entered denom loop... " << &pbeAnt->getBack() << endl;
               if ( pbeAnt->getHidd().getI() != 0 ) {
                 if (VERBOSE > 1) cout << "    adding index to exclude for blocking: " << tAnt+pbeAnt->getHidd().getI() << " pbeAnt...get(): " << pbeAnt->getHidd().getI() << endl;
                 excludedIndices.push_back(tAnt+pbeAnt->getHidd().getI()); //add excluded index if there's a non-null coref decision
@@ -382,9 +382,9 @@ int main ( int nArgs, char* argv[] ) {
               }
               bool corefON = (tAnt==int(t)) ? 0 : 1;
 
-              if (VERBOSE > 1) cout << "about to generate npv... " << &pbeAnt->getBack() << endl;
+              //if (VERBOSE > 1) cout << "about to generate npv... " << &pbeAnt->getBack() << endl;
               NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1, ABLATE_UNARY );
-              if (VERBOSE > 1) cout << "about to generate nresponses... " << &pbeAnt->getBack() << endl;
+              //if (VERBOSE > 1) cout << "about to generate nresponses... " << &pbeAnt->getBack() << endl;
               arma::vec nresponses = modN.calcResponses( npv ); //nps.NLogResponses(matN);
 
               //if (VERBOSE > 1) {
@@ -393,17 +393,25 @@ int main ( int nArgs, char* argv[] ) {
               //}
               
               ndenom += nresponses(1) / nresponses(0) ;
-              if (VERBOSE > 1) cout << "bottom of denom loop... " << &pbeAnt->getBack() << endl;
+              //if (VERBOSE > 1) cout << "bottom of denom loop... " << &pbeAnt->getBack() << endl;
             } //closes for tAnt
 
             pbeAnt = &beDummy; //reset pbiAnt pointer after calculating denominator
 
-            if (VERBOSE > 1) cout << "entering numerator loop..." << endl;
+            //if (VERBOSE > 1) cout << "entering numerator loop..." << endl;
             //numerator loop over candidate antecedents. specific choice.
             for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers. 
-              if (pbeAnt->getHidd().getPrtrm().getCat() == cFail) { continue; }
+              if (pbeAnt->getHidd().getPrtrm().getCat() == cFail) { 
+                if (VERBOSE>1) {
+                  cout << "skipping cFail antecedent at idx: " << tAnt << endl;
+                }
+                continue; 
+              }
               //block indices as read from previous storestate's excludedIndices
               if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
+                if (VERBOSE>1) {
+                  cout << "skipping excluded index: " << tAnt << endl;
+                }
                 continue;
               }
               
@@ -415,15 +423,15 @@ int main ( int nArgs, char* argv[] ) {
               //if (VERBOSE>1) { cout << "    " << pair<const NModel&, const NPredictorVec&>(modN,npv) << endl; } //npv.printOut(cout); }
               arma::vec nresponses = modN.calcResponses( npv );
               if (VERBOSE>1) {
-                cout << "considering basec: " << npv.getBaseC() << " antec: " << npv.getAnteC() << " basesem: " << npv.getBaseSem() << " antesem: " << npv.getAnteSem() << " antdist: " << npv.getAntDist() << " sqantdist: " << npv.getAntDistSq() << " corefOn: " << npv.getCorefOn() << endl;
-                cout << "  with nresponses: " << nresponses << " nresponses(1): " << nresponses(1) << " nresponses(0): " << nresponses(0) << endl;
-                cout << "  nr(1) / nr(0): " << nresponses(1) / nresponses(0) << endl;
+                //cout << "considering basec: " << npv.getBaseC() << " antec: " << npv.getAnteC() << " basesem: " << npv.getBaseSem() << " antesem: " << npv.getAnteSem() << " antdist: " << npv.getAntDist() << " sqantdist: " << npv.getAntDistSq() << " corefOn: " << npv.getCorefOn() << endl;
+                cout << "    nresponses(1): " << nresponses(1) << " nresponses(0): " << nresponses(0) << endl;
+                cout << "    nr(1) / nr(0): " << nresponses(1) / nresponses(0) << endl;
               }
               double numerator = nresponses(1) / nresponses(0) ;
               double nprob = numerator / ndenom;
 
-              if ( VERBOSE>1 ) cout << "    N ... : 1 = " << numerator << "/" << ndenom << "=" << nprob << "  tAnt: " << (t - tAnt) << endl;
-
+              if ( VERBOSE>1 ) cout << "    N  antprtrm: " << pbeAnt->getHidd().getPrtrm() << " corefOn: " << corefON << "t-tAnt: " << t-tAnt <<  "qtdec1: " << q_tdec1 << " ablate_unary: " << ABLATE_UNARY << " : 1 = " << numerator << "/" << ndenom << "=" << nprob << endl;
+              //NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1, ABLATE_UNARY );
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
                 FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );
 //                if( VERBOSE>1 ) cout << "     f predictors: " << pair<const FModel&,const FPredictorVec&>( modF, lfpredictors ) << endl;
@@ -491,7 +499,7 @@ int main ( int nArgs, char* argv[] ) {
                             O    opR = modJ.getJEOO( jresponse ).fourth(); //.getROp();
                             //if( jresponse.toInt() >= int(jresponses.size()) ) cerr << "ERROR: unknown jresponse: " << jresponse << endl;
                             double probJoin = jresponses[jresponse]; //  / jnorm;
-                            if ( VERBOSE>1 ) cout << "        J ... " << " : " << modJ.getJEOO(jresponse) << " = " << probJoin << endl;
+                            if ( VERBOSE>1 ) cout << "        J " << f << " " << e_p_t << " " << aLchild << " " << qTermPhase << " : " << modJ.getJEOO(jresponse) << " = " << probJoin << endl;
 
                             // For each possible apex category label...
                             APredictorVec apredictor( f, j, e_p_t, e, opL, aLchild, qTermPhase );  // save apredictor for use in prob calc

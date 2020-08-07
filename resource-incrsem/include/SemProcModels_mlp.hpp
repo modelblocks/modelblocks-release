@@ -21,7 +21,9 @@
 
 const uint SEM_SIZE = 20;
 const uint SYN_SIZE = 10;
-const uint NPREDDIM = 2*SEM_SIZE+2*SYN_SIZE+3;
+const uint NSYN_SIZE = 10;
+const uint NSEM_SIZE = 40;
+const uint NPREDDIM = 2*NSEM_SIZE+2*NSYN_SIZE+3;
 
 arma::mat relu( const arma::mat& km ) {
   arma::mat A(km.n_rows, 1);
@@ -99,8 +101,8 @@ class NModel {
     map<KVec,KDenseVec> mkdv;                  // map between KVec and embeds
 
   public:
-    NModel( ) : zeroCatEmb(SYN_SIZE) { }
-    NModel( istream& is ) : zeroCatEmb(SYN_SIZE) {
+    NModel( ) : zeroCatEmb(NSYN_SIZE) { }
+    NModel( istream& is ) : zeroCatEmb(NSYN_SIZE) {
       //DelimitedMat<psX, double, psComma, NPREDDIM, NPREDDIM, psX> nw;                              // n model weights. square for now, doesn't have to be
 
       //rewrite how to read in N model learned weights, crib off of J model
@@ -115,12 +117,12 @@ class NModel {
       while ( is.peek()=='C' ) {
         Delimited<CVar> c;
         is >> "C " >> c >> " ";
-        is >> mcv.try_emplace(c,SYN_SIZE).first->second >> "\n"; //mcv[c]
+        is >> mcv.try_emplace(c,NSYN_SIZE).first->second >> "\n"; //mcv[c]
       }
       while ( is.peek()=='K' ) {
         Delimited<K> k;
         is >> "K " >> k >> " ";
-        is >> mkdv.try_emplace(k,SEM_SIZE).first->second >> "\n";
+        is >> mkdv.try_emplace(k,NSEM_SIZE).first->second >> "\n";
       }
       //Reshape read-in model params to correct dimensions, save to private members
       //first layer
@@ -157,10 +159,10 @@ class NModel {
     }
   
     const KDenseVec getKVecEmbed( HVec hv ) const {
-      KDenseVec KVecEmbed = KDenseVec(arma::zeros(SEM_SIZE));
+      KDenseVec KVecEmbed = KDenseVec(arma::zeros(NSEM_SIZE));
       for ( auto& kV : hv.at(0) ) {
         if ( kV == K::kTop) {
-          KVecEmbed += KDenseVec(arma::ones(SEM_SIZE));
+          KVecEmbed += KDenseVec(arma::ones(NSEM_SIZE));
           continue;
         }
         auto it = mkdv.find( kV );

@@ -1,6 +1,7 @@
 import sys
 import pdb
 import numpy as np
+import matplotlib.pyplot as plt
 
 #generate coreference chain descriptive statistics like mean chain length, distance to last mention, etc.
 
@@ -54,6 +55,7 @@ for doc in [1]:
         
 #print("distances: {}".format(distances))
 print("word distance between mentions - mean: {}, median: {}, min/max: {}/{}, stddev: {}".format(np.mean(distances),np.median(distances),np.min(distances),np.max(distances),np.std(distances)))
-
+hist,binedges = np.histogram(distances)
+print(hist)
 #print("coref chain length - mean: {}, min/max:{}/{}, stddev: {}".format(mean,min,max,stdddev))
 #print("num chains in a doc - mean: {}, min/max:{}/{}, stddev: {}".format(mean,min,max,stdddev))

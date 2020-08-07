@@ -82,6 +82,7 @@ def prepare_data():
     flat_hvA = [hvec for sublist in hvAnteFirsts for hvec in sublist if hvec not in ["", "Bot", "Top"]]
     allCats = set(catBases).union(set(catAntes))
     cat_to_ix = {cat: i for i, cat in enumerate(sorted(set(allCats)))}
+    
     #fdecs_to_ix = {fdecs: i for i, fdecs in enumerate(sorted(set(fDecs)))}
     hvec_to_ix = {hvec: i for i, hvec in enumerate(sorted(set(flat_hvB + flat_hvA)))}
 
@@ -253,12 +254,26 @@ class NModel(nn.Module):
         
         return F.log_softmax(x, dim=1)
 
+def print_examples(cat_to_ix, cat_base_ixs, cat_ante_ixs, hvb_mat, hva_mat, hvec_to_ix, hvb_top, hva_top, wordDists, sqWordDists, corefOns, labels):
+   '''WARNING: don't try to do this for a big dataset - it will run out of memory trying to change sparse to full matrix'''
+   ix_to_cat = {v: k for k, v in cat_to_ix.items()} 
+   ix_to_hvec = {v: k for k, v in hvec_to_ix.items()} 
+   ex_idxs = range(len(cat_base_ixs))
+   eprint("example data:")
+   for ex_idx in ex_idxs:
+       eprint("base_ix: {} base_cat: {} ante_ix: {} ante_cat: {} worddist: {} sqworddist: {} corefon: {} label: {}".format(cat_base_ixs[ex_idx],ix_to_cat[cat_base_ixs[ex_idx]], cat_ante_ixs[ex_idx], ix_to_cat[cat_ante_ixs[ex_idx]], wordDists[ex_idx], sqWordDists[ex_idx], corefOns[ex_idx], labels[ex_idx]))
+       eprint("  base hvecs: {}".format(",".join([ ix_to_hvec[i] for i,val in enumerate(hvb_mat.toarray()[ex_idx]) if val > 0 ])))
+       eprint("  antecedent hvecs: {}".format(",".join([ ix_to_hvec[i] for i,val in enumerate(hva_mat.toarray()[ex_idx]) if val > 0 ])))
+       #eprint("hvec b: {} hvec a: {}".format([ix_to_hvec[x] for x in hvb_mat[ex_idx] if x != 0], [ix_to_hvec[x] for x in hva_mat[ex_idx] if x != 0]))
 
 def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dropout_prob,
           num_epochs, batch_size, learning_rate, weight_decay, l2_reg, 
           ablate_sem, useClassFreqWeighting):
     #depth, cat_b_ix, hvb_mat, hvf_mat, cat_to_ix, fdecs_ix, fdecs_to_ix, hvec_to_ix, hvb_top, hvf_top = prepare_data()
     cat_to_ix, cat_base_ixs, cat_ante_ixs, hvb_mat, hva_mat, hvec_to_ix, hvb_top, hva_top, wordDists, sqWordDists, corefOns, labels = prepare_data() 
+    #cat_to_ix, cat_base_ixs, cat_ante_ixs, hvb_mat, hva_mat, hvec_to_ix, hvb_top, hva_top, wordDists, sqWordDists, corefOns, labels = prepare_data() 
+    #print_examples( cat_to_ix, cat_base_ixs, cat_ante_ixs, hvb_mat, hva_mat, hvec_to_ix, hvb_top, hva_top, wordDists, sqWordDists, corefOns, labels)
+    
     #depth = F.one_hot(torch.LongTensor(depth), 7).float()
     #cat_b_ix = torch.LongTensor(cat_b_ix)
     #target = torch.LongTensor(fdecs_ix)
