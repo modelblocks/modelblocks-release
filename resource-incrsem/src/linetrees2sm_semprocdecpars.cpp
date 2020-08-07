@@ -329,7 +329,7 @@ void calcContext ( Tree<L>& tr,
         cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " : " << removeLink(tr.front())  << endl;
       }
 #endif
-      q = StoreState( q, hvAnt, eF.c_str(), k, getCat(removeLink(l)), matE, funcO );
+      q = StoreState( q, f, hvAnt, eF.c_str(), k, getCat(removeLink(l)), matE, funcO );
       aPretrm = q.back().apex().back();
     } else {
       aPretrm = Sign();

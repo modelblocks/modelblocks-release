@@ -479,7 +479,7 @@ int main ( int nArgs, char* argv[] ) {
                         double probFPW = probFork * modP.find(ppredictor)->second.find(c_p_t)->second * probwgivkl;
                         if ( VERBOSE>1 ) cout << "       f: f" << f << "&" << e_p_t << "&" << k_p_t << " " << probFork << " * " << modP.find(ppredictor)->second.find(c_p_t)->second << " * " << probwgivkl << " = " << probFPW << endl;
 
-                        StoreState qPretrm( q_tdec1, hvAnt, e_p_t, k_p_t, c_p_t, matE, funcO );
+                        StoreState qPretrm( q_tdec1, f, hvAnt, e_p_t, k_p_t, c_p_t, matE, funcO );
                         const Sign& aPretrm = qPretrm.getApex();
                         if( VERBOSE>1 ) cout << "       qPretrm="    << qPretrm    << endl;
                         StoreState qTermPhase( qPretrm, f );
