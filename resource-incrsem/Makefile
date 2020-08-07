@@ -429,13 +429,15 @@ endef
 %_nmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/undersample_nmodel_noncorefs.py \
               $(INCRSEM-SCRIPTS)/mlpdecpars2nmodel.py  \
-              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))n.ini
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*))).ini
+              #scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))n.ini
 	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 $(word 2,$^)  | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
 .PRECIOUS: %_fmlpmodel
 %_fmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py \
               $(INCRSEM-SCRIPTS)/mlpdecpars2fmodel.py  \
-              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*))).ini
+              #scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini
 	cat $<  |  grep '^F'  |  sed 's/^F //'  |  python $(word 2,$^) | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
 .PRECIOUS: %_pmlpmodel
 %_pmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
@@ -448,7 +450,8 @@ endef
 .PRECIOUS: %_jmlpmodel
 %_jmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/mlpdecpars2jmodel.py  \
-              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*))).ini
+              #scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini
 	cat $<  |  grep '^J'  |  sed 's/^J//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
 .PRECIOUS: %_amlpmodel
 %_amlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
