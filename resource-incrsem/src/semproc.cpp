@@ -24,6 +24,7 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <regex>
 using namespace std;
 #include <armadillo>
 using namespace arma;
@@ -35,6 +36,13 @@ bool STORESTATE_TYPE = true;
 bool STORESTATE_CHATTY = false;
 uint FEATCONFIG = 0;
 #include <StoreState.hpp>
+uint NSEM_SIZE = -1;
+uint NSYN_SIZE = -1;
+uint FSEM_SIZE = -1;
+uint FSYN_SIZE = -1;
+uint JSEM_SIZE = -1;
+uint JSYN_SIZE = -1;
+uint NPREDDIM = -1;
 #ifdef DENSE_VECTORS
 #include <SemProcModels_dense.hpp>
 #elif defined MLP
@@ -43,11 +51,11 @@ uint FEATCONFIG = 0;
 #include <SemProcModels_sparse.hpp>
 #endif
 #include <Beam.hpp>
+
 int COREF_WINDOW = INT_MAX;
 bool ABLATE_UNARY = false;
 bool NO_ENTITY_BLOCKING = false;
 bool NO_ANTUNK = false;
-
 #define SERIAL_IO
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -188,6 +196,27 @@ int main ( int nArgs, char* argv[] ) {
       else if( '-'==argv[a][0] && 'a'==argv[a][1] ) ABLATE_UNARY = true;
       else if( '-'==argv[a][0] && 'n'==argv[a][1] && 'b'==argv[a][2]) NO_ENTITY_BLOCKING = true;
       else if( '-'==argv[a][0] && 'n'==argv[a][1] && 'a'==argv[a][2]) NO_ANTUNK = true;
+      //else if (0==strncmp(argv[a][strlen(argv[a])-3]),"ini",3) ) { //must be at end of options before model file since negative substrings for small args will fail
+      else if ('i'==argv[a][strlen(argv[a])-3] && 'n'==argv[a][strlen(argv[a])-2] && 'i'==argv[a][strlen(argv[a])-1]  ) { //must be at end of options before model file since small args will fail indexing
+        std::regex nsemr("NSEM_SIZE=([0-9]+)\n");
+        std::regex nsynr("NSYN_SIZE=([0-9]+)\n");
+        std::regex fsemr("FSEM_SIZE=([0-9]+)\n");
+        std::regex fsynr("FSYN_SIZE=([0-9]+)\n");
+        std::regex jsemr("JSEM_SIZE=([0-9]+)\n");
+        std::regex jsynr("JSYN_SIZE=([0-9]+)\n");
+        std::smatch matches;
+        ifstream fin (argv[a], ios::in );
+        for( std::string line; getline( fin, line ); ) {
+        //while ( fin && EOF!=fin.peek() ) {    
+          if(std::regex_search(line, matches, nsemr)) { NSEM_SIZE = stoul(matches.str(1)); continue; } 
+          if(std::regex_search(line, matches, nsynr)) { NSYN_SIZE = stoul(matches.str(1)); continue; } 
+          if(std::regex_search(line, matches, fsemr)) { FSEM_SIZE = stoul(matches.str(1)); continue; } 
+          if(std::regex_search(line, matches, fsynr)) { FSYN_SIZE = stoul(matches.str(1)); continue; } 
+          if(std::regex_search(line, matches, jsemr)) { JSEM_SIZE = stoul(matches.str(1)); continue; } 
+          if(std::regex_search(line, matches, jsynr)) { JSYN_SIZE = stoul(matches.str(1)); continue; } 
+        }
+        NPREDDIM = 2*NSEM_SIZE+2*NSYN_SIZE+3; 
+      }
       else {
         cerr << "Loading model " << argv[a] << "..." << endl;
         // Open file...

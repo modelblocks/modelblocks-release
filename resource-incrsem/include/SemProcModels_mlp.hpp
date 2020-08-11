@@ -21,9 +21,9 @@
 
 const uint SEM_SIZE = 20;
 const uint SYN_SIZE = 10;
-const uint NSYN_SIZE = 10;
-const uint NSEM_SIZE = 40;
-const uint NPREDDIM = 2*NSEM_SIZE+2*NSYN_SIZE+3;
+//uint NSYN_SIZE = 10;
+//uint NSEM_SIZE = 40;
+//uint NPREDDIM = 2*NSEM_SIZE+2*NSYN_SIZE+3;
 
 arma::mat relu( const arma::mat& km ) {
   arma::mat A(km.n_rows, 1);
