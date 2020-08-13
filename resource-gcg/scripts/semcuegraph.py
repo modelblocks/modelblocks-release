@@ -438,14 +438,16 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           sys.stderr.write( 'ERROR: multiple -n tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         if len( re.findall( '-s',G[x,'0'] ) ) > 1:
           sys.stderr.write( 'ERROR: multiple -s tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-w',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -w tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         for dep in re.findall( '-[mntsw][0-9]+r?', G[x,'0'] ):
           dest = dep[2:6] if len(dep)>5 else sentnumprefix+dep[2:4]
           if   dep[1]=='m' and dep[-1]=='r': G.equate( dest+'r', 'm', x+'r' )  ## discourse anaphor
           elif dep[1]=='m':                  G.equate( dest+'s', 'm', x+'r' )  ## discourse anaphor
-          #if   dep[1]=='m' or 
+          #if   dep[1]=='m' or
           elif dep[1]=='n' and dep[-1]=='r': G.equate( dest+'r', 'n', x+'r' )
           elif dep[1]=='n':                  G.equate( dest+'s', 'n', x+'r' )
-          elif dep[1]=='t':                  G.equate( dest+'s', 's', x+'s' )  ## scotch tape (suggested scope for lambda expressions, but not to be used for scoring) 
+          elif dep[1]=='t':                  G.equate( dest+'s', 's', x+'s' )  ## scotch tape (suggested scope for lambda expressions, but not to be used for scoring)
           elif dep[1]=='s' and dep[-1]=='r': G.equate( dest+'r', 's', x+'s' )
           elif dep[1]=='s':                  G.equate( dest+'s', 's', x+'s' )
 #          if dep[1]=='w': G.equate( dest+'s', 'W', x+'s' )
@@ -626,7 +628,7 @@ class SemCueGraph( StoreStateCueGraph ):
       if l in 'mns' and ( (G[x,l][0:4],'S') not in G or (G[G[x,l][0:4],'S'],'r') not in G ):
         sys.stderr.write( 'WARNING: destination ' + G[x,l] + ' of dependency ' + l + ' in ' + x + ' not complete referential state in graph!\n' )
     for x,l in sorted( G.keys() ):
-      if l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'ersCDEFGHIJKLMNOPQRSTUVWXYZ': 
+      if l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'ersCDEFGHIJKLMNOPQRSTUVWXYZ':
         del G[x,l]
 
       '''
