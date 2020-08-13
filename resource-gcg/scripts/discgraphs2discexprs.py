@@ -33,6 +33,8 @@ for a in sys.argv:
     VERBOSE = True
   if a=='-g':
     ENDGRAPH = True
+  if a=='-n':
+  	PRINT_NORMAL = True
 
 ################################################################################
 
@@ -155,14 +157,14 @@ for line in sys.stdin:
   L1 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
   if len(L1) > 1:
     print(           '#WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences' )
-    sys.stderr.write( 'WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences\n' ) 
+    sys.stderr.write( 'WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences\n' )
     for xHi in L1:
       print(           '#    ' + xHi + ' subsumes ' + ' '.join(sorted(sets.Set([ xLo  for xLo in D.Referents  if D.reaches(xLo,xHi) ]))) )
       sys.stderr.write( '    ' + xHi + ' subsumes ' + ' '.join(sorted(sets.Set([ xLo  for xLo in D.Referents  if D.reaches(xLo,xHi) ]))) + '\n' )
   elif L1 == []:
     L2 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
     print(           '#NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + ' '.join(L2) )
-    sys.stderr.write( 'NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + ' '.join(L2) + '\n' ) 
+    sys.stderr.write( 'NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + ' '.join(L2) + '\n' )
     if L2 == []:
 #      L = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
       print(           '#WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents' )
@@ -269,6 +271,9 @@ for line in sys.stdin:
       D.QuantTuples.remove( (q,e,r,s,n) )
       if VERBOSE: print( 'Removing non-terminal quantifier ' + q + ' ' + e + ' ' + r + ' ' + s + ' ' + n )
 
+# output normalized discgraph
+  if PRINT_NORMAL: print( 'GRAPH: ' + D.strGraph() )
+
   #### V. TRANSLATE TO LAMBDA CALCULUS...
 
   Translations = [ ]
@@ -282,7 +287,7 @@ for line in sys.stdin:
     i += 1
     active = False
 
-    if VERBOSE: 
+    if VERBOSE:
       print( '---- ITERATION ' + str(i) + ' ----' )
       print( 'P = ' + str(sorted(D.PredTuples)) )
       print( 'Q = ' + str(sorted(D.QuantTuples)) )
@@ -306,7 +311,7 @@ for line in sys.stdin:
     '''
     ## P1 rule...
     for ptup in list(D.PredTuples):
-      x = ptup[1]  
+      x = ptup[1]
       if x not in D.Scopes.values() and x not in D.Inhs and x not in D.DiscInhs:
         if VERBOSE: print( 'applying P to move from P to A: \\' + x + '. ' + lambdaFormat(ptup) )
         Abstractions[ x ].append( ptup )
@@ -383,7 +388,7 @@ for line in sys.stdin:
             if len( OutscopingUnbound ) == 0: break
         else:
           if VERBOSE: print( 'tried to attach discourse anaphor, but none of ' + ' '.join(DstUnbound) + ' had no unbound variables in Expression set' )
-          continue 
+          continue
          '''
 
         expr = replaceVarName( makeDiscAntec( ('D:prevosomeQ', '_', ('lambda', var+'x', ()), ('lambda', var, expr)), dst, EverUnbound ), dst, src )
