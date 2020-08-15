@@ -175,7 +175,7 @@ pair<pair<K,CVar>,pair<string,string>> getPredAndRules ( const L& lP, const L& l
 
   // CODE REVIEW: DEACTIVATE THE BELOW PUNCT LIQUIDATOR TO ALLOW THE MORPH SCRIPT TO DETERMINE SET OF PREDICATES (THOUGH SIMPLE PUNCT CATS HAVE NO SYNTACTIC ARGS, SO DON'T DO MUCH)...
   // If punct, but not special !-delimited label...
-  if ( (not RELAX_NOPUNC) and ispunct(lW[0]) and ('!'!=lW[0] or lW.size()==1) ) return pair<pair<K,CVar>,pair<string,string>>(pair<K,CVar>(K::kBot, c), pair<string,string>("%|", c.getString() + " " + "Bot"));
+  if ( (not RELAX_NOPUNC) and ispunct(lW[0]) and ('!'!=lW[0] or lW.size()==1) ) return pair<pair<K,CVar>,pair<string,string>>(pair<K,CVar>(K::kBot, c), pair<string,string>("%|", "Null Bot"));
 
   cout<<"reducing "<<lP<<" now "<<c;
   string sLemma = lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
@@ -196,7 +196,7 @@ pair<pair<K,CVar>,pair<string,string>> getPredAndRules ( const L& lP, const L& l
     cout<<" obtains "<<sPred<<endl;
   }
 
-  if ( sPred.size() == 0 ) return pair<pair<K,CVar>,pair<string,string>>(pair<K,CVar>(K::kBot, c), pair<string,string>(sX, sCat + " " + "Bot"));
+  if ( sPred.size() == 0 ) return pair<pair<K,CVar>,pair<string,string>>(pair<K,CVar>(K::kBot, c), pair<string,string>(sX, "Null Bot"));
 
   int iSplit = sPred.find( ":", 1 );
   sCat  = sPred.substr( 0, iSplit );

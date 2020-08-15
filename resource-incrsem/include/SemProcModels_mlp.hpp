@@ -25,17 +25,17 @@ const uint SYN_SIZE = 20;
 
 // XModel E, K, P, Char, RNN hidden sizes
 const uint X_E_SIZE = 20;
-const uint X_K_SIZE = 20;
+const uint X_K_SIZE = 200;
 const uint X_P_SIZE = 20;
 const uint X_C_SIZE = 20;
-const uint X_H_SIZE = 80;
+const uint X_H_SIZE = 260;
 
 // MModel E, P, LCat, Char, RNN hidden sizes
 const uint M_E_SIZE = 20;
 const uint M_P_SIZE = 20;
-const uint M_L_SIZE = 20;
+const uint M_L_SIZE = 200;
 const uint M_C_SIZE = 20;
-const uint M_H_SIZE = 80;
+const uint M_H_SIZE = 260;
 
 vector<string> PUNCT = { "-LCB-", "-LRB-", "-RCB-", "-RRB-" };
 
@@ -602,17 +602,18 @@ class WModel {
     // XModel: index list of compatible WPredictors given pair<lemma, primcat>
     const DelimitedList<psLBrack,WPredictor,psSpace,psRBrack> getWPredictorList( pair<string,string> xsp ) const {
       if ( isdigit(xsp.first.at(0)) ) {
-//        cerr << "found number!" << endl;
         pair<string,string> numpair ("NUM", "All");
         return mxwp.find(numpair)->second;
       } else {
         auto it = mxwp.find( xsp );
+        pair<string,string> unkpair ("UNK", xsp.second);
+        auto unklist = mxwp.find(unkpair)->second;
         if ( it != mxwp.end() ) {
-          return it->second;
+          auto predlist = it->second;
+          unklist.splice(unklist.begin(), predlist);
+          return unklist;
         } else {
-//          cerr << "found OOV lemma!" << endl;
-          pair<string,string> unkpair ("UNK", xsp.second);
-          return mxwp.find(unkpair)->second;
+          return unklist;
         }
       }
     }
@@ -651,17 +652,18 @@ class WModel {
     // MModel: index list of compatible MPredictors given pair<lemma, primcat>
     const DelimitedList<psLBrack,MPredictor,psSpace,psRBrack> getMPredictorList( pair<string,string> xsp ) const {
       if ( isdigit(xsp.first.at(0)) ) {
-//        cerr << "found number!" << endl;
         pair<string,string> numpair ("NUM", "All");
         return mxmp.find(numpair)->second;
       } else {
         auto it = mxmp.find( xsp );
+        pair<string,string> unkpair ("UNK", xsp.second);
+        auto unklist = mxmp.find(unkpair)->second;
         if ( it != mxmp.end() ) {
-          return it->second;
+          auto predlist = it->second;
+          unklist.splice(unklist.begin(), predlist);
+          return unklist;
         } else {
-//          cerr << "found OOV lemma!" << endl;
-          pair<string,string> unkpair ("UNK", xsp.second);
-          return mxmp.find(unkpair)->second;
+          return unklist;
         }
       }
     }
