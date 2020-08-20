@@ -441,6 +441,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         if len( re.findall( '-w',G[x,'0'] ) ) > 1:
           sys.stderr.write( 'ERROR: multiple -w tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         for tag,dest,r in re.findall( '-([mnstuw]+)([0-9]+)(r?)', G[x,'0'] ):
+          dest = sentnumprefix+dest if len(dest) == 2 else dest
           if   tag=='m' and r=='r': G.equate( dest+'r', 'm', x+'r' )  ## discourse anaphor
           elif tag=='m':            G.equate( dest+'s', 'm', x+'r' )  ## discourse anaphor
           elif tag=='n' and r=='r': G.equate( dest+'r', 'n', x+'r' )
