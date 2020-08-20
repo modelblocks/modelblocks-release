@@ -440,29 +440,19 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           sys.stderr.write( 'ERROR: multiple -s tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         if len( re.findall( '-w',G[x,'0'] ) ) > 1:
           sys.stderr.write( 'ERROR: multiple -w tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
-#        for dep in re.findall( '-[mnstuw]+[0-9]+r?', G[x,'0'] ):
         for tag,dest,r in re.findall( '-([mnstuw]+)([0-9]+)(r?)', G[x,'0'] ):
-#          dest = dep[2:6] if len(dep)>5 else sentnumprefix+dep[2:4]
-#          if   dep[1]=='m' and dep[-1]=='r': G.equate( dest+'r', 'm', x+'r' )  ## discourse anaphor
           if   tag=='m' and r=='r': G.equate( dest+'r', 'm', x+'r' )  ## discourse anaphor
-#          elif dep[1]=='m':                  G.equate( dest+'s', 'm', x+'r' )  ## discourse anaphor
-          elif tag=='m':                  G.equate( dest+'s', 'm', x+'r' )  ## discourse anaphor
-          #if   dep[1]=='m' or
-#          elif dep[1]=='n' and dep[-1]=='r': G.equate( dest+'r', 'n', x+'r' )
+          elif tag=='m':            G.equate( dest+'s', 'm', x+'r' )  ## discourse anaphor
           elif tag=='n' and r=='r': G.equate( dest+'r', 'n', x+'r' )
-#          elif dep[1]=='n':                  G.equate( dest+'s', 'n', x+'r' )
-          elif tag=='n':                  G.equate( dest+'s', 'n', x+'r' )
-#          elif dep[1]=='t':                  G.equate( dest+'s', 's', x+'s' )  ## scotch tape (suggested scope for lambda expressions, but not to be used for scoring)
-          elif tag=='t':                  G.equate( dest+'s', 's', x+'s' )  ## scotch tape (suggested scope for lambda expressions, but not to be used for scoring)
-#          elif dep[1]=='s' and dep[-1]=='r': G.equate( dest+'r', 's', x+'s' )
+          elif tag=='n':            G.equate( dest+'s', 'n', x+'r' )
+          elif tag=='t':  ## scotch tape (suggested scope for lambda expressions, but not to be used for scoring)
+                                    G.equate( dest+'s', 's', x+'s' )
+                                    G.equate( dest+'s', 'tt', x+'s' ) # 'tainted' not truth-conditionally necessary
           elif tag=='s' and r=='r': G.equate( dest+'r', 's', x+'s' )
-#          elif dep[1]=='s':                  G.equate( dest+'s', 's', x+'s' )
-          elif tag=='s':                  G.equate( dest+'s', 's', x+'s' )
-          ### TODO elif tag=='u':
-          ### TODO elif tag=='uu':
-#          if dep[1]=='w': G.equate( dest+'s', 'W', x+'s' )
-#          if dep[1]=='w': G.equate( dest+'s', 'W', x )
-          if tag=='w': G.equate( dest+'s', 'W', x )
+          elif tag=='s':            G.equate( dest+'s', 's', x+'s' )
+          elif tag=='u':            G.equate( dest+'s', 'u', x+'s' ) # 'upward' outscoper but not necessarily immediate outscoper
+          elif tag=='uu':           G.equate( dest+'s', 'uu', x+'s' ) # ditto
+          if tag=='w':              G.equate( dest+'s', 'W', x )
           ### TODO no good reason the -w case isn't an elif, is there?
           ### TODO else warn abt unrecognized tag
         G[x,'0'] = re.sub( '-[mnstuw]+[0-9]+r?', '', G[x,'0'] ) # delete the tags
