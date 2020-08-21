@@ -19,12 +19,6 @@
 
 #include <typeinfo>
 
-const uint SEM_SIZE = 20;
-const uint SYN_SIZE = 10;
-//uint NSYN_SIZE = 10;
-//uint NSEM_SIZE = 40;
-//uint NPREDDIM = 2*NSEM_SIZE+2*NSYN_SIZE+3;
-
 arma::mat relu( const arma::mat& km ) {
   arma::mat A(km.n_rows, 1);
   for ( unsigned int c = 0; c<km.n_rows; c++ ) {
@@ -34,6 +28,7 @@ arma::mat relu( const arma::mat& km ) {
   return A;
 }
 
+uint SEM_SIZE = 13;
 // for semantic ablation
 class TVec : public DelimitedCol<psLBrack, double, psComma, psRBrack> {
   public:
@@ -87,6 +82,10 @@ class NModel {
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> KDenseVec;
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> CVec;
 
+  uint NSYN_SIZE = 10; //these will all be overwritten
+  uint NSEM_SIZE = 20;
+  uint NFULL_WIDTH = 13; 
+
   private:
     mat nwm;
     mat nwsm;
@@ -116,33 +115,42 @@ class NModel {
       }
       while ( is.peek()=='C' ) {
         Delimited<CVar> c;
+        DelimitedVector<psX, double, psComma, psX> vtemp;  
         is >> "C " >> c >> " ";
-        is >> mcv.try_emplace(c,NSYN_SIZE).first->second >> "\n"; //mcv[c]
+        is >> vtemp >> "\n";
+        mcv.try_emplace(c,vtemp);
+        NSYN_SIZE=vtemp.size();
       }
+      zeroCatEmb=CVec(NSYN_SIZE);
       while ( is.peek()=='K' ) {
         Delimited<K> k;
+        DelimitedVector<psX, double, psComma, psX> vtemp;
         is >> "K " >> k >> " ";
-        is >> mkdv.try_emplace(k,NSEM_SIZE).first->second >> "\n";
+        is >> vtemp >> "\n";
+        mkdv.try_emplace(k,vtemp);
+        //is >> mkdv.try_emplace(k,NSEM_SIZE).first->second >> "\n";
+        NSEM_SIZE=vtemp.size();
       }
+      NFULL_WIDTH = 2*NSEM_SIZE+2*NSYN_SIZE+3;
       //Reshape read-in model params to correct dimensions, save to private members
       //first layer
       nwm = nw;
-      nwm.reshape(nwm.size()/NPREDDIM, NPREDDIM); //hidden x input. converts input dim to hidden dim
-      cerr << "nwm reshaped n_rows, ncols, size: " << nwm.n_rows << " " << nwm.n_cols << " " << nwm.size() << endl;
+      nwm.reshape(nwm.size()/NFULL_WIDTH, NFULL_WIDTH); //hidden x input. converts input dim to hidden dim
+      //cerr << "nwm reshaped n_rows, ncols, size: " << nwm.n_rows << " " << nwm.n_cols << " " << nwm.size() << endl;
       nwbv = nwb;
-      cerr << "nwbv size: " << nwbv.size() << endl;
+      //cerr << "nwbv size: " << nwbv.size() << endl;
 
       //second layer
       nwsm = nws;
-      nwsm.reshape(nwsm.size()/(nwm.size()/NPREDDIM), nwm.size()/NPREDDIM); //unsqueeze vector to matrix.  //outputdim, hidden. converts hidden dim to outputdim
-      cerr << "nwsm reshaped n_rows, n_cols, size: " << nwsm.n_rows << " " << nwsm.n_cols << " " << nwsm.size() << endl;
+      nwsm.reshape(nwsm.size()/(nwm.size()/NFULL_WIDTH), nwm.size()/NFULL_WIDTH); //unsqueeze vector to matrix.  //outputdim, hidden. converts hidden dim to outputdim
+      //cerr << "nwsm reshaped n_rows, n_cols, size: " << nwsm.n_rows << " " << nwsm.n_cols << " " << nwsm.size() << endl;
       nwsbv = nwsb;
-      cerr << "nwsbv size: " << nwsbv.size() << endl;
+      //cerr << "nwsbv size: " << nwsbv.size() << endl;
       
       //print out first row
-      cerr << "first nwm matrix col: " << endl;
-      for (uint i = 0; i < nwm.n_rows; i++) { cerr << nwm(i,0) << ","; }
-      cerr << endl;
+      //cerr << "first nwm matrix col: " << endl;
+      //for (uint i = 0; i < nwm.n_rows; i++) { cerr << nwm(i,0) << ","; }
+      //cerr << endl;
     }
 
     const CVec& getCatEmbed( CVar i ) const {
@@ -177,7 +185,7 @@ class NModel {
 
     arma::vec calcResponses( const NPredictorVec& npv ) const {
       //cerr << "entering calcLogResponses..." << endl;
-      arma::vec nlogresponses = arma::zeros( NPREDDIM ); 
+      arma::vec nlogresponses = arma::zeros( NFULL_WIDTH); 
       
       //cerr << "getting cat indices, hvecs, ad-hoc feat values..." << endl;
       CVar catB = npv.getBaseC();
@@ -278,7 +286,9 @@ class FModel {
   typedef DelimitedTrip<psX,F,psAmpersand,Delimited<EVar>,psAmpersand,Delimited<K>,psX> FEK;
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> CVec;
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> KDenseVec;
-
+  uint FSEM_SIZE = 20; 
+  uint FSYN_SIZE = 10;
+  uint FFULL_WIDTH = 13;
   private:
 
     map<CVar,CVec> mcv;                        // map between syntactic category and embeds
@@ -302,25 +312,36 @@ class FModel {
 
   public:
 
-    FModel( ) : zeroCatEmb(SYN_SIZE) { }
-    FModel( istream& is ) : zeroCatEmb(SYN_SIZE) {
+    //FModel( ) : zeroCatEmb(SYN_SIZE) { }
+    //FModel( istream& is ) : zeroCatEmb(SYN_SIZE) {
+    FModel( ) : zeroCatEmb(13) { }
+    FModel( istream& is ) : zeroCatEmb(13) {
       while ( is.peek()=='F' ) {
         Delimited<char> c;
         is >> "F " >> c >> " ";
         if (c == 'F') is >> fwf >> "\n";
-        if (c == 'f') is >> fbf >> "\n";
+        if (c == 'f') is >> fbf >> "\n"; 
         if (c == 'S') is >> fws >> "\n";
-        if (c == 's') is >> fbs >> "\n";
+        if (c == 's') is >> fbs >> "\n"; 
       }
       while ( is.peek()=='C' ) {
         Delimited<CVar> c;
+        DelimitedVector<psX, double, psComma, psX> vtemp;  
         is >> "C " >> c >> " ";
-        is >> mcv.try_emplace(c,SYN_SIZE).first->second >> "\n";
+        //is >> mcv.try_emplace(c,SYN_SIZE).first->second >> "\n";
+        is >> vtemp >> "\n";
+        mcv.try_emplace(c,vtemp);
+        FSYN_SIZE=vtemp.size();
       }
+      zeroCatEmb=CVec(FSYN_SIZE);
       while ( is.peek()=='K' ) {
         Delimited<K> k;
+        DelimitedVector<psX, double, psComma, psX> vtemp;  
         is >> "K " >> k >> " ";
-        is >> mkdv.try_emplace(k,SEM_SIZE).first->second >> "\n";
+        //is >> mkdv.try_emplace(k,SEM_SIZE).first->second >> "\n";
+        is >> vtemp >> "\n";
+        mkdv.try_emplace(k,vtemp);
+        FSEM_SIZE=vtemp.size();
       }
       while ( is.peek()=='f' ) {
         unsigned int i;
@@ -332,8 +353,11 @@ class FModel {
       fwsm = fws;
       fbfv = fbf;
       fbsv = fbs;
-      fwfm.reshape(fwf.size()/(8 + 3*SEM_SIZE + SYN_SIZE), 8 + 3*SEM_SIZE + SYN_SIZE);
-      fwsm.reshape(fws.size()/(fwf.size()/(8 + 3*SEM_SIZE + SYN_SIZE)), (fwf.size()/(8 + 3*SEM_SIZE + SYN_SIZE)));
+      FFULL_WIDTH = 8 + 3*FSEM_SIZE + FSYN_SIZE;
+      fwfm.reshape(fwf.size()/(FFULL_WIDTH), FFULL_WIDTH);
+      //fwfm.reshape(fwf.size()/(8 + 3*FSEM_SIZE + FSYN_SIZE), 8 + 3*FSEM_SIZE + FSYN_SIZE);
+      fwsm.reshape(fws.size()/(fwf.size()/(FFULL_WIDTH)), (fwf.size()/(FFULL_WIDTH)));
+      //fwsm.reshape(fws.size()/(fwf.size()/(8 + 3*FSEM_SIZE + FSYN_SIZE)), (fwf.size()/(8 + 3*FSEM_SIZE + FSYN_SIZE)));
     }
 
     const FEK& getFEK( unsigned int i ) const {
@@ -356,10 +380,10 @@ class FModel {
     }
 
     const KDenseVec getKVecEmbed( HVec hv ) const {
-      KDenseVec KVecEmbed = KDenseVec(arma::zeros(SEM_SIZE));
+      KDenseVec KVecEmbed = KDenseVec(arma::zeros(FSEM_SIZE));
       for ( auto& kV : hv.at(0) ) {
         if ( kV == K::kTop) {
-          KVecEmbed += KDenseVec(arma::ones(SEM_SIZE));
+          KVecEmbed += KDenseVec(arma::ones(FSEM_SIZE));
           continue;
         }
         auto it = mkdv.find( kV );
@@ -387,7 +411,8 @@ class FModel {
     arma::vec calcResponses( FPredictorVec& lfpredictors ) const {
 // return distribution over FEK indices
 // vectorize predictors: one-hot for depth(7), three hvecs, one cat-embed - also 1bit for nullant
-      arma::vec flogresponses = arma::zeros( 8 + 3*SEM_SIZE + SYN_SIZE );
+      //arma::vec flogresponses = arma::zeros( 8 + 3*FSEM_SIZE + FSYN_SIZE );
+      arma::vec flogresponses = arma::zeros( FFULL_WIDTH);
       CVar catB = lfpredictors.getCatBase();
       const HVec& hvB = lfpredictors.getHvB();
       const HVec& hvF = lfpredictors.getHvF();
@@ -491,6 +516,9 @@ class JModel {
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> KDenseVec;
   unsigned int jr0;
   unsigned int jr1;
+  uint JSYN_SIZE = 10; //placeholders - these will be overwritten when reading in the model
+  uint JSEM_SIZE = 20;
+  uint JFULL_WIDTH = 13;
 
   private:
 
@@ -515,14 +543,14 @@ class JModel {
 
   public:
 
-    JModel() : zeroCatEmb(SYN_SIZE) {
+    JModel() : zeroCatEmb(13) {
       //jr0 = getResponseIndex( 0, EVar::eNil, 'N', O_I );
       //jr1 = getResponseIndex( 1, EVar::eNil, 'N', O_I );
       jr0 = -1;
       jr1 = -1;
     }
     // read in weights, embeddings, and JEOOs
-    JModel(istream& is) : zeroCatEmb(SYN_SIZE) {
+    JModel(istream& is) : zeroCatEmb(13) {
       while ( is.peek()=='J' ) {
         Delimited<char> c;
         is >> "J " >> c >> " ";
@@ -533,13 +561,21 @@ class JModel {
       }
       while ( is.peek()=='C' ) {
         Delimited<CVar> c;
+        DelimitedVector<psX, double, psComma, psX> vtemp;
         is >> "C " >> c >> " ";
-        is >> mcv.try_emplace(c,SYN_SIZE).first->second >> "\n";
+        is >> vtemp >> "\n";
+        mcv.try_emplace(c,vtemp);
+        JSYN_SIZE = vtemp.size();
+        //is >> mcv.try_emplace(c,SYN_SIZE).first->second >> "\n";
       }
       while ( is.peek()=='K' ) {
         Delimited<K> k;
+        DelimitedVector<psX, double, psComma, psX> vtemp;
         is >> "K " >> k >> " ";
-        is >> mkdv.try_emplace(k,SEM_SIZE).first->second >> "\n";
+        is >> vtemp >> "\n";
+        mkdv.try_emplace(k,vtemp);
+        JSEM_SIZE = vtemp.size();
+        //is >> mkdv.try_emplace(k,SEM_SIZE).first->second >> "\n";
       }
       while ( is.peek()=='j' ) {
         Delimited<int> k;
@@ -555,8 +591,11 @@ class JModel {
       jwsm = jws;
       jbfv = jbf;
       jbsv = jbs;
-      jwfm.reshape(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE), (7 + 3*SEM_SIZE + 2*SYN_SIZE));
-      jwsm.reshape(jws.size()/(jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)), (jwf.size()/(7 + 3*SEM_SIZE + 2*SYN_SIZE)));
+      JFULL_WIDTH = 7 + 3*JSEM_SIZE + 2*JSYN_SIZE;
+      //jwfm.reshape(jwf.size()/(7 + 3*JSEM_SIZE + 2*JSYN_SIZE), (7 + 3*JSEM_SIZE + 2*JSYN_SIZE));
+      //jwsm.reshape(jws.size()/(jwf.size()/(7 + 3*JSEM_SIZE + 2*JSYN_SIZE)), (jwf.size()/(7 + 3*JSEM_SIZE + 2*JSYN_SIZE)));
+      jwfm.reshape(jwf.size()/(JFULL_WIDTH), (JFULL_WIDTH));
+      jwsm.reshape(jws.size()/(jwf.size()/(JFULL_WIDTH)), (jwf.size()/(JFULL_WIDTH)));
     }
 
     const JEOO& getJEOO( unsigned int i ) const {
@@ -579,10 +618,10 @@ class JModel {
     }
 
     const KDenseVec getKVecEmbed( HVec hv ) const {
-      KDenseVec KVecEmbed = KDenseVec(arma::zeros(SEM_SIZE));
+      KDenseVec KVecEmbed = KDenseVec(arma::zeros(JSEM_SIZE));
       for ( auto& kV : hv.at(0) ) {
         if ( kV == K::kTop) {
-          KVecEmbed += KDenseVec(arma::ones(SEM_SIZE));
+          KVecEmbed += KDenseVec(arma::ones(JSEM_SIZE));
           continue;
         }
         auto it = mkdv.find( kV );
@@ -610,7 +649,8 @@ class JModel {
     arma::vec calcResponses( JPredictorVec& ljpredictors ) const {
 // return distribution over JEOO indices
 // vectorize predictors: one-hot for depth, three hvecs, two cat-embeds
-      arma::vec jlogresponses = arma::zeros( 7 + 3*SEM_SIZE + 2*SYN_SIZE );
+      //arma::vec jlogresponses = arma::zeros( 7 + 3*JSEM_SIZE + 2*JSYN_SIZE );
+      arma::vec jlogresponses = arma::zeros( JFULL_WIDTH );
       CVar catA = ljpredictors.getCatAncstr();
       const HVec& hvA = ljpredictors.getHvAncstr();
       const HVec& hvF = ljpredictors.getHvFiller();

@@ -440,10 +440,10 @@ def main(config):
     print("N S " + ",".join(map(str, second_weights.flatten('F').tolist())))
     print("N s " + ",".join(map(str, second_biases.flatten('F').tolist())))
     for cat, ix in sorted(cat_to_ix.items()):
-        print("C " + str(cat) + " [" + ",".join(map(str, cat_embeds[ix])) + "]")
+        print("C " + str(cat) + " " + ",".join(map(str, cat_embeds[ix])))
     if not n_config.getboolean("AblateSem"):
         for hvec, ix in sorted(hvec_to_ix.items()):
-            print("K " + str(hvec) + " [" + ",".join(map(str, hvec_embeds[ix])) + "]")
+            print("K " + str(hvec) + " " + ",".join(map(str, hvec_embeds[ix])))
     #for fdec, ix in sorted(fdecs_to_ix.items()):
     #    print("f " + str(ix) + " " + str(fdec))
 

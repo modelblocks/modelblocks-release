@@ -401,10 +401,10 @@ def main(config):
     print("J s " + ",".join(map(str, second_biases.flatten('F').tolist())))
     if not j_config.getboolean("AblateSyn"):
         for cat, ix in sorted(cat_to_ix.items()):
-            print("C " + str(cat) + " [" + ",".join(map(str, cat_embeds[ix])) + "]")
+            print("C " + str(cat) + " " + ",".join(map(str, cat_embeds[ix])))
     if not j_config.getboolean("AblateSem"):
         for hvec, ix in sorted(hvec_to_ix.items()):
-            print("K " + str(hvec) + " [" + ",".join(map(str, hvec_embeds[ix])) + "]")
+            print("K " + str(hvec) + " " + ",".join(map(str, hvec_embeds[ix])))
     for jdec, ix in sorted(jdecs_to_ix.items()):
         print("j " + str(ix) + " " + str(jdec))
 
