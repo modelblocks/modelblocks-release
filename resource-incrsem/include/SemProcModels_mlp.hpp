@@ -292,7 +292,8 @@ class FModel {
   private:
 
     map<CVar,CVec> mcv;                        // map between syntactic category and embeds
-    map<KVec,KDenseVec> mkdv;                  // map between KVec and embeds
+    map<KVec,KDenseVec> mkdv;                  // map between filler/base KVec and embeds
+    map<KVec,KDenseVec> mldv;                  // map between antecedent KVec and embeds
 
     map<FEK,unsigned int> mfeki;               // response indices
     map<unsigned int,FEK> mifek;
@@ -342,6 +343,13 @@ class FModel {
         is >> vtemp >> "\n";
         mkdv.try_emplace(k,vtemp);
         FSEM_SIZE=vtemp.size();
+      }
+      while ( is.peek()=='L') {
+        Delimited<K> k;
+        DelimitedVector<psX, double, psComma, psX> vtemp;  
+        is >> "L " >> k >> " ";
+        is >> vtemp >> "\n";
+        mldv.try_emplace(k,vtemp);
       }
       while ( is.peek()=='f' ) {
         unsigned int i;
@@ -396,6 +404,23 @@ class FModel {
       return KVecEmbed;
     }
 
+    const KDenseVec getAnteKVecEmbed( HVec hv ) const {
+      KDenseVec KVecEmbed = KDenseVec(arma::zeros(FSEM_SIZE));
+      for ( auto& kV : hv.at(0) ) {
+        if ( kV == K::kTop) {
+          KVecEmbed += KDenseVec(arma::ones(FSEM_SIZE));
+          continue;
+        }
+        auto it = mldv.find( kV );
+        if ( it == mldv.end() ) {
+          continue;
+        } else {
+          KVecEmbed += it->second;
+        }
+      }
+      return KVecEmbed;
+    }
+
     // const auto& it = mxv.find( x ); return ( it == mxv.end() ) ? KVec() : it->second;
 
     unsigned int getResponseIndex( F f, EVar e, K k ) {
@@ -423,7 +448,7 @@ class FModel {
       const CVec& catBEmb = getCatEmbed(catB);
       const KDenseVec& hvBEmb = getKVecEmbed(hvB);
       const KDenseVec& hvFEmb = getKVecEmbed(hvF);
-      const KDenseVec& hvAEmb = getKVecEmbed(hvA);
+      const KDenseVec& hvAEmb = getAnteKVecEmbed(hvA);
 
 // populate predictor vector
       for(unsigned int i = 0; i < catBEmb.n_elem; i++){

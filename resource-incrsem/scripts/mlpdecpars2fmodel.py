@@ -225,7 +225,7 @@ class FModel(nn.Module):
         self.cat_embeds = nn.Embedding(cat_vocab_size, syn_size)
         self.hvec_embeds = nn.Embedding(hvec_vocab_size, sem_size)
         #self.base_hvec_embeds = nn.Embedding(hvec_vocab_size, sem_size)
-        #self.ante_hvec_embeds = nn.Embedding(hvec_vocab_size, sem_size)
+        self.ante_hvec_embeds = nn.Embedding(hvec_vocab_size, sem_size)
         #self.filler_hvec_embeds = nn.Embedding(hvec_vocab_size, sem_size)
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
@@ -410,18 +410,20 @@ def main(config):
 
     if f_config.getint("GPU") >= 0:
         cat_embeds = list(model.parameters())[0].data.cpu().numpy()
-        hvec_embeds = list(model.parameters())[1].data.cpu().numpy() #TODO how to get correct hvec embed layers
-        first_weights = list(model.parameters())[2].data.cpu().numpy()
-        first_biases = list(model.parameters())[3].data.cpu().numpy()
-        second_weights = list(model.parameters())[4].data.cpu().numpy()
-        second_biases = list(model.parameters())[5].data.cpu().numpy()
+        hvec_embeds = list(model.parameters())[1].data.cpu().numpy() 
+        ante_hvec_embeds = list(model.parameters())[2].data.cpu().numpy() 
+        first_weights = list(model.parameters())[3].data.cpu().numpy()
+        first_biases = list(model.parameters())[4].data.cpu().numpy()
+        second_weights = list(model.parameters())[5].data.cpu().numpy()
+        second_biases = list(model.parameters())[6].data.cpu().numpy()
     else:
         cat_embeds = list(model.parameters())[0].data.numpy()
-        hvec_embeds = list(model.parameters())[1].data.numpy() #TODO same here for 3 layers
-        first_weights = list(model.parameters())[2].data.numpy()
-        first_biases = list(model.parameters())[3].data.numpy()
-        second_weights = list(model.parameters())[4].data.numpy()
-        second_biases = list(model.parameters())[5].data.numpy()
+        hvec_embeds = list(model.parameters())[1].data.numpy() 
+        ante_hvec_embeds = list(model.parameters())[2].data.numpy() 
+        first_weights = list(model.parameters())[3].data.numpy()
+        first_biases = list(model.parameters())[4].data.numpy()
+        second_weights = list(model.parameters())[5].data.numpy()
+        second_biases = list(model.parameters())[6].data.numpy()
 
     eprint(first_weights.shape, second_weights.shape)
     print("F F " + ",".join(map(str, first_weights.flatten('F').tolist())))
@@ -430,12 +432,12 @@ def main(config):
     print("F s " + ",".join(map(str, second_biases.flatten('F').tolist())))
     if not f_config.getboolean("AblateSyn"):
         for cat, ix in sorted(cat_to_ix.items()):
-            #print("C " + str(cat) + " [" + ",".join(map(str, cat_embeds[ix])) + "]")
             print("C " + str(cat) + " " + ",".join(map(str, cat_embeds[ix])))
     if not f_config.getboolean("AblateSem"):
         for hvec, ix in sorted(hvec_to_ix.items()):
-            #print("K " + str(hvec) + " [" + ",".join(map(str, hvec_embeds[ix])) + "]") #TODO print 3 different Ks - filler,base,ante
-            print("K " + str(hvec) + " " + ",".join(map(str, hvec_embeds[ix]))) #TODO print 3 different Ks - filler,base,ante
+            print("K " + str(hvec) + " " + ",".join(map(str, hvec_embeds[ix]))) #print different Ks - fillerbase,ante
+        for hvec, ix in sorted(hvec_to_ix.items()):
+            print("L " + str(hvec) + " " + ",".join(map(str, ante_hvec_embeds[ix]))) 
     for fdec, ix in sorted(fdecs_to_ix.items()):
         print("f " + str(ix) + " " + str(fdec))
 
