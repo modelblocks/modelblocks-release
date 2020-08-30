@@ -25,17 +25,17 @@ const uint SYN_SIZE = 20;
 
 // XModel E, K, P, Char, RNN hidden sizes
 const uint X_E_SIZE = 20;
-const uint X_K_SIZE = 200;
+const uint X_K_SIZE = 400;
 const uint X_P_SIZE = 20;
 const uint X_C_SIZE = 20;
-const uint X_H_SIZE = 260;
+const uint X_H_SIZE = 460;
 
 // MModel E, P, LCat, Char, RNN hidden sizes
 const uint M_E_SIZE = 20;
 const uint M_P_SIZE = 20;
-const uint M_L_SIZE = 200;
+const uint M_L_SIZE = 400;
 const uint M_C_SIZE = 20;
-const uint M_H_SIZE = 260;
+const uint M_H_SIZE = 460;
 
 vector<string> PUNCT = { "-LCB-", "-LRB-", "-RCB-", "-RRB-" };
 
