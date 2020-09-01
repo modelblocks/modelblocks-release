@@ -434,10 +434,17 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         if (x,    'S') in G: G.rename( x+'s', G[x,    'S'] )
         if (x+'s','r') in G: G.rename( x+'r', G[x+'s','r'] )
         ## apply -n, -m, and -s tags...
+          # TODO this repetitious warning code could use an abstraction
         if len( re.findall( '-n',G[x,'0'] ) ) > 1:
           sys.stderr.write( 'ERROR: multiple -n tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         if len( re.findall( '-s',G[x,'0'] ) ) > 1:
           sys.stderr.write( 'ERROR: multiple -s tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-t',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -t tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-u',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -u tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-uu',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -uu tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         if len( re.findall( '-w',G[x,'0'] ) ) > 1:
           sys.stderr.write( 'ERROR: multiple -w tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         for tag,dest,r in re.findall( '-([mnstuw]+)([0-9]+)(r?)', G[x,'0'] ):

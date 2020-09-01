@@ -26,13 +26,14 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gc
 import discgraph
 import induciblediscgraph
 
-VERBOSE  = False    ## print debugging info.
-ENDGRAPH = False    ## print last graph for each discourse.
+VERBOSE      = False    ## print debugging info.
+ENDGRAPH     = False    ## print last graph for each discourse.
+PRINT_NORMAL = False	## smuggle graph out with induced scopes & normalized inherits
 for a in sys.argv:
   if a=='-d':
-    VERBOSE = True
+    VERBOSE      = True
   if a=='-g':
-    ENDGRAPH = True
+    ENDGRAPH     = True
   if a=='-n':
   	PRINT_NORMAL = True
 
@@ -131,6 +132,19 @@ for line in sys.stdin:
     for xFin in D.Heirs.get(x,[]):
       if xFin not in D.Subs  and  xFin not in D.Scopes:
         D.Scopes[ xFin ] = D.Scopes[ x ]
+  ## Copy special scope markers (taint, upward) down to final heirs
+  for x in D.Taints.keys():
+    for xFin in D.Heirs.get(x,[]):
+      if xFin not in D.Subs  and  xFin not in D.Taints:
+        D.Taints[ xFin ] = D.Taints[ x ]
+  for x in D.Upward1.keys():
+    for xFin in D.Heirs.get(x,[]):
+      if xFin not in D.Subs  and  xFin not in D.Upward1:
+        D.Upward1[ xFin ] = D.Upward1[ x ]
+  for x in D.Upward2.keys():
+    for xFin in D.Heirs.get(x,[]):
+      if xFin not in D.Subs  and  xFin not in D.Upward2:
+        D.Upward2[ xFin ] = D.Upward2[ x ]
   ## Skip sentence if cycle...
   if not D.check(): continue
 
