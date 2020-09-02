@@ -20,10 +20,6 @@
 #include <typeinfo>
 #include <regex>
 
-<<<<<<< HEAD
-const uint SEM_SIZE = 20;
-const uint SYN_SIZE = 20;
-
 // XModel E, K, P, Char, RNN hidden sizes
 const uint X_E_SIZE = 20;
 const uint X_K_SIZE = 400;
@@ -38,25 +34,16 @@ const uint M_L_SIZE = 400;
 const uint M_C_SIZE = 20;
 const uint M_H_SIZE = 460;
 
+// maybe include as part of WModel
 vector<string> PUNCT = { "-LCB-", "-LRB-", "-RCB-", "-RRB-" };
 
-=======
->>>>>>> 64b380031625d77410b16e759a4ffcabbb513d98
+// ReLU function
 arma::mat relu( const arma::mat& km ) {
   if ( km.max() < 0 ) return zeros( size(km) );
   else return clamp(km, 0, km.max());
 }
 
-uint SEM_SIZE = 13;
-// for semantic ablation
-class TVec : public DelimitedCol<psLBrack, double, psComma, psRBrack> {
-  public:
-    TVec ( )                       : DelimitedCol<psLBrack, double, psComma, psRBrack>(SEM_SIZE) { }
-    TVec ( const Col<double>& kv ) : DelimitedCol<psLBrack, double, psComma, psRBrack>(kv)       { }
-    TVec& add( const TVec& kv ) { *this += kv; return *this; }
-};
-
-const TVec foo   ( arma::zeros<Col<double>>(SEM_SIZE) );
+////////////////////////////////////////////////////////////////////////////////
 
 class NPredictorVec {
   private:
@@ -303,23 +290,24 @@ class FPredictorVec {
 class FModel {
 
   typedef DelimitedTrip<psX,F,psAmpersand,Delimited<EVar>,psAmpersand,Delimited<K>,psX> FEK;
-<<<<<<< HEAD
-  typedef DelimitedCol<psLBrack, double, psComma, psRBrack> DenseVec;
-
-=======
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> CVec;
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> KDenseVec;
   uint FSEM_SIZE = 20; 
   uint FSYN_SIZE = 10;
   uint FFULL_WIDTH = 13;
->>>>>>> 64b380031625d77410b16e759a4ffcabbb513d98
   private:
 
-    map<CVar,vec> mcbv;                        // map between syntactic category and embeds
-    map<KVec,vec> mkbdv;                       // map between KVec and embeds
-    map<KVec,vec> mkfdv;
+//    map<CVar,CVec> mcbv;                        // map between syntactic category and embeds
+//    map<KVec,KDenseVec> mkbdv;                  // map between KVec and embeds
+//    map<KVec,KDenseVec> mkfdv;
+//    map<KVec,KDenseVec> mkadv;
 
-    map<FEK,unsigned int> mfeki;               // response indices
+    map<CVar,vec> mcbv;                        // map between syntactic category and embeds
+    map<KVec,vec> mkbdv;                  // map between KVec and embeds
+    map<KVec,vec> mkfdv;
+    map<KVec,vec> mkadv;
+
+    map<FEK,unsigned int> mfeki;                // response indices
     map<unsigned int,FEK> mifek;
 
     unsigned int iNextResponse  = 0;
@@ -333,7 +321,7 @@ class FModel {
     mat fwsm;
     vec fbfv;
     vec fbsv;
-    CVec zeroCatEmb;
+    vec zeroCatEmb;
 
   public:
 
@@ -350,39 +338,26 @@ class FModel {
         if (c == 's') is >> fbs >> "\n"; 
       }
       while ( is.peek()=='C' ) {
-<<<<<<< HEAD
         Delimited<char> c;
         Delimited<CVar> cv;
-        DenseVec dv = DenseVec(SYN_SIZE);
-        is >> "C " >> c >> " " >> cv >> " " >> dv >> "\n";
-        if (c == 'B') mcbv.try_emplace(cv, vec(dv));
-=======
-        Delimited<CVar> c;
         DelimitedVector<psX, double, psComma, psX> vtemp;  
-        is >> "C " >> c >> " ";
-        //is >> mcv.try_emplace(c,SYN_SIZE).first->second >> "\n";
+        is >> "C " >> c >> " " >> cv >> " ";
         is >> vtemp >> "\n";
-        mcv.try_emplace(c,vtemp);
+        if (c == 'B') mcbv.try_emplace(cv,vtemp);
         FSYN_SIZE=vtemp.size();
->>>>>>> 64b380031625d77410b16e759a4ffcabbb513d98
       }
-      zeroCatEmb=CVec(FSYN_SIZE);
+//      zeroCatEmb=CVec(FSYN_SIZE);
+      zeroCatEmb=arma::zeros(FSYN_SIZE);
       while ( is.peek()=='K' ) {
         Delimited<char> c;
         Delimited<K> k;
-<<<<<<< HEAD
-        DenseVec dv = DenseVec(SEM_SIZE);
-        is >> "K " >> c >> " " >> k >> " " >> dv >> "\n";
-        if (c == 'B') mkbdv.try_emplace(k, vec(dv));
-        else if (c == 'F') mkfdv.try_emplace(k, vec(dv));
-=======
-        DelimitedVector<psX, double, psComma, psX> vtemp;  
-        is >> "K " >> k >> " ";
-        //is >> mkdv.try_emplace(k,SEM_SIZE).first->second >> "\n";
+        DelimitedVector<psX, double, psComma, psX> vtemp;
+        is >> "K " >> c >> " " >> k >> " ";
         is >> vtemp >> "\n";
-        mkdv.try_emplace(k,vtemp);
+        if (c == 'B') mkbdv.try_emplace(k, vtemp);
+        else if (c == 'F') mkfdv.try_emplace(k, vtemp);
+        else if (c == 'A') mkadv.try_emplace(k, vtemp);
         FSEM_SIZE=vtemp.size();
->>>>>>> 64b380031625d77410b16e759a4ffcabbb513d98
       }
       while ( is.peek()=='f' ) {
         unsigned int i;
@@ -410,22 +385,24 @@ class FModel {
       return it->second;
     }
 
-<<<<<<< HEAD
     const vec getCatEmbed( CVar i, Delimited<char> c) const {
+//    const CVec& getCatEmbed( CVar i, Delimited<char> c) const {
       if (c == 'B') {
         auto it = mcbv.find( i );
-        return ( ( it != mcbv.end() ) ? it->second : arma::zeros(SYN_SIZE) );
+        return ( ( it != mcbv.end() ) ? it->second : zeroCatEmb );
       }
       cerr << "ERROR: F model CVar position misspecified." << endl;
-      return arma::zeros(SYN_SIZE);
+      return zeroCatEmb;
     }
 
+//    const KDenseVec getKVecEmbed( HVec hv, Delimited<char> c ) const {
+//      KDenseVec KVecEmbed = KDenseVec(arma::zeros(FSEM_SIZE));
     const vec getKVecEmbed( HVec hv, Delimited<char> c ) const {
-      vec KVecEmbed = arma::zeros(SEM_SIZE);
+      vec KVecEmbed = arma::zeros(FSEM_SIZE);
       if (c == 'B') {
         for ( auto& kV : hv.at(0) ) {
           if ( kV == K::kTop) {
-            KVecEmbed += arma::ones(SEM_SIZE);
+            KVecEmbed += arma::ones(FSEM_SIZE);
             continue;
           }
           auto it = mkbdv.find( kV );
@@ -434,34 +411,30 @@ class FModel {
           } else {
             KVecEmbed += it->second;
           }
-=======
-    const CVec& getCatEmbed( CVar i ) const { 
-      auto it = mcv.find( i );
-      //assert( it != mcv.end() );
-      if (it == mcv.end()) { 
-        cerr << "ERROR: CVar not defined in fmodel: no embedding found for: " << i << endl; 
-        return zeroCatEmb;
-      }
-      return it->second;
-    }
-
-    const KDenseVec getKVecEmbed( HVec hv ) const {
-      KDenseVec KVecEmbed = KDenseVec(arma::zeros(FSEM_SIZE));
-      for ( auto& kV : hv.at(0) ) {
-        if ( kV == K::kTop) {
-          KVecEmbed += KDenseVec(arma::ones(FSEM_SIZE));
-          continue;
->>>>>>> 64b380031625d77410b16e759a4ffcabbb513d98
         }
       }
       else if (c == 'F') {
         for ( auto& kV : hv.at(0) ) {
           if ( kV == K::kTop) {
-            KVecEmbed += arma::ones(SEM_SIZE);
+            KVecEmbed += arma::ones(FSEM_SIZE);
             continue;
           }
           auto it = mkfdv.find( kV );
           if ( it == mkfdv.end() ) {
+            continue;
+          } else {
+            KVecEmbed += it->second;
+          }
+        }
+      }
+      else if (c == 'A') {
+        for ( auto& kV : hv.at(0) ) {
+          if ( kV == K::kTop) {
+            KVecEmbed += arma::ones(FSEM_SIZE);
+            continue;
+          }
+          auto it = mkadv.find( kV );
+          if ( it == mkadv.end() ) {
             continue;
           } else {
             KVecEmbed += it->second;
@@ -484,13 +457,7 @@ class FModel {
 
     arma::vec calcResponses( FPredictorVec& lfpredictors ) const {
 // return distribution over FEK indices
-<<<<<<< HEAD
-// vectorize predictors: one-hot for depth, two hvecs, one cat-embed
-=======
 // vectorize predictors: one-hot for depth(7), three hvecs, one cat-embed - also 1bit for nullant
-      //arma::vec flogresponses = arma::zeros( 8 + 3*FSEM_SIZE + FSYN_SIZE );
-      arma::vec flogresponses = arma::zeros( FFULL_WIDTH);
->>>>>>> 64b380031625d77410b16e759a4ffcabbb513d98
       CVar catB = lfpredictors.getCatBase();
       const HVec& hvB = lfpredictors.getHvB();
       const HVec& hvF = lfpredictors.getHvF();
@@ -498,47 +465,34 @@ class FModel {
       const HVec& hvA = lfpredictors.getHvA();
       bool nullA = lfpredictors.getNullA();
 
-<<<<<<< HEAD
       const vec& catBEmb = getCatEmbed(catB, 'B');
       const vec& hvBEmb = getKVecEmbed(hvB, 'B');
       const vec& hvFEmb = getKVecEmbed(hvF, 'F');
+      const vec& hvAEmb = getKVecEmbed(hvA, 'A');
 
 // populate predictor vector
-      arma::vec flogresponses = join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), arma::zeros(7));
-      flogresponses(2*SEM_SIZE + SYN_SIZE + d) = 1;
-=======
-      const CVec& catBEmb = getCatEmbed(catB);
-      const KDenseVec& hvBEmb = getKVecEmbed(hvB);
-      const KDenseVec& hvFEmb = getKVecEmbed(hvF);
-      const KDenseVec& hvAEmb = getKVecEmbed(hvA);
+      arma::vec flogresponses = join_cols(join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), hvAEmb), arma::zeros(8));
+      if (nullA) flogresponses(3*FSEM_SIZE + FSYN_SIZE + 1) = 1;
+      flogresponses(3*FSEM_SIZE + FSYN_SIZE + 1 + d) = 1;
 
-// populate predictor vector
-      for(unsigned int i = 0; i < catBEmb.n_elem; i++){
-        flogresponses(i) = catBEmb(i);
-      }
-      for(unsigned int i = 0; i < hvBEmb.n_elem; i++){
-        flogresponses(catBEmb.n_elem+i) = hvBEmb(i);
-      }
-      for(unsigned int i = 0; i < hvFEmb.n_elem; i++){
-        flogresponses(catBEmb.n_elem+hvBEmb.n_elem+i) = hvFEmb(i);
-      }
-      for(unsigned int i = 0; i < hvAEmb.n_elem; i++){
-        flogresponses(catBEmb.n_elem+hvBEmb.n_elem+hvFEmb.n_elem+i) = hvAEmb(i);
-      }
-      if (nullA) flogresponses(catBEmb.n_elem+hvBEmb.n_elem+hvFEmb.n_elem+hvAEmb.n_elem) = 1;
-      flogresponses(catBEmb.n_elem+hvBEmb.n_elem+hvFEmb.n_elem+hvAEmb.n_elem+1+d) = 1;
->>>>>>> 64b380031625d77410b16e759a4ffcabbb513d98
+//      for(unsigned int i = 0; i < catBEmb.n_elem; i++){
+//        flogresponses(i) = catBEmb(i);
+//      }
+//      for(unsigned int i = 0; i < hvBEmb.n_elem; i++){
+//        flogresponses(catBEmb.n_elem+i) = hvBEmb(i);
+//      }
+//      for(unsigned int i = 0; i < hvFEmb.n_elem; i++){
+//        flogresponses(catBEmb.n_elem+hvBEmb.n_elem+i) = hvFEmb(i);
+//      }
+//      for(unsigned int i = 0; i < hvAEmb.n_elem; i++){
+//        flogresponses(catBEmb.n_elem+hvBEmb.n_elem+hvFEmb.n_elem+i) = hvAEmb(i);
+//      }
+//      if (nullA) flogresponses(catBEmb.n_elem+hvBEmb.n_elem+hvFEmb.n_elem+hvAEmb.n_elem) = 1;
+//      flogresponses(catBEmb.n_elem+hvBEmb.n_elem+hvFEmb.n_elem+hvAEmb.n_elem+1+d) = 1;
 
 // implementation of MLP
-      //cout << "trying f model matmul..." << endl;
+//      cout << "trying f model matmul..." << endl;
       arma::vec flogscores = fwsm * relu(fwfm*flogresponses + fbfv) + fbsv;
-      arma::vec fscores = arma::exp(flogscores);
-      double fnorm = arma::accu(fscores);
-      return fscores/fnorm;
-    }
-
-  arma::vec testCalcResponses( arma::vec testvec ) const {
-      arma::vec flogscores = fwsm * relu(fwfm*testvec + fbfv) + fbsv;
       arma::vec fscores = arma::exp(flogscores);
       double fnorm = arma::accu(fscores);
       return fscores/fnorm;
@@ -1093,7 +1047,7 @@ class JModel {
     mat jwsm;
     vec jbfv;
     vec jbsv;
-    CVec zeroCatEmb;
+    vec zeroCatEmb;
 
   public:
 
@@ -1114,40 +1068,26 @@ class JModel {
         if (c == 's') is >> jbs >> "\n";
       }
       while ( is.peek()=='C' ) {
-<<<<<<< HEAD
         Delimited<char> c;
         Delimited<CVar> cv;
-        DenseVec dv = DenseVec(SYN_SIZE);
-        is >> "C " >> c >> " " >> cv >> " " >> dv >> "\n";
-        if (c == 'A') mcav.try_emplace(cv, vec(dv));
-        else if (c == 'L') mclv.try_emplace(cv, vec(dv));
-=======
-        Delimited<CVar> c;
         DelimitedVector<psX, double, psComma, psX> vtemp;
-        is >> "C " >> c >> " ";
-        is >> vtemp >> "\n";
-        mcv.try_emplace(c,vtemp);
+        is >> "C " >> c >> " " >> cv >> " " >> vtemp >> "\n";
+        if (c == 'A') mcav.try_emplace(cv,vtemp);
+        else if (c == 'L') mclv.try_emplace(cv,vtemp);
         JSYN_SIZE = vtemp.size();
         //is >> mcv.try_emplace(c,SYN_SIZE).first->second >> "\n";
->>>>>>> 64b380031625d77410b16e759a4ffcabbb513d98
       }
+      zeroCatEmb=arma::zeros(JSYN_SIZE);
       while ( is.peek()=='K' ) {
         Delimited<char> c;
         Delimited<K> k;
-<<<<<<< HEAD
-        DenseVec dv = DenseVec(SYN_SIZE);
-        is >> "K " >> c >> " " >> k >> " " >> dv >> "\n";
-        if (c == 'A') mkadv.try_emplace(k, vec(dv));
-        else if (c == 'F') mkfdv.try_emplace(k, vec(dv));
-        else if (c == 'L') mkldv.try_emplace(k, vec(dv));
-=======
         DelimitedVector<psX, double, psComma, psX> vtemp;
-        is >> "K " >> k >> " ";
-        is >> vtemp >> "\n";
-        mkdv.try_emplace(k,vtemp);
+        is >> "K " >> c >> " " >> k >> " " >> vtemp >> "\n";
+        if (c == 'A') mkadv.try_emplace(k,vtemp);
+        else if (c == 'F') mkfdv.try_emplace(k,vtemp);
+        else if (c == 'L') mkldv.try_emplace(k,vtemp);
         JSEM_SIZE = vtemp.size();
         //is >> mkdv.try_emplace(k,SEM_SIZE).first->second >> "\n";
->>>>>>> 64b380031625d77410b16e759a4ffcabbb513d98
       }
       while ( is.peek()=='j' ) {
         Delimited<int> k;
@@ -1179,26 +1119,25 @@ class JModel {
       return it->second;
     }
 
-<<<<<<< HEAD
     const vec getCatEmbed( CVar i, Delimited<char> c ) const {
       if (c == 'A') {
         auto it = mcav.find( i );
-        return ( ( it != mcav.end() ) ? it->second : arma::zeros(SYN_SIZE) );
+        return ( ( it != mcav.end() ) ? it->second : zeroCatEmb );
       }
       else if (c == 'L') {
         auto it = mclv.find( i );
-        return ( ( it != mclv.end() ) ? it->second : arma::zeros(SYN_SIZE) );
+        return ( ( it != mclv.end() ) ? it->second : zeroCatEmb );
       }
       cerr << "ERROR: J model CVar position misspecified." << endl;
-      return arma::zeros(SYN_SIZE);
+      return zeroCatEmb;
     }
 
     const vec getKVecEmbed( HVec hv, Delimited<char> c ) const {
-      vec KVecEmbed = arma::zeros(SEM_SIZE);
+      vec KVecEmbed = arma::zeros(JSEM_SIZE);
       if (c == 'A') {
         for ( auto& kV : hv.at(0) ) {
           if ( kV == K::kTop) {
-            KVecEmbed += arma::ones(SEM_SIZE);
+            KVecEmbed += arma::ones(JSEM_SIZE);
             continue;
           }
           auto it = mkadv.find( kV );
@@ -1207,30 +1146,12 @@ class JModel {
           } else {
             KVecEmbed += it->second;
           }
-=======
-    const CVec& getCatEmbed( CVar i ) const { 
-      auto it = mcv.find( i );
-      if (it == mcv.end()) { 
-        cerr << "ERROR: CVar not defined in jmodel: no embedding found for: " << i << endl; 
-        return zeroCatEmb;
-      }
-      //assert( it != mcv.end() );
-      return it->second;
-    }
-
-    const KDenseVec getKVecEmbed( HVec hv ) const {
-      KDenseVec KVecEmbed = KDenseVec(arma::zeros(JSEM_SIZE));
-      for ( auto& kV : hv.at(0) ) {
-        if ( kV == K::kTop) {
-          KVecEmbed += KDenseVec(arma::ones(JSEM_SIZE));
-          continue;
->>>>>>> 64b380031625d77410b16e759a4ffcabbb513d98
         }
       }
       else if (c == 'F') {
         for ( auto& kV : hv.at(0) ) {
           if ( kV == K::kTop) {
-            KVecEmbed += arma::ones(SEM_SIZE);
+            KVecEmbed += arma::ones(JSEM_SIZE);
             continue;
           }
           auto it = mkfdv.find( kV );
@@ -1244,7 +1165,7 @@ class JModel {
       else if (c == 'L') {
         for ( auto& kV : hv.at(0) ) {
           if ( kV == K::kTop) {
-            KVecEmbed += arma::ones(SEM_SIZE);
+            KVecEmbed += arma::ones(JSEM_SIZE);
             continue;
           }
           auto it = mkldv.find( kV );
@@ -1274,11 +1195,8 @@ class JModel {
     arma::vec calcResponses( JPredictorVec& ljpredictors ) const {
 // return distribution over JEOO indices
 // vectorize predictors: one-hot for depth, three hvecs, two cat-embeds
-<<<<<<< HEAD
-=======
       //arma::vec jlogresponses = arma::zeros( 7 + 3*JSEM_SIZE + 2*JSYN_SIZE );
-      arma::vec jlogresponses = arma::zeros( JFULL_WIDTH );
->>>>>>> 64b380031625d77410b16e759a4ffcabbb513d98
+//      arma::vec jlogresponses = arma::zeros( JFULL_WIDTH );
       CVar catA = ljpredictors.getCatAncstr();
       const HVec& hvA = ljpredictors.getHvAncstr();
       const HVec& hvF = ljpredictors.getHvFiller();
@@ -1294,17 +1212,10 @@ class JModel {
 
 // populate predictor vector
       arma::vec jlogresponses = join_cols(join_cols(join_cols(join_cols(join_cols(catAEmb, hvAEmb), hvFEmb), catLEmb), hvLEmb), arma::zeros(7));
-      jlogresponses(3*SEM_SIZE + 2*SYN_SIZE + d) = 1;
+      jlogresponses(3*JSEM_SIZE + 2*JSYN_SIZE + d) = 1;
 
 // implementation of MLP
       arma::vec jlogscores = jwsm * relu(jwfm*jlogresponses + jbfv) + jbsv;
-      arma::vec jscores = arma::exp(jlogscores);
-      double jnorm = arma::accu(jscores);
-      return jscores/jnorm;
-    }
-
-  arma::vec testCalcResponses( arma::vec testvec ) const {
-      arma::vec jlogscores = jwsm * relu(jwfm*testvec + jbfv) + jbsv;
       arma::vec jscores = arma::exp(jlogscores);
       double jnorm = arma::accu(jscores);
       return jscores/jnorm;
