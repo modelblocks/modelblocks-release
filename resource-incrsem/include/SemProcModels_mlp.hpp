@@ -39,7 +39,7 @@ vector<string> PUNCT = { "-LCB-", "-LRB-", "-RCB-", "-RRB-" };
 
 // ReLU function
 arma::mat relu( const arma::mat& km ) {
-  if ( km.max() < 0 ) return zeros( size(km) );
+  if ( km.max() < 0 ) return zeros( arma::size(km) );
   else return clamp(km, 0, km.max());
 }
 
