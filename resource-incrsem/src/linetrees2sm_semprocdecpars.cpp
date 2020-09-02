@@ -50,6 +50,7 @@ int COREF_WINDOW = INT_MAX;
 bool RELAX_NOPUNC = false;
 bool ABLATE_UNARY = false;
 bool NO_ENTITY_BLOCKING = false;
+bool REDUCED_PRTRM_CONTEXTS = false;
 bool WINDOW_REDUCE = false;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -343,7 +344,14 @@ void calcContext ( Tree<L>& tr,
 
           bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
           NPredictorVec npv( modN, candidate.first(), corefON, tDisc - i, q, ABLATE_UNARY ); 
+          //cout << "N " << pair<const NModel&,const NPredictorVec&>(modN,npv) << " : " << nLabel << endl; //i-1 because that's candidate index 
+#ifdef DENSE_VECTORS
+          cout << "N " << npv << " : " << nLabel << endl;
+#elif defined MLP
+          cout << "N " << npv << " : " << nLabel << endl;
+#else
           cout << "N " << pair<const NModel&,const NPredictorVec&>(modN,npv) << " : " << nLabel << endl; //i-1 because that's candidate index 
+#endif
         } //single candidate output
       } //all previous antecedent candidates output
 
@@ -369,7 +377,7 @@ void calcContext ( Tree<L>& tr,
         cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " " << m << " " << lm << " " << removeLink(tr.front()) << endl;
       }
 #endif
-      q = StoreState( q, hvAnt, eF.c_str(), k, getCat(removeLink(l)), matE, funcO );
+      q = StoreState( q, f, REDUCED_PRTRM_CONTEXTS, hvAnt, eF.c_str(), k, getCat(removeLink(l)), matE, funcO );
       aPretrm = q.back().apex().back();
     } else {
       aPretrm = Sign();
@@ -459,6 +467,7 @@ int main ( int nArgs, char* argv[] ) {
     else if( '-'==argv[a][0] && 'a'==argv[a][1] ) ABLATE_UNARY = true;
     else if( '-'==argv[a][0] && 'n'==argv[a][1] && 'b'==argv[a][2]) NO_ENTITY_BLOCKING = true;
     else if( '-'==argv[a][0] && 'w'==argv[a][1] ) WINDOW_REDUCE = true; //TODO implement this
+    else if( '-'==argv[a][0] && 'r'==argv[a][1] && 'p'==argv[a][2]) REDUCED_PRTRM_CONTEXTS = true;
     else {
       cerr << "Loading model " << argv[a] << "..." << endl;
       // Open file...

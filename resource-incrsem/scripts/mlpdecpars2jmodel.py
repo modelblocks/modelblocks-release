@@ -448,25 +448,25 @@ def main(config):
     #     second_biases = list(model.parameters())[5].data.numpy()
 
     if j_config.getint("GPU") >= 0:
-        cata_embeds = list(model.parameters())[0].data.cpu().numpy()
-        catl_embeds = list(model.parameters())[1].data.cpu().numpy()
-        hveca_embeds = list(model.parameters())[2].data.cpu().numpy()
-        hvecf_embeds = list(model.parameters())[3].data.cpu().numpy()
-        hvecl_embeds = list(model.parameters())[4].data.cpu().numpy()
-        first_weights = list(model.parameters())[5].data.cpu().numpy()
-        first_biases = list(model.parameters())[6].data.cpu().numpy()
-        second_weights = list(model.parameters())[7].data.cpu().numpy()
-        second_biases = list(model.parameters())[8].data.cpu().numpy()
+        cata_embeds = model.state_dict()["cata_embeds.weight"].data.cpu().numpy()
+        catl_embeds = model.state_dict()["catl_embeds.weight"].data.cpu().numpy()
+        hveca_embeds = model.state_dict()["hveca_embeds.weight"].data.cpu().numpy()
+        hvecf_embeds = model.state_dict()["hvecf_embeds.weight"].data.cpu().numpy()
+        hvecl_embeds = model.state_dict()["hvecl_embeds.weight"].data.cpu().numpy()
+        first_weights = model.state_dict()["fc1.weight"].data.cpu().numpy()
+        first_biases = model.state_dict()["fc1.bias"].data.cpu().numpy()
+        second_weights = model.state_dict()["fc2.weight"].data.cpu().numpy()
+        second_biases = model.state_dict()["fc2.bias"].data.cpu().numpy()
     else:
-        cata_embeds = list(model.parameters())[0].data.numpy()
-        catl_embeds = list(model.parameters())[1].data.numpy()
-        hveca_embeds = list(model.parameters())[2].data.numpy()
-        hvecf_embeds = list(model.parameters())[3].data.numpy()
-        hvecl_embeds = list(model.parameters())[4].data.numpy()
-        first_weights = list(model.parameters())[5].data.numpy()
-        first_biases = list(model.parameters())[6].data.numpy()
-        second_weights = list(model.parameters())[7].data.numpy()
-        second_biases = list(model.parameters())[8].data.numpy()
+        cata_embeds = model.state_dict()["cata_embeds.weight"].data.numpy()
+        catl_embeds = model.state_dict()["catl_embeds.weight"].data.numpy()
+        hveca_embeds = model.state_dict()["hveca_embeds.weight"].data.numpy()
+        hvecf_embeds = model.state_dict()["hvecf_embeds.weight"].data.numpy()
+        hvecl_embeds = model.state_dict()["hvecl_embeds.weight"].data.numpy()
+        first_weights = model.state_dict()["fc1.weight"].data.numpy()
+        first_biases = model.state_dict()["fc1.bias"].data.numpy()
+        second_weights = model.state_dict()["fc2.weight"].data.numpy()
+        second_biases = model.state_dict()["fc2.bias"].data.numpy()
 
     eprint(first_weights.shape, second_weights.shape)
     print("J F " + ",".join(map(str, first_weights.flatten('F').tolist())))
@@ -481,16 +481,16 @@ def main(config):
     #         print("K " + str(hvec) + " [" + ",".join(map(str, hvec_embeds[ix])) + "]")
     if not j_config.getboolean("AblateSyn"):
         for cat, ix in sorted(cata_to_ix.items()):
-            print("C A " + str(cat) + " [" + ",".join(map(str, cata_embeds[ix])) + "]")
+            print("C A " + str(cat) + " " + ",".join(map(str, cata_embeds[ix])))
         for cat, ix in sorted(catl_to_ix.items()):
-            print("C L " + str(cat) + " [" + ",".join(map(str, catl_embeds[ix])) + "]")
+            print("C L " + str(cat) + " " + ",".join(map(str, catl_embeds[ix])))
     if not j_config.getboolean("AblateSem"):
         for hvec, ix in sorted(hveca_to_ix.items()):
-            print("K A " + str(hvec) + " [" + ",".join(map(str, hveca_embeds[ix])) + "]")
+            print("K A " + str(hvec) + " " + ",".join(map(str, hveca_embeds[ix])))
         for hvec, ix in sorted(hvecf_to_ix.items()):
-            print("K F " + str(hvec) + " [" + ",".join(map(str, hvecf_embeds[ix])) + "]")
+            print("K F " + str(hvec) + " " + ",".join(map(str, hvecf_embeds[ix])))
         for hvec, ix in sorted(hvecl_to_ix.items()):
-            print("K L " + str(hvec) + " [" + ",".join(map(str, hvecl_embeds[ix])) + "]")
+            print("K L " + str(hvec) + " " + ",".join(map(str, hvecl_embeds[ix])))
     for jdec, ix in sorted(jdecs_to_ix.items()):
         print("j " + str(ix) + " " + str(jdec))
 

@@ -513,13 +513,16 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
   StoreState ( CVar cA, CVar cB ) { emplace( end() ); back().apex().emplace_back( hvBot, cA, S_A ); back().base().emplace_back( hvBot, cB, S_B ); }
 
   // Preterminal constructor...
-  StoreState ( const StoreState& qPrev, const HVec& hvAnt, EVar evF, K k, CVar cP, const EMat& matE, const OFunc& funcO ) {
+  StoreState ( const StoreState& qPrev, F f, bool REDUCED_PRTRM_CONTEXTS, const HVec& hvAnt, EVar evF, K k, CVar cP, const EMat& matE, const OFunc& funcO ) {
     // Add preterm and apply unaries...
     reserve( qPrev.size() + 1 );
     insert( end(), qPrev.begin(), qPrev.end() );
     emplace( end() )->apex().set( getBase().getCat(), cP, 'I', 'I', Sign() );
     back().apex().back().setHVec() = HVec( k, matE, funcO );
     back().apex().back().setHVec().add( hvAnt );
+    if ( f == 0  && (! REDUCED_PRTRM_CONTEXTS)) {
+      back().apex().back().setHVec() = qPrev.getBase().getHVec(); // add base semantics to preterminal
+    }
     applyUnariesBotUp( back().apex(), evF );
   }
 

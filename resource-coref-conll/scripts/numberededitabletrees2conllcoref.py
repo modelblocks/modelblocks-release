@@ -39,6 +39,7 @@ class CorefTracker:
         id = line.split(":")[0] #assumes 2 digit sentid, 2 digit word id.
         id = str(self.article_id).zfill(3) + id #prepend article id
         word = self.getWord(line)
+        
         self.wordlist += [(id,word)]
 
     def findChainId(self, annot):
@@ -50,7 +51,7 @@ class CorefTracker:
 
     def processCoref(self, line):
         #check for anaphoricity
-        result = re.search(r".*-[nm]([0-9]+) ", line)
+        result = re.search(r".*-[nm]([0-9]+)", line)
         if result is not None:
             annot = str(self.article_id).zfill(3) + result.group(1).zfill(4)
             chainid = self.findChainId(annot)
@@ -64,6 +65,7 @@ class CorefTracker:
             return
         else:
             self.printHeader()
+            #pdb.set_trace()
             for item in self.wordlist:
                 word = item[1]
                 wordnum = item[0][-2:]
