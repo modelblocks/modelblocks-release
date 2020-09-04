@@ -170,6 +170,47 @@ pair<K,CVar> getPred ( const L& lP, const L& lW ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+pair<pair<K,CVar>,pair<string,string>> getPredAndRules ( const L& lP, const L& lW ) {
+  CVar c = getCat ( lP );
+  string sX = "%|%";
+
+  // CODE REVIEW: DEACTIVATE THE BELOW PUNCT LIQUIDATOR TO ALLOW THE MORPH SCRIPT TO DETERMINE SET OF PREDICATES (THOUGH SIMPLE PUNCT CATS HAVE NO SYNTACTIC ARGS, SO DON'T DO MUCH)...
+  // If punct, but not special !-delimited label...
+  if ( (not RELAX_NOPUNC) and ispunct(lW[0]) and ('!'!=lW[0] or lW.size()==1) ) return pair<pair<K,CVar>,pair<string,string>>(pair<K,CVar>(K::kBot, c), pair<string,string>("%|", "Null Bot"));
+
+  cout<<"reducing "<<lP<<" now "<<c;
+  string sLemma = lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
+  string sCat = c.getString();
+  string sPred = sCat + ':' + sLemma;
+  cout<<" to "<<sCat<<endl;
+
+  smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^} ][^| ]*[|](?:(?!-[a-zA-Z])[^ }])*)(.*?)$")); s=m[3] ) {
+    sX = m[2];
+    smatch mX;
+    cout<<"applying "<<sX<<" to "<<sPred;
+    if( regex_match( sX, mX, regex("^(.*)%(.*)%(.*)[|](.*)%(.*)%(.*)$") ) )             // transfix (prefix+infix+suffix) rule application
+      sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"(.*)"+regex_escape(mX[3])+"$"), string(mX[4])+"$1"+string(mX[5])+"$2"+string(mX[6]) );
+    else if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)[%](.*)$") ) )              // circumfix (prefix+suffix) rule application
+      sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"$"), string(mX[3])+"$1"+string(mX[4]) );
+    else if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)$") ) )                     // annihilator rule application
+      sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"$"), string(mX[3]) );
+    cout<<" obtains "<<sPred<<endl;
+  }
+
+  if ( sPred.size() == 0 ) return pair<pair<K,CVar>,pair<string,string>>(pair<K,CVar>(K::kBot, c), pair<string,string>(sX, "Null Bot"));
+
+  int iSplit = sPred.find( ":", 1 );
+  sCat  = sPred.substr( 0, iSplit );
+  sLemma = sPred.substr( iSplit+1 );
+  string sOrigLemma = sLemma;
+  if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end() || mldLemmaCounts[sLemma]<MINCOUNTS ) sLemma = "!unk!";
+  if ( isdigit(lW[0]) )                                                                        sLemma = "!num!";
+
+  return pair<pair<K,CVar>,pair<string,string>>(pair<K,CVar>(( sCat + ':' + sLemma + '_' + ((lP[0]=='N' or lP[0]=='U') ? '1' : '0') ).c_str(), c), pair<string,string>(sX, sCat + " " + sOrigLemma));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 EMat matE;
 OFunc funcO;
 
@@ -234,8 +275,11 @@ void calcContext ( Tree<L>& tr,
     string annot    = getLink( tr );  //if( annot == currentloc ) annot = "";
     f               = 1 - s;
     eF              = e + getUnaryOp( tr );
-    pair<K,CVar> kc = getPred ( removeLink(tr), removeLink(tr.front()) );
-    K k             = (FEATCONFIG & 8 && kc.first.getString()[2]!='y') ? K::kBot : kc.first;
+//    pair<K,CVar> kc = getPred ( removeLink(tr), removeLink(tr.front()) );
+    pair<pair<K,CVar>,pair<string,string>> kc = getPredAndRules ( removeLink(tr), removeLink(tr.front()) );
+    string m = kc.second.first;
+    string lm = kc.second.second;
+    K k             = (FEATCONFIG & 8 && kc.first.first.getString()[2]!='y') ? K::kBot : kc.first.first;
     bool validIntra = false;
 
     std::string annotSentIdx = annot.substr(0,annot.size()-2); //get all but last two...
@@ -315,19 +359,22 @@ void calcContext ( Tree<L>& tr,
       cout << "F " << lfp << " " << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) /*getCat(l)*/     << endl;
       if (k != kAntUnk) { 
-        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+//        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " " << m /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " " << m << " " << lm << " " << removeLink(tr.front()) << endl;
       }
 #elif defined MLP
       cout << "F " << lfp << " " << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) /*getCat(l)*/     << endl;
       if (k != kAntUnk) {
-        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+//        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " " << m /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " " << m << " " << lm << " " << removeLink(tr.front()) << endl;
       }
 #else
       cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : f" << f << "&" << e << "&" << k << endl;  modF.getResponseIndex(f,e.c_str(),k);
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) << endl;
       if (k != kAntUnk) { 
-        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " : " << removeLink(tr.front())  << endl;
+//        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " " << m /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " " << m << " " << lm << " " << removeLink(tr.front()) << endl;
       }
 #endif
       q = StoreState( q, f, REDUCED_PRTRM_CONTEXTS, hvAnt, eF.c_str(), k, getCat(removeLink(l)), matE, funcO );
