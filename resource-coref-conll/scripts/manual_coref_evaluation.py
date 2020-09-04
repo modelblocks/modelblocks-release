@@ -99,18 +99,26 @@ for i,goldline in enumerate(goldlines):
             if goldcid != "-\n":
                 lowerpredcorrect += 1
             
+def f1(prec,rec):
+    return (2*prec*rec)/(prec+rec)
+
 anaphoricity_recall = predcorrect / float(goldcount)
 anaphoricity_precision = predcorrect / float(predcount)
+anaph_f1 = f1(anaphoricity_recall,anaphoricity_precision)
 pro_rec = propredcorrect / float(goldprocount)
 pro_prec = propredcorrect / float(propredcount)
+pro_f1 = f1(pro_rec,pro_prec)
 upp_rec = upperpredcorrect / float(golduppercount)
 upp_prec = upperpredcorrect / float(upperpredcount)
+upp_f1 = f1(upp_rec,upp_prec)
 low_rec = lowerpredcorrect / float(goldlowercount)
 low_prec = lowerpredcorrect / float(lowerpredcount)
-print("Anaphoricity prec: {}, rec: {}".format(anaphoricity_precision, anaphoricity_recall))      
-print("Pronoun prec: {} recall: {}".format(pro_prec,pro_rec))
-print("Upper prec: {} recall: {}".format(upp_prec, upp_rec))
-print("Lower prec: {} recall: {}".format(low_prec,low_rec))
+low_f1 = f1(low_rec,low_prec)
+
+print("Pronoun prec: {} recall: {}, f1: {}".format(pro_prec,pro_rec,pro_f1))
+print("Anaphoricity prec: {}, rec: {}, f1: {}".format(anaphoricity_precision, anaphoricity_recall, anaph_f1))      
+print("Upper prec: {} recall: {}, f1: {}".format(upp_prec, upp_rec, upp_f1))
+print("Lower prec: {} recall: {}, f1: {}".format(low_prec,low_rec, low_f1))
 
 #Calculate antecedent precision of correctly recalled mentions - of the correctly recalled mentions, what percentage have the correct antecedent chosen?
 
@@ -156,5 +164,4 @@ strict_acc = float(santecorrect) / predcorrect
 pro_acc = float(proantecorrect) / propredcorrect
 
 print("For correct mention detections, accuracy of antecedent choice where relaxed is any correct antecedent in chain, while strict is most recent antecedent mention in chain")
-print("Relaxed_acc: {} Strict_acc: {}".format(relaxed_acc, strict_acc))
-print("Relaxed pronoun_acc: {}".format(pro_acc))
+print("Relaxed pronoun acc: {} relaxed acc: {}".format(pro_acc,relaxed_acc)) #Strict_acc: {}".format(relaxed_acc, strict_acc))
