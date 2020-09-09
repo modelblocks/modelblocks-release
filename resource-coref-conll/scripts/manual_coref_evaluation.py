@@ -119,6 +119,7 @@ print("Pronoun prec: {} recall: {}, f1: {}".format(pro_prec,pro_rec,pro_f1))
 print("Anaphoricity prec: {}, rec: {}, f1: {}".format(anaphoricity_precision, anaphoricity_recall, anaph_f1))      
 print("Upper prec: {} recall: {}, f1: {}".format(upp_prec, upp_rec, upp_f1))
 print("Lower prec: {} recall: {}, f1: {}".format(low_prec,low_rec, low_f1))
+print("Gold pronoun count: {}".format(goldprocount))
 
 #Calculate antecedent precision of correctly recalled mentions - of the correctly recalled mentions, what percentage have the correct antecedent chosen?
 
