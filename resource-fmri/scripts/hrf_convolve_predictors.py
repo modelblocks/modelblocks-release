@@ -86,6 +86,8 @@ def main():
         out[c] = convolve_column(df, c)
         i += 1
 
+    sys.stderr.write('\n')
+
     out['sampleid'] = 1
     out.sampleid = out.groupby(['docid']).sampleid.cumsum()
     sampleid_format = '{0:05d}'
