@@ -97,7 +97,7 @@ def prepare_data():
                 continue
             else:
                 hva_row.append(i)
-                hva_col.append(hvec_to_ix[hvec])
+                hva_col.append(hveca_to_ix[hvec])
         hva_top.append([top_count])
     hva_mat = csr_matrix((np.ones(len(hva_row), dtype=np.int32), (hva_row, hva_col)),
                          shape=(len(hvAFirst), len(hveca_to_ix)))
@@ -187,7 +187,7 @@ def prepare_data_dev(dev_decpars_file, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hve
                 continue
             else:
                 hva_row.append(i)
-                hva_col.append(hvec_to_ix[hvec])
+                hva_col.append(hveca_to_ix[hvec])
         hva_top.append([top_count])
     hva_mat = csr_matrix((np.ones(len(hva_row), dtype=np.int32), (hva_row, hva_col)),
                          shape=(len(hvAFirst), len(hveca_to_ix)))
@@ -289,7 +289,8 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
 
     if use_dev >= 0:
         dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_fdecs_ix, dev_hvb_top, dev_hvf_top, dev_hva_mat, dev_hva_top, dev_nullA = prepare_data_dev(
-            dev_decpars_file, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix)
+            dev_decpars_file, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix)
+#def prepare_data_dev(dev_decpars_file, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix):
         dev_depth = F.one_hot(torch.LongTensor(dev_depth), 7).float()
         dev_cat_b_ix = torch.LongTensor(dev_cat_b_ix)
         dev_target = torch.LongTensor(dev_fdecs_ix)

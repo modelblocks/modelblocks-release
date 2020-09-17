@@ -354,13 +354,6 @@ class FModel {
         else if (c == 'A') mkadv.try_emplace(k, vtemp);
         FSEM_SIZE=vtemp.size();
       }
-      while ( is.peek()=='L') {
-        Delimited<K> k;
-        DelimitedVector<psX, double, psComma, psX> vtemp;  
-        is >> "L " >> k >> " ";
-        is >> vtemp >> "\n";
-        mldv.try_emplace(k,vtemp);
-      }
       while ( is.peek()=='f' ) {
         unsigned int i;
         is >> "f " >> i >> " ";
