@@ -26,7 +26,7 @@ def get_docid(timeseries):
 def convolve_column(df, col):
     categorical = df[col].dtype.name == 'category'
     arr = np.array(df[col])
-    time = np.array(df.timestamp)
+    time = np.array(df.time)
     time_cur = 0.
     start = 0
     out = [] 
@@ -62,11 +62,13 @@ def convolve_column(df, col):
 
 def main():
     df = pd.read_csv(args.data,sep=' ',skipinitialspace=True)
-    df['docid'] = get_docid(df.timestamp)
+    df['docid'] = get_docid(df.time)
     df['rate'] = 1.
-    
-    df.sentid = df.sentid.astype('category')
-    df.rolled = df.rolled.astype('category')
+   
+    if 'sentid' in df.columns:
+        df.sentid = df.sentid.astype('category')
+    if 'rolled' in df.columns:
+        df.rolled = df.rolled.astype('category')
     sys.stderr.write(df.sentid.dtype.name + '\n')
 
     n = len(df.columns)

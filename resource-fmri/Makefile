@@ -158,7 +158,7 @@ fMRICoreEvmeasures:
       innerdelim: .
 endef
 .PRECIOUS: %.hrf.itemmeasures
-%.hrf.itemmeasures: %.t.itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py
+%.hrf.itemmeasures: %.t.all-itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py
 	python $(word 2, $^) $(word 1, $^) > $@
 
 %.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py
