@@ -23,13 +23,13 @@ def get_docid(timeseries):
         docid.append(doc_names[docix])
     return pd.Series(docid).astype('category')
 
-def convolve_column(df, col):
+def convolve_column(df, col, step):
     categorical = df[col].dtype.name == 'category'
     arr = np.array(df[col])
     time = np.array(df.time)
     time_cur = 0.
     start = 0
-    out = [] 
+    out = []
     for i in range(len(df)):
         if i > 0 and time[i] < time[i-1]:
             start = i
@@ -76,20 +76,22 @@ def main():
 
     out = pd.DataFrame()
 
-    for c in df.columns: 
-        sys.stderr.write('\rConvolving column %d/%d' %(i,n))
-        if df[c].dtype.name != 'category':
-            if df[c].dtype.name == 'object':
-                df[c] = df[c].astype('category')
-            else:
-                df[c] = df[c].astype('float')
-        out[c] = convolve_column(df, c)
+    for c in df.columns:
+        if c != 'time':
+            sys.stderr.write('\rConvolving column %d/%d' %(i,n))
+            if df[c].dtype.name != 'category':
+                if df[c].dtype.name == 'object':
+                    df[c] = df[c].astype('category')
+                else:
+                    df[c] = df[c].astype('float')
+            out[c] = convolve_column(df, c, step)
         i += 1
 
     sys.stderr.write('\n')
 
     out['sampleid'] = 1
     out.sampleid = out.groupby(['docid']).sampleid.cumsum()
+    out['time'] = (out.sampleid - 1) * 2
     sampleid_format = '{0:05d}'
     out.sampleid = out.docid.astype('str').str.cat(out.sampleid.apply(sampleid_format.format), sep='-')
     out.to_csv(sys.stdout, ' ', index=False, na_rep='NaN')
