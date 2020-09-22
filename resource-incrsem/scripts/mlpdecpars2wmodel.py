@@ -603,12 +603,12 @@ def main(config):
     for k in lchar2ekpsk:
         print("X " + k[0] + " " + k[1], end=" [")
         for v in list(lchar2ekpsk[k])[:-1]:
-            print(v[0], v[1], v[2], sep="/", end=" ")
+            print(v[0], v[1], v[2], sep="|", end=" ")
         print(list(lchar2ekpsk[k])[-1][0], list(lchar2ekpsk[k])[-1][1], list(lchar2ekpsk[k])[-1][2], sep="/", end="]\n")
     for k in lchar2ekpsk:
         print("M " + k[0] + " " + k[1], end=" [")
         for v in list(lchar2ekpsk[k])[:-1]:
-            print(v[0], v[2], v[3], sep="/", end=" ")
+            print(v[0], v[2], v[3], sep="|", end=" ")
         print(list(lchar2ekpsk[k])[-1][0], list(lchar2ekpsk[k])[-1][2], list(lchar2ekpsk[k])[-1][3], sep="/", end="]\n")
 
 
