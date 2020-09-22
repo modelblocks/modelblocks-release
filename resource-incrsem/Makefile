@@ -430,7 +430,7 @@ endef
               $(INCRSEM-SCRIPTS)/undersample_nmodel_noncorefs.py \
               $(INCRSEM-SCRIPTS)/mlpdecpars2nmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))n.ini
-	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 $(word 2,$^)  | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
+	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 $(word 2,$^) $(word 4,$^) | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
 .PRECIOUS: %_fmlpmodel
 %_fmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py \

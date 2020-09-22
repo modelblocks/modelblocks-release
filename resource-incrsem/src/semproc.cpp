@@ -228,13 +228,20 @@ int main ( int nArgs, char* argv[] ) {
         while ( fin && EOF!=fin.peek() ) {
           if      ( fin.peek()=='E' ) matEmutable = EMat( fin );
           else if ( fin.peek()=='O' ) funcOmutable = OFunc( fin );
-          else if ( fin.peek()=='N' ) modNmutable = NModel( fin );
-          else if ( fin.peek()=='F' ) modFmutable = FModel( fin );
-          else if ( fin.peek()=='P' ) modPmutable = PModel( fin );
-          else if ( fin.peek()=='W' ) modWmutable = WModel( fin );  //fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
-          else if ( fin.peek()=='J' ) modJmutable = JModel( fin );
-          else if ( fin.peek()=='A' ) modAmutable = AModel( fin );
-          else if ( fin.peek()=='B' ) modBmutable = BModel( fin );
+          //else if ( fin.peek()=='N' ) modNmutable = NModel( fin );
+          else if ( fin.peek()=='N' ) { modNmutable = NModel( fin ); cerr << "loaded N model" << endl; }
+          //else if ( fin.peek()=='F' )  modFmutable = FModel( fin ); 
+          else if ( fin.peek()=='F' ) { modFmutable = FModel( fin ); cerr << "loaded F model" << endl; }
+          //else if ( fin.peek()=='P' ) modPmutable = PModel( fin );
+          else if ( fin.peek()=='P' ) { modPmutable = PModel( fin ); cerr << "loaded P model" << endl; }
+          //else if ( fin.peek()=='W' ) modWmutable = WModel( fin );  //fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
+          else if ( fin.peek()=='W' ) { modWmutable = WModel( fin ); cerr << "loaded W model" << endl; } 
+          //else if ( fin.peek()=='J' ) modJmutable = JModel( fin );
+          else if ( fin.peek()=='J' ) { modJmutable = JModel( fin ); cerr << "loaded J model" << endl; }
+          //else if ( fin.peek()=='A' ) modAmutable = AModel( fin );
+          else if ( fin.peek()=='A' ) { modAmutable = AModel( fin ); cerr << "loaded A model" << endl; }
+          //else if ( fin.peek()=='B' ) modBmutable = BModel( fin );
+          else if ( fin.peek()=='B' ) { modBmutable = BModel( fin ); cerr << "loaded B model" << endl; }
           else {
             Delimited<string> sOffSpec;
             fin >> sOffSpec >> "\n";
