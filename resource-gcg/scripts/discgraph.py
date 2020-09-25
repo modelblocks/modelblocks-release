@@ -53,8 +53,8 @@ class DiscGraph:
       elif lbl == 't':   D.Traces   [src]      = dst                ## Add traces.
       elif lbl == 'm':   D.DiscInhs [src]      = dst                ## Add discourse anaphor.
       elif lbl == 'tt':  D.Taints   [src]      = dst                ## Taint-markers
-      elif lbl == 'u':   D.Unplgs1  [src]      = dst                ## Unplugged arcs
-      elif lbl == 'uu':  D.Unplgs2  [src]      = dst
+      elif lbl == 'u':   D.Upward1  [src]      = dst                ## Unplugged arcs
+      elif lbl == 'uu':  D.Upward2  [src]      = dst
       else:              D.Inhs     [src][lbl] = dst                ## Add inheritances.
 #      if lbl == 'r':     D.Nuscos [dst].append( src )             ## Index nusco of each restr.
 #      if lbl == 'r':     D.NuscoValues[src]  = True
@@ -131,10 +131,10 @@ class DiscGraph:
     for xLo,xHi in HypScopes.items():
       G.append( xLo + ',tt,' + xHi )
     ## List upward/unplugged scopes
-    for xLo,xHi in Upward1.items():
+    for xLo,xHi in D.Upward1.items():
       G.append( xLo + ',u,' + xHi )
     ## List more upward/unplugged scopes -- and finally stop distinguishing between them
-    for xLo,xHi in Upward2.items():
+    for xLo,xHi in D.Upward2.items():
       G.append( xLo + ',u,' + xHi )
     ## print out...
     return ' '.join( sorted( G ) )
