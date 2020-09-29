@@ -18,7 +18,11 @@ def ensure_binary(data):
     '''confirms two labels are present.  if not, adds 1 additional training example with label flipped'''
     labels = set()
     for line in data:
-        _, _, _, _, _, _, _, _, label = line.split(" ")
+        try:
+            _, _, _, _, _, _, _, _, label = line.split(" ")
+        except:
+            eprint("WARNING: mlpdecpars spec not observed: {}".format(line))
+            continue
         labels.add(label)
     if len(labels) == 1:
         eprint("only one label found, adding fake training example...")
@@ -78,6 +82,7 @@ def prepare_data():
     flat_hvA = [hvec for sublist in hvAnteFirsts for hvec in sublist if hvec not in ["", "Bot", "Top"]]
     allCats = set(catBases).union(set(catAntes))
     cat_to_ix = {cat: i for i, cat in enumerate(sorted(set(allCats)))}
+    
     #fdecs_to_ix = {fdecs: i for i, fdecs in enumerate(sorted(set(fDecs)))}
     hvec_to_ix = {hvec: i for i, hvec in enumerate(sorted(set(flat_hvB + flat_hvA)))}
 
@@ -192,7 +197,7 @@ def prepare_data_dev(dev_decpars_file, cat_to_ix, hvec_to_ix):
 
 class NModel(nn.Module):
 
-    def __init__(self, cat_vocab_size, hvec_vocab_size, syn_size, sem_size, hidden_dim, output_dim):
+    def __init__(self, cat_vocab_size, hvec_vocab_size, syn_size, sem_size, hidden_dim, output_dim, dropout_prob):
         super(NModel, self).__init__()
         self.hvec_vocab_size = hvec_vocab_size
         self.sem_size = sem_size
@@ -200,7 +205,9 @@ class NModel(nn.Module):
         self.hvec_embeds = nn.Embedding(hvec_vocab_size, sem_size)
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
+        self.dropout_prob = dropout_prob
         self.fc1 = nn.Linear(2*syn_size+2*sem_size+3, self.hidden_dim, bias=True)
+        self.dropout = nn.Dropout(self.dropout_prob)
         self.relu = F.relu
         self.fc2 = nn.Linear(self.hidden_dim, self.output_dim, bias=True)
 
@@ -241,17 +248,32 @@ class NModel(nn.Module):
         #eprint(x)
         #eprint(hvb_mat[0,:])
         x = self.fc1(x)
+        x = self.dropout(x)
         x = self.relu(x)
         x = self.fc2(x)
         
         return F.log_softmax(x, dim=1)
 
+def print_examples(cat_to_ix, cat_base_ixs, cat_ante_ixs, hvb_mat, hva_mat, hvec_to_ix, hvb_top, hva_top, wordDists, sqWordDists, corefOns, labels):
+   '''WARNING: don't try to do this for a big dataset - it will run out of memory trying to change sparse to full matrix'''
+   ix_to_cat = {v: k for k, v in cat_to_ix.items()} 
+   ix_to_hvec = {v: k for k, v in hvec_to_ix.items()} 
+   ex_idxs = range(len(cat_base_ixs))
+   eprint("example data:")
+   for ex_idx in ex_idxs:
+       eprint("base_ix: {} base_cat: {} ante_ix: {} ante_cat: {} worddist: {} sqworddist: {} corefon: {} label: {}".format(cat_base_ixs[ex_idx],ix_to_cat[cat_base_ixs[ex_idx]], cat_ante_ixs[ex_idx], ix_to_cat[cat_ante_ixs[ex_idx]], wordDists[ex_idx], sqWordDists[ex_idx], corefOns[ex_idx], labels[ex_idx]))
+       eprint("  base hvecs: {}".format(",".join([ ix_to_hvec[i] for i,val in enumerate(hvb_mat.toarray()[ex_idx]) if val > 0 ])))
+       eprint("  antecedent hvecs: {}".format(",".join([ ix_to_hvec[i] for i,val in enumerate(hva_mat.toarray()[ex_idx]) if val > 0 ])))
+       #eprint("hvec b: {} hvec a: {}".format([ix_to_hvec[x] for x in hvb_mat[ex_idx] if x != 0], [ix_to_hvec[x] for x in hva_mat[ex_idx] if x != 0]))
 
-def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, 
+def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dropout_prob,
           num_epochs, batch_size, learning_rate, weight_decay, l2_reg, 
           ablate_sem, useClassFreqWeighting):
     #depth, cat_b_ix, hvb_mat, hvf_mat, cat_to_ix, fdecs_ix, fdecs_to_ix, hvec_to_ix, hvb_top, hvf_top = prepare_data()
     cat_to_ix, cat_base_ixs, cat_ante_ixs, hvb_mat, hva_mat, hvec_to_ix, hvb_top, hva_top, wordDists, sqWordDists, corefOns, labels = prepare_data() 
+    #cat_to_ix, cat_base_ixs, cat_ante_ixs, hvb_mat, hva_mat, hvec_to_ix, hvb_top, hva_top, wordDists, sqWordDists, corefOns, labels = prepare_data() 
+    #print_examples( cat_to_ix, cat_base_ixs, cat_ante_ixs, hvb_mat, hva_mat, hvec_to_ix, hvb_top, hva_top, wordDists, sqWordDists, corefOns, labels)
+    
     #depth = F.one_hot(torch.LongTensor(depth), 7).float()
     #cat_b_ix = torch.LongTensor(cat_b_ix)
     #target = torch.LongTensor(fdecs_ix)
@@ -266,7 +288,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim,
     target = torch.LongTensor(labels)
     outputdim = len(set(target.tolist())) 
     assert outputdim == 2
-    model = NModel(len(cat_to_ix), len(hvec_to_ix), syn_size, sem_size, hidden_dim, outputdim) #output_dim is last param
+    model = NModel(len(cat_to_ix), len(hvec_to_ix), syn_size, sem_size, hidden_dim, outputdim, dropout_prob) 
 
     if use_gpu >= 0:
         #depth = depth.to("cuda")
@@ -387,13 +409,15 @@ def main(config):
                                    n_config.getint("SynSize"), 
                                    n_config.getint("SemSize"), 
                                    n_config.getint("HiddenSize"), 
+                                   n_config.getfloat("DropoutProb"),
                                    n_config.getint("NEpochs"), 
                                    n_config.getint("BatchSize"), 
                                    n_config.getfloat("LearningRate"), 
                                    n_config.getfloat("WeightDecay"), 
                                    n_config.getfloat("L2Reg"), 
                                    n_config.getboolean("AblateSem"),
-                                   n_config.getboolean("UseClassFreqWeighting"))
+                                   n_config.getboolean("UseClassFreqWeighting")
+)
 
     if n_config.getint("GPU") >= 0:
         cat_embeds = list(model.parameters())[0].data.cpu().numpy()
@@ -416,10 +440,10 @@ def main(config):
     print("N S " + ",".join(map(str, second_weights.flatten('F').tolist())))
     print("N s " + ",".join(map(str, second_biases.flatten('F').tolist())))
     for cat, ix in sorted(cat_to_ix.items()):
-        print("C " + str(cat) + " [" + ",".join(map(str, cat_embeds[ix])) + "]")
+        print("C " + str(cat) + " " + ",".join(map(str, cat_embeds[ix])))
     if not n_config.getboolean("AblateSem"):
         for hvec, ix in sorted(hvec_to_ix.items()):
-            print("K " + str(hvec) + " [" + ",".join(map(str, hvec_embeds[ix])) + "]")
+            print("K " + str(hvec) + " " + ",".join(map(str, hvec_embeds[ix])))
     #for fdec, ix in sorted(fdecs_to_ix.items()):
     #    print("f " + str(ix) + " " + str(fdec))
 

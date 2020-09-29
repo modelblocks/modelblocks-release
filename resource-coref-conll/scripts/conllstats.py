@@ -56,7 +56,6 @@ for doc in chains:
         
 print("distances: {}".format(distances))
 print("word distance between mentions - mean: {}, median: {}, min/max: {}/{}, stddev: {}".format(np.mean(distances),np.median(distances),np.min(distances),np.max(distances),np.std(distances)))
-
 hist, binedges = np.histogram(distances)
 print(hist)
 print(binedges)

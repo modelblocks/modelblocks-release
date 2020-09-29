@@ -73,7 +73,12 @@ endif
 %.key.conll: $(CONLL-SCRIPTS)/numberededitabletrees2conllcoref.py %.fromlinetrees.numbered.editabletrees
 	python3 $< $(word 2, $^) > $@
 
+.PRECIOUS:
 %.preds.conll: $(CONLL-SCRIPTS)/tokdecs2conllcoref.py %.tokdecs 
 	python3 $< $(word 2, $^) > $@
 
-
+%coreval: $(CONLL-SCRIPTS)/manual_coref_evaluation.py \
+             genmodel/$$(subst -,.,$$(basename $$(basename $$*)))$$(subst _,.,$$(suffix $$*))key.conll \
+             %preds.conll \
+             %tokdecs
+	python $^ > $@

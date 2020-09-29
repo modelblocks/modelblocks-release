@@ -49,8 +49,11 @@ lowerpredcorrect = 0
 predchains = {} #{doc:{cid:[uid,...],cid2:[uid2,...],...}, doc2:{cid2:[uid3,...]}, ...}
 goldchains = {} #dict of dict of lists
 docnum = 0 
+conlllines = []
 
 for i,goldline in enumerate(goldlines):
+    errortype = ""
+    wordtype = ""
     if goldline.startswith("#"):
         docnum += 1
         continue
@@ -70,22 +73,36 @@ for i,goldline in enumerate(goldlines):
         predchains[docnum][predcid].append(i)
         if goldcid != "-\n":
             predcorrect += 1
+        else:
+            errortype = "mprec.err"
     if goldcid != "-\n":
         goldcount += 1
+        if predcid == "-\n":
+            errortype = "mrec.err"
         if docnum not in goldchains:
             goldchains[docnum] = {}
         if goldcid not in goldchains[docnum]:
             goldchains[docnum][goldcid] = []
         goldchains[docnum][goldcid].append(i) #confirmed cids not resued across different documents in gold
-
+    
     if word in PRONOUNS:
+        wordtype = "pro"
         goldprocount += 1
         if predcid != "-\n":
             propredcount += 1
             if goldcid != "-\n":
                 propredcorrect += 1
-
-    if word.isupper():
+        #gold1 pred1
+        #gold1 pred0 - recall miss - false negative
+        #gold0 pred1 - prec miss - false positive
+        #gold0 pred0 
+        #if there is one each of above four cases, would expect 50% recall (out of gold, how many did you get), 50% prec (out of one's you said were, how many were)
+        #4 goldprocount
+        #2 propredcount
+        #1 propredcorrect
+        
+    if word[0].isupper():
+        wordtype += "up"
         golduppercount += 1
         if predcid != "-\n":
             upperpredcount += 1
@@ -98,19 +115,29 @@ for i,goldline in enumerate(goldlines):
             lowerpredcount += 1
             if goldcid != "-\n":
                 lowerpredcorrect += 1
-            
-anaphoricity_recall = predcorrect / float(goldcount)
+
+    conlllines.append(goldline.strip().ljust(50)+predline.strip().ljust(30)+errortype+"\t"+wordtype)        
+
+def f1(prec,rec):
+    return (2*prec*rec)/(prec+rec)
+
+#anaphoricity_recall = predcorrect / float(goldcount)
+anaphoricity_recall = predcount / float(goldcount)
 anaphoricity_precision = predcorrect / float(predcount)
-pro_rec = propredcorrect / float(goldprocount)
+anaph_f1 = f1(anaphoricity_recall,anaphoricity_precision)
+#pro_rec = propredcorrect / float(goldprocount)
+pro_rec = propredcount / float(goldprocount)
 pro_prec = propredcorrect / float(propredcount)
-upp_rec = upperpredcorrect / float(golduppercount)
+pro_f1 = f1(pro_rec,pro_prec)
+#upp_rec = upperpredcorrect / float(golduppercount)
+upp_rec = upperpredcount / float(golduppercount)
 upp_prec = upperpredcorrect / float(upperpredcount)
-low_rec = lowerpredcorrect / float(goldlowercount)
+upp_f1 = f1(upp_rec,upp_prec)
+#low_rec = lowerpredcorrect / float(goldlowercount)
+low_rec = lowerpredcount / float(goldlowercount)
 low_prec = lowerpredcorrect / float(lowerpredcount)
-print("Anaphoricity prec: {}, rec: {}".format(anaphoricity_precision, anaphoricity_recall))      
-print("Pronoun prec: {} recall: {}".format(pro_prec,pro_rec))
-print("Upper prec: {} recall: {}".format(upp_prec, upp_rec))
-print("Lower prec: {} recall: {}".format(low_prec,low_rec))
+low_f1 = f1(low_rec,low_prec)
+
 
 #Calculate antecedent precision of correctly recalled mentions - of the correctly recalled mentions, what percentage have the correct antecedent chosen?
 
@@ -128,9 +155,12 @@ santecorrect = 0 #strict
 
 proantecorrect = 0 #relaxed, pronouns with correctly id'd antecedent idx (any of them in chain)
 propredcorrect = 0 #pronoun correct mention detection - denom.  all correctly mentionid'd pronouns.
+linkerrtypes = []
+
 for i,tdline in enumerate(tokdecs):
+    linkerrtype = "" 
     if tdline.startswith("!ARTICLE"):
-        continue
+        continue #this is ok - tokdecs have single art delim (header removed above), conll also have single art delim (enddoc removed above)
     _,_,_,_,_,goldcid = goldlines[i].split(DELIM)
     _,_,_,_,predcid = predictedlines[i].split(DELIM)
     if predcid != "-\n" and goldcid != "-\n": #limit to correct mention detection cases 
@@ -144,17 +174,29 @@ for i,tdline in enumerate(tokdecs):
         if predoffset != 0:
             if predoffset in mid2offsets[i]: #relaxed correctness is any previous in chain (matches training)
                 antecorrect += 1
+            if predoffset not in mid2offsets[i]:
+                linkerrtype = "link.wrongante"
             try:
                 if mid2offsets[i] != []: #only check for correctness if gold has any correct antecedents.  if predoffset is not zero but gold has zero correct antecedents, prediction is wrong - no need to check min.
                     if predoffset == min(mid2offsets[i]): #strict correctness is most recent (smallest negative offset)
                         santecorrect += 1
             except:
                 pdb.set_trace()
+    linkerrtypes.append(linkerrtype)  
+
+for i,cline in enumerate(conlllines):
+    print(cline+"\t"+linkerrtypes[i])
+
+print("")
+print("Pronoun prec: {} recall: {}, f1: {}".format(pro_prec,pro_rec,pro_f1))
+print("Anaphoricity prec: {}, rec: {}, f1: {}".format(anaphoricity_precision, anaphoricity_recall, anaph_f1))      
+print("Upper prec: {} recall: {}, f1: {}".format(upp_prec, upp_rec, upp_f1))
+print("Lower prec: {} recall: {}, f1: {}".format(low_prec,low_rec, low_f1))
+print("Gold pronoun count: {}".format(goldprocount))
 
 relaxed_acc = float(antecorrect) / predcorrect
 strict_acc = float(santecorrect) / predcorrect
 pro_acc = float(proantecorrect) / propredcorrect
 
 print("For correct mention detections, accuracy of antecedent choice where relaxed is any correct antecedent in chain, while strict is most recent antecedent mention in chain")
-print("Relaxed_acc: {} Strict_acc: {}".format(relaxed_acc, strict_acc))
-print("Relaxed pronoun_acc: {}".format(pro_acc))
+print("Relaxed pronoun acc: {} relaxed acc: {}".format(pro_acc,relaxed_acc)) #Strict_acc: {}".format(relaxed_acc, strict_acc))
