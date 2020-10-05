@@ -235,3 +235,24 @@ naturalstoriesfmri_Lang_MD%.itemmeasures: naturalstories%.itemmeasures
 %.sp.itemmeasures: $$(DEP-NATSTORIES) %.itemmeasures $(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(CONFIGDIR)/user-naturalstories-directory.txt $(NATSTORDIR)/audio/*.wav
 	cat $(word 1, $^) | python $(word 2, $^) $(wordlist 4, $(words $^), $^) > $@
 
+
+# Link fMRI data (melted and filtered to bilateral hippocampus only) to NatStor text preprocessing pipeline
+
+%naturalstoriesfmri_Hip.linetoks: %naturalstories.linetoks
+	cp $(word 1, $^) $@
+
+%naturalstoriesfmri_Hip.lineitems: %naturalstories.lineitems
+	cp $(word 1, $^) $@
+
+naturalstoriesfmri_Hip%.tokmeasures: naturalstories%.tokmeasures
+	cp $(word 1, $^) $@
+
+naturalstoriesfmri_Hip%.itemmeasures: naturalstories%.itemmeasures
+	cp $(word 1, $^) $@
+
+%naturalstoriesfmriHipWide.evmeasures: $$(DEP-NATSTORIES) $$(DEP-NATSTORIESFMRI) $(NATSTORFMRIDIR)/naturalstories_fmriHIP.evmeasures $(NATSTORIESFMRI-SCRIPTS)/preprocess_natstor_fmri.py \
+$(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(NATSTORIESFMRI-SCRIPTS)/filter_docs.py $(CONFIGDIR)/user-naturalstories-fmri-directory.txt $(NATSTORDIR)/audio/*.wav | %
+	cat $(word 1, $^) | python $(word 2, $^) $(NATSTOR-STORIES) sampleid | python $(word 3, $^) $(wordlist 6, $(words $^), $^) | python $(word 4, $^) > $@
+
+%naturalstoriesfmri_Hip.evmeasures: %naturalstoriesfmriHipWide.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
+	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k "[LR]Hip.*" | python $(word 3, $^) - > $@
