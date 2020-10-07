@@ -128,7 +128,7 @@ class DiscGraph:
     for xLo,xHi in HypScopes.items():
       G.append( xLo + ',s,' + xHi )
     ## List taint markers
-    for xLo,xHi in HypScopes.items():
+    for xLo,xHi in D.Taints.items():
       G.append( xLo + ',tt,' + xHi )
     ## List upward/unplugged scopes
     for xLo,xHi in D.Upward1.items():
