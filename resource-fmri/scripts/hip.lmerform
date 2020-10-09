@@ -1,0 +1,5 @@
+BOLD
+z.(unigramsurp) + z.(fwprob5surp) + z.(endofsentence) + z.(pausedur)
+z.(unigramsurp) + z.(fwprob5surp) + z.(endofsentence) + z.(pausedur)
+(z.(unigramsurp) + z.(fwprob5surp) + z.(endofsentence) + z.(pausedur) | fROI)
+
