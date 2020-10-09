@@ -411,7 +411,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
             dev_acc = 0
 
         eprint("Epoch {:04d} | AvgTrainLoss {:.4f} | TrainAcc {:.4f} | DevLoss {:.4f} | DevAcc {:.4f} | Time {:.4f}".
-               format(epoch, total_train_loss / (len(depth) // batch_size), 100 * (total_train_correct / len(depth)),
+               format(epoch, total_train_loss / ((len(depth) // batch_size)+1), 100 * (total_train_correct / len(depth)),
                       total_dev_loss, dev_acc, time.time() - c0))
 
         if epoch == num_epochs:

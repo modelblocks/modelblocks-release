@@ -461,7 +461,8 @@ int main ( int nArgs, char* argv[] ) {
               double numerator = nresponses(1) / nresponses(0) ;
               double nprob = numerator / ndenom;
 
-              if ( VERBOSE>1 ) cout << "    N  antprtrm: " << pbeAnt->getHidd().getPrtrm() << " corefOn: " << corefON << "t-tAnt: " << t-tAnt <<  "qtdec1: " << q_tdec1 << " ablate_unary: " << ABLATE_UNARY << " : 1 = " << numerator << "/" << ndenom << "=" << nprob << endl;
+              //if ( VERBOSE>1 ) cout << "    N  antprtrm: " << pbeAnt->getHidd().getPrtrm() << " corefOn: " << corefON << " t-tAnt: " << t-tAnt <<  " qtdec1: " << q_tdec1 << " ablate_unary: " << ABLATE_UNARY << " : 1 = " << numerator << "/" << ndenom << "=" << nprob << endl;
+              if ( VERBOSE>1 ) cout << "    N  npv: " << npv << " : 1 = " << numerator << "/" << ndenom << "=" << nprob << endl;
               //NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1, ABLATE_UNARY );
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
                 FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );
@@ -499,7 +500,8 @@ int main ( int nArgs, char* argv[] ) {
 //                      if( modF.getResponseIndex(f,e_p_t,k_p_t)==0 ) cerr<<"ERROR: unable to find fresponse "<<f<<"&"<<e_p_t<<"&"<<k_p_t<<endl;
                       if( modF.getResponseIndex(f,e_p_t,k_p_t) == uint(-1) ) continue;
                       double probFork = fresponses( modF.getResponseIndex(f,e_p_t,k_p_t) );
-                      if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << probFork << endl;
+                      //if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << probFork << endl;
+                      if ( VERBOSE>1 ) cout << "      F " << lfpredictors << " : " << f << " " << e_p_t << " " << k_p_t << " = " << probFork << endl;
 
                       // Thread heartbeat (to diagnose thread death)...
                       if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
