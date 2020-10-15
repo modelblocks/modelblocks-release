@@ -212,7 +212,7 @@ endef
 	cat $<  |  perl $(word 2,$^)  >  $@
 #### indentation formats for annotation...
 %.fromtoktrees.annot-syn:  %.toktrees
-	cat $<  |  perl -pe 's/-[mnstuw][0-9]+r?//g'  >  $@
+	cat $<  |  perl -pe 's/-[mnstuw]+[0-9]+r?//g'  >  $@
 %.fromtoktrees.annot-sem:  %.toktrees  $(GCG-SCRIPTS)/dedent.perl  $(GCG-SCRIPTS)/bare-ends.perl  $(GCG-SCRIPTS)/yoink-word-rightward.perl  $(GCG-SCRIPTS)/nathans-numberer.perl
 	cat $(word 1,$^)  |  perl $(word 2,$^) | perl $(word 3,$^) | perl $(word 4,$^) | perl $(word 5,$^) >  $@
 
