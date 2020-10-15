@@ -447,6 +447,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           sys.stderr.write( 'ERROR: multiple -uu tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         if len( re.findall( '-w',G[x,'0'] ) ) > 1:
           sys.stderr.write( 'ERROR: multiple -w tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-ww',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -ww tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         for tag,dest,r in re.findall( '-([mnstuw]+)([0-9]+)(r?)', G[x,'0'] ):
           dest = sentnumprefix+dest if len(dest) == 2 else dest
           if   tag=='m' and r=='r': G.equate( dest+'r', 'm', x+'r' )  ## discourse anaphor
@@ -460,9 +462,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif tag=='s':            G.equate( dest+'s', 's', x+'s' )
           elif tag=='u':            G.equate( dest+'s', 'u', x+'s' ) # 'upward' outscoper but not necessarily immediate outscoper
           elif tag=='uu':           G.equate( dest+'s', 'uu', x+'s' ) # ditto
-          if tag=='w':              G.equate( dest+'s', 'W', x )
-          ### TODO no good reason the -w case isn't an elif, is there?
-          ### TODO else warn abt unrecognized tag
+          # as of October 2020 nothing becomes of -w but at least they'll be in the graph
+          elif tag=='w':            G.equate( dest+'s', 'W', x )
+          elif tag=='ww':           G.equate( dest+'s', 'WW', x )
+          else: sys.stderr.write( 'ERROR: unknown tag ' + tag + ' in category ' + G[x,'0'] + '\n' )
         G[x,'0'] = re.sub( '-[mnstuw]+[0-9]+r?', '', G[x,'0'] ) # delete the tags
         ## obtain pred by applying lex rules to word token...
         s = re.sub('-l.','',G[x,'0']) + ':' + G[x,'X'].lower()
