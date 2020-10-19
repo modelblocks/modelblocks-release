@@ -197,7 +197,7 @@ $(RT-SCRIPTS)/merge_tables.py
 	cat $(word 1, $^) | python $(word 2, $^) > $@
 
 # TO SPEC
-%.fmri-bywrd.resmeasures: %.resmeasures
+%.fmri-bywrd.resmeasures: $$(word 1,$$(subst ., ,%)).evmeasures
 	ln -sf $(abspath $(word 1,$^)) $@
 
 # TO SPEC

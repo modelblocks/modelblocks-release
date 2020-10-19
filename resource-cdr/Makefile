@@ -37,7 +37,7 @@
 .SUFFIXES:
 .SECONDEXPANSION:
 
-VPATH += $(RESOURCE-CDR)
+# VPATH += $(RESOURCE-CDR)
 
 ################################################################################
 #
@@ -82,6 +82,9 @@ export PYTHONPATH
 #  Recipes 
 #
 ################################################################################
+
+scripts/%cdrform: $(CDR-SCRIPTS)/$$*cdrform $(CDR-SCRIPTS)/get_prereqs_from_baseform.py $$(shell cat $(CDR-SCRIPTS)/%cdrform | python $(CDR-SCRIPTS)/get_prereqs_from_baseform.py);
+	cp $< $@
 
 bin/regress-cdr: $(CDR-SCRIPTS)/regress-cdr.sh
 	cp $< $@
@@ -186,6 +189,12 @@ $(CDRDIR)/cdr/cdrbayes.py
 %_cdr: %_cdr_outdir/finished.txt;
 
 %.cdr: %.cdr_outdir/finished.txt;
+
+%_prd.resmeasures:  %_predicted.errors
+	cp $(basename $*)_outdir/CDR/preds_$(subst held,test,$(subst expl,dev,$(subst fit,train,$(subst .,,$(suffix $*))))).txt > $@
+
+%_obs.resmeasures:  %_predicted.errors
+	cp $(basename $*)_outdir/CDR/obs_$(subst held,test,$(subst expl,dev,$(subst fit,train,$(subst .,,$(suffix $*))))).txt > $@
 
 #%_ptsignif: $$(DEP-CDR) \
 $$(basename $$(basename $$(basename %))).$$(subst .,,$$(suffix $$(basename $$*))).filt.evmeasures \

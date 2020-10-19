@@ -127,9 +127,15 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 # 	$^  >  $@
 
 
-## generic signif file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>.(<predr>_)*<signif-type>.signif
+## generic signif file: <data>.<fit-part>_<baseline>_(<predr>_)*<regrmodel>.<eval-part>.(<predr>_)*<signif-type>signif
 %signif:  bin/signif-$$(lastword $$(subst _, ,$$(suffix $$*)))  \
 	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(basename $$(basename $$(basename $$*))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)  |  bin  genmodel
+	$^  >  $@  2>  $@.log
+
+%ctsignif:  bin/signif-ct  \
+	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(basename $$(basename $$(basename $$*))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_prd.resmeasures) \
+	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(basename $$(basename $$(basename $$*))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_obs.resmeasures) \
+	    |  bin  genmodel
 	$^  >  $@  2>  $@.log
 
 
