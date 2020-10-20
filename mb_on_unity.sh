@@ -7,7 +7,7 @@ source activate mb
 
 # install compilers/BLAS dependencies (for armadillo), python/scipy (for NN training)
 # python >= 3.5 recommended
-conda install -c conda-forge compilers libblas liblapack arpack superlu mkl python scipy
+conda install -c conda-forge compilers libblas liblapack arpack superlu mkl python scipy pandas
 
 # install pytorch (for NN training) - Unity node 070 has cuda driver 10.1
 conda install pytorch torchvision cudatoolkit=10.1 -c pytorch
