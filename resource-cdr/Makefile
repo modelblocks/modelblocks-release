@@ -191,10 +191,10 @@ $(CDRDIR)/cdr/cdrbayes.py
 %.cdr: %.cdr_outdir/finished.txt;
 
 %_prd.resmeasures:  %_predicted.errors
-	cp $(basename $*)_outdir/CDR/preds_$(subst held,test,$(subst expl,dev,$(subst fit,train,$(subst .,,$(suffix $*))))).txt > $@
+	cp $(basename $*).fitmodel_outdir/CDR/preds_$(subst held,test,$(subst expl,dev,$(subst fit,train,$(subst .,,$(suffix $*))))).txt $@
 
 %_obs.resmeasures:  %_predicted.errors
-	cp $(basename $*)_outdir/CDR/obs_$(subst held,test,$(subst expl,dev,$(subst fit,train,$(subst .,,$(suffix $*))))).txt > $@
+	cp $(basename $*).fitmodel_outdir/CDR/obs_$(subst held,test,$(subst expl,dev,$(subst fit,train,$(subst .,,$(suffix $*))))).txt $@
 
 #%_ptsignif: $$(DEP-CDR) \
 $$(basename $$(basename $$(basename %))).$$(subst .,,$$(suffix $$(basename $$*))).filt.evmeasures \

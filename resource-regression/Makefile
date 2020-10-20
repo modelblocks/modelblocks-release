@@ -49,6 +49,10 @@ VPATH += $(RESOURCE-REGRESSION) $(RESOURCE-LMEFIT) $(RESOURCE-DTSR)
 empty:=
 space:= $(empty) $(empty)
 
+$(REGRESSION-SCRIPTS)/signif-pt.sh: $(REGRESSION-SCRIPTS)/pt.py;
+
+$(REGRESSION-SCRIPTS)/signif-ct.sh: $(REGRESSION-SCRIPTS)/pt.py;
+
 bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 	cp $< $@
 
@@ -115,6 +119,7 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 
 
 ## generic predicted errors file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
+.PRECIOUS: %_predicted.errors
 %_predicted.errors:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
                      genmodel/$$(basename $$*).fitmodel  \
            	     genmodel/$$(basename $$(basename $$*))$$(suffix $$*)_part.prdmeasures \
@@ -128,10 +133,12 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 
 
 ## generic signif file: <data>.<fit-part>_<baseline>_(<predr>_)*<regrmodel>.<eval-part>.(<predr>_)*<signif-type>signif
+.PRECIOUS: %signif
 %signif:  bin/signif-$$(lastword $$(subst _, ,$$(suffix $$*)))  \
 	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(basename $$(basename $$(basename $$*))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)  |  bin  genmodel
 	$^  >  $@  2>  $@.log
 
+.PRECIOUS: %ctsignif
 %ctsignif:  bin/signif-ct  \
 	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(basename $$(basename $$(basename $$*))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_prd.resmeasures) \
 	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(basename $$(basename $$(basename $$*))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_obs.resmeasures) \
