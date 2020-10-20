@@ -441,7 +441,7 @@ endef
 %.all-itemmeasures:  $(RT-SCRIPTS)/evmeas2uniqcols.py  $(RT-SCRIPTS)/filter_cols.py  $(RT-SCRIPTS)/addCols.r  $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
                          $$(patsubst $$(pc),$$(word 1,$$(subst ., ,$$*)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,$$*)),$$(subst ., ,%))) \
 			 $$(word 1, $$(subst ., ,%)).itemmeasures
-	paste -d ' ' $(wordlist 6,$(words $^),$^)  |  python2 $(word 1,$^)  |  python2 $(word 2,$^)  |   $(word 3,$^)  >  $@
+	paste -d ' ' $(wordlist 6,$(words $^),$^)  |  python2 $(word 1,$^)  |  python $(word 2,$^)  |   $(word 3,$^)  >  $@
 #%.core-itemmeasures: $$(patsubst $$(pc),$$(word 1,$$(subst ., ,%)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,%)),$$(subst ., ,%))) 
 #	paste $^  >  $@
 
