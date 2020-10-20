@@ -233,7 +233,7 @@ $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmo
 
 %.unigram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLM-SCRIPTS)/unigram.py $(KENLMMODDIR)/gigaword.1.fw.kenlm %.lineitems \
 $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
-	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+	python2 $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
 
 ## not to spec
 .PRECIOUS: %.kenlm.ngram.itemmeasures
