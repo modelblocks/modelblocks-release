@@ -591,6 +591,7 @@ class WModel {
           if (j == 'f') is >> mfcb >> "\n";
         }
       }
+      cerr << "done with Ws" << endl;
       while ( is.peek()=='E' ) {
         Delimited<char> i;
         Delimited<EVar> e;
@@ -606,12 +607,14 @@ class WModel {
           mmev.try_emplace(e, vec(dv));
         }
       }
+      cerr << "done with Es" << endl;
       while ( is.peek()=='K' ) {
         Delimited<K> k;
         DenseVec dv = DenseVec(X_K_SIZE);
         is >> "K " >> k >> " " >> dv >> "\n";
         mxkv.try_emplace(k, vec(dv));
       }
+      cerr << "done with Ks" << endl;
       while ( is.peek()=='P' ) {
         Delimited<char> i;
         Delimited<CVar> c;
@@ -627,12 +630,14 @@ class WModel {
           mmpv.try_emplace(c, vec(dv));
         }
       }
+      cerr << "done with Ps" << endl;
       while ( is.peek()=='L' ) {
         string l;
         DenseVec dv = DenseVec(M_L_SIZE);
         is >> "L " >> l >> " " >> dv >> "\n";
         mmlv.try_emplace(l, vec(dv));
       }
+      cerr << "done with Ls" << endl;
       while ( is.peek()=='C' ) {
         Delimited<char> i;
         string c;
@@ -651,11 +656,13 @@ class WModel {
           is >> mci[c] >> "\n";
         }
       }
+      cerr << "done with Cs" << endl;
       while ( is.peek()=='R' ) {
         string x;
         is >> "R " >> x >> " ";
         is >> mmi[x] >> "\n";
       }
+      cerr << "done with Rs" << endl;
       while ( is.peek()=='X' ) {
         string x;
         string p;
@@ -664,6 +671,7 @@ class WModel {
         pair<string,string> xppair (x,p);
         mxwp.try_emplace(xppair, wp);
       }
+      cerr << "done with Xs" << endl;
       while ( is.peek()=='M' ) {
         string x;
         string p;
@@ -672,7 +680,7 @@ class WModel {
         pair<string,string> xppair (x,p);
         mxmp.try_emplace(xppair, mp);
       }
-
+      cerr << "done with Ms" << endl;
       // initialize armadillo mat/vecs
       xihwm = xihw;
       xhhwm = xhhw;
@@ -937,6 +945,7 @@ class WModel {
       auto it = wwppmap.find( w_t );
       if ( it == wwppmap.end() ) {
         // generate list of <<lemma, primcat>, rule>
+        cerr << "applying morph rules for word: " << w_t << endl;
         list<pair<pair<string,string>,string>> lxmp = applyMorphRules(w_t);
         // loop over <<lemma, primcat>, rule>
         for ( const auto& xmp : lxmp ) {
@@ -1055,6 +1064,7 @@ class JModel {
     // read in weights, embeddings, and JEOOs
     JModel(istream& is) : zeroCatEmb(13) {
       while ( is.peek()=='J' ) {
+        cerr << "found a J" << endl;
         Delimited<char> c;
         is >> "J " >> c >> " ";
         if (c == 'F') is >> jwf >> "\n";
@@ -1062,6 +1072,7 @@ class JModel {
         if (c == 'S') is >> jws >> "\n";
         if (c == 's') is >> jbs >> "\n";
       }
+     cerr << "loaded J weights" << endl;
       while ( is.peek()=='C' ) {
         Delimited<char> c;
         Delimited<CVar> cv;
@@ -1072,6 +1083,7 @@ class JModel {
         JSYN_SIZE = vtemp.size();
         //is >> mcv.try_emplace(c,SYN_SIZE).first->second >> "\n";
       }
+      cerr << "loaded J Cs" << endl;
       zeroCatEmb=arma::zeros(JSYN_SIZE);
       while ( is.peek()=='K' ) {
         Delimited<char> c;
@@ -1084,6 +1096,7 @@ class JModel {
         JSEM_SIZE = vtemp.size();
         //is >> mkdv.try_emplace(k,SEM_SIZE).first->second >> "\n";
       }
+      cerr << "loaded J Ks" << endl;
       while ( is.peek()=='j' ) {
         Delimited<int> k;
         is >> "j " >> k >> " ";
@@ -1091,6 +1104,7 @@ class JModel {
         mjeooi[mijeoo[k]] = k;
         iNextResponse = k+1; //code review WS this should be handled more elegantly, since inextresponse is legacy
       }
+      cerr << "loaded Jresps" << endl;
       //cout << "finished reading in J model..." << endl;
       jr0 = getResponseIndex( 0, EVar::eNil, 'N', O_I );
       jr1 = getResponseIndex( 1, EVar::eNil, 'N', O_I );

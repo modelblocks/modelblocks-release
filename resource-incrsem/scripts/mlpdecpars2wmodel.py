@@ -420,7 +420,7 @@ def train(use_dev, dev_file, use_gpu,
             dev_seq_acc = 0
 
         eprint("Epoch {:04d} | AvgTrainLoss {:.4f} | TrainSeqAcc {:.4f} | DevLoss {:.4f} | DevSeqAcc {:.4f} | Time {:.4f}".
-               format(epoch, total_train_loss / (input_lens.shape[0] // batch_size_x), 100 * (total_seq_correct / total_seq_ex),
+               format(epoch, total_train_loss / ((input_lens.shape[0] // batch_size_x)+1), 100 * (total_seq_correct / total_seq_ex),
                       total_dev_loss, dev_seq_acc, time.time() - c0))
 
         if epoch == num_epochs_x:
@@ -489,7 +489,7 @@ def train(use_dev, dev_file, use_gpu,
 
         eprint(
             "Epoch {:04d} | AvgTrainLoss {:.4f} | TrainAcc {:.4f} | DevLoss {:.4f} | DevAcc {:.4f} | Time {:.4f}".
-            format(epoch, total_train_loss / (input_lens.shape[0] // batch_size_m), 100 * (total_correct / total_ex),
+            format(epoch, total_train_loss / ((input_lens.shape[0] // batch_size_m)+1), 100 * (total_correct / total_ex),
                    total_dev_loss, dev_acc, time.time() - c0))
 
         if epoch == num_epochs_m:
@@ -604,12 +604,12 @@ def main(config):
         print("X " + k[0] + " " + k[1], end=" [")
         for v in list(lchar2ekpsk[k])[:-1]:
             print(v[0], v[1], v[2], sep="|", end=" ")
-        print(list(lchar2ekpsk[k])[-1][0], list(lchar2ekpsk[k])[-1][1], list(lchar2ekpsk[k])[-1][2], sep="/", end="]\n")
+        print(list(lchar2ekpsk[k])[-1][0], list(lchar2ekpsk[k])[-1][1], list(lchar2ekpsk[k])[-1][2], sep="|", end="]\n")
     for k in lchar2ekpsk:
         print("M " + k[0] + " " + k[1], end=" [")
         for v in list(lchar2ekpsk[k])[:-1]:
             print(v[0], v[2], v[3], sep="|", end=" ")
-        print(list(lchar2ekpsk[k])[-1][0], list(lchar2ekpsk[k])[-1][2], list(lchar2ekpsk[k])[-1][3], sep="/", end="]\n")
+        print(list(lchar2ekpsk[k])[-1][0], list(lchar2ekpsk[k])[-1][2], list(lchar2ekpsk[k])[-1][3], sep="|", end="]\n")
 
 
 if __name__ == "__main__":

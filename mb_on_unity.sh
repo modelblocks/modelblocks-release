@@ -12,6 +12,9 @@ conda install -c conda-forge compilers libblas liblapack arpack superlu mkl pyth
 # install pytorch (for NN training) - Unity node 070 has cuda driver 10.1
 conda install pytorch torchvision cudatoolkit=10.1 -c pytorch
 
+# install up-to-date compilers that can use c++17
+conda install compilers
+
 # download armadillo from source
 wget http://sourceforge.net/projects/arma/files/armadillo-9.900.3.tar.xz
 tar -xJf armadillo-9.900.3.tar.xz

@@ -228,13 +228,20 @@ int main ( int nArgs, char* argv[] ) {
         while ( fin && EOF!=fin.peek() ) {
           if      ( fin.peek()=='E' ) matEmutable = EMat( fin );
           else if ( fin.peek()=='O' ) funcOmutable = OFunc( fin );
-          else if ( fin.peek()=='N' ) modNmutable = NModel( fin );
-          else if ( fin.peek()=='F' ) modFmutable = FModel( fin );
-          else if ( fin.peek()=='P' ) modPmutable = PModel( fin );
-          else if ( fin.peek()=='W' ) modWmutable = WModel( fin );  //fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
-          else if ( fin.peek()=='J' ) modJmutable = JModel( fin );
-          else if ( fin.peek()=='A' ) modAmutable = AModel( fin );
-          else if ( fin.peek()=='B' ) modBmutable = BModel( fin );
+          //else if ( fin.peek()=='N' ) modNmutable = NModel( fin );
+          else if ( fin.peek()=='N' ) { modNmutable = NModel( fin ); cerr << "loaded N model" << endl; }
+          //else if ( fin.peek()=='F' )  modFmutable = FModel( fin ); 
+          else if ( fin.peek()=='F' ) { modFmutable = FModel( fin ); cerr << "loaded F model" << endl; }
+          //else if ( fin.peek()=='P' ) modPmutable = PModel( fin );
+          else if ( fin.peek()=='P' ) { modPmutable = PModel( fin ); cerr << "loaded P model" << endl; }
+          //else if ( fin.peek()=='W' ) modWmutable = WModel( fin );  //fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
+          else if ( fin.peek()=='W' ) { modWmutable = WModel( fin ); cerr << "loaded W model" << endl; } 
+          //else if ( fin.peek()=='J' ) modJmutable = JModel( fin );
+          else if ( fin.peek()=='J' ) { modJmutable = JModel( fin ); cerr << "loaded J model" << endl; }
+          //else if ( fin.peek()=='A' ) modAmutable = AModel( fin );
+          else if ( fin.peek()=='A' ) { modAmutable = AModel( fin ); cerr << "loaded A model" << endl; }
+          //else if ( fin.peek()=='B' ) modBmutable = BModel( fin );
+          else if ( fin.peek()=='B' ) { modBmutable = BModel( fin ); cerr << "loaded B model" << endl; }
           else {
             Delimited<string> sOffSpec;
             fin >> sOffSpec >> "\n";
@@ -454,7 +461,8 @@ int main ( int nArgs, char* argv[] ) {
               double numerator = nresponses(1) / nresponses(0) ;
               double nprob = numerator / ndenom;
 
-              if ( VERBOSE>1 ) cout << "    N  antprtrm: " << pbeAnt->getHidd().getPrtrm() << " corefOn: " << corefON << "t-tAnt: " << t-tAnt <<  "qtdec1: " << q_tdec1 << " ablate_unary: " << ABLATE_UNARY << " : 1 = " << numerator << "/" << ndenom << "=" << nprob << endl;
+              //if ( VERBOSE>1 ) cout << "    N  antprtrm: " << pbeAnt->getHidd().getPrtrm() << " corefOn: " << corefON << " t-tAnt: " << t-tAnt <<  " qtdec1: " << q_tdec1 << " ablate_unary: " << ABLATE_UNARY << " : 1 = " << numerator << "/" << ndenom << "=" << nprob << endl;
+              if ( VERBOSE>1 ) cout << "    N  npv: " << npv << " : 1 = " << numerator << "/" << ndenom << "=" << nprob << endl;
               //NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1, ABLATE_UNARY );
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
                 FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );
@@ -492,7 +500,8 @@ int main ( int nArgs, char* argv[] ) {
 //                      if( modF.getResponseIndex(f,e_p_t,k_p_t)==0 ) cerr<<"ERROR: unable to find fresponse "<<f<<"&"<<e_p_t<<"&"<<k_p_t<<endl;
                       if( modF.getResponseIndex(f,e_p_t,k_p_t) == uint(-1) ) continue;
                       double probFork = fresponses( modF.getResponseIndex(f,e_p_t,k_p_t) );
-                      if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << probFork << endl;
+                      //if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << probFork << endl;
+                      if ( VERBOSE>1 ) cout << "      F " << lfpredictors << " : " << f << " " << e_p_t << " " << k_p_t << " = " << probFork << endl;
 
                       // Thread heartbeat (to diagnose thread death)...
                       if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
