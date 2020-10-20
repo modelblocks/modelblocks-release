@@ -140,9 +140,9 @@ naturalstoriesfmri%.itemmeasures: naturalstories%.itemmeasures
 	cp $(word 1, $^) $@
 
 %naturalstoriesfmri.evmeasures: $$(DEP-NATSTORIES) $$(DEP-NATSTORIESFMRI) $(NATSTORFMRIDIR)/naturalstoriesFMRI.evmeasures $(NATSTORIESFMRI-SCRIPTS)/preprocess_natstor_fmri.py \
-$(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(NATSTORIESFMRI-SCRIPTS)/filter_docs.py $(CONFIGDIR)/user-naturalstories-fmri-directory.txt $(NATSTORIES-SCRIPTS)/get_maxstimtime.py \
-%naturalstories.t.itemmeasures $(NATSTORDIR)/audio/*.wav | %
-	cat $(word 1, $^) | python $(word 2, $^) $(NATSTOR-STORIES) sampleid | python $(word 3, $^) $(wordlist 8, $(words $^), $^) | python $(word 4, $^) | python $(word 6, $^) $(word 7, $^) > $@
+$(NATSTORIESFMRI-SCRIPTS)/filter_docs.py $(CONFIGDIR)/user-naturalstories-fmri-directory.txt $(NATSTORIES-SCRIPTS)/get_maxstimtime.py \
+%naturalstories.t.itemmeasures | %
+	cat $(word 1, $^) | python $(word 2, $^) $(NATSTOR-STORIES) sampleid | python $(word 3, $^) | python $(word 5, $^) $(word 6, $^) > $@
 
 %.soundpower.prdmeasures: $$(DEP-NATSTORIES) %.evmeasures $(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(CONFIGDIR)/user-naturalstories-directory.txt $(NATSTORDIR)/audio/*.wav
 	cat $(word 1, $^) | python $(word 2, $^) $(wordlist 4, $(words $^), $^) -I 0.100 > $@
@@ -252,9 +252,9 @@ naturalstoriesfmri_Hip%.itemmeasures: naturalstories%.itemmeasures
 	cp $(word 1, $^) $@
 
 %naturalstoriesfmriHipWide.evmeasures: $$(DEP-NATSTORIES) $$(DEP-NATSTORIESFMRI) $(NATSTORFMRIDIR)/naturalstories_fmriHIP.evmeasures $(NATSTORIESFMRI-SCRIPTS)/preprocess_natstor_fmri.py \
-$(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(NATSTORIESFMRI-SCRIPTS)/filter_docs.py $(CONFIGDIR)/user-naturalstories-fmri-directory.txt $(NATSTORIES-SCRIPTS)/get_maxstimtime.py \
-%naturalstories.t.itemmeasures $(NATSTORDIR)/audio/*.wav | %
-	cat $(word 1, $^) | python $(word 2, $^) $(NATSTOR-STORIES) sampleid | python $(word 3, $^) $(wordlist 8, $(words $^), $^) | python $(word 4, $^) | python $(word 6, $^) $(word 7, $^) > $@
+$(NATSTORIESFMRI-SCRIPTS)/filter_docs.py $(CONFIGDIR)/user-naturalstories-fmri-directory.txt $(NATSTORIES-SCRIPTS)/get_maxstimtime.py \
+%naturalstories.t.itemmeasures | %
+	cat $(word 1, $^) | python $(word 2, $^) $(NATSTOR-STORIES) sampleid | python $(word 3, $^) | python $(word 5, $^) $(word 6, $^) > $@
 
 %naturalstoriesfmri_Hip.evmeasures: %naturalstoriesfmriHipWide.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
 	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k "[LR]Hip.*" | python $(word 3, $^) - > $@
