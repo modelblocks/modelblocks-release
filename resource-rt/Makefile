@@ -342,11 +342,11 @@ $(RT-SCRIPTS)/filter_cols.py
 	cat $< | awk -f $(word 2, $^) -v cols=word:totsurp | grep -v '!ARTICLE' > $@
 
 # Merges surprisal columns from a parser trained on multiple grammars
-%.merged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*))_parsed.tokmeasures)
+%.merged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(notdir $$(subst GRAMMAR,$$(grammar),$$(basename $$*)))_parsed.tokmeasures)
 	cat $(word 2, $^) | sed '1s/totsurp/$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))surp/' | $(foreach grammar,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))), $(MERGESURP)) > $@
 
 # Merges surprisal columns from multiple parsers trained on a grammar
-%.parsermerged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach parser,$$(subst -_+,-+,$$(subst +,_+,$$(subst _, ,$$(subst .,,$$(suffix $$*))))),genmodel/$$(subst PARSER,$$(parser),$$(basename $$*))_parsed.tokmeasures)
+%.parsermerged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach parser,$$(subst -_+,-+,$$(subst +,_+,$$(subst _, ,$$(subst .,,$$(suffix $$*))))),genmodel/$$(notdir $$(subst PARSER,$$(parser),$$(basename $$*)))_parsed.tokmeasures)
 	cat $(word 2, $^) | sed '1s/totsurp/$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))surp/' | $(foreach parser,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))), $(MERGEPARSERSURP)) > $@
 
 # %.tokmeasures with a time column, requires %.time.tokmeasures with timestamps for tokens in stimulus
@@ -439,7 +439,7 @@ endef
 	cat $< | python2 $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 > $@
 
 %.all-itemmeasures:  $(RT-SCRIPTS)/evmeas2uniqcols.py  $(RT-SCRIPTS)/filter_cols.py  $(RT-SCRIPTS)/addCols.r  $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
-                         $$(patsubst $$(pc),$$(word 1,$$(subst ., ,$$*)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,$$*)),$$(subst ., ,%))) \
+                         $$(patsubst $$(pc),$$(notdir $$(word 1,$$(subst ., ,$$*))).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,$$*)),$$(subst ., ,%))) \
 			 $$(word 1, $$(subst ., ,%)).itemmeasures
 	paste -d ' ' $(wordlist 6,$(words $^),$^)  |  python2 $(word 1,$^)  |  python $(word 2,$^)  |   $(word 3,$^)  >  $@
 #%.core-itemmeasures: $$(patsubst $$(pc),$$(word 1,$$(subst ., ,%)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,%)),$$(subst ., ,%))) 
