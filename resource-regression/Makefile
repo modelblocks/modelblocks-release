@@ -49,9 +49,9 @@ VPATH += $(RESOURCE-REGRESSION) $(RESOURCE-LMEFIT) $(RESOURCE-DTSR)
 empty:=
 space:= $(empty) $(empty)
 
-$(REGRESSION-SCRIPTS)/signif-pt.sh: $(REGRESSION-SCRIPTS)/pt.py;
+#$(REGRESSION-SCRIPTS)/signif-pt.sh: $(REGRESSION-SCRIPTS)/pt.py;
 
-$(REGRESSION-SCRIPTS)/signif-ct.sh: $(REGRESSION-SCRIPTS)/pt.py;
+#$(REGRESSION-SCRIPTS)/signif-ct.sh: $(REGRESSION-SCRIPTS)/pt.py;
 
 bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 	cp $< $@
