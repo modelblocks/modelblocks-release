@@ -7,6 +7,7 @@ if __name__ == '__main__':
     argparser.add_argument('data', type=str, help='Path to data table')
     argparser.add_argument('-s', '--step', type=float, default=2.0, help='Step size (in seconds) between fMRI samples')
     argparser.add_argument('-S', '--start', type=float, default=0.0, help='Start time (time of first scan)')
+    argparser.add_argument('-g', '--grouping_columns', nargs='+', default=['docid'], help='Name(s) of column(s) that define(s) unique time series.')
     args = argparser.parse_args()
 
     df = pd.read_csv(args.data,sep=' ',skipinitialspace=True)
@@ -23,13 +24,17 @@ if __name__ == '__main__':
 
     cols = [x for x in df.select_dtypes([np.number]).columns if x != 'time']
 
-    gb = df.groupby('docid')
+    gb = df.groupby(args.grouping_columns)
     series = [x[1] for x in gb]
     series_names = [x[0] for x in gb]
 
     out = []
     for i in range(len(series)):
         df_cur = series[i]
+        if 'duration' in df_cur.columns:
+            duration = df_cur['duration']
+        else:
+            duration = None
         X = df_cur[cols]
         impulse_times = df_cur.time.values
         max_response_time = int(np.ceil(df_cur.time.max()))
@@ -40,17 +45,20 @@ if __name__ == '__main__':
         G_mask = D >= 0
         G = hrf(D)
         G = np.where(G_mask, G, 0)
+        if duration is not None:
+            X = X.multiply(duration, axis=0)
         X_conv = np.dot(G, X)
         X_conv = pd.DataFrame(X_conv, columns=cols)
         X_conv['time'] = response_times
-        X_conv['docid'] = series_names[i]
+        for col, val in zip(args.grouping_columns, series_names[i]):
+            X_conv[col] = val
         out.append(X_conv)
 
     out = pd.concat(out, axis=0)
     out.reset_index(drop=True, inplace=True)
     out['sampleid'] = 1
-    out.sampleid = out.groupby(['docid']).sampleid.cumsum()
-    sampleid_format = '{0:05d}'
-    out.sampleid = out.docid.astype('str').str.cat(out.sampleid.apply(sampleid_format.format), sep='-')
+    out.sampleid = out.groupby(args.grouping_columns).sampleid.cumsum().apply('{0:05d}'.format)
+    for col in args.grouping_columns[::-1]:
+        out.sampleid = out[col].astype('str').str.cat(out.sampleid, sep='-')
     out.to_csv(sys.stdout, ' ', index=False, na_rep='NaN')
 
