@@ -288,10 +288,10 @@ void calcContext ( Tree<L>& tr,
     const HVec& hvAnt = validIntra == true ? annot2kset[annot] : hvTop;
     bool nullAnt = (hvAnt.empty()) ? true : false;
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
-    if (annot != "")  {
-      annot2kset[currentloc] = hvAnt;
-    }
-    annot2kset[currentloc] = HVec(k, matE, funcO); //add current k
+    //if (annot != "")  {
+    //  annot2kset[currentloc] = hvAnt;
+   // }
+    //annot2kset[currentloc] = HVec(k, matE, funcO); //add current k //TODO don't overwrite here, and also use preterminal, not k
     annot2tdisc[currentloc] = tDisc; //map current sent,word index to discourse word counter
     W histword(""); //histword will track most recent observed word whose k is unk. will be stored for correct antecedent only.
     if (not isFailTree) {
@@ -378,6 +378,7 @@ void calcContext ( Tree<L>& tr,
       }
 #endif
       q = StoreState( q, f, REDUCED_PRTRM_CONTEXTS, hvAnt, eF.c_str(), k, getCat(removeLink(l)), matE, funcO );
+      cout << "qPrtrm: " << q << endl;
       aPretrm = q.back().apex().back();
     } else {
       aPretrm = Sign();
@@ -390,6 +391,7 @@ void calcContext ( Tree<L>& tr,
     }
     //cout << "saving histword: " << histword << " for word: " << removeLink(tr.front()) << endl;
     antecedentCandidates.emplace_back(trip<Sign,W,K>(aPretrm, histword, k)); //append current prtrm to candidate list for future coref decisions 
+    annot2kset[currentloc] = aPretrm.getHVec();
   }
 
   // At unary identity nonpreterminal...
