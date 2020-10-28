@@ -3,7 +3,6 @@ import re
 import numpy as np
 import pandas as pd
 import librosa
-from mvpa2.misc.data_generators import double_gamma_hrf as hrf
 import argparse
 
 argparser = argparse.ArgumentParser('''
@@ -38,9 +37,8 @@ max_len = 0
 for i in range(len(args.files)):
     path = args.files[i]
     n = ix2name[int(name.match(path).group(1)) - 1]
-    sys.stderr.write('\rProcessing audio file "%s" (%d/%d)        ' %(n, i + 1, 10))
+    sys.stderr.write('\rProcessing audio file "%s" (%d/%d)        ' %(n, i + 1, len(args.files)))
     y, sr = librosa.load(path)
-    support = np.arange(0, len(y), 50)
     rmse = librosa.feature.rms(y, hop_length=50)
     rmse = rmse[0]
     power[n] = rmse
@@ -59,8 +57,11 @@ if args.interval:
     df = df[keys].drop_duplicates()
     intervals = []
     for docid in ix2name:
-        max_time = float(len(power[docid])) / 441.
-        intervals_cur = pd.DataFrame({'time': np.arange(0, max_time, args.interval)})
+        ix = (np.arange(len(power[docid])) / (441. * args.interval)).astype(int)
+        splits = np.where(ix[1:] != ix[:-1])[0] + 1
+        time = splits.astype(float) / 441.
+        chunks = np.array([x.mean() for x in np.split(power[docid], splits)][1:])
+        intervals_cur = pd.DataFrame({'time': time, 'soundPower%sms' % int(args.interval * 1000): chunks})
         intervals_cur['docid'] = docid
         intervals.append(intervals_cur)
     intervals = pd.concat(intervals, axis=0)
@@ -72,22 +73,9 @@ power_ix = np.array(power_ix)
 docid = df.docid
 docid_ix = df.docid.map(docid2ix)
 
-# Instantaneous sound power
-soundPower = np.zeros(power_ix.shape)
-
-sys.stderr.write('Extracting instantaneous sound power values...\n')
-for i in range(power_ix.shape[0]):
-    if docid[i] in power:
-        if power_ix[i] < len(power[docid[i]]):
-            soundPower[i] = power[docid[i]][power_ix[i]]
-
-if args.interval:
-    df['soundPower%sms' % int(args.interval * 1000)] = soundPower
-else:
-    df['soundPowerInstantaneousAtWord'] = soundPower
-
 if args.convolve:
     # HRF convolved sound power
+    from mvpa2.misc.data_generators import double_gamma_hrf as hrf
     power_padded = []
     tau_padded = []
     for docid in ix2docid:
