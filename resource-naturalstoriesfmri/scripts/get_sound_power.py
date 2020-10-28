@@ -39,7 +39,11 @@ for i in range(len(args.files)):
     n = ix2name[int(name.match(path).group(1)) - 1]
     sys.stderr.write('\rProcessing audio file "%s" (%d/%d)        ' %(n, i + 1, len(args.files)))
     y, sr = librosa.load(path)
-    rmse = librosa.feature.rms(y, hop_length=50)
+    # Newer versions of librosa (e.g., 0.7.1) use "rms" rather than "rmse"
+    if hasattr(librosa.feature, 'rms'):
+        rmse = librosa.feature.rms(y, hop_length=50)
+    else:
+        rmse = librosa.feature.rmse(y, hop_length=50)
     rmse = rmse[0]
     power[n] = rmse
     max_len = max(max_len, len(rmse))
