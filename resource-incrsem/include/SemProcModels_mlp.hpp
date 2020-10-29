@@ -294,6 +294,7 @@ class FModel {
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> KDenseVec;
   uint FSEM_SIZE = 20; 
   uint FSYN_SIZE = 10;
+  uint FANT_SIZE = 10;
   uint FFULL_WIDTH = 13;
   private:
 
@@ -349,10 +350,18 @@ class FModel {
         DelimitedVector<psX, double, psComma, psX> vtemp;
         is >> "K " >> c >> " " >> k >> " ";
         is >> vtemp >> "\n";
-        if (c == 'B') mkbdv.try_emplace(k, vtemp);
-        else if (c == 'F') mkfdv.try_emplace(k, vtemp);
-        else if (c == 'A') mkadv.try_emplace(k, vtemp);
-        FSEM_SIZE=vtemp.size();
+        if (c == 'B') { 
+          mkbdv.try_emplace(k, vtemp);
+          FSEM_SIZE=vtemp.size();
+        }
+        else if (c == 'F') { 
+          mkfdv.try_emplace(k, vtemp);
+          FSEM_SIZE=vtemp.size();
+        }
+        else if (c == 'A') {
+          mkadv.try_emplace(k, vtemp);
+          FANT_SIZE=vtemp.size();
+        }
       }
       while ( is.peek()=='f' ) {
         unsigned int i;
@@ -364,11 +373,10 @@ class FModel {
       fwsm = fws;
       fbfv = fbf;
       fbsv = fbs;
-      FFULL_WIDTH = 8 + 3*FSEM_SIZE + FSYN_SIZE;
+      cerr << "FSEM: " << FSEM_SIZE << " FSYN: " << FSYN_SIZE << " FANT: " << FANT_SIZE << endl;
+      FFULL_WIDTH = 8 + 2*FSEM_SIZE + FSYN_SIZE + FANT_SIZE;
       fwfm.reshape(fwf.size()/(FFULL_WIDTH), FFULL_WIDTH);
-      //fwfm.reshape(fwf.size()/(8 + 3*FSEM_SIZE + FSYN_SIZE), 8 + 3*FSEM_SIZE + FSYN_SIZE);
       fwsm.reshape(fws.size()/(fwf.size()/(FFULL_WIDTH)), (fwf.size()/(FFULL_WIDTH)));
-      //fwsm.reshape(fws.size()/(fwf.size()/(8 + 3*FSEM_SIZE + FSYN_SIZE)), (fwf.size()/(8 + 3*FSEM_SIZE + FSYN_SIZE)));
     }
 
     const FEK& getFEK( unsigned int i ) const {
@@ -393,8 +401,9 @@ class FModel {
 //    const KDenseVec getKVecEmbed( HVec hv, Delimited<char> c ) const {
 //      KDenseVec KVecEmbed = KDenseVec(arma::zeros(FSEM_SIZE));
     const vec getKVecEmbed( HVec hv, Delimited<char> c ) const {
-      vec KVecEmbed = arma::zeros(FSEM_SIZE);
+      vec KVecEmbed;// = arma::zeros(FSEM_SIZE);
       if (c == 'B') {
+        KVecEmbed = arma::zeros(FSEM_SIZE);
         for ( auto& kV : hv.at(0) ) {
           if ( kV == K::kTop) {
             KVecEmbed += arma::ones(FSEM_SIZE);
@@ -409,6 +418,7 @@ class FModel {
         }
       }
       else if (c == 'F') {
+        KVecEmbed = arma::zeros(FSEM_SIZE);
         for ( auto& kV : hv.at(0) ) {
           if ( kV == K::kTop) {
             KVecEmbed += arma::ones(FSEM_SIZE);
@@ -423,9 +433,10 @@ class FModel {
         }
       }
       else if (c == 'A') {
+        KVecEmbed = arma::zeros(FANT_SIZE);
         for ( auto& kV : hv.at(0) ) {
           if ( kV == K::kTop) {
-            KVecEmbed += arma::ones(FSEM_SIZE);
+            KVecEmbed += arma::ones(FANT_SIZE);
             continue;
           }
           auto it = mkadv.find( kV );
@@ -467,8 +478,8 @@ class FModel {
 
 // populate predictor vector
       arma::vec flogresponses = join_cols(join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), hvAEmb), arma::zeros(8));
-      if (nullA) flogresponses(3*FSEM_SIZE + FSYN_SIZE + 1) = 1;
-      flogresponses(3*FSEM_SIZE + FSYN_SIZE + 1 + d) = 1;
+      if (nullA) flogresponses(2*FSEM_SIZE + FSYN_SIZE + FANT_SIZE + 1) = 1;
+      flogresponses(2*FSEM_SIZE + FSYN_SIZE + FANT_SIZE + 1 + d) = 1;
 
 //      for(unsigned int i = 0; i < catBEmb.n_elem; i++){
 //        flogresponses(i) = catBEmb(i);
@@ -487,7 +498,14 @@ class FModel {
 
 // implementation of MLP
 //      cout << "trying f model matmul..." << endl;
+      cerr << "size of flogresponses: " << flogresponses.size() << endl;
+      cerr << "first weight matrix rows/cols: " << fwfm.n_rows << "/" << fwfm.n_cols << endl;
+      cerr << "second weight matrix rows/cols: " << fwsm.n_rows << "/" << fwsm.n_cols << endl;
+      cerr << "size of ffull_width: " << FFULL_WIDTH << endl;
+      cerr << "size of fbfv: " << fbfv.size() << endl;
+      cerr << "size of fbsv: " << fbsv.size() << endl;
       arma::vec flogscores = fwsm * relu(fwfm*flogresponses + fbfv) + fbsv;
+      cerr << "finished calculating an flogscores" << endl;
       arma::vec fscores = arma::exp(flogscores);
       double fnorm = arma::accu(fscores);
       return fscores/fnorm;
