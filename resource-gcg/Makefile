@@ -178,7 +178,7 @@ endef
 	cat $<  |  perl $(word 2,$^) -t >  $@
 
 #### apply semantic left-corner transform
-%.semlctrans.linetrees: %.linetrees ../incrsem/scripts/semlctrans.pl 
+%.semlctrans.linetrees: %.linetrees ../incrsem/scripts/semlctrans.pl
 	cat $< | perl $(word 2,$^) > $@
 
 #### lengthen trees to full gcg derivation...
@@ -187,7 +187,7 @@ endef
 
 #### Remove traces
 %.nt.linetrees: %.linetrees
-	cat $^ | sed 's/(-DFL- \+E_S) *//g;s/  \+/ /g;s/\t/ /g;s/\([^ ]\)(/\1 (/g;s/_//g;s/-UNDERSCORE-//g;s/([^ ()]\+ \+\*[^ ()]*)//g;s/( *-NONE-[^ ()]\+ *[^ ()]* *)//g;s/([^ ()]\+ )//g;s/ )/)/g;s/( /(/g;s/  \+/ /g;' | awk '!/^\s*\(CODE/' > $@ 
+	cat $^ | sed 's/(-DFL- \+E_S) *//g;s/  \+/ /g;s/\t/ /g;s/\([^ ]\)(/\1 (/g;s/_//g;s/-UNDERSCORE-//g;s/([^ ()]\+ \+\*[^ ()]*)//g;s/( *-NONE-[^ ()]\+ *[^ ()]* *)//g;s/([^ ()]\+ )//g;s/ )/)/g;s/( /(/g;s/  \+/ /g;' | awk '!/^\s*\(CODE/' > $@
 
 #### Remove subcategorization information (only from preterminals)
 %.nounary.nosubcat.linetrees: %.nounary.linetrees
@@ -212,7 +212,7 @@ endef
 	cat $<  |  perl $(word 2,$^)  >  $@
 #### indentation formats for annotation...
 %.fromtoktrees.annot-syn:  %.toktrees
-	cat $<  |  perl -pe 's/-[mnstuw][0-9]+r?//g'  >  $@
+	cat $<  |  perl -pe 's/-[mnstuw]+[0-9]+r?//g'  >  $@
 %.fromtoktrees.annot-sem:  %.toktrees  $(GCG-SCRIPTS)/dedent.perl  $(GCG-SCRIPTS)/bare-ends.perl  $(GCG-SCRIPTS)/yoink-word-rightward.perl  $(GCG-SCRIPTS)/nathans-numberer.perl
 	cat $(word 1,$^)  |  perl $(word 2,$^) | perl $(word 3,$^) | perl $(word 4,$^) | perl $(word 5,$^) >  $@
 
@@ -240,7 +240,7 @@ endef
 # %.discgraphs.pdf:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discgraphspdf.py
 # 	cat $<  |  python $(word 2,$^)  |  dot -Tpdf  >  $@
 
-#### obtain tex drawing of discgraph 
+#### obtain tex drawing of discgraph
 %.discgraphs.tex:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discgraphstex.d  $(GCG-SCRIPTS)/discgraphs2discgraphstex.py
 	cat $<  |  python $(word 3,$^)  >  $@
 
@@ -264,6 +264,9 @@ endef
 %.autoinduced.discgraphs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py
 	cat $<  |  python $(word 3,$^) -g  |  grep 'GRAPH:'  |  perl -pe 's/ *GRAPH: *//'  >  $@
 
+#### obtain discgraphs after scope induction & assorted normalization, ready to translate to discexprs
+%.autonormed.discgraphs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py
+	cat $<  |  python $(word 3,$^) -n  |  grep 'GRAPH:'  |  perl -pe 's/ *GRAPH: *//'  >  $@
 
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
 .PRECIOUS: %.refconts
