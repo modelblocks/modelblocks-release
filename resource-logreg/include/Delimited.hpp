@@ -40,6 +40,7 @@ char psSemi[] = ";";
 char psEquals[] = "=";
 char psColon[] = ":";
 char psSlash[] = "/";
+char psPipe[] = "|";
 char psLine[] = "\n";
 
 ////////////////////////////////////////////////////////////////////////////////

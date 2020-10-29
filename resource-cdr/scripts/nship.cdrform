@@ -1,0 +1,38 @@
+[data]
+X_train = genmodel/naturalstoriesfmri_Hip.soundpower.prdmeasures
+X_dev = genmodel/naturalstoriesfmri_Hip.soundpower.prdmeasures
+X_test = genmodel/naturalstoriesfmri_Hip.soundpower.prdmeasures
+series_ids = subject docid fROI
+split_ids = splitVal15
+modulus = 4
+history_length = 256
+filters = time < maxstimtime
+
+[dtsr_settings]
+network_type = bayes
+declare_priors = True
+irf_param_prior_sd = 1
+n_samples = 1
+n_iter = 100000
+optim = Nadam
+epsilon=0.01
+optim_epsilon=1.0
+learning_rate = .001
+ema_decay = 0.999
+minibatch_size = 1024
+eval_minibatch_size = 100000
+log_freq = 100
+save_freq = 100
+plot_n_time_units = 30
+plot_n_time_points = 1000
+
+[newpred_rangf]
+rangf = fROI
+
+[impulse_to_irf]
+default = HRFDoubleGamma2(irf_id=HRF)
+
+[model_CDR_BASELINE]
+formula = BOLD ~ s(tr) + C(rate + s(soundPower100ms) + endofsentence + s(pausedur) + s(unigramsurp) + s(fwprob5surp) + s(totsurp), HRFDoubleGamma2(irf_id=HRF)) + (s(tr) + C(rate + s(soundPower100ms) + endofsentence + s(pausedur) + s(unigramsurp) + s(fwprob5surp) + s(totsurp), HRFDoubleGamma2(irf_id=HRF, ran=T)) | fROI) + (1 | subject)
+
+

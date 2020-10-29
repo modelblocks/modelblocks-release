@@ -96,7 +96,7 @@ endif
 #### c++ executables  --  NOTE: $< must precede -l's on ubuntu g++
 .PRECIOUS: $(BIN)/%
 $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user-cflags.txt  |  $(BIN)  $(INCLUDE)
-	g++ -I/usr/include/libxml2/ -I$(word 2,$|) -I$(SRC) -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 3,$^)` -fpermissive -std=c++17 $< -lm -larmadillo -lpthread -o $@
+	g++ -L$(CONDA_PREFIX)/lib -L$(CONDA_PREFIX)/lib64 -I/usr/include/libxml2/ -I$(word 2,$|) -I$(SRC) -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 3,$^)` -fpermissive -std=c++17 $< -lm -larmadillo -Wl,-rpath-link=$(CONDA_PREFIX)/lib -lpthread -o $@
 
 ################################################################################
 #
@@ -430,20 +430,22 @@ endef
               $(INCRSEM-SCRIPTS)/undersample_nmodel_noncorefs.py \
               $(INCRSEM-SCRIPTS)/mlpdecpars2nmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))n.ini
-	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 $(word 2,$^)  | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
+	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 $(word 2,$^) $(word 4,$^) | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
 .PRECIOUS: %_fmlpmodel
 %_fmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py \
               $(INCRSEM-SCRIPTS)/mlpdecpars2fmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini
-	cat $<  |  grep '^F'  |  sed 's/^F//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+	cat $<  |  grep '^F'  |  sed 's/^F //'  |  python $(word 2,$^) | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
 .PRECIOUS: %_pmlpmodel
 %_pmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^P'  |  python3 $(word 2,$^)  >  $@
 .PRECIOUS: %_wmlpmodel
 %_wmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
-              $(INCRSEM-SCRIPTS)/relfreq.py
-	cat $<  |  grep '^W'  |  python3 $(word 2,$^)  >  $@
+              $(INCRSEM-SCRIPTS)/mlpdecpars2wmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))w.ini
+	cat $<  |  grep '^W'  |  sed 's/^W //'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
 .PRECIOUS: %_jmlpmodel
 %_jmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/mlpdecpars2jmodel.py  \

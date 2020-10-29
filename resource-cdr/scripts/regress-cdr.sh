@@ -21,8 +21,6 @@ cat $3 | python3 ../resource-cdr/scripts/baseform_to_config.py $1 $2 $outdir $pr
 
 cdr_dir=$(cat ../config/user-cdr-directory.txt)
 
-echo $cdr_dir
-
 export PYTHONPATH=$PYTHONPATH:$cdr_dir
 
 python3 -m cdr.bin.train $outdir/config.ini

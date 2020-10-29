@@ -157,8 +157,8 @@ fMRICoreEvmeasures:
     kwargs:
       innerdelim: .
 endef
-.PRECIOUS: %.hrf.itemmeasures
-%.hrf.itemmeasures: %.t.itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py
+.PRECIOUS: %.hrf.all-itemmeasures
+%.hrf.all-itemmeasures: %.t.all-itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py
 	python $(word 2, $^) $(word 1, $^) > $@
 
 %.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py
@@ -170,6 +170,11 @@ endef
 
 .PRECIOUS: %.hrf.core.evmeasures
 %.hrf.core.evmeasures : %.hrf.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
+$(RT-SCRIPTS)/merge_tables.py
+	cat $< | python $(word 3, $^) $< $(word 2, $^) sampleid > $@
+
+.PRECIOUS: %.hrf.prdmeasures
+%.hrf.prdmeasures : %.hrf.all-itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
 	cat $< | python $(word 3, $^) $< $(word 2, $^) sampleid > $@
 
@@ -192,7 +197,7 @@ $(RT-SCRIPTS)/merge_tables.py
 	cat $(word 1, $^) | python $(word 2, $^) > $@
 
 # TO SPEC
-%.fmri-bywrd.resmeasures: %.resmeasures
+%.fmri-bywrd.resmeasures: $$(word 1,$$(subst ., ,%)).evmeasures
 	ln -sf $(abspath $(word 1,$^)) $@
 
 # TO SPEC
