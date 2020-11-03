@@ -498,14 +498,14 @@ class FModel {
 
 // implementation of MLP
 //      cout << "trying f model matmul..." << endl;
-      cerr << "size of flogresponses: " << flogresponses.size() << endl;
-      cerr << "first weight matrix rows/cols: " << fwfm.n_rows << "/" << fwfm.n_cols << endl;
-      cerr << "second weight matrix rows/cols: " << fwsm.n_rows << "/" << fwsm.n_cols << endl;
-      cerr << "size of ffull_width: " << FFULL_WIDTH << endl;
-      cerr << "size of fbfv: " << fbfv.size() << endl;
-      cerr << "size of fbsv: " << fbsv.size() << endl;
+      //cerr << "size of flogresponses: " << flogresponses.size() << endl;
+      //cerr << "first weight matrix rows/cols: " << fwfm.n_rows << "/" << fwfm.n_cols << endl;
+      //cerr << "second weight matrix rows/cols: " << fwsm.n_rows << "/" << fwsm.n_cols << endl;
+      //cerr << "size of ffull_width: " << FFULL_WIDTH << endl;
+      //cerr << "size of fbfv: " << fbfv.size() << endl;
+      //cerr << "size of fbsv: " << fbsv.size() << endl;
       arma::vec flogscores = fwsm * relu(fwfm*flogresponses + fbfv) + fbsv;
-      cerr << "finished calculating an flogscores" << endl;
+      //cerr << "finished calculating an flogscores" << endl;
       arma::vec fscores = arma::exp(flogscores);
       double fnorm = arma::accu(fscores);
       return fscores/fnorm;
@@ -963,11 +963,11 @@ class WModel {
       auto it = wwppmap.find( w_t );
       if ( it == wwppmap.end() ) {
         // generate list of <<lemma, primcat>, rule>
-        cerr << "applying morph rules for word: " << w_t << endl;
+        //cerr << "applying morph rules for word: " << w_t << endl;
         list<pair<pair<string,string>,string>> lxmp = applyMorphRules(w_t);
         // loop over <<lemma, primcat>, rule>
         for ( const auto& xmp : lxmp ) {
-          cerr << "generated word " << w_t << " from lemma " << xmp.first.first << ", primcat " << xmp.first.second << ", rule " << xmp.second << endl;
+          //cerr << "generated word " << w_t << " from lemma " << xmp.first.first << ", primcat " << xmp.first.second << ", rule " << xmp.second << endl;
           DelimitedList<psLBrack,WPredictor,psSpace,psRBrack> lwp = getWPredictorList(xmp.first);
           rowvec xll = calcLemmaLikelihoods(xmp.first, xpmap);
           mat mllall = calcRuleLikelihoods(xmp.first, mpmap);

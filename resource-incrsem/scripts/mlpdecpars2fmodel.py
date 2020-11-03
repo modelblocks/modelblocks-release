@@ -414,6 +414,8 @@ def main(config):
             print("K F " + str(hvec) + " " + ",".join(map(str, hvecf_embeds[ix])))
         for hvec, ix in sorted(hveca_to_ix.items()):
             print("K A " + str(hvec) + " " + ",".join(map(str, hveca_embeds[ix])))
+        if len(hveca_to_ix.items()) == 0:
+            print("K A N-aD:ph_0 " + "0,"*(f_config.getint("AntSize")-1)+"0") #add placeholder so model knows antecedent size
     for fdec, ix in sorted(fdecs_to_ix.items()):
         print("f " + str(ix) + " " + str(fdec))
 
