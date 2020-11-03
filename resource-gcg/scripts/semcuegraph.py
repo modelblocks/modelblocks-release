@@ -434,23 +434,39 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         if (x,    'S') in G: G.rename( x+'s', G[x,    'S'] )
         if (x+'s','r') in G: G.rename( x+'r', G[x+'s','r'] )
         ## apply -n, -m, and -s tags...
+          # TODO this repetitious warning code could use an abstraction
         if len( re.findall( '-n',G[x,'0'] ) ) > 1:
           sys.stderr.write( 'ERROR: multiple -n tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         if len( re.findall( '-s',G[x,'0'] ) ) > 1:
           sys.stderr.write( 'ERROR: multiple -s tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
-        for dep in re.findall( '-[mntsw][0-9]+r?', G[x,'0'] ):
-          dest = dep[2:6] if len(dep)>5 else sentnumprefix+dep[2:4]
-          if   dep[1]=='m' and dep[-1]=='r': G.equate( dest+'r', 'm', x+'r' )  ## discourse anaphor
-          elif dep[1]=='m':                  G.equate( dest+'s', 'm', x+'r' )  ## discourse anaphor
-          #if   dep[1]=='m' or 
-          elif dep[1]=='n' and dep[-1]=='r': G.equate( dest+'r', 'n', x+'r' )
-          elif dep[1]=='n':                  G.equate( dest+'s', 'n', x+'r' )
-          elif dep[1]=='t':                  G.equate( dest+'s', 's', x+'s' )  ## scotch tape (suggested scope for lambda expressions, but not to be used for scoring) 
-          elif dep[1]=='s' and dep[-1]=='r': G.equate( dest+'r', 's', x+'s' )
-          elif dep[1]=='s':                  G.equate( dest+'s', 's', x+'s' )
-#          if dep[1]=='w': G.equate( dest+'s', 'W', x+'s' )
-          if dep[1]=='w': G.equate( dest+'s', 'W', x )
-        G[x,'0'] = re.sub( '-[mntsw][0-9]+r?', '', G[x,'0'] )
+        if len( re.findall( '-t',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -t tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-u',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -u tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-uu',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -uu tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-w',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -w tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-ww',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -ww tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        for tag,dest,r in re.findall( '-([mnstuw]+)([0-9]+)(r?)', G[x,'0'] ):
+          dest = sentnumprefix+dest if len(dest) == 2 else dest
+          if   tag=='m' and r=='r': G.equate( dest+'r', 'm', x+'r' )  ## discourse anaphor
+          elif tag=='m':            G.equate( dest+'s', 'm', x+'r' )  ## discourse anaphor
+          elif tag=='n' and r=='r': G.equate( dest+'r', 'n', x+'r' )
+          elif tag=='n':            G.equate( dest+'s', 'n', x+'r' )
+          elif tag=='t':  ## scotch tape (suggested scope for lambda expressions, but not to be used for scoring)
+                                    G.equate( dest+'s', 's', x+'s' )
+                                    G.equate( dest+'s', 'tt', x+'s' ) # 'tainted' not truth-conditionally necessary
+          elif tag=='s' and r=='r': G.equate( dest+'r', 's', x+'s' )
+          elif tag=='s':            G.equate( dest+'s', 's', x+'s' )
+          elif tag=='u':            G.equate( dest+'s', 'u', x+'s' ) # 'upward' outscoper but not necessarily immediate outscoper
+          elif tag=='uu':           G.equate( dest+'s', 'uu', x+'s' ) # ditto
+          # as of October 2020 nothing becomes of -w but at least they'll be in the graph
+          elif tag=='w':            G.equate( dest+'s', 'W', x )
+          elif tag=='ww':           G.equate( dest+'s', 'WW', x )
+          else: sys.stderr.write( 'ERROR: unknown tag ' + tag + ' in category ' + G[x,'0'] + '\n' )
+        G[x,'0'] = re.sub( '-[mnstuw]+[0-9]+r?', '', G[x,'0'] ) # delete the tags
         ## obtain pred by applying lex rules to word token...
         s = re.sub('-l.','',G[x,'0']) + ':' + G[x,'X'].lower()
         eqns = re.sub( '-x.*:', ':', s )
@@ -623,10 +639,10 @@ class SemCueGraph( StoreStateCueGraph ):
 
   def finalize( G ):
     for x,l in sorted( G.keys() ):
-      if l in 'mns' and ( (G[x,l][0:4],'S') not in G or (G[G[x,l][0:4],'S'],'r') not in G ):
+      if (l in 'mnsuuw' or l == 'tt') and ( (G[x,l][0:4],'S') not in G or (G[G[x,l][0:4],'S'],'r') not in G ):
         sys.stderr.write( 'WARNING: destination ' + G[x,l] + ' of dependency ' + l + ' in ' + x + ' not complete referential state in graph!\n' )
     for x,l in sorted( G.keys() ):
-      if l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'ersCDEFGHIJKLMNOPQRSTUVWXYZ': 
+      if l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'ersCDEFGHIJKLMNOPQRSTUVWXYZ':
         del G[x,l]
 
       '''
