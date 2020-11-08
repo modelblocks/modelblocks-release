@@ -48,7 +48,7 @@ def prepare_data():
             lchar2ekpsk[("UNK", primcat)] = lchar2ekpsk.get(("UNK", primcat), [])
             lchar2ekpsk[("UNK", primcat)].append((ex, pred, cat, lcat))
         elif re.search(":!num!", pred):
-            lchar2ekpsk[("NUM", "All")] = lchar2ekpsk.get(("NUM", ""), [])
+            lchar2ekpsk[("NUM", "All")] = lchar2ekpsk.get(("NUM", "All"), [])
             lchar2ekpsk[("NUM", "All")].append((ex, pred, cat, lcat))
         else:
             lchar2ekpsk[(lchar, primcat)] = lchar2ekpsk.get((lchar, primcat), [])

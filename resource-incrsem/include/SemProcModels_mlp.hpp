@@ -19,23 +19,24 @@
 
 #include <typeinfo>
 #include <regex>
+#include <algorithm>
 
 const uint SEM_SIZE = 20;
 const uint SYN_SIZE = 20;
 
 // XModel E, K, P, Char, RNN hidden sizes
 const uint X_E_SIZE = 20;
-const uint X_K_SIZE = 200;
+const uint X_K_SIZE = 400;
 const uint X_P_SIZE = 20;
 const uint X_C_SIZE = 20;
-const uint X_H_SIZE = 260;
+const uint X_H_SIZE = 460;
 
 // MModel E, P, LCat, Char, RNN hidden sizes
 const uint M_E_SIZE = 20;
 const uint M_P_SIZE = 20;
-const uint M_L_SIZE = 200;
+const uint M_L_SIZE = 400;
 const uint M_C_SIZE = 20;
-const uint M_H_SIZE = 260;
+const uint M_H_SIZE = 460;
 
 vector<string> PUNCT = { "-LCB-", "-LRB-", "-RCB-", "-RRB-" };
 
@@ -592,6 +593,17 @@ class WModel {
 
     }
 
+    string removeUnkChar( string s ) const {
+      for ( unsigned i = 0; i < s.length(); ++i ){
+        string str(1, s[i]);
+        if ( mci.find(str) == mci.end() ) {
+          cerr << "Unknown character " << s[i] << " found in " << s << "." << endl;
+          s.erase(std::remove(s.begin(), s.end(), s[i]), s.end());
+        }
+      }
+      return s;
+    }
+
     // XModel: index input character embedding
     const mat getXCharMat( string a, unsigned int i ) const {
       auto it = mxcv.find( a );
@@ -698,8 +710,12 @@ class WModel {
       list<pair<pair<string,string>,string>> lxmp;
       string sW = w_t.getString().c_str();
 
-      // do not lowercase word if special punctuation token ("-LCB-", "-LRB-", "-RCB-", "-RRB-")
-      if ( find( PUNCT.begin(), PUNCT.end(), sW ) == PUNCT.end() ) transform(sW.begin(), sW.end(), sW.begin(), [](unsigned char c) { return std::tolower(c); });
+      // lowercase word if not special punctuation token ("-LCB-", "-LRB-", "-RCB-", "-RRB-")
+      // remove unknown characters before applying morph rules
+      if ( find( PUNCT.begin(), PUNCT.end(), sW ) == PUNCT.end() ) {
+        transform(sW.begin(), sW.end(), sW.begin(), [](unsigned char c) { return std::tolower(c); });
+        sW = removeUnkChar(sW);
+      }
 
       // loop over morph rules
       for ( const auto& mi : mmi ) {
@@ -711,7 +727,7 @@ class WModel {
         if ( mi.first == "%|%" || mi.first == "%|" ) {
           sX = sW;
           sP = "All";
-          lxmp.push_back(pair<pair<string,string>,string>(pair<string,string>(sX,sP),mi.first));
+          if (!sX.empty()) lxmp.push_back(pair<pair<string,string>,string>(pair<string,string>(sX,sP),mi.first));
         } else {
           // otherwise, apply morph rule for lemma and primcat
           if ( regex_match( mi.first, mM, regex("^(.*)[%](.*)[|](.*)[%](.*)$") ) ) {
@@ -719,7 +735,7 @@ class WModel {
             if ( regex_match(sW, mW, regex("^(.*)"+string(mM[2])+"$")) ) {
               sX = string(mW[1])+string(mM[4]);
               sP = string(mM[3]);
-              lxmp.push_back(pair<pair<string,string>,string>(pair<string,string>(sX,sP),mi.first));
+              if (!sX.empty()) lxmp.push_back(pair<pair<string,string>,string>(pair<string,string>(sX,sP),mi.first));
             }
           }
         }
@@ -756,32 +772,31 @@ class WModel {
           rowvec st1_norm = sum(st1_scores, 0);
           st1_logprobs = log(st1_scores.row(getXCharIndex( "<E>" )) / st1_norm);
           seqlogprobs += st1_logprobs;
-        } else {
-          string c0(1, x_t[0]);
-          // index probability for first character
-          seqlogprobs += st_logprobs.row( getXCharIndex( c0.c_str() ));
+          } else {
+              string c0(1, x_t[0]);
+              // index probability for first character
+              seqlogprobs += st_logprobs.row( getXCharIndex( c0.c_str() ));
 
-          for ( unsigned i = 0; i < x_t.length(); ++i ){
-            string ct(1, x_t[i]);
-            string ct1(1, x_t[i+1]);
-            mat ht1 = relu(xihwm * join_cols(wpmat, getXCharMat(ct.c_str(), wplist.size())) + xihbm + xhhwm * ht + xhhbm);
-            mat st1_scores = exp(xfcwm * ht1 + xfcbm);
-            rowvec st1_norm = sum(st1_scores, 0);
+              for ( unsigned i = 0; i < x_t.length(); ++i ){
+                string ct(1, x_t[i]);
+                string ct1(1, x_t[i+1]);
+                mat ht1 = relu(xihwm * join_cols(wpmat, getXCharMat(ct.c_str(), wplist.size())) + xihbm + xhhwm * ht + xhhbm);
+                mat st1_scores = exp(xfcwm * ht1 + xfcbm);
+                rowvec st1_norm = sum(st1_scores, 0);
 
-            if (i != x_t.length()-1) {
-              st1_logprobs = log(st1_scores.row(getXCharIndex( ct1.c_str() )) / st1_norm);
-            } else {
-              st1_logprobs = log(st1_scores.row(getXCharIndex( "<E>" )) / st1_norm);
+                if (i != x_t.length()-1) {
+                  st1_logprobs = log(st1_scores.row(getXCharIndex( ct1.c_str() )) / st1_norm);
+                } else {
+                  st1_logprobs = log(st1_scores.row(getXCharIndex( "<E>" )) / st1_norm);
+                }
+                seqlogprobs += st1_logprobs;
+                ht = ht1;
+              }
             }
-            seqlogprobs += st1_logprobs;
-            ht = ht1;
-          }
-        }
         xpmap.try_emplace(xsp, seqlogprobs);
-      }
-      else {
-        seqlogprobs = it->second;
-      }
+        } else {
+          seqlogprobs = it->second;
+        }
       return seqlogprobs;
     }
 
@@ -806,24 +821,23 @@ class WModel {
           rowvec st_norm = sum(st_scores, 0);
           rulelogprobs = log(st_scores.each_row() / st_norm);
         } else {
-          string c0(1, x_t[0]);
-          // calculate probability using first character
+            string c0(1, x_t[0]);
+            // calculate probability using first character
 //          cerr << "word " << x_t << " c0 " << c0 << endl;
-          mat ht = relu(mihwm * join_cols(mpmat, getMCharMat(c0.c_str(), mplist.size())) + mihbm + mhhbm);
+            mat ht = relu(mihwm * join_cols(mpmat, getMCharMat(c0.c_str(), mplist.size())) + mihbm + mhhbm);
 
-          for ( unsigned i = 1; i < x_t.length(); ++i ){
-            string ct(1, x_t[i]);
+            for ( unsigned i = 1; i < x_t.length(); ++i ){
+              string ct(1, x_t[i]);
 //            cerr << "word " << x_t << " c" << i << " " << ct << endl;
-            mat ht1 = relu(mihwm * join_cols(mpmat, getMCharMat(ct.c_str(), mplist.size())) + mihbm + mhhwm * ht + mhhbm);
-            ht = ht1;
+              mat ht1 = relu(mihwm * join_cols(mpmat, getMCharMat(ct.c_str(), mplist.size())) + mihbm + mhhwm * ht + mhhbm);
+              ht = ht1;
+            }
+            mat st_scores = exp(mfcwm * ht + mfcbm);
+            rowvec st_norm = sum(st_scores, 0);
+            rulelogprobs = log(st_scores.each_row() / st_norm);
           }
-          mat st_scores = exp(mfcwm * ht + mfcbm);
-          rowvec st_norm = sum(st_scores, 0);
-          rulelogprobs = log(st_scores.each_row() / st_norm);
-        }
-        mpmap.try_emplace(xsp, rulelogprobs);
-      }
-      else {
+          mpmap.try_emplace(xsp, rulelogprobs);
+      } else {
         rulelogprobs = it->second;
       }
       return rulelogprobs;
