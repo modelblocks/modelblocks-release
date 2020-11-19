@@ -397,6 +397,9 @@ endef
                $(BIN)/linetrees2mlpsemprocdecpars  \
                $$(basename %).lemmacounts
 	cat $<  |  $(word 2,$^) $(wordlist 1,99,$(subst _, ,$(subst .,,$(suffix $*)))) $(word 3,$^)  >  $@
+## remove non-coref pronouns from F predictors (for ontonotes)...
+%_ontocorfix_mlpdecpars : %_mlpdecpars  $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py
+	cat $<  |  $(word 2,$^)  >  $@
 
 ## Create component model file from training example file (% contains gcn ini filename and decpar flags and dsp ini filename)...
 %_ndspmodel : 
@@ -433,10 +436,9 @@ endef
 	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 $(word 2,$^) $(word 4,$^) | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
 .PRECIOUS: %_fmlpmodel
 %_fmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
-              $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py \
               $(INCRSEM-SCRIPTS)/mlpdecpars2fmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini
-	cat $<  |  grep '^F'  |  sed 's/^F //'  |  python $(word 2,$^) | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
+	cat $<  |  grep '^F'  |  sed 's/^F //'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
 .PRECIOUS: %_pmlpmodel
 %_pmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
