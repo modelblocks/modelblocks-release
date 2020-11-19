@@ -265,11 +265,13 @@ void calcContext ( Tree<L>& tr,
   static string     eF;
   static Sign       aPretrm;
   static StoreState q;
-
+  cout << "tr: " << tr << " and l: " << l << endl;
   if( l==L() ) l = removeLink(tr);
+  cout << "l after possibly changing empty: " << l << endl;
 
   // At unary preterminal...
   if ( tr.size()==1 && tr.front().size()==0 ) {
+    cout << "unary preterminal case..." << endl;
     wordnum++;  // increment word index at terminal (sentence-level) one-indexing
     tDisc++;    // increment discourse-level word index. one-indexing
     string annot    = getLink( tr );  //if( annot == currentloc ) annot = "";
@@ -286,7 +288,7 @@ void calcContext ( Tree<L>& tr,
     if (annotSentIdx == std::to_string(sentnum)) validIntra = true;
     if (INTERSENTENTIAL == true) validIntra = true;
     int antecedentTdisc = annot != "" ? annot2tdisc[annot] : -1; 
-    const HVec& hvAnt = (validIntra == true and antecedentTdisc >= (tDisc-COREF_WINDOW)) ? annot2kset[annot] : hvTop; 
+    const HVec& hvAnt = (validIntra == true and antecedentTdisc >= (tDisc-COREF_WINDOW)) ? annot2kset[annot] : HVec(); //hvTop; 
     bool nullAnt = (hvAnt.empty()) ? true : false;
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
     //if (annot != "")  {
@@ -365,6 +367,7 @@ void calcContext ( Tree<L>& tr,
       }
 #elif defined MLP
       cout << "F " << lfp << " " << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);
+      cout << "printing P training data for object l: " << l << " with linkless: " << removeLink(l) << " category: " << getCat(removeLink(l)) << endl;
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) /*getCat(l)*/     << endl;
       if (k != kAntUnk) {
 //        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " " << m /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
@@ -397,6 +400,7 @@ void calcContext ( Tree<L>& tr,
 
   // At unary identity nonpreterminal...
   else if ( tr.size()==1 and getCat(tr)==getCat(tr.front()) ) {
+    cout << "recursing at unary identity nonpreterminal with l: " << l << endl; 
     calcContext( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, s, d, e, l );
   }
 
@@ -404,11 +408,13 @@ void calcContext ( Tree<L>& tr,
   else if ( tr.size()==1 ) {
     //// cerr<<"#U"<<getCat(tr)<<" "<<getCat(tr.front())<<endl;
     e = e + getUnaryOp( tr );
+    cout << "recursing at unary nonpreterminal with l: " << l << endl;
     calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, s, d, e, l );
   }
 
   // At binary nonterminal...
   else if ( tr.size()==2 ) {
+    cout << "binary case" << endl;
     //// cerr<<"#B "<<getCat(tr)<<" "<<getCat(tr.front())<<" "<<getCat(tr.back())<<endl;
 
     if (isFailTree) {
@@ -418,6 +424,7 @@ void calcContext ( Tree<L>& tr,
     }
 
     // Traverse left child...
+    cout << "traversing left child..." << endl;
     calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, 0, d+s );
 
     J j          = s;
@@ -446,6 +453,7 @@ void calcContext ( Tree<L>& tr,
     q = StoreState ( q, j, e.c_str(), oL, oR, getCat(removeLink(l)), getCat(removeLink(tr.back())) );
 
     // Traverse right child...
+    cout << "traversing right child..." << endl;
     calcContext ( tr.back(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, 1, d );
   }
 
@@ -521,7 +529,7 @@ int main ( int nArgs, char* argv[] ) {
         corefchains.clear();
       }
       else {
-	int wordnum = 0;
+	    int wordnum = 0;
         bool isFailTree = (removeLink(t.front()) == "FAIL") ? true : false;
         if( t.front().size() > 0 ) calcContext( t, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY);
       }

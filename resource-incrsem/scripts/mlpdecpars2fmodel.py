@@ -203,6 +203,8 @@ class FModel(nn.Module):
         self.catb_embeds = nn.Embedding(catb_vocab_size, syn_size)
         self.hvecb_embeds = nn.Embedding(hvecb_vocab_size, sem_size)
         self.hvecf_embeds = nn.Embedding(hvecf_vocab_size, sem_size)
+        print("hveca_vocab_size: {}".format(hveca_vocab_size))
+        print("ant_size: {}".format(ant_size))
         self.hveca_embeds = nn.Embedding(hveca_vocab_size, ant_size)
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
