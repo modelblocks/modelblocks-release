@@ -286,7 +286,7 @@ void calcContext ( Tree<L>& tr,
     if (annotSentIdx == std::to_string(sentnum)) validIntra = true;
     if (INTERSENTENTIAL == true) validIntra = true;
     int antecedentTdisc = annot != "" ? annot2tdisc[annot] : -1; 
-    const HVec& hvAnt = (validIntra == true and antecedentTdisc >= (tDisc-COREF_WINDOW)) ? annot2kset[annot] : hvTop; 
+    const HVec& hvAnt = (validIntra == true and antecedentTdisc >= (tDisc-COREF_WINDOW)) ? annot2kset[annot] : HVec(); //hvTop; 
     bool nullAnt = (hvAnt.empty()) ? true : false;
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
     //if (annot != "")  {

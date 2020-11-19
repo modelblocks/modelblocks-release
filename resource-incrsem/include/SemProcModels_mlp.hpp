@@ -374,7 +374,12 @@ class FModel {
       fbfv = fbf;
       fbsv = fbs;
       cerr << "FSEM: " << FSEM_SIZE << " FSYN: " << FSYN_SIZE << " FANT: " << FANT_SIZE << endl;
+#define PREMERGE
+#ifdef PREMERGE
+      FFULL_WIDTH = 7 + 2*FSEM_SIZE + FSYN_SIZE;
+#else
       FFULL_WIDTH = 8 + 2*FSEM_SIZE + FSYN_SIZE + FANT_SIZE;
+#endif
       fwfm.reshape(fwf.size()/(FFULL_WIDTH), FFULL_WIDTH);
       fwsm.reshape(fws.size()/(fwf.size()/(FFULL_WIDTH)), (fwf.size()/(FFULL_WIDTH)));
     }
@@ -474,12 +479,20 @@ class FModel {
       const vec& catBEmb = getCatEmbed(catB, 'B');
       const vec& hvBEmb = getKVecEmbed(hvB, 'B');
       const vec& hvFEmb = getKVecEmbed(hvF, 'F');
+#ifdef PREMERGE
+#else
       const vec& hvAEmb = getKVecEmbed(hvA, 'A');
+#endif
 
 // populate predictor vector
+#ifdef PREMERGE
+      arma::vec flogresponses = join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), arma::zeros(7));
+      flogresponses(2*FSEM_SIZE + FSYN_SIZE + d) = 1;
+#else
       arma::vec flogresponses = join_cols(join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), hvAEmb), arma::zeros(8));
       if (nullA) flogresponses(2*FSEM_SIZE + FSYN_SIZE + FANT_SIZE + 1) = 1;
       flogresponses(2*FSEM_SIZE + FSYN_SIZE + FANT_SIZE + 1 + d) = 1;
+#endif
 
 //      for(unsigned int i = 0; i < catBEmb.n_elem; i++){
 //        flogresponses(i) = catBEmb(i);
@@ -759,8 +772,10 @@ class WModel {
         assert ( itk != mxkv.end() );
         auto itp = mxpv.find( wp.third() );
         assert ( itp != mxpv.end() );
-        wpmat.col(idx) = join_cols(join_cols(ite->second, itk->second), itp->second);
-        idx ++;
+        if( itp!=mxpv.end() ) {
+          wpmat.col(idx) = join_cols(join_cols(ite->second, itk->second), (itp==mxpv.end()) ? zeros(X_P_SIZE) : itp->second);
+          idx ++;
+        }
       }
       return wpmat;
     }
@@ -878,6 +893,7 @@ class WModel {
         mat st_logprobs = log(st_scores.each_row() / st_norm);
         rowvec st1_logprobs;
 
+
         if ( find( PUNCT.begin(), PUNCT.end(), x_t ) != PUNCT.end() ) {
           // if lemma is special punctuation token ("-LCB-", "-LRB-", "-RCB-", "-RRB-"), index probability using the token itself
           seqlogprobs += st_logprobs.row( getXCharIndex( x_t ) );
@@ -967,7 +983,7 @@ class WModel {
         list<pair<pair<string,string>,string>> lxmp = applyMorphRules(w_t);
         // loop over <<lemma, primcat>, rule>
         for ( const auto& xmp : lxmp ) {
-          //cerr << "generated word " << w_t << " from lemma " << xmp.first.first << ", primcat " << xmp.first.second << ", rule " << xmp.second << endl;
+//cerr << "generated word " << w_t << " from lemma " << xmp.first.first << ", primcat " << xmp.first.second << ", rule " << xmp.second << endl;
           DelimitedList<psLBrack,WPredictor,psSpace,psRBrack> lwp = getWPredictorList(xmp.first);
           rowvec xll = calcLemmaLikelihoods(xmp.first, xpmap);
           mat mllall = calcRuleLikelihoods(xmp.first, mpmap);
