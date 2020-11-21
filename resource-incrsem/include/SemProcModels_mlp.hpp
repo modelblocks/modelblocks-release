@@ -374,7 +374,8 @@ class FModel {
       fbfv = fbf;
       fbsv = fbs;
       cerr << "FSEM: " << FSEM_SIZE << " FSYN: " << FSYN_SIZE << " FANT: " << FANT_SIZE << endl;
-//#define PREMERGE
+// WS: below set to simulate PREMERGE condition
+#define PREMERGE
 #ifdef PREMERGE
       FFULL_WIDTH = 7 + 2*FSEM_SIZE + FSYN_SIZE;
 #else
