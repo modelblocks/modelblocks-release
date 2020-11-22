@@ -399,7 +399,7 @@ endef
 	cat $<  |  $(word 2,$^) $(wordlist 1,99,$(subst _, ,$(subst .,,$(suffix $*)))) $(word 3,$^)  >  $@
 ## remove non-coref pronouns from F predictors (for ontonotes)...
 %_ontocorfix_mlpdecpars : %_mlpdecpars  $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py
-	cat $<  |  $(word 2,$^)  >  $@
+	cat $<  |  python3 $(word 2,$^)  >  $@
 
 ## Create component model file from training example file (% contains gcn ini filename and decpar flags and dsp ini filename)...
 %_ndspmodel : 

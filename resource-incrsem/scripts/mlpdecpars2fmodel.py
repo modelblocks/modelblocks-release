@@ -207,9 +207,7 @@ class FModel(nn.Module):
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
         self.dropout_prob = dropout_prob
-#        self.fc1 = nn.Linear(8 + syn_size + 2 * sem_size + ant_size, self.hidden_dim, bias=True)
-        ## WS: below set to simulate PREMERGE condition
-        self.fc1 = nn.Linear(7 + syn_size + 2 * sem_size, self.hidden_dim, bias=True)
+        self.fc1 = nn.Linear(8 + syn_size + 2 * sem_size + ant_size, self.hidden_dim, bias=True)
         self.dropout = nn.Dropout(self.dropout_prob)
         self.relu = F.relu
         self.fc2 = nn.Linear(self.hidden_dim, self.output_dim, bias=True)
@@ -265,9 +263,7 @@ class FModel(nn.Module):
             hvf_embed = torch.sparse.mm(hvf_mat, self.hvecf_embeds.weight) + hvf_top
             hva_embed = torch.sparse.mm(hva_mat, self.hveca_embeds.weight) + hva_top
 
-#        x = torch.cat((cat_b_embed, hvb_embed, hvf_embed, hva_embed, nullA.unsqueeze(dim=1), d_onehot), 1)  
-        ## WS: below set to simulate PREMERGE condition
-        x = torch.cat((cat_b_embed, hvb_embed, hvf_embed, d_onehot), 1)  
+        x = torch.cat((cat_b_embed, hvb_embed, hvf_embed, hva_embed, nullA.unsqueeze(dim=1), d_onehot), 1)  
         x = self.fc1(x)
         x = self.dropout(x)
         x = self.relu(x)
