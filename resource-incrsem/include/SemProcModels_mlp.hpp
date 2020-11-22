@@ -374,12 +374,7 @@ class FModel {
       fbfv = fbf;
       fbsv = fbs;
       cerr << "FSEM: " << FSEM_SIZE << " FSYN: " << FSYN_SIZE << " FANT: " << FANT_SIZE << endl;
-//#define PREMERGE
-#ifdef PREMERGE
-      FFULL_WIDTH = 7 + 2*FSEM_SIZE + FSYN_SIZE;
-#else
       FFULL_WIDTH = 8 + 2*FSEM_SIZE + FSYN_SIZE + FANT_SIZE;
-#endif
       fwfm.reshape(fwf.size()/(FFULL_WIDTH), FFULL_WIDTH);
       fwsm.reshape(fws.size()/(fwf.size()/(FFULL_WIDTH)), (fwf.size()/(FFULL_WIDTH)));
     }
@@ -479,20 +474,12 @@ class FModel {
       const vec& catBEmb = getCatEmbed(catB, 'B');
       const vec& hvBEmb = getKVecEmbed(hvB, 'B');
       const vec& hvFEmb = getKVecEmbed(hvF, 'F');
-#ifdef PREMERGE
-#else
       const vec& hvAEmb = getKVecEmbed(hvA, 'A');
-#endif
 
 // populate predictor vector
-#ifdef PREMERGE
-      arma::vec flogresponses = join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), arma::zeros(7));
-      flogresponses(2*FSEM_SIZE + FSYN_SIZE + d) = 1;
-#else
       arma::vec flogresponses = join_cols(join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), hvAEmb), arma::zeros(8));
-      if (nullA) flogresponses(2*FSEM_SIZE + FSYN_SIZE + FANT_SIZE + 1) = 1;
+      if (nullA) flogresponses(2*FSEM_SIZE + FSYN_SIZE + FANT_SIZE) = 1;
       flogresponses(2*FSEM_SIZE + FSYN_SIZE + FANT_SIZE + 1 + d) = 1;
-#endif
 
 //      for(unsigned int i = 0; i < catBEmb.n_elem; i++){
 //        flogresponses(i) = catBEmb(i);
