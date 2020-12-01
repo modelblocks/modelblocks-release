@@ -39,23 +39,29 @@ class DiscGraph:
     D.Inheriteds = { }
     D.DiscInhs   = { }
     D.Referents  = [ ]
+    D.Taints     = { } ## taint arcs run parallel to 'scotch tape' scopings
+    D.Upward1    = { } ## upward: truthfuncly necessary, possibly not immediate outscoper
+    D.Upward2    = { } ## if we ever need more than 2 outgoing Upwards we'll re-kludge
  
     ## For each assoc...
     for assoc in sorted( line.split(' ') ):
       src,lbl,dst = assoc.split( ',', 2 )
-      if dst.startswith('N-bO:') or dst.startswith('N-bN:') or dst.startswith('N-b{N-aD}:') or dst.startswith('N-aD-b{N-aD}:'): dst += 'Q'
+      if ( dst.startswith('N-bO:') or dst.startswith('N-bN:') or dst.startswith('N-b{N-aD}:') or dst.startswith('N-aD-b{N-aD}:') or dst.startswith('N-aD-b{N-aD}-bN:') ) and not dst.endswith('Q'):  dst += 'Q'
       D.Referents += [ src ] if lbl=='0' else [ src, dst ]
       if lbl.isdigit():  D.PorQs    [src].insert( int(lbl), dst )   ## Add preds and quants.
       elif lbl == 's':   D.Scopes   [src]      = dst                ## Add scopes.
       elif lbl == 't':   D.Traces   [src]      = dst                ## Add traces.
-      elif lbl == 'm':   D.DiscInhs [src]      = dst                ## Add discource anaphor.
+      elif lbl == 'm':   D.DiscInhs [src]      = dst                ## Add discourse anaphor.
+      elif lbl == 'tt':  D.Taints   [src]      = dst                ## Taint-markers
+      elif lbl == 'u':   D.Upward1  [src]      = dst                ## Unplugged arcs
+      elif lbl == 'uu':  D.Upward2  [src]      = dst
       else:              D.Inhs     [src][lbl] = dst                ## Add inheritances.
 #      if lbl == 'r':     D.Nuscos [dst].append( src )             ## Index nusco of each restr.
 #      if lbl == 'r':     D.NuscoValues[src]  = True
       if lbl == 'e':     D.Inheriteds[dst]   = True
 
     D.PredTuples  = [ ]
-    D.QuantTuples = [ ] 
+    D.QuantTuples = [ ]
 
     ## Distinguish preds and quants...
     for elempred,Particips in D.PorQs.items():
@@ -64,10 +70,10 @@ class DiscGraph:
       if Particips[0].endswith('Q'):  D.QuantTuples.append( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] + (['_'] if len(Particips)<4 else []) ) )
       else:                           D.PredTuples.append ( tuple( [ Particips[0] ] + [ elempred ] + Particips[1:] ) )
 
-    D.OrigConsts = [ ep[0] for ep in D.PredTuples ] + [ q[0] for q in D.QuantTuples ]
+    D.OrigConsts = [ (ep[0],ep[1]) for ep in D.PredTuples ] + [ (q[0],'Q') for q in D.QuantTuples ]
 
     ## Report items...
-    if VERBOSE: 
+    if VERBOSE:
       print( 'P = ' + str(sorted(D.PredTuples)) )
       print( 'Q = ' + str(sorted(D.QuantTuples)) )
       print( 'S = ' + str(sorted(D.Scopes.items())) )
@@ -98,7 +104,7 @@ class DiscGraph:
 
   #### Translate dict representation back into string representation...
   def strGraph( D, HypScopes = None ):  # PredTuples, QuantTuples, Inhs, Scopes ):
-    if HypScopes == None: HypScopes = D.Scopes
+    if HypScopes == None: HypScopes = D.Scopes # can substitute other scopes for D's
     G = []
     ## List elementary predications...
     for ptup in D.PredTuples:
@@ -121,6 +127,15 @@ class DiscGraph:
     ## List scopes...
     for xLo,xHi in HypScopes.items():
       G.append( xLo + ',s,' + xHi )
+    ## List taint markers
+    for xLo,xHi in D.Taints.items():
+      G.append( xLo + ',tt,' + xHi )
+    ## List upward/unplugged scopes
+    for xLo,xHi in D.Upward1.items():
+      G.append( xLo + ',u,' + xHi )
+    ## List more upward/unplugged scopes -- and finally stop distinguishing between them
+    for xLo,xHi in D.Upward2.items():
+      G.append( xLo + ',u,' + xHi )
     ## print out...
     return ' '.join( sorted( G ) )
 
@@ -139,6 +154,11 @@ class DiscGraph:
     for xLo in D.Subs[x]:
       sys.stderr.write( 'WARNING: inheritance -n should not be annotated from ' + xLo + ' to redundant predicative referent: ' + x + '\n' )
       print(           '#WARNING: inheritance -n should not be annotated from ' + xLo + ' to redundant predicative referent: ' + x )
+    ## Complain about disc inhs immediately below smitten...
+    for xLo in D.DiscInhs:
+      if D.DiscInhs[xLo] == x:
+        sys.stderr.write( 'WARNING: inheritance -m should not be annotated from ' + xLo + ' to redundant predicative referent: ' + x + '\n' )
+        print(           '#WARNING: inheritance -m should not be annotated from ' + xLo + ' to redundant predicative referent: ' + x )
     ## Complain about scopes immediately above smitten...
     if x in D.Scopes:
       sys.stderr.write( 'WARNING: scope -s should not be annotated on redundant predicative referent: ' + x + '\n' )
@@ -325,7 +345,7 @@ class DiscGraph:
         if VERBOSE: print( 'Removing redundant abstract quant ' + q + ' from ' + s + ' because of inheritance at ' + D.Subs[s][0] )
         D.QuantTuples.remove( (q,e,r,s,n) )
     ## Report items...
-    if VERBOSE: 
+    if VERBOSE:
       print( 'P = ' + str(sorted(D.PredTuples)) )
       print( 'Q = ' + str(sorted(D.QuantTuples)) )
       print( 'S = ' + str(sorted(D.Scopes.items())) )

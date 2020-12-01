@@ -96,7 +96,7 @@ endif
 #### c++ executables  --  NOTE: $< must precede -l's on ubuntu g++
 .PRECIOUS: $(BIN)/%
 $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user-cflags.txt  |  $(BIN)  $(INCLUDE)
-	g++ -I/usr/include/libxml2/ -I$(word 2,$|) -I$(SRC) -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 3,$^)` -fpermissive -std=c++17 $< -lm -larmadillo -lpthread -o $@
+	g++ -L$(CONDA_PREFIX)/lib -L$(CONDA_PREFIX)/lib64 -I/usr/include/libxml2/ -I$(word 2,$|) -I$(SRC) -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 3,$^)` -fpermissive -std=c++17 $< -lm -larmadillo -Wl,-rpath-link=$(CONDA_PREFIX)/lib -lpthread -o $@
 
 ################################################################################
 #
@@ -277,7 +277,7 @@ endef
 	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
 
 ## pull apart predictor/responses for training...
-%.nmlrdecpars:  %densemprocdecpars
+%.ngcndecpars:  %densemprocdecpars
 	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
 #%.fmlrdecpars:  %semprocdecpars
 %.fgcndecpars:  %densemprocdecpars  $(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py #TODO this won't work - remove and confirm filtering is done earlier
@@ -295,10 +295,10 @@ endef
 	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
 
 ## pull apart predictor/responses for training...
-%.nmlrdecpars:  %mlpsemprocdecpars
+%.nmlpdecpars:  %mlpsemprocdecpars
 	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
-%.fmlpdecpars:  %mlpsemprocdecpars
-	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
+%.fmlpdecpars:  %mlpsemprocdecpars $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py
+	cat $(word 1, $^)  |  grep '^F'  |  sed 's/^. //' | python $(word 2, $^) >  $@
 %.jmlpdecpars:  %mlpsemprocdecpars
 	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
 %.pcptdecpars:  %mlpsemprocdecpars
@@ -397,6 +397,9 @@ endef
                $(BIN)/linetrees2mlpsemprocdecpars  \
                $$(basename %).lemmacounts
 	cat $<  |  $(word 2,$^) $(wordlist 1,99,$(subst _, ,$(subst .,,$(suffix $*)))) $(word 3,$^)  >  $@
+## remove non-coref pronouns from F predictors (for ontonotes)...
+%_ontocorfix_mlpdecpars : %_mlpdecpars  $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py
+	cat $<  |  python3 $(word 2,$^)  >  $@
 
 ## Create component model file from training example file (% contains gcn ini filename and decpar flags and dsp ini filename)...
 %_ndspmodel : 
@@ -425,25 +428,36 @@ endef
 	cat $<  |  grep '^B'  |  python3 $(word 2,$^)  >  $@
 
 ## Create component model file from training example file (% contains decpar flags and mlp ini filename)...
-%_nmlpmodel :
-	echo ''  >  $@
+.PRECIOUS: %_nmlpmodel
+%_nmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/undersample_nmodel_noncorefs.py \
+              $(INCRSEM-SCRIPTS)/mlpdecpars2nmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))n.ini
+	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 $(word 2,$^) $(word 4,$^) | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
+.PRECIOUS: %_fmlpmodel
 %_fmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/mlpdecpars2fmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini
-	cat $<  |  grep '^F'  |  sed 's/^F//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+	cat $<  |  grep '^F'  |  sed 's/^F //'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+.PRECIOUS: %_pmlpmodel
 %_pmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^P'  |  python3 $(word 2,$^)  >  $@
+.PRECIOUS: %_wmlpmodel
 %_wmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
-              $(INCRSEM-SCRIPTS)/relfreq.py
-	cat $<  |  grep '^W'  |  python3 $(word 2,$^)  >  $@
+              $(INCRSEM-SCRIPTS)/mlpdecpars2wmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))w.ini
+	cat $<  |  grep '^W'  |  sed 's/^W //'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+.PRECIOUS: %_jmlpmodel
 %_jmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/mlpdecpars2jmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini
 	cat $<  |  grep '^J'  |  sed 's/^J//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+.PRECIOUS: %_amlpmodel
 %_amlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^A'  |  python3 $(word 2,$^)  >  $@
+.PRECIOUS: %_bmlpmodel
 %_bmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^B'  |  python3 $(word 2,$^)  >  $@
@@ -455,8 +469,7 @@ endef
 
 ## Create mlp model out of component models...
 .PRECIOUS: %_mlpsemprocmodel
-#%_mlpsemprocmodel : %_nmlpmodel  %_fmlpmodel  %_pmlpmodel  %_wmlpmodel  %_jmlpmodel  %_amlpmodel  %_bmlpmodel
-%_mlpsemprocmodel : %_fmlpmodel  %_pmlpmodel  %_wmlpmodel  %_jmlpmodel  %_amlpmodel  %_bmlpmodel
+%_mlpsemprocmodel : %_nmlpmodel  %_fmlpmodel  %_pmlpmodel  %_wmlpmodel  %_jmlpmodel  %_amlpmodel  %_bmlpmodel
 	cat $^  >  $@
 
 ## Parse with: wsj02.wsj02to21-bestgcn_bestdsp_densemproc-parsed.tokdecs
@@ -695,4 +708,5 @@ endef
 ## obtain linetrees from token decisions...
 %.linetrees:  %.tokdecs  $(INCRSEM-SCRIPTS)/tokdecs2linetrees.py
 	cat $<  |  python $(word 2,$^)  |  perl -pe 's/\[[^\]]*\]://g'  >  $@
+
 

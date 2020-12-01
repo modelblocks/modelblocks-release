@@ -11,7 +11,7 @@ sub get_word {
 	return scalar reverse $1;
 }
 
-my $annot = qr/((?:-[mnstw]\d+r?)+)\s+\S+/; # captures the whole sequence of annots
+my $annot = qr/((?:-[mnstuwy]+[\dGQ]+r?)+)\s+\S+/; # captures the whole sequence of annots
 
 while (<$syn_file>) {
 	unless (/[a-zA-Z]/) {print; next} # if line does not have letters, pass it right through
@@ -22,7 +22,7 @@ while (<$syn_file>) {
 	}
 	$sem =~ s/-[ns]\?{4}//g; # strip leftover -n???? etc (from .annot-ready)
 	# check for annots in $sem, capture if so
-	if ($sem =~ /$annot/) { 
+	if ($sem =~ /$annot/) {
 		my $tags = $1;
 		s/(?= +\S+$)/$tags/; # and splice onto the syntax line
 	}

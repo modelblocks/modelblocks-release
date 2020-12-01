@@ -26,13 +26,16 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gc
 import discgraph
 import induciblediscgraph
 
-VERBOSE  = False    ## print debugging info.
-ENDGRAPH = False    ## print last graph for each discourse.
+VERBOSE      = False    ## print debugging info.
+ENDGRAPH     = False    ## print last graph for each discourse.
+PRINT_NORMAL = False	## smuggle graph out with induced scopes & normalized inherits
 for a in sys.argv:
   if a=='-d':
-    VERBOSE = True
+    VERBOSE      = True
   if a=='-g':
-    ENDGRAPH = True
+    ENDGRAPH     = True
+  if a=='-n':
+  	PRINT_NORMAL = True
 
 ################################################################################
 
@@ -81,8 +84,10 @@ def makeDiscAntec( expr, dst, OrigUnbound ):
 def checkConstsUsed( expr, OrigConsts ):
   if len( expr ) == 0: return
   if isinstance( expr, str ): return
-  if expr[0] in OrigConsts:
-    OrigConsts.remove( expr[0] )
+  if len(expr)>1 and (expr[0],expr[1]) in OrigConsts:
+    OrigConsts.remove( (expr[0],expr[1]) )
+  if (expr[0],'Q') in OrigConsts:
+    OrigConsts.remove( (expr[0],'Q') )
   for subexpr in expr:
     checkConstsUsed( subexpr, OrigConsts )
 
@@ -127,6 +132,19 @@ for line in sys.stdin:
     for xFin in D.Heirs.get(x,[]):
       if xFin not in D.Subs  and  xFin not in D.Scopes:
         D.Scopes[ xFin ] = D.Scopes[ x ]
+  ## Copy special scope markers (taint, upward) down to final heirs
+  for x in D.Taints.keys():
+    for xFin in D.Heirs.get(x,[]):
+      if xFin not in D.Subs  and  xFin not in D.Taints:
+        D.Taints[ xFin ] = D.Taints[ x ]
+  for x in D.Upward1.keys():
+    for xFin in D.Heirs.get(x,[]):
+      if xFin not in D.Subs  and  xFin not in D.Upward1:
+        D.Upward1[ xFin ] = D.Upward1[ x ]
+  for x in D.Upward2.keys():
+    for xFin in D.Heirs.get(x,[]):
+      if xFin not in D.Subs  and  xFin not in D.Upward2:
+        D.Upward2[ xFin ] = D.Upward2[ x ]
   ## Skip sentence if cycle...
   if not D.check(): continue
 
@@ -153,14 +171,14 @@ for line in sys.stdin:
   L1 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
   if len(L1) > 1:
     print(           '#WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences' )
-    sys.stderr.write( 'WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences\n' ) 
+    sys.stderr.write( 'WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences\n' )
     for xHi in L1:
       print(           '#    ' + xHi + ' subsumes ' + ' '.join(sorted(sets.Set([ xLo  for xLo in D.Referents  if D.reaches(xLo,xHi) ]))) )
       sys.stderr.write( '    ' + xHi + ' subsumes ' + ' '.join(sorted(sets.Set([ xLo  for xLo in D.Referents  if D.reaches(xLo,xHi) ]))) + '\n' )
   elif L1 == []:
     L2 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
     print(           '#NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + ' '.join(L2) )
-    sys.stderr.write( 'NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + ' '.join(L2) + '\n' ) 
+    sys.stderr.write( 'NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + ' '.join(L2) + '\n' )
     if L2 == []:
 #      L = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
       print(           '#WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents' )
@@ -267,6 +285,9 @@ for line in sys.stdin:
       D.QuantTuples.remove( (q,e,r,s,n) )
       if VERBOSE: print( 'Removing non-terminal quantifier ' + q + ' ' + e + ' ' + r + ' ' + s + ' ' + n )
 
+# output normalized discgraph
+  if PRINT_NORMAL: print( 'GRAPH: ' + D.strGraph() )
+
   #### V. TRANSLATE TO LAMBDA CALCULUS...
 
   Translations = [ ]
@@ -280,7 +301,7 @@ for line in sys.stdin:
     i += 1
     active = False
 
-    if VERBOSE: 
+    if VERBOSE:
       print( '---- ITERATION ' + str(i) + ' ----' )
       print( 'P = ' + str(sorted(D.PredTuples)) )
       print( 'Q = ' + str(sorted(D.QuantTuples)) )
@@ -304,7 +325,7 @@ for line in sys.stdin:
     '''
     ## P1 rule...
     for ptup in list(D.PredTuples):
-      x = ptup[1]  
+      x = ptup[1]
       if x not in D.Scopes.values() and x not in D.Inhs and x not in D.DiscInhs:
         if VERBOSE: print( 'applying P to move from P to A: \\' + x + '. ' + lambdaFormat(ptup) )
         Abstractions[ x ].append( ptup )
@@ -354,8 +375,13 @@ for line in sys.stdin:
 
 
         EverUnbound = sets.Set()
+        AlreadyTriedVars = []
         while len(DstUnbound)>0 and expr!=None:
           var = DstUnbound.pop()
+          if (var,len(DstUnbound),len(EverUnbound)) in AlreadyTriedVars:
+            sys.stderr.write('ERROR: unable to make discourse anaphor from ' + src + ' to ' + dst + ' without cycle in quantifying ' + ' '.join([v for v,n,m in AlreadyTriedVars]) + '\n' )
+            break #exit(0)
+          AlreadyTriedVars += [ (var,len(DstUnbound),len(EverUnbound)) ]
           expr = Expressions.get(var,None)
           if expr == None: break
           findUnboundVars( expr, DstUnbound, [var] )
@@ -376,7 +402,7 @@ for line in sys.stdin:
             if len( OutscopingUnbound ) == 0: break
         else:
           if VERBOSE: print( 'tried to attach discourse anaphor, but none of ' + ' '.join(DstUnbound) + ' had no unbound variables in Expression set' )
-          continue 
+          continue
          '''
 
         expr = replaceVarName( makeDiscAntec( ('D:prevosomeQ', '_', ('lambda', var+'x', ()), ('lambda', var, expr)), dst, EverUnbound ), dst, src )
@@ -443,6 +469,6 @@ for line in sys.stdin:
   if VERBOSE: print( 'D.OrigConsts = ' + str(D.OrigConsts) )
   checkConstsUsed( expr, D.OrigConsts )
   for k in D.OrigConsts:
-    print(           '#    DOWNSTREAM LAMBDA EXPRESSION WARNING: const does not appear in translations: ' + k )
-    sys.stderr.write( '    DOWNSTREAM LAMBDA EXPRESSION WARNING: const does not appear in translations: ' + k + '\n' )
+    print(           '#    DOWNSTREAM LAMBDA EXPRESSION WARNING: const does not appear in translations: ' + ','.join(k) )
+    sys.stderr.write( '    DOWNSTREAM LAMBDA EXPRESSION WARNING: const does not appear in translations: ' + ','.join(k) + '\n' )
 

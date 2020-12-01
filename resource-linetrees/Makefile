@@ -240,7 +240,8 @@ Linetoks:
 endef
 
 #### This item is used to flatten trees from treebank corpora *in the genmodel directory* into tokenized parser input...
-%.linetoks:  $(GENMODEL)/%.linetrees   #$(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.linetrees)))
+#%.linetoks:  $(GENMODEL)/%.linetrees   #$(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.linetrees)))
+%.linetoks:  $(GENMODEL)/$$(notdir $$*.linetrees)   #$(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.linetrees)))
 	cat $<  |  sed 's/(-NONE-[^)]*)//g'  \
 		|  sed 's/([^ ]* //g;s/)//g'  |  sed 's/  */ /g;s/^ *//;s/ *$$//;'  \
 		|  sed 's/!unf! *//g' >  $@

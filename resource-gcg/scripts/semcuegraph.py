@@ -149,6 +149,12 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('1\'',G.result('S',d)), '2\'', G.result('S',d+'u') )  ## switch 1' & 2' arguments (same process top-down as bottom-up)
       G.equate( G.result('2\'',G.result('S',d)), '1\'', G.result('S',d+'u') )
       G.equate( G.result('S',dUpper), 'e', G.result('r',G.result('S',dLower)) )
+    elif '-lZ' in sD and sC.startswith('N-aD-b{N-aD}'):      ## Zd (cardinal quant)
+      G.equate( G.result(l,d), l, d+'u' )
+      G.equate( G.result('S',dLower),                               '3', G.result('r',G.result('S',dUpper)) )
+      G.equate( G.result('2\'',G.result('S',dUpper)),               '2', G.result('r',G.result('S',dUpper)) )
+      G.equate( G.result('r',G.result('2\'',G.result('S',dUpper))), '1', G.result('r',G.result('S',dUpper)) )
+      G.equate( 'D:eqQ',                                            '0', G.result('r',G.result('S',dUpper)) )
     elif '-lZ' in sD and sC.startswith('A-aN-x'):            ## Zc
       G.equate( G.result(l,d), l, d+'u' )
       G.equate( G.result('S',dLower),                 '2', G.result('r',G.result('S',dUpper)) )
@@ -365,7 +371,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 #      G.equate( G.result('S',d), 'S', G.result('A',e) )
       G.equate( G.result('r',G.result('S',d)), 'S', G.result('A',e) )  # grab restrictor, tho 'which' gets put on restrictor of nolo
       G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
-    elif sD==',' and sE.endswith('-pPc') or sD==';' and sE.endswith('-pPs'):
+    elif sD.startswith(',') and sE.endswith('-pPc') or sD.startswith(';') and sE.endswith('-pPs'):
       G.equate( G.result('S',c), 'S', e )
     elif sD=='U' and sE=='U':
       G.equate( G.result('S',d), 'S', c )
@@ -373,6 +379,13 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     else:
       if sC != 'FAIL':   #sC != sD != sE != 'FAIL':
         sys.stderr.write( 'WARNING: No analysis for annotated binary expansion ' + sC + ' -> ' + sD + ' ' + sE + ' at ' + str(id) + '.\n' )
+    if ( '-lE' in sD or '-lE' in sE or
+         '-lZ' in sD or '-lZ' in sE or
+         '-lz' in sD or '-lz' in sE or
+         '-lQ' in sD or '-lQ' in sE or
+         '-lF' in sD or '-lF' in sE or
+         '-lV' in sD or '-lV' in sE ):
+      sys.stderr.write( 'WARNING: Illegal unary operator in binary expansion ' + sC + ' -> ' + sD + ' ' + sE + ' at ' + str(id) + '.\n' )
 
 
   def convert( G, t, sentnumprefix='', s=0, i=0 ):
@@ -393,6 +406,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       i = G.convert( t.ch[0], sentnumprefix, 0, i )
       G.updateBin( s, t.c, t.ch[0].c, t.ch[1].c, sentnumprefix+('0' if i<10 else '')+str(i) )
       i = G.convert( t.ch[1], sentnumprefix, 1, i )
+
+    ## unsupported n-ary branch...
+    else:
+      sys.stderr.write( 'ERROR: No analysis for super-binary branch: ' + str(t) + '\n' )
 
     return i
 
@@ -417,23 +434,39 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         if (x,    'S') in G: G.rename( x+'s', G[x,    'S'] )
         if (x+'s','r') in G: G.rename( x+'r', G[x+'s','r'] )
         ## apply -n, -m, and -s tags...
+          # TODO this repetitious warning code could use an abstraction
         if len( re.findall( '-n',G[x,'0'] ) ) > 1:
           sys.stderr.write( 'ERROR: multiple -n tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         if len( re.findall( '-s',G[x,'0'] ) ) > 1:
           sys.stderr.write( 'ERROR: multiple -s tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
-        for dep in re.findall( '-[mntsw][0-9]+r?', G[x,'0'] ):
-          dest = dep[2:6] if len(dep)>5 else sentnumprefix+dep[2:4]
-          if   dep[1]=='m' and dep[-1]=='r': G.equate( dest+'r', 'm', x+'r' )  ## discourse anaphor
-          elif dep[1]=='m':                  G.equate( dest+'s', 'm', x+'r' )  ## discourse anaphor
-          #if   dep[1]=='m' or 
-          elif dep[1]=='n' and dep[-1]=='r': G.equate( dest+'r', 'n', x+'r' )
-          elif dep[1]=='n':                  G.equate( dest+'s', 'n', x+'r' )
-          elif dep[1]=='t':                  G.equate( dest+'s', 's', x+'s' )  ## scotch tape (suggested scope for lambda expressions, but not to be used for scoring) 
-          elif dep[1]=='s' and dep[-1]=='r': G.equate( dest+'r', 's', x+'s' )
-          elif dep[1]=='s':                  G.equate( dest+'s', 's', x+'s' )
-#          if dep[1]=='w': G.equate( dest+'s', 'W', x+'s' )
-          if dep[1]=='w': G.equate( dest+'s', 'W', x )
-        G[x,'0'] = re.sub( '-[mntsw][0-9]+r?', '', G[x,'0'] )
+        if len( re.findall( '-t',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -t tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-u',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -u tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-uu',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -uu tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-w',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -w tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-ww',G[x,'0'] ) ) > 1:
+          sys.stderr.write( 'ERROR: multiple -ww tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        for tag,dest,r in re.findall( '-([mnstuw]+)([0-9]+)(r?)', G[x,'0'] ):
+          dest = sentnumprefix+dest if len(dest) == 2 else dest
+          if   tag=='m' and r=='r': G.equate( dest+'r', 'm', x+'r' )  ## discourse anaphor
+          elif tag=='m':            G.equate( dest+'s', 'm', x+'r' )  ## discourse anaphor
+          elif tag=='n' and r=='r': G.equate( dest+'r', 'n', x+'r' )
+          elif tag=='n':            G.equate( dest+'s', 'n', x+'r' )
+          elif tag=='t':  ## scotch tape (suggested scope for lambda expressions, but not to be used for scoring)
+                                    G.equate( dest+'s', 's', x+'s' )
+                                    G.equate( dest+'s', 'tt', x+'s' ) # 'tainted' not truth-conditionally necessary
+          elif tag=='s' and r=='r': G.equate( dest+'r', 's', x+'s' )
+          elif tag=='s':            G.equate( dest+'s', 's', x+'s' )
+          elif tag=='u':            G.equate( dest+'s', 'u', x+'s' ) # 'upward' outscoper but not necessarily immediate outscoper
+          elif tag=='uu':           G.equate( dest+'s', 'uu', x+'s' ) # ditto
+          # as of October 2020 nothing becomes of -w but at least they'll be in the graph
+          elif tag=='w':            G.equate( dest+'s', 'W', x )
+          elif tag=='ww':           G.equate( dest+'s', 'WW', x )
+          else: sys.stderr.write( 'ERROR: unknown tag ' + tag + ' in category ' + G[x,'0'] + '\n' )
+        G[x,'0'] = re.sub( '-[mnstuw]+[0-9]+r?', '', G[x,'0'] ) # delete the tags
         ## obtain pred by applying lex rules to word token...
         s = re.sub('-l.','',G[x,'0']) + ':' + G[x,'X'].lower()
         eqns = re.sub( '-x.*:', ':', s )
@@ -447,6 +480,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif xrule == 'NORD'  :  xrule = '%|Qr0=%DecOne^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r^Rrh=SH'
           elif xrule == 'NORDSUP' :  xrule = '%|Qr0=%DecOne^Qr1=2r^Qr2=2^ro=2r^31=2^3r1h=SH^Pr0=3r0^Pr1=r^Rr0=A:gt^Rr1=3r2^Rr2=Pr2'
           elif xrule == 'NSUP'  :  xrule = '%|Qr0=D:moreQ^Er0=%ness^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2'
+          elif xrule == 'NSUP3' :  xrule = '%|Qr0=D:moreQ^Er0=3r0^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2'
+          elif xrule == 'NSUPEXI' :  xrule = '%|Rr0=D:someQ^Rr1=r^Rr2=^Qr0=D:moreQ^Er0=%ness^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2'
           elif xrule == 'NCOMP' :  xrule = '%|Er0=%^Er1=r^Er2=2^2w=^t=s' #^Q0=D:someDummyQ^Q1=31r^Q2=31'
           elif xrule == 'NOUN'  :  xrule = '%|Er0=%^Er1=r' + ''.join( [ '^Er' +str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
           elif xrule == 'NRELEXI'  :  xrule = '%|Qr0=D:someQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er' +str(i+1)+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
@@ -480,8 +515,9 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           ## quantifier semantics...
           if   eqns.startswith('N-b{N-aD}:'):    eqns = 'r0='  + eqns + '^r1=1r^r2=1'
           elif eqns.startswith('N-aD-b{N-aD}:'): eqns = 'r0='  + eqns + '^r1=2r^r2=2'
-          elif eqns.startswith('N-bN:'):         eqns = 'r0='  + eqns + '^r1=2r^r2=2'
-          elif eqns.startswith('N-bO:'):         eqns = 'r0='  + eqns + '^r1=2r^r2=2'
+          elif eqns.startswith('N-aD-b{N-aD}-bN:'): eqns = 'r0='  + eqns + '^r1=2r^r2=2^r3=3'
+          elif eqns.startswith('N-bN:'):         eqns = 'r0='  + eqns + '^r1=1r^r2=1'
+          elif eqns.startswith('N-bO:'):         eqns = 'r0='  + eqns + '^r1=1r^r2=1'
           ## relative/interrogative pronoun semantics...
           elif eqns.startswith('A-aN-iN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
           elif eqns.startswith('A-aN-rN'):       eqns = 'r0='  + eqns +            ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,3) ] )
@@ -603,10 +639,10 @@ class SemCueGraph( StoreStateCueGraph ):
 
   def finalize( G ):
     for x,l in sorted( G.keys() ):
-      if l in 'mns' and ( (G[x,l][0:4],'S') not in G or (G[G[x,l][0:4],'S'],'r') not in G ):
+      if (l in 'mnsuuw' or l == 'tt') and ( (G[x,l][0:4],'S') not in G or (G[G[x,l][0:4],'S'],'r') not in G ):
         sys.stderr.write( 'WARNING: destination ' + G[x,l] + ' of dependency ' + l + ' in ' + x + ' not complete referential state in graph!\n' )
     for x,l in sorted( G.keys() ):
-      if l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'ersCDEFGHIJKLMNOPQRSTUVWXYZ': 
+      if l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'ersCDEFGHIJKLMNOPQRSTUVWXYZ':
         del G[x,l]
 
       '''
