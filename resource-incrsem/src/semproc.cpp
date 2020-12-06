@@ -564,7 +564,8 @@ int main ( int nArgs, char* argv[] ) {
                                     for ( auto& cpB : modB.find(bpredictor)->second ) {
                                       if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << cpB.first << " = " << cpB.second << endl;
                                       //                            lock_guard<mutex> guard( mutexBeam );
-                                      if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second) > beams[t].rbegin()->getProb() ) {
+                                      double lgprItem = lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second);
+                                      if( isnormal(lgprItem) and ( beams[t].size()<BEAM_WIDTH or lgprItem > beams[t].rbegin()->getProb() ) ) {
 
                                         // Thread heartbeat (to diagnose thread death)...
                                         if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
@@ -576,7 +577,7 @@ int main ( int nArgs, char* argv[] ) {
                                         // Calculate probability and storestate and add to beam...
                                         StoreState ss( qTermPhase, j, e, opL, opR, cpA.first, cpB.first );
                                         if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
-                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t, w_t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second), be_tdec1 ) );
+                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t, w_t ), ProbBack<HiddState>( lgprItem, be_tdec1 ) );
                                           if( VERBOSE>1 ) cout << "                send (" << be_tdec1.getHidd() << ") to (" << ss << ") with "
                                             << (lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second)) << endl;
                                         } //closes if ( (t<lwSent
