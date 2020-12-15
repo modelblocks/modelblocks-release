@@ -93,7 +93,7 @@ endif
             $(CONLLSCORERDIR)/scorer.pl \
              genmodel/$$(subst -,.,$$(basename $$(basename $$*)))$$(subst _,.,$$(suffix $$*))key.conll \
 	           $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$(basename $$*))$$(subst _,.,$$(suffix $$*))preds.conll 
-	perl $(word 2, $^) all $(word 3, $^) $(word 4, $^) > $@
+	perl $(word 1, $^) all $(word 2, $^) $(word 3, $^) > $@
 
 ## TO SPEC
 #.PRECIOUS: %syneval
