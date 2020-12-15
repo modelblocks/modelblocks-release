@@ -384,6 +384,8 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
             else:
                 l2_loss = torch.FloatTensor([0])
             for param in model.parameters():
+                if torch.numel(param) == 0:
+                    continue
                 l2_loss += torch.mean(param.pow(2))
 
             output = model(batch_d, batch_a, batch_hva_mat, batch_hvf_mat, batch_l, batch_hvl_mat, batch_hva_top,

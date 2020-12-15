@@ -3,7 +3,8 @@ mkdir $HOME/tmp
 
 # initialize and activate new conda env (need to be on (base) environment of miniconda3)
 conda create -n mb
-source activate mb
+conda activate mb
+#source activate mb #ej - this didn't work for me so i changed it to 'conda activate'
 
 # install compilers/BLAS dependencies (for armadillo), python/scipy (for NN training)
 # python >= 3.5 recommended
