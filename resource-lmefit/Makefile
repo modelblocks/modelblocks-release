@@ -37,6 +37,11 @@
 .SUFFIXES:
 .SECONDEXPANSION:
 
+
+#### copy lmerform to local scripts directory...
+scripts/%.lmerform:  $(LMEFIT-SCRIPTS)/%.lmerform  |  scripts
+	cp $^ $@
+
 ################################################################################
 #
 #  LMER recipes

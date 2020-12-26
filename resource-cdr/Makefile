@@ -83,7 +83,7 @@ export PYTHONPATH
 #
 ################################################################################
 
-scripts/%cdrform: $(CDR-SCRIPTS)/$$*cdrform $(CDR-SCRIPTS)/get_prereqs_from_baseform.py $$(shell cat $(CDR-SCRIPTS)/%cdrform | python $(CDR-SCRIPTS)/get_prereqs_from_baseform.py);
+scripts/%cdrform: $(CDR-SCRIPTS)/$$*cdrform $(CDR-SCRIPTS)/get_prereqs_from_baseform.py $$(shell cat $(CDR-SCRIPTS)/%cdrform | python $(CDR-SCRIPTS)/get_prereqs_from_baseform.py)  |  scripts
 	cp $< $@
 
 bin/regress-cdr: $$(DEP-CDR) $(CDR-SCRIPTS)/regress-cdr.sh

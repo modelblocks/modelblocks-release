@@ -76,7 +76,8 @@ EMPTY :=
 SPACE :=$(EMPTY) $(EMPTY)
 COMMA :=, 
 
-VPATH += $(RESOURCE-RT)
+## WS: VPATH MAKES IT IMPOSSIBLE TO CREATE LOCAL SCRIPTS DIRECTORY IN PROJECT DIRECTORY
+#VPATH += $(RESOURCE-RT)
 
 MERGESURP = paste -d' ' - <(cat $(subst GRAMMAR,$(grammar),$(basename $*))_parsed.tokmeasures | \
 awk -f $(word 1, $^) -v cols=totsurp | \
