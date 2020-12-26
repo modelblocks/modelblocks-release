@@ -157,8 +157,8 @@ $(NATSTORDIR)/naturalstories_RTS/all_stories.tok $(CONFIGDIR)/user-naturalstorie
 %naturalstories.mfields.itemmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/all_stories.tok %naturalstories.lineitems \
 $(RT-SCRIPTS)/sents2sentids.py $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/filter_cols.awk $(NATSTORIES-SCRIPTS)/docidint2name.py\
 $(CONFIGDIR)/user-naturalstories-directory.txt
-	paste -d' ' <(cat $(word 1, $^) | sed 's/\t/ /g;s/peaked/peeked/g') <(cat $(word 2, $^) | python $(word 3, $^) | cut -d' ' -f 2-) \
-	<(cat $(word 1, $^) | sed 's/\t/ /g;' | awk -f $(word 5, $^) -v cols=item - | python $(word 4, $^) item docid) | python $(word 6, $^) > $@
+	paste -d' ' <(cat $(word 1, $^) | sed 's/\t/ /g;s/peaked/peeked/g') <(cat $(word 2, $^) | python2 $(word 3, $^) | cut -d' ' -f 2-) \
+	<(cat $(word 1, $^) | sed 's/\t/ /g;' | awk -f $(word 5, $^) -v cols=item - | python2 $(word 4, $^) item docid) | python $(word 6, $^) > $@
 
 %naturalstories.t.itemmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/audio %naturalstories.itemmeasures $$(NATSTORIES-SCRIPTS)/textGrid2itemmeasures.py $(NATSTORIES-SCRIPTS)/add_start_and_end_of_sentence.py
 	python2 $(word 3, $^) $(word 2, $^) $(word 1, $^)  |  python $(word 4,$^)  >  $@
