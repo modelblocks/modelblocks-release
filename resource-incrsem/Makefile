@@ -398,6 +398,7 @@ endef
                $$(basename %).lemmacounts
 	cat $<  |  $(word 2,$^) $(wordlist 1,99,$(subst _, ,$(subst .,,$(suffix $*)))) $(word 3,$^)  >  $@
 ## remove non-coref pronouns from F predictors (for ontonotes)...
+.PRECIOUS: %_ontocorfix_mlpdecpars
 %_ontocorfix_mlpdecpars : %_mlpdecpars  $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py
 	cat $<  |  python3 $(word 2,$^)  >  $@
 
