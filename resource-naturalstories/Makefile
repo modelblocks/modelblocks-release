@@ -107,7 +107,7 @@ endif
 ################################################################################
 
 ## copy partition ini into project genmodel directory
-genmodel/%.ini: $(NATSTORIES-SCRIPTS)/%.ini
+genmodel/%.ini: $(NATSTORIES-SCRIPTS)/%.ini  |  scripts
 	cp $< $@
 
 genmodel/naturalstories.merge_tables.params: | genmodel
