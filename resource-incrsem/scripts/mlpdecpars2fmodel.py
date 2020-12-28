@@ -216,7 +216,7 @@ class FModel(nn.Module):
         hvb_top = torch.FloatTensor(hvb_top)
         hvf_top = torch.FloatTensor(hvf_top)
         hva_top = torch.FloatTensor(hva_top)
-        nullA   = torch.FloatTensor(nullA)
+        # nullA   = torch.FloatTensor(nullA)
 
         if ablate_syn:
             cat_b_embed = torch.zeros([len(cat_b_ix), self.syn_size], dtype=torch.float)
@@ -327,6 +327,8 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidd
             else:
                 l2_loss = torch.FloatTensor([0])
             for param in model.parameters():
+                if torch.numel(param) == 0:
+                    continue
                 l2_loss += torch.mean(param.pow(2))
 
             output = model(batch_d, batch_c, batch_hvb_mat, batch_hvf_mat, batch_hvb_top, batch_hvf_top, batch_hva_mat, batch_hva_top, batch_nulla, use_gpu, ablate_syn, ablate_sem)
