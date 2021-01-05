@@ -80,8 +80,11 @@ class Trellis : public vector<Beam<HiddState>> {
     void setMostLikelySequence ( DelimitedList<psX,BeamElement<HiddState>,psLine,psX>& lbe, const JModel& jm ) {
       static StoreState ssLongFail( cFail, cFail );
 //      static StoreState ssLongFail;  ssLongFail.emplace( ssLongFail.end() );  ssLongFail.back().apex().emplace_back(hvBot,cFail,S_A);  ssLongFail.back().base().emplace_back(hvBot,cFail,S_B);
+      // Add top of last timestep beam to front of mls list...
       lbe.clear(); if( back().size()>0 ) lbe.push_front( *back().begin() );
+      // Follow backpointers from trellis and add each to front of mls list...
       if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( lbe.front().getBack() );
+      // Add dummy element at end...
       if( lbe.size()>0 ) lbe.emplace_back( BeamElement<HiddState>() );
       cerr << "lbe.size(): " << lbe.size() << endl;
       // If parse fails...
@@ -228,13 +231,20 @@ int main ( int nArgs, char* argv[] ) {
         while ( fin && EOF!=fin.peek() ) {
           if      ( fin.peek()=='E' ) matEmutable = EMat( fin );
           else if ( fin.peek()=='O' ) funcOmutable = OFunc( fin );
-          else if ( fin.peek()=='N' ) modNmutable = NModel( fin );
-          else if ( fin.peek()=='F' ) modFmutable = FModel( fin );
-          else if ( fin.peek()=='P' ) modPmutable = PModel( fin );
-          else if ( fin.peek()=='W' ) modWmutable = WModel( fin );  //fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
-          else if ( fin.peek()=='J' ) modJmutable = JModel( fin );
-          else if ( fin.peek()=='A' ) modAmutable = AModel( fin );
-          else if ( fin.peek()=='B' ) modBmutable = BModel( fin );
+          //else if ( fin.peek()=='N' ) modNmutable = NModel( fin );
+          else if ( fin.peek()=='N' ) { modNmutable = NModel( fin ); cerr << "loaded N model" << endl; }
+          //else if ( fin.peek()=='F' )  modFmutable = FModel( fin ); 
+          else if ( fin.peek()=='F' ) { modFmutable = FModel( fin ); cerr << "loaded F model" << endl; }
+          //else if ( fin.peek()=='P' ) modPmutable = PModel( fin );
+          else if ( fin.peek()=='P' ) { modPmutable = PModel( fin ); cerr << "loaded P model" << endl; }
+          //else if ( fin.peek()=='W' ) modWmutable = WModel( fin );  //fin >> "W " >> *lW.emplace(lW.end()) >> "\n";
+          else if ( fin.peek()=='W' ) { modWmutable = WModel( fin ); cerr << "loaded W model" << endl; } 
+          //else if ( fin.peek()=='J' ) modJmutable = JModel( fin );
+          else if ( fin.peek()=='J' ) { modJmutable = JModel( fin ); cerr << "loaded J model" << endl; }
+          //else if ( fin.peek()=='A' ) modAmutable = AModel( fin );
+          else if ( fin.peek()=='A' ) { modAmutable = AModel( fin ); cerr << "loaded A model" << endl; }
+          //else if ( fin.peek()=='B' ) modBmutable = BModel( fin );
+          else if ( fin.peek()=='B' ) { modBmutable = BModel( fin ); cerr << "loaded B model" << endl; }
           else {
             Delimited<string> sOffSpec;
             fin >> sOffSpec >> "\n";
@@ -454,7 +464,8 @@ int main ( int nArgs, char* argv[] ) {
               double numerator = nresponses(1) / nresponses(0) ;
               double nprob = numerator / ndenom;
 
-              if ( VERBOSE>1 ) cout << "    N  antprtrm: " << pbeAnt->getHidd().getPrtrm() << " corefOn: " << corefON << "t-tAnt: " << t-tAnt <<  "qtdec1: " << q_tdec1 << " ablate_unary: " << ABLATE_UNARY << " : 1 = " << numerator << "/" << ndenom << "=" << nprob << endl;
+              //if ( VERBOSE>1 ) cout << "    N  antprtrm: " << pbeAnt->getHidd().getPrtrm() << " corefOn: " << corefON << " t-tAnt: " << t-tAnt <<  " qtdec1: " << q_tdec1 << " ablate_unary: " << ABLATE_UNARY << " : 1 = " << numerator << "/" << ndenom << "=" << nprob << endl;
+              if ( VERBOSE>1 ) cout << "    N  npv: " << npv << " : 1 = " << numerator << "/" << ndenom << "=" << nprob << endl;
               //NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1, ABLATE_UNARY );
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
                 FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );
@@ -492,7 +503,8 @@ int main ( int nArgs, char* argv[] ) {
 //                      if( modF.getResponseIndex(f,e_p_t,k_p_t)==0 ) cerr<<"ERROR: unable to find fresponse "<<f<<"&"<<e_p_t<<"&"<<k_p_t<<endl;
                       if( modF.getResponseIndex(f,e_p_t,k_p_t) == uint(-1) ) continue;
                       double probFork = fresponses( modF.getResponseIndex(f,e_p_t,k_p_t) );
-                      if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << probFork << endl;
+                      //if ( VERBOSE>1 ) cout << "      F ... : " << f << " " << e_p_t << " " << k_p_t << " = " << probFork << endl;
+                      if ( VERBOSE>1 ) cout << "      F " << lfpredictors << " : " << f << " " << e_p_t << " " << k_p_t << " = " << probFork << endl;
 
                       // Thread heartbeat (to diagnose thread death)...
                       if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
@@ -533,7 +545,8 @@ int main ( int nArgs, char* argv[] ) {
                             O    opR = modJ.getJEOO( jresponse ).fourth(); //.getROp();
                             //if( jresponse.toInt() >= int(jresponses.size()) ) cerr << "ERROR: unknown jresponse: " << jresponse << endl;
                             double probJoin = jresponses[jresponse]; //  / jnorm;
-                            if ( VERBOSE>1 ) cout << "        J " << f << " " << e_p_t << " " << aLchild << " " << qTermPhase << " : " << modJ.getJEOO(jresponse) << " = " << probJoin << endl;
+                            //if ( VERBOSE>1 ) cout << "        J " << f << " " << e_p_t << " " << aLchild << " " << qTermPhase << " : " << modJ.getJEOO(jresponse) << " = " << probJoin << endl;
+                            if ( VERBOSE>1 ) cout << "        J " << ljpredictors << " : " << modJ.getJEOO(jresponse) << " = " << probJoin << endl;
 
                             // For each possible apex category label...
                             APredictorVec apredictor( f, j, e_p_t, e, opL, aLchild, qTermPhase );  // save apredictor for use in prob calc
@@ -551,7 +564,8 @@ int main ( int nArgs, char* argv[] ) {
                                     for ( auto& cpB : modB.find(bpredictor)->second ) {
                                       if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << cpB.first << " = " << cpB.second << endl;
                                       //                            lock_guard<mutex> guard( mutexBeam );
-                                      if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second) > beams[t].rbegin()->getProb() ) {
+                                      double lgprItem = lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second);
+                                      if( isnormal(lgprItem) and ( beams[t].size()<BEAM_WIDTH or lgprItem > beams[t].rbegin()->getProb() ) ) {
 
                                         // Thread heartbeat (to diagnose thread death)...
                                         if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
@@ -563,7 +577,7 @@ int main ( int nArgs, char* argv[] ) {
                                         // Calculate probability and storestate and add to beam...
                                         StoreState ss( qTermPhase, j, e, opL, opR, cpA.first, cpB.first );
                                         if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
-                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t, w_t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second), be_tdec1 ) );
+                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t, w_t ), ProbBack<HiddState>( lgprItem, be_tdec1 ) );
                                           if( VERBOSE>1 ) cout << "                send (" << be_tdec1.getHidd() << ") to (" << ss << ") with "
                                             << (lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second)) << endl;
                                         } //closes if ( (t<lwSent

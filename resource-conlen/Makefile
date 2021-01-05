@@ -104,11 +104,11 @@ genmodel/%_LANG_MD.ini: genmodel/%.ini
 genmodel/%_LANG_MD.ini: genmodel/%.ini
 	cp $< $@
 
-%conlenfmri_beh.txt: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_beh.txt $(CONFIGDIR)/user-conlen-directory.txt | %
-	cp $< $@
+%conlenfmri.beh.evmeasures: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_beh.csv $(CONFIGDIR)/user-conlen-directory.txt $(CONLEN-SCRIPTS)/build_itemmeasures.py | %
+	cat $< | python $(word 3, $^) > $@
 
-%conlen.itemmeasures: %conlenfmri_beh.txt $(CONLEN-SCRIPTS)/build_itemmeasures.py
-	cat $< | python $(word 2, $^) > $@
+%conlenfmri.wide.hrf.evmeasures: $(FMRI-SCRIPTS)/hrf_convolve_predictors.py %conlenfmri.beh.evmeasures
+	python $^ -g subject run > $@
 
 %conlenc.itemmeasures: $(CONLEN-SCRIPTS)/filter_itemmeasures.py %conlen.itemmeasures
 	python $^ c > $@
@@ -183,30 +183,30 @@ conlenfmri%itemmeasures: $(CONLEN-SCRIPTS)/concat_itemmeasures.py conlenc%itemme
 %conlenfmri_bold.evmeasures: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_bold.csv $(CONFIGDIR)/user-conlen-directory.txt | %
 	cp $< $@
 
-%conlenfmri.evmeasures: $$(DEP-CONLEN) %conlenfmri_bold.evmeasures $(CONLEN-SCRIPTS)/preprocess_conlen_fmri.py
+%conlenfmri.resmeasures: $$(DEP-CONLEN) %conlenfmri_bold.evmeasures $(CONLEN-SCRIPTS)/preprocess_conlen_fmri.py
 	cat $(word 1, $^) | python $(word 2, $^) > $@
 
-%conlenfmri_LANG.evmeasures: %conlenfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(CONLEN-SCRIPTS)/add_network.py
+%conlenfmri_LANG.resmeasures: %conlenfmri.resmeasures $(GENERAL-SCRIPTS)/melt.py $(CONLEN-SCRIPTS)/add_network.py
 	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k LANG.* | python $(word 3, $^) > $@
 
-%conlenfmri_MD.evmeasures: %conlenfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(CONLEN-SCRIPTS)/add_network.py
+%conlenfmri_MD.resmeasures: %conlenfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(CONLEN-SCRIPTS)/add_network.py
 	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k MD.* | python $(word 3, $^)  > $@
 
-%conlenfmri_LANG_MD.evmeasures: %conlenfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(CONLEN-SCRIPTS)/add_network.py
+%conlenfmri_LANG_MD.resmeasures: %conlenfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(CONLEN-SCRIPTS)/add_network.py
 	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k LANG.* MD.* | python $(word 3, $^)  > $@
 
-%conlenfmri.beh.evmeasures: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_beh.csv
+%conlenfmri.hrf.prdmeasures: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_beh.csv
 	cp $^ $@
 
-conlenfmri.%.evmeasures: $(CONLEN-SCRIPTS)/merge_itemmeasures_into_runs.py $$(dir %)conlenfmri.beh.evmeasures conlenfmri.%.all-itemmeasures
+%conlenfmri_LANG.hrf.prdmeasures: $(CONLEN-SCRIPTS)/tile_stim_into_roi.py %conlenfmri_LANG.evmeasures %conlenfmri.wide.hrf.evmeasures
 	python $^ > $@
 
-conlenfmri_LANG.%.evmeasures: $(CONLEN-SCRIPTS)/tile_stim_into_roi.py $$(dir %)conlenfmri_LANG.evmeasures conlenfmri.%.evmeasures
+%conlenfmri_MD.hrf.prdmeasures: $(CONLEN-SCRIPTS)/tile_stim_into_roi.py %conlenfmri_MD.evmeasures %.conlenfmri.wide.hrf.evmeasures
 	python $^ > $@
 
-conlenfmri_MD.%.evmeasures: $(CONLEN-SCRIPTS)/tile_stim_into_roi.py $$(dir %)conlenfmri_MD.evmeasures conlenfmri.%.evmeasures
+%conlenfmri_LANG_MD.hrf.prdmeasures: $(CONLEN-SCRIPTS)/tile_stim_into_roi.py %conlenfmri_LANG_MD.evmeasures %conlenfmri.wide.hrf.evmeasures
 	python $^ > $@
 
-conlenfmri_LANG_MD.%.evmeasures: $(CONLEN-SCRIPTS)/tile_stim_into_roi.py $$(dir %)conlenfmri_LANG_MD.evmeasures conlenfmri.%.evmeasures
+%hrf.all.evmeasures: $(CONLEN-SCRIPTS)/merge_prd_res.py %hrf.prdmeasures %resmeasures
 	python $^ > $@
 

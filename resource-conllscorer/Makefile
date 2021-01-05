@@ -89,10 +89,11 @@ endif
 ################################################################################
 
 .PRECIOUS: %corefeval
-%corefeval: $(CONLLSCORERDIR)/scorer.pl \
+%corefeval: $$(DEP-CONLLSCORER) \
+            $(CONLLSCORERDIR)/scorer.pl \
              genmodel/$$(subst -,.,$$(basename $$(basename $$*)))$$(subst _,.,$$(suffix $$*))key.conll \
 	           $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$(basename $$*))$$(subst _,.,$$(suffix $$*))preds.conll 
-	perl $< all $(word 2, $^) $(word 3, $^) > $@
+	perl $(word 1, $^) all $(word 2, $^) $(word 3, $^) > $@
 
 ## TO SPEC
 #.PRECIOUS: %syneval

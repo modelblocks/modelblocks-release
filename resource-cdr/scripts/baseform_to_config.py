@@ -13,9 +13,22 @@ config = configparser.ConfigParser()
 config.optionxform = str
 config.readfp(sys.stdin)
 
-config['data']['X_train'] = X_path
-config['data']['X_dev'] = X_path
-config['data']['X_test'] = X_path
+if 'data' in config and 'X_train' in config['data']:
+    X_train = ';'.join([X_path, config['data']['X_train']])
+else:
+    X_train = X_path
+if 'data' in config and 'X_dev' in config['data']:
+    X_dev = ';'.join([X_path, config['data']['X_dev']])
+else:
+    X_dev = X_path
+if 'data' in config and 'X_test' in config['data']:
+    X_test = ';'.join([X_path, config['data']['X_test']])
+else:
+    X_test = X_path
+
+config['data']['X_train'] = X_train
+config['data']['X_dev'] = X_dev
+config['data']['X_test'] = X_test
 config['data']['y_train'] = y_path
 config['data']['y_dev'] = y_path.replace('fit_part','expl_part')
 config['data']['y_test'] = y_path.replace('fit_part', 'held_part')

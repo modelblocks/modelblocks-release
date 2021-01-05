@@ -76,7 +76,8 @@ EMPTY :=
 SPACE :=$(EMPTY) $(EMPTY)
 COMMA :=, 
 
-VPATH += $(RESOURCE-RT)
+## WS: VPATH MAKES IT IMPOSSIBLE TO CREATE LOCAL SCRIPTS DIRECTORY IN PROJECT DIRECTORY
+#VPATH += $(RESOURCE-RT)
 
 MERGESURP = paste -d' ' - <(cat $(subst GRAMMAR,$(grammar),$(basename $*))_parsed.tokmeasures | \
 awk -f $(word 1, $^) -v cols=totsurp | \
@@ -302,10 +303,10 @@ genmodel/rename_cols.params: | genmodel
  
 # Computes DLT predictors
 %.dlt.tokmeasures: %.gold.linetrees $(RT-SCRIPTS)/calcDLT.py
-	cat $< | python $(word 2, $^) > $@
+	cat $< | python2 $(word 2, $^) > $@
 
 %.dlt.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
-	cat $< | python $(word 2, $^) > $@
+	cat $< | python2 $(word 2, $^) > $@
 
 # Pastes GloVe predictors to existing identically tokenized tokmeasures file
 %.glove.tokmeasures: $$(basename $$(basename %)).tokmeasures $$(word 1, $$(subst ., ,%)).gigaword$$(suffix $$(basename $$*))$$(suffix $$*).glove.tokmeasures
@@ -335,18 +336,18 @@ genmodel/rename_cols.params: | genmodel
 %_parsed.tokmeasures: $$(basename %).tokmeasures \
 $$(word 1, $$(subst ., ,%))$$(suffix $$*)_parsed.tokmeasures \
 $(RT-SCRIPTS)/filter_cols.py
-	cat $< | paste -d' ' - <(cat $(word 2, $^) | python $(word 3, $^) -x word sentid) > $@
+	cat $< | paste -d' ' - <(cat $(word 2, $^) | python2 $(word 3, $^) -x word sentid) > $@
 
 # Computes parser complexity predictors 
 %_parsed.tokmeasures: %_parsed.tokdecs $(RT-SCRIPTS)/filter_cols.awk
 	cat $< | awk -f $(word 2, $^) -v cols=word:totsurp | grep -v '!ARTICLE' > $@
 
 # Merges surprisal columns from a parser trained on multiple grammars
-%.merged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(subst GRAMMAR,$$(grammar),$$(basename $$*))_parsed.tokmeasures)
+%.merged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach grammar,$$(subst _, ,$$(subst .,,$$(suffix $$*))),genmodel/$$(notdir $$(subst GRAMMAR,$$(grammar),$$(basename $$*)))_parsed.tokmeasures)
 	cat $(word 2, $^) | sed '1s/totsurp/$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))surp/' | $(foreach grammar,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))), $(MERGESURP)) > $@
 
 # Merges surprisal columns from multiple parsers trained on a grammar
-%.parsermerged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach parser,$$(subst -_+,-+,$$(subst +,_+,$$(subst _, ,$$(subst .,,$$(suffix $$*))))),genmodel/$$(subst PARSER,$$(parser),$$(basename $$*))_parsed.tokmeasures)
+%.parsermerged_parsed.tokmeasures: $(RT-SCRIPTS)/filter_cols.awk $$(foreach parser,$$(subst -_+,-+,$$(subst +,_+,$$(subst _, ,$$(subst .,,$$(suffix $$*))))),genmodel/$$(notdir $$(subst PARSER,$$(parser),$$(basename $$*)))_parsed.tokmeasures)
 	cat $(word 2, $^) | sed '1s/totsurp/$(subst -,,$(word 1, $(subst _, ,$(subst .,,$(suffix $*)))))surp/' | $(foreach parser,$(wordlist 2,100,$(subst _, ,$(subst .,,$(suffix $*)))), $(MERGEPARSERSURP)) > $@
 
 # %.tokmeasures with a time column, requires %.time.tokmeasures with timestamps for tokens in stimulus
@@ -372,33 +373,33 @@ $(RT-SCRIPTS)/filter_cols.py
 %.itemmeasures: $$(DEP-RHACKS) $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
-	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
+	cat $< | python2 $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
-        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python $(word 4, $^) -d | \
+        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python2 $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
 %.t.itemmeasures: $$(basename %).t.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
-	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
+	cat $< | python2 $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
-        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python $(word 4, $^) -d | \
+        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python2 $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
 %.t.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.t.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
-	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
+	cat $< | python2 $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
-        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python $(word 4, $^) -d | \
+        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python2 $(word 4, $^) -d | \
 	$(word 5, $^) > $@
 
 %.r.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures $$(basename %).roark.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
-	cat $< | python $(word 4, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
+	cat $< | python2 $(word 4, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | paste -d' ' - $(word 3, $^) | \
-        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python $(word 5, $^) -d | \
+        paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python2 $(word 5, $^) -d | \
 	$(word 6, $^) > $@
 
 %.docids.itemmeasures: %.itemmeasures $$(word 1,$$(subst ., ,%)).docids.itemmeasures $(RT-SCRIPTS)/merge_tables.py
@@ -433,15 +434,15 @@ endef
 	cat $<  |  python $(word 2, $^) >  $@
 
 %parsed.itemmeasures: %parsed.tokmeasures  $$(basename %).itemmeasures  $(RT-SCRIPTS)/roll_toks.py
-	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1  >  $@
+	cat $< | python2 $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1  >  $@
 
 %.itemmeasures: %.tokmeasures $$(basename %).itemmeasures $(RT-SCRIPTS)/roll_toks.py
-	cat $< | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 > $@
+	cat $< | python2 $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1 > $@
 
 %.all-itemmeasures:  $(RT-SCRIPTS)/evmeas2uniqcols.py  $(RT-SCRIPTS)/filter_cols.py  $(RT-SCRIPTS)/addCols.r  $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
-                         $$(patsubst $$(pc),$$(word 1,$$(subst ., ,$$*)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,$$*)),$$(subst ., ,%))) \
+                         $$(patsubst $$(pc),$$(notdir $$(word 1,$$(subst ., ,$$*))).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,$$*)),$$(subst ., ,%))) \
 			 $$(word 1, $$(subst ., ,%)).itemmeasures
-	paste -d ' ' $(wordlist 6,$(words $^),$^)  |  python $(word 1,$^)  |  python $(word 2,$^)  |   $(word 3,$^)  >  $@
+	paste -d ' ' $(wordlist 6,$(words $^),$^)  |  python2 $(word 1,$^)  |  python $(word 2,$^)  |   $(word 3,$^)  >  $@
 #%.core-itemmeasures: $$(patsubst $$(pc),$$(word 1,$$(subst ., ,%)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,%)),$$(subst ., ,%))) 
 #	paste $^  >  $@
 

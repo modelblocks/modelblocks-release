@@ -56,7 +56,8 @@ endef
 .SECONDEXPANSION:
 .DELETE_ON_ERROR:
 
-VPATH += $(RESOURCE-NATSTORIES)
+## WS: VPATH MAKES IT IMPOSSIBLE TO CREATE LOCAL SCRIPTS DIRECTORY IN PROJECT DIRECTORY
+#VPATH += $(RESOURCE-NATSTORIES)
 
 NATSTORIES-BASENAME := genmodel/naturalstories.wsj02to21-GRAMMAR-nol-prtrm-3sm-synproc-+c_+u_+b5000.gcg15_nodashtags.merged.syn.5-kenlm.spr
 NATSTORIES-LMEDEFAULT := -NSCFl_-o_5_-B_100_-U_3000
@@ -106,7 +107,7 @@ endif
 ################################################################################
 
 ## copy partition ini into project genmodel directory
-genmodel/%.ini: $(NATSTORIES-SCRIPTS)/%.ini
+genmodel/%.ini: $(NATSTORIES-SCRIPTS)/%.ini  |  scripts
 	cp $< $@
 
 genmodel/naturalstories.merge_tables.params: | genmodel
@@ -129,9 +130,9 @@ $(CONFIGDIR)/user-naturalstories-directory.txt | %
 	cat $(word 2, $^) | perl $(word 1, $^) > $@
 
 genmodel/naturalstories.linetoks: genmodel/naturalstories.penn.linetrees $(NATSTORIES-SCRIPTS)/penn2sents.py | genmodel
-	cat $< | python $(word 2, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' > $@
+	cat $< | python2 $(word 2, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' > $@
 
-genmodel/naturalstories.delim.linetoks: genmodel/naturalstories.delim.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed | genmodel 
+genmodel/naturalstories.delim.linetoks: $$(DEP-TOKENIZER) genmodel/naturalstories.delim.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed | genmodel 
 	cat $< | $(word 2, $^) | sed 's/! ARTICLE/!ARTICLE/' | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' | perl -pe 's/ +$$//g' > $@
 
 %naturalstories.items: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.tsv $(RT-SCRIPTS)/get_rttokenization.py \
@@ -140,7 +141,7 @@ $(CONFIGDIR)/user-naturalstories-directory.txt
 
 %/naturalstories.lineitems: $$(DEP-NATSTORIES) %/naturalstories.linetoks $(RT-SCRIPTS)/toks2sents.py \
 $(NATSTORDIR)/naturalstories_RTS/all_stories.tok $(CONFIGDIR)/user-naturalstories-directory.txt | %
-	cat $(word 3, $^) | sed 's/\t/ /g;s/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' | python $(word 2, $^) $(word 1, $^) > $@
+	cat $(word 3, $^) | sed 's/\t/ /g;s/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' | python2 $(word 2, $^) $(word 1, $^) > $@
  
 %/naturalstories.itemmeasures: $$(DEP-NATSTORIES) %/naturalstories.lineitems $(NATSTORIES-SCRIPTS)/docids_by_item.py $(NATSTORDIR)/naturalstories_RTS/all_stories.tok
 	cat $(word 1, $^) | python $(word 2, $^) $(word 3, $^) > $@
@@ -156,11 +157,11 @@ $(NATSTORDIR)/naturalstories_RTS/all_stories.tok $(CONFIGDIR)/user-naturalstorie
 %naturalstories.mfields.itemmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/all_stories.tok %naturalstories.lineitems \
 $(RT-SCRIPTS)/sents2sentids.py $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/filter_cols.awk $(NATSTORIES-SCRIPTS)/docidint2name.py\
 $(CONFIGDIR)/user-naturalstories-directory.txt
-	paste -d' ' <(cat $(word 1, $^) | sed 's/\t/ /g;s/peaked/peeked/g') <(cat $(word 2, $^) | python $(word 3, $^) | cut -d' ' -f 2-) \
-	<(cat $(word 1, $^) | sed 's/\t/ /g;' | awk -f $(word 5, $^) -v cols=item - | python $(word 4, $^) item docid) | python $(word 6, $^) > $@
+	paste -d' ' <(cat $(word 1, $^) | sed 's/\t/ /g;s/peaked/peeked/g') <(cat $(word 2, $^) | python2 $(word 3, $^) | cut -d' ' -f 2-) \
+	<(cat $(word 1, $^) | sed 's/\t/ /g;' | awk -f $(word 5, $^) -v cols=item - | python2 $(word 4, $^) item docid) | python $(word 6, $^) > $@
 
-%naturalstories.t.itemmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/audio %naturalstories.itemmeasures $$(NATSTORIES-SCRIPTS)/textGrid2itemmeasures.py
-	python $(word 3, $^) $(word 2, $^) $(word 1, $^) > $@
+%naturalstories.t.itemmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/audio %naturalstories.itemmeasures $$(NATSTORIES-SCRIPTS)/textGrid2itemmeasures.py $(NATSTORIES-SCRIPTS)/add_start_and_end_of_sentence.py
+	python2 $(word 3, $^) $(word 2, $^) $(word 1, $^)  |  python $(word 4,$^)  >  $@
 
 %naturalstories.evmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.tsv \
 $(RT-SCRIPTS)/rename_cols.py $(NATSTORIES-SCRIPTS)/merge_natstor.py %naturalstories.mfields.itemmeasures \
@@ -169,10 +170,10 @@ $(CDR-SCRIPTS)/compute_timestamps_from_RT.py $(CONFIGDIR)/user-naturalstories-di
 	$(word 4, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' | python $(word 5, $^) > $@
   
 %naturalstories.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.linetrees %naturalstories.linetoks
-	python $^ > $@
+	python2 $^ > $@
 
 %naturalstories.coref.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.coref.linetrees %naturalstories.linetoks
-	python $^ > $@
+	python2 $^ > $@
 
 genmodel/naturalstories.toktrees: genmodel/naturalstories.coref.fromlinetrees.numbered.editabletrees
 	cat $^ > $@

@@ -43,7 +43,8 @@
 .SUFFIXES:
 SECONDEXPANSION:
 
-VPATH := $(RESOURCE-FMRI):$(VPATH):$(RESOURCE-GENERAL)
+## WS: VPATH MAKES IT IMPOSSIBLE TO CREATE LOCAL SCRIPTS DIRECTORY IN PROJECT DIRECTORY
+#VPATH := $(RESOURCE-FMRI):$(VPATH):$(RESOURCE-GENERAL)
 
 ifndef SAMPLE-START
 SAMPLE-START := 0
@@ -173,6 +174,11 @@ endef
 $(RT-SCRIPTS)/merge_tables.py
 	cat $< | python $(word 3, $^) $< $(word 2, $^) sampleid > $@
 
+.PRECIOUS: %.hrf.prdmeasures
+%.hrf.prdmeasures : %.hrf.all-itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
+$(RT-SCRIPTS)/merge_tables.py
+	cat $< | python $(word 3, $^) $< $(word 2, $^) sampleid > $@
+
 .PRECIOUS: %.tiled.core.evmeasures
 %.tiled.core.evmeasures: $(FMRI-SCRIPTS)/tile_stimuli.py %.itemmeasures $$(word 1,$$(subst ., ,%)).evmeasures
 	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
@@ -192,7 +198,7 @@ $(RT-SCRIPTS)/merge_tables.py
 	cat $(word 1, $^) | python $(word 2, $^) > $@
 
 # TO SPEC
-%.fmri-bywrd.resmeasures: %.resmeasures
+%.fmri-bywrd.resmeasures: $$(word 1,$$(subst ., ,%)).evmeasures
 	ln -sf $(abspath $(word 1,$^)) $@
 
 # TO SPEC

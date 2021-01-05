@@ -313,8 +313,13 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
   XVar getXVar   ( )                  const { auto it = mkx.find(*this); return (it==mkx.end()) ? XVar() : it->second; }
   int  getDir    ( )                  const { auto it = mkdir.find(*this); return (it==mkdir.end()) ? 0 : it->second; }
   K    project   ( int n )            const { auto it = mkik.find(pair<K,int>(*this,n)); return (it==mkik.end()) ? kBot : it->second; }
-  K    transform ( bool bUp, char c ) const { return mkkO[*this]; }
-  bool isUnk     ( )                  const { return mkb[*this]; }
+  K    transform ( bool bUp, char c ) const { auto it = mkkO.find(*this); return (it==mkkO.end()) ? kBot : it->second; }
+  bool isUnk     ( )                  const { auto it = mkb.find(*this); 
+                                              if (it==mkb.end()) {
+                                                cerr << "WARNING: unknown key for mkb - using default false" << endl;
+                                                return false;
+                                              } else { return it->second; }
+                                            }
 
 //  K transform ( bool bUp, char c ) const { return (bUp and c=='V') ? mkkVU[*this] :
 //                                                  (        c=='V') ? mkkVD[*this] : kBot; }
@@ -521,7 +526,7 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
     back().apex().back().setHVec() = HVec( k, matE, funcO );
     back().apex().back().setHVec().add( hvAnt );
     if ( f == 0  && (! REDUCED_PRTRM_CONTEXTS)) {
-      back().apex().back().setHVec() = qPrev.getBase().getHVec(); // add base semantics to preterminal
+      back().apex().back().setHVec().add( qPrev.getBase().getHVec() ); // add base semantics to preterminal
     }
     applyUnariesBotUp( back().apex(), evF );
   }

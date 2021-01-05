@@ -285,13 +285,14 @@ void calcContext ( Tree<L>& tr,
     std::string annotSentIdx = annot.substr(0,annot.size()-2); //get all but last two...
     if (annotSentIdx == std::to_string(sentnum)) validIntra = true;
     if (INTERSENTENTIAL == true) validIntra = true;
-    const HVec& hvAnt = validIntra == true ? annot2kset[annot] : hvTop;
+    int antecedentTdisc = annot != "" ? annot2tdisc[annot] : -1; 
+    const HVec& hvAnt = (validIntra == true and antecedentTdisc >= (tDisc-COREF_WINDOW)) ? annot2kset[annot] : HVec(); //hvTop; 
     bool nullAnt = (hvAnt.empty()) ? true : false;
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
-    if (annot != "")  {
-      annot2kset[currentloc] = hvAnt;
-    }
-    annot2kset[currentloc] = HVec(k, matE, funcO); //add current k
+    //if (annot != "")  {
+    //  annot2kset[currentloc] = hvAnt;
+   // }
+    //annot2kset[currentloc] = HVec(k, matE, funcO); //add current k //TODO don't overwrite here, and also use preterminal, not k
     annot2tdisc[currentloc] = tDisc; //map current sent,word index to discourse word counter
     W histword(""); //histword will track most recent observed word whose k is unk. will be stored for correct antecedent only.
     if (not isFailTree) {
@@ -378,6 +379,7 @@ void calcContext ( Tree<L>& tr,
       }
 #endif
       q = StoreState( q, f, REDUCED_PRTRM_CONTEXTS, hvAnt, eF.c_str(), k, getCat(removeLink(l)), matE, funcO );
+      cout << "qPrtrm: " << q << endl;
       aPretrm = q.back().apex().back();
     } else {
       aPretrm = Sign();
@@ -390,6 +392,7 @@ void calcContext ( Tree<L>& tr,
     }
     //cout << "saving histword: " << histword << " for word: " << removeLink(tr.front()) << endl;
     antecedentCandidates.emplace_back(trip<Sign,W,K>(aPretrm, histword, k)); //append current prtrm to candidate list for future coref decisions 
+    annot2kset[currentloc] = aPretrm.getHVec();
   }
 
   // At unary identity nonpreterminal...
@@ -463,11 +466,11 @@ int main ( int nArgs, char* argv[] ) {
     if(      '-'==argv[a][0] && 'f'==argv[a][1] ) FEATCONFIG   = atoi( argv[a]+2 );
     else if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS    = atoi( argv[a]+2 );
     else if( '-'==argv[a][0] && 'c'==argv[a][1] ) COREF_WINDOW = atoi( argv[a]+2 );
+    else if( '-'==argv[a][0] && 'r'==argv[a][1] && 'p'==argv[a][2]) REDUCED_PRTRM_CONTEXTS = true;
     else if( '-'==argv[a][0] && 'r'==argv[a][1] ) RELAX_NOPUNC = true;
     else if( '-'==argv[a][0] && 'a'==argv[a][1] ) ABLATE_UNARY = true;
     else if( '-'==argv[a][0] && 'n'==argv[a][1] && 'b'==argv[a][2]) NO_ENTITY_BLOCKING = true;
     else if( '-'==argv[a][0] && 'w'==argv[a][1] ) WINDOW_REDUCE = true; //TODO implement this
-    else if( '-'==argv[a][0] && 'r'==argv[a][1] && 'p'==argv[a][2]) REDUCED_PRTRM_CONTEXTS = true;
     else {
       cerr << "Loading model " << argv[a] << "..." << endl;
       // Open file...

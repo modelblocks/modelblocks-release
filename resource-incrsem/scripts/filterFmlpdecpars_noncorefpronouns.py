@@ -13,8 +13,9 @@ logfile = open("filterFmodel.log", "w+")
 
 count = 0
 for line in sys.stdin:
+  if line.startswith('F'):
     #match null-antecedent predicting pronounk F training data
-    _, _, _, _, _, corefOFF, K = line.split(" ")
+    f, _, _, _, _, _, corefOFF, K = line.split(" ")
     k = K.split("&")[2].strip()
     rem = re.match(r'[DN]:([hH]e|[hH]im|[Hh]is|[Ss]he|[Hh]er|[Tt]hey|[Tt]hem|[Tt]heir|[Ii]t|[Ii]ts|[Ii]tself|[Tt]hemselves|[Tt]hemself|[Hh]erself|[Hh]imself)_[01]', k)
     #rem = re.match(r'F.*acorefOFF=1.* : f[01]&&[DN]-PRTRM:([hH]e|[hH]im|[Hh]is|[Ss]he|[Hh]er|[Tt]hey|[Tt]hem|[Tt]heir|[Ii]t|[Ii]ts|[Ii]tself|[Tt]hemselves|[Tt]hemself|[Hh]erself|[Hh]imself)_[01].*', line)
@@ -23,6 +24,8 @@ for line in sys.stdin:
         count += 1
     else:
         sys.stdout.write(line) 
+  else:
+    sys.stdout.write(line)
 
 logfile.write("total non-coref pronoun lines found: {}\n".format(count))
 

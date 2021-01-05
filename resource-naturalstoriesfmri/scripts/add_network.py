@@ -4,10 +4,12 @@ import pandas as pd
 import argparse
 
 
-network_names = ['Lang', 'MDlangloc', 'MDspatwm', 'DMNlangloc', 'DMNspatwm', 'AC']
+network_names = ['Lang', 'MDlangloc', 'MDspatwm', 'DMNlangloc', 'DMNspatwm', 'AC', 'LHip', 'RHip']
 
 
 def compute_network(name):
+    if 'Hip' in name:
+        return 'Hip'
     for network_name in network_names:
         if name.startswith(network_name):
             return network_name
@@ -15,6 +17,8 @@ def compute_network(name):
 
 
 def compute_hemisphere(name):
+    if name in ['LHip', 'RHip']:
+        return name[0]
     for network_name in network_names:
         if name.startswith(network_name):
             return name[len(network_name)]
