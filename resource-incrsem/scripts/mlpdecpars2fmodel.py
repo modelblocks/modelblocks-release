@@ -203,6 +203,8 @@ class FModel(nn.Module):
         self.catb_embeds = nn.Embedding(catb_vocab_size, syn_size)
         self.hvecb_embeds = nn.Embedding(hvecb_vocab_size, sem_size)
         self.hvecf_embeds = nn.Embedding(hvecf_vocab_size, sem_size)
+        #print("hveca_vocab_size: {}".format(hveca_vocab_size))
+        #print("ant_size: {}".format(ant_size))
         self.hveca_embeds = nn.Embedding(hveca_vocab_size, ant_size)
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
@@ -216,7 +218,7 @@ class FModel(nn.Module):
         hvb_top = torch.FloatTensor(hvb_top)
         hvf_top = torch.FloatTensor(hvf_top)
         hva_top = torch.FloatTensor(hva_top)
-        # nullA   = torch.FloatTensor(nullA)
+        #nullA   = torch.FloatTensor(nullA) #TODO expected CPU, got CUDA
 
         if ablate_syn:
             cat_b_embed = torch.zeros([len(cat_b_ix), self.syn_size], dtype=torch.float)
@@ -229,6 +231,7 @@ class FModel(nn.Module):
             hvf_top = hvf_top.to("cuda")
             hva_top = hva_top.to("cuda")
             cat_b_embed = cat_b_embed.to("cuda")
+            #nullA = nullA.to("cuda")
 
         if ablate_sem:
             hvb_embed = torch.zeros([hvb_top.shape[0], self.sem_size], dtype=torch.float) + hvb_top
@@ -263,7 +266,7 @@ class FModel(nn.Module):
             hvf_embed = torch.sparse.mm(hvf_mat, self.hvecf_embeds.weight) + hvf_top
             hva_embed = torch.sparse.mm(hva_mat, self.hveca_embeds.weight) + hva_top
 
-        x = torch.cat((cat_b_embed, hvb_embed, hvf_embed, hva_embed, nullA.unsqueeze(dim=1), d_onehot), 1)  
+        x = torch.cat((cat_b_embed, hvb_embed, hvf_embed, hva_embed, nullA.unsqueeze(dim=1), d_onehot), 1) 
         x = self.fc1(x)
         x = self.dropout(x)
         x = self.relu(x)
@@ -294,11 +297,14 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidd
         dev_depth = F.one_hot(torch.LongTensor(dev_depth), 7).float()
         dev_cat_b_ix = torch.LongTensor(dev_cat_b_ix)
         dev_target = torch.LongTensor(dev_fdecs_ix)
+        dev_nulla = torch.FloatTensor(dev_nullA)
 
         if use_gpu >= 0:
             dev_depth = dev_depth.to("cuda")
             dev_cat_b_ix = dev_cat_b_ix.to("cuda")
             dev_target = dev_target.to("cuda")
+            dev_nulla = dev_nulla.to("cuda")
+            #model = model.to("cuda")
 
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     criterion = nn.NLLLoss()
@@ -345,7 +351,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidd
         if use_dev >= 0:
             with torch.no_grad():
                 model.eval()
-                dev_pred = model(dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_hvb_top, dev_hvf_top, dev_hva_mat, dev_hva_top, dev_nullA, use_gpu,
+                dev_pred = model(dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_hvb_top, dev_hvf_top, dev_hva_mat, dev_hva_top, dev_nulla, use_gpu,
                                  ablate_syn, ablate_sem)
                 _, dev_fdec = torch.max(dev_pred.data, 1)
                 dev_correct = (dev_fdec == dev_target).sum().item()

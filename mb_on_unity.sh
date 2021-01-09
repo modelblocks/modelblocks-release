@@ -3,13 +3,13 @@ mkdir $HOME/tmp
 
 # initialize and activate new conda env (need to be on (base) environment of miniconda3)
 conda create -n mb
-conda activate mb
-#source activate mb #ej - this didn't work for me so i changed it to 'conda activate'
+#conda activate mb
+source activate mb #ej - this didn't work for me so i changed it to 'conda activate'
 
 # install compilers/BLAS dependencies (for armadillo), python/scipy (for NN training)
 # python >= 3.5 recommended
 # NOTE: tensorflow<2.0 because of CDR
-conda install -c conda-forge compilers libblas liblapack arpack superlu mkl python scipy pandas librosa r-base r-lme4 r-languageR r-optimx r-ggplot2 r-optparse tensorflow"<2.0" pytorch torchvision cudatoolkit=10.1 -c pytorch
+conda install -c conda-forge compilers libblas liblapack arpack superlu mkl python scipy pandas librosa r-base r-lme4 r-languageR r-optimx r-ggplot2 r-optparse tensorflow"<2.0" pytorch-gpu torchvision cudatoolkit=10.1 -c pytorch
 
 # install pytorch (for NN training) - Unity node 070 has cuda driver 10.1
 #conda install pytorch torchvision cudatoolkit=10.1 -c pytorch

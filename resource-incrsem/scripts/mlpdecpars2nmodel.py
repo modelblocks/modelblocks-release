@@ -45,7 +45,12 @@ def prepare_data():
     catBases, catAntes, hvBases, hvAntes, hvBaseFirsts, hvAnteFirsts, wordDists, sqWordDists, corefOns, labels = ([] for _ in range(10))
     #depth, catBase, hvBase, hvFiller, fDecs, hvBFirst, hvFFirst = ([] for _ in range(8))
     for line in data:
-        catBase, catAnte, hvBase, hvAnte, wordDist, sqWordDist, corefOn, _, label = line.split(" ")
+        try:
+            catBase, catAnte, hvBase, hvAnte, wordDist, sqWordDist, corefOn, _, label = line.split(" ")
+        except:
+            eprint("unspec line: {}".format(line))
+            continue
+            #raise Exception("out of spec line in input")
         #d, cb, hvb, hvf, fd = line.split(" ")
         #depth.append(int(d))
         #catBase.append(cb)

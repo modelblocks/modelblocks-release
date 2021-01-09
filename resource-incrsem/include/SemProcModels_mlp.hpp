@@ -525,9 +525,10 @@ class WPredictor : public DelimitedTrip<psX,Delimited<EVar>,psSpace,Delimited<K>
 
 class WModel {
 
-  typedef DelimitedTrip<psX,Delimited<EVar>,psPipe,Delimited<K>,psPipe,Delimited<CVar>,psX> WPredictor;
-  typedef DelimitedTrip<psX,Delimited<EVar>,psPipe,Delimited<CVar>,psPipe,Delimited<string>,psX> MPredictor;
-  typedef DelimitedCol<psLBrack, double, psComma, psRBrack> DenseVec;
+  public:
+    typedef DelimitedTrip<psX,Delimited<EVar>,psPipe,Delimited<K>,psPipe,Delimited<CVar>,psX> WPredictor;
+    typedef DelimitedTrip<psX,Delimited<EVar>,psPipe,Delimited<CVar>,psPipe,Delimited<string>,psX> MPredictor;
+    typedef DelimitedCol<psLBrack, double, psComma, psRBrack> DenseVec;
 
   private:
 

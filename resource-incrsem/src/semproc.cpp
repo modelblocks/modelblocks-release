@@ -478,11 +478,17 @@ int main ( int nArgs, char* argv[] ) {
                 W histword;
                 histword = getHistWord(antPtr, wEmpty, NO_ANTUNK);
                 //cout << "main semproc got histword: " << histword << endl;
+                WModel::WPPMap mymapWPP; //special case for antunk
+                WModel::WPredictor wp(EVar::eNil,kAntUnk,CVar("N-aD"));
+                WModel::WPredictor wpn(EVar::eNil,kAntUnk,CVar("N"));
+                mymapWPP[wp] = 1.0;  // no operand[] for std::map<DelimitedTrip...
+                mymapWPP[wpn] = 1.0;
+                //mymapWPP.insert(std::map<WPredictor,double>::value_type(WPredictor(EVar::eNil,kAntUnk,CVar("N-aD")), 1.0));  //error: no matching function for call to 'std::map<DelimitedTrip<(& psX), Delimited<EVar>, (& psPipe), Delimited<K>, (& psPipe), Delimited<CVar>, (& psX)>, double>::insert(std::map<WPredictor, double>::value_type)'
 
                 // For each possible lemma (context + label + prob) for preterminal of current word...
 //                for ( auto& ektpr_p_t : modW.calcPredictorLikelihoods(w_t, histword) ) { //ektpr_p_t is a pair of (Wpredictor, prob)
 //                for ( auto& ektpr_p_t : listWP ) { //ektpr_p_t is a pair of (Wpredictor, prob)
-                for ( auto& ektpr_p_t : mapWPP ) { //ektpr_p_t is a pair of (Wpredictor, prob)
+                for ( auto& ektpr_p_t : (histword == w_t ? mymapWPP : mapWPP )) { //ektpr_p_t is a pair of (Wpredictor, prob)
 //                for ( auto& ektpr_p_t : modW.calcPredictorLikelihoods(w_t) ) { //ektpr_p_t is a pair of (Wpredictor, prob)
 //                  if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(ektpr_p_t.second) > beams[t].rbegin()->getProb() ) {
 //                    EVar  e_p_t       = ektpr_p_t.first.first();
