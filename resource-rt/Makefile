@@ -283,6 +283,10 @@ SPRCorpus:
   paramtype: Dropdown
 endef
 
+## copy partition ini into project genmodel directory
+scripts/%.lmerform: $(RT-SCRIPTS)/%.lmerform |  scripts
+	cp $< $@
+
 genmodel/rename_cols.params: | genmodel
 	echo '' > $@
 
