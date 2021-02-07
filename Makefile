@@ -10,3 +10,6 @@ RESOURCES.md: getResourceDescr.py $(wildcard resource-*/Makefile)
 
 %.test.linetrees: $$(shell python -m mb.dep % linetrees -o .test)
 	echo $@
+
+mb_on_unity: mb_on_unity.sh
+	$(SHELL) $(word 1, $^)

@@ -363,7 +363,7 @@ while ( <> ) {
   ## awake
   s/\(([BVLG])([^ %]*) ([Aa]?)([Ww])(aken|akes|ake|oke|akened|akening)\)/\(B\2-o\1%\4\5|B%\4aken \3\4aken\)/gi;
   ## be
-  s/\(([BVLG])([^ %]*) ()(\'m|\'re|(?<=\{A-a.\} )\'s|[Bb]e|[Aa]m|[Ii]s|[Aa]re|[Ww]as|[Ww]ere|[Bb]een|[Bb]eing)\)/\(B\2-o\1%\4|B%be \3be\)/gi;
+  s/\(([BVLG])([^ %]*) ()(\'m|\'re|(?<=\{A-a.\} )\'s|(?<=\{A-a.\} )s|[Bb]e|[Aa]m|[Ii]s|[Aa]re|[Ww]as|[Ww]ere|[Bb]een|[Bb]eing)\)/\(B\2-o\1%\4|B%be \3be\)/gi;
   ## bear
   s/\(([BVLG])([^ %]*) ([Bb])(ear|ears|ore|orne|earing)\)/\(B\2-o\1%\3\4|B%\3ear \3ear\)/gi;
   ## beat

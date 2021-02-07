@@ -313,8 +313,13 @@ class K : public DiscreteDomainRV<int,domK> {   // NOTE: can't be subclass of De
   XVar getXVar   ( )                  const { auto it = mkx.find(*this); return (it==mkx.end()) ? XVar() : it->second; }
   int  getDir    ( )                  const { auto it = mkdir.find(*this); return (it==mkdir.end()) ? 0 : it->second; }
   K    project   ( int n )            const { auto it = mkik.find(pair<K,int>(*this,n)); return (it==mkik.end()) ? kBot : it->second; }
-  K    transform ( bool bUp, char c ) const { return mkkO[*this]; }
-  bool isUnk     ( )                  const { return mkb[*this]; }
+  K    transform ( bool bUp, char c ) const { auto it = mkkO.find(*this); return (it==mkkO.end()) ? kBot : it->second; }
+  bool isUnk     ( )                  const { auto it = mkb.find(*this); 
+                                              if (it==mkb.end()) {
+                                                cerr << "WARNING: unknown key for mkb - using default false" << endl;
+                                                return false;
+                                              } else { return it->second; }
+                                            }
 
 //  K transform ( bool bUp, char c ) const { return (bUp and c=='V') ? mkkVU[*this] :
 //                                                  (        c=='V') ? mkkVD[*this] : kBot; }
@@ -513,13 +518,16 @@ class StoreState : public DelimitedVector<psX,DerivationFragment,psX,psX> {
   StoreState ( CVar cA, CVar cB ) { emplace( end() ); back().apex().emplace_back( hvBot, cA, S_A ); back().base().emplace_back( hvBot, cB, S_B ); }
 
   // Preterminal constructor...
-  StoreState ( const StoreState& qPrev, const HVec& hvAnt, EVar evF, K k, CVar cP, const EMat& matE, const OFunc& funcO ) {
+  StoreState ( const StoreState& qPrev, F f, bool REDUCED_PRTRM_CONTEXTS, const HVec& hvAnt, EVar evF, K k, CVar cP, const EMat& matE, const OFunc& funcO ) {
     // Add preterm and apply unaries...
     reserve( qPrev.size() + 1 );
     insert( end(), qPrev.begin(), qPrev.end() );
     emplace( end() )->apex().set( getBase().getCat(), cP, 'I', 'I', Sign() );
     back().apex().back().setHVec() = HVec( k, matE, funcO );
     back().apex().back().setHVec().add( hvAnt );
+    if ( f == 0  && (! REDUCED_PRTRM_CONTEXTS)) {
+      back().apex().back().setHVec().add( qPrev.getBase().getHVec() ); // add base semantics to preterminal
+    }
     applyUnariesBotUp( back().apex(), evF );
   }
 
@@ -673,36 +681,36 @@ void BaseWithCarriers::set ( CVar cA, CVar cB, O opL, O opR, StoreState& ss, con
 
 ////////////////////////////////////////////////////////////////////////////////
 
-W wUnkIng ( "!unk!ing" );
-W wUnkEd  ( "!unk!ed"  );
-W wUnkS   ( "!unk!s"   );
-W wUnkIon ( "!unk!ion" );
-W wUnkEr  ( "!unk!er"  );
-W wUnkEst ( "!unk!est" );
-W wUnkLy  ( "!unk!ly"  );
-W wUnkIty ( "!unk!ity" );
-W wUnkY   ( "!unk!y"   );
-W wUnkAl  ( "!unk!al"  );
-W wUnkCap ( "!unk!cap" );
-W wUnkNum ( "!unk!num" );
-W wUnk    ( "!unk!"    );
-W wNull   ( "!null!"   );
-
-W unkWord ( const char* ps ) {
-  return ( 0==strcmp(ps+strlen(ps)-strlen("ing"), "ing") ) ? W("!unk!ing") :
-         ( 0==strcmp(ps+strlen(ps)-strlen("ed"),  "ed" ) ) ? W("!unk!ed") :
-         ( 0==strcmp(ps+strlen(ps)-strlen("s"),   "s"  ) ) ? W("!unk!s") :
-         ( 0==strcmp(ps+strlen(ps)-strlen("ion"), "ion") ) ? W("!unk!ion") :
-         ( 0==strcmp(ps+strlen(ps)-strlen("er"),  "er" ) ) ? W("!unk!er") :
-         ( 0==strcmp(ps+strlen(ps)-strlen("est"), "est") ) ? W("!unk!est") :
-         ( 0==strcmp(ps+strlen(ps)-strlen("ly"),  "ly" ) ) ? W("!unk!ly") : 
-         ( 0==strcmp(ps+strlen(ps)-strlen("ity"), "ity") ) ? W("!unk!ity") : 
-         ( 0==strcmp(ps+strlen(ps)-strlen("y"),   "y"  ) ) ? W("!unk!y") : 
-         ( 0==strcmp(ps+strlen(ps)-strlen("al"),  "al" ) ) ? W("!unk!al") :
-         ( ps[0]>='A' && ps[0]<='Z'                      ) ? W("!unk!cap") :
-         ( ps[0]>='0' && ps[0]<='9'                      ) ? W("!unk!num") :
-                                                             W("!unk!");
-}
+//W wUnkIng ( "!unk!ing" );
+//W wUnkEd  ( "!unk!ed"  );
+//W wUnkS   ( "!unk!s"   );
+//W wUnkIon ( "!unk!ion" );
+//W wUnkEr  ( "!unk!er"  );
+//W wUnkEst ( "!unk!est" );
+//W wUnkLy  ( "!unk!ly"  );
+//W wUnkIty ( "!unk!ity" );
+//W wUnkY   ( "!unk!y"   );
+//W wUnkAl  ( "!unk!al"  );
+//W wUnkCap ( "!unk!cap" );
+//W wUnkNum ( "!unk!num" );
+//W wUnk    ( "!unk!"    );
+//W wNull   ( "!null!"   );
+//
+//W unkWord ( const char* ps ) {
+//  return ( 0==strcmp(ps+strlen(ps)-strlen("ing"), "ing") ) ? W("!unk!ing") :
+//         ( 0==strcmp(ps+strlen(ps)-strlen("ed"),  "ed" ) ) ? W("!unk!ed") :
+//         ( 0==strcmp(ps+strlen(ps)-strlen("s"),   "s"  ) ) ? W("!unk!s") :
+//         ( 0==strcmp(ps+strlen(ps)-strlen("ion"), "ion") ) ? W("!unk!ion") :
+//         ( 0==strcmp(ps+strlen(ps)-strlen("er"),  "er" ) ) ? W("!unk!er") :
+//         ( 0==strcmp(ps+strlen(ps)-strlen("est"), "est") ) ? W("!unk!est") :
+//         ( 0==strcmp(ps+strlen(ps)-strlen("ly"),  "ly" ) ) ? W("!unk!ly") :
+//         ( 0==strcmp(ps+strlen(ps)-strlen("ity"), "ity") ) ? W("!unk!ity") :
+//         ( 0==strcmp(ps+strlen(ps)-strlen("y"),   "y"  ) ) ? W("!unk!y") :
+//         ( 0==strcmp(ps+strlen(ps)-strlen("al"),  "al" ) ) ? W("!unk!al") :
+//         ( ps[0]>='A' && ps[0]<='Z'                      ) ? W("!unk!cap") :
+//         ( ps[0]>='0' && ps[0]<='9'                      ) ? W("!unk!num") :
+//                                                             W("!unk!");
+//}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -756,64 +764,64 @@ class PModel : public map<PPredictorVec,map<P,double>> {
 //template<class S>
 //class BeamElement;
 
-class WPredictor : public DelimitedTrip<psX,Delimited<EVar>,psSpace,Delimited<K>,psSpace,Delimited<CVar>,psX> { 
-  public:
-    WPredictor ( ) : DelimitedTrip<psX,Delimited<EVar>,psSpace,Delimited<K>,psSpace,Delimited<CVar>,psX>(){} 
-    WPredictor ( EVar e, K k, CVar c ) : DelimitedTrip<psX,Delimited<EVar>,psSpace,Delimited<K>,psSpace,Delimited<CVar>,psX>(e,k,c){} 
-};
-
-class WModel : public map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> {
- public:
-  WModel ( ) { }
-  WModel ( istream& is ) {
-    while( is.peek()=='W' ) {
-      WPredictor wp;  W w;  Delimited<double> pr;
-      is >> "W " >> wp >> " : " >> w >> " = " >> pr >> "\n";
-      (*this)[w].emplace_back(wp,pr);
-    }
-
-    // Add unk...
-    for( auto& entry : *this ) {
-      // for each word:{<category:prob>}
-      for( auto& unklistelem : (*this)[unkWord(entry.first.getString().c_str())] ) {
-        // for each possible unked(word) category:prob pair
-        bool BAIL = false;
-        for( auto& listelem : entry.second ) {
-          if (listelem.first == unklistelem.first) {
-            BAIL = true;
-            listelem.second = listelem.second + ( 0.000001 * unklistelem.second ); // merge actual likelihood and unk likelihood
-          }
-        }
-        if (not BAIL) entry.second.push_back( DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>(unklistelem.first,0.000001*unklistelem.second) );
-      }
-    } //closes for auto& entry : lexW
-  }
-
-  const list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> calcPredictorLikelihoods( W w_t, W histword ) const {
-    //modify wpreds returned depending on histword==w_t or not.
-    //specifically, change any antunk k predictors to probability 1
-    if( end() == find( unkWord( w_t.getString().c_str() ) ) )  cerr << "ERROR: unable to find unk form: " << unkWord( w_t.getString().c_str() ) << endl;
-    //return( ( end() != find(w_t) ) ? find(w_t)->second : find( unkWord( w_t.getString().c_str() ) )->second );
-    list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> results;
-    //use word preds or else unk word preds for w_t
-    if ( end() == find(w_t) ) {
-      results = find(unkWord(w_t.getString().c_str()))->second;
-    }
-    else {
-      results = find(w_t)->second;     
-    }
-    //modify antunk probs if w_t == histword
-   //cout << "calcPredictorLikelihoods got w_t: " << w_t << " and histword: " << histword << endl;
-    if (w_t == histword) {//histword == w_t - replace all antunks with prob one as predictors of the word
-      //for (auto it = results.rbegin(); it !=results.rend(); it++) {
-      //  if (it->first.second().isUnk()) { it->second = 1;}  
-      results.emplace_back(WPredictor(EVar::eNil,kAntUnk,CVar("N-aD")), 1.0);
-      //cout << "added antunk, prob=1 for WModel for antunk case with histword: " << histword << ", w_t: " << w_t << endl; //" and WPred k: " << it->first.second() << endl;
-      //}
-    }
-    return results;
-  }
-};
+//class WPredictor : public DelimitedTrip<psX,Delimited<EVar>,psSpace,Delimited<K>,psSpace,Delimited<CVar>,psX> {
+//  public:
+//    WPredictor ( ) : DelimitedTrip<psX,Delimited<EVar>,psSpace,Delimited<K>,psSpace,Delimited<CVar>,psX>(){}
+//    WPredictor ( EVar e, K k, CVar c ) : DelimitedTrip<psX,Delimited<EVar>,psSpace,Delimited<K>,psSpace,Delimited<CVar>,psX>(e,k,c){}
+//};
+//
+//class WModel : public map<W,list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>>> {
+// public:
+//  WModel ( ) { }
+//  WModel ( istream& is ) {
+//    while( is.peek()=='W' ) {
+//      WPredictor wp;  W w;  Delimited<double> pr;
+//      is >> "W " >> wp >> " : " >> w >> " = " >> pr >> "\n";
+//      (*this)[w].emplace_back(wp,pr);
+//    }
+//
+//    // Add unk...
+//    for( auto& entry : *this ) {
+//      // for each word:{<category:prob>}
+//      for( auto& unklistelem : (*this)[unkWord(entry.first.getString().c_str())] ) {
+//        // for each possible unked(word) category:prob pair
+//        bool BAIL = false;
+//        for( auto& listelem : entry.second ) {
+//          if (listelem.first == unklistelem.first) {
+//            BAIL = true;
+//            listelem.second = listelem.second + ( 0.000001 * unklistelem.second ); // merge actual likelihood and unk likelihood
+//          }
+//        }
+//        if (not BAIL) entry.second.push_back( DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>(unklistelem.first,0.000001*unklistelem.second) );
+//      }
+//    } //closes for auto& entry : lexW
+//  }
+//
+//  const list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> calcPredictorLikelihoods( W w_t, W histword ) const {
+//    //modify wpreds returned depending on histword==w_t or not.
+//    //specifically, change any antunk k predictors to probability 1
+//    if( end() == find( unkWord( w_t.getString().c_str() ) ) )  cerr << "ERROR: unable to find unk form: " << unkWord( w_t.getString().c_str() ) << endl;
+//    //return( ( end() != find(w_t) ) ? find(w_t)->second : find( unkWord( w_t.getString().c_str() ) )->second );
+//    list<DelimitedPair<psX,WPredictor,psSpace,Delimited<double>,psX>> results;
+//    //use word preds or else unk word preds for w_t
+//    if ( end() == find(w_t) ) {
+//      results = find(unkWord(w_t.getString().c_str()))->second;
+//    }
+//    else {
+//      results = find(w_t)->second;
+//    }
+//    //modify antunk probs if w_t == histword
+//   //cout << "calcPredictorLikelihoods got w_t: " << w_t << " and histword: " << histword << endl;
+//    if (w_t == histword) {//histword == w_t - replace all antunks with prob one as predictors of the word
+//      //for (auto it = results.rbegin(); it !=results.rend(); it++) {
+//      //  if (it->first.second().isUnk()) { it->second = 1;}
+//      results.emplace_back(WPredictor(EVar::eNil,kAntUnk,CVar("N-aD")), 1.0);
+//      //cout << "added antunk, prob=1 for WModel for antunk case with histword: " << histword << ", w_t: " << w_t << endl; //" and WPred k: " << it->first.second() << endl;
+//      //}
+//    }
+//    return results;
+//  }
+//};
 
 ////////////////////////////////////////////////////////////////////////////////
 

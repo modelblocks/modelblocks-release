@@ -50,6 +50,7 @@ int COREF_WINDOW = INT_MAX;
 bool RELAX_NOPUNC = false;
 bool ABLATE_UNARY = false;
 bool NO_ENTITY_BLOCKING = false;
+bool REDUCED_PRTRM_CONTEXTS = false;
 bool WINDOW_REDUCE = false;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -169,6 +170,47 @@ pair<K,CVar> getPred ( const L& lP, const L& lW ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+pair<pair<K,CVar>,pair<string,string>> getPredAndRules ( const L& lP, const L& lW ) {
+  CVar c = getCat ( lP );
+  string sX = "%|%";
+
+  // CODE REVIEW: DEACTIVATE THE BELOW PUNCT LIQUIDATOR TO ALLOW THE MORPH SCRIPT TO DETERMINE SET OF PREDICATES (THOUGH SIMPLE PUNCT CATS HAVE NO SYNTACTIC ARGS, SO DON'T DO MUCH)...
+  // If punct, but not special !-delimited label...
+  if ( (not RELAX_NOPUNC) and ispunct(lW[0]) and ('!'!=lW[0] or lW.size()==1) ) return pair<pair<K,CVar>,pair<string,string>>(pair<K,CVar>(K::kBot, c), pair<string,string>("%|", "Null Bot"));
+
+  cout<<"reducing "<<lP<<" now "<<c;
+  string sLemma = lW;  transform(sLemma.begin(), sLemma.end(), sLemma.begin(), [](unsigned char c) { return std::tolower(c); });
+  string sCat = c.getString();
+  string sPred = sCat + ':' + sLemma;
+  cout<<" to "<<sCat<<endl;
+
+  smatch m; for( string s=lP; regex_match(s,m,regex("^(.*?)-x([^} ][^| ]*[|](?:(?!-[a-zA-Z])[^ }])*)(.*?)$")); s=m[3] ) {
+    sX = m[2];
+    smatch mX;
+    cout<<"applying "<<sX<<" to "<<sPred;
+    if( regex_match( sX, mX, regex("^(.*)%(.*)%(.*)[|](.*)%(.*)%(.*)$") ) )             // transfix (prefix+infix+suffix) rule application
+      sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"(.*)"+regex_escape(mX[3])+"$"), string(mX[4])+"$1"+string(mX[5])+"$2"+string(mX[6]) );
+    else if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)[%](.*)$") ) )              // circumfix (prefix+suffix) rule application
+      sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"$"), string(mX[3])+"$1"+string(mX[4]) );
+    else if( regex_match( sX, mX, regex("^(.*)[%](.*)[|](.*)$") ) )                     // annihilator rule application
+      sPred = regex_replace( sPred, regex("^"+regex_escape(mX[1])+"(.*)"+regex_escape(mX[2])+"$"), string(mX[3]) );
+    cout<<" obtains "<<sPred<<endl;
+  }
+
+  if ( sPred.size() == 0 ) return pair<pair<K,CVar>,pair<string,string>>(pair<K,CVar>(K::kBot, c), pair<string,string>(sX, "Null Bot"));
+
+  int iSplit = sPred.find( ":", 1 );
+  sCat  = sPred.substr( 0, iSplit );
+  sLemma = sPred.substr( iSplit+1 );
+  string sOrigLemma = sLemma;
+  if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end() || mldLemmaCounts[sLemma]<MINCOUNTS ) sLemma = "!unk!";
+  if ( isdigit(lW[0]) )                                                                        sLemma = "!num!";
+
+  return pair<pair<K,CVar>,pair<string,string>>(pair<K,CVar>(( sCat + ':' + sLemma + '_' + ((lP[0]=='N' or lP[0]=='U') ? '1' : '0') ).c_str(), c), pair<string,string>(sX, sCat + " " + sOrigLemma));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 EMat matE;
 OFunc funcO;
 
@@ -223,30 +265,36 @@ void calcContext ( Tree<L>& tr,
   static string     eF;
   static Sign       aPretrm;
   static StoreState q;
-
+  //cout << "tr: " << tr << " and l: " << l << endl;
   if( l==L() ) l = removeLink(tr);
+  //cout << "l after possibly changing empty: " << l << endl;
 
   // At unary preterminal...
   if ( tr.size()==1 && tr.front().size()==0 ) {
+    //cout << "unary preterminal case..." << endl;
     wordnum++;  // increment word index at terminal (sentence-level) one-indexing
     tDisc++;    // increment discourse-level word index. one-indexing
     string annot    = getLink( tr );  //if( annot == currentloc ) annot = "";
     f               = 1 - s;
     eF              = e + getUnaryOp( tr );
-    pair<K,CVar> kc = getPred ( removeLink(tr), removeLink(tr.front()) );
-    K k             = (FEATCONFIG & 8 && kc.first.getString()[2]!='y') ? K::kBot : kc.first;
+//    pair<K,CVar> kc = getPred ( removeLink(tr), removeLink(tr.front()) );
+    pair<pair<K,CVar>,pair<string,string>> kc = getPredAndRules ( removeLink(tr), removeLink(tr.front()) );
+    string m = kc.second.first;
+    string lm = kc.second.second;
+    K k             = (FEATCONFIG & 8 && kc.first.first.getString()[2]!='y') ? K::kBot : kc.first.first;
     bool validIntra = false;
 
     std::string annotSentIdx = annot.substr(0,annot.size()-2); //get all but last two...
     if (annotSentIdx == std::to_string(sentnum)) validIntra = true;
     if (INTERSENTENTIAL == true) validIntra = true;
-    const HVec& hvAnt = validIntra == true ? annot2kset[annot] : hvTop;
+    int antecedentTdisc = annot != "" ? annot2tdisc[annot] : -1; 
+    const HVec& hvAnt = (validIntra == true and antecedentTdisc >= (tDisc-COREF_WINDOW)) ? annot2kset[annot] : HVec(); //hvTop; 
     bool nullAnt = (hvAnt.empty()) ? true : false;
     const string currentloc = std::to_string(sentnum) + ZeroPadNumber(2, wordnum); // be careful about where wordnum get initialized and incremented - starts at 1 in main, so get it before incrementing below with "wordnum++"
-    if (annot != "")  {
-      annot2kset[currentloc] = hvAnt;
-    }
-    annot2kset[currentloc] = HVec(k, matE, funcO); //add current k
+    //if (annot != "")  {
+    //  annot2kset[currentloc] = hvAnt;
+   // }
+    //annot2kset[currentloc] = HVec(k, matE, funcO); //add current k //TODO don't overwrite here, and also use preterminal, not k
     annot2tdisc[currentloc] = tDisc; //map current sent,word index to discourse word counter
     W histword(""); //histword will track most recent observed word whose k is unk. will be stored for correct antecedent only.
     if (not isFailTree) {
@@ -299,7 +347,14 @@ void calcContext ( Tree<L>& tr,
 
           bool corefON = ((i==tDisc) ? 0 : 1); //whether current antecedent is non-null or not
           NPredictorVec npv( modN, candidate.first(), corefON, tDisc - i, q, ABLATE_UNARY ); 
+          //cout << "N " << pair<const NModel&,const NPredictorVec&>(modN,npv) << " : " << nLabel << endl; //i-1 because that's candidate index 
+#ifdef DENSE_VECTORS
+          cout << "N " << npv << " : " << nLabel << endl;
+#elif defined MLP
+          cout << "N " << npv << " : " << nLabel << endl;
+#else
           cout << "N " << pair<const NModel&,const NPredictorVec&>(modN,npv) << " : " << nLabel << endl; //i-1 because that's candidate index 
+#endif
         } //single candidate output
       } //all previous antecedent candidates output
 
@@ -307,22 +362,27 @@ void calcContext ( Tree<L>& tr,
       cout << "F " << lfp << " " << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) /*getCat(l)*/     << endl;
       if (k != kAntUnk) { 
-        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+//        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " " << m /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " " << m << " " << lm << " " << removeLink(tr.front()) << endl;
       }
 #elif defined MLP
       cout << "F " << lfp << " " << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);
+      //cout << "printing P training data for object l: " << l << " with linkless: " << removeLink(l) << " category: " << getCat(removeLink(l)) << endl;
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) /*getCat(l)*/     << endl;
       if (k != kAntUnk) {
-        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+//        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " " << m /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " " << m << " " << lm << " " << removeLink(tr.front()) << endl;
       }
 #else
       cout << "F " << pair<const FModel&,const FPredictorVec&>(modF,lfp) << " : f" << f << "&" << e << "&" << k << endl;  modF.getResponseIndex(f,e.c_str(),k);
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) << endl;
       if (k != kAntUnk) { 
-        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " : " << removeLink(tr.front())  << endl;
+//        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " " << m /*getCat(l)*/           << " : " << removeLink(tr.front())  << endl;
+        cout << "W " << e << " " << k << " " << getCat(removeLink(l)) << " " << m << " " << lm << " " << removeLink(tr.front()) << endl;
       }
 #endif
-      q = StoreState( q, hvAnt, eF.c_str(), k, getCat(removeLink(l)), matE, funcO );
+      q = StoreState( q, f, REDUCED_PRTRM_CONTEXTS, hvAnt, eF.c_str(), k, getCat(removeLink(l)), matE, funcO );
+      cout << "qPrtrm: " << q << endl;
       aPretrm = q.back().apex().back();
     } else {
       aPretrm = Sign();
@@ -335,10 +395,12 @@ void calcContext ( Tree<L>& tr,
     }
     //cout << "saving histword: " << histword << " for word: " << removeLink(tr.front()) << endl;
     antecedentCandidates.emplace_back(trip<Sign,W,K>(aPretrm, histword, k)); //append current prtrm to candidate list for future coref decisions 
+    annot2kset[currentloc] = aPretrm.getHVec();
   }
 
   // At unary identity nonpreterminal...
   else if ( tr.size()==1 and getCat(tr)==getCat(tr.front()) ) {
+    //cout << "recursing at unary identity nonpreterminal with l: " << l << endl; 
     calcContext( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, s, d, e, l );
   }
 
@@ -346,11 +408,13 @@ void calcContext ( Tree<L>& tr,
   else if ( tr.size()==1 ) {
     //// cerr<<"#U"<<getCat(tr)<<" "<<getCat(tr.front())<<endl;
     e = e + getUnaryOp( tr );
+    //cout << "recursing at unary nonpreterminal with l: " << l << endl;
     calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, s, d, e, l );
   }
 
   // At binary nonterminal...
   else if ( tr.size()==2 ) {
+    //cout << "binary case" << endl;
     //// cerr<<"#B "<<getCat(tr)<<" "<<getCat(tr.front())<<" "<<getCat(tr.back())<<endl;
 
     if (isFailTree) {
@@ -360,6 +424,7 @@ void calcContext ( Tree<L>& tr,
     }
 
     // Traverse left child...
+    //cout << "traversing left child..." << endl;
     calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, 0, d+s );
 
     J j          = s;
@@ -388,6 +453,7 @@ void calcContext ( Tree<L>& tr,
     q = StoreState ( q, j, e.c_str(), oL, oR, getCat(removeLink(l)), getCat(removeLink(tr.back())) );
 
     // Traverse right child...
+    //cout << "traversing right child..." << endl;
     calcContext ( tr.back(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, 1, d );
   }
 
@@ -408,6 +474,7 @@ int main ( int nArgs, char* argv[] ) {
     if(      '-'==argv[a][0] && 'f'==argv[a][1] ) FEATCONFIG   = atoi( argv[a]+2 );
     else if( '-'==argv[a][0] && 'u'==argv[a][1] ) MINCOUNTS    = atoi( argv[a]+2 );
     else if( '-'==argv[a][0] && 'c'==argv[a][1] ) COREF_WINDOW = atoi( argv[a]+2 );
+    else if( '-'==argv[a][0] && 'r'==argv[a][1] && 'p'==argv[a][2]) REDUCED_PRTRM_CONTEXTS = true;
     else if( '-'==argv[a][0] && 'r'==argv[a][1] ) RELAX_NOPUNC = true;
     else if( '-'==argv[a][0] && 'a'==argv[a][1] ) ABLATE_UNARY = true;
     else if( '-'==argv[a][0] && 'n'==argv[a][1] && 'b'==argv[a][2]) NO_ENTITY_BLOCKING = true;
@@ -462,7 +529,7 @@ int main ( int nArgs, char* argv[] ) {
         corefchains.clear();
       }
       else {
-	int wordnum = 0;
+	    int wordnum = 0;
         bool isFailTree = (removeLink(t.front()) == "FAIL") ? true : false;
         if( t.front().size() > 0 ) calcContext( t, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY);
       }
