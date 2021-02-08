@@ -56,8 +56,12 @@ def output_surprisal(output_flat, targets, batch_tokens):
         elif idx2word[correct_label] == "<unk>":
             lstmunk = 1
             print(token + " " + str(scores[correct_label]) + " " + str(lstmunk))
+        elif idx2word[correct_label] == "(":
+            print("-LRB- " + str(scores[correct_label]) + " " + str(lstmunk))
+        elif idx2word[correct_label] == ")":
+            print("-RRB- " + str(scores[correct_label]) + " " + str(lstmunk))
         else:
-            assert idx2word[correct_label] == token or (idx2word[correct_label] == "(" and token == "-LRB-") or (idx2word[correct_label] == ")" and token == "-RRB-")
+            assert idx2word[correct_label] == token # or (idx2word[correct_label] == "(" and token == "-LRB-") or (idx2word[correct_label] == ")" and token == "-RRB-")
             print(idx2word[correct_label] + " " + str(scores[correct_label]) + " " + str(lstmunk))
 
 
