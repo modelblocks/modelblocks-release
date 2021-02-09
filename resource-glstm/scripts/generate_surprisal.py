@@ -100,7 +100,7 @@ id_tensor, tokens = dictionary_corpus.tokenize(dictionary, args.path)
 test_data = batchify(id_tensor, eval_batch_size, args.cuda)
 
 eprint("Computing surprisal for target words in {}".format(args.path))
-print("word totsurp lstmunk")
+print("word totsurp glstmunk")
 # GLSTM cannot make predictions for the first token
 print(tokens[0]+" inf 1")
 evaluate(test_data, tokens[1:])

@@ -132,6 +132,9 @@ WILLIAMS-SCRIPTS := $(RESOURCE-WILLIAMS)/scripts
 RESOURCE-INCRSEM := $(abspath $(MBDIR)/resource-incrsem)
 INCRSEM-SCRIPTS := $(RESOURCE-INCRSEM)/scripts
 
+RESOURCE-JLSTM := $(abspath $(MBDIR)/resource-jlstm)
+JLSTM-SCRIPTS := $(RESOURCE-JLSTM)/scripts
+
 RESOURCE-KENLM := $(abspath $(MBDIR)/resource-kenlm)
 KENLM-SCRIPTS := $(RESOURCE-KENLM)/scripts
 
@@ -236,6 +239,7 @@ include $(RESOURCE-HUTH)/Makefile
 include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
+include $(RESOURCE-JLSTM)/Makefile
 include $(RESOURCE-RT)/Makefile
 include $(RESOURCE-REGRESSION)/Makefile
 include $(RESOURCE-CDR)/Makefile
