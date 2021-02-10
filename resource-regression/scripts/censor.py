@@ -34,6 +34,11 @@ def compute_filter(y, field, cond):
             return y[field] != (np.inf if cond[2:].strip() == 'inf' else float(cond[2:].strip()))
         except:
             return y[field].astype('str') != cond[2:].strip()
+    if cond.startswith('in'):
+        try:
+            return y[field].isin([float(x) for x in cond[2:].strip().split(';')])
+        except:
+            return y[field].astype('str').isin(cond[2:].strip().split(';'))
     raise ValueError('Unsupported comparator in filter "%s"' %cond)
 
 
@@ -81,4 +86,4 @@ if __name__ == '__main__':
 
     df = df[select]
 
-    df.to_csv(sys.stdout, sep=' ', index=False, na_rep='nan')
+    df.to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN')

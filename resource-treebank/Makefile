@@ -76,9 +76,9 @@ endif
 
 
 %/user-treebank-directory.txt: | %   
-	echo '/home/corpora/original/english/penn_treebank_3' > $@
+	echo '/data/corpora/original/english/penn_treebank_3' > $@
 %/user-treebank-vadas-directory.txt: | %
-	echo '/home/corpora/original/english/penn_treebank_3_vadas_np_bracketing' > $@
+	echo '/data/corpora/original/english/penn_treebank_3_vadas_np_bracketing' > $@
 
 ################################################################################
 #
@@ -107,6 +107,8 @@ $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
 	cat $(word 2,$^)/*.mrg | perl $(word 3,$^) > $@
 
 %/wsj02to21.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,%/wsj$(sect).linetrees)
+	cat $^ > $@
+%/wsj00to24.linetrees:  $(foreach sect,00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24,%/wsj$(sect).linetrees)
 	cat $^ > $@
 %/wsjv02to21.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,%/wsjv$(sect).linetrees)
 	cat $^ > $@

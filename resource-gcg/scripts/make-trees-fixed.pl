@@ -55,9 +55,12 @@ while ( <> ) {
   s/ \)/\)/g;
   s/\)\(/\) \(/g;
 
+  ## change honorifics to adj
+  s/\(NNP (Mrs\.|Mr\.|Ms\.|Dr\.|Prof\.|Sir|Madam|Rev\.)\)/\(JJ \1\)/g;
+
   ## conjoin disjoint trees with root node
-  s/^(\(*[^S\( ].*)$/\(S \1\)/;
-  s/^(.*[^\)]\))$/\(S \1\)/;
+  s/^(\(*[^S!\( ].*)$/\(S \1\)/;
+  s/^([^!].*[^\)]\))$/\(S \1\)/;
 
   ## conjoin erroneously split punctuation
   s/\(\. \?\) \(\. \?\)/\(\? \?\)/g;

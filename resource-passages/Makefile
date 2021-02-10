@@ -63,7 +63,8 @@ endef
 .SECONDEXPANSION:
 .DELETE_ON_ERROR:
 
-VPATH += $(RESOURCE-PASSAGES)
+## WS: VPATH MAKES IT IMPOSSIBLE TO CREATE LOCAL SCRIPTS DIRECTORY IN PROJECT DIRECTORY
+#VPATH += $(RESOURCE-PASSAGES)
 
 PASSAGES-ROI := LPostTemp LAntTemp LAngG LIFG LMFG LIFGorb AllROI
 PASSAGES72-BASENAME := genmodel/passages72.wsj02to21-gcg15-nol-prtrm-3sm-synproc-+c_+u_+b5000.syn.5-kenlm.bysent
@@ -112,7 +113,7 @@ endif
 
 
 %/user-passages-directory.txt: | %   
-	echo '/home/corpora/original/english/MITpassages' > $@
+	echo '/data/corpora/original/english/MITpassages' > $@
 
 ################################################################################
 #
@@ -136,7 +137,7 @@ genmodel/%.xlsx: $$(DEP-PASSAGES) $(PASSAGESDIR)/$$*.xlsx $(CONFIGDIR)/user-pass
 %passages96.linetoks: $$(DEP-TOKENIZER) %passages96.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
 	cat $(word 1, $^) | $(word 2, $^) | sed 's/ $$//g' > $@
 
-passages%.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-PASSAGES)/srcmodel/passages$$*.stripped.linetrees passages%.linetoks
+passages%.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-PASSAGES)/srcmodel/passages$$*.stripped.linetrees passages%.linetoks
 	python $^ > $@
 
 genmodel/passages.linetoks: genmodel/passages72.linetoks genmodel/passages96.linetoks
@@ -145,7 +146,7 @@ genmodel/passages.linetoks: genmodel/passages72.linetoks genmodel/passages96.lin
 genmodel/passages.lineitems: genmodel/passages72.lineitems genmodel/passages96.lineitems	
 	cat $(word 1, $^) $(word 2, $^) > $@
 
-genmodel/passages.linetrees: genmodel/passages72.linetrees genmodel/passages96.linetrees
+genmodel/passages.gold.linetrees: genmodel/passages72.gold.linetrees genmodel/passages96.gold.linetrees
 	cat $(word 1, $^) $(word 2, $^) > $@
 
 genmodel/passages.evmeasures: genmodel/passages72.evmeasures genmodel/passages96.evmeasures $(PASSAGES-SCRIPTS)/cumSentID.py

@@ -65,7 +65,7 @@ endif
 
     
 %/user-tiger-directory.txt: | %   
-	echo '/home/corpora/original/german/tigercorpus1' > $@
+	echo '/data/corpora/original/german/tigercorpus1' > $@
     
 ################################################################################
 #
@@ -77,8 +77,8 @@ genmodel/tiger.linetrees: $(TIGERDIR) $(LTREES-SCRIPTS)/editabletrees2linetrees.
 $(CONFIGDIR)/user-tiger-directory.txt | genmodel
 	grep -v '^%' $</corpus/*.penn | sed 's/($$[^ ]* \([^)]*\))/(\1 \1)/g' | perl $(word 2,$^) > $@
 
-genmodel/tigerTRAIN.linetrees: genmodel/tiger.linetrees | genmodel
+genmodel/tiger%TRAIN.linetrees: genmodel/tiger%.linetrees | genmodel
 	head -n 20894 $^ > $@
 
-genmodel/tigerTEST.linetrees: genmodel/tiger.linetrees | genmodel
+genmodel/tiger%TEST.linetrees: genmodel/tiger%.linetrees | genmodel
 	tail -n 2611 $^ > $@

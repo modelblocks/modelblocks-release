@@ -61,7 +61,8 @@ endef
 .SECONDEXPANSION:
 .DELETE_ON_ERROR:
 
-VPATH += $(RESOURCE-DUNDEE)
+## WS: VPATH MAKES IT IMPOSSIBLE TO CREATE LOCAL SCRIPTS DIRECTORY IN PROJECT DIRECTORY
+#VPATH += $(RESOURCE-DUNDEE)
 
 DUNDEESECTS = 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20
 DUNDEESUBJS = sa sb sc sd se sf sg sh si sj
@@ -105,7 +106,7 @@ endif
 
     
 %/user-dundee-directory.txt: | %
-	echo '/home/corpora/original/english/dundee' > $@
+	echo '/data/corpora/original/english/dundee' > $@
     
 ################################################################################
 #
@@ -156,10 +157,13 @@ genmodel/dundee.textdata $(RT-SCRIPTS)/sents2sentids.py genmodel/dundee.lineitem
 genmodel/dundee.%.evmeasures: $(RT-SCRIPTS)/concat_tables.py $(foreach subj, $(DUNDEESUBJS), genmodel/dundee.$(subj)_%.evmeasures) | genmodel
 	python $^ > $@
 
-genmodel/dundee.evmeasures: genmodel/dundee.fp.evmeasures genmodel/dundee.gp.evmeasures $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/filter_cols.awk $(DTSR-SCRIPTS)/compute_timestamps_from_RT.py \
-$(RT-SCRIPTS)/add_sentence_starts_and_ends.py
-	cat $< | python $(word 3, $^) fdur fdurFP | paste -d' ' - <(awk -f $(word 4, $^) -v cols=fdur:fileid $(word 2, $^) | \
-	python $(word 3, $^) fdur fdurGP fileid docid) | python $(word 5, $^) | python $(word 6, $^) > $@
+#genmodel/dundee.evmeasures: genmodel/dundee.fp.evmeasures genmodel/dundee.gp.evmeasures $(RT-SCRIPTS)/rename_cols.py $(RT-SCRIPTS)/filter_cols.awk $(DTSR-SCRIPTS)/compute_timestamps_from_RT.py \
+#$(RT-SCRIPTS)/add_sentence_starts_and_ends.py
+#	cat $< | python $(word 3, $^) fdur fdurFP | paste -d' ' - <(awk -f $(word 4, $^) -v cols=fdur:fileid $(word 2, $^) | \
+#	python $(word 3, $^) fdur fdurGP fileid docid) | python $(word 5, $^) | python $(word 6, $^) > $@
+
+%dundee.evmeasures: $$(DEP-DUNDEE) $(DUNDEE-SCRIPTS)/process_dundee.py $(DUNDEEDIR) %dundee.lineitems
+	python $^ > $@
 
 
 ################################################################################
@@ -198,7 +202,7 @@ genmodel/dundee.linetoks: $$(foreach sect,$$(DUNDEESECTS),genmodel/dundee$$(sect
 #
 ################################################################################
 
-%dundee.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees %dundee.linetoks
+%dundee.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees %dundee.linetoks
 	python $^ > $@
 
 %dundee.edit.editabletrees: $$(dir %)dundee.gold.linetrees bin/indent

@@ -90,7 +90,7 @@ endif
 
 
 %/user-fedorenkoetal16ecog-directory.txt: | %   
-	echo '/home/corpora/original/english/fedorenkoetal16_ecog' > $@
+	echo '/data/corpora/original/english/fedorenkoetal16_ecog' > $@
 
 ################################################################################
 #
@@ -98,12 +98,48 @@ endif
 #
 ################################################################################
 
-fedorenkoetal16ecog_sent%.linetoks: $$(DEP-FEDECOG) $$(DEP-TOKENIZER) $(CONFIG) $$(FEDECOGDIR)/materials_visual/1_sent/$$*.txt $$(TOKENIZERDIR)/ptb_tokenizer.sed
-	tr '\n' ' ' < $(word 2, $^) | tr '[:upper:]' '[:lower:]' | sed -f $(word 3, $^) | paste -d'\0' - <(echo ".") | sed 's/./\u&/' > $@
+%fedorenkoetal16ecogsents.itemmeasures: $$(DEP-FEDECOG) $$(DEP-TOKENIZER) $(CONFIG) $(FEDECOG-SCRIPTS)/build_itemmeasures.py $$(FEDECOGDIR)/materials_visual/1_sent/
+	python $(word 2, $^) $(word 3, $^) > $@
 
-%/fedorenkoetal16ecog_sents.linetoks: $$(DEP-FEDECOG) $(CONFIG) $$(foreach file,$$(wildcard $$(FEDECOGDIR)/materials_visual/1_sent/*.txt),%/fedorenkoetal16ecog_sent$$(notdir $$(basename $$(file))).linetoks) | genmodel
-	awk '{print $$0}' $(sort $(wordlist 2, 200, $^)) > $@
+%fedorenkoetal16ecogsents.lineitems: $(FEDECOG-SCRIPTS)/itemmeasures2lineitems.py %fedorenkoetal16ecogsents.itemmeasures
+	cat $(word 2, $^) | python $< > $@
 
-%/fedorenkoetal16ecog_sents.lineitems: $$(DEP-TOKENIZER) %/fedorenkoetal16ecog_sents.linetoks $$(TOKENIZERDIR)/ptb_untokenizer.sed
-	cat $(word 1, $^) | sed -f $(word 2, $^) > $@
+%fedorenkoetal16ecogsents.linetoks: $$(DEP-TOKENIZER) %fedorenkoetal16ecogsents.lineitems $$(TOKENIZERDIR)/ptb_tokenizer.sed
+	cat $< | sed -f $(word 2, $^) | sed 's/ $$//g' > $@
+
+%fedorenkoetal16ecogwords.itemmeasures: $$(DEP-FEDECOG) $$(DEP-TOKENIZER) $(CONFIG) $(FEDECOG-SCRIPTS)/build_itemmeasures.py $$(FEDECOGDIR)/materials_visual/2_words/
+	python $(word 2, $^) $(word 3, $^) > $@
+
+%fedorenkoetal16ecogwords.lineitems: $(FEDECOG-SCRIPTS)/itemmeasures2lineitems.py %fedorenkoetal16ecogwords.itemmeasures
+	cat $(word 2, $^) | python $< > $@
+
+%fedorenkoetal16ecogwords.linetoks: $$(DEP-TOKENIZER) %fedorenkoetal16ecogwords.lineitems $$(TOKENIZERDIR)/ptb_tokenizer.sed
+	cat $< | sed -f $(word 2, $^) | sed 's/ $$//g' > $@
+
+%fedorenkoetal16ecogjabsents.itemmeasures: $$(DEP-FEDECOG) $$(DEP-TOKENIZER) $(CONFIG) $(FEDECOG-SCRIPTS)/build_itemmeasures.py $$(FEDECOGDIR)/materials_visual/3_jabsent/
+	python $(word 2, $^) $(word 3, $^) > $@
+
+%fedorenkoetal16ecogjabsents.lineitems: $(FEDECOG-SCRIPTS)/itemmeasures2lineitems.py %fedorenkoetal16ecogjabsents.itemmeasures
+	cat $(word 2, $^) | python $< > $@
+
+%fedorenkoetal16ecogjabsents.linetoks: $$(DEP-TOKENIZER) %fedorenkoetal16ecogjabsents.lineitems $$(TOKENIZERDIR)/ptb_tokenizer.sed
+	cat $< | sed -f $(word 2, $^) | sed 's/ $$//g' > $@
+
+%fedorenkoetal16ecogjabwords.itemmeasures: $$(DEP-FEDECOG) $$(DEP-TOKENIZER) $(CONFIG) $(FEDECOG-SCRIPTS)/build_itemmeasures.py $$(FEDECOGDIR)/materials_visual/4_jabwords/
+	python $(word 2, $^) $(word 3, $^) > $@
+
+%fedorenkoetal16ecogjabwords.lineitems: $(FEDECOG-SCRIPTS)/itemmeasures2lineitems.py %fedorenkoetal16ecogjabwords.itemmeasures
+	cat $(word 2, $^) | python $< > $@
+
+%fedorenkoetal16ecogjabwords.linetoks: $$(DEP-TOKENIZER) %fedorenkoetal16ecogjabwords.lineitems $$(TOKENIZERDIR)/ptb_tokenizer.sed
+	cat $< | sed -f $(word 2, $^) | sed 's/ $$//g' > $@
+
+%fedorenkoetal16ecog.itemmeasures: %fedorenkoetal16ecogsents.itemmeasures %fedorenkoetal16ecogwords.itemmeasures %fedorenkoetal16ecogjabsents.itemmeasures %fedorenkoetal16ecogjabwords.itemmeasures
+	cat $< <(tail -n+2 $(word 2, $^)) <(tail -n+2 $(word 3, $^)) <(tail -n+2 $(word 4, $^)) > $@
+
+%fedorenkoetal16ecog.lineitems: %fedorenkoetal16ecogsents.lineitems %fedorenkoetal16ecogwords.lineitems %fedorenkoetal16ecogjabsents.lineitems %fedorenkoetal16ecogjabwords.lineitems
+	cat $^ > $@
+
+%fedorenkoetal16ecog.linetoks: %fedorenkoetal16ecogsents.linetoks %fedorenkoetal16ecogwords.linetoks %fedorenkoetal16ecogjabsents.linetoks %fedorenkoetal16ecogjabwords.linetoks
+	cat $^ > $@
 

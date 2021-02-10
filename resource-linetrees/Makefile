@@ -93,7 +93,7 @@ EditableTrees:
 endef
 #### obtain (flat) linetrees from (indented) editabletrees
 %.linetrees:  %.editabletrees  $(LTREES-SCRIPTS)/editabletrees2linetrees.pl
-	cat $<  |  perl -pe 's/^[0-9]*://;'  |  perl $(word 2,$^)  >  $@
+	cat $<  |  perl -pe 's/^[0-9]*://'  |  perl $(word 2,$^)  >  $@
 %.fromlinetrees.editabletrees:  %.linetrees  bin/indent
 	cat $<  |  $(word 2,$^)  >  $@
 %.numbered.editabletrees:  %.editabletrees  $(LTREES-SCRIPTS)/make-trees-numbered.pl
@@ -238,17 +238,23 @@ Linetoks:
   blocktitle: Linetoks
   targetsuffix: .linetoks
 endef
-%.fromtrees.linetoks:  $(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.linetrees)))
+
+#### This item is used to flatten trees from treebank corpora *in the genmodel directory* into tokenized parser input...
+#%.linetoks:  $(GENMODEL)/%.linetrees   #$(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.linetrees)))
+%.linetoks:  $(GENMODEL)/$$(notdir $$*.linetrees)   #$(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.linetrees)))
 	cat $<  |  sed 's/(-NONE-[^)]*)//g'  \
 		|  sed 's/([^ ]* //g;s/)//g'  |  sed 's/  */ /g;s/^ *//;s/ *$$//;'  \
 		|  sed 's/!unf! *//g' >  $@
-%.fromtrees.linetoks:  %.linetrees
+#### This item is used to flatten trees from treebank corpora into tokenized parser input...
+%.linetoks:  %.linetrees
 	cat $<  |  sed 's/(-NONE-[^)]*)//g'  \
 		|  sed 's/([^ ]* //g;s/)//g'  |  sed 's/  */ /g;s/^ *//;s/ *$$//;'  \
 		|  sed 's/!unf! *//g' >  $@
-%.fromtrees.morph.linetoks: %.linetoks
+%.morph.linetoks: %.linetoks
 	morfessor -t $^ -T $^ --output-format={analysis}' ' --output-newlines > $@
 
+%.delim.linetoks: %.linetoks $(LTREES-SCRIPTS)/linetoks2delimlinetoks.py
+	cat $< | python $(word 2,$^) > $@
 
 #### reverse the order of tokens by sentence in an input linetoks file
 %.rev.linetoks: %.linetoks
@@ -285,6 +291,9 @@ endef
 
 %.nopunc.linetoks: %.linetoks
 	cat $<  |  perl -pe "s/ (,|\.|\`\`|\`|--|-RRB-|-LRB-|-LCB-|-RCB-|''|'|\.\.\.|\?|\!|\:|\;|\(|\))//g" > $@
+
+#%.blankfail.linetrees: %.linetrees
+#	cat $< | sed 's/^.*FAIL.*$$//g' > $@
 
 %.nocurr.linetrees: %.linetrees $(LTREES-SCRIPTS)/make-trees-nounary.pl
 	cat $< | sed 's/\(\$$ \+[^ ()]\+\)//g;' | perl $(word 2, $^) > $@

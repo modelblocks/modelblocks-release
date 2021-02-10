@@ -58,7 +58,8 @@ endef
 .SECONDEXPANSION:
 .DELETE_ON_ERROR:
 
-VPATH += $(RESOURCE-UCL)
+## WS: VPATH MAKES IT IMPOSSIBLE TO CREATE LOCAL SCRIPTS DIRECTORY IN PROJECT DIRECTORY
+#VPATH += $(RESOURCE-UCL)
 
 UCL-BASENAME := genmodel/ucl.wsj02to21-GRAMMAR-nol-prtrm-3sm-synproc-+c_+u_+b5000.gcg15_nodashtags.merged.syn.5-kenlm.eyeGP
 UCL-LMEDEFAULT := -NSCFl
@@ -138,13 +139,13 @@ endif
 
 
 %/user-ucl-directory.txt: | %
-	echo '/home/corpora/original/english/ucl_novels' > $@
+	echo '/data/corpora/original/english/ucl_novels' > $@
 
 %/user-esn-directory.txt: | %
-	echo '/home/corpora/original/english/dundee/echo_state' > $@
+	echo '/data/corpora/original/english/dundee/echo_state' > $@
 
 %/user-geniatagger-directory.txt: | %
-	echo '/home/compling/geniatagger-2.0.2' > $@
+	echo '/data/compling/geniatagger-2.0.2' > $@
 
 
 ################################################################################
@@ -176,7 +177,7 @@ genmodel/ucl.rm_unfix_items.params: | genmodel
 $(UCLDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | %
 	cut -f 2 $(word 3,$^) | tail -n+2 | $(word 4,$^) | sed 's/ $$//g' > $@
 
-%/ucl.lineitems: $$(DEP-UCL) $$(DEP-TOKENIZER) $(CONFIGDIR)/user-tokenizer-directory.txt $(CONFIGDIR)/user-ucl-directory.txt \
+%/ucl.lineitems: $$(DEP-UCL) $(CONFIGDIR)/user-ucl-directory.txt \
 $(UCLDIR)/eye_movement/stimuli.txt | %
 	cut -f 2 $(word 3,$^) | tail -n+2 > $@
 

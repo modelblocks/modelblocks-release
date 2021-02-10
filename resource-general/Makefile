@@ -84,14 +84,20 @@ CHILDES-SCRIPTS := $(RESOURCE-CHILDES)/scripts
 RESOURCE-CONLEN := $(abspath $(MBDIR)/resource-conlen)
 CONLEN-SCRIPTS := $(RESOURCE-CONLEN)/scripts
 
+RESOURCE-COREF-CONLL := $(abspath $(MBDIR)/resource-coref-conll)
+CONLL-SCRIPTS := $(RESOURCE-COREF-CONLL)/scripts
+
 RESOURCE-DMV := $(abspath $(MBDIR)/resource-dmv)
 DMV-SCRIPTS := $(RESOURCE-DMV)/scripts
 
-RESOURCE-DTSR := $(abspath $(MBDIR)/resource-dtsr)
-DTSR-SCRIPTS := $(RESOURCE-DTSR)/scripts
+RESOURCE-CDR := $(abspath $(MBDIR)/resource-cdr)
+CDR-SCRIPTS := $(RESOURCE-CDR)/scripts
 
 RESOURCE-DUNDEE := $(abspath $(MBDIR)/resource-dundee)
 DUNDEE-SCRIPTS := $(RESOURCE-DUNDEE)/scripts
+
+RESOURCE-EPIC := $(abspath $(MBDIR)/resource-epic)
+EPIC-SCRIPTS := $(RESOURCE-EPIC)/scripts
 
 RESOURCE-FEDECOG := $(abspath $(MBDIR)/resource-fedorenkoetal16ecog)
 FEDECOG-SCRIPTS := $(RESOURCE-FEDECOG)/scripts
@@ -114,6 +120,9 @@ GIGAWORD-SCRIPTS := $(RESOURCE-GIGAWORD)/scripts
 RESOURCE-GLOVE := $(abspath $(MBDIR)/resource-glove)
 GLOVE-SCRIPTS := $(RESOURCE-GLOVE)/scripts
 
+RESOURCE-GLSTM := $(abspath $(MBDIR)/resource-glstm)
+GLSTM-SCRIPTS := $(RESOURCE-GLSTM)/scripts
+
 RESOURCE-HUTH := $(abspath $(MBDIR)/resource-huth)
 HUTH-SCRIPTS := $(RESOURCE-HUTH)/scripts
 
@@ -122,6 +131,9 @@ WILLIAMS-SCRIPTS := $(RESOURCE-WILLIAMS)/scripts
 
 RESOURCE-INCRSEM := $(abspath $(MBDIR)/resource-incrsem)
 INCRSEM-SCRIPTS := $(RESOURCE-INCRSEM)/scripts
+
+RESOURCE-JLSTM := $(abspath $(MBDIR)/resource-jlstm)
+JLSTM-SCRIPTS := $(RESOURCE-JLSTM)/scripts
 
 RESOURCE-KENLM := $(abspath $(MBDIR)/resource-kenlm)
 KENLM-SCRIPTS := $(RESOURCE-KENLM)/scripts
@@ -168,6 +180,9 @@ RT-SCRIPTS := $(RESOURCE-RT)/scripts
 RESOURCE-TOKENIZE := $(abspath $(MBDIR)/resource-segment-tokenize)
 TOKENIZE-SCRIPTS := $(RESOURCE-TOKENIZE)/scripts
 
+RESOURCE-SKIPDEP := $(abspath $(MBDIR)/resource-skipdep)
+SKIPDEP-SCRIPTS := $(RESOURCE-SKIPDEP)/scripts
+
 RESOURCE-SRILM := $(abspath $(MBDIR)/resource-srilm)
 SRILM-SCRIPTS := $(RESOURCE-SRILM)/scripts
 
@@ -202,6 +217,8 @@ WORDNET-SCRIPTS := $(RESOURCE-WORDNET)/scripts
 RESOURCE-XLSX2CSV := $(abspath $(MBDIR)/resource-xlsx2csv)
 XLSX2CSV-SCRIPTS := $(RESOURCE-XLSX2CSV)/scripts
 
+RESOURCE-CONLLSCORER := $(abspath $(MBDIR)/resource-conllscorer)
+
 BIN      := bin
 GENMODEL := genmodel
 
@@ -210,18 +227,22 @@ include $(RESOURCE-TOKENIZER)/Makefile
 include $(RESOURCE-LTREES)/Makefile
 include $(RESOURCE-GCG)/Makefile
 include $(RESOURCE-LVPCFG)/Makefile
+include $(RESOURCE-SKIPDEP)/Makefile
+include $(RESOURCE-EPIC)/Makefile
 include $(RESOURCE-LCPARSE)/Makefile
 include $(RESOURCE-BNC)/Makefile
 include $(RESOURCE-TREEBANK)/Makefile
 include $(RESOURCE-GIGAWORD)/Makefile
 include $(RESOURCE-GLOVE)/Makefile
+include $(RESOURCE-GLSTM)/Makefile
 include $(RESOURCE-HUTH)/Makefile
 include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
+include $(RESOURCE-JLSTM)/Makefile
 include $(RESOURCE-RT)/Makefile
 include $(RESOURCE-REGRESSION)/Makefile
-include $(RESOURCE-DTSR)/Makefile
+include $(RESOURCE-CDR)/Makefile
 include $(RESOURCE-FEDECOG)/Makefile
 include $(RESOURCE-FMRI)/Makefile
 include $(RESOURCE-LMEFIT)/Makefile
@@ -245,6 +266,8 @@ include $(RESOURCE-UPPARSE)/Makefile
 include $(RESOURCE-WILLIAMS)/Makefile
 include $(RESOURCE-WORD2VEC)/Makefile
 include $(RESOURCE-WORDNET)/Makefile
+include $(RESOURCE-COREF-CONLL)/Makefile
+include $(RESOURCE-CONLLSCORER)/Makefile
 endef
 
 ################################################################################

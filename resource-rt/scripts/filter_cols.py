@@ -9,7 +9,7 @@ argparser.add_argument('-d', '--dedup', dest='d', action='store_true', help='dro
 args, unknown = argparser.parse_known_args()
 
 def main():
-    data = pd.read_csv(sys.stdin, sep=' ', skipinitialspace=True)
+    data = pd.read_csv(sys.stdin, sep=' ', skipinitialspace=True, quoting=3)
     if args.d:
         dups = [col for col in data.columns.values if re.search('\.[0-9]+$', col)]
         for dup in dups:
@@ -19,6 +19,6 @@ def main():
     if args.x != None:
         for x in args.x:
             data.drop(x, axis=1, inplace=True)
-    data.to_csv(sys.stdout, ' ', na_rep='nan', index=False)
+    data.to_csv(sys.stdout, ' ', na_rep='NaN', index=False, quoting=3)
     
 main()

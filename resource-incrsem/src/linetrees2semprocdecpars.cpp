@@ -32,7 +32,7 @@ using namespace arma;
 bool STORESTATE_TYPE = true;
 bool STORESTATE_CHATTY = true;
 int FEATCONFIG = 0;
-#include <StoreState.hpp>
+#include <StoreStatePreRefactoring.hpp>
 #include <Tree.hpp>
 
 map<L,double> mldLemmaCounts;

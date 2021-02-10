@@ -64,12 +64,12 @@ class LVU : public trip<L,arma::rowvec,arma::vec> { //label, vec, vec
   arma::rowvec&        v ( )       { return second(); }
   arma::vec&           u ( )       { return third(); }
   L              getLink ( ) const { 
-          if (string::npos != first().find("-n")) {
-            std::smatch sm;
-            std::regex re ("(.*)-n([0-9]+).*"); //get consecutive numbers after a "-n"
-            if (std::regex_search(first(), sm, re) && sm.size() > 2) { return(sm.str(2)); }
-          }
-          else return("");
+    if (string::npos != first().find("-n")) {
+      std::smatch sm;
+      std::regex re ("(.*)-n([0-9]+).*"); //get consecutive numbers after a "-n"
+      if (std::regex_search(first(), sm, re) && sm.size() > 2) { return(sm.str(2)); }
+    }
+    else return("");
   } 
   // Input / output methods  ---  NOTE: only reads and writes label, not vectors...
   friend pair<istream&,LVU&> operator>> ( istream&            is,  LVU& t              )                 { return pair<istream&,LVU&>(is,t); }
@@ -245,7 +245,7 @@ if( FEATCONFIG & 16)
   if ( mldLemmaCounts.find(sLemma)==mldLemmaCounts.end() || mldLemmaCounts[sLemma]<MINCOUNTS ) sLemma = "!unk!";
   if ( isdigit(lW[0]) )                                                                        sLemma = "!num!";
 
-  return pair<K,T>( ( sType + ':' + sLemma + '_' + ((lP[0]=='N') ? '1' : '0') ).c_str(), t );
+  return pair<K,T>( ( sType + ':' + sLemma + '_' + ((lP[0]=='N' or lP[0]=='U') ? '1' : '0') ).c_str(), t );
 }
 
 ////////////////////////////////////////////////////////////////////////////////

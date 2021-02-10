@@ -347,5 +347,5 @@ if __name__ == '__main__':
                 sys.stderr.write('Lanczos filtering columns %s within TRs...\n' % ', '.join(lanczos_cols))
                 response = lanczos(preds, response, first_obs, last_obs, series_starts_X, series_starts_y, lanczos_cols, n_filters=args.n_filters)
 
-    response.to_csv(sys.stdout, ' ', index=False, na_rep='nan')
+    response.to_csv(sys.stdout, ' ', index=False, na_rep='NaN')
 

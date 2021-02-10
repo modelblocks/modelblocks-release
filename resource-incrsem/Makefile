@@ -23,6 +23,9 @@ SHELL := /bin/bash
 .SUFFIXES:
 .SECONDEXPANSION:
 
+## WS: VPATH MAKES IT IMPOSSIBLE TO CREATE LOCAL SCRIPTS DIRECTORY IN PROJECT DIRECTORY
+#VPATH += $(RESOURCE-INCRSEM)
+
 #### directories used by included items...
 BIN := bin
 GENMODEL := genmodel
@@ -87,14 +90,18 @@ $(INCRSEM-SCRIPTS)/%.d:  $(INCRSEM-SCRIPTS)/%.py
 .PRECIOUS:  $(SRC)/%.d
 $(SRC)/%.d:  $(SRC)/%.cpp  |  $(INCLUDE)
 	echo '$@: \' > $@   #' ##
-	echo `g++ -I$| -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl/) -std=c++11 -MM $<` | sed 's/^.*:.*\.cpp */ $$(wildcard /;s/\\ *//g;s/$$/)/' >> $@
+	echo `g++ -I$| -I$(SRC) -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl/) -std=c++17 -MM $<` | perl -pe 's/^.*: .*?\.cpp */ \$$\(wildcard /;s/\\ *//g;s/$$/\)/' >> $@
 	cat $@ | sed 's/\.d:/\.cpp:/' >> $@
 endif
 
 #### c++ executables  --  NOTE: $< must precede -l's on ubuntu g++
 .PRECIOUS: $(BIN)/%
 $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user-cflags.txt  |  $(BIN)  $(INCLUDE)
-	g++ -I/usr/include/libxml2/ -I$(word 2,$|) -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 3,$^)` -fpermissive -std=c++11 $< -lm -larmadillo -lpthread -o $@
+	g++ -L$(CONDA_PREFIX)/lib -L$(CONDA_PREFIX)/lib64 -I/usr/include/libxml2/ -I$(word 2,$|) -I$(SRC) -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 3,$^)` -fpermissive -std=c++17 $< -lm -larmadillo -Wl,-rpath-link=$(CONDA_PREFIX)/lib -lpthread -o $@
+
+#### copy .ini files to scripts
+scripts/%.ini:  $(INCRSEM-SCRIPTS)/%.ini  |  scripts
+	cp $^ $@
 
 ################################################################################
 #
@@ -103,7 +110,7 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 ################################################################################
 
 ## obtain auto-parsed simplewiki corpus...
-%simplewikiFULLAUTO.gcg15.linetrees:  /home/corpora/original/english/simplewiki20140903/simplewiki-20140903-pages-articles.wsj02to21-comparativized-gcg15-4sm.berk.parsed.linetrees
+%simplewikiFULLAUTO.gcg15.linetrees:  /data/corpora/original/english/simplewiki20140903/simplewiki-20140903-pages-articles.wsj02to21-comparativized-gcg15-4sm.berk.parsed.linetrees
 	ln -s $< $@
 
 ## remove % comments
@@ -163,9 +170,13 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 #	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/%[^ %|]*\|//g;s/-x(?:(?!-[a-z])[^ }])*(?=[^\)]* )//g'  >  $@
 #	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/-x[^- \}]*%[^- ]*(?=[^\)]* )//g'  >  $@
 
+## remove !ARTICLE article delimiters
+%.nodelim.linetrees: %.linetrees
+	cat $< | grep -v '!ARTICLE' > $@
+
 ## remove scope and coref tags...
 %.nosem.linetrees:  %.linetrees
-	cat $<  |  perl -pe 's/[-+](?:[nms]|nn+)[0-9]+(?=[^\)]* )//g;'  >  $@
+	cat $<  |  perl -pe 's/[-+](?:[nmstw]|nn+)[0-9]+(?=[^\)]* )//g;'  >  $@
 
 ## obtain lemma counts from trees...
 %.lemmacounts:  %.linetrees  $(INCRSEM-SCRIPTS)/printlemmas.py  $(INCRSEM-SCRIPTS)/printlemmas.d
@@ -176,14 +187,35 @@ $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user
 %sm_semprocdecpars:     $$(basename %).linetrees  \
 			$(BIN)/linetrees2sm_semprocdecpars  \
 			$$(basename %).lemmacounts  \
-			$$(basename %).nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
-	cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
+			$(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py \
+	    #TODO push this filtering further upstream to resource
+			#$$(basename %).nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
+	#cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
+	###################################
+	### generating training data... ###
+	###################################
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) | python $(word 4,$^) >  $@
+
+## obtain predictors and responses for all semantic processing models...
+.PRECIOUS: %densemprocdecpars
+%densemprocdecpars:     $$(basename %).linetrees  \
+			$(BIN)/linetrees2densemprocdecpars  \
+			$$(basename %).lemmacounts  \
+			#$$(basename %).nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
+	#cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^) genmodel/test_20dim_2samples_1500epochs0.01lr_nodes_emat_omodel.txt  >  $@
+
+.PRECIOUS: %mlpsemprocdecpars
+%mlpsemprocdecpars:     $$(basename %).linetrees  \
+			$(BIN)/linetrees2mlpsemprocdecpars  \
+			$$(basename %).lemmacounts
+	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
 
 .PRECIOUS: %sm_corefsemprocdecpars
 %sm_corefsemprocdecpars:     $$(basename %).linetrees  \
 			$(BIN)/linetrees2sm_semprocdecpars_coref  \
 			$$(basename %).lemmacounts  \
-			$$(basename %).unlinked.nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
+			#$$(basename %).unlinked.nol4train.$$(subst .,,$$(suffix $$(subst _,.,$$*)))sm.ccx.model
 	cat $(word 1,$^)  |  grep -v '='  |  $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(suffix $*)))) $(word 3,$^) $(word 4,$^)  >  $@
 #%semprocdecpars:  $$(basename $$(basename %)).linetrees  $(BIN)/linetrees2semprocdecpars  $$(basename $$(basename %)).lemmacounts
 #	cat $(word 1,$^)  |  grep '^([^)]'  |  grep -v '='  |  $(word 2,$^) $(subst _, ,$(subst .,, $(suffix $*))) $(word 3,$^)  >  $@
@@ -234,7 +266,9 @@ endef
 ################################################################################
 
 ## pull apart predictor/responses for training...
-%.fmlrdecpars:  %semprocdecpars
+%.nmlrdecpars:  %semprocdecpars
+	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
+%.fmlrdecpars:  %semprocdecpars 
 	cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
 %.jmlrdecpars:  %semprocdecpars
 	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
@@ -247,23 +281,60 @@ endef
 %.wcptdecpars:  %semprocdecpars
 	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
 
+## pull apart predictor/responses for training...
+%.ngcndecpars:  %densemprocdecpars
+	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
+#%.fmlrdecpars:  %semprocdecpars
+%.fgcndecpars:  %densemprocdecpars  $(INCRSEM-SCRIPTS)/filterFNoncorefPronounsSemprocdecpars.py #TODO this won't work - remove and confirm filtering is done earlier
+	#cat $<  |  grep '^F'  |  sed 's/^. //'  >  $@
+	cat $(word 1, $^)  |  grep '^F'  |  sed 's/^. //' | python $(word 2, $^) >  $@
+%.jgcndecpars:  %densemprocdecpars
+	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
+%.pcptdecpars:  %densemprocdecpars
+	cat $<  |  grep '^P'  |  sed 's/^. //'  >  $@
+%.acptdecpars:  %densemprocdecpars
+	cat $<  |  grep '^A'  |  sed 's/^. //'  >  $@
+%.bcptdecpars:  %densemprocdecpars
+	cat $<  |  grep '^B'  |  sed 's/^. //'  >  $@
+%.wcptdecpars:  %densemprocdecpars
+	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
+
+## pull apart predictor/responses for training...
+%.nmlpdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^N'  |  sed 's/^. //'  >  $@
+%.fmlpdecpars:  %mlpsemprocdecpars $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py
+	cat $(word 1, $^)  |  grep '^F'  |  sed 's/^. //' | python $(word 2, $^) >  $@
+%.jmlpdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^J'  |  sed 's/^. //'  >  $@
+%.pcptdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^P'  |  sed 's/^. //'  >  $@
+%.acptdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^A'  |  sed 's/^. //'  >  $@
+%.bcptdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^B'  |  sed 's/^. //'  >  $@
+%.wcptdecpars:  %mlpsemprocdecpars
+	cat $<  |  grep '^W'  |  sed 's/^. //'  >  $@
+
 ## push together semantic processing models...
 .PRECIOUS: %_semprocmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e4_1e-6_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e-1_1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
-%_semprocmodel: $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_$$(suffix $$(basename $$(subst _,.,$$*)))_100_fmlrmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_$$(suffix $$(subst _,.,$$*))_100_jmlrmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_.pcptmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_.acptmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_.bcptmodel \
-                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*))))))_.wcptmodel
-	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
-	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
-	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
-	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
-	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
-	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
+%_semprocmodel: $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(basename $$(basename $$(subst _,.,$$*))))_100_nmlrmodel \
+ 								$$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(basename $$(subst _,.,$$*)))_100_fmlrmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_$$(suffix $$(subst _,.,$$*))_100_jmlrmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.pcptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.acptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.bcptmodel \
+                $$(basename %).$$(subst .,_,$$(basename $$(basename $$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))))_.wcptmodel 
+	cat $(word 1,$^)  |  sed 's/^/N /'   >  $@
+	cat $(word 2,$^)  |  sed 's/^/F /'  >>  $@
+	cat $(word 3,$^)  |  sed 's/^/J /'  >>  $@
+	cat $(word 4,$^)  |  sed 's/^/P /'  >>  $@
+	cat $(word 5,$^)  |  sed 's/^/A /'  >>  $@
+	cat $(word 6,$^)  |  sed 's/^/B /'  >>  $@
+	cat $(word 7,$^)  |  sed 's/^/W /'  >>  $@
 
+## push together semantic processing models...
 .PRECIOUS: %_corefsemprocmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e4_1e-6_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 #%semprocmodel:  %.1e-1_1_100_fmlrmodel  %.1e-1_1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
@@ -280,22 +351,137 @@ endef
 	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
 	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
 
-.PRECIOUS: %.semproctorchmodel
-%.semproctorchmodel:  %.-batchsize_100_fmlrtorchmodel  %.jmlrtorchmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
-	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
-	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
-	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
-	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
-	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
-	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
-#.PRECIOUS: %.synprocmodel
-#%.synprocmodel:  %.1e-1_100_fmlrmodel  %.1e-1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+#.PRECIOUS: %.semproctorchmodel
+#%.semproctorchmodel:  %.-batchsize_100_fmlrtorchmodel  %.jmlrtorchmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
 #	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
 #	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
 #	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
 #	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
 #	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
 #	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
+#
+##.PRECIOUS: %.synprocmodel
+##%.synprocmodel:  %.1e-1_100_fmlrmodel  %.1e-1_100_jmlrmodel  %.pcptmodel  %.acptmodel  %.bcptmodel  %.wcptmodel
+##	cat $(word 1,$^)  |  sed 's/^/F /'   >  $@
+##	cat $(word 2,$^)  |  sed 's/^/J /'  >>  $@
+##	cat $(word 3,$^)  |  sed 's/^/P /'  >>  $@
+##	cat $(word 4,$^)  |  sed 's/^/A /'  >>  $@
+##	cat $(word 5,$^)  |  sed 's/^/B /'  >>  $@
+##	cat $(word 6,$^)  |  sed 's/^/W /'  >>  $@
+
+
+################################################################################
+#
+#  config(ini)-based dsp (densemproc/mlpsemproc)
+#
+################################################################################
+
+# WS: don't need this bc of VPATH, which is dangerous
+# ## Copy learning hyperparameter file from incrsem srcmodel...
+# $(PROJECT-SCRIPTS)/%.ini : $(INCRSEM-SCRIPTS)/%.ini  |  $(PROJECT-SCRIPTS)
+# 	cp $^ $@
+
+## Induce predicate vectors and cued association transition model (% contains gcn ini filename)...
+# wsj requires artdelim for !ARTICLE delimiters
+.PRECIOUS: %_emat_omodel
+%_emat_omodel : $$(basename %).discgraphs  \
+                $(INCRSEM-SCRIPTS)/discgraphs2omodel.py  \
+                scripts/$$(subst .,,$$(suffix $$*)).ini
+	python3 -u $(word 2,$^) $< $(word 3,$^)  >  $@  2>  $@.log
+
+## Create training example file from training corpus (% contains gcn ini filename and decpar flags)...
+.PRECIOUS: %_dspdecpars
+%_dspdecpars : $$(basename %).linetrees  \
+               $(BIN)/linetrees2densemprocdecpars  \
+               $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
+	cat $<  |  $(word 2,$^) $(wordlist 2,99,$(subst _, ,$(suffix $*))) $(word 3,$^)  >  $@
+
+## Create training example file from training corpus (% contains decpar flags)...
+.PRECIOUS: %_mlpdecpars
+%_mlpdecpars : $$(basename %).linetrees  \
+               $(BIN)/linetrees2mlpsemprocdecpars  \
+               $$(basename %).lemmacounts
+	cat $<  |  $(word 2,$^) $(wordlist 1,99,$(subst _, ,$(subst .,,$(suffix $*)))) $(word 3,$^)  >  $@
+## remove non-coref pronouns from F predictors (for ontonotes)...
+.PRECIOUS: %_ontocorfix_mlpdecpars
+%_ontocorfix_mlpdecpars : %_mlpdecpars  $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py
+	cat $<  |  python3 $(word 2,$^)  >  $@
+
+## Create component model file from training example file (% contains gcn ini filename and decpar flags and dsp ini filename)...
+%_ndspmodel : 
+	echo ''  >  $@
+%_fdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
+              $(INCRSEM-SCRIPTS)/dspdecpars2fmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini  \
+              $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
+	cat $<  |  grep '^F'  |  sed 's/^F//'  |  python3 -u $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
+%_pdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^P'  |  python3 $(word 2,$^)  >  $@
+%_wdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^W'  |  python3 $(word 2,$^)  >  $@
+%_jdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
+              $(INCRSEM-SCRIPTS)/dspdecpars2jmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini  \
+              $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
+	cat $<  |  grep '^J'  |  sed 's/^J//'  |  python3 -u $(word 2,$^) $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
+%_adspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^A'  |  python3 $(word 2,$^)  >  $@
+%_bdspmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_dspdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^B'  |  python3 $(word 2,$^)  >  $@
+
+## Create component model file from training example file (% contains decpar flags and mlp ini filename)...
+.PRECIOUS: %_nmlpmodel
+%_nmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/undersample_nmodel_noncorefs.py \
+              $(INCRSEM-SCRIPTS)/mlpdecpars2nmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))n.ini
+	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 $(word 2,$^) $(word 4,$^) | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
+.PRECIOUS: %_fmlpmodel
+%_fmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/mlpdecpars2fmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini
+	cat $<  |  grep '^F'  |  sed 's/^F //'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+.PRECIOUS: %_pmlpmodel
+%_pmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^P'  |  python3 $(word 2,$^)  >  $@
+.PRECIOUS: %_wmlpmodel
+%_wmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/mlpdecpars2wmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))w.ini
+	cat $<  |  grep '^W'  |  sed 's/^W //'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+.PRECIOUS: %_jmlpmodel
+%_jmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/mlpdecpars2jmodel.py  \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini
+	cat $<  |  grep '^J'  |  sed 's/^J//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+.PRECIOUS: %_amlpmodel
+%_amlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^A'  |  python3 $(word 2,$^)  >  $@
+.PRECIOUS: %_bmlpmodel
+%_bmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+              $(INCRSEM-SCRIPTS)/relfreq.py
+	cat $<  |  grep '^B'  |  python3 $(word 2,$^)  >  $@
+
+## Create dsp model out of component models...
+.PRECIOUS: %_densemprocmodel
+%_densemprocmodel : %_ndspmodel  %_fdspmodel  %_pdspmodel  %_wdspmodel  %_jdspmodel  %_adspmodel  %_bdspmodel  $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
+	cat $^  >  $@
+
+## Create mlp model out of component models...
+.PRECIOUS: %_mlpsemprocmodel
+%_mlpsemprocmodel : %_nmlpmodel  %_fmlpmodel  %_pmlpmodel  %_wmlpmodel  %_jmlpmodel  %_amlpmodel  %_bmlpmodel
+	cat $^  >  $@
+
+## Parse with: wsj02.wsj02to21-bestgcn_bestdsp_densemproc-parsed.tokdecs
+
+################################################################################
+
 
 ### Get training and test data
 
@@ -499,15 +685,14 @@ endef
 
 .PRECIOUS: %parsed.tokdecs
 %parsed.tokdecs:  bin/$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$(subst +,-,$$(subst -,.,$$*)))))) \
-                  $$(basename %).linetoks \
+                  $$(basename %).delim.linetoks \
                   genmodel/$$(basename $$(subst +,-,$$(subst -,.,$$(subst .,,$$(suffix $$*)))))model  |  $(CONFIGDIR)/user-numthreads.txt
+	###############
+	### parsing ###
+	###############
 	cat $(word 2,$^)  |  $(word 1,$^) -p$(shell cat $|) $(subst _, ,$(subst +,-,$(subst .,,$(suffix $(subst -,.,$*))))) $(word 3,$^)  >  $@  2>  $@.log
 
 ### obtain parsed token states for sem proc model...
-##.PRECIOUS: %semproc-parsed.tokdecs
-##%semproc-parsed.tokdecs:  bin/semproc  $$(basename %).linetoks  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*)))).semprocmodel
-##	cat $(word 2,$^)  |  $(word 1,$^) $(word 3,$^)  >  $@
-##.PRECIOUS: %ss-semproc-parsed.tokdecs
 ##%ss-semproc-parsed.tokdecs:  bin/semproc  $$(basename %).linetoks  genmodel/$$(subst -,.,$$(subst .,,$$(suffix $$*)))ss.semprocmodel
 ##	cat $(word 2,$^)  |  $(word 1,$^) $(subst .,,$(suffix $(subst -,.,$*))) $(word 3,$^)  >  $@
 ##.PRECIOUS: %semproctorch-parsed.tokdecs
@@ -529,4 +714,5 @@ endef
 ## obtain linetrees from token decisions...
 %.linetrees:  %.tokdecs  $(INCRSEM-SCRIPTS)/tokdecs2linetrees.py
 	cat $<  |  python $(word 2,$^)  |  perl -pe 's/\[[^\]]*\]://g'  >  $@
+
 

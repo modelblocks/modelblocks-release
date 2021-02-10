@@ -7,9 +7,9 @@ argparser.add_argument('-C', '--colspillpairs', dest='colspillpairs', nargs='*',
 argparser.add_argument('-n', '--number', dest='n', action='store', nargs=1, default=[1], help='Number of spillover shifts to calculate.')
 argparser.add_argument('-p', '--skippunc', dest='p', action='store_true', help='Skip punctuation when shifting for spillover calculation.')
 argparser.add_argument('-a', '--allcols', dest='a', action='store_true', help='Spillover all columns.')
-argparser.add_argument('-I', '--ignoresents', dest='ignoresents', action='store_true', help='Spillover across sentence boundaries.')
+argparser.add_argument('-S', '--breakatsents', dest='breakatsents', action='store_true', help='Do not spillover across sentence boundaries.')
 argparser.add_argument('-s', '--nosubjects', dest='nosubjects', action='store_true', help='Input does not contain by-subject information.')
-args, unknown = argparser.parse_known_args()
+args = argparser.parse_args()
 args.n = int(args.n[0])
 
 punc = ["-LRB-", "-RRB-", ",", "-", ";", ":", "\'", "\'\'", '\"', "`", "``", ".", "!", "?", "*FOOT*"]
@@ -41,7 +41,7 @@ else:
     group_cols = ['docid']
     if not args.nosubjects:
         group_cols.append('subject')
-    if not args.ignoresents:
+    if args.breakatsents:
         group_cols.append('sentid')
     grouped = data.groupby(group_cols)
 
@@ -63,6 +63,6 @@ for col in cols:
             else:
                 data[s_name] = grouped[col].shift(i, fill_value=0)
 
-data.to_csv(sys.stdout, sep=' ', index=False, na_rep='nan')
+data.to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN')
             
 

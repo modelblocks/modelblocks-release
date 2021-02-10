@@ -43,7 +43,8 @@
 .SUFFIXES:
 SECONDEXPANSION:
 
-VPATH := $(RESOURCE-FMRI):$(VPATH):$(RESOURCE-GENERAL)
+## WS: VPATH MAKES IT IMPOSSIBLE TO CREATE LOCAL SCRIPTS DIRECTORY IN PROJECT DIRECTORY
+#VPATH := $(RESOURCE-FMRI):$(VPATH):$(RESOURCE-GENERAL)
 
 ifndef SAMPLE-START
 SAMPLE-START := 0
@@ -157,11 +158,15 @@ fMRICoreEvmeasures:
     kwargs:
       innerdelim: .
 endef
-.PRECIOUS: %.hrf.itemmeasures
-%.hrf.itemmeasures: %.t.itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py
+.PRECIOUS: %.hrf.all-itemmeasures
+%.hrf.all-itemmeasures: %.t.all-itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py
 	python $(word 2, $^) $(word 1, $^) > $@
 
 %.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py
+	cat $(word 1, $^) | python $(word 2, $^) > $@
+
+# TO SPEC
+%.bysent.all-itemmeasures: %.all-itemmeasures $(FMRI-SCRIPTS)/reducesents.py
 	cat $(word 1, $^) | python $(word 2, $^) > $@
 
 .PRECIOUS: %.hrf.core.evmeasures
@@ -169,14 +174,36 @@ endef
 $(RT-SCRIPTS)/merge_tables.py
 	cat $< | python $(word 3, $^) $< $(word 2, $^) sampleid > $@
 
+.PRECIOUS: %.hrf.prdmeasures
+%.hrf.prdmeasures : %.hrf.all-itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
+$(RT-SCRIPTS)/merge_tables.py
+	cat $< | python $(word 3, $^) $< $(word 2, $^) sampleid > $@
+
 .PRECIOUS: %.tiled.core.evmeasures
 %.tiled.core.evmeasures: $(FMRI-SCRIPTS)/tile_stimuli.py %.itemmeasures $$(word 1,$$(subst ., ,%)).evmeasures
 	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
 
-.PRECIOUS: %.bysent.core.evmeasures
-%.bysent.core.evmeasures : %.bysent.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
+# TO SPEC
+.PRECIOUS: %.fmri-bywrd.prdmeasures
+%.fmri-bywrd.prdmeasures: $(FMRI-SCRIPTS)/tile_stimuli.py %.all-itemmeasures $$(word 1,$$(subst ., ,%)).evmeasures
+	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+
+# TO SPEC
+.PRECIOUS: %.fmri-bysent.prdmeasures
+%.fmri-bysent.prdmeasures: %.bysent.all-itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
 	cat $< | python $(word 3, $^) $< $(word 2, $^) sentid > $@
+
+%.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py
+	cat $(word 1, $^) | python $(word 2, $^) > $@
+
+# TO SPEC
+%.fmri-bywrd.resmeasures: $$(word 1,$$(subst ., ,%)).evmeasures
+	ln -sf $(abspath $(word 1,$^)) $@
+
+# TO SPEC
+%.fmri-sent.resmeasures: %.resmeasures
+	ln -sf $(abspath $(word 1,$^)) $@
 
 %.nm1.evmeasures: %.evmeasures $(FMRI-SCRIPTS)/average_nm1.py
 	cat $< | python $(word 2, $^) - > $@

@@ -126,10 +126,10 @@ endif
 
 
 %/user-kenlm-directory.txt: | %
-	echo '/home/compling/kenlm_git' > $@
+	echo '/data/compling/kenlm_git' > $@
 
 %/user-kenlm-model-directory.txt: | %
-	echo '/home/compling/kenlm_models' > $@
+	echo '/data/compling/kenlm_models' > $@
 
 %/user-kenlm-flags.txt: | %
 	echo '-T kenlmtmp -S 50%' > $@
@@ -233,7 +233,7 @@ $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmo
 
 %.unigram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLM-SCRIPTS)/unigram.py $(KENLMMODDIR)/gigaword.1.fw.kenlm %.lineitems \
 $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
-	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+	python2 $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
 
 ## not to spec
 .PRECIOUS: %.kenlm.ngram.itemmeasures

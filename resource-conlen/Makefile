@@ -83,7 +83,7 @@ endif
 
 
 %/user-conlen-directory.txt: | %   
-	echo '/home/corpora/original/english/constituent_length' > $@
+	echo '/data/corpora/original/english/constituent_length' > $@
 
 ################################################################################
 #
@@ -91,16 +91,59 @@ endif
 #
 ################################################################################
 
-%conlen.itemmeasures: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length.itemmeasures $(CONFIGDIR)/user-conlen-directory.txt | %
+## copy partition ini into project genmodel directory
+genmodel/%.ini: $(CONLEN-SCRIPTS)/%.ini
 	cp $< $@
 
-conlen%.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_$$*.lineitems | genmodel
+genmodel/%_LANG.ini: genmodel/%.ini
 	cp $< $@
 
-conlen%.linetoks: $$(DEP-TOKENIZER) conlen%.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
+genmodel/%_LANG_MD.ini: genmodel/%.ini
+	cp $< $@
+
+genmodel/%_LANG_MD.ini: genmodel/%.ini
+	cp $< $@
+
+%conlenfmri.beh.evmeasures: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_beh.csv $(CONFIGDIR)/user-conlen-directory.txt $(CONLEN-SCRIPTS)/build_itemmeasures.py | %
+	cat $< | python $(word 3, $^) > $@
+
+%conlenfmri.wide.hrf.evmeasures: $(FMRI-SCRIPTS)/hrf_convolve_predictors.py %conlenfmri.beh.evmeasures
+	python $^ -g subject run > $@
+
+%conlenc.itemmeasures: $(CONLEN-SCRIPTS)/filter_itemmeasures.py %conlen.itemmeasures
+	python $^ c > $@
+
+%conlennc.itemmeasures: $(CONLEN-SCRIPTS)/filter_itemmeasures.py %conlen.itemmeasures
+	python $^ nc > $@
+
+%conlenjab.itemmeasures: $(CONLEN-SCRIPTS)/filter_itemmeasures.py %conlen.itemmeasures
+	python $^ jab > $@
+
+%conlenc.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_c.lineitems
+	cp $< $@
+
+%conlennc.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_nc.lineitems
+	cp $< $@
+
+%conlenncsents.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_ncsents.lineitems
+	cp $< $@
+
+%conlenjab.lineitems: $$(DEP-CONLEN) $(CONLENDIR)/constituent_length_jab.lineitems
+	cp $< $@
+
+%conlenc.linetoks: $$(DEP-TOKENIZER) %conlenc.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
 	cat $< | $(word 2, $^) | sed 's/ $$//g' | sed 's/\r //g' > $@
 
-%conlenc.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees %conlenc.linetoks
+%conlennc.linetoks: $$(DEP-TOKENIZER) %conlennc.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
+	cat $< | $(word 2, $^) | sed 's/ $$//g' | sed 's/\r //g' > $@
+
+%conlenncsents.linetoks: $$(DEP-TOKENIZER) %conlenncsents.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
+	cat $< | $(word 2, $^) | sed 's/ $$//g' | sed 's/\r //g' > $@
+
+%conlenjab.linetoks: $$(DEP-TOKENIZER) %conlenjab.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
+	cat $< | $(word 2, $^) | sed 's/ $$//g' | sed 's/\r //g' > $@
+
+%conlenc.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees %conlenc.linetoks
 	python $^ > $@
 
 %conlenc.12.stripped.linetrees: $(RESOURCE-CONLEN)/srcmodel/conlenc.stripped.linetrees
@@ -124,11 +167,46 @@ conlen%.linetoks: $$(DEP-TOKENIZER) conlen%.lineitems $(TOKENIZERDIR)/ptb_tokeni
 %conlenjab.stripped.linetrees: %conlenc.12.stripped.linetrees %conlenc.4.stripped.linetrees %conlenc.1.stripped.linetrees
 	cat $^ > $@
 
-%conlenjab.linetrees: $(GCG-SCRIPTS)/plugLeaves.py %conlenjab.stripped.linetrees %conlenjab.linetoks
+%conlenjab.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py %conlenjab.stripped.linetrees %conlenjab.linetoks
 	python $^ > $@
 
-%conlenncsents.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenncsents.stripped.linetrees %conlenncsents.linetoks
+%conlenncsents.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-CONLEN)/srcmodel/conlenncsents.stripped.linetrees %conlenncsents.linetoks
 	python $^ > $@
 
-conlenncfilt%itemmeasures: conlenncsents%itemmeasures $(CONLEN-SCRIPTS)/build_nc.py $$(dir %)/conlennc.lineitems
-	cat $< | python $(word 2, $^) $(word 3, $^) > $@
+conlenncfilt%itemmeasures: $$(dir %)/conlennc.itemmeasures conlenncsents%itemmeasures $(CONLEN-SCRIPTS)/build_nc.py $$(dir %)/conlennc.lineitems \
+	$(RT-SCRIPTS)/evmeas2uniqcols.py
+	paste -d ' ' $< <(cat $(word 2, $^) | python $(word 3, $^) $(word 4, $^)) | python $(word 5, $^) > $@
+
+conlenfmri%itemmeasures: $(CONLEN-SCRIPTS)/concat_itemmeasures.py conlenc%itemmeasures conlenncfilt%itemmeasures conlenjab%itemmeasures
+	python $^ > $@
+
+%conlenfmri_bold.evmeasures: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_bold.csv $(CONFIGDIR)/user-conlen-directory.txt | %
+	cp $< $@
+
+%conlenfmri.resmeasures: $$(DEP-CONLEN) %conlenfmri_bold.evmeasures $(CONLEN-SCRIPTS)/preprocess_conlen_fmri.py
+	cat $(word 1, $^) | python $(word 2, $^) > $@
+
+%conlenfmri_LANG.resmeasures: %conlenfmri.resmeasures $(GENERAL-SCRIPTS)/melt.py $(CONLEN-SCRIPTS)/add_network.py
+	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k LANG.* | python $(word 3, $^) > $@
+
+%conlenfmri_MD.resmeasures: %conlenfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(CONLEN-SCRIPTS)/add_network.py
+	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k MD.* | python $(word 3, $^)  > $@
+
+%conlenfmri_LANG_MD.resmeasures: %conlenfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(CONLEN-SCRIPTS)/add_network.py
+	cat $(word 1, $^) | python $(word 2, $^) - "bold.*" -p 4 -k LANG.* MD.* | python $(word 3, $^)  > $@
+
+%conlenfmri.hrf.prdmeasures: $$(DEP-CONLEN) $(CONLENDIR)/conlenfmri_beh.csv
+	cp $^ $@
+
+%conlenfmri_LANG.hrf.prdmeasures: $(CONLEN-SCRIPTS)/tile_stim_into_roi.py %conlenfmri_LANG.evmeasures %conlenfmri.wide.hrf.evmeasures
+	python $^ > $@
+
+%conlenfmri_MD.hrf.prdmeasures: $(CONLEN-SCRIPTS)/tile_stim_into_roi.py %conlenfmri_MD.evmeasures %.conlenfmri.wide.hrf.evmeasures
+	python $^ > $@
+
+%conlenfmri_LANG_MD.hrf.prdmeasures: $(CONLEN-SCRIPTS)/tile_stim_into_roi.py %conlenfmri_LANG_MD.evmeasures %conlenfmri.wide.hrf.evmeasures
+	python $^ > $@
+
+%hrf.all.evmeasures: $(CONLEN-SCRIPTS)/merge_prd_res.py %hrf.prdmeasures %resmeasures
+	python $^ > $@
+

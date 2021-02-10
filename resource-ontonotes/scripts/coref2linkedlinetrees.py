@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys, os, re, getopt
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import tree
@@ -47,13 +48,13 @@ for line in coreffile: #coref file passed as argument
 
   if line.startswith('<DOC'):
     if '!ARTICLE' not in treestring: sys.stderr.write ( 'ERROR: instead of "...!ARTICLE..." I got: ' + treestring + '\n')
-    print '(U !ARTICLE)'
+    print('(U !ARTICLE)')
     linenum = 0
     PrevMention = { }
     continue
 
   if treestring == '\n':
-    print ''
+    print('')
     continue
 
   t = tree.Tree()
@@ -64,20 +65,20 @@ for line in coreffile: #coref file passed as argument
   for token in line.split():
     toknum += 1
     if ('-d','') in optlist:
-      print '|' + token + '|' + str(toknum) + '|'
+      print('|' + token + '|' + str(toknum) + '|')
     for mentionbegin in re.findall('<COREF>',token):
       RefStack.append(toknum)
       if ('-d','') in optlist:
-        print '  push '+str(toknum)
+        print('  push '+str(toknum))
     for mentionid in re.findall('(?<=</COREF)[0-9]+(?=>)',token):
       mentionbegin = RefStack.pop()
       head = addCoref ( t, mentionbegin, toknum )
       if ('-d','') in optlist:
-        print '  i think ' + str(mentionbegin) + ' ' + str(toknum) + ' is ' + str(head)
+        print('  i think ' + str(mentionbegin) + ' ' + str(toknum) + ' is ' + str(head))
       if mentionid in PrevMention: head.c += '-n' + PrevMention[mentionid]
       PrevMention[mentionid] = str(linenum) + ('0' if head.r<9 else '') + str(head.r+1)
       if ('-d','') in optlist:
-        print '  pop ' + mentionid + ' -> ' + PrevMention[mentionid]
-  print str(t)
+        print('  pop ' + mentionid + ' -> ' + PrevMention[mentionid])
+  print(str(t))
 
 

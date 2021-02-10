@@ -61,7 +61,8 @@ endef
 .SECONDEXPANSION:
 .DELETE_ON_ERROR:
 
-VPATH += $(RESOURCE-ALICE)
+## WS: VPATH MAKES IT IMPOSSIBLE TO CREATE LOCAL SCRIPTS DIRECTORY IN PROJECT DIRECTORY
+#VPATH += $(RESOURCE-ALICE)
 
 SAMPLE-START := 20.05891632653599
 # NOTE: Dataset also contains an s33 but BOLD values are all zero, so excluded from analysis
@@ -100,7 +101,7 @@ endif
 endif
 
 %/user-alice-directory.txt: | %   
-	echo '/home/corpora/original/english/brennan_2016_fmri' > $@
+	echo '/data/corpora/original/english/brennan_2016_fmri' > $@
 
 ################################################################################
 #
@@ -123,7 +124,7 @@ genmodel/alice.time.tokmeasures: $(ALICE-SCRIPTS)/alignSrcToks2OrigToks.py genmo
 genmodel/alice.linetoks: $(ALICE-SCRIPTS)/tokmeasures2linetoks.py genmodel/alice.time.tokmeasures | genmodel
 	cat $(word 2, $^) | python $(word 1, $^) > $@
 
-%alice.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-ALICE)/srcmodel/alice.stripped.linetrees %alice.linetoks
+%alice.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-ALICE)/srcmodel/alice.stripped.linetrees %alice.linetoks
 	python $^ > $@
 
 genmodel/alice.sbj.evmeasures: | genmodel
