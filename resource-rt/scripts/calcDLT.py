@@ -175,6 +175,12 @@ def calcCosts(t, MOD):
     tmp = t
     while t.p != None and len(t.p.ch) == 1:
         t = t.p
+    
+    dlts = 0
+    label = argsFromString(t.c)
+    if 'b' in label:
+        dlts += len(label[b])
+
     s = getIdx(t) + 1
     dlt = 0
     dltc = 0
@@ -243,7 +249,7 @@ def calcCosts(t, MOD):
             dltv += sumCosts(s, e, True, False, incr)
         t = t.p
         stop = nonhead or t.p is None
-    return dlt, dltc, dltcv, dltv, depdirSyn, depdirSem
+    return dlt, dltc, dltcv, dltv, depdirSyn, depdirSem, dlts
         
 def getNext(t):
     tmp = t
@@ -362,13 +368,13 @@ def printToks(T):
             print '====='
             print '-ModMod Dependencies'
             print '=====' 
-        ic, icc, iccv, icv, depdirSyn, depdirSem = calcCosts(T, False)
+        ic, icc, iccv, icv, depdirSyn, depdirSem, sc = calcCosts(T, False)
         dlt, dltc, dltcv, dltv = [discCost + ic, discCost + icc, discCostV + iccv, discCostV + icv]
         if args.DEBUG:
             print '====='
             print '+ModMod Dependencies'
             print '====='
-        icm, iccm, iccvm, icvm, depdirSynM, depdirSemM = calcCosts(T, True)
+        icm, iccm, iccvm, icvm, depdirSynM, depdirSemM, _ = calcCosts(T, True)
         dltm, dltcm, dltcvm, dltvm = [discCost + icm, discCost + iccm, discCostV + iccvm, discCostV + icvm]
         if len(coords) > 0:
             if T == ends[-1]:
