@@ -17,6 +17,36 @@
 ##                                                                            ##
 ################################################################################
 
+ifndef MAKECONFIG
+CONFIG := $(CONFIGDIR)/user-glstm-directory.txt
+ifeq (,$(firstword $(wildcard $(CONFIG))))
+$(info $(call CONFIGWARN $(CONFIG)))
+DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
+endif
+GLSTMDIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(GLSTMDIR))))
+RESOURCE-NAME := Gulordava LSTM
+define RESOURCE-DESCR =
+
+NAME: Gulordava LSTM
+MB POINTER FILE: config/user-glstm-directory.txt
+AVAILABILITY: Free
+URL: ???
+DESCRIPTION: LSTM estimates, filters, and queries language models. Estimation
+is fast and scalable due to streaming algorithms.
+endef
+GLSTM-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-GLSTM = $(error $(GLSTM-ERROR))
+else
+DEP-GLSTM :=
+endif
+endif
+
+%/user-glstm-directory.txt: | %   
+	echo '/data/compling/glstm' > $@
+
+################################################################################
+
 glstm_env: $(RESOURCE-GLSTM)/glstm_conda_env.sh
 	$(SHELL) $(word 1, $^)
 

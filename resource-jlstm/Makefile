@@ -17,6 +17,36 @@
 ##                                                                            ##
 ################################################################################
 
+ifndef MAKECONFIG
+CONFIG := $(CONFIGDIR)/user-glstm-directory.txt
+ifeq (,$(firstword $(wildcard $(CONFIG))))
+$(info $(call CONFIGWARN $(CONFIG)))
+DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
+endif
+JLSTMDIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(JLSTMDIR))))
+RESOURCE-NAME := Jozefowicz LSTM
+define RESOURCE-DESCR =
+
+NAME: Jozefowicz LSTM
+MB POINTER FILE: config/user-glstm-directory.txt
+AVAILABILITY: Free
+URL: ???
+DESCRIPTION: LSTM estimates, filters, and queries language models. Estimation
+is fast and scalable due to streaming algorithms.
+endef
+JLSTM-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-JLSTM = $(error $(JLSTM-ERROR))
+else
+DEP-JLSTM :=
+endif
+endif
+
+%/user-jlstm-directory.txt: | %   
+	echo '/data/compling/jlstm' > $@
+
+################################################################################
+
 jlstm_env: $(RESOURCE-JLSTM)/jlstm_conda_env.sh
 	$(SHELL) $(word 1, $^)
 
