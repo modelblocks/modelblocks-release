@@ -17,7 +17,13 @@
 ##                                                                            ##
 ################################################################################
 
+glstm_env: $(RESOURCE-GLSTM)/glstm_conda_env.sh
+	$(SHELL) $(word 1, $^)
 
 .PRECIOUS: %.glstm.tokmeasures
 $(GENMODEL)/%.glstm.tokmeasures:  %.delim.linetoks $(GLSTM-SCRIPTS)/generate_surprisal.py  |  $(CONFIGDIR)/user-glstm-directory.txt
+	##################################################################
+	### This target assumes active (glstm_env) conda environment #####
+	### Please run "make glstm_env" and "conda activate glstm_env" ###
+	##################################################################
 	python3 $(word 2,$^) --checkpoint $(shell cat $|) --path $(word 1,$^) --data $(RESOURCE-GLSTM)/src >  $@  2>  $@.log
