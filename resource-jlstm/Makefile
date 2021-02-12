@@ -31,7 +31,7 @@ define RESOURCE-DESCR =
 NAME: Jozefowicz LSTM
 MB POINTER FILE: config/user-glstm-directory.txt
 AVAILABILITY: Free
-URL: ???
+URL: https://github.com/tensorflow/models/tree/archive/research/lm_1b
 DESCRIPTION: LSTM estimates, filters, and queries language models. Estimation
 is fast and scalable due to streaming algorithms.
 endef

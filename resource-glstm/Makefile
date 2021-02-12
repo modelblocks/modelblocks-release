@@ -31,7 +31,7 @@ define RESOURCE-DESCR =
 NAME: Gulordava LSTM
 MB POINTER FILE: config/user-glstm-directory.txt
 AVAILABILITY: Free
-URL: ???
+URL: https://github.com/facebookresearch/colorlessgreenRNNs
 DESCRIPTION: LSTM estimates, filters, and queries language models. Estimation
 is fast and scalable due to streaming algorithms.
 endef
@@ -56,4 +56,4 @@ $(GENMODEL)/%.glstm.tokmeasures:  %.delim.linetoks $(GLSTM-SCRIPTS)/generate_sur
 	### This target assumes active (glstm_env) conda environment #####
 	### Please run "make glstm_env" and "conda activate glstm_env" ###
 	##################################################################
-	python3 $(word 2,$^) --checkpoint $(shell cat $|) --path $(word 1,$^) --data $(RESOURCE-GLSTM)/src >  $@  2>  $@.log
+	python3 $(word 2,$^) --checkpoint $(shell cat $|)/hidden650_batch128_dropout0.2_lr20.0.pt --path $(word 1,$^) --data $(RESOURCE-GLSTM)/src >  $@  2>  $@.log
