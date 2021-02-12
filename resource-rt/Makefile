@@ -366,8 +366,8 @@ $(RT-SCRIPTS)/filter_cols.py
 %.syn.tokmeasures: %_parsed.dlt.lc.100.1_2_3_inf.word2vec.tokmeasures
 	mv $^ $@
 
-# Returns syntactic categories from gold "nounary" linetrees
-%.syncat.tokmeasures: %.gold.nounary.linetrees $(RT-SCRIPTS)/getSyncat.py
+# Returns syntactic categories from gold "nol4train" linetrees
+%.syncat.tokmeasures: %.gold.nol4train.linetrees $(RT-SCRIPTS)/getSyncat.py
 	cat $< | python $(word 2, $^) > $@
 
 # Pastes syntactic categories to existing identically tokenized tokmeasures file
