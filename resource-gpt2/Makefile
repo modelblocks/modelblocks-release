@@ -41,7 +41,8 @@ DEP-GPT2 :=
 endif
 endif
 
-%/user-gpt2-directory.txt: | %   echo '/data/compling/gpt2' > $@
+%/user-gpt2-directory.txt: | %
+	echo '/data/compling/gpt2' > $@
 
 ################################################################################
 
@@ -51,7 +52,7 @@ gpt2_env: $(RESOURCE-GPT2)/gpt2_conda_env.sh
 # TODO get itemmeasures from all sizes of GPT-2
 
 .PRECIOUS: %.gpt2.itemmeasures
-$(GENMODEL)/%.gpt2.itemmeasures:  %.delim.lineitems $(GPT2-SCRIPTS)/per_word_surprisal.py  |  $(CONFIGDIR)/user-gpt2-directory.txt
+%.gpt2.itemmeasures:  %.delim.lineitems  $(GPT2-SCRIPTS)/per_word_surprisal.py  |  $(CONFIGDIR)/user-gpt2-directory.txt
 	##################################################################
 	### This target assumes active (gpt2_env) conda environment #####
 	### Please run "make gpt2_env" and "conda activate gpt2_env" ###
