@@ -49,12 +49,35 @@ endif
 gpt2_env: $(RESOURCE-GPT2)/gpt2_conda_env.sh
 	$(SHELL) $(word 1, $^)
 
-# TODO get itemmeasures from all sizes of GPT-2
 
-.PRECIOUS: %.gpt2.itemmeasures
-%.gpt2.itemmeasures:  %.delim.lineitems  $(GPT2-SCRIPTS)/per_word_surprisal.py  |  $(CONFIGDIR)/user-gpt2-directory.txt
+.PRECIOUS: %.gpt2small.itemmeasures
+%.gpt2small.itemmeasures:  %.delim.lineitems  $(GPT2-SCRIPTS)/per_word_surprisal.py  |  $(CONFIGDIR)/user-gpt2-directory.txt
 	##################################################################
 	### This target assumes active (gpt2_env) conda environment #####
 	### Please run "make gpt2_env" and "conda activate gpt2_env" ###
 	##################################################################
-	python3 $(word 2,$^) --models_dir $(shell cat $|)/models --model_name 124M > $@ 2> $@.log
+	python3 $(word 2,$^) $(word 1,$^) --models_dir $(shell cat $|)/models --model_name 124M > $@ 2> $@.log
+
+.PRECIOUS: %.gpt2medium.itemmeasures
+%.gpt2medium.itemmeasures:  %.delim.lineitems  $(GPT2-SCRIPTS)/per_word_surprisal.py  |  $(CONFIGDIR)/user-gpt2-directory.txt
+	##################################################################
+	### This target assumes active (gpt2_env) conda environment #####
+	### Please run "make gpt2_env" and "conda activate gpt2_env" ###
+	##################################################################
+	python3 $(word 2,$^) $(word 1,$^) --models_dir $(shell cat $|)/models --model_name 355M > $@ 2> $@.log
+
+.PRECIOUS: %.gpt2large.itemmeasures
+%.gpt2large.itemmeasures:  %.delim.lineitems  $(GPT2-SCRIPTS)/per_word_surprisal.py  |  $(CONFIGDIR)/user-gpt2-directory.txt
+	##################################################################
+	### This target assumes active (gpt2_env) conda environment #####
+	### Please run "make gpt2_env" and "conda activate gpt2_env" ###
+	##################################################################
+	python3 $(word 2,$^) $(word 1,$^) --models_dir $(shell cat $|)/models --model_name 774M > $@ 2> $@.log
+
+.PRECIOUS: %.gpt2xl.itemmeasures
+%.gpt2xl.itemmeasures:  %.delim.lineitems  $(GPT2-SCRIPTS)/per_word_surprisal.py  |  $(CONFIGDIR)/user-gpt2-directory.txt
+	##################################################################
+	### This target assumes active (gpt2_env) conda environment #####
+	### Please run "make gpt2_env" and "conda activate gpt2_env" ###
+	##################################################################
+	python3 $(word 2,$^) $(word 1,$^) --models_dir $(shell cat $|)/models --model_name 1558M > $@ 2> $@.log
