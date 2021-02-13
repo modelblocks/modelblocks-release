@@ -123,6 +123,9 @@ GLOVE-SCRIPTS := $(RESOURCE-GLOVE)/scripts
 RESOURCE-GLSTM := $(abspath $(MBDIR)/resource-glstm)
 GLSTM-SCRIPTS := $(RESOURCE-GLSTM)/scripts
 
+RESOURCE-GPT2 := $(abspath $(MBDIR)/resource-gpt2)
+GPT2-SCRIPTS := $(RESOURCE-GPT2)/scripts
+
 RESOURCE-HUTH := $(abspath $(MBDIR)/resource-huth)
 HUTH-SCRIPTS := $(RESOURCE-HUTH)/scripts
 
@@ -235,6 +238,7 @@ include $(RESOURCE-TREEBANK)/Makefile
 include $(RESOURCE-GIGAWORD)/Makefile
 include $(RESOURCE-GLOVE)/Makefile
 include $(RESOURCE-GLSTM)/Makefile
+include $(RESOURCE-GPT2)/Makefile
 include $(RESOURCE-HUTH)/Makefile
 include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile

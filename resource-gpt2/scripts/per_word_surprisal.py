@@ -6,6 +6,31 @@ import tensorflow as tf
 import encoder, surprisal, model
 
 BATCH_SIZE = 1
+DELIMITER = '!ARTICLE'
+
+
+def get_delimited_texts(lineitems_fn):
+    '''Returns the texts in the delim.linetimes file. Each text
+    is preceded by a line with a special delimiter token. Output is a
+    list of strings, where each string is one complete text'''
+    texts = list()
+
+    f = open(lineitems_fn)
+    firstline = f.readline()
+    assert firstline.strip() == DELIMITER
+
+    curr_text = list()
+    for l in f:
+        sentence = l.strip()
+        if sentence == DELIMITER:
+            texts.append(' '.join(curr_text))
+            curr_text = list()
+        else:
+            curr_text.append(sentence)
+    # don't forget the last text
+    texts.append(' '.join(curr_text))
+        
+    return texts
 
 
 def get_subword_windows(encoded_text, context_size):
@@ -78,68 +103,86 @@ def roll_subword_surprisal(subwords, subword_surps, words):
 
 
 def per_word_surprisal(
-    text, 
+    lineitems, 
     model_name='124M',
     models_dir='models',
     context_size=1024
 ):
     """
-    Use GPT-2 to calculate per-word surprisal for a provided text
-    :text : path to input text file, which contains one word per line
-    :model_name=124M : String, which model to use
-    :models_dir : path to parent folder containing model subfolders
-    (i.e. contains the <model_name> folder)
-    :context_size : the maximum context size allowed by the model (n_ctx). If the length of the input text exceeds context_size, the text is split into overlapping windows to calculate surprisal
-    """
+    Use GPT-2 to calculate per-word surprisal for a provided lineitems file
 
+    Parameters
+    ----------
+    lineitems :
+        path to delimited lineitems file (*.delim.lineitems)
+
+    model_name :
+        which model to use
+
+    models_dir :
+        path to parent folder containing model subfolders
+        (i.e. contains the <model_name> folder)
+
+    context_size :
+        the maximum context size allowed by the model (n_ctx). 
+        If the length of the input text exceeds context_size, the text is 
+        split into overlapping windows to calculate surprisal
+    """
 
     models_dir = os.path.expanduser(os.path.expandvars(models_dir))
     hparams = model.default_hparams()
     with open(os.path.join(models_dir, model_name, 'hparams.json')) as f:
         hparams.override_from_dict(json.load(f))
 
-    # 1. convert list of words into one big string
-    words = open(text).readlines()
-    words = [w.strip() for w in words]
-    combined_text = ' '.join(w for w in words)
+    # prepare each text as a single string to feed into GPT-2
+    texts = get_delimited_texts(lineitems)
 
-    # 2. get sequence of subword encodings
-    enc = encoder.get_encoder(model_name, models_dir)
-    enc_text = enc.encode(combined_text)
-    subwords = [enc.decode([x]) for x in enc_text]
-
-    # 3. split subword sequence into windows of size <= context_size
-    windows = get_subword_windows(enc_text, context_size)
-
-    # 4. feed each window into GPT-2, get per-subword surprisals
-    window_surprisals = list()
-    for window in windows:
-        with tf.Session(graph=tf.Graph()) as sess:
+    all_words = list()
+    all_word_surprisals = list()
+    for text in texts:
+        # get sequence of subword encodings
+        enc = encoder.get_encoder(model_name, models_dir)
+        enc_text = enc.encode(text)
+        subwords = [enc.decode([x]) for x in enc_text]
+        words = text.split()
     
-            output = surprisal.get_per_subword_surprisal(
-                corpus=window, hparams=hparams,
-                encoder=enc
-            )
+        # split subword sequence into windows of size <= context_size
+        windows = get_subword_windows(enc_text, context_size)
     
-            saver = tf.train.Saver()
-            ckpt = tf.train.latest_checkpoint(os.path.join(models_dir, model_name))
-            saver.restore(sess, ckpt)
+        # feed each window into GPT-2, get per-subword surprisals
+        window_surprisals = list()
+        for window in windows:
+            with tf.Session(graph=tf.Graph()) as sess:
+        
+                output = surprisal.get_per_subword_surprisal(
+                    corpus=window, hparams=hparams,
+                    encoder=enc
+                )
+        
+                saver = tf.train.Saver()
+                ckpt = tf.train.latest_checkpoint(
+                           os.path.join(models_dir, model_name))
+                saver.restore(sess, ckpt)
+        
+                # out has dimension batch_size x num_subwords
+                # containing per-subword surprisals
+                assert BATCH_SIZE == 1
+                out = sess.run(output)
+                surps = list(out[0])
+            window_surprisals.append(surps)
+        subword_surprisals = combine_window_surprisals(
+                                 window_surprisals, context_size)
     
-            # out has dimension batch_size x num_subwords
-            # containing per-subword surprisals. We assume no batching is used
-            assert BATCH_SIZE == 1
-            out = sess.run(output)
-            surps = list(out[0])
-        window_surprisals.append(surps)
-    subword_surprisals = combine_window_surprisals(window_surprisals, context_size)
+        # "roll" surprisals together to get per-word surprisal
+        word_surprisals = roll_subword_surprisal(
+                              subwords, subword_surprisals, words)
 
-    # 5. "roll" surprisals together to get per-word surprisal
-    word_surprisals = roll_subword_surprisal(
-                          subwords, subword_surprisals, words)
-
+        all_words.extend(words)
+        all_word_surprisals.extend(word_surprisals)
+    
     print("word gpt2surp")
-    for i in range(len(words)):
-        print('{} {}'.format(words[i], word_surprisals[i]))
+    for i in range(len(all_words)):
+        print('{} {}'.format(all_words[i], all_word_surprisals[i]))
 
 
 if __name__ == '__main__':
