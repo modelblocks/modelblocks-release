@@ -30,6 +30,6 @@ rangf = fROI
 default = HRFDoubleGamma2(irf_id=HRF)
 
 [model_CDR_BASELINE]
-formula = BOLD ~ s(tr) + C(rate + endofsentence + s(pausedur) + s(unigramsurp) + s(fwprob5surp), HRFDoubleGamma2(irf_id=HRF)) + (s(tr) + C(rate + endofsentence + s(pausedur) + s(unigramsurp) + s(fwprob5surp), HRFDoubleGamma2(irf_id=HRF, ran=T)) | fROI) + (1 | subject)
+formula = BOLD ~ s(tr) + C(rate + endofsentence + s(pausedur), HRFDoubleGamma2(irf_id=HRF)) + (s(tr) + C(rate + endofsentence + s(pausedur), HRFDoubleGamma2(irf_id=HRF, ran=T)) | fROI) + (1 | subject)
 
 
