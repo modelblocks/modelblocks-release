@@ -55,7 +55,7 @@ jlstm: bin
 	cd $< && bazel build -c opt lm_1b/... && cd ..
 
 .PRECIOUS: %.jlstm.tokmeasures jlstm
-$(GENMODEL)/%.jlstm.tokmeasures:  %.delim.linetoks jlstm  |  $(CONFIGDIR)/user-jlstm-directory.txt
+%.jlstm.tokmeasures:  %.delim.linetoks jlstm  |  $(CONFIGDIR)/user-jlstm-directory.txt
 	##################################################################
 	### This target assumes active (jlstm_env) conda environment #####
 	### Please run "make jlstm_env" and "conda activate jlstm_env" ###
