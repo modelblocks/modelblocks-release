@@ -89,7 +89,7 @@ scripts/%cdrform: $(CDR-SCRIPTS)/$$*cdrform $(CDR-SCRIPTS)/get_prereqs_from_base
 bin/regress-cdr: $$(DEP-CDR) $(CDR-SCRIPTS)/regress-cdr.sh
 	cp $< $@
 
-bin/predict-cdr: $$(DEP-CDR) $(CDR-SCRIPTS)/predict-cdr.sh
+bin/predict-cdr-dependonallparts: $$(DEP-CDR) $(CDR-SCRIPTS)/predict-cdr-dependonallparts.sh
 	cp $< $@
 
 .PRECIOUS: %.t.core.evmeasures
@@ -188,13 +188,16 @@ $(CDRDIR)/cdr/cdrbayes.py
 ## TO SPEC
 %_cdr: %_cdr_outdir/finished.txt;
 
+## WS: WHY IS THIS IN HERE TWICE?
 %.cdr: %.cdr_outdir/finished.txt;
 
+# WS: THESE AREN'T REAL DEPENDENCIES, AND SO IF THESE DON'T EXIST AFTER CDR CRASH, THEY BREAK
 %_prd.resmeasures:  %_predicted.errors 
-	cp $(basename $*).fitmodel_outdir/CDR/preds_$(subst held,test,$(subst expl,dev,$(subst fit,train,$(subst .,,$(suffix $*))))).txt $@
+	cp $(basename $*).fitmodel_outdir/CDR/preds_$(subst held,test,$(subst expl,dev,$(subst fit,train,$(subst expl+held,expl-held,$(subst .,,$(suffix $*)))))).txt $@
 
 %_obs.resmeasures:  %_predicted.errors
-	cp $(basename $*).fitmodel_outdir/CDR/obs_$(subst held,test,$(subst expl,dev,$(subst fit,train,$(subst .,,$(suffix $*))))).txt $@
+	cp $(basename $*).fitmodel_outdir/CDR/obs_$(subst held,test,$(subst expl,dev,$(subst fit,train,$(subst expl+held,expl-held,$(subst .,,$(suffix $*)))))).txt $@
+
 
 #%_ptsignif: $$(DEP-CDR) \
 $$(basename $$(basename $$(basename %))).$$(subst .,,$$(suffix $$(basename $$*))).filt.evmeasures \

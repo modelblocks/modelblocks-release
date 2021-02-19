@@ -135,6 +135,19 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
            	     genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures  |  bin  genmodel
 	$^  >  $@  2>  $@.log
 
+.PRECIOUS: %_predicted.errors
+%_predicted.errors:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))-dependonallparts  \
+                     genmodel/$$(notdir $$(basename $$*)).fitmodel  \
+                     genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.prdmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*))).fit_part.prdmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*))).expl_part.prdmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*))).held_part.prdmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*))).fit_part.resmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*))).expl_part.resmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*))).held_part.resmeasures  |  bin  genmodel
+	$^  >  $@  2>  $@.log
+
 
 # ## generic errors file: <data>.<baseline>_(<predr>_)*<regrmodel>.errors
 # %.errors:  bin/calc-errors  %_predicted.resmeasures  $$(basename $$(basename %)).$$(word 2,$$(subst +, ,$$(suffix $$(basename $$*))))-part.resmeasures
@@ -147,8 +160,9 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(notdir $$(basename $$(basename $$(basename $$*)))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)  |  bin  genmodel
 	$^  >  $@  2>  $@.log
 
+## WS: NON-GENERIC DEPENDENCIES
 .PRECIOUS: %ctsignif
-%ctsignif:  bin/signif-ct  \
+%ctsignif:  bin/signif-ct-nongeneric  \
 	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(notdir $$(basename $$(basename $$(basename $$*)))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_prd.resmeasures) \
 	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(notdir $$(basename $$(basename $$(basename $$*)))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_obs.resmeasures) \
 	    |  bin  genmodel
