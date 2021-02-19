@@ -175,5 +175,5 @@ $(CDR-SCRIPTS)/compute_timestamps_from_RT.py $(CONFIGDIR)/user-naturalstories-di
 %naturalstories.coref.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.coref.linetrees %naturalstories.linetoks
 	python2 $^ > $@
 
-genmodel/naturalstories.toktrees: genmodel/naturalstories.coref.fromlinetrees.numbered.editabletrees
+genmodel/naturalstories.toktrees: genmodel/naturalstories.coref.fromlinetrees.editabletrees 
 	cat $^ > $@
