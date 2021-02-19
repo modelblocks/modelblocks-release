@@ -64,48 +64,56 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 %_spilled.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/spilloverMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(subst .,,$(suffix $*))))) -n $(subst .,,$(suffix $(subst _,.,$(suffix $*)))) >  $@
 %_spilled.resmeasures:  $$(basename %).resmeasures
-	ln -sf $(abspath $<) $(abspath $@)
+	cp $(abspath $<) $(abspath $@)
+#	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_<offset>_spilled.prdmeasures for second spilled over predictor
 %_altspilled.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/spilloverMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(word 1, $(subst _, ,$(subst .,,$(suffix $*)))) -n $(word 2, $(subst _, ,$(subst .,,$(suffix $*)))) >  $@
 %_altspilled.resmeasures:  $$(basename %).resmeasures
-	ln -sf $(abspath $<) $(abspath $@)
+	cp $(abspath $<) $(abspath $@)
+#	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_<offset>_spilled.prdmeasures for third spilled over predictor
 %_altaltspilled.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/spilloverMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(word 1, $(subst _, ,$(subst .,,$(suffix $*)))) -n $(word 2, $(subst _, ,$(subst .,,$(suffix $*)))) >  $@
 %_altaltspilled.resmeasures:  $$(basename %).resmeasures
-	ln -sf $(abspath $<) $(abspath $@)
+	cp $(abspath $<) $(abspath $@)
+#	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_cumued.prdmeasures
 %_cumued.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/accumulateMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 %_cumued.resmeasures:  $$(basename %).resmeasures
-	ln -sf $(abspath $<) $(abspath $@)
+	cp $(abspath $<) $(abspath $@)
+#	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_<offset>_futured.prdmeasures
 %_futured.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/futureMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 %_futured.resmeasures:  $$(basename %).resmeasures
-	ln -sf $(abspath $<) $(abspath $@)
+	cp $(abspath $<) $(abspath $@)
+#	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_<predr>_delta.prdmeasures
 %_delta.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/deltaMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 %_delta.resmeasures:  $$(basename %).resmeasures
-	ln -sf $(abspath $<) $(abspath $@)
+	cp $(abspath $<) $(abspath $@)
+#	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply censorship (e.g. remove end-of-sentence responses) (prdmeasures unaffected)
 %.prdmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/censor.py
-	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
+	cp $(abspath $(word 2,$^)) $(abspath $@)
+#	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
 %.resmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/censor.py
 	cat $(word 2,$^)  |  python3 $(word 3,$^) -c $(word 1,$^)  >  $@
 
 
 ## apply partitioning (prdmeasures unaffected)
 %_part.prdmeasures:  genmodel/$$(notdir $$(word 1, $$(subst ., ,$$*))).part_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/partition.py  |  genmodel
-	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
+	cp $(abspath $(word 2,$^)) $(abspath $@)
+#	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
 %_part.resmeasures:  genmodel/$$(notdir $$(word 1, $$(subst ., ,$$*))).part_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/partition.py  |  genmodel
 	cat $(word 2,$^)  |  python3 $(word 3, $^) -c $(word 1, $^) -p $(subst +, ,$(subst .,,$(suffix $*)))  >  $@
 
