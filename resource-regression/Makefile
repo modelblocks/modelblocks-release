@@ -99,7 +99,6 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 %_delta.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/deltaMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 %_delta.resmeasures:  $$(basename %).resmeasures
-<<<<<<< HEAD
 	cp $(abspath $<) $(abspath $@)
 #	ln -sf $(abspath $<) $(abspath $@)
 
@@ -107,28 +106,14 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 %.prdmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/censor.py
 	cp $(abspath $(word 2,$^)) $(abspath $@)
 #	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
-=======
-	#ln -sf $(abspath $<) $(abspath $@)
-	cp $(abspath $<) $(abspath $@)
-
-## apply censorship (e.g. remove end-of-sentence responses) (prdmeasures unaffected)
-%.prdmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/censor.py
-	#ln -sf $(abspath $(word 2,$^)) $(abspath $@)
-	cp $(abspath $(word 2,$^)) $(abspath $@)
->>>>>>> e3d84bcf0c717299194911d4746c8386286036a8
 %.resmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/censor.py
 	cat $(word 2,$^)  |  python3 $(word 3,$^) -c $(word 1,$^)  >  $@
 
 
 ## apply partitioning (prdmeasures unaffected)
 %_part.prdmeasures:  genmodel/$$(notdir $$(word 1, $$(subst ., ,$$*))).part_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/partition.py  |  genmodel
-<<<<<<< HEAD
 	cp $(abspath $(word 2,$^)) $(abspath $@)
 #	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
-=======
-	#ln -sf $(abspath $(word 2,$^)) $(abspath $@)
-	cp $(abspath $(word 2,$^)) $(abspath $@)
->>>>>>> e3d84bcf0c717299194911d4746c8386286036a8
 %_part.resmeasures:  genmodel/$$(notdir $$(word 1, $$(subst ., ,$$*))).part_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/partition.py  |  genmodel
 	cat $(word 2,$^)  |  python3 $(word 3, $^) -c $(word 1, $^) -p $(subst +, ,$(subst .,,$(suffix $*)))  >  $@
 
