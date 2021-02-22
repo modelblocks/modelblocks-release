@@ -437,6 +437,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           # TODO this repetitious warning code could use an abstraction
         if len( re.findall( '-n',G[x,'0'] ) ) > 1:
           sys.stderr.write( 'ERROR: multiple -n tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
+        if len( re.findall( '-nn',G[x,'0'] ) ) > 0:
+          sys.stderr.write( 'ERROR: -nn tag in category ' + G[x,'0'] + ' -- not implemented!\n' )
         if len( re.findall( '-s',G[x,'0'] ) ) > 1:
           sys.stderr.write( 'ERROR: multiple -s tags in category ' + G[x,'0'] + ' -- these will be unified, which is probably not desired!\n' )
         if len( re.findall( '-t',G[x,'0'] ) ) > 1:
