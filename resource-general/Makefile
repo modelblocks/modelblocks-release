@@ -120,6 +120,12 @@ GIGAWORD-SCRIPTS := $(RESOURCE-GIGAWORD)/scripts
 RESOURCE-GLOVE := $(abspath $(MBDIR)/resource-glove)
 GLOVE-SCRIPTS := $(RESOURCE-GLOVE)/scripts
 
+RESOURCE-GLSTM := $(abspath $(MBDIR)/resource-glstm)
+GLSTM-SCRIPTS := $(RESOURCE-GLSTM)/scripts
+
+RESOURCE-GPT2 := $(abspath $(MBDIR)/resource-gpt2)
+GPT2-SCRIPTS := $(RESOURCE-GPT2)/scripts
+
 RESOURCE-HUTH := $(abspath $(MBDIR)/resource-huth)
 HUTH-SCRIPTS := $(RESOURCE-HUTH)/scripts
 
@@ -128,6 +134,9 @@ WILLIAMS-SCRIPTS := $(RESOURCE-WILLIAMS)/scripts
 
 RESOURCE-INCRSEM := $(abspath $(MBDIR)/resource-incrsem)
 INCRSEM-SCRIPTS := $(RESOURCE-INCRSEM)/scripts
+
+RESOURCE-JLSTM := $(abspath $(MBDIR)/resource-jlstm)
+JLSTM-SCRIPTS := $(RESOURCE-JLSTM)/scripts
 
 RESOURCE-KENLM := $(abspath $(MBDIR)/resource-kenlm)
 KENLM-SCRIPTS := $(RESOURCE-KENLM)/scripts
@@ -228,10 +237,13 @@ include $(RESOURCE-BNC)/Makefile
 include $(RESOURCE-TREEBANK)/Makefile
 include $(RESOURCE-GIGAWORD)/Makefile
 include $(RESOURCE-GLOVE)/Makefile
+include $(RESOURCE-GLSTM)/Makefile
+include $(RESOURCE-GPT2)/Makefile
 include $(RESOURCE-HUTH)/Makefile
 include $(RESOURCE-KENLM)/Makefile
 include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
+include $(RESOURCE-JLSTM)/Makefile
 include $(RESOURCE-RT)/Makefile
 include $(RESOURCE-REGRESSION)/Makefile
 include $(RESOURCE-CDR)/Makefile

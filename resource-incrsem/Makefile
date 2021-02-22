@@ -23,7 +23,8 @@ SHELL := /bin/bash
 .SUFFIXES:
 .SECONDEXPANSION:
 
-VPATH += $(RESOURCE-INCRSEM)
+## WS: VPATH MAKES IT IMPOSSIBLE TO CREATE LOCAL SCRIPTS DIRECTORY IN PROJECT DIRECTORY
+#VPATH += $(RESOURCE-INCRSEM)
 
 #### directories used by included items...
 BIN := bin
@@ -97,6 +98,10 @@ endif
 .PRECIOUS: $(BIN)/%
 $(BIN)/%:  $(SRC)/$$(notdir $$@).cpp  $(SRC)/$$(notdir $$@).d  $(CONFIGDIR)/user-cflags.txt  |  $(BIN)  $(INCLUDE)
 	g++ -L$(CONDA_PREFIX)/lib -L$(CONDA_PREFIX)/lib64 -I/usr/include/libxml2/ -I$(word 2,$|) -I$(SRC) -I$(MBDIR)/resource-logreg/include -I$(abspath $(MBDIR)/resource-rvtl) -Wall `cat $(word 3,$^)` -fpermissive -std=c++17 $< -lm -larmadillo -Wl,-rpath-link=$(CONDA_PREFIX)/lib -lpthread -o $@
+
+#### copy .ini files to scripts
+scripts/%.ini:  $(INCRSEM-SCRIPTS)/%.ini  |  scripts
+	cp $^ $@
 
 ################################################################################
 #
@@ -397,6 +402,10 @@ endef
                $(BIN)/linetrees2mlpsemprocdecpars  \
                $$(basename %).lemmacounts
 	cat $<  |  $(word 2,$^) $(wordlist 1,99,$(subst _, ,$(subst .,,$(suffix $*)))) $(word 3,$^)  >  $@
+## remove non-coref pronouns from F predictors (for ontonotes)...
+.PRECIOUS: %_ontocorfix_mlpdecpars
+%_ontocorfix_mlpdecpars : %_mlpdecpars  $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py
+	cat $<  |  python3 $(word 2,$^)  >  $@
 
 ## Create component model file from training example file (% contains gcn ini filename and decpar flags and dsp ini filename)...
 %_ndspmodel : 
@@ -433,10 +442,9 @@ endef
 	cat $<  |  grep '^N'  |  sed 's/^N//'  |  python3 $(word 2,$^) $(word 4,$^) | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
 .PRECIOUS: %_fmlpmodel
 %_fmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
-              $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py \
               $(INCRSEM-SCRIPTS)/mlpdecpars2fmodel.py  \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini
-	cat $<  |  grep '^F'  |  sed 's/^F //'  |  python $(word 2,$^) | python3 -u $(word 3,$^) $(word 4,$^)  >  $@  2>  $@.log
+	cat $<  |  grep '^F'  |  sed 's/^F //'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
 .PRECIOUS: %_pmlpmodel
 %_pmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
               $(INCRSEM-SCRIPTS)/relfreq.py

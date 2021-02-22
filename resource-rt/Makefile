@@ -76,7 +76,8 @@ EMPTY :=
 SPACE :=$(EMPTY) $(EMPTY)
 COMMA :=, 
 
-VPATH += $(RESOURCE-RT)
+## WS: VPATH MAKES IT IMPOSSIBLE TO CREATE LOCAL SCRIPTS DIRECTORY IN PROJECT DIRECTORY
+#VPATH += $(RESOURCE-RT)
 
 MERGESURP = paste -d' ' - <(cat $(subst GRAMMAR,$(grammar),$(basename $*))_parsed.tokmeasures | \
 awk -f $(word 1, $^) -v cols=totsurp | \
@@ -90,7 +91,7 @@ SPILLOVER := S1
 SURP := fwprob5surp totsurp 
 DLT := dlt dltc dltcv dltv dltm dltcm dltcvm dltvm
 FJ := noF yesJ embddepthMin endembdMin startembdMin noFlen noFdr noFdrv embdlen embddr embddrv 
-COREF := # corefbin coreflenw coreflenr corefsize
+COREF := corefbin coreflenw coreflenr corefsize
 SEMDIST := sdCosMeanW1 sdEuclMeanW1 sdNACosMeanW1 sdNAEuclMeanW1 sdCosMeanW2 sdEuclMeanW2 sdNACosMeanW2 sdNAEuclMeanW2 sdCosMeanW3 sdEuclMeanW3 sdNACosMeanW3 sdNAEuclMeanW3 sdCosMeanWinf sdEuclMeanWinf sdNACosMeanWinf sdNAEuclMeanWinf
 GCG-CATS := A B C D F G
 EMBDDEPTHS := 1 2 3 4 5
@@ -282,6 +283,10 @@ SPRCorpus:
   paramtype: Dropdown
 endef
 
+## copy partition ini into project genmodel directory
+scripts/%.lmerform: $(RT-SCRIPTS)/%.lmerform |  scripts
+	cp $< $@
+
 genmodel/rename_cols.params: | genmodel
 	echo '' > $@
 
@@ -361,8 +366,8 @@ $(RT-SCRIPTS)/filter_cols.py
 %.syn.tokmeasures: %_parsed.dlt.lc.100.1_2_3_inf.word2vec.tokmeasures
 	mv $^ $@
 
-# Returns syntactic categories from gold "nounary" linetrees
-%.syncat.tokmeasures: %.gold.nounary.linetrees $(RT-SCRIPTS)/getSyncat.py
+# Returns syntactic categories from gold "nol4train" linetrees
+%.syncat.tokmeasures: %.gold.nol4train.linetrees $(RT-SCRIPTS)/getSyncat.py
 	cat $< | python $(word 2, $^) > $@
 
 # Pastes syntactic categories to existing identically tokenized tokmeasures file

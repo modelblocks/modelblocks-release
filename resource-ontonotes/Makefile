@@ -112,12 +112,12 @@ $(ONTONOTESDIR)/data/files/data/english/annotations/nw/wsj/$$* $(ONTONOTES-SCRIP
 $$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/data/files/data/english/annotations/nw/wsj/$$*/*.coref)))  |  genmodel
 #	tail -n +1 $(wordlist 4, $(words $^), $^)  |  python $(word 3,$^)  >  $@
 
-%.linked.linetrees:  $(ONTONOTES-SCRIPTS)/coref2linkedlinetrees.py  $$(dir %)$$(word 1,$$(subst ., ,$$*)).coref  %.linetrees
+%.linked.linetrees:  $(ONTONOTES-SCRIPTS)/coref2linkedlinetrees.py  $$(word 1,$$(subst ., ,%)).coref  %.linetrees
 	#cat $(word 2,$^)  |  python $(word 1,$^)  $(word 3,$^)  >  $@
 	python $(word 1,$^)  $(word 3,$^)  $(word 2,$^)  >  $@
 
 # editing...
-%.ner.linetrees:  $(ONTONOTES-SCRIPTS)/name2nerlinetrees.py  $$(dir %)$$(word 1,$$(subst ., ,$$*)).name  %.linetrees
+%.ner.linetrees:  $(ONTONOTES-SCRIPTS)/name2nerlinetrees.py  $$(word 1,$$(subst ., ,%)).name  %.linetrees
 	#cat $(word 2,$^)  |  python $(word 1,$^)  $(word 3,$^)  >  $@
 	python $(word 1,$^)  $(word 3,$^)  $(word 2,$^)  >  $@
 

@@ -366,8 +366,9 @@ def train(use_dev, dev_file, use_gpu,
                 l2_loss = torch.cuda.FloatTensor([0])
             else:
                 l2_loss = torch.FloatTensor([0])
-
             for param in modX.parameters():
+                if torch.numel(param) == 0:
+                    continue
                 l2_loss += torch.mean(param.pow(2))
 
             lemma_seq = modX(b_ex_ix, b_pred_ix, b_cat_ix, b_input_ix, b_input_lens, use_gpu)

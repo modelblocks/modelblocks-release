@@ -37,7 +37,8 @@
 .SUFFIXES:
 .SECONDEXPANSION:
 
-VPATH += $(RESOURCE-REGRESSION) $(RESOURCE-LMEFIT) $(RESOURCE-DTSR)
+## WS: VPATH MAKES IT IMPOSSIBLE TO CREATE LOCAL SCRIPTS DIRECTORY IN PROJECT DIRECTORY
+#VPATH += $(RESOURCE-REGRESSION) $(RESOURCE-LMEFIT) $(RESOURCE-DTSR)
 
 ################################################################################
 #
@@ -63,48 +64,56 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 %_spilled.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/spilloverMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(subst ., ,$(basename $(subst _,.,$(subst .,,$(suffix $*))))) -n $(subst .,,$(suffix $(subst _,.,$(suffix $*)))) >  $@
 %_spilled.resmeasures:  $$(basename %).resmeasures
-	ln -sf $(abspath $<) $(abspath $@)
+	cp $(abspath $<) $(abspath $@)
+#	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_<offset>_spilled.prdmeasures for second spilled over predictor
 %_altspilled.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/spilloverMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(word 1, $(subst _, ,$(subst .,,$(suffix $*)))) -n $(word 2, $(subst _, ,$(subst .,,$(suffix $*)))) >  $@
 %_altspilled.resmeasures:  $$(basename %).resmeasures
-	ln -sf $(abspath $<) $(abspath $@)
+	cp $(abspath $<) $(abspath $@)
+#	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_<offset>_spilled.prdmeasures for third spilled over predictor
 %_altaltspilled.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/spilloverMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(word 1, $(subst _, ,$(subst .,,$(suffix $*)))) -n $(word 2, $(subst _, ,$(subst .,,$(suffix $*)))) >  $@
 %_altaltspilled.resmeasures:  $$(basename %).resmeasures
-	ln -sf $(abspath $<) $(abspath $@)
+	cp $(abspath $<) $(abspath $@)
+#	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_cumued.prdmeasures
 %_cumued.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/accumulateMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 %_cumued.resmeasures:  $$(basename %).resmeasures
-	ln -sf $(abspath $<) $(abspath $@)
+	cp $(abspath $<) $(abspath $@)
+#	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_<offset>_futured.prdmeasures
 %_futured.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/futureMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 %_futured.resmeasures:  $$(basename %).resmeasures
-	ln -sf $(abspath $<) $(abspath $@)
+	cp $(abspath $<) $(abspath $@)
+#	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply predictor modifications: <data>.<predr>_<predr>_delta.prdmeasures
 %_delta.prdmeasures:  $$(basename %).prdmeasures  $(RT-SCRIPTS)/deltaMetrics.py
 	cat $(word 1,$^)  |  python $(word 2,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 %_delta.resmeasures:  $$(basename %).resmeasures
-	ln -sf $(abspath $<) $(abspath $@)
+	cp $(abspath $<) $(abspath $@)
+#	ln -sf $(abspath $<) $(abspath $@)
 
 ## apply censorship (e.g. remove end-of-sentence responses) (prdmeasures unaffected)
 %.prdmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/censor.py
-	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
+	cp $(abspath $(word 2,$^)) $(abspath $@)
+#	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
 %.resmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/censor.py
 	cat $(word 2,$^)  |  python3 $(word 3,$^) -c $(word 1,$^)  >  $@
 
 
 ## apply partitioning (prdmeasures unaffected)
 %_part.prdmeasures:  genmodel/$$(notdir $$(word 1, $$(subst ., ,$$*))).part_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/partition.py  |  genmodel
-	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
+	cp $(abspath $(word 2,$^)) $(abspath $@)
+#	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
 %_part.resmeasures:  genmodel/$$(notdir $$(word 1, $$(subst ., ,$$*))).part_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/partition.py  |  genmodel
 	cat $(word 2,$^)  |  python3 $(word 3, $^) -c $(word 1, $^) -p $(subst +, ,$(subst .,,$(suffix $*)))  >  $@
 
@@ -126,6 +135,19 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
            	     genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures  |  bin  genmodel
 	$^  >  $@  2>  $@.log
 
+.PRECIOUS: %_predicted.errors
+%_predicted.errors:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))-dependonallparts  \
+                     genmodel/$$(notdir $$(basename $$*)).fitmodel  \
+                     genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.prdmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*))).fit_part.prdmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*))).expl_part.prdmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*))).held_part.prdmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*))).fit_part.resmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*))).expl_part.resmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*))).held_part.resmeasures  |  bin  genmodel
+	$^  >  $@  2>  $@.log
+
 
 # ## generic errors file: <data>.<baseline>_(<predr>_)*<regrmodel>.errors
 # %.errors:  bin/calc-errors  %_predicted.resmeasures  $$(basename $$(basename %)).$$(word 2,$$(subst +, ,$$(suffix $$(basename $$*))))-part.resmeasures
@@ -138,8 +160,9 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(notdir $$(basename $$(basename $$(basename $$*)))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_predicted.errors)  |  bin  genmodel
 	$^  >  $@  2>  $@.log
 
+## WS: NON-GENERIC DEPENDENCIES
 .PRECIOUS: %ctsignif
-%ctsignif:  bin/signif-ct  \
+%ctsignif:  bin/signif-ct-nongeneric  \
 	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(notdir $$(basename $$(basename $$(basename $$*)))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_prd.resmeasures) \
 	    $$(foreach abl,$$(shell python $(REGRESSION-SCRIPTS)/infer_ablation_powerset.py  $$(subst ., ,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))), genmodel/$$(notdir $$(basename $$(basename $$(basename $$*)))).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$(basename $$(basename $$*)))))))_$$(abl)_$$(lastword $$(subst _, ,$$(basename $$(basename $$*))))$$(suffix $$(basename $$*))_obs.resmeasures) \
 	    |  bin  genmodel

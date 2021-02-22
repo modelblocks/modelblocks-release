@@ -80,8 +80,11 @@ class Trellis : public vector<Beam<HiddState>> {
     void setMostLikelySequence ( DelimitedList<psX,BeamElement<HiddState>,psLine,psX>& lbe, const JModel& jm ) {
       static StoreState ssLongFail( cFail, cFail );
 //      static StoreState ssLongFail;  ssLongFail.emplace( ssLongFail.end() );  ssLongFail.back().apex().emplace_back(hvBot,cFail,S_A);  ssLongFail.back().base().emplace_back(hvBot,cFail,S_B);
+      // Add top of last timestep beam to front of mls list...
       lbe.clear(); if( back().size()>0 ) lbe.push_front( *back().begin() );
+      // Follow backpointers from trellis and add each to front of mls list...
       if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( lbe.front().getBack() );
+      // Add dummy element at end...
       if( lbe.size()>0 ) lbe.emplace_back( BeamElement<HiddState>() );
       cerr << "lbe.size(): " << lbe.size() << endl;
       // If parse fails...
@@ -475,11 +478,17 @@ int main ( int nArgs, char* argv[] ) {
                 W histword;
                 histword = getHistWord(antPtr, wEmpty, NO_ANTUNK);
                 //cout << "main semproc got histword: " << histword << endl;
+                WModel::WPPMap mymapWPP; //special case for antunk
+                WModel::WPredictor wp(EVar::eNil,kAntUnk,CVar("N-aD"));
+                WModel::WPredictor wpn(EVar::eNil,kAntUnk,CVar("N"));
+                mymapWPP[wp] = 1.0;  // no operand[] for std::map<DelimitedTrip...
+                mymapWPP[wpn] = 1.0;
+                //mymapWPP.insert(std::map<WPredictor,double>::value_type(WPredictor(EVar::eNil,kAntUnk,CVar("N-aD")), 1.0));  //error: no matching function for call to 'std::map<DelimitedTrip<(& psX), Delimited<EVar>, (& psPipe), Delimited<K>, (& psPipe), Delimited<CVar>, (& psX)>, double>::insert(std::map<WPredictor, double>::value_type)'
 
                 // For each possible lemma (context + label + prob) for preterminal of current word...
 //                for ( auto& ektpr_p_t : modW.calcPredictorLikelihoods(w_t, histword) ) { //ektpr_p_t is a pair of (Wpredictor, prob)
 //                for ( auto& ektpr_p_t : listWP ) { //ektpr_p_t is a pair of (Wpredictor, prob)
-                for ( auto& ektpr_p_t : mapWPP ) { //ektpr_p_t is a pair of (Wpredictor, prob)
+                for ( auto& ektpr_p_t : (histword == w_t ? mymapWPP : mapWPP )) { //ektpr_p_t is a pair of (Wpredictor, prob)
 //                for ( auto& ektpr_p_t : modW.calcPredictorLikelihoods(w_t) ) { //ektpr_p_t is a pair of (Wpredictor, prob)
 //                  if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(ektpr_p_t.second) > beams[t].rbegin()->getProb() ) {
 //                    EVar  e_p_t       = ektpr_p_t.first.first();
@@ -542,7 +551,8 @@ int main ( int nArgs, char* argv[] ) {
                             O    opR = modJ.getJEOO( jresponse ).fourth(); //.getROp();
                             //if( jresponse.toInt() >= int(jresponses.size()) ) cerr << "ERROR: unknown jresponse: " << jresponse << endl;
                             double probJoin = jresponses[jresponse]; //  / jnorm;
-                            if ( VERBOSE>1 ) cout << "        J " << f << " " << e_p_t << " " << aLchild << " " << qTermPhase << " : " << modJ.getJEOO(jresponse) << " = " << probJoin << endl;
+                            //if ( VERBOSE>1 ) cout << "        J " << f << " " << e_p_t << " " << aLchild << " " << qTermPhase << " : " << modJ.getJEOO(jresponse) << " = " << probJoin << endl;
+                            if ( VERBOSE>1 ) cout << "        J " << ljpredictors << " : " << modJ.getJEOO(jresponse) << " = " << probJoin << endl;
 
                             // For each possible apex category label...
                             APredictorVec apredictor( f, j, e_p_t, e, opL, aLchild, qTermPhase );  // save apredictor for use in prob calc
@@ -560,7 +570,8 @@ int main ( int nArgs, char* argv[] ) {
                                     for ( auto& cpB : modB.find(bpredictor)->second ) {
                                       if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << cpB.first << " = " << cpB.second << endl;
                                       //                            lock_guard<mutex> guard( mutexBeam );
-                                      if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second) > beams[t].rbegin()->getProb() ) {
+                                      double lgprItem = lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second);
+                                      if( isnormal(lgprItem) and ( beams[t].size()<BEAM_WIDTH or lgprItem > beams[t].rbegin()->getProb() ) ) {
 
                                         // Thread heartbeat (to diagnose thread death)...
                                         if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
@@ -572,7 +583,7 @@ int main ( int nArgs, char* argv[] ) {
                                         // Calculate probability and storestate and add to beam...
                                         StoreState ss( qTermPhase, j, e, opL, opR, cpA.first, cpB.first );
                                         if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
-                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t, w_t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second), be_tdec1 ) );
+                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t, w_t ), ProbBack<HiddState>( lgprItem, be_tdec1 ) );
                                           if( VERBOSE>1 ) cout << "                send (" << be_tdec1.getHidd() << ") to (" << ss << ") with "
                                             << (lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second)) << endl;
                                         } //closes if ( (t<lwSent

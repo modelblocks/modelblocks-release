@@ -45,7 +45,12 @@ def prepare_data():
     catBases, catAntes, hvBases, hvAntes, hvBaseFirsts, hvAnteFirsts, wordDists, sqWordDists, corefOns, labels = ([] for _ in range(10))
     #depth, catBase, hvBase, hvFiller, fDecs, hvBFirst, hvFFirst = ([] for _ in range(8))
     for line in data:
-        catBase, catAnte, hvBase, hvAnte, wordDist, sqWordDist, corefOn, _, label = line.split(" ")
+        try:
+            catBase, catAnte, hvBase, hvAnte, wordDist, sqWordDist, corefOn, _, label = line.split(" ")
+        except:
+            eprint("unspec line: {}".format(line))
+            continue
+            #raise Exception("out of spec line in input")
         #d, cb, hvb, hvf, fd = line.split(" ")
         #depth.append(int(d))
         #catBase.append(cb)
@@ -221,8 +226,6 @@ class NModel(nn.Module):
         if use_gpu >= 0:
             cat_base_embed = cat_base_embed.to("cuda")
             cat_ante_embed = cat_ante_embed.to("cuda")
-            hvb_mat = hvb_mat.to("cuda")
-            hva_mat = hva_mat.to("cuda")
             hvb_top = hvb_top.to("cuda")
             hva_top = hva_top.to("cuda")
 
@@ -239,8 +242,17 @@ class NModel(nn.Module):
             hva_mat = torch.sparse.FloatTensor(torch.LongTensor([hva_mat.row.tolist(), hva_mat.col.tolist()]),
                                                torch.FloatTensor(hva_mat.data.astype(np.float32)),
                                                torch.Size(hva_mat.shape))
+            if use_gpu >= 0:
+                hvb_mat = hvb_mat.to("cuda")
+                hva_mat = hva_mat.to("cuda")
+
             hvb_embed = torch.sparse.mm(hvb_mat, self.hvec_embeds.weight) + hvb_top
             hva_embed = torch.sparse.mm(hva_mat, self.hvec_embeds.weight) + hva_top
+
+            if use_gpu >= 0:
+                hvb_embed = hvb_embed.to("cuda")
+                hva_embed = hva_embed.to("cuda")
+
         x = torch.cat((cat_base_embed, cat_ante_embed, hvb_embed, hva_embed, worddists.unsqueeze(dim=1), sqworddists.unsqueeze(dim=1), corefons.unsqueeze(dim=1)), 1)
 
         np.set_printoptions(threshold=sys.maxsize)
@@ -356,6 +368,8 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
             else:
                 l2_loss = torch.FloatTensor([0])
             for param in model.parameters():
+                if torch.numel(param) == 0:
+                    continue
                 l2_loss += torch.mean(param.pow(2))
 
             #output = model(batch_d, batch_c, batch_hvb_mat, batch_hvf_mat, batch_hvb_top, batch_hvf_top, use_gpu,

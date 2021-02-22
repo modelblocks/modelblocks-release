@@ -124,7 +124,7 @@ class StreamTrellis : public vector<Beam> {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int main ( int nArgs, char* argv[] ) {
+int main ( int nArgs, const char* argv[] ) {
 
   uint numThreads = 10;
   bool bUnkShrink = false;

@@ -196,18 +196,20 @@ def prepare_data_dev(dev_decpars_file, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hve
 
 
 class FModel(nn.Module):
-    def __init__(self, catb_vocab_size, hvecb_vocab_size, hvecf_vocab_size, hveca_vocab_size, syn_size, sem_size, hidden_dim, output_dim, dropout_prob):
+    def __init__(self, catb_vocab_size, hvecb_vocab_size, hvecf_vocab_size, hveca_vocab_size, syn_size, sem_size, ant_size, hidden_dim, output_dim, dropout_prob):
         super(FModel, self).__init__()
         self.syn_size = syn_size
         self.sem_size = sem_size
         self.catb_embeds = nn.Embedding(catb_vocab_size, syn_size)
         self.hvecb_embeds = nn.Embedding(hvecb_vocab_size, sem_size)
         self.hvecf_embeds = nn.Embedding(hvecf_vocab_size, sem_size)
-        self.hveca_embeds = nn.Embedding(hveca_vocab_size, sem_size)
+        #print("hveca_vocab_size: {}".format(hveca_vocab_size))
+        #print("ant_size: {}".format(ant_size))
+        self.hveca_embeds = nn.Embedding(hveca_vocab_size, ant_size)
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
         self.dropout_prob = dropout_prob
-        self.fc1 = nn.Linear(8 + syn_size + 3 * sem_size, self.hidden_dim, bias=True)
+        self.fc1 = nn.Linear(8 + syn_size + 2 * sem_size + ant_size, self.hidden_dim, bias=True)
         self.dropout = nn.Dropout(self.dropout_prob)
         self.relu = F.relu
         self.fc2 = nn.Linear(self.hidden_dim, self.output_dim, bias=True)
@@ -216,7 +218,7 @@ class FModel(nn.Module):
         hvb_top = torch.FloatTensor(hvb_top)
         hvf_top = torch.FloatTensor(hvf_top)
         hva_top = torch.FloatTensor(hva_top)
-        nullA   = torch.FloatTensor(nullA)
+        #nullA   = torch.FloatTensor(nullA) #TODO expected CPU, got CUDA
 
         if ablate_syn:
             cat_b_embed = torch.zeros([len(cat_b_ix), self.syn_size], dtype=torch.float)
@@ -229,11 +231,12 @@ class FModel(nn.Module):
             hvf_top = hvf_top.to("cuda")
             hva_top = hva_top.to("cuda")
             cat_b_embed = cat_b_embed.to("cuda")
+            #nullA = nullA.to("cuda")
 
         if ablate_sem:
             hvb_embed = torch.zeros([hvb_top.shape[0], self.sem_size], dtype=torch.float) + hvb_top
             hvf_embed = torch.zeros([hvb_top.shape[0], self.sem_size], dtype=torch.float) + hvf_top
-            hva_embed = torch.zeros([hva_top.shape[0], self.sem_size], dtype=torch.float) + hva_top
+            hva_embed = torch.zeros([hva_top.shape[0], self.ant_size], dtype=torch.float) + hva_top
 
             if use_gpu >= 0:
                 hvb_embed = hvb_embed.to("cuda")
@@ -263,7 +266,7 @@ class FModel(nn.Module):
             hvf_embed = torch.sparse.mm(hvf_mat, self.hvecf_embeds.weight) + hvf_top
             hva_embed = torch.sparse.mm(hva_mat, self.hveca_embeds.weight) + hva_top
 
-        x = torch.cat((cat_b_embed, hvb_embed, hvf_embed, hva_embed, nullA.unsqueeze(dim=1), d_onehot), 1)  
+        x = torch.cat((cat_b_embed, hvb_embed, hvf_embed, hva_embed, nullA.unsqueeze(dim=1), d_onehot), 1) 
         x = self.fc1(x)
         x = self.dropout(x)
         x = self.relu(x)
@@ -271,13 +274,13 @@ class FModel(nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dropout_prob, num_epochs, batch_size, learning_rate,
+def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidden_dim, dropout_prob, num_epochs, batch_size, learning_rate,
           weight_decay, l2_reg, ablate_syn, ablate_sem):
     depth, cat_b_ix, hvb_mat, hvf_mat, catb_to_ix, fdecs_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix, hvb_top, hvf_top, hva_mat, hva_top, nullA = prepare_data()
     depth = F.one_hot(torch.LongTensor(depth), 7).float()
     cat_b_ix = torch.LongTensor(cat_b_ix)
     target = torch.LongTensor(fdecs_ix)
-    model = FModel(len(catb_to_ix), len(hvecb_to_ix), len(hvecf_to_ix), len(hveca_to_ix), syn_size, sem_size, hidden_dim, len(fdecs_to_ix), dropout_prob)
+    model = FModel(len(catb_to_ix), len(hvecb_to_ix), len(hvecf_to_ix), len(hveca_to_ix), syn_size, sem_size, ant_size, hidden_dim, len(fdecs_to_ix), dropout_prob)
     nulla = torch.FloatTensor(nullA)
 
     if use_gpu >= 0:
@@ -294,11 +297,14 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
         dev_depth = F.one_hot(torch.LongTensor(dev_depth), 7).float()
         dev_cat_b_ix = torch.LongTensor(dev_cat_b_ix)
         dev_target = torch.LongTensor(dev_fdecs_ix)
+        dev_nulla = torch.FloatTensor(dev_nullA)
 
         if use_gpu >= 0:
             dev_depth = dev_depth.to("cuda")
             dev_cat_b_ix = dev_cat_b_ix.to("cuda")
             dev_target = dev_target.to("cuda")
+            dev_nulla = dev_nulla.to("cuda")
+            #model = model.to("cuda")
 
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     criterion = nn.NLLLoss()
@@ -327,6 +333,8 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
             else:
                 l2_loss = torch.FloatTensor([0])
             for param in model.parameters():
+                if torch.numel(param) == 0:
+                    continue
                 l2_loss += torch.mean(param.pow(2))
 
             output = model(batch_d, batch_c, batch_hvb_mat, batch_hvf_mat, batch_hvb_top, batch_hvf_top, batch_hva_mat, batch_hva_top, batch_nulla, use_gpu, ablate_syn, ablate_sem)
@@ -343,7 +351,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
         if use_dev >= 0:
             with torch.no_grad():
                 model.eval()
-                dev_pred = model(dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_hvb_top, dev_hvf_top, dev_hva_mat, dev_hva_top, dev_nullA, use_gpu,
+                dev_pred = model(dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_hvb_top, dev_hvf_top, dev_hva_mat, dev_hva_top, dev_nulla, use_gpu,
                                  ablate_syn, ablate_sem)
                 _, dev_fdec = torch.max(dev_pred.data, 1)
                 dev_correct = (dev_fdec == dev_target).sum().item()
@@ -369,7 +377,8 @@ def main(config):
     model, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix = train(f_config.getint("Dev"), f_config.get("DevFile"),
                                                       f_config.getint("GPU"),
                                                       f_config.getint("SynSize"), f_config.getint("SemSize"),
-                                                      f_config.getint("HiddenSize"), f_config.getfloat("DropoutProb"),
+                                                      f_config.getint("AntSize"), f_config.getint("HiddenSize"), 
+                                                      f_config.getfloat("DropoutProb"),
                                                       f_config.getint("NEpochs"), f_config.getint("BatchSize"),
                                                       f_config.getfloat("LearningRate"),
                                                       f_config.getfloat("WeightDecay"), f_config.getfloat("L2Reg"),
@@ -413,6 +422,8 @@ def main(config):
             print("K F " + str(hvec) + " " + ",".join(map(str, hvecf_embeds[ix])))
         for hvec, ix in sorted(hveca_to_ix.items()):
             print("K A " + str(hvec) + " " + ",".join(map(str, hveca_embeds[ix])))
+        if len(hveca_to_ix.items()) == 0:
+            print("K A N-aD:ph_0 " + "0,"*(f_config.getint("AntSize")-1)+"0") #add placeholder so model knows antecedent size
     for fdec, ix in sorted(fdecs_to_ix.items()):
         print("f " + str(ix) + " " + str(fdec))
 

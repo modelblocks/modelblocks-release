@@ -43,7 +43,8 @@
 .SUFFIXES:
 SECONDEXPANSION:
 
-VPATH := $(RESOURCE-FMRI):$(VPATH):$(RESOURCE-GENERAL)
+## WS: VPATH MAKES IT IMPOSSIBLE TO CREATE LOCAL SCRIPTS DIRECTORY IN PROJECT DIRECTORY
+#VPATH := $(RESOURCE-FMRI):$(VPATH):$(RESOURCE-GENERAL)
 
 ifndef SAMPLE-START
 SAMPLE-START := 0
@@ -198,11 +199,13 @@ $(RT-SCRIPTS)/merge_tables.py
 
 # TO SPEC
 %.fmri-bywrd.resmeasures: $$(word 1,$$(subst ., ,%)).evmeasures
-	ln -sf $(abspath $(word 1,$^)) $@
+	cp $(abspath $(word 1,$^)) $@
+#	ln -sf $(abspath $(word 1,$^)) $@
 
 # TO SPEC
 %.fmri-sent.resmeasures: %.resmeasures
-	ln -sf $(abspath $(word 1,$^)) $@
+	cp $(abspath $(word 1,$^)) $@
+#	ln -sf $(abspath $(word 1,$^)) $@
 
 %.nm1.evmeasures: %.evmeasures $(FMRI-SCRIPTS)/average_nm1.py
 	cat $< | python $(word 2, $^) - > $@

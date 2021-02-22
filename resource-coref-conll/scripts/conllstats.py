@@ -1,8 +1,9 @@
 import sys
 import pdb
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
 #generate coreference chain descriptive statistics like mean chain length, distance to last mention, etc.
 
 with open(sys.argv[1], 'r') as iff:
@@ -39,8 +40,8 @@ distances = [] #distances between mentions
 num_mentions = [] #each chain's length
 num_chains = [] #chains in a doc
 
-#for doc in chains:
-for doc in [1]:
+for doc in chains:
+#for doc in [1]:
     #mentions in a chain
     #distances between mentions
     num_chains.append(len(chains[doc]))
@@ -53,9 +54,16 @@ for doc in [1]:
             #    pdb.set_trace()
             
         
-#print("distances: {}".format(distances))
+print("distances: {}".format(distances))
 print("word distance between mentions - mean: {}, median: {}, min/max: {}/{}, stddev: {}".format(np.mean(distances),np.median(distances),np.min(distances),np.max(distances),np.std(distances)))
-hist,binedges = np.histogram(distances)
+hist, binedges = np.histogram(distances)
 print(hist)
+print(binedges)
+plt.hist(distances, bins = [0,20,40,60,80,100,120,140,160,180,200,220,240,260,280,300,320,340,360,380,400,420,440,460,480,500,600,700,800,900,1000,1500,2000,2500]) 
+plt.title("coref distances") 
+#plt.show()
+plt.xlabel("distance to antecedent (words)")
+plt.ylabel("count")
+plt.savefig("coref_distances4.png")
 #print("coref chain length - mean: {}, min/max:{}/{}, stddev: {}".format(mean,min,max,stdddev))
 #print("num chains in a doc - mean: {}, min/max:{}/{}, stddev: {}".format(mean,min,max,stdddev))

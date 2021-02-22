@@ -19,7 +19,9 @@
 
 #include <typeinfo>
 #include <regex>
+#include <algorithm>
 
+// TODO: have parser identify this automatically
 // XModel E, K, P, Char, RNN hidden sizes
 const uint X_E_SIZE = 20;
 const uint X_K_SIZE = 400;
@@ -294,6 +296,7 @@ class FModel {
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> KDenseVec;
   uint FSEM_SIZE = 20; 
   uint FSYN_SIZE = 10;
+  uint FANT_SIZE = 10;
   uint FFULL_WIDTH = 13;
   private:
 
@@ -349,10 +352,18 @@ class FModel {
         DelimitedVector<psX, double, psComma, psX> vtemp;
         is >> "K " >> c >> " " >> k >> " ";
         is >> vtemp >> "\n";
-        if (c == 'B') mkbdv.try_emplace(k, vtemp);
-        else if (c == 'F') mkfdv.try_emplace(k, vtemp);
-        else if (c == 'A') mkadv.try_emplace(k, vtemp);
-        FSEM_SIZE=vtemp.size();
+        if (c == 'B') { 
+          mkbdv.try_emplace(k, vtemp);
+          FSEM_SIZE=vtemp.size();
+        }
+        else if (c == 'F') { 
+          mkfdv.try_emplace(k, vtemp);
+          FSEM_SIZE=vtemp.size();
+        }
+        else if (c == 'A') {
+          mkadv.try_emplace(k, vtemp);
+          FANT_SIZE=vtemp.size();
+        }
       }
       while ( is.peek()=='f' ) {
         unsigned int i;
@@ -364,11 +375,10 @@ class FModel {
       fwsm = fws;
       fbfv = fbf;
       fbsv = fbs;
-      FFULL_WIDTH = 8 + 3*FSEM_SIZE + FSYN_SIZE;
+      cerr << "FSEM: " << FSEM_SIZE << " FSYN: " << FSYN_SIZE << " FANT: " << FANT_SIZE << endl;
+      FFULL_WIDTH = 8 + 2*FSEM_SIZE + FSYN_SIZE + FANT_SIZE;
       fwfm.reshape(fwf.size()/(FFULL_WIDTH), FFULL_WIDTH);
-      //fwfm.reshape(fwf.size()/(8 + 3*FSEM_SIZE + FSYN_SIZE), 8 + 3*FSEM_SIZE + FSYN_SIZE);
       fwsm.reshape(fws.size()/(fwf.size()/(FFULL_WIDTH)), (fwf.size()/(FFULL_WIDTH)));
-      //fwsm.reshape(fws.size()/(fwf.size()/(8 + 3*FSEM_SIZE + FSYN_SIZE)), (fwf.size()/(8 + 3*FSEM_SIZE + FSYN_SIZE)));
     }
 
     const FEK& getFEK( unsigned int i ) const {
@@ -393,8 +403,9 @@ class FModel {
 //    const KDenseVec getKVecEmbed( HVec hv, Delimited<char> c ) const {
 //      KDenseVec KVecEmbed = KDenseVec(arma::zeros(FSEM_SIZE));
     const vec getKVecEmbed( HVec hv, Delimited<char> c ) const {
-      vec KVecEmbed = arma::zeros(FSEM_SIZE);
+      vec KVecEmbed;// = arma::zeros(FSEM_SIZE);
       if (c == 'B') {
+        KVecEmbed = arma::zeros(FSEM_SIZE);
         for ( auto& kV : hv.at(0) ) {
           if ( kV == K::kTop) {
             KVecEmbed += arma::ones(FSEM_SIZE);
@@ -409,6 +420,7 @@ class FModel {
         }
       }
       else if (c == 'F') {
+        KVecEmbed = arma::zeros(FSEM_SIZE);
         for ( auto& kV : hv.at(0) ) {
           if ( kV == K::kTop) {
             KVecEmbed += arma::ones(FSEM_SIZE);
@@ -423,9 +435,10 @@ class FModel {
         }
       }
       else if (c == 'A') {
+        KVecEmbed = arma::zeros(FANT_SIZE);
         for ( auto& kV : hv.at(0) ) {
           if ( kV == K::kTop) {
-            KVecEmbed += arma::ones(FSEM_SIZE);
+            KVecEmbed += arma::ones(FANT_SIZE);
             continue;
           }
           auto it = mkadv.find( kV );
@@ -467,8 +480,8 @@ class FModel {
 
 // populate predictor vector
       arma::vec flogresponses = join_cols(join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), hvAEmb), arma::zeros(8));
-      if (nullA) flogresponses(3*FSEM_SIZE + FSYN_SIZE + 1) = 1;
-      flogresponses(3*FSEM_SIZE + FSYN_SIZE + 1 + d) = 1;
+      if (nullA) flogresponses(2*FSEM_SIZE + FSYN_SIZE + FANT_SIZE) = 1;
+      flogresponses(2*FSEM_SIZE + FSYN_SIZE + FANT_SIZE + 1 + d) = 1;
 
 //      for(unsigned int i = 0; i < catBEmb.n_elem; i++){
 //        flogresponses(i) = catBEmb(i);
@@ -487,7 +500,14 @@ class FModel {
 
 // implementation of MLP
 //      cout << "trying f model matmul..." << endl;
+      //cerr << "size of flogresponses: " << flogresponses.size() << endl;
+      //cerr << "first weight matrix rows/cols: " << fwfm.n_rows << "/" << fwfm.n_cols << endl;
+      //cerr << "second weight matrix rows/cols: " << fwsm.n_rows << "/" << fwsm.n_cols << endl;
+      //cerr << "size of ffull_width: " << FFULL_WIDTH << endl;
+      //cerr << "size of fbfv: " << fbfv.size() << endl;
+      //cerr << "size of fbsv: " << fbsv.size() << endl;
       arma::vec flogscores = fwsm * relu(fwfm*flogresponses + fbfv) + fbsv;
+      //cerr << "finished calculating an flogscores" << endl;
       arma::vec fscores = arma::exp(flogscores);
       double fnorm = arma::accu(fscores);
       return fscores/fnorm;
@@ -505,9 +525,10 @@ class WPredictor : public DelimitedTrip<psX,Delimited<EVar>,psSpace,Delimited<K>
 
 class WModel {
 
-  typedef DelimitedTrip<psX,Delimited<EVar>,psPipe,Delimited<K>,psPipe,Delimited<CVar>,psX> WPredictor;
-  typedef DelimitedTrip<psX,Delimited<EVar>,psPipe,Delimited<CVar>,psPipe,Delimited<string>,psX> MPredictor;
-  typedef DelimitedCol<psLBrack, double, psComma, psRBrack> DenseVec;
+  public:
+    typedef DelimitedTrip<psX,Delimited<EVar>,psPipe,Delimited<K>,psPipe,Delimited<CVar>,psX> WPredictor;
+    typedef DelimitedTrip<psX,Delimited<EVar>,psPipe,Delimited<CVar>,psPipe,Delimited<string>,psX> MPredictor;
+    typedef DelimitedCol<psLBrack, double, psComma, psRBrack> DenseVec;
 
   private:
 
@@ -711,6 +732,17 @@ class WModel {
       return repmat(it->second, 1, i);
     }
 
+    string removeUnkChar( string s ) const {
+      for ( unsigned i = 0; i < s.length(); ++i ){
+        string str(1, s[i]);
+        if ( mci.find(str) == mci.end() ) {
+          cerr << "Unknown character " << s[i] << " found in " << s << "." << endl;
+          s.erase(std::remove(s.begin(), s.end(), s[i]), s.end());
+        }
+      }
+      return s;
+    }
+
     // XModel: index list of compatible WPredictors given pair<lemma, primcat>
     const DelimitedList<psLBrack,WPredictor,psSpace,psRBrack> getWPredictorList( pair<string,string> xsp ) const {
       if ( isdigit(xsp.first.at(0)) ) {
@@ -741,8 +773,10 @@ class WModel {
         assert ( itk != mxkv.end() );
         auto itp = mxpv.find( wp.third() );
         assert ( itp != mxpv.end() );
-        wpmat.col(idx) = join_cols(join_cols(ite->second, itk->second), itp->second);
-        idx ++;
+        if( itp!=mxpv.end() ) {
+          wpmat.col(idx) = join_cols(join_cols(ite->second, itk->second), (itp==mxpv.end()) ? zeros(X_P_SIZE) : itp->second);
+          idx ++;
+        }
       }
       return wpmat;
     }
@@ -811,7 +845,10 @@ class WModel {
       string sW = w_t.getString().c_str();
 
       // do not lowercase word if special punctuation token ("-LCB-", "-LRB-", "-RCB-", "-RRB-")
-      if ( find( PUNCT.begin(), PUNCT.end(), sW ) == PUNCT.end() ) transform(sW.begin(), sW.end(), sW.begin(), [](unsigned char c) { return std::tolower(c); });
+      if ( find( PUNCT.begin(), PUNCT.end(), sW ) == PUNCT.end() ) {
+        transform(sW.begin(), sW.end(), sW.begin(), [](unsigned char c) { return std::tolower(c); });
+        sW = removeUnkChar(sW);
+      }
 
       // loop over morph rules
       for ( const auto& mi : mmi ) {
@@ -823,7 +860,7 @@ class WModel {
         if ( mi.first == "%|%" || mi.first == "%|" ) {
           sX = sW;
           sP = "All";
-          lxmp.push_back(pair<pair<string,string>,string>(pair<string,string>(sX,sP),mi.first));
+          if (!sX.empty()) lxmp.push_back(pair<pair<string,string>,string>(pair<string,string>(sX,sP),mi.first));
         } else {
           // otherwise, apply morph rule for lemma and primcat
           if ( regex_match( mi.first, mM, regex("^(.*)[%](.*)[|](.*)[%](.*)$") ) ) {
@@ -831,7 +868,7 @@ class WModel {
             if ( regex_match(sW, mW, regex("^(.*)"+string(mM[2])+"$")) ) {
               sX = string(mW[1])+string(mM[4]);
               sP = string(mM[3]);
-              lxmp.push_back(pair<pair<string,string>,string>(pair<string,string>(sX,sP),mi.first));
+              if (!sX.empty()) lxmp.push_back(pair<pair<string,string>,string>(pair<string,string>(sX,sP),mi.first));
             }
           }
         }
@@ -860,6 +897,7 @@ class WModel {
         mat st_logprobs = log(st_scores.each_row() / st_norm);
         rowvec st1_logprobs;
 
+
         if ( find( PUNCT.begin(), PUNCT.end(), x_t ) != PUNCT.end() ) {
           // if lemma is special punctuation token ("-LCB-", "-LRB-", "-RCB-", "-RRB-"), index probability using the token itself
           seqlogprobs += st_logprobs.row( getXCharIndex( x_t ) );
@@ -869,31 +907,30 @@ class WModel {
           st1_logprobs = log(st1_scores.row(getXCharIndex( "<E>" )) / st1_norm);
           seqlogprobs += st1_logprobs;
         } else {
-          string c0(1, x_t[0]);
-          // index probability for first character
-          seqlogprobs += st_logprobs.row( getXCharIndex( c0.c_str() ));
+              string c0(1, x_t[0]);
+              // index probability for first character
+              seqlogprobs += st_logprobs.row( getXCharIndex( c0.c_str() ));
 
-          for ( unsigned i = 0; i < x_t.length(); ++i ){
-            string ct(1, x_t[i]);
-            string ct1(1, x_t[i+1]);
-            mat ht1 = relu(xihwm * join_cols(wpmat, getXCharMat(ct.c_str(), wplist.size())) + xihbm + xhhwm * ht + xhhbm);
-            mat st1_scores = exp(xfcwm * ht1 + xfcbm);
-            rowvec st1_norm = sum(st1_scores, 0);
+              for ( unsigned i = 0; i < x_t.length(); ++i ){
+                string ct(1, x_t[i]);
+                string ct1(1, x_t[i+1]);
+                mat ht1 = relu(xihwm * join_cols(wpmat, getXCharMat(ct.c_str(), wplist.size())) + xihbm + xhhwm * ht + xhhbm);
+                mat st1_scores = exp(xfcwm * ht1 + xfcbm);
+                rowvec st1_norm = sum(st1_scores, 0);
 
-            if (i != x_t.length()-1) {
-              st1_logprobs = log(st1_scores.row(getXCharIndex( ct1.c_str() )) / st1_norm);
-            } else {
-              st1_logprobs = log(st1_scores.row(getXCharIndex( "<E>" )) / st1_norm);
+                if (i != x_t.length()-1) {
+                  st1_logprobs = log(st1_scores.row(getXCharIndex( ct1.c_str() )) / st1_norm);
+                } else {
+                  st1_logprobs = log(st1_scores.row(getXCharIndex( "<E>" )) / st1_norm);
+                }
+                seqlogprobs += st1_logprobs;
+                ht = ht1;
+              }
             }
-            seqlogprobs += st1_logprobs;
-            ht = ht1;
-          }
-        }
         xpmap.try_emplace(xsp, seqlogprobs);
-      }
-      else {
-        seqlogprobs = it->second;
-      }
+        } else {
+          seqlogprobs = it->second;
+        }
       return seqlogprobs;
     }
 
@@ -918,24 +955,23 @@ class WModel {
           rowvec st_norm = sum(st_scores, 0);
           rulelogprobs = log(st_scores.each_row() / st_norm);
         } else {
-          string c0(1, x_t[0]);
-          // calculate probability using first character
+            string c0(1, x_t[0]);
+            // calculate probability using first character
 //          cerr << "word " << x_t << " c0 " << c0 << endl;
-          mat ht = relu(mihwm * join_cols(mpmat, getMCharMat(c0.c_str(), mplist.size())) + mihbm + mhhbm);
+            mat ht = relu(mihwm * join_cols(mpmat, getMCharMat(c0.c_str(), mplist.size())) + mihbm + mhhbm);
 
-          for ( unsigned i = 1; i < x_t.length(); ++i ){
-            string ct(1, x_t[i]);
+            for ( unsigned i = 1; i < x_t.length(); ++i ){
+              string ct(1, x_t[i]);
 //            cerr << "word " << x_t << " c" << i << " " << ct << endl;
-            mat ht1 = relu(mihwm * join_cols(mpmat, getMCharMat(ct.c_str(), mplist.size())) + mihbm + mhhwm * ht + mhhbm);
-            ht = ht1;
+              mat ht1 = relu(mihwm * join_cols(mpmat, getMCharMat(ct.c_str(), mplist.size())) + mihbm + mhhwm * ht + mhhbm);
+              ht = ht1;
+            }
+            mat st_scores = exp(mfcwm * ht + mfcbm);
+            rowvec st_norm = sum(st_scores, 0);
+            rulelogprobs = log(st_scores.each_row() / st_norm);
           }
-          mat st_scores = exp(mfcwm * ht + mfcbm);
-          rowvec st_norm = sum(st_scores, 0);
-          rulelogprobs = log(st_scores.each_row() / st_norm);
-        }
-        mpmap.try_emplace(xsp, rulelogprobs);
-      }
-      else {
+          mpmap.try_emplace(xsp, rulelogprobs);
+      } else {
         rulelogprobs = it->second;
       }
       return rulelogprobs;
@@ -945,11 +981,11 @@ class WModel {
       auto it = wwppmap.find( w_t );
       if ( it == wwppmap.end() ) {
         // generate list of <<lemma, primcat>, rule>
-        cerr << "applying morph rules for word: " << w_t << endl;
+        //cerr << "applying morph rules for word: " << w_t << endl;
         list<pair<pair<string,string>,string>> lxmp = applyMorphRules(w_t);
         // loop over <<lemma, primcat>, rule>
         for ( const auto& xmp : lxmp ) {
-          cerr << "generated word " << w_t << " from lemma " << xmp.first.first << ", primcat " << xmp.first.second << ", rule " << xmp.second << endl;
+        //cerr << "generated word " << w_t << " from lemma " << xmp.first.first << ", primcat " << xmp.first.second << ", rule " << xmp.second << endl;
           DelimitedList<psLBrack,WPredictor,psSpace,psRBrack> lwp = getWPredictorList(xmp.first);
           rowvec xll = calcLemmaLikelihoods(xmp.first, xpmap);
           mat mllall = calcRuleLikelihoods(xmp.first, mpmap);
