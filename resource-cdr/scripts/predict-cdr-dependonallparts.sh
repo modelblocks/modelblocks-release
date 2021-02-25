@@ -20,7 +20,8 @@ cdr_dir=$(cat ../config/user-cdr-directory.txt)
 
 export PYTHONPATH=$PYTHONPATH:cdr_dir
 
-python3 -m cdr.bin.predict $config_path -p $pred_partition
+python3 -m cdr.bin.predict $config_path -d $2 $3
 
-cat "$1_outdir/CDR/losses_mse_$pred_partition.txt"
+cat "$1_outdir/CDR/losses_mse_1.txt"
+# New version use squared_error_1.txt
 

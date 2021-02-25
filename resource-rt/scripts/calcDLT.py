@@ -32,8 +32,6 @@ ends = []
 complete = []
 cCosts = []
 cvCosts = []
-post = []
-postpost = []
 
 def terminal(T):
     return len(T.ch) == 1 and len(T.ch[0].ch) == 0
@@ -110,7 +108,7 @@ def getPOS(T):
         return T.c[0]
     return 'O'
         
-def head(T):
+def head(T, dp=False):
     x = T
     while not terminal(x):
         if (len(x.ch)) == 1:
@@ -119,7 +117,7 @@ def head(T):
             lArgs = argsFromString(x.ch[0].c)
             rArgs = argsFromString(x.ch[1].c)
             if 'l' not in lArgs:
-                if x.ch[0].c == 'N-b{N-aD}':
+                if x.ch[0].c == 'N-b{N-aD}' and not dp:
                     x = x.ch[1]
                 else:
                     x = x.ch[0]
@@ -309,13 +307,24 @@ def sumBetween(s, e, vMod, cMod):
                 sum += DLTcosts[i]
     return sum
     
-def getIdx(T):
+def getIdx(T, terms_cur=None):
+    if terms_cur is None:
+        terms_cur = terms
     while not terminal(T) and len(T.ch) == 1:
         T = T.ch[0]
     if not terminal(T):
         raise ValueError('Cannot get index of non-terminal tree')
-    return terms.index(T)    
-    
+    return terms_cur.index(T)    
+   
+def getTerms(T):
+    out = []
+    if terminal(T):
+        out.append(T)
+    else:
+        for x in T.ch:
+            out += getTerms(x)
+    return out
+
 def cWeight(T, vMod):
     isCoord = False
     if terminal(T):
@@ -340,9 +349,113 @@ def cWeight(T, vMod):
     for t in T.ch:
         weight += cWeight(t, vMod)
     return weight
-    
-def printToks(T):
-    global post, postpost
+  
+def followH(T, dp=False):
+    label = argsFromString(T.c)
+    out = None
+    if 'h' in label:
+        for x in T.ch:
+            out = followH(x, dp=dp)
+            if out is not None:
+                break
+    if out is None:
+        out = head(T, dp=dp)
+    return out
+
+def followG(T, dp=False):
+    label = argsFromString(T.c)
+    out = None
+    if 'g' in label:
+        for x in T.ch:
+            out = followH(x, dp=dp)
+            if out is not None:
+                break
+    if out is None:
+        out = head(T, dp=dp)
+    return out
+
+def followN(T, dp=False):
+    label = argsFromString(T.c)
+    out = None
+    if 'r' in label and 'N' in label['r']:
+        for x in T.ch:
+            out = followH(x, dp=dp)
+            if out is not None:
+                break
+    if out is None:
+        out = head(T, dp=dp)
+    return out
+
+def getFwdDeps(T, terms_cur, dp=True):
+    out = {}
+    out_gap = {}
+    if len(T.ch) == 2:
+        deps = []
+        gap_deps = []
+        left = T.ch[0]
+        right = T.ch[1]
+        label_cur = argsFromString(T.c)
+        label_left = argsFromString(left.c)
+        label_right = argsFromString(right.c)
+        if ('l' in label_left and 'A' in label_left['l']) \
+                or ('l' in label_right and 'A' in label_right['l']) \
+                or ('l' in label_left and 'M' in label_left['l']) \
+                or ('l' in label_right and 'C' in label_right['l']):
+            deps.append((head(left, dp=dp), head(right, dp=dp)))
+        elif (('C' in label_cur['head'] or 'V' in label_cur['head'])) and ('r' in label_cur and 'N' in label_cur['r']) \
+                and ('l' in label_cur and 'N' in label_cur['l']):
+            deps.append((first(left), followG(right, dp=dp)))
+            gap_deps.append((first(left), head(right, dp=dp)))
+        elif 'i' in label_left and 'N' in label_left['i']:
+            gap_deps.append((first(left), followG(right, dp=dp)))
+        elif 'l' in label_right and 'N' in label_right['l'] and 'h' in label_left:
+            gap_deps.append((followH(left), head(right, dp=dp)))
+        
+        for dep in deps:
+            if not isPunc(dep[0]) and not isPunc(dep[1]):
+                start = getIdx(dep[0], terms_cur)
+                end = getIdx(dep[1], terms_cur)
+                if end not in out:
+                    out[end] = start
+
+        for dep in gap_deps:
+            if not isPunc(dep[0]) and not isPunc(dep[1]):
+                start = getIdx(dep[0], terms_cur)
+                end = getIdx(dep[1], terms_cur)
+                if end not in out_gap:
+                    out_gap[end] = start
+
+    for x in T.ch:
+        deps, gap_deps = getFwdDeps(x, terms_cur)
+        
+        for dep in deps:
+            start = deps[dep]
+            end = dep
+            if end not in out:
+                out[end] = start
+
+        for dep in gap_deps:
+            start = gap_deps[dep]
+            end = dep
+            if end not in out_gap:
+                out_gap[end] = start
+
+    return out, out_gap
+
+def printToks(T, fwddeps=None, fwddeps_gap=None):
+    top = fwddeps is None
+    if top:
+        terms_fwd = getTerms(T)
+        fwddeps, fwddeps_gap = getFwdDeps(T, terms_fwd)
+        # if args.DEBUG:
+        if args.DEBUG:
+            print('=====')
+            print('Forward dependencies (for storage cost)')
+            for x in fwddeps:
+                print('%s -- %s' % (terms_fwd[fwddeps[x]].ch[0].c, terms_fwd[x].ch[0].c))
+            for x in fwddeps_gap:
+                print('%s -- %s' % (terms_fwd[fwddeps_gap[x]].ch[0].c, terms_fwd[x].ch[0].c))
+            print('=====')
     if terminal(T):
         terms.append(T)
         discCost = 0
@@ -384,23 +497,33 @@ def printToks(T):
                 cvCosts.append(cWeight(complete[-1], True))
                 coords.pop()
                 ends.pop()
+
+        dlts = 0
+        idx = getIdx(T)
+        for e in fwddeps:
+            if idx >= fwddeps[e] and idx < e:
+                dlts += 1
+        for e in fwddeps_gap:
+            if idx >= fwddeps_gap[e] and idx < e:
+                dlts += 1
+
         print T.ch[0].c + ' ' + str(discCost) + ' ' + str(discCostV) + ' ' \
               + str(dlt) + ' ' + str(dltc) + ' ' + str(dltcv) + ' ' + str(dltv) + ' ' \
 	      + str(dltm) + ' ' + str(dltcm) + ' ' + str(dltcvm) + ' ' + str(dltvm) + ' ' \
               + str(getPOS(T)) + ' ' + str(depdirSyn) + ' ' + str(depdirSem) + ' ' + str(depdirSynM) + ' ' + str(depdirSemM) + ' ' \
-              + str(int(isPhrasePunc(T.ch[0])))
+              + str(int(isPhrasePunc(T.ch[0]))) + ' ' + str(dlts)
     else:
         if len(T.ch[0].c) > 1 and T.ch[0].c.endswith('lC') and not '-c' in T.c:
             coords.append(T)
             ends.append(last(T))
         for t in T.ch:
-            printToks(t)
+            printToks(t, fwddeps=fwddeps, fwddeps_gap=fwddeps_gap)
 
 print('word dltdc dltdcv ' \
     + 'dlt dltc dltcv dltv ' \
     + 'dltm dltcm dltcvm dltvm ' \
     + 'pos depdirSyn depdirSem depdirSynM depdirSemM' + ' ' \
-    + 'punc')
+    + 'punc dlts')
 
 for line in sys.stdin:
     if (line.strip() !='') and (line.strip()[0] != '%'):
@@ -412,8 +535,6 @@ for line in sys.stdin:
         complete = []
         cCosts = []
         cvCosts = []
-        post = [0, 0, 0, 0, 0, 0, 0, 0]
-        postpost = [0, 0, 0, 0, 0, 0, 0, 0]
         T = tree.Tree()
         T.read(line)
         printToks(T)
