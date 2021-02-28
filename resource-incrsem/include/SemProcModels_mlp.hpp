@@ -733,11 +733,15 @@ class WModel {
     }
 
     string removeUnkChar( string s ) const {
-      for ( unsigned i = 0; i < s.length(); ++i ){
+      unsigned i = 0;
+      while ( i < s.length() ){
         string str(1, s[i]);
+        cerr << "Processing character " << s[i] << "." << endl;
         if ( mci.find(str) == mci.end() ) {
           cerr << "Unknown character " << s[i] << " found in " << s << "." << endl;
           s.erase(std::remove(s.begin(), s.end(), s[i]), s.end());
+        } else {
+          i++;
         }
       }
       return s;
@@ -985,7 +989,7 @@ class WModel {
         list<pair<pair<string,string>,string>> lxmp = applyMorphRules(w_t);
         // loop over <<lemma, primcat>, rule>
         for ( const auto& xmp : lxmp ) {
-        //cerr << "generated word " << w_t << " from lemma " << xmp.first.first << ", primcat " << xmp.first.second << ", rule " << xmp.second << endl;
+        cerr << "generated word " << w_t << " from lemma " << xmp.first.first << ", primcat " << xmp.first.second << ", rule " << xmp.second << endl;
           DelimitedList<psLBrack,WPredictor,psSpace,psRBrack> lwp = getWPredictorList(xmp.first);
           rowvec xll = calcLemmaLikelihoods(xmp.first, xpmap);
           mat mllall = calcRuleLikelihoods(xmp.first, mpmap);
