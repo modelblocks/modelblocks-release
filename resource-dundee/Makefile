@@ -202,7 +202,10 @@ genmodel/dundee.linetoks: $$(foreach sect,$$(DUNDEESECTS),genmodel/dundee$$(sect
 #
 ################################################################################
 
-%dundee.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees %dundee.linetoks
+%dundee.delim.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees %dundee.linetoks
+	python $^ | awk 'NF' > $@
+
+genmodel/dundee.delim.linetoks: $(LTREES-SCRIPTS)/linetrees2linetoks.py genmodel/dundee.delim.gold.linetrees
 	python $^ > $@
 
 %dundee.edit.editabletrees: $$(dir %)dundee.gold.linetrees bin/indent
