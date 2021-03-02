@@ -129,14 +129,14 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 
 ## generic predicted errors file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
 .PRECIOUS: %_predicted.errors
-%_predicted.errors:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
-                     genmodel/$$(notdir $$(basename $$*)).fitmodel  \
-           	     genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.prdmeasures \
-           	     genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures  |  bin  genmodel
-	$^  >  $@  2>  $@.log
+%_predicted.errors %_prd.resmeasures %_obs.resmeasures:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
+                                                         genmodel/$$(notdir $$(basename $$*)).fitmodel  \
+                                                         genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.prdmeasures \
+                                                         genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures  |  bin  genmodel
+	$^  >  $*_predicted.errors  2>  $*_predicted.errors.log
 
-.PRECIOUS: %_predicted.errors
-%_predicted.errors:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))-dependonallparts  \
+#.PRECIOUS: %_predicted.errors
+##%_predicted.errors:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))-dependonallparts  \
                      genmodel/$$(notdir $$(basename $$*)).fitmodel  \
                      genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.prdmeasures \
                      genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures \
@@ -146,7 +146,11 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
                      genmodel/$$(notdir $$(basename $$(basename $$*))).fit_part.resmeasures \
                      genmodel/$$(notdir $$(basename $$(basename $$*))).expl_part.resmeasures \
                      genmodel/$$(notdir $$(basename $$(basename $$*))).held_part.resmeasures  |  bin  genmodel
-	$^  >  $@  2>  $@.log
+#%_predicted.errors:  bin/predict-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))-dependonallparts  \
+                     genmodel/$$(notdir $$(basename $$*)).fitmodel  \
+                     genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.prdmeasures \
+                     genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures  |  bin  genmodel
+#	$^  >  $@  2>  $@.log
 
 
 # ## generic errors file: <data>.<baseline>_(<predr>_)*<regrmodel>.errors
