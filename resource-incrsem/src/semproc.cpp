@@ -294,6 +294,7 @@ int main ( int nArgs, char* argv[] ) {
   // Pointers to 
   auto iartNextToProc = corpus.begin();
   auto iartNextToDump = corpus.begin();
+  uint numartNextToProc = 0;
 #else
   uint linenum = 0;
   // For each line in stdin...
@@ -302,7 +303,7 @@ int main ( int nArgs, char* argv[] ) {
 #endif
 
   // loop over threads (each thread gets an article)
-  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&corpus,&iartNextToProc,&iartNextToDump,/*&articleMLSs,&articles,&linenum,*/&mutexMLSList,numThreads,&matE,&funcO,&modN,&modF,&modP,&modW,&modJ,&modA,&modB] (uint numt) {
+  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&corpus,&iartNextToProc,&iartNextToDump,&numartNextToProc,/*&articleMLSs,&articles,&linenum,*/&mutexMLSList,numThreads,&matE,&funcO,&modN,&modF,&modP,&modW,&modJ,&modA,&modB] (uint numt) {
 
     auto tpLastReport = chrono::high_resolution_clock::now();  // clock for thread heartbeats
     // WModel-related maps for each thread
@@ -315,9 +316,11 @@ int main ( int nArgs, char* argv[] ) {
 
 #ifdef SERIAL_IO
       decltype(corpus)::iterator iart;
+      uint numart;
       { lock_guard<mutex> guard( mutexMLSList );
         if( iartNextToProc == corpus.end() ) break;
         iart = iartNextToProc++;
+        numart = numartNextToProc++;
       }
       const auto& sents = iart->first;
       auto&       MLSs  = iart->second;
@@ -403,6 +406,8 @@ int main ( int nArgs, char* argv[] ) {
             //if (VERBOSE > 1) cout << "entering denom loop... " << &pbeAnt->getBack() << endl;
             //denominator loop over candidate antecedents
             for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { 
+              //TODO ignore incorrect candidate antecedents if oracle flag is on
+              //TODO prepare correct n decisions from nmlpdecpars, read in as map art->sent->word->correctoffset. somewhere outside of here.
               if (pbeAnt->getHidd().getPrtrm().getCat() == cFail) { continue; }
               //if (VERBOSE > 1) cout << "entered denom loop... " << &pbeAnt->getBack() << endl;
               if ( pbeAnt->getHidd().getI() != 0 ) {
@@ -435,6 +440,7 @@ int main ( int nArgs, char* argv[] ) {
             //if (VERBOSE > 1) cout << "entering numerator loop..." << endl;
             //numerator loop over candidate antecedents. specific choice.
             for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers.
+              //TODO ignore incorrect candidates if oracle flag is on
               if (pbeAnt->getHidd().getPrtrm().getCat() == cFail) { 
                 if (VERBOSE>1) {
                   cout << "skipping cFail antecedent at idx: " << tAnt << endl;
