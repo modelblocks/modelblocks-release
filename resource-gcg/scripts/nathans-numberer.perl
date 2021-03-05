@@ -1,3 +1,6 @@
+# not a hugely robust piece of code. Relies on lines starting with open paren 
+# (produced by prettyprinter) to detect sentence boundary.
+# Will silently do The Wrong Thing on a text longer than 99 sentences. 
 my ($sentence, $word) = (0,1);
 
 while (<>) {
