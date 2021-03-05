@@ -57,6 +57,7 @@ bool ABLATE_UNARY = false;
 bool NO_ENTITY_BLOCKING = false;
 bool NO_ANTUNK = false;
 bool REDUCED_PRTRM_CONTEXTS = false;
+bool ORACLE_COREF = false;
 #define SERIAL_IO
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -165,6 +166,39 @@ W getHistWord ( const BeamElement<HiddState>* antPtr, const W wEmpty, bool NO_AN
   return histword;
 }
 
+map<int,map<int,map<int,int>>> readOracleCoref ( char * filename ) {
+  std::ifstream iff;
+  iff.open(filename);
+  if ( !iff ) { cerr << "Unable to open oracle coreference offset file!" << endl; throw 44; }
+  //4 tab-delim input file fields: docid sentid wordid correctoffset
+  map<int,map<int,map<int,int>>> oracle_dswo;
+  int docid, sentid, wordid, correctoffset;
+  string input;
+  while ( true )
+  {
+    getline(iff,input);
+    if (!iff) break;
+    istringstream buffer(input);
+    buffer >> docid >> sentid >> wordid >> correctoffset;
+    if ( !buffer || !buffer.eof()) { break; }
+    // do stuff with vars
+    // see if docid exists in map and create if not
+    auto ditem = oracle_dswo.find(docid);
+    if (ditem == oracle_dswo.end()) {
+      map<int,map<int,int>> temp;
+      oracle_dswo.try_emplace(docid, temp);
+    }
+    // see if sentid exists in map and create if not
+    auto sitem = oracle_dswo.at(docid).find(sentid);
+    if ( sitem == oracle_dswo.at(docid).end() ) {
+      map<int,int> temp;
+      oracle_dswo.at(docid).try_emplace(sentid, temp);
+    }
+    oracle_dswo.at(docid).at(sentid).try_emplace(wordid, correctoffset);
+  }
+  iff.close();
+  return oracle_dswo;
+}
   
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -201,6 +235,11 @@ int main ( int nArgs, char* argv[] ) {
       else if( '-'==argv[a][0] && 'n'==argv[a][1] && 'b'==argv[a][2]) NO_ENTITY_BLOCKING = true;
       else if( '-'==argv[a][0] && 'n'==argv[a][1] && 'a'==argv[a][2]) NO_ANTUNK = true;
       else if( '-'==argv[a][0] && 'r'==argv[a][1] && 'p'==argv[a][2]) REDUCED_PRTRM_CONTEXTS = true;
+      else if( '-'==argv[a][0] && 'o'==argv[a][1] ) {
+        ORACLE_COREF = true;
+        map<int,map<int,map<int,int>>> oracle_dswo;
+        oracle_dswo = readOracleCoref(argv[a]+2);
+        }
       //else if (0==strncmp(argv[a][strlen(argv[a])-3]),"ini",3) ) { //must be at end of options before model file since negative substrings for small args will fail
       //else if ('i'==argv[a][strlen(argv[a])-3] && 'n'==argv[a][strlen(argv[a])-2] && 'i'==argv[a][strlen(argv[a])-1]  ) { //must be at end of options before model file since small args will fail indexing
        // std::regex nsemr("NSEM_SIZE=([0-9]+)\n");
