@@ -60,7 +60,12 @@ L getLink( L l ) {
     std::smatch sm;
     std::regex re( "(.*)-n([0-9]+).*" ); //get consecutive numbers after a "-n"
     if( std::regex_search( l, sm, re ) && sm.size() > 2 ) { 
-      return( sm.str(2) ); 
+      //return( sm.str(2) );  //string type
+      if (sm.str(2)[0] == '0') {
+        //cerr << "found zero-paded sent annot: " << sm.str(2) << " . slicing to return: " << sm.str(2).substr(1) << endl;
+        return sm.str(2).substr(1); //one to end, slicing off initial '0'
+      }
+      else { return sm.str(2); }
     }
   }
   return( "" );
