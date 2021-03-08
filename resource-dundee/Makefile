@@ -172,7 +172,7 @@ genmodel/dundee.%.evmeasures: $(RT-SCRIPTS)/concat_tables.py $(foreach subj, $(D
 #
 ################################################################################    
 
-dundee%.linetoks: $$(DEP-DUNDEE) $(DUNDEEDIR)/tx$$*wrdp.dat $(DUNDEE-SCRIPTS)/builddundeecorpus.py \
+genmodel/dundee%.linetoks: $$(DEP-DUNDEE) $(DUNDEEDIR)/tx$$*wrdp.dat $(DUNDEE-SCRIPTS)/builddundeecorpus.py \
 $(GENERAL-SCRIPTS)/convert_latin-1.py $(CONFIGDIR)/user-dundee-directory.txt
 	cat $(word 1, $^) | python $(word 2,$^) > $@.raw
 	cat $@.raw | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" | python3 $(word 3,$^) | \
