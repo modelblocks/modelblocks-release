@@ -163,7 +163,7 @@ genmodel/dundee.%.evmeasures: $(RT-SCRIPTS)/concat_tables.py $(foreach subj, $(D
 #	python $(word 3, $^) fdur fdurGP fileid docid) | python $(word 5, $^) | python $(word 6, $^) > $@
 
 %dundee.evmeasures: $$(DEP-DUNDEE) $(DUNDEE-SCRIPTS)/process_dundee.py $(DUNDEEDIR) %dundee.lineitems
-	python $^ > $@
+	python3 $^ > $@
 
 
 ################################################################################
@@ -174,7 +174,7 @@ genmodel/dundee.%.evmeasures: $(RT-SCRIPTS)/concat_tables.py $(foreach subj, $(D
 
 genmodel/dundee%.linetoks: $$(DEP-DUNDEE) $(DUNDEEDIR)/tx$$*wrdp.dat $(DUNDEE-SCRIPTS)/builddundeecorpus.py \
 $(GENERAL-SCRIPTS)/convert_latin-1.py $(CONFIGDIR)/user-dundee-directory.txt
-	cat $(word 1, $^) | python $(word 2,$^) > $@.raw
+	cat $(word 1, $^) | python2 $(word 2,$^) -e latin-1 > $@.raw
 	cat $@.raw | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" | python3 $(word 3,$^) | \
 	sed 's/garbage\/sentimental/garbage \/ sentimental/g' \
 	| sed 's/Oxford-educated/Oxford- educated/g' \
@@ -194,7 +194,7 @@ genmodel/dundee.linetoks: $$(foreach sect,$$(DUNDEESECTS),genmodel/dundee$$(sect
 	cat $^ > $@
 
 %dundee.lineitems: %dundee.linetoks $(RT-SCRIPTS)/toks2sents.py %dundee.textdata
-	cat <(echo word) <(cat $(word 3, $^) | awk '!/^WORD/') | python $(word 2, $^) $< > $@
+	cat <(echo word) <(cat $(word 3, $^) | awk '!/^WORD/')  |  python2 $(word 2, $^) $< -e latin-1  > $@
 
 ################################################################################
 #
