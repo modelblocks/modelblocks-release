@@ -30,8 +30,8 @@ config['data']['X_train'] = X_train
 config['data']['X_dev'] = X_dev
 config['data']['X_test'] = X_test
 config['data']['y_train'] = y_path
-config['data']['y_dev'] = y_path.replace('fit_part','expl_part')
-config['data']['y_test'] = y_path.replace('fit_part', 'held_part')
+config['data']['y_dev'] = y_path #.replace('fit_part','expl_part')
+config['data']['y_test'] = y_path #.replace('fit_part', 'held_part')
 
 impulse_to_irf = {}
 if 'impulse_to_irf' in config:

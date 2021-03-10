@@ -13,12 +13,12 @@ config = configparser.ConfigParser()
 config.optionxform = str
 config.readfp(sys.stdin)
 
-config['data']['X_train'] = X_path
-config['data']['X_dev'] = X_path
-config['data']['X_test'] = X_path
-config['data']['y_train'] = y_path + '.train'
-config['data']['y_dev'] = y_path + '.dev'
-config['data']['y_test'] = y_path + '.test'
+#config['data']['X_train'] = X_path
+#config['data']['X_dev'] = X_path
+#config['data']['X_test'] = X_path
+#config['data']['y_train'] = y_path + '.train'
+#config['data']['y_dev'] = y_path + '.dev'
+#config['data']['y_test'] = y_path + '.test'
 
 impulse_to_irf = {}
 if 'impulse_to_irf' in config:
