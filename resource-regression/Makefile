@@ -102,9 +102,10 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 	cp $(abspath $<) $(abspath $@)
 #	ln -sf $(abspath $<) $(abspath $@)
 
-## apply censorship (e.g. remove end-of-sentence responses) (prdmeasures unaffected)
+## apply censorship (e.g. remove end-of-sentence responses) (prdmeasures theoretically unaffected, but if it contains responses, needs censoring too)
 %.prdmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/censor.py
-	cp $(abspath $(word 2,$^)) $(abspath $@)
+	cat $(word 2,$^)  |  python3 $(word 3,$^) -c $(word 1,$^)  >  $@
+#	cp $(abspath $(word 2,$^)) $(abspath $@)
 #	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
 %.resmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/censor.py
 	cat $(word 2,$^)  |  python3 $(word 3,$^) -c $(word 1,$^)  >  $@
