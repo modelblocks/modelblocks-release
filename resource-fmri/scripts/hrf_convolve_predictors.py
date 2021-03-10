@@ -40,7 +40,8 @@ if __name__ == '__main__':
         max_response_time = int(np.ceil(df_cur.time.max()))
         if max_response_time % 2 != 0:
            max_response_time += 1
-        response_times = np.arange(0, max_response_time+args.step, args.step) + args.start
+        tr = np.arange(0, max_response_time // args.step)
+        response_times = tr * args.step + args.start
         D = response_times[..., None] - impulse_times[None, ...]
         G_mask = D >= 0
         G = hrf(D)
@@ -50,6 +51,7 @@ if __name__ == '__main__':
         X_conv = np.dot(G, X)
         X_conv = pd.DataFrame(X_conv, columns=cols)
         X_conv['time'] = response_times
+        X_conv['tr'] = tr
         for col, val in zip(args.grouping_columns, series_names[i]):
             X_conv[col] = val
         out.append(X_conv)
