@@ -4,6 +4,7 @@ from numpy import nan
 import pandas as pd
 import argparse
 
+#sys.stdin.reconfigure(encoding='latin-1',errors='replace') #'utf-8',errors='replace') #'ignore')
 
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser('''
@@ -37,7 +38,7 @@ if __name__ == '__main__':
     start_ix = []
     for p in sorted([x for x in os.listdir(args.dundee_dir) if x.endswith('wrdp.dat')]):
         start_ix.append(k)
-        with open(args.dundee_dir + '/' + p, 'r') as f:
+        with open(args.dundee_dir + '/' + p, 'r', encoding='latin-1') as f:
             for i, line in enumerate(f):
                 line = line.replace('(', '-LRB-').replace(')', '-RRB-')
                 fields = line.strip().split()
@@ -103,7 +104,7 @@ if __name__ == '__main__':
     # Loop through fixations in order
     for i, p in enumerate(sorted([x for x in os.listdir(args.dundee_dir) if x.endswith('ma1p.dat')])):
         out_file = []
-        with open(args.dundee_dir + '/' + p, 'r') as f:
+        with open(args.dundee_dir + '/' + p, 'r', encoding='latin-1') as f:
             subject = p[:2]
             doc_id = int(p[2:4]) - 1
             word_id_prev = -1
@@ -319,3 +320,4 @@ if __name__ == '__main__':
     ]
 
     out[toprint].to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN')
+

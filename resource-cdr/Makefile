@@ -86,10 +86,10 @@ export PYTHONPATH
 scripts/%cdrform: $(CDR-SCRIPTS)/$$*cdrform $(CDR-SCRIPTS)/get_prereqs_from_baseform.py $$(shell cat $(CDR-SCRIPTS)/%cdrform | python $(CDR-SCRIPTS)/get_prereqs_from_baseform.py)  |  scripts
 	cp $< $@
 
-bin/regress-cdr: $$(DEP-CDR) $(CDR-SCRIPTS)/regress-cdr.sh
+%/regress-cdr: $$(DEP-CDR) $(CDR-SCRIPTS)/regress-cdr.sh | %
 	cp $< $@
 
-bin/predict-cdr: $$(DEP-CDR) $(CDR-SCRIPTS)/predict-cdr.sh
+%/predict-cdr: $$(DEP-CDR) $(CDR-SCRIPTS)/predict-cdr.sh | %
 	cp $< $@
 
 .PRECIOUS: %.t.core.evmeasures
