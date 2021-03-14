@@ -216,6 +216,10 @@ endef
 %.fromtoktrees.annot-sem:  %.toktrees  $(GCG-SCRIPTS)/dedent.perl  $(GCG-SCRIPTS)/bare-ends.perl  $(GCG-SCRIPTS)/yoink-word-rightward.perl  $(GCG-SCRIPTS)/nathans-numberer.perl
 	cat $(word 1,$^)  |  perl $(word 2,$^) | perl $(word 3,$^) | perl $(word 4,$^) | perl $(word 5,$^) >  $@
 
+#### auto lengthener repair...
+%.lengthrepaired.linetrees:  %.annot-syn  $(LTREES-SCRIPTS)/editabletrees2linetrees.pl  $(GCG-SCRIPTS)/fix_lengthener_errors.py
+	cat $<  |  perl $(word 2,$^)  |  python3 $(word 3,$^)  >  $@
+
 #### DEPRECATED: obtain sentence-aligned space-delimited variable (semantic) dependencies
 .PRECIOUS: %.protographs
 %.protographs:  %.linetrees  $(GCG-SCRIPTS)/trees2protographs.py

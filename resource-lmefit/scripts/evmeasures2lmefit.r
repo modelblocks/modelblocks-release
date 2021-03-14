@@ -19,7 +19,6 @@ options(width=200,digits=7)
 # Import packages
 # Relative path code from Suppressingfire on StackExchange
 initial.options <- commandArgs(trailingOnly = FALSE)
-print(initial.options)
 file.arg.name <- "--file="
 script.name <- sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)])
 script.basename <- dirname(script.name)
