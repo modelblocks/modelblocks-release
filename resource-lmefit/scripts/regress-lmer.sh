@@ -60,7 +60,8 @@ outdir="${base_filename/_part\./\.}"
 outfile="${base_filename/_part\./\.}"
 outfile+="_lmer.fitmodel.rdata";
 corpusname=$(cut -d'.' -f1 <<< "$(basename $prdmeasures)");
-tblfile="merged.tbl"
+#tblfile="merged.tbl"
+tblfile="merged.$(date +"%Y_%m_%d_%I_%M_%p").tbl"
 python ../resource-rt/scripts/merge_tables.py $prdmeasures $resmeasures subject docid sentid sentpos word > $tblfile
 python ../resource-rt/scripts/check_preds.py $tblfile $bform $preds_add_STR $preds_ablate_STR
 ../resource-lmefit/scripts/evmeasures2lmefit.r <(cat $tblfile) $outfile -b $bform $preds_add_STR $preds_ablate_STR -c $corpusname -e
