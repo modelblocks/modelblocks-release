@@ -20,12 +20,9 @@ ShiftedGammaShapeGT1.s(wlen)-Terminal.s(wlen) = Word length
 ShiftedGammaShapeGT1.s(unigram)-Terminal.s(unigram) = Unigram logprob
 ShiftedGammaShapeGT1.s(fwprob5surp)-Terminal.s(fwprob5surp) = 5-gram surprisal
 
-[impulse_to_irf]
-default = ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2, ran=T)
-
 [newpred_rangf]
 rangf = subject
 
 [model_CDR_BASELINE]
-formula = log(fdur) ~ s(trial) + s(sentpos) + C(rate + z(wlen) + z(unigram) + z(fwprob5surp), ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2)) + (s(trial) + s(sentpos) + C(rate + z(wlen) + z(unigram) + z(fwprob5surp), ShiftedGammaShapeGT1(ran=T)) | subject)
+formula = log(fdur) ~ s(trial) + s(sentpos) + C(rate + z(wlen) + z(unigramsurp) + z(fwprob5surp), ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2)) + (s(trial) + s(sentpos) + C(rate + z(wlen) + z(unigramsurp) + z(fwprob5surp), ShiftedGammaShapeGT1(ran=T)) | subject)
 
