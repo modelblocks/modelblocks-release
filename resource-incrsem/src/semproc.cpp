@@ -343,6 +343,17 @@ int main ( int nArgs, char* argv[] ) {
         beams[0].tryAdd( lbeWholeArticle.back().getHidd(), lbeWholeArticle.back().getProbBack() );
         //beams[0].tryAdd( HiddState(), ProbBack<HiddState>() );
 
+        // initialize cell, hidden states at the beginning of each sentence
+        vec f_c_0 = arma::zeros(modF.F_H_SIZE);
+        vec f_h_0 = arma::zeros(modF.F_H_SIZE);
+        vec f_c_1 = arma::zeros(modF.F_H_SIZE);
+        vec f_h_1 = arma::zeros(modF.F_H_SIZE);
+
+        vec j_c_0 = arma::zeros(modJ.J_H_SIZE);
+        vec j_h_0 = arma::zeros(modJ.J_H_SIZE);
+        vec j_c_1 = arma::zeros(modJ.J_H_SIZE);
+        vec j_h_1 = arma::zeros(modJ.J_H_SIZE);
+
         // For each word...
         for ( auto& w_t : lwSent ) {
 //          if ( numThreads == 1 ) cerr << " " << w_t;
@@ -354,6 +365,10 @@ int main ( int nArgs, char* argv[] ) {
           WModel::WPPMap mapWPP;
           modW.calcPredictorLikelihoods(w_t, mapWWPP, mapXP, mapMP, mapWPP);
           mapWWPP.try_emplace(w_t, mapWPP);
+
+          modF.runWordLSTM(w_t, f_c_0, f_h_0, f_c_1, f_h_1);
+          modJ.runWordLSTM(w_t, j_c_0, j_h_0, j_c_1, j_h_1);
+
 //          cerr << "========== Processing word ========== " << w_t << endl;
 //          for ( const auto &it: modW.mwpi) {
 //            cerr << w_t << " " << it.second << " " << it.first << " : " << seqprobs(it.second) << endl;
@@ -416,7 +431,7 @@ int main ( int nArgs, char* argv[] ) {
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
                 FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );
 //                if( VERBOSE>1 ) cout << "     f predictors: " << pair<const FModel&,const FPredictorVec&>( modF, lfpredictors ) << endl;
-                arma::vec fresponses = modF.calcResponses( lfpredictors );
+                arma::vec fresponses = modF.calcResponses( lfpredictors, f_h_1 );
 
                 //get most recent observed word for which k of fek F decision was 'unk'.
                 const BeamElement<HiddState>* antPtr = pbeAnt;
@@ -478,7 +493,7 @@ int main ( int nArgs, char* argv[] ) {
 
                         JPredictorVec ljpredictors( modJ, f, e_p_t, aLchild, qTermPhase );  // q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
 //                        if( VERBOSE>1 ) cout << "        j predictors: " << pair<const JModel&,const JPredictorVec&>( modJ, ljpredictors ) << endl;
-                        arma::vec jresponses = modJ.calcResponses( ljpredictors );
+                        arma::vec jresponses = modJ.calcResponses( ljpredictors, j_h_1 );
 
                         // For each possible no-join or join decision, and operator decisions...
                         for( unsigned int jresponse=0; jresponse<jresponses.size(); jresponse++ ) {  //JResponse jresponse; jresponse<JResponse::getDomain().getSize(); ++jresponse ) {
