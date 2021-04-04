@@ -23,6 +23,8 @@
 
 const uint SEM_SIZE = 20;
 const uint SYN_SIZE = 20;
+const uint BOP_SIZE = 20;
+const uint BSYN_SIZE = 20;
 
 // XModel E, K, P, Char, RNN hidden sizes
 const uint X_E_SIZE = 20;
@@ -1111,6 +1113,175 @@ class JModel {
       double jnorm = arma::accu(jscores);
       return jscores/jnorm;
     }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+class BPredictorVec : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX> {
+ public:
+  BPredictorVec ( ) { }
+  BPredictorVec ( D d, F f, J j, EVar e, O oL, O oR, CVar cP, CVar cL ) :
+    DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( d, f, j, e, oL, oR, cP, cL ) { }
+  BPredictorVec ( F f, J j, EVar eF, EVar eJ, O opL, O opR, CVar cParent, const LeftChildSign& aLchild, const StoreState& ss ) :
+    DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()-j, f, j, eJ, opL, opR, cParent, aLchild.getCat() ) { }
+};
+
+class BModel {
+
+  typedef Delimited<CVar> B;
+  typedef DelimitedCol<psLBrack, double, psComma, psRBrack> DenseVec;
+
+  private:
+    map<EVar,vec> bmev;
+    map<O,vec> bmolv;
+    map<O,vec> bmorv;
+    map<CVar,vec> bmclv;
+    map<CVar,vec> bmcav;
+
+    map<B,unsigned int> bmbi;
+    map<unsigned int,B> bmib;
+
+    DelimitedVector<psX, double, psComma, psX> bwf;  // weights for B model
+    DelimitedVector<psX, double, psComma, psX> bws;
+    DelimitedVector<psX, double, psComma, psX> bbf;  // biases for B model
+    DelimitedVector<psX, double, psComma, psX> bbs;
+    mat bwfm;
+    mat bwsm;
+    vec bbfv;
+    vec bbsv;
+
+  public:
+    BModel ( ) { }
+    BModel ( istream& is ) {
+      while ( is.peek()=='B' ) {
+        Delimited<char> c;
+        is >> "B " >> c >> " ";
+        if (c == 'F') is >> bwf >> "\n";
+        if (c == 'f') is >> bbf >> "\n";
+        if (c == 'S') is >> bws >> "\n";
+        if (c == 's') is >> bbs >> "\n";
+      }
+      while ( is.peek()=='E' ) {
+        Delimited<char> c;
+        Delimited<EVar> ev;
+        DenseVec dv = DenseVec(BOP_SIZE);
+        is >> "E " >> c >> " " >> ev >> " " >> dv >> "\n";
+        bmev.try_emplace(ev, vec(dv));
+      }
+      while ( is.peek()=='O' ) {
+        Delimited<char> c;
+        Delimited<O> o;
+        DenseVec dv = DenseVec(BOP_SIZE);
+        is >> "O " >> c >> " " >> o >> " " >> dv >> "\n";
+        if (c == '1') bmolv.try_emplace(o, vec(dv));
+        else if (c == '2') bmorv.try_emplace(o, vec(dv));
+      }
+      while ( is.peek()=='C' ) {
+        Delimited<char> c;
+        Delimited<CVar> cv;
+        DenseVec dv = DenseVec(BSYN_SIZE);
+        is >> "C " >> c >> " " >> cv >> " " >> dv >> "\n";
+        if (c == 'L') bmclv.try_emplace(cv, vec(dv));
+        else if (c == 'A') bmcav.try_emplace(cv, vec(dv));
+      }
+      while ( is.peek()=='b' ) {
+        unsigned int i;
+        is >> "b " >> i >> " ";
+        is >> bmib[i] >> "\n";
+        bmbi[bmib[i]] = i;
+      }
+      bwfm = bwf;
+      bwsm = bws;
+      bbfv = bbf;
+      bbsv = bbs;
+      bwfm.reshape(bwf.size()/(7 + 2 + 3*BOP_SIZE + 2 * BSYN_SIZE), 7 + 2 + 3*BOP_SIZE + 2 * BSYN_SIZE);
+      bwsm.reshape(bws.size()/(bwf.size()/(7 + 2 + 3*BOP_SIZE + 2 * BSYN_SIZE)), (bwf.size()/(7 + 2 + 3*BOP_SIZE + 2 * BSYN_SIZE)));
+      }
+
+      const uint getResponseIndex( B b ) const {
+        auto it = bmbi.find( b );
+        assert( it != bmbi.end() );
+        return it->second;
+      }
+
+      const B& getB( unsigned int i ) const {
+        auto it = bmib.find( i );
+        assert( it != bmib.end() );
+        return it->second;
+      }
+
+      const vec getExEmbed( EVar i ) const {
+        auto it = bmev.find( i );
+        assert( it != bmev.end() );
+        return it->second;
+      }
+
+      const vec getOpEmbed( O i, Delimited<char> c ) const {
+        if (c == '1') {
+          auto it = bmolv.find( i );
+          assert( it != bmolv.end() );
+          return it->second;
+        }
+        else if (c == '2') {
+          auto it = bmorv.find( i );
+          assert( it != bmorv.end() );
+          return it->second;
+        }
+      }
+
+      const vec getCatEmbed( CVar i, Delimited<char> c ) const {
+        if (c == 'L') {
+          auto it = bmclv.find( i );
+          assert( it != bmclv.end() );
+          return it->second;
+        }
+        else if (c == 'A') {
+          auto it = bmcav.find( i );
+          assert( it != bmcav.end() );
+          return it->second;
+        }
+      }
+
+      vec calcResponses( BPredictorVec& bpredictor ) const {
+        uint d = bpredictor.first();
+        uint f = bpredictor.second();
+        uint j = bpredictor.third();
+        EVar e = bpredictor.fourth();
+        O o1 = bpredictor.fifth();
+        O o2 = bpredictor.sixth();
+        CVar ca = bpredictor.seventh();
+        CVar cl = bpredictor.eighth();
+
+        // Add top-level rule...
+        // (*this)[ BPredictorVec(1,0,1,EVar::eNil,'S','1',CVar("-"),CVar("S")) ][ B("T") ] = 1.0;
+        if ((d == 1) & (f == 0) & (j == 1) & (e == EVar::eNil) & (o1 == 'S') & (o2 == '1') & (ca == CVar("-")) & (cl == CVar("S"))) {
+          cerr << "Applying top-level rule..." << endl;
+          vec bscores = arma::zeros(bmbi.size());
+          bscores(getResponseIndex(B("T"))) = 1;
+          return bscores;
+        }
+        else {
+          // return distribution over B indices
+          // vectorize predictors
+          const vec& exEmb = getExEmbed(e);
+          const vec& olEmb = getOpEmbed(o1, '1');
+          const vec& orEmb = getOpEmbed(o2, '2');
+          const vec& catAEmb = getCatEmbed(ca, 'A');
+          const vec& catLEmb = getCatEmbed(cl, 'L');
+
+          // populate predictor vector
+          arma::vec blogresponses = join_cols(join_cols(zeros(2), exEmb, olEmb, orEmb), catLEmb, catAEmb, zeros(7));
+          blogresponses(0) = f;
+          blogresponses(1) = j;
+          blogresponses(2 + 3*BOP_SIZE + 2*BSYN_SIZE + d) = 1;
+
+          // implementation of MLP
+          vec blogscores = bwsm * relu(bwfm*blogresponses + bbfv) + bbsv;
+          vec bscores = exp(blogscores);
+          double bnorm = accu(bscores);
+          return bscores/bnorm;
+        }
+      }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

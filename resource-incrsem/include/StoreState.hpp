@@ -727,7 +727,6 @@ class HiddState : public DelimitedOct<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmp
 
 typedef Delimited<CVar> P;
 typedef Delimited<CVar> A;
-typedef Delimited<CVar> B;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -842,30 +841,3 @@ class AModel : public map<APredictorVec,map<A,double>> {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-
-class BPredictorVec : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX> {
- public:
-  BPredictorVec ( ) { }
-  BPredictorVec ( D d, F f, J j, EVar e, O oL, O oR, CVar cP, CVar cL ) :
-    DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( d, f, j, e, oL, oR, cP, cL ) { }
-  BPredictorVec ( F f, J j, EVar eF, EVar eJ, O opL, O opR, CVar cParent, const LeftChildSign& aLchild, const StoreState& ss ) :
-    DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()-j, f, j, eJ, opL, opR, cParent, aLchild.getCat() ) { }
-};
-
-class BModel : public map<BPredictorVec,map<B,double>> {
- public:
-  BModel ( ) { }
-  BModel ( istream& is ) {
-    // Add top-level rule...
-    (*this)[ BPredictorVec(1,0,1,EVar::eNil,'S','1',CVar("-"),CVar("S")) ][ B("T") ] = 1.0;
-    // Process B lines in stream...
-    while( is.peek()=='B' ) {
-      BPredictorVec bpv;  B b;
-      is >> "B " >> bpv >> " : " >> b >> " = ";
-      is >> (*this)[bpv][b] >> "\n"; 
-    }
-  }
-};
-
-////////////////////////////////////////////////////////////////////////////////
-

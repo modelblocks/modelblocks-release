@@ -503,25 +503,36 @@ int main ( int nArgs, char* argv[] ) {
                                   // For each possible brink category label...
                                   BPredictorVec bpredictor( f, j, e_p_t, e, opL, opR, cpA.first, aLchild, qTermPhase );  // bpredictor for prob calc
                                   if ( VERBOSE>1 ) cout << "          B " << bpredictor << "..." << endl;
-                                  if ( modB.end()!=modB.find(bpredictor) )
-                                    for ( auto& cpB : modB.find(bpredictor)->second ) {
-                                      if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << cpB.first << " = " << cpB.second << endl;
-                                      //                            lock_guard<mutex> guard( mutexBeam );
-                                      if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second) > beams[t].rbegin()->getProb() ) {
+                                  arma::vec bresponses = modB.calcResponses( bpredictor );
+                                  for( unsigned int bresponse=0; bresponse<bresponses.size(); bresponse++ ) {
+                                    if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(bresponses[bresponse]) > beams[t].rbegin()->getProb() ) {
+                                      double probB = bresponses[bresponse];
+                                      if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << modB.getB(bresponse) << " = " << probB << endl;
+
+
+//                                  if ( modB.end()!=modB.find(bpredictor) )
+//                                    for ( auto& cpB : modB.find(bpredictor)->second ) {
+//                                      if ( VERBOSE>1 ) cout << "          B " << bpredictor << " : " << cpB.first << " = " << cpB.second << endl;
+//                                      //                            lock_guard<mutex> guard( mutexBeam );
+//                                      if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second) > beams[t].rbegin()->getProb() ) {
 
                                         // Thread heartbeat (to diagnose thread death)...
                                         if( chrono::high_resolution_clock::now() > tpLastReport + chrono::minutes(1) ) {
                                           tpLastReport = chrono::high_resolution_clock::now();
                                           lock_guard<mutex> guard( mutexMLSList );
 //                                          cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t << " JRESP " << modJ.getJEOO(jresponse) << " A " << cpA.first << " B " << cpB.first << endl;
-                                          cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t.first << ektpr_p_t.second << " JRESP " << modJ.getJEOO(jresponse) << " A " << cpA.first << " B " << cpB.first << endl;
+//                                          cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t.first << ektpr_p_t.second << " JRESP " << modJ.getJEOO(jresponse) << " A " << cpA.first << " B " << cpB.first << endl;
+                                          cerr << "WORKER " << numt << ": SENT " << currline << " WORD " << t << " FROM " << be_tdec1.getHidd() << " PRED " << ektpr_p_t.first << ektpr_p_t.second << " JRESP " << modJ.getJEOO(jresponse) << " A " << cpA.first << " B " << modB.getB(bresponse) << endl;
                                         } //closes if chrono
                                         // Calculate probability and storestate and add to beam...
-                                        StoreState ss( qTermPhase, j, e, opL, opR, cpA.first, cpB.first );
+//                                        StoreState ss( qTermPhase, j, e, opL, opR, cpA.first, cpB.first );
+                                        StoreState ss( qTermPhase, j, e, opL, opR, cpA.first, modB.getB(bresponse) );
                                         if( (t<lwSent.size() && ss.size()>0) || (t==lwSent.size() && ss.size()==0) ) {
-                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t, w_t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second), be_tdec1 ) );
+//                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t, w_t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second), be_tdec1 ) );
+                                          beams[t].tryAdd( HiddState( aPretrm, f,e_p_t,k_p_t, jresponse, ss, tAnt-t, w_t ), ProbBack<HiddState>( lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(probB), be_tdec1 ) );
                                           if( VERBOSE>1 ) cout << "                send (" << be_tdec1.getHidd() << ") to (" << ss << ") with "
-                                            << (lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second)) << endl;
+//                                            << (lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(cpB.second)) << endl;
+                                            << (lgpr_tdec1 + log(nprob) + log(probFPW) + log(probJoin) + log(cpA.second) + log(probB)) << endl;
                                         } //closes if ( (t<lwSent
                                       } //closes if beams[t]
                                     } //closes for cpB
