@@ -238,7 +238,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 #          else:    G[ G.findNolo(hideps[i],d), '0' ] = lodeps[i]    ## top down on right child
       if a == d+'u': return  ## don't add 'u' node
       G.equate( G[d,l], l, a )
-    else: return  ## don't add 'u' node
+    else:
+      sys.stderr.write( 'ERROR: No analysis for annotated unnary expansion ' + sC + ' -> ' + sD + ' at ' + str(id) + '.\n' )
+      print(            'ERROR: No analysis for annotated unnary expansion ' + sC + ' -> ' + sD + ' at ' + str(id) )
+      return  ## don't add 'u' node
 
     ## add 'u' node
     if s==0:
