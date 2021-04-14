@@ -238,7 +238,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 #          else:    G[ G.findNolo(hideps[i],d), '0' ] = lodeps[i]    ## top down on right child
       if a == d+'u': return  ## don't add 'u' node
       G.equate( G[d,l], l, a )
-    else: return  ## don't add 'u' node
+    else:
+      sys.stderr.write( 'ERROR: No analysis for annotated unnary expansion ' + sC + ' -> ' + sD + ' at ' + str(id) + '.\n' )
+      print(            'ERROR: No analysis for annotated unnary expansion ' + sC + ' -> ' + sD + ' at ' + str(id) )
+      return  ## don't add 'u' node
 
     ## add 'u' node
     if s==0:
@@ -479,6 +482,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif xrule == 'NOTHAVE' : xrule = '%|r0=D:noneQ^r1=Er^r2=E^Er0=B-aN-bN:have^Er1=1^Er2=2'
           elif xrule == 'NGEN'  :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'NEXI'  :  xrule = '%|Qr0=D:someQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
+          elif xrule == 'NUNI'  :  xrule = '%|Qr0=D:allQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'NORD'  :  xrule = '%|Qr0=%DecOne^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r^Rrh=SH'
           elif xrule == 'NORDSUP' :  xrule = '%|Qr0=%DecOne^Qr1=2r^Qr2=2^ro=2r^31=2^3r1h=SH^Pr0=3r0^Pr1=r^Rr0=A:gt^Rr1=3r2^Rr2=Pr2'
           elif xrule == 'NSUP'  :  xrule = '%|Qr0=D:moreQ^Er0=%ness^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2'
