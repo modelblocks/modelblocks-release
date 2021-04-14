@@ -295,10 +295,10 @@ genmodel/rename_cols.params: | genmodel
 	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
 
 # Computes left-corner predictors
-%.lc.tokmeasures: %.linetoks $(RT-SCRIPTS)/calcEmbd.py %.gold.nopunc.0sm_semprocdecpars
+%.lc.tokmeasures: %.linetoks $(RT-SCRIPTS)/calcEmbd.py %.gold.nopunc.-u0_-c0_mlpdecpars
 	cat $< | python $(word 2, $^) $(word 3, $^) > $@
     
-%.lc.tokmeasures: %.linetoks $(RT-SCRIPTS)/calcEmbd.py %.nopunc.0sm_semprocdecpars
+%.lc.tokmeasures: %.linetoks $(RT-SCRIPTS)/calcEmbd.py %.nopunc.-u0_-c0_mlpdecpars
 	cat $< | python $(word 2, $^) $(word 3, $^) > $@
 
 # Pastes DLT predictors to existing identically tokenized tokmeasures file
