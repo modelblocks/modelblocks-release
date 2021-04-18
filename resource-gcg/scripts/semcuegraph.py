@@ -496,6 +496,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif xrule == 'PGEN'  :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2=^r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'PRED1' :  xrule = '%|r0=%^r1=1'
           elif xrule == 'PRED12':  xrule = '%|r0=%^r1=1^r2=2'
+          elif xrule == 'PRED13':  xrule = '%|r0=%^r1=1^r2=3'
           elif xrule == 'PRED'  :  xrule = '%|r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'QGEN'  :  xrule = '%|r0=D:genQ^r1=1r^r2=1'
           elif xrule == 'QUANT' :  xrule = '%|r0=%Q^r1=1r^r2=1'
