@@ -828,7 +828,7 @@ class WModel {
         auto itp = mmpv.find( mp.second() );
         assert ( itp != mmpv.end() );
         auto itl = mmlv.find( mp.third() );
-        assert ( itp != mmlv.end() );
+        assert ( itl != mmlv.end() );
         mpmat.col(idx) = join_cols(join_cols(ite->second, itp->second), itl->second);
         idx ++;
       }
