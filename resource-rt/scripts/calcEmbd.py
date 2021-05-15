@@ -19,8 +19,8 @@ length_measures = ['len', 'dr', 'drv']
 ## Regex searches
 s = re.compile('----(.*)$')
 w = re.compile('W .* ([^ ]+)$')
-f = re.compile('F .* : f([01])')
-j = re.compile('J .* : j([01])')
+f = re.compile('F .* ([01])[^ ]*$')
+j = re.compile('J .* ([01])[^ ]*$')
 p = re.compile('P .* ([^ ]+)$')
 frag = re.compile(' *\[[^\]]*\]:([^\/;]+)\/ *\[[^\]]*\]:([^\/;]+)')
 #frag = re.compile(' *[^\]]+\]:([^\/]+)\/*[^\]]+\]:([^\/]+)')
@@ -216,11 +216,14 @@ class StoreNode(object):
 ## Method definitions
 def next_tok(buffer):
     line = decpars.readline()
-    while line and not line.startswith('F '):
+    while line and not line.startswith('N '):
         line = decpars.readline()
     return(line)
 
 def process_tok(buffer, line, i, prev, debug=True):
+    while line and not line.startswith('F '):
+        line = buffer.readline()
+    assert line, 'Badly-formed input'
     F = int(f.match(line.strip()).group(1))
     while line and not line.startswith('P '):
         line = buffer.readline()

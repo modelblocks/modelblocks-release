@@ -200,6 +200,7 @@ class FModel(nn.Module):
         super(FModel, self).__init__()
         self.syn_size = syn_size
         self.sem_size = sem_size
+        self.ant_size = ant_size
         self.catb_embeds = nn.Embedding(catb_vocab_size, syn_size)
         self.hvecb_embeds = nn.Embedding(hvecb_vocab_size, sem_size)
         self.hvecf_embeds = nn.Embedding(hvecf_vocab_size, sem_size)
@@ -234,9 +235,9 @@ class FModel(nn.Module):
             #nullA = nullA.to("cuda")
 
         if ablate_sem:
-            hvb_embed = torch.zeros([hvb_top.shape[0], self.sem_size], dtype=torch.float) + hvb_top
-            hvf_embed = torch.zeros([hvb_top.shape[0], self.sem_size], dtype=torch.float) + hvf_top
-            hva_embed = torch.zeros([hva_top.shape[0], self.ant_size], dtype=torch.float) + hva_top
+            hvb_embed = torch.zeros([hvb_top.shape[0], self.sem_size], dtype=torch.float).to('cuda') + hvb_top
+            hvf_embed = torch.zeros([hvb_top.shape[0], self.sem_size], dtype=torch.float).to('cuda') + hvf_top
+            hva_embed = torch.zeros([hva_top.shape[0], self.ant_size], dtype=torch.float).to('cuda') + hva_top
 
             if use_gpu >= 0:
                 hvb_embed = hvb_embed.to("cuda")
@@ -293,7 +294,6 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidd
     if use_dev >= 0:
         dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_fdecs_ix, dev_hvb_top, dev_hvf_top, dev_hva_mat, dev_hva_top, dev_nullA = prepare_data_dev(
             dev_decpars_file, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix)
-#def prepare_data_dev(dev_decpars_file, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix):
         dev_depth = F.one_hot(torch.LongTensor(dev_depth), 7).float()
         dev_cat_b_ix = torch.LongTensor(dev_cat_b_ix)
         dev_target = torch.LongTensor(dev_fdecs_ix)
