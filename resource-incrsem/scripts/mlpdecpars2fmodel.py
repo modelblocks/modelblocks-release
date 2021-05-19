@@ -235,14 +235,18 @@ class FModel(nn.Module):
             #nullA = nullA.to("cuda")
 
         if ablate_sem:
-            hvb_embed = torch.zeros([hvb_top.shape[0], self.sem_size], dtype=torch.float).to('cuda') + hvb_top
-            hvf_embed = torch.zeros([hvb_top.shape[0], self.sem_size], dtype=torch.float).to('cuda') + hvf_top
-            hva_embed = torch.zeros([hva_top.shape[0], self.ant_size], dtype=torch.float).to('cuda') + hva_top
+            hvb_zeros = torch.zeros([hvb_top.shape[0], self.sem_size], dtype=torch.float)
+            hvf_zeros = torch.zeros([hvb_top.shape[0], self.sem_size], dtype=torch.float)
+            hva_zeros = torch.zeros([hva_top.shape[0], self.ant_size], dtype=torch.float)
 
             if use_gpu >= 0:
-                hvb_embed = hvb_embed.to("cuda")
-                hvf_embed = hvf_embed.to("cuda")
-                hva_embed = hva_embed.to("cuda")
+                hvb_zeros = hvb_zeros.to("cuda")
+                hvf_zeros = hvf_zeros.to("cuda")
+                hva_zeros = hva_zeros.to("cuda")
+
+            hvb_embed = hvb_zeros + hvb_top
+            hvf_embed = hvf_zeros + hvf_top
+            hva_embed = hva_zeros + hva_top
 
         else:
             hvb_mat = hvb_mat.tocoo()
