@@ -72,7 +72,7 @@ def findUnboundVars( expr, Unbound, Bound = [] ):
       findUnboundVars( subexpr, Unbound, Bound )
 
 ## Convert expr to existentialized discourse anaphor antecedent...
-def makeDiscAntec( expr, dst, OrigUnbound ):
+def makeDiscAntec( expr, dst, OrigUnbound ):                           #### NOTE: we should really just existentialize anything above the destination var
 #  print( 'mDA ' + dst + ' ' + str(expr[3][1] if len(expr)>3 and len(expr[3])>2 else '') )
   if len( expr ) > 3 and expr[0].endswith('Q') and len( expr[2] ) > 2 and expr[2][1] == dst: return expr[2][2]
   if len( expr ) > 3 and expr[0].endswith('Q') and len( expr[3] ) > 2 and expr[3][1] == dst: return expr[3][2]
@@ -374,6 +374,29 @@ for line in sys.stdin:
 #        print( 'yyyy ' + str(DstUnbound) )
 
 
+        def getOutscoper( Unbound, EverUnbound ):
+          if VERBOSE: print( 'DDDDDDDDDD trying to find outscoper for ' + str(Unbound) )
+          ## For each unbound variable...
+          for var in Unbound:
+            ## Look up each expression...
+            supexpr = Expressions.get( var, None )
+            if supexpr != None:
+              SupUnbound = []
+              findUnboundVars( supexpr, SupUnbound, [var] )
+              ## If all old unbounds are scoped, and not new unbounds, return new expression...
+              if SupUnbound == []: return var,supexpr,EverUnbound
+              ## If all old unbounds are outscoped...
+              if set(SupUnbound).isdisjoint( Unbound ):
+                ## Repeat for newly unbound variables...
+                return getOutscoper( SupUnbound, EverUnbound + SupUnbound )
+          if VERBOSE: print( 'failed' )
+          return None,None,[]
+
+
+        var,expr,EverUnbound = getOutscoper( DstUnbound, DstUnbound )
+        if expr == None: continue
+
+        '''
         EverUnbound = sets.Set()
         AlreadyTriedVars = []
         while len(DstUnbound)>0 and expr!=None:
@@ -387,6 +410,7 @@ for line in sys.stdin:
           findUnboundVars( expr, DstUnbound, [var] )
           EverUnbound |= sets.Set(DstUnbound)
         if expr == None: continue
+        '''
 
 #        for expr in Translations:
 #          if contains( expr, dst ): break
@@ -403,7 +427,7 @@ for line in sys.stdin:
         else:
           if VERBOSE: print( 'tried to attach discourse anaphor, but none of ' + ' '.join(DstUnbound) + ' had no unbound variables in Expression set' )
           continue
-         '''
+        '''
 
         expr = replaceVarName( makeDiscAntec( ('D:prevosomeQ', '_', ('lambda', var+'x', ()), ('lambda', var, expr)), dst, EverUnbound ), dst, src )
 #        expr = replaceVarName( makeDiscAntec( expr, dst, EverUnbound ), dst, src )
