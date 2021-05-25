@@ -197,7 +197,7 @@ def train(f_config):
             optimizer.step()
             optimizer.zero_grad()
 
-        eprint("Epoch {:04d} | AvgTrainLoss {:.4f} | TrainAcc {:.4f} | DevLoss {:.4f} | DevAcc {:.4f} | Time {:.4f}".
+        eprint('Epoch {:04d} | AvgTrainLoss {:.4f} | TrainAcc {:.4f} | DevLoss {:.4f} | DevAcc {:.4f} | Time {:.4f}'.
                format(epoch, total_train_loss / ((len(train_seqs) // batch_size) + 1), 100 * (total_train_correct / total_train_items),
                       total_dev_loss, dev_acc, time.time() - c0))
 
@@ -208,6 +208,55 @@ def main(config):
     f_config = config['FModel']
     torch.manual_seed(f_config.getint('Seed'))
     model, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix = train(f_config)
+
+    model.eval()
+    if f_config.getboolean('UseGPU'):
+        catb_embeds = model.state_dict()['catb_embeds.weight'].data.cpu().numpy()
+        hvecb_embeds = model.state_dict()['hvb_embeds.weight'].data.cpu().numpy()
+        hvecf_embeds = model.state_dict()['hvf_embeds.weight'].data.cpu().numpy()
+        hveca_embeds = model.state_dict()['hva_embeds.weight'].data.cpu().numpy()
+        query_weights = model.state_dict()['query.weight'].data.cpu().numpy()
+        key_weights = model.state_dict()['key.weight'].data.cpu().numpy()
+        value_weights = model.state_dict()['value.weight'].data.cpu().numpy()
+        fc1_weights = model.state_dict()['fc1.weight'].data.cpu().numpy()
+        fc1_biases = model.state_dict()['fc1.bias'].data.cpu().numpy()
+        fc2_weights = model.state_dict()['fc2.weight'].data.cpu().numpy()
+        fc2_biases = model.state_dict()['fc2.bias'].data.cpu().numpy()
+    else:
+        catb_embeds = model.state_dict()['catb_embeds.weight'].data.numpy()
+        hvecb_embeds = model.state_dict()['hvb_embeds.weight'].data.numpy()
+        hvecf_embeds = model.state_dict()['hvf_embeds.weight'].data.numpy()
+        hveca_embeds = model.state_dict()['hva_embeds.weight'].data.numpy()
+        query_weights = model.state_dict()['query.weight'].data.numpy()
+        key_weights = model.state_dict()['key.weight'].data.numpy()
+        value_weights = model.state_dict()['value.weight'].data.numpy()
+        fc1_weights = model.state_dict()['fc1.weight'].data.numpy()
+        fc1_biases = model.state_dict()['fc1.bias'].data.numpy()
+        fc2_weights = model.state_dict()['fc2.weight'].data.numpy()
+        fc2_biases = model.state_dict()['fc2.bias'].data.numpy()
+
+    print('Q ' + ','.join(map(str, query_weights.flatten('F').tolist())))
+    print('K ' + ','.join(map(str, key_weights.flatten('F').tolist())))
+    print('V ' + ','.join(map(str, value_weights.flatten('F').tolist())))
+    print('F F ' + ','.join(map(str, fc1_weights.flatten('F').tolist())))
+    print('F f ' + ','.join(map(str, fc1_biases.flatten('F').tolist())))
+    print('F S ' + ','.join(map(str, fc2_weights.flatten('F').tolist())))
+    print('F s ' + ','.join(map(str, fc2_biases.flatten('F').tolist())))
+
+    if not f_config.getboolean('AblateSyn'):
+        for cat, ix in sorted(catb_to_ix.items()):
+            print('C B ' + str(cat) + ' ' + ','.join(map(str, catb_embeds[ix])))
+    if not f_config.getboolean('AblateSem'):
+        for hvec, ix in sorted(hvb_to_ix.items()):
+            print('K B ' + str(hvec) + ' ' + ','.join(map(str, hvecb_embeds[ix])))
+        for hvec, ix in sorted(hvf_to_ix.items()):
+            print('K F ' + str(hvec) + ' ' + ','.join(map(str, hvecf_embeds[ix])))
+        for hvec, ix in sorted(hva_to_ix.items()):
+            print('K A ' + str(hvec) + ' ' + ','.join(map(str, hveca_embeds[ix])))
+        if len(hva_to_ix.items()) == 0:
+            print('K A N-aD:ph_0 ' + '0,'*(f_config.getint('AntSize')-1)+'0') #add placeholder so model knows antecedent size
+    for fdec, ix in sorted(fdecs_to_ix.items()):
+        print('f ' + str(ix) + ' ' + str(fdec))
 
 
 if __name__ == '__main__':
