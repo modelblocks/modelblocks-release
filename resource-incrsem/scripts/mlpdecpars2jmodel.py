@@ -276,14 +276,18 @@ class JModel(nn.Module):
             cat_l_embed = cat_l_embed.to("cuda")
 
         if ablate_sem:
-            hva_embed = torch.zeros([hva_top.shape[0], self.sem_size], dtype=torch.float) + hva_top
-            hvf_embed = torch.zeros([hvf_top.shape[0], self.sem_size], dtype=torch.float) + hvf_top
-            hvl_embed = torch.zeros([hvl_top.shape[0], self.sem_size], dtype=torch.float) + hvl_top
+            hva_zeros = torch.zeros([hva_top.shape[0], self.sem_size], dtype=torch.float)
+            hvf_zeros = torch.zeros([hvf_top.shape[0], self.sem_size], dtype=torch.float)
+            hvl_zeros = torch.zeros([hvl_top.shape[0], self.sem_size], dtype=torch.float)
 
             if use_gpu >= 0:
-                hva_embed = hva_embed.to("cuda")
-                hvf_embed = hvf_embed.to("cuda")
-                hvl_embed = hvl_embed.to("cuda")
+                hva_zeros = hva_zeros.to("cuda")
+                hvf_zeros = hvf_zeros.to("cuda")
+                hvl_zeros = hvl_zeros.to("cuda")
+
+            hva_embed = hva_zeros + hva_top
+            hvf_embed = hvf_zeros + hvf_top
+            hvl_embed = hvl_zeros + hvl_top
 
         else:
             hva_mat = hva_mat.tocoo()

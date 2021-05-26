@@ -295,8 +295,8 @@ class FModel {
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> CVec;
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> KDenseVec;
   uint FSEM_SIZE = 20; 
-  uint FSYN_SIZE = 10;
-  uint FANT_SIZE = 10;
+  uint FSYN_SIZE = 20;
+  uint FANT_SIZE = 20;
   uint FFULL_WIDTH = 13;
   private:
 
@@ -1065,7 +1065,7 @@ class JModel {
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> DenseVec;
   unsigned int jr0;
   unsigned int jr1;
-  uint JSYN_SIZE = 10; //placeholders - these will be overwritten when reading in the model
+  uint JSYN_SIZE = 20; //placeholders - these will be overwritten when reading in the model
   uint JSEM_SIZE = 20;
   uint JFULL_WIDTH = 13;
 
