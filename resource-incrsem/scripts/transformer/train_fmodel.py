@@ -5,8 +5,6 @@ import torch.optim as optim
 
 from transformerfmodel import TransformerFModel
 
-
-ARTICLE_DELIM = '!ARTICLE'
 PAD = '<PAD>'
 
 
@@ -39,30 +37,32 @@ def prepare_data():
     # list of lists; each outer list is an article
     per_article_finfo = list()
     
-    # throw out first line
-    firstline = sys.stdin.readline()
-    assert firstline.strip() == ARTICLE_DELIM
-
     # list of f decisions for the current article
     curr_finfo = list()
     
+    is_first_line = True
     for line in sys.stdin:
-        if line.strip() == ARTICLE_DELIM:
-            per_article_finfo.append(curr_finfo)
-            curr_finfo = list()
-        else:
-            depth, catb, hv_base, hv_filler, hv_ante, nulla, fdec = line.split()
-            finfo = FInfo()
-            finfo.depth = int(depth)
-            finfo.catb = catb
-            finfo.hvb = extract_first_kvec(hv_base)
-            finfo.hvf = extract_first_kvec(hv_filler)
-            finfo.hva = extract_first_kvec(hv_ante)
-            finfo.nulla = int(nulla)
-            # TODO is there any downside to not splitting the fdec into its
-            # constitutents (match and hvec)?
-            finfo.fdec = fdec
-            curr_finfo.append(finfo)
+        is_new_article, depth, catb, hv_base, hv_filler, hv_ante, nulla, fdec = line.split()
+        is_new_article = bool(int(is_new_article))
+        if is_new_article:
+            if is_first_line:
+                is_first_line = False
+            else:
+                per_article_finfo.append(curr_finfo)
+                curr_finfo = list()
+
+        finfo = FInfo()
+        finfo.depth = int(depth)
+        finfo.catb = catb
+        finfo.hvb = extract_first_kvec(hv_base)
+        finfo.hvf = extract_first_kvec(hv_filler)
+        finfo.hva = extract_first_kvec(hv_ante)
+        finfo.nulla = int(nulla)
+        # TODO is there any downside to not splitting the fdec into its
+        # constitutents (match and hvec)?
+        finfo.fdec = fdec
+        curr_finfo.append(finfo)
+
     per_article_finfo.append(curr_finfo)
            
     all_hvb, all_hvf, all_hva, all_fdecs, all_catb = [set()] * 5
