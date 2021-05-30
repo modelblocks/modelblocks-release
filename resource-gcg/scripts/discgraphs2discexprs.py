@@ -477,9 +477,10 @@ for line in sys.stdin:
           if x != D.Scopes[ S[1] ]:
             Expr = replaceVarName( Expr, x, D.Scopes[ S[1] ] )
         Abstractions[ D.Scopes[ S[1] ] ].append( Expr )
-        del D.Scopes[ S[1] ]
+#        del D.Scopes[ S[1] ]
 #        if R[1] in Scopes: del Scopes[ R[1] ]   ## Should use 't' trace assoc.
         Translations.remove( (q, n, R, S) )
+        if not [True for q1,n1,R1,S1 in Translations if S1[1]==S[1]]: del D.Scopes[ S[1] ]   ## Remove scope only if no more quantifiers using it.
         active = True
 
   expr = tuple( ['and'] + Translations )
