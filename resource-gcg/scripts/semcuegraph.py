@@ -460,6 +460,9 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif tag=='m':            G.equate( dest+'s', 'm', x+'r' )  ## discourse anaphor
           elif tag=='n' and r=='r': G.equate( dest+'r', 'n', x+'r' )
           elif tag=='n':            G.equate( dest+'s', 'n', x+'r' )
+          elif tag=='t' and r=='r':  ## scotch tape (suggested scope for lambda expressions, but not to be used for scoring)
+                                    G.equate( dest+'r', 's', x+'s' )
+                                    G.equate( dest+'r', 'tt', x+'s' ) # 'tainted' not truth-conditionally necessary
           elif tag=='t':  ## scotch tape (suggested scope for lambda expressions, but not to be used for scoring)
                                     G.equate( dest+'s', 's', x+'s' )
                                     G.equate( dest+'s', 'tt', x+'s' ) # 'tainted' not truth-conditionally necessary
@@ -504,6 +507,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif xrule == 'QUANT' :  xrule = '%|r0=%Q^r1=1r^r2=1'
           elif xrule == 'QUANT2' :  xrule = '%|r0=%Q^r1=2r^r2=2'
           elif xrule == 'QUANT12' :  xrule = '%|r0=%Q^r1=1r^r2=1' #^r3=1'  ## number should be connected, but not sure if lambdafier can accommodate
+          elif xrule == 'QUANT23' :  xrule = '%|r0=%Q^r1=2r^r2=2' #^r3=1'  ## number should be connected, but not sure if lambdafier can accommodate
           elif xrule == 'WEAK2' :  xrule = '%|%^2=W'
           elif xrule == 'XEXI'  :  xrule = '%|Qr0=D:someQ^Qr1=r^Qr2='
           elif xrule == 'XGEN'  :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2='
