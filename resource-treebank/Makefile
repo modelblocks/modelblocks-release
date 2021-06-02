@@ -101,7 +101,7 @@ WSJ23:
 endef
 genmodel/wsj%.linetrees: $$(DEP-TREEBANK) $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/wsj/$$* \
 $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
-	cat $(word 2,$^)/*.mrg | perl $(word 3,$^) > $@
+	for f in $(word 2,$^)/*.mrg; do echo '!ARTICLE' >> $@; cat $$f | perl $(word 3,$^) >> $@; done
 genmodel/wsjv%.linetrees: $$(DEP-TREEBANK) $(CONFIGDIR)/user-treebank-vadas-directory.txt $$(shell cat $(CONFIGDIR)/user-treebank-vadas-directory.txt)/parsed/mrg/wsj/$$* \
 $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
 	cat $(word 2,$^)/*.mrg | perl $(word 3,$^) > $@
