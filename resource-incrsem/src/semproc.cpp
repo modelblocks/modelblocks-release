@@ -46,7 +46,12 @@ uint FEATCONFIG = 0;
 #ifdef DENSE_VECTORS
 #include <SemProcModels_dense.hpp>
 #elif defined MLP
-#include <SemProcModels_mlp.hpp>
+//#include <SemProcModels_mlp.hpp>
+#include <mlp.hpp>
+#include <NModel_mlp.hpp>
+#include <FModel_mlp.hpp>
+#include <WModel_mlp.hpp>
+#include <JModel_mlp.hpp>
 #else
 #include <SemProcModels_sparse.hpp>
 #endif
