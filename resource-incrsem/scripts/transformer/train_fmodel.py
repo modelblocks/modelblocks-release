@@ -235,9 +235,9 @@ def main(config):
         fc2_weights = model.state_dict()['fc2.weight'].data.numpy()
         fc2_biases = model.state_dict()['fc2.bias'].data.numpy()
 
-    print('Q ' + ','.join(map(str, query_weights.flatten('F').tolist())))
-    print('K ' + ','.join(map(str, key_weights.flatten('F').tolist())))
-    print('V ' + ','.join(map(str, value_weights.flatten('F').tolist())))
+    print('F Q ' + ','.join(map(str, query_weights.flatten('F').tolist())))
+    print('F K ' + ','.join(map(str, key_weights.flatten('F').tolist())))
+    print('F V ' + ','.join(map(str, value_weights.flatten('F').tolist())))
     print('F F ' + ','.join(map(str, fc1_weights.flatten('F').tolist())))
     print('F f ' + ','.join(map(str, fc1_biases.flatten('F').tolist())))
     print('F S ' + ','.join(map(str, fc2_weights.flatten('F').tolist())))
