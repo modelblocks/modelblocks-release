@@ -7,3 +7,4 @@ extraScripts/
 config/
 workspace/
 resource-rhacks/scripts
+*.swp
