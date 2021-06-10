@@ -32,6 +32,7 @@ using namespace arma;
 #include <nl-randvar.h>
 #include <nl-string.h>
 #include <Delimited.hpp>
+#include <Beam.hpp>
 bool STORESTATE_TYPE = true;
 bool STORESTATE_CHATTY = false;
 uint FEATCONFIG = 0;
@@ -46,16 +47,22 @@ uint FEATCONFIG = 0;
 #ifdef DENSE_VECTORS
 #include <SemProcModels_dense.hpp>
 #elif defined MLP
-//#include <SemProcModels_mlp.hpp>
 #include <mlp.hpp>
 #include <NModel_mlp.hpp>
 #include <FModel_mlp.hpp>
 #include <WModel_mlp.hpp>
 #include <JModel_mlp.hpp>
+#elif defined TRANSFORMER
+#include <mlp.hpp>
+#include <NModel_mlp.hpp>
+#include <FModel_transformer.hpp>
+#include <WModel_mlp.hpp>
+// TODO switch to JModel_transformer.hpp
+#include <JModel_mlp.hpp>
 #else
 #include <SemProcModels_sparse.hpp>
 #endif
-#include <Beam.hpp>
+//#include <Beam.hpp>
 
 int COREF_WINDOW = INT_MAX;
 bool ABLATE_UNARY = false;
@@ -463,7 +470,7 @@ int main ( int nArgs, char* argv[] ) {
               if ( ORACLE_COREF == true ) { //in oracle mode
                 //cerr << "ndenom searching for oracle at: " << numart << " " << currline << " " << word_index << endl;
                 try {
-                  if ( (t-tAnt) != coracle_dswo.at(numart).at(currline).at(word_index) ) continue; // skip offset if not correct one
+                  if ( int(t-tAnt) != coracle_dswo.at(numart).at(currline).at(word_index) ) continue; // skip offset if not correct one
                 }
                 catch (const std::out_of_range& oor) {
                   cerr << "ERROR: Out of Range error: " << oor.what() << endl;
@@ -506,7 +513,7 @@ int main ( int nArgs, char* argv[] ) {
               if ( ORACLE_COREF == true ) { //in oracle mode
                 //cerr << "nnumer searching for oracle at: " << numart << " " << currline << " " << word_index << endl;
                 try {
-                  if ( (t-tAnt) != coracle_dswo.at(numart).at(currline).at(word_index) ) continue; // skip offset if not correct one
+                  if ( int(t-tAnt) != coracle_dswo.at(numart).at(currline).at(word_index) ) continue; // skip offset if not correct one
                 }
                 catch (const std::out_of_range& oor) {
                   cerr << "ERROR: Out of Range error: " << oor.what() << endl;
@@ -543,8 +550,14 @@ int main ( int nArgs, char* argv[] ) {
               if ( VERBOSE>1 ) cout << "    N  npv: " << npv << " : 1 = " << numerator << "/" << ndenom << "=" << nprob << endl;
               //NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1, ABLATE_UNARY );
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
+#ifdef TRANSFORMER
+                // be_tdec1 is the hypothesized store state from the previous time step
+                // Maybe it's necessary to pass modF in too; not sure yet
+                FPredictorVec lfpredictors( be_tdec1, hvAnt, not corefON );
+#else
                 FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );
 //                if( VERBOSE>1 ) cout << "     f predictors: " << pair<const FModel&,const FPredictorVec&>( modF, lfpredictors ) << endl;
+#endif
                 arma::vec fresponses = modF.calcResponses( lfpredictors );
 
                 //get most recent observed word for which k of fek F decision was 'unk'.
@@ -638,7 +651,7 @@ int main ( int nArgs, char* argv[] ) {
 
                                   if ( VERBOSE>1 ) cout << "         A " << apredictor << " : " << cpA.first << " = " << cpA.second << endl;
 
-                                  // For each possible brink category label...
+                                  // For each possible base category label...
                                   BPredictorVec bpredictor( f, j, e_p_t, e, opL, opR, cpA.first, aLchild, qTermPhase );  // bpredictor for prob calc
                                   if ( VERBOSE>1 ) cout << "          B " << bpredictor << "..." << endl;
                                   if ( modB.end()!=modB.find(bpredictor) )
