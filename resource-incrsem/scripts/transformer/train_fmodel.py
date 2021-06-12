@@ -5,7 +5,10 @@ import torch.optim as optim
 
 from transformerfmodel import TransformerFModel
 
-PAD = '<PAD>'
+#PAD = '<PAD>'
+# The C++ code expects a certain format for each fdec, so this is
+# a "fake" fdec used for padding
+PAD = '0&&PAD'
 
 
 # Dummy class for recording information about each F decision
@@ -62,10 +65,15 @@ def prepare_data():
         # constitutents (match and hvec)?
         finfo.fdec = fdec
         curr_finfo.append(finfo)
+        
 
     per_article_finfo.append(curr_finfo)
            
-    all_hvb, all_hvf, all_hva, all_fdecs, all_catb = [set()] * 5
+    all_hvb = set()
+    all_hvf = set()
+    all_hva = set()
+    all_fdecs = set()
+    all_catb = set()
     for article in per_article_finfo:
         for finfo in article:
             all_hvb.update(set(finfo.hvb))
@@ -73,7 +81,7 @@ def prepare_data():
             all_hva.update(set(finfo.hva))
             all_fdecs.add(finfo.fdec)
             all_catb.add(finfo.catb)
-                
+
     catb_to_ix = {cat: i for i, cat in enumerate(sorted(all_catb))}
     fdecs_to_ix = {fdecs: i for i, fdecs in enumerate(sorted(all_fdecs))}
     # ID for padding symbol added at end of sequence
@@ -164,32 +172,52 @@ def train(f_config):
 
             batch = train_seqs[j:j+batch_size]
             target = [[fi.fdec for fi in seq] for seq in batch]
-            # S x N
+            # L x N
+            # Note: padding of the input sequence happens within the
+            # forward method of the F model
             target = pad_target_matrix(target, fdecs_to_ix[PAD])
             if use_gpu:
                 target = target.to('cuda')
 
-            # output dimension is S x N x E
-            # S: window size
+            # output dimension is L x N x E
+            # L: window length
             # N: batch size
-            # E: output size
+            # E: output dimensionality (number of classes)
             output = model(batch)
 
-            # fdec dimension is S x N
+            # fdec dimension is L x N
             _, fdec = torch.max(output.data, 2)
-            # TODO don't include padding in loss
-            train_correct = (fdec == target).sum().item()
+
+            # count all items where fdec matches target and target isn't padding
+            train_correct = ((fdec == target) * (target != fdecs_to_ix[PAD])).sum().item()
+            #train_correct = (fdec == target).sum().item()
             total_train_correct += train_correct
-            # TODO change this
-            total_train_items += target.numel()
+            
+            # again, ignore padding
+            total_train_items += (target != fdecs_to_ix[PAD]).sum().item()
+            #total_train_items += target.numel()
 
-            # have to rearrange dimensions for NLLLoss function
-            # output dimension becomes N x E x S
-            output = torch.transpose(output, 0, 2) # SxNxE --> ExNxS
-            output = torch.transpose(output, 0, 1) # ExNxS --> NxExS
+            
+            # NLLLoss requires target dimension to be N x L
+            # https://pytorch.org/docs/stable/generated/torch.nn.NLLLoss.html
+            target = torch.transpose(target, 0, 1) # LxN --> NxL
+                
+            # NLLLoss requires output dimension to be N x E x L
+            output = torch.transpose(output, 0, 2) # LxNxE --> ExNxL
+            output = torch.transpose(output, 0, 1) # ExNxL --> NxExL
 
-            # target dimension becomes N x S
-            target = torch.transpose(target, 0, 1)
+
+            # assign PAD class 0 weight so that it doesn't influence loss.
+            # equally weight all other classes
+            num_classes = output.shape[1]
+            # last class is PAD
+            assert fdecs_to_ix[PAD] == num_classes - 1
+            per_class_weight = 1/(num_classes-1)
+            class_weights = torch.FloatTensor([per_class_weight]*(num_classes-1) + [0])
+
+            if use_gpu:
+                class_weights = class_weights.to('cuda')
+
             nll_loss = criterion(output, target)
             loss = nll_loss + l2_reg * l2_loss
             total_train_loss += loss.item()
@@ -210,54 +238,106 @@ def main(config):
     model, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix = train(f_config)
 
     model.eval()
-    if f_config.getboolean('UseGPU'):
-        catb_embeds = model.state_dict()['catb_embeds.weight'].data.cpu().numpy()
-        hvecb_embeds = model.state_dict()['hvb_embeds.weight'].data.cpu().numpy()
-        hvecf_embeds = model.state_dict()['hvf_embeds.weight'].data.cpu().numpy()
-        hveca_embeds = model.state_dict()['hva_embeds.weight'].data.cpu().numpy()
-        query_weights = model.state_dict()['query.weight'].data.cpu().numpy()
-        key_weights = model.state_dict()['key.weight'].data.cpu().numpy()
-        value_weights = model.state_dict()['value.weight'].data.cpu().numpy()
-        fc1_weights = model.state_dict()['fc1.weight'].data.cpu().numpy()
-        fc1_biases = model.state_dict()['fc1.bias'].data.cpu().numpy()
-        fc2_weights = model.state_dict()['fc2.weight'].data.cpu().numpy()
-        fc2_biases = model.state_dict()['fc2.bias'].data.cpu().numpy()
-    else:
-        catb_embeds = model.state_dict()['catb_embeds.weight'].data.numpy()
-        hvecb_embeds = model.state_dict()['hvb_embeds.weight'].data.numpy()
-        hvecf_embeds = model.state_dict()['hvf_embeds.weight'].data.numpy()
-        hveca_embeds = model.state_dict()['hva_embeds.weight'].data.numpy()
-        query_weights = model.state_dict()['query.weight'].data.numpy()
-        key_weights = model.state_dict()['key.weight'].data.numpy()
-        value_weights = model.state_dict()['value.weight'].data.numpy()
-        fc1_weights = model.state_dict()['fc1.weight'].data.numpy()
-        fc1_biases = model.state_dict()['fc1.bias'].data.numpy()
-        fc2_weights = model.state_dict()['fc2.weight'].data.numpy()
-        fc2_biases = model.state_dict()['fc2.bias'].data.numpy()
+    params = [ 
+        #('query.weight', 'F Q'),
+        #('query.bias', 'F q'),
+        #('key.weight', 'F K' ),
+        #('key.bias', 'F k'),
+        #('value.weight', 'F V' ),
+        #('value.bias', 'F v'),
+        ('pre_attn_fc.weight', 'F P'),
+        ('pre_attn_fc.bias', 'F p'),
+        ('attn.in_proj_weight', 'F I'),
+        ('attn.in_proj_bias', 'F i'),
+        ('attn.out_proj.weight', 'F O'),
+        ('attn.out_proj.bias', 'F o'),
+        ('fc1.weight', 'F F'),
+        ('fc1.bias', 'F f'),
+        ('fc2.weight', 'F S'),
+        ('fc2.bias', 'F s')
+    ]
 
-    print('F Q ' + ','.join(map(str, query_weights.flatten('F').tolist())))
-    print('F K ' + ','.join(map(str, key_weights.flatten('F').tolist())))
-    print('F V ' + ','.join(map(str, value_weights.flatten('F').tolist())))
-    print('F F ' + ','.join(map(str, fc1_weights.flatten('F').tolist())))
-    print('F f ' + ','.join(map(str, fc1_biases.flatten('F').tolist())))
-    print('F S ' + ','.join(map(str, fc2_weights.flatten('F').tolist())))
-    print('F s ' + ','.join(map(str, fc2_biases.flatten('F').tolist())))
+    for param, prefix in params:
+        if f_config.getboolean('UseGPU'):
+            weights = model.state_dict()[param].data.cpu().numpy()
+        else:
+            weights = model.state_dict()[param].data.numpy()
+        print(prefix, ','.join(map(str, weights.flatten('F').tolist())))
 
     if not f_config.getboolean('AblateSyn'):
+        if f_config.getboolean('UseGPU'):
+            weights = model.state_dict()['catb_embeds.weight'].data.cpu().numpy()
+        else:
+            weights = model.state_dict()['catb_embeds.weight'].data.numpy()
         for cat, ix in sorted(catb_to_ix.items()):
-            print('C B ' + str(cat) + ' ' + ','.join(map(str, catb_embeds[ix])))
+            print('C B ' + str(cat) + ' ' + ','.join(map(str, weights[ix])))
+
     if not f_config.getboolean('AblateSem'):
+        if f_config.getboolean('UseGPU'):
+            b_weights = model.state_dict()['hvb_embeds.weight'].data.cpu().numpy()
+            f_weights = model.state_dict()['hvf_embeds.weight'].data.cpu().numpy()
+            a_weights = model.state_dict()['hva_embeds.weight'].data.cpu().numpy()
+        else:
+            b_weights = model.state_dict()['hvb_embeds.weight'].data.numpy()
+            f_weights = model.state_dict()['hvf_embeds.weight'].data.numpy()
+            a_weights = model.state_dict()['hva_embeds.weight'].data.numpy()
+
         for hvec, ix in sorted(hvb_to_ix.items()):
-            print('K B ' + str(hvec) + ' ' + ','.join(map(str, hvecb_embeds[ix])))
+            print('K B ' + str(hvec) + ' ' + ','.join(map(str, b_weights[ix])))
         for hvec, ix in sorted(hvf_to_ix.items()):
-            print('K F ' + str(hvec) + ' ' + ','.join(map(str, hvecf_embeds[ix])))
+            print('K F ' + str(hvec) + ' ' + ','.join(map(str, f_weights[ix])))
         for hvec, ix in sorted(hva_to_ix.items()):
-            print('K A ' + str(hvec) + ' ' + ','.join(map(str, hveca_embeds[ix])))
+            print('K A ' + str(hvec) + ' ' + ','.join(map(str, a_weights[ix])))
         if len(hva_to_ix.items()) == 0:
             print('K A N-aD:ph_0 ' + '0,'*(f_config.getint('AntSize')-1)+'0') #add placeholder so model knows antecedent size
+
     for fdec, ix in sorted(fdecs_to_ix.items()):
         print('f ' + str(ix) + ' ' + str(fdec))
 
+
+#    if f_config.getboolean('UseGPU'):
+#        catb_embeds = model.state_dict()['catb_embeds.weight'].data.cpu().numpy()
+#        hvecb_embeds = model.state_dict()['hvb_embeds.weight'].data.cpu().numpy()
+#        hvecf_embeds = model.state_dict()['hvf_embeds.weight'].data.cpu().numpy()
+#        hveca_embeds = model.state_dict()['hva_embeds.weight'].data.cpu().numpy()
+#        query_weights = model.state_dict()['query.weight'].data.cpu().numpy()
+#        key_weights = model.state_dict()['key.weight'].data.cpu().numpy()
+#        value_weights = model.state_dict()['value.weight'].data.cpu().numpy()
+#        fc1_weights = model.state_dict()['fc1.weight'].data.cpu().numpy()
+#        fc1_biases = model.state_dict()['fc1.bias'].data.cpu().numpy()
+#        fc2_weights = model.state_dict()['fc2.weight'].data.cpu().numpy()
+#        fc2_biases = model.state_dict()['fc2.bias'].data.cpu().numpy()
+#    else:
+#        catb_embeds = model.state_dict()['catb_embeds.weight'].data.numpy()
+#        hvecb_embeds = model.state_dict()['hvb_embeds.weight'].data.numpy()
+#        hvecf_embeds = model.state_dict()['hvf_embeds.weight'].data.numpy()
+#        hveca_embeds = model.state_dict()['hva_embeds.weight'].data.numpy()
+#        query_weights = model.state_dict()['query.weight'].data.numpy()
+#        query_biases = model.state_dict()['query.bias'].data.numpy()
+#        key_weights = model.state_dict()['key.weight'].data.numpy()
+#        key_biases = model.state_dict()['key.bias'].data.numpy()
+#        value_weights = model.state_dict()['value.weight'].data.numpy()
+#        value_biases = model.state_dict()['value.bias'].data.numpy()
+#        attn_weights = model.state_dict()['attn.weight'].data.numpy()
+#        attn_biases = model.state_dict()['attn.bias'].data.numpy()
+#        fc1_weights = model.state_dict()['fc1.weight'].data.numpy()
+#        fc1_biases = model.state_dict()['fc1.bias'].data.numpy()
+#        fc2_weights = model.state_dict()['fc2.weight'].data.numpy()
+#        fc2_biases = model.state_dict()['fc2.bias'].data.numpy()
+#
+#    print('F Q ' + ','.join(map(str, query_weights.flatten('F').tolist())))
+#    print('F q ' + ','.join(map(str, query_biases.flatten('F').tolist())))
+#    print('F K ' + ','.join(map(str, key_weights.flatten('F').tolist())))
+#    print('F k ' + ','.join(map(str, key_biases.flatten('F').tolist())))
+#    print('F V ' + ','.join(map(str, value_weights.flatten('F').tolist())))
+#    print('F v ' + ','.join(map(str, value_biases.flatten('F').tolist())))
+#    print('F A ' + ','.join(map(str, attn_weights.flatten('F').tolist())))
+#    print('F a ' + ','.join(map(str, attn_biases.flatten('F').tolist())))
+#    print('F F ' + ','.join(map(str, fc1_weights.flatten('F').tolist())))
+#    print('F f ' + ','.join(map(str, fc1_biases.flatten('F').tolist())))
+#    print('F S ' + ','.join(map(str, fc2_weights.flatten('F').tolist())))
+#    print('F s ' + ','.join(map(str, fc2_biases.flatten('F').tolist())))
+#
 
 if __name__ == '__main__':
     config = configparser.ConfigParser(allow_no_value=True)
