@@ -2,25 +2,47 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+# source:
+# https://pytorch.org/tutorials/beginner/transformer_tutorial.html
+class PositionalEncoding(nn.Module):
+
+    def __init__(self, dim, dropout=0.1, max_len=5000):
+        super(PositionalEncoding, self).__init__()
+        self.dropout = nn.Dropout(p=dropout)
+
+        pe = torch.zeros(max_len, dim)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, dim, 2).float() * (-math.log(10000.0) / dim))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0).transpose(0, 1)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        x = x + self.pe[:x.size(0), :]
+        return self.dropout(x)
+
 
 class TransformerFModel(nn.Module):
     def __init__(self, f_config, catb_vocab_size, hvb_vocab_size,
                  hvf_vocab_size, hva_vocab_size, output_dim):
         super(TransformerFModel, self).__init__()
-        self.syn_size = f_config.getint('SynSize')
-        self.sem_size = f_config.getint('SemSize')
-        self.ant_size = f_config.getint('AntSize')
-        self.hidden_dim = f_config.getint('HiddenSize')
+        self.syn_dim = f_config.getint('SynDim')
+        self.sem_dim = f_config.getint('SemDim')
+        self.ant_dim = f_config.getint('AntDim')
+        self.hidden_dim = f_config.getint('HiddenDim')
         self.dropout_prob = f_config.getfloat('DropoutProb')
         self.ablate_syn = f_config.getboolean('AblateSyn')
         self.ablate_sem = f_config.getboolean('AblateSem')
+        self.use_positional_encoding = f_config.getboolean('UsePositionalEncoding')
         # TODO this is int in the old config -- why?
         self.use_gpu = f_config.getboolean('UseGPU')
         # TODO add num_blocks option for multiple transformer blocks
         self.num_heads = f_config.getint('NumHeads')
-        self.attn_q_dim = f_config.getint('AttnQDim')
-        self.attn_k_dim = f_config.getint('AttnKDim')
-        self.attn_v_dim = f_config.getint('AttnVDim')
+        self.attn_dim = f_config.getint('AttnDim')
+        #self.attn_q_dim = f_config.getint('AttnQDim')
+        #self.attn_k_dim = f_config.getint('AttnKDim')
+        #self.attn_v_dim = f_config.getint('AttnVDim')
         # TODO decide whether to use this at runtime or just for
         # training
         self.attn_window_size = f_config.getint('AttnWindowSize')
@@ -32,27 +54,43 @@ class TransformerFModel(nn.Module):
 
         # TODO should there just be one big embedding? inputs would be
         # multi-hot; not sure if that's easy
-        self.catb_embeds = nn.Embedding(catb_vocab_size, self.syn_size)
-        self.hvb_embeds = nn.Embedding(hvb_vocab_size, self.sem_size)
-        self.hvf_embeds = nn.Embedding(hvf_vocab_size, self.sem_size)
-        self.hva_embeds = nn.Embedding(hva_vocab_size, self.ant_size)
+        self.catb_embeds = nn.Embedding(catb_vocab_size, self.syn_dim)
+        self.hvb_embeds = nn.Embedding(hvb_vocab_size, self.sem_dim)
+        self.hvf_embeds = nn.Embedding(hvf_vocab_size, self.sem_dim)
+        self.hva_embeds = nn.Embedding(hva_vocab_size, self.ant_dim)
 
-        # the 8 is for (one-hot) depth
-        input_dim = 8 + self.syn_size + 2*self.sem_size + self.ant_size
-        self.query = nn.Linear(input_dim, self.attn_q_dim)
-        self.key = nn.Linear(input_dim, self.attn_k_dim)
-        self.value = nn.Linear(input_dim, self.attn_v_dim)
+        # attn intput is (one-hot) depth, base syn cat embedding,
+        # base hvec embedding, and filler hvec embedding
+        attn_input_dim = 7 + self.syn_dim + 2*self.sem_dim
+        #self.query = nn.Linear(attn_input_dim, self.attn_q_dim, bias=True)
+        #self.key = nn.Linear(attn_input_dim, self.attn_k_dim, bias=True)
+        #self.value = nn.Linear(attn_input_dim, self.attn_v_dim, bias=True)
+        #self.query = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
+        #self.key = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
+        #self.value = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
+
+        # project the attention input to the right dimensionality
+        self.pre_attn_fc = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
+
+        # this layer adds positional encodings to the output of pre_attn_fc
+        # its output is used for queries, keys, and values
+        self.positional_encoding = PositionalEncoding(self.attn_dim)
 
         # TODO define this as a block so you can have multiple attention layers
         self.attn =  nn.MultiheadAttention(
-            embed_dim=self.attn_q_dim,
+            embed_dim=self.attn_dim,
+            #embed_dim=self.attn_q_dim,
             num_heads=self.num_heads,
-            kdim=self.attn_k_dim,
-            vdim=self.attn_v_dim
+            #kdim=self.attn_k_dim,
+            #vdim=self.attn_v_dim,
+            bias=True
         )
 
         # TODO make this resnet?
-        self.fc1 = nn.Linear(self.attn_v_dim, self.hidden_dim, bias=True)
+        # the input to fc1 is the output of the attention layer concatenated
+        # with the antecedent hVec embedding and the null antecedent indicator
+        # (hence the +1)
+        self.fc1 = nn.Linear(self.attn_dim+self.ant_dim+1, self.hidden_dim, bias=True)
         self.dropout = nn.Dropout(self.dropout_prob)
         self.relu = F.relu
         self.fc2 = nn.Linear(self.hidden_dim, self.output_dim, bias=True)
@@ -75,12 +113,14 @@ class TransformerFModel(nn.Module):
 
     
     def get_per_sequence_x(self, batch_finfo):
-        per_sequence_x = list()
+        #per_sequence_x = list()
+        per_seq_attn_input = list()
+        per_seq_coref_emb = list()
         for seq in batch_finfo:
             # base category embeddings
             if self.ablate_syn:
                 catb_embed = torch.zeros(
-                    [len(seq), self.syn_size],
+                    [len(seq), self.syn_dim],
                     dtype=torch.float
                 )
             else:
@@ -94,13 +134,13 @@ class TransformerFModel(nn.Module):
             # base, filler, antecedent hvec embeddings
             if self.ablate_sem:
                 hvb_embed = torch.zeros(
-                    [max_seq_length, batch_size, self.sem_size], dtype=torch.float
+                    [max_seq_length, batch_size, self.sem_dim], dtype=torch.float
                 )
                 hvf_embed = torch.zeros(
-                    [max_seq_length, batch_size, self.sem_size], dtype=torch.float
+                    [max_seq_length, batch_size, self.sem_dim], dtype=torch.float
                 )
                 hva_embed = torch.zeros(
-                    [max_seq_length, batch_size, self.ant_size], dtype=torch.float
+                    [max_seq_length, batch_size, self.ant_dim], dtype=torch.float
                 )
 
             else:
@@ -144,13 +184,17 @@ class TransformerFModel(nn.Module):
                 nulla = nulla.to('cuda')
                 depth = depth.to('cuda')
 
-            sequence_x = torch.cat(
-                (catb_embed, hvb_embed, hvf_embed, 
-                 hva_embed, nulla.unsqueeze(dim=1), depth), 1
+            seq_attn_input = torch.cat(
+                (catb_embed, hvb_embed, hvf_embed, depth), dim=1
             ) 
-            per_sequence_x.append(sequence_x)
+            seq_coref_emb = torch.cat(
+                (hva_embed, nulla.unsqueeze(dim=1)), dim=1
+            )
+
+            per_seq_attn_input.append(seq_attn_input)
+            per_seq_coref_emb.append(seq_coref_emb)
     
-        return per_sequence_x
+        return per_seq_attn_input, per_seq_coref_emb
 
 
     def get_padded_input_matrix(self, per_sequence_x):
@@ -180,19 +224,29 @@ class TransformerFModel(nn.Module):
 
     def forward(self, batch_finfo):
         # list of matrices, one matrix for each sequence
-        per_sequence_x = self.get_per_sequence_x(batch_finfo)
-        # 3D tensor of dimensionality SxNxE
+        per_seq_attn_input, per_seq_coref_emb = \
+            self.get_per_sequence_x(batch_finfo)
+        # attn_input_3d and coref_emb_3d are 3D tensors of dimensionality SxNxE
         # S: sequence length
         # N: batch size (number of sequences)
         # E: embedding size
-        x = self.get_padded_input_matrix(per_sequence_x)
-        q = self.query(x)
-        k = self.key(x)
-        v = self.value(x)
+        attn_input_3d = self.get_padded_input_matrix(per_seq_attn_input)
+        coref_emb_3d = self.get_padded_input_matrix(per_seq_coref_emb)
+        #q = self.query(attn_input_3d)
+        #k = self.key(attn_input_3d)
+        #v = self.value(attn_input_3d)
+        # the same matrix is used as query, key, and value. Within the attn
+        # layer this will be projected to a separate q, k, and v for each
+        # attn head
+        qkv = self.pre_attn_fc(attn_input_3d)
+        if self.use_positional_encoding:
+            qkv = self.positional_encoding(qkv)
         # use mask to hide future inputs
-        mask = self.get_attn_mask(len(x))
+        mask = self.get_attn_mask(len(attn_input_3d))
         # second output is attn weights
-        x, _ = self.attn(q, k, v, attn_mask=mask)
+        #attn_output, _ = self.attn(q, k, v, attn_mask=mask)
+        attn_output, _ = self.attn(qkv, qkv, qkv, attn_mask=mask)
+        x = torch.cat((attn_output, coref_emb_3d), dim=2)
         x = self.fc1(x)
         x = self.dropout(x)
         x = self.relu(x)
