@@ -375,7 +375,7 @@ for line in sys.stdin:
 
 
         def getOutscoper( Unbound, EverUnbound ):
-          if VERBOSE: print( 'DDDDDDDDDD trying to find outscoper for ' + str(Unbound) )
+          if VERBOSE: print( 'DDDDDDDDDD trying to find outscoper for ' + str(Unbound) + ' ' + str(EverUnbound) )
           ## For each unbound variable...
           for var in Unbound:
             ## Look up each expression...
@@ -386,7 +386,7 @@ for line in sys.stdin:
               ## If all old unbounds are scoped, and not new unbounds, return new expression...
               if SupUnbound == []: return var,supexpr,EverUnbound
               ## If all old unbounds are outscoped...
-              if set(SupUnbound).isdisjoint( Unbound ):
+              if set(SupUnbound).isdisjoint( EverUnbound ):
                 ## Repeat for newly unbound variables...
                 return getOutscoper( SupUnbound, EverUnbound + SupUnbound )
           if VERBOSE: print( 'failed' )

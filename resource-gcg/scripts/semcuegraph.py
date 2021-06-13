@@ -482,6 +482,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           ## replace macro lex rules with compositional rules...
           if   xrule == 'COPU'  :  xrule = '%|21=1'
           elif xrule == 'MDL'   :  xrule = '%|Qr0=%Q^Qr1=r^Qr2=^Er0=B:contain^Er1=^Er2=2r'
+          elif xrule == 'CONDL' :  xrule = '%|Qr0=%Q^Qr1=r^Qr2=^Er0=B:contain^Er1=^Er2=2r^Fr0=B:contain^Fr1=r^Fr2=1'
+          elif xrule == 'DPOSS' :  xrule = '%|Er0=B-aN-bN:have^Er1=2^Er2=1r'
           elif xrule == 'NOTHAVE' : xrule = '%|r0=D:noneQ^r1=Er^r2=E^Er0=B-aN-bN:have^Er1=1^Er2=2'
           elif xrule == 'NGEN'  :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'NEXI'  :  xrule = '%|Qr0=D:someQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
@@ -489,7 +491,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif xrule == 'NORD'  :  xrule = '%|Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r^Rrh=SH'
           elif xrule == 'NORDEXI' :  xrule = '%|Rr0=D:someQ^Rr1=r^Rr2=^Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^Pr0=A:prec^Pr1=2^Pr2=r^Prh=SH'
           elif xrule == 'NORDSUP' :  xrule = '%|Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^31=2^3r1h=SH^Pr0=3r0^Pr1=r^Rr0=A:gt^Rr1=3r2^Rr2=Pr2'
-          elif xrule == 'NSUP'  :  xrule = '%|Qr0=D:moreQ^Er0=%ness^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2'
+          elif xrule == 'NSUP'  :  xrule = '%|Qr0=D:moreQ^Er0=%ness^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2' #^Qr2s=2^Qr1s=Qr2'  ## should induce this; should not crash if added; why not?
           elif xrule == 'NSUP3' :  xrule = '%|Qr0=D:moreQ^Er0=3r0^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2'
           elif xrule == 'NSUPEXI' :  xrule = '%|Rr0=D:someQ^Rr1=r^Rr2=^Qr0=D:moreQ^Er0=%ness^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2'
           elif xrule == 'NCOMP' :  xrule = '%|Er0=%^Er1=r^Er2=2^2w=^t=s' #^Q0=D:someDummyQ^Q1=31r^Q2=31'
@@ -500,9 +502,11 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif xrule == 'NREL2' :  xrule = '%|Er0=%^Er1=r^Er2=2'
           elif xrule == 'PGEN'  :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2=^r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'PRED1' :  xrule = '%|r0=%^r1=1'
+          elif xrule == 'PRED2' :  xrule = '%|r0=%^r1=2'  ## 'the form of a mountain'
           elif xrule == 'PRED12':  xrule = '%|r0=%^r1=1^r2=2'
           elif xrule == 'PRED13':  xrule = '%|r0=%^r1=1^r2=3'
           elif xrule == 'PRED'  :  xrule = '%|r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
+          elif xrule == 'PRAIS' :  xrule = '%|21=1^r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'QGEN'  :  xrule = '%|r0=D:genQ^r1=1r^r2=1'
           elif xrule == 'QUANT' :  xrule = '%|r0=%Q^r1=1r^r2=1'
           elif xrule == 'QUANT2' :  xrule = '%|r0=%Q^r1=2r^r2=2'
