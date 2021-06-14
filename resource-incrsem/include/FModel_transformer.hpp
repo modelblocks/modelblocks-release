@@ -133,6 +133,8 @@ class FModel {
     vec fbfv;
     vec fbsv;
 
+    vec computeResult( vector<vec> attnInput, vec corefVector ) const;
+
   public:
 
     FModel( ) 
@@ -330,98 +332,205 @@ class FModel {
       return ( ( it != mfeki.end() ) ? it->second : uint(-1) );
     }
 
-    // TODO
-    vec calcResponses( FPredictorVec& lfpredictors ) const {
-// return distribution over FEK indices
-      const HVec hvA = lfpredictors.getHvA();
-      const bool nullA = lfpredictors.getNullA();
-      const vec hvAEmb = getKVecEmbed(hvA, 'A');
+    vec calcResponses( FPredictorVec& lfpredictors, int wordIndex ) const;
 
-      const BeamElement<HiddState> be = lfpredictors.getBeamElement();
-      CVar catB = getCatBase(be);
-      HVec hvB = getHvB(be);
-      HVec hvF = getHvF(be);
-      uint d = getDepth(be);
-      
-      vec catBEmb = getCatEmbed(catB, 'B');
-      vec hvBEmb = getKVecEmbed(hvB, 'B');
-      vec hvFEmb = getKVecEmbed(hvF, 'F');
-
-      // populate input vector to pre-attn feedforward
-      vec preAttnInputs = join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), zeros(7)); 
-      preAttnInputs(2*FSEM_DIM + FSYN_DIM + d) = 1;
-
-      vec attnInputs = fwpm*preAttnInputs + fbpv;
-      // we only char about the query for the latest word, hence the const
-      const vec query = fwqm*attnInputs + fbqv;
-      vec key = fwkm*attnInputs + fbkv;
-      vec value = fwvm*attnInputs + fbvv;
-
-      // TODO not sure if this is the right way to get the length of a vec
-      const double scalingFactor = sqrt(fbqv.size());
-
-      list<vec> values;
-      // Q*K for each f decision being attended to, scaled by sqrt(attn_dim)
-      list<double> scaledDotProds;
-      values.emplace_front(value);
-      scaledDotProds.emplace_front(dot(query, key)/scalingFactor);
-
-      //const BeamElement<HiddState>* pbeAnt = &beDummy;
-      //const BeamElement<HiddState>* curr = &be.getBack();
-
-      //while (&curr != &BeamElement<HiddState>::beStableDummy)
-      //for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { 
-      // TODO limit how far back you go?
-      for (const BeamElement<HiddState>* curr = &be.getBack(); (curr != &BeamElement<HiddState>::beStableDummy); curr = &curr->getBack()) {
-        catB = getCatBase(*curr);
-        hvB = getHvB(*curr);
-        hvF = getHvF(*curr);
-        d = getDepth(*curr);
-        
-        catBEmb = getCatEmbed(catB, 'B');
-        hvBEmb = getKVecEmbed(hvB, 'B');
-        hvFEmb = getKVecEmbed(hvF, 'F');
-
-        preAttnInputs = join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), zeros(7)); 
-        preAttnInputs(2*FSEM_DIM + FSYN_DIM + d) = 1;
-  
-        attnInputs = fwpm*preAttnInputs + fbpv;
-        key = fwkm*attnInputs + fbkv;
-        value = fwvm*attnInputs + fbvv;
-        values.emplace_front(value);
-        scaledDotProds.emplace_front(dot(query, key)/scalingFactor);
-
-        //curr = &curr->getBack();
-      }
-
-      // take softmax of scaled dot products
-      vec sdp = vec(scaledDotProds.size());
-      for ( uint i=0; (i < scaledDotProds.size()); i++ ) {
-        sdp(i) = scaledDotProds.front();
-        scaledDotProds.pop_front();
-      }
-      vec sdpExp = exp(sdp);
-      double norm = accu(sdpExp);
-      vec sdpSoftmax = sdpExp/norm;
-
-      // calculate scaled_softmax(QK)*V
-      vec attnResult = zeros<vec>(fbvv.size());
-
-      for ( uint i=0; (i < values.size()); i++ ) {
-        double weight = sdpSoftmax(i);
-        vec val = values.front();
-        values.pop_front();
-        attnResult = attnResult + weight*val;
-      }
-
-      vec attnOutput = fwom*attnResult + fbov;
-      // final bit is for nullA
-      vec hiddenInput = join_cols(join_cols(attnResult, hvAEmb), zeros(1));
-      if (nullA) hiddenInput(attnResult.size() + hvAEmb.size()) = 1;
-      vec logScores = fwsm * relu(fwfm*hiddenInput + fbfv) + fbsv;
-      vec scores = exp(logScores);
-      double outputNorm = accu(scores);
-      return scores/outputNorm;
-    } 
+    vec testCalcResponses() const;
 };
 
+// Word index needed for positional encoding
+vec FModel::calcResponses( FPredictorVec& lfpredictors, int wordIndex ) const {
+// return distribution over FEK indices
+  const HVec hvA = lfpredictors.getHvA();
+  const bool nullA = lfpredictors.getNullA();
+  const vec hvAEmb = getKVecEmbed(hvA, 'A');
+
+  vec corefVec = join_cols(hvAEmb, zeros(1));
+  if (nullA) corefVec(hvAEmb.size()) = 1;
+
+  const BeamElement<HiddState> be = lfpredictors.getBeamElement();
+
+  vector<vec> attnInput;
+  
+  // TODO add positional encoding
+  // TODO limit how far back you can go
+  // this moves backwards in time, starting with the word for which the
+  // response is being calculated
+  for (const BeamElement<HiddState>* curr = &be; (curr != &BeamElement<HiddState>::beStableDummy); curr = &curr->getBack()) {
+    CVar catB = getCatBase(*curr);
+    HVec hvB = getHvB(*curr);
+    HVec hvF = getHvF(*curr);
+    uint d = getDepth(*curr);
+    
+    vec catBEmb = getCatEmbed(catB, 'B');
+    vec hvBEmb = getKVecEmbed(hvB, 'B');
+    vec hvFEmb = getKVecEmbed(hvF, 'F');
+
+    vec currAttnInput = join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), zeros(7)); 
+    currAttnInput(2*FSEM_DIM + FSYN_DIM + d) = 1;
+    // vector<> doesn't have an emplace_front method
+    attnInput.emplace_back(currAttnInput);
+  }
+
+  // reverse attnInput so that the last item is the most recent word
+  reverse(attnInput.begin(), attnInput.end());
+  
+  return computeResult(attnInput, corefVec);
+}
+
+
+// returns distribution over FEK indices
+// attnInput contains the embeddings for previous words up to the current word
+// attnInput.back() is the current word that we are making an F decision for
+// TODO positional encoding
+vec FModel::computeResult( vector<vec> attnInput, vec corefVec ) const {
+  vec last = attnInput.back();
+  vec proj = fwpm*last + fbpv;
+  const vec query = fwqm*proj + fbqv;
+  // used to scale the attention softmax (see section 3.2.1 of Attention
+  // Is All You Need)
+  const double scalingFactor = sqrt(fbqv.size());
+
+  vector<vec> values;
+  vector<double> scaledDotProds;
+  for ( vec curr : attnInput ) { 
+    proj = fwpm*curr + fbpv;
+    vec key = fwkm*proj + fbkv;
+    vec value = fwvm*proj + fbvv;
+    values.emplace_back(value);
+    scaledDotProds.emplace_back(dot(query, key)/scalingFactor);
+  }
+
+  vec sdp = vec(scaledDotProds.size());
+  for ( uint i=0; (i < scaledDotProds.size()); i++ ) {
+    sdp(i) = scaledDotProds[i];
+  }
+
+  vec sdpExp = exp(sdp);
+  double norm = accu(sdpExp);
+  vec sdpSoftmax = sdpExp/norm;
+
+  // calculate scaled_softmax(QK)*V
+  vec attnResult = zeros<vec>(fbvv.size());
+
+  for ( uint i=0; (i < values.size()); i++ ) {
+    double weight = sdpSoftmax(i);
+    vec val = values[i];
+    attnResult += weight*val;
+  }
+
+  vec attnOutput = fwom*attnResult + fbov;
+  // final bit is for nullA
+  vec hiddenInput = join_cols(attnOutput, corefVec);
+  vec logScores = fwsm * relu(fwfm*hiddenInput + fbfv) + fbsv;
+  vec scores = exp(logScores);
+  double outputNorm = accu(scores);
+  return scores/outputNorm;
+} 
+
+
+// pass vectors of 1s as inputs as a sanity check (for comparison with
+// Python training code)
+vec FModel::testCalcResponses() const {
+  vector<vec> attnInput;
+  for ( int i=0; (i<10); i++ ) {
+    attnInput.emplace_back(ones<vec>(2*FSEM_DIM + FSYN_DIM + 7));
+  }
+  
+  vec corefVec = ones<vec>(FANT_DIM+1);
+
+  return computeResult(attnInput, corefVec);
+}
+
+
+  //=============================================================================
+
+//  CVar catB = getCatBase(be);
+//  HVec hvB = getHvB(be);
+//  HVec hvF = getHvF(be);
+//  uint d = getDepth(be);
+//  
+//  vec catBEmb = getCatEmbed(catB, 'B');
+//  vec hvBEmb = getKVecEmbed(hvB, 'B');
+//  vec hvFEmb = getKVecEmbed(hvF, 'F');
+//
+//  // populate input vector to pre-attn feedforward
+//  vec preAttnInputs = join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), zeros(7)); 
+//  preAttnInputs(2*FSEM_DIM + FSYN_DIM + d) = 1;
+//
+//  vec attnInputs = fwpm*preAttnInputs + fbpv;
+//  // we only char about the query for the latest word, hence the const
+//  const vec query = fwqm*attnInputs + fbqv;
+//  vec key = fwkm*attnInputs + fbkv;
+//  vec value = fwvm*attnInputs + fbvv;
+//
+//  // TODO not sure if this is the right way to get the length of a vec
+//  const double scalingFactor = sqrt(fbqv.size());
+//
+//  list<vec> values;
+//  // Q*K for each f decision being attended to, scaled by sqrt(attn_dim)
+//  list<double> scaledDotProds;
+//  values.emplace_front(value);
+//  scaledDotProds.emplace_front(dot(query, key)/scalingFactor);
+//
+//  //const BeamElement<HiddState>* pbeAnt = &beDummy;
+//  //const BeamElement<HiddState>* curr = &be.getBack();
+//
+//  //while (&curr != &BeamElement<HiddState>::beStableDummy)
+//  //for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { 
+//  
+//  int wordOffset = 0;
+//  // TODO limit how far back you go?
+//  for (const BeamElement<HiddState>* curr = &be.getBack(); (curr != &BeamElement<HiddState>::beStableDummy); curr = &curr->getBack(), wordOffset++) {
+//    catB = getCatBase(*curr);
+//    hvB = getHvB(*curr);
+//    hvF = getHvF(*curr);
+//    d = getDepth(*curr);
+//    
+//    catBEmb = getCatEmbed(catB, 'B');
+//    hvBEmb = getKVecEmbed(hvB, 'B');
+//    hvFEmb = getKVecEmbed(hvF, 'F');
+//
+//    preAttnInputs = join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), zeros(7)); 
+//    preAttnInputs(2*FSEM_DIM + FSYN_DIM + d) = 1;
+//
+//    attnInputs = fwpm*preAttnInputs + fbpv;
+//    // TODO add positional encoding here, using wordIndex - wordOffset
+//    key = fwkm*attnInputs + fbkv;
+//    value = fwvm*attnInputs + fbvv;
+//    values.emplace_front(value);
+//    scaledDotProds.emplace_front(dot(query, key)/scalingFactor);
+//
+//    //curr = &curr->getBack();
+//  }
+//
+//  // take softmax of scaled dot products
+//  vec sdp = vec(scaledDotProds.size());
+//  for ( uint i=0; (i < scaledDotProds.size()); i++ ) {
+//    sdp(i) = scaledDotProds.front();
+//    scaledDotProds.pop_front();
+//  }
+//  vec sdpExp = exp(sdp);
+//  double norm = accu(sdpExp);
+//  vec sdpSoftmax = sdpExp/norm;
+//
+//  // calculate scaled_softmax(QK)*V
+//  vec attnResult = zeros<vec>(fbvv.size());
+//
+//  for ( uint i=0; (i < values.size()); i++ ) {
+//    double weight = sdpSoftmax(i);
+//    vec val = values.front();
+//    values.pop_front();
+//    attnResult = attnResult + weight*val;
+//  }
+//
+//  vec attnOutput = fwom*attnResult + fbov;
+//  // final bit is for nullA
+//  //vec hiddenInput = join_cols(join_cols(attnResult, hvAEmb), zeros(1));
+//  vec hiddenInput = join_cols(join_cols(attnOutput, hvAEmb), zeros(1));
+//  //if (nullA) hiddenInput(attnResult.size() + hvAEmb.size()) = 1;
+//  if (nullA) hiddenInput(attnOutput.size() + hvAEmb.size()) = 1;
+//  vec logScores = fwsm * relu(fwfm*hiddenInput + fbfv) + fbsv;
+//  vec scores = exp(logScores);
+//  double outputNorm = accu(scores);
+//  return scores/outputNorm;
+//} 

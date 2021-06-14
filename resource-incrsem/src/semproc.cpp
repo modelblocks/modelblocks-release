@@ -452,7 +452,7 @@ int main ( int nArgs, char* argv[] ) {
           mapWWPP.try_emplace(w_t, mapWPP);
           //if (w_t == W("``") and currline == 37) { VERBOSE += 1; } //corontowsj01 208first.158onward sent immediately after jim enzor sent crashes, outputting only first `` token.
           // For each hypothesized storestate at previous time step...
-          for( const BeamElement<HiddState>& be_tdec1 : beams[t-1] ) { //beams[t-1] is a Beam<ProbBack,BeamElement>, so be_tdec1 is a beam item, which is a pair<ProbBack,BeamElement>. first.first is the prob in the probback, and second is the beamelement, which is a sextuple of <sign, f, e, k, j, q>
+          for( const BeamElement<HiddState>& be_tdec1 : beams[t-1] ) { //beams[t-1] is a Beam<HiddState>, so be_tdec1 is a beam item, which is a pair<ProbBack,HiddState>. first.first is the prob in the probback, and second is the hidden state, which is a sextuple of <sign, f, e, k, j, q>
             double            lgpr_tdec1 = be_tdec1.getProb(); // logprob of prev storestate
             const StoreState& q_tdec1    = be_tdec1.getHidd().sixth();  // prev storestate
             if( VERBOSE>1 ) cout << "  from (" << be_tdec1.getHidd() << ")" << endl;
@@ -554,11 +554,14 @@ int main ( int nArgs, char* argv[] ) {
                 // be_tdec1 is the hypothesized store state from the previous time step
                 // Maybe it's necessary to pass modF in too; not sure yet
                 FPredictorVec lfpredictors( be_tdec1, hvAnt, not corefON );
+                // sanity test
+                cerr << "F " << modF.testCalcResponses() << endl;
+                arma::vec fresponses = modF.calcResponses( lfpredictors, word_index-1 );
 #else
                 FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );
 //                if( VERBOSE>1 ) cout << "     f predictors: " << pair<const FModel&,const FPredictorVec&>( modF, lfpredictors ) << endl;
-#endif
                 arma::vec fresponses = modF.calcResponses( lfpredictors );
+#endif
 
                 //get most recent observed word for which k of fek F decision was 'unk'.
                 const BeamElement<HiddState>* antPtr = pbeAnt;
