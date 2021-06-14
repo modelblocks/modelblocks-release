@@ -347,7 +347,9 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         G[n,'0']+='-closed'  ## close off nolo
     elif '-lI' in sE:                               ## I
       G.equate( G.result('S',d), 'S', c )
-      if sD.startswith('N-b{V-g') or sD.startswith('N-b{I-aN-g'):                                 ## nominal clause
+      if sD.startswith('N-b{V-g{'):                                                               ## nominal clause with relation extraction
+        G.equate( G.result('S',d), 'S', G.result('A',e) )
+      elif sD.startswith('N-b{V-g') or sD.startswith('N-b{I-aN-g'):                               ## nominal clause with nominal extraction
         G.equate( G.result('r',G.result('S',d)), 'S', G.result('A',e) )
       elif '-b{I-aN-gN}' in sD:                                                                   ## tough construction
         G.equate( G.result('1\'',G.result('S',d)), 'S', G.result('A',e) )
