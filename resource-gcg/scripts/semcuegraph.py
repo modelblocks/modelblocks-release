@@ -347,7 +347,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         G[n,'0']+='-closed'  ## close off nolo
     elif '-lI' in sE:                               ## I
       G.equate( G.result('S',d), 'S', c )
-      if sD.startswith('N-b{V-g{'):                                                               ## nominal clause with relation extraction
+      if sD.startswith('N-b{V-g{') or sD.startswith('N-b{I-aN-g{'):                               ## nominal clause with relation extraction
         G.equate( G.result('S',d), 'S', G.result('A',e) )
       elif sD.startswith('N-b{V-g') or sD.startswith('N-b{I-aN-g'):                               ## nominal clause with nominal extraction
         G.equate( G.result('r',G.result('S',d)), 'S', G.result('A',e) )
@@ -648,7 +648,7 @@ class SemCueGraph( StoreStateCueGraph ):
     if t is not None:
       G = StoreStateCueGraph( t )
       for x,l in sorted( G.keys() ):
-        if l!='A' and l!='B' and l!='S' and l!='X' and l not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' and (l!='0' or x[-1] in 'ersABCDEFGHIJKLMNOPQRSTUVWXYZ') and l[-1]!='\'':
+        if l!='A' and l!='B' and l!='S' and l!='X' and l not in 'ABCDEFGHIJKLMNOPQRSTUVWWXYZ' and (l!='0' or x[-1] in 'ersABCDEFGHIJKLMNOPQRSTUVWXYZ') and l[-1]!='\'':
           H[x,l] = G[x,l]
 
 #  def add( H, t, sentnumprefix ):
@@ -663,7 +663,7 @@ class SemCueGraph( StoreStateCueGraph ):
       if (l in 'mnsuuw' or l == 'tt') and ( (G[x,l][0:4],'S') not in G or (G[G[x,l][0:4],'S'],'r') not in G ):
         sys.stderr.write( 'WARNING: destination ' + G[x,l] + ' of dependency ' + l + ' in ' + x + ' not complete referential state in graph!\n' )
     for x,l in sorted( G.keys() ):
-      if l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'ersCDEFGHIJKLMNOPQRSTUVWXYZ':
+      if l in 'ABCDEFGHIJKLMNOPQRSTUVWWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'ersCDEFGHIJKLMNOPQRSTUVWXYZ':
         del G[x,l]
 
       '''
