@@ -1,4 +1,4 @@
-import sys, configparser, torch, re, os, time, random
+import sys, configparser, torch, re, os, time, random, pickle
 from collections import Counter
 import torch.nn as nn
 import torch.optim as optim
@@ -235,6 +235,9 @@ def train(f_config):
 def main(config):
     f_config = config['FModel']
     torch.manual_seed(f_config.getint('Seed'))
+    save_pytorch = f_config.getboolean('SaveTorchModel')
+    pytorch_fn = f_config.get('TorchFilename')
+    extra_params_fn = f_config.get('ExtraParamsFilename')
     model, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix = train(f_config)
 
     model.eval()
@@ -294,50 +297,18 @@ def main(config):
     for fdec, ix in sorted(fdecs_to_ix.items()):
         print('f ' + str(ix) + ' ' + str(fdec))
 
+    if save_pytorch:
+        torch.save(model.state_dict(), pytorch_fn)
+        # these are needed to initialize the model if we want to reload it
+        extra_params = {
+            'catb_vocab_size': len(catb_to_ix),
+            'hvb_vocab_size': len(hvb_to_ix),
+            'hvf_vocab_size': len(hvf_to_ix),
+            'hva_vocab_size': len(hva_to_ix),
+            'output_dim': len(fdecs_to_ix)
+        }
+        pickle.dump(extra_params, open(extra_params_fn, 'wb'))
 
-#    if f_config.getboolean('UseGPU'):
-#        catb_embeds = model.state_dict()['catb_embeds.weight'].data.cpu().numpy()
-#        hvecb_embeds = model.state_dict()['hvb_embeds.weight'].data.cpu().numpy()
-#        hvecf_embeds = model.state_dict()['hvf_embeds.weight'].data.cpu().numpy()
-#        hveca_embeds = model.state_dict()['hva_embeds.weight'].data.cpu().numpy()
-#        query_weights = model.state_dict()['query.weight'].data.cpu().numpy()
-#        key_weights = model.state_dict()['key.weight'].data.cpu().numpy()
-#        value_weights = model.state_dict()['value.weight'].data.cpu().numpy()
-#        fc1_weights = model.state_dict()['fc1.weight'].data.cpu().numpy()
-#        fc1_biases = model.state_dict()['fc1.bias'].data.cpu().numpy()
-#        fc2_weights = model.state_dict()['fc2.weight'].data.cpu().numpy()
-#        fc2_biases = model.state_dict()['fc2.bias'].data.cpu().numpy()
-#    else:
-#        catb_embeds = model.state_dict()['catb_embeds.weight'].data.numpy()
-#        hvecb_embeds = model.state_dict()['hvb_embeds.weight'].data.numpy()
-#        hvecf_embeds = model.state_dict()['hvf_embeds.weight'].data.numpy()
-#        hveca_embeds = model.state_dict()['hva_embeds.weight'].data.numpy()
-#        query_weights = model.state_dict()['query.weight'].data.numpy()
-#        query_biases = model.state_dict()['query.bias'].data.numpy()
-#        key_weights = model.state_dict()['key.weight'].data.numpy()
-#        key_biases = model.state_dict()['key.bias'].data.numpy()
-#        value_weights = model.state_dict()['value.weight'].data.numpy()
-#        value_biases = model.state_dict()['value.bias'].data.numpy()
-#        attn_weights = model.state_dict()['attn.weight'].data.numpy()
-#        attn_biases = model.state_dict()['attn.bias'].data.numpy()
-#        fc1_weights = model.state_dict()['fc1.weight'].data.numpy()
-#        fc1_biases = model.state_dict()['fc1.bias'].data.numpy()
-#        fc2_weights = model.state_dict()['fc2.weight'].data.numpy()
-#        fc2_biases = model.state_dict()['fc2.bias'].data.numpy()
-#
-#    print('F Q ' + ','.join(map(str, query_weights.flatten('F').tolist())))
-#    print('F q ' + ','.join(map(str, query_biases.flatten('F').tolist())))
-#    print('F K ' + ','.join(map(str, key_weights.flatten('F').tolist())))
-#    print('F k ' + ','.join(map(str, key_biases.flatten('F').tolist())))
-#    print('F V ' + ','.join(map(str, value_weights.flatten('F').tolist())))
-#    print('F v ' + ','.join(map(str, value_biases.flatten('F').tolist())))
-#    print('F A ' + ','.join(map(str, attn_weights.flatten('F').tolist())))
-#    print('F a ' + ','.join(map(str, attn_biases.flatten('F').tolist())))
-#    print('F F ' + ','.join(map(str, fc1_weights.flatten('F').tolist())))
-#    print('F f ' + ','.join(map(str, fc1_biases.flatten('F').tolist())))
-#    print('F S ' + ','.join(map(str, fc2_weights.flatten('F').tolist())))
-#    print('F s ' + ','.join(map(str, fc2_biases.flatten('F').tolist())))
-#
 
 if __name__ == '__main__':
     config = configparser.ConfigParser(allow_no_value=True)

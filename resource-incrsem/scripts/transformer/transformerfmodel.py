@@ -1,4 +1,4 @@
-import torch
+import torch, math
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -232,21 +232,30 @@ class TransformerFModel(nn.Module):
         # E: embedding size
         attn_input_3d = self.get_padded_input_matrix(per_seq_attn_input)
         coref_emb_3d = self.get_padded_input_matrix(per_seq_coref_emb)
-        #q = self.query(attn_input_3d)
-        #k = self.key(attn_input_3d)
-        #v = self.value(attn_input_3d)
+        return self.compute(attn_input_3d, coref_emb_3d)
+
+
+    def compute(self, attn_input, coref_emb, verbose=False):
         # the same matrix is used as query, key, and value. Within the attn
         # layer this will be projected to a separate q, k, and v for each
         # attn head
-        qkv = self.pre_attn_fc(attn_input_3d)
+        if verbose:
+            print('final word attn input:')
+            for x in attn_input[-1, 0]:
+                print(x.item())
+        qkv = self.pre_attn_fc(attn_input)
+        if verbose:
+            print('final word\'s qkv:')
+            for x in qkv[-1, 0]:
+                print(x.item())
         if self.use_positional_encoding:
             qkv = self.positional_encoding(qkv)
         # use mask to hide future inputs
-        mask = self.get_attn_mask(len(attn_input_3d))
+        mask = self.get_attn_mask(len(attn_input))
         # second output is attn weights
         #attn_output, _ = self.attn(q, k, v, attn_mask=mask)
         attn_output, _ = self.attn(qkv, qkv, qkv, attn_mask=mask)
-        x = torch.cat((attn_output, coref_emb_3d), dim=2)
+        x = torch.cat((attn_output, coref_emb), dim=2)
         x = self.fc1(x)
         x = self.dropout(x)
         x = self.relu(x)
