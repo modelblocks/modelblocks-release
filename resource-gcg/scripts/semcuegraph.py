@@ -304,6 +304,16 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     elif '-lM' in sE:                               ## Mb
       G.equate( G.result('S',d), 'S', c )
       G.equate( G.result('r',G.result('S',d)), '1\'', G.result('S',e) )
+    elif '-lC' in sD and '-lC' in sE:               ## Cd
+      G.equate( G.result('S',c), 'c', G.result('S',d) )
+      G.equate( G.result('S',c), 'c', G.result('S',e) )
+      G.equate( G.result('r',G.result('S',c)), 'c', G.result('r',G.result('S',d)) )
+      G.equate( G.result('r',G.result('S',c)), 'c', G.result('r',G.result('S',e)) )
+      G.equate( G.result('H',G.result('S',d)), 'H', G.result('S',c) )
+      G.equate( G.result('H',G.result('S',c)), 'H', G.result('S',e) )
+      for i in range( 1, len(gcgtree.deps(sC,'ab'))+1 ): #G.getArity(sC)+1 ):
+        G.equate( G.result(str(i)+'\'',G.result('S',c)), str(i)+'\'', G.result('S',d) )
+        G.equate( G.result(str(i)+'\'',G.result('S',c)), str(i)+'\'', G.result('S',e) )
     elif '-lC' in sD:                               ## Ca,Cb
       G.equate( G.result('S',c), 'S', e )
       G.equate( G.result('r',G.result('S',e)), 'c', G.result('r',G.result('S',d)) )
@@ -320,7 +330,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('H',G.result('S',c)), 'H', G.result('S',e) )
       for i in range( 1, len(gcgtree.deps(sC,'ab'))+1 ):  #G.getArity(sC)+1 ):
         G.equate( G.result(str(i)+'\'',G.result('S',c)), str(i)+'\'', G.result('S',e) )
-      if sE.endswith('-g{V-gN}-lC'):                ## Cd
+      if sE.endswith('-g{V-gN}-lC'):                ## Ce
         G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
 #        G.equate( G.result('W',G.result('S',d)), 'w', G.result('S',G.result('A',e)) )
 #        G.equate( G.result('s',G.result('W',G.result('S',d))), 't', G.result('W',G.result('S',d)) )
