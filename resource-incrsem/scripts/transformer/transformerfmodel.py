@@ -239,13 +239,25 @@ class TransformerFModel(nn.Module):
         # the same matrix is used as query, key, and value. Within the attn
         # layer this will be projected to a separate q, k, and v for each
         # attn head
-        if verbose:
-            print('final word attn input:')
-            for x in attn_input[-1, 0]:
-                print(x.item())
+#        if verbose:
+#            print('F final word attn input:')
+#            for x in attn_input[-1, 0]:
+#                print(x.item())
+#            weights = self.state_dict()['pre_attn_fc.weight'].data.cpu().numpy()
+#            print('F pre attn fc weights shape:', weights.shape)
+#            print('F pre attn fc weights numpy:')
+#            print(weights)
+#            print('F pre attn fc weights:')
+#            # F is column-major order
+#            for x in weights.flatten('F'):
+#                print(x)
+#            print('F final word pre_attn_fc bias:')
+#            bias = self.state_dict()['pre_attn_fc.bias'].data.cpu().numpy()
+#            for x in bias:
+#                print(x)
         qkv = self.pre_attn_fc(attn_input)
         if verbose:
-            print('final word\'s qkv:')
+            print('F final word\'s qkv:')
             for x in qkv[-1, 0]:
                 print(x.item())
         if self.use_positional_encoding:
@@ -255,10 +267,23 @@ class TransformerFModel(nn.Module):
         # second output is attn weights
         #attn_output, _ = self.attn(q, k, v, attn_mask=mask)
         attn_output, _ = self.attn(qkv, qkv, qkv, attn_mask=mask)
+        if verbose:
+            print('F final word\'s attn output:')
+            for x in attn_output[-1, 0]:
+                print(x.item())
         x = torch.cat((attn_output, coref_emb), dim=2)
         x = self.fc1(x)
         x = self.dropout(x)
         x = self.relu(x)
         x = self.fc2(x)
-        return F.log_softmax(x, dim=2)
+        result = F.log_softmax(x, dim=2)
+        if verbose:
+            for i in range(result.shape[0]):
+                log_scores = result[i, 0]
+                scores = torch.exp(log_scores)
+                norm_scores = scores/sum(scores)
+                print('F ==== output for word {} ===='.format(i))
+                for x in norm_scores:
+                    print(x.item())
+        return result
 

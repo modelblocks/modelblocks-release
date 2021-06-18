@@ -25,14 +25,23 @@ def main(config):
 #        model = model.cuda()
 
     model.eval()
+    model.load_state_dict(torch.load(pytorch_fn))
 
     # S x N x E
-#    dummy_attn_input = torch.ones(10, 1, 
+    seq_length = 5
+#    dummy_attn_input = torch.ones(seq_length, 1, 
 #        2*f_config.getint('SemDim') + f_config.getint('SynDim') + model.max_depth)
-#    dummy_coref_emb = torch.ones(10, 1, f_config.getint('AntDim') + 1)
-    dummy_attn_input = torch.ones(1, 1, 
+#    dummy_coref_emb = torch.ones(seq_length, 1, f_config.getint('AntDim') + 1)
+    # the ith dummy vector is filled with 0.1 * (i+1)
+    # so  [0.1 0.1 0.1 ...], [0.2 0.2 0.2 ...], ...
+    dummy_attn_input = torch.FloatTensor(seq_length, 1, 
         2*f_config.getint('SemDim') + f_config.getint('SynDim') + model.max_depth)
-    dummy_coref_emb = torch.ones(1, 1, f_config.getint('AntDim') + 1)
+    dummy_coref_emb = torch.FloatTensor(seq_length, 1, f_config.getint('AntDim') + 1)
+    for i in range(seq_length):
+        for j in range(len(dummy_attn_input[i, 0])):
+            dummy_attn_input[i, 0, j] = 0.1 * (i+1)
+        for j in range(len(dummy_coref_emb[i, 0])):
+            dummy_coref_emb[i, 0, j] = 0.1 * (i+1)
     dummy_pred = model.compute(dummy_attn_input, dummy_coref_emb, verbose=True)
     # only look at the last word
     fdec_log_scores = dummy_pred[-1, 0]
