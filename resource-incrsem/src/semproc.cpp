@@ -332,6 +332,11 @@ int main ( int nArgs, char* argv[] ) {
 
   cerr<<"Models ready."<<endl;
 
+  // sanity test
+  cerr << "F sanity test:\n" << endl;
+  modF.testCalcResponses();
+  //cerr << "F sanity test:\n" << modF.testCalcResponses() << endl;
+
   mutex mutexMLSList;
   vector<thread> vtWorkers;  vtWorkers.reserve( numThreads );
 
@@ -554,8 +559,6 @@ int main ( int nArgs, char* argv[] ) {
                 // be_tdec1 is the hypothesized store state from the previous time step
                 // Maybe it's necessary to pass modF in too; not sure yet
                 FPredictorVec lfpredictors( be_tdec1, hvAnt, not corefON );
-                // sanity test
-                cerr << "F " << modF.testCalcResponses() << endl;
                 arma::vec fresponses = modF.calcResponses( lfpredictors, word_index-1 );
 #else
                 FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );

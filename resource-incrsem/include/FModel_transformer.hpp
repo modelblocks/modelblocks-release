@@ -133,7 +133,7 @@ class FModel {
     vec fbfv;
     vec fbsv;
 
-    vec computeResult( vector<vec> attnInput, vec corefVector ) const;
+    vec computeResult( vector<vec> attnInput, vec corefVector, bool verbose ) const;
 
   public:
 
@@ -334,7 +334,7 @@ class FModel {
 
     vec calcResponses( FPredictorVec& lfpredictors, int wordIndex ) const;
 
-    vec testCalcResponses() const;
+    void testCalcResponses() const;
 };
 
 // Word index needed for positional encoding
@@ -374,7 +374,7 @@ vec FModel::calcResponses( FPredictorVec& lfpredictors, int wordIndex ) const {
   // reverse attnInput so that the last item is the most recent word
   reverse(attnInput.begin(), attnInput.end());
   
-  return computeResult(attnInput, corefVec);
+  return computeResult(attnInput, corefVec, 0);
 }
 
 
@@ -382,9 +382,25 @@ vec FModel::calcResponses( FPredictorVec& lfpredictors, int wordIndex ) const {
 // attnInput contains the embeddings for previous words up to the current word
 // attnInput.back() is the current word that we are making an F decision for
 // TODO positional encoding
-vec FModel::computeResult( vector<vec> attnInput, vec corefVec ) const {
+vec FModel::computeResult( vector<vec> attnInput, vec corefVec, bool verbose ) const {
   vec last = attnInput.back();
+  if ( verbose ) {
+    //cerr << "F last" << last << endl;
+
+//    cerr << "F fwpm" << endl;
+//    cerr << "num rows: " << fwpm.n_rows << endl;
+//    cerr << "num cols: " << fwpm.n_cols << endl;
+//    for ( uint j=0; j<fwpm.n_cols; j++ ) {
+//      for ( uint i=0; i<fwpm.n_rows; i++ ) {
+//        cerr << fwpm(i, j) << endl;
+//      }
+//    }
+//    cerr << "F fbpv" << fbpv << endl;
+  }
   vec proj = fwpm*last + fbpv;
+  if ( verbose ) {
+    cerr << "F proj" << proj << endl;
+  }
   const vec query = fwqm*proj + fbqv;
   // used to scale the attention softmax (see section 3.2.1 of Attention
   // Is All You Need)
@@ -419,26 +435,45 @@ vec FModel::computeResult( vector<vec> attnInput, vec corefVec ) const {
   }
 
   vec attnOutput = fwom*attnResult + fbov;
+
+  if ( verbose ) {
+    cerr << "F attnOutput" << attnOutput << endl;
+  }
   // final bit is for nullA
   vec hiddenInput = join_cols(attnOutput, corefVec);
   vec logScores = fwsm * relu(fwfm*hiddenInput + fbfv) + fbsv;
   vec scores = exp(logScores);
   double outputNorm = accu(scores);
-  return scores/outputNorm;
+  vec result = scores/outputNorm;
+  if ( verbose ) {
+    cerr << "F result" << result << endl;
+  }
+  return result;
 } 
 
 
 // pass vectors of 1s as inputs as a sanity check (for comparison with
 // Python training code)
-vec FModel::testCalcResponses() const {
+void FModel::testCalcResponses() const {
+  //vec corefVec = ones<vec>(FANT_DIM+1);
+  vec corefVec;
+  vec currAttnInput;
   vector<vec> attnInput;
-  for ( int i=0; (i<10); i++ ) {
-    attnInput.emplace_back(ones<vec>(2*FSEM_DIM + FSYN_DIM + 7));
+  uint attnInputDim = 2*FSEM_DIM + FSYN_DIM + 7;
+  uint corefDim = FANT_DIM + 1;
+  uint seqLength = 5;
+  // the ith dummy input will be a vector of 0.1*(i+1)
+  // [0.1 0.1 0.1 ...] [0.2 0.2 0.2 ...] ...
+  for ( uint i=0; (i<seqLength); i++ ) {
+    cerr << "F ==== output for word " << i << " ====" << endl;
+    currAttnInput = vec(attnInputDim);
+    currAttnInput.fill(0.1 * (i+1));
+    //attnInput.emplace_back(ones<vec>(2*FSEM_DIM + FSYN_DIM + 7));
+    attnInput.emplace_back(currAttnInput);
+    corefVec = vec(corefDim);
+    corefVec.fill(0.1 * (i+1));
+    computeResult(attnInput, corefVec, 1);
   }
-  
-  vec corefVec = ones<vec>(FANT_DIM+1);
-
-  return computeResult(attnInput, corefVec);
 }
 
 
