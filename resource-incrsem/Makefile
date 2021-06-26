@@ -402,6 +402,14 @@ endef
                $(BIN)/linetrees2mlpsemprocdecpars  \
                $$(basename %).lemmacounts
 	cat $<  |  $(word 2,$^) $(wordlist 1,99,$(subst _, ,$(subst .,,$(suffix $*)))) $(word 3,$^)  >  $@
+
+## Create Transformer training example file from training corpus (% contains decpar flags)...
+.PRECIOUS: %_trdecpars
+%_trdecpars : $$(basename %).linetrees  \
+               $(BIN)/linetrees2trdecpars  \
+               $$(basename %).lemmacounts
+	cat $<  |  $(word 2,$^) $(wordlist 1,99,$(subst _, ,$(subst .,,$(suffix $*)))) $(word 3,$^)  >  $@
+
 ## remove non-coref pronouns from F predictors (for ontonotes)...
 .PRECIOUS: %_ontocorfix_mlpdecpars
 %_ontocorfix_mlpdecpars : %_mlpdecpars  $(INCRSEM-SCRIPTS)/filterFmlpdecpars_noncorefpronouns.py
@@ -468,6 +476,19 @@ endef
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^B'  |  python3 $(word 2,$^)  >  $@
 
+## Create component Transformer model file from training example file (% contains decpar flags and mlp ini filename)...
+.PRECIOUS: %_ftrmodel
+%_ftrmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_trdecpars  \
+              $(INCRSEM-SCRIPTS)/transformer/train_fmodel.py \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini
+	cat $<  |  grep '^F'  |  sed 's/^F //'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+# TODO add jtrmodel
+#.PRECIOUS: %_jmlpmodel
+#%_jmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
+#              $(INCRSEM-SCRIPTS)/mlpdecpars2jmodel.py  \
+#              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini
+#	cat $<  |  grep '^J'  |  sed 's/^J//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+
 ## Create dsp model out of component models...
 .PRECIOUS: %_densemprocmodel
 %_densemprocmodel : %_ndspmodel  %_fdspmodel  %_pdspmodel  %_wdspmodel  %_jdspmodel  %_adspmodel  %_bdspmodel  $$(basename %)$$(word 1,$$(subst _, ,$$(suffix $$*)))_emat_omodel
@@ -476,6 +497,12 @@ endef
 ## Create mlp model out of component models...
 .PRECIOUS: %_mlpsemprocmodel
 %_mlpsemprocmodel : %_nmlpmodel  %_fmlpmodel  %_pmlpmodel  %_wmlpmodel  %_jmlpmodel  %_amlpmodel  %_bmlpmodel
+	cat $^  >  $@
+
+## Create transformer model out of component models. Components other than F and J are the same as MLP
+# TODO switch jmlpmodel to jtrmodel
+.PRECIOUS: %_trsemprocmodel
+%_trsemprocmodel : %_nmlpmodel  %_ftrmodel  %_pmlpmodel  %_wmlpmodel  %_jmlpmodel  %_amlpmodel  %_bmlpmodel
 	cat $^  >  $@
 
 ## Parse with: wsj02.wsj02to21-bestgcn_bestdsp_densemproc-parsed.tokdecs
