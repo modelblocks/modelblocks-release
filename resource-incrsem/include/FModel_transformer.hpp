@@ -21,18 +21,37 @@ int getDepth( const BeamElement<HiddState>& be ) {
     return be.getHidd().getStoreState().getDepth();
 }
 
+
 CVar getCatBase( const BeamElement<HiddState>& be ) {
     return be.getHidd().getStoreState().getBase().getCat();
 }
+
 
 HVec getHvB( const BeamElement<HiddState>& be ) {
     StoreState ss = be.getHidd().getStoreState();
     return (( ss.getBase().getHVec().size() > 0 ) ? ss.getBase().getHVec() : hvBot);
 }
 
+
 HVec getHvF( const BeamElement<HiddState>& be ) {
     StoreState ss = be.getHidd().getStoreState();
     return (( ss.getBase().getCat().getNoloArity() && ss.getNoloBack().getHVec().size() != 0 ) ? ss.getNoloBack().getHVec() : hvBot);
+}
+
+
+// returns a positional encoding for an embedding of dimensionality dim,
+// at position wordIndex in sequence
+vec getPositionalEncoding( uint dim, uint wordIndex ) {
+  vec encoding = vec(dim);
+  for ( uint i=0; i<dim; i++ ) {
+    if ( i % 2 == 0 ) {
+      encoding[i] = sin(wordIndex * exp(i * -log(10000) / dim));
+    }
+    else {
+      encoding[i] = cos(wordIndex * exp((i-1) * -log(10000) / dim));
+    }
+  }
+  return encoding;
 }
 
 
@@ -133,7 +152,7 @@ class FModel {
     vec fbfv;
     vec fbsv;
 
-    vec computeResult( vector<vec> attnInput, vec corefVector, bool verbose ) const;
+    vec computeResult( vector<vec> attnInput, vec corefVector, uint wordIndex, bool verbose ) const;
 
   public:
 
@@ -337,7 +356,6 @@ class FModel {
     void testCalcResponses() const;
 };
 
-// Word index needed for positional encoding
 vec FModel::calcResponses( FPredictorVec& lfpredictors, int wordIndex ) const {
 // return distribution over FEK indices
   const HVec hvA = lfpredictors.getHvA();
@@ -351,11 +369,13 @@ vec FModel::calcResponses( FPredictorVec& lfpredictors, int wordIndex ) const {
 
   vector<vec> attnInput;
   
-  // TODO add positional encoding
-  // TODO limit how far back you can go
+  //uint MAX_WINDOW_SIZE = 20;
+  uint MAX_WINDOW_SIZE = 10;
+  uint wordOffset = 0;
   // this moves backwards in time, starting with the word for which the
-  // response is being calculated
-  for (const BeamElement<HiddState>* curr = &be; (curr != &BeamElement<HiddState>::beStableDummy); curr = &curr->getBack()) {
+  // response is being calculated. wordOffset tracks how many
+  // words back we've moved
+  for (const BeamElement<HiddState>* curr = &be; ( (curr != &BeamElement<HiddState>::beStableDummy) && (wordOffset < MAX_WINDOW_SIZE) ); curr=&curr->getBack(), wordOffset++) {
     CVar catB = getCatBase(*curr);
     HVec hvB = getHvB(*curr);
     HVec hvF = getHvF(*curr);
@@ -374,15 +394,15 @@ vec FModel::calcResponses( FPredictorVec& lfpredictors, int wordIndex ) const {
   // reverse attnInput so that the last item is the most recent word
   reverse(attnInput.begin(), attnInput.end());
   
-  return computeResult(attnInput, corefVec, 0);
+  return computeResult(attnInput, corefVec, wordIndex, 0);
 }
 
 
 // returns distribution over FEK indices
 // attnInput contains the embeddings for previous words up to the current word
 // attnInput.back() is the current word that we are making an F decision for
-// TODO positional encoding
-vec FModel::computeResult( vector<vec> attnInput, vec corefVec, bool verbose ) const {
+vec FModel::computeResult( vector<vec> attnInput, vec corefVec, uint wordIndex, bool verbose ) const {
+  bool usePositionalEncoding = false;
   vec last = attnInput.back();
   if ( verbose ) {
     //cerr << "F last" << last << endl;
@@ -398,6 +418,9 @@ vec FModel::computeResult( vector<vec> attnInput, vec corefVec, bool verbose ) c
 //    cerr << "F fbpv" << fbpv << endl;
   }
   vec proj = fwpm*last + fbpv;
+  if ( usePositionalEncoding ) {
+    proj = proj + getPositionalEncoding(fbpv.size(), wordIndex);
+  }
   if ( verbose ) {
     cerr << "F proj" << proj << endl;
   }
@@ -408,8 +431,12 @@ vec FModel::computeResult( vector<vec> attnInput, vec corefVec, bool verbose ) c
 
   vector<vec> values;
   vector<double> scaledDotProds;
+  int currIndex = wordIndex - attnInput.size() + 1;
   for ( vec curr : attnInput ) { 
     proj = fwpm*curr + fbpv;
+    if ( usePositionalEncoding ) {
+      proj = proj + getPositionalEncoding(fbpv.size(), currIndex++);
+    }
     vec key = fwkm*proj + fbkv;
     vec value = fwvm*proj + fbvv;
     values.emplace_back(value);
@@ -472,7 +499,7 @@ void FModel::testCalcResponses() const {
     attnInput.emplace_back(currAttnInput);
     corefVec = vec(corefDim);
     corefVec.fill(0.1 * (i+1));
-    computeResult(attnInput, corefVec, 1);
+    computeResult(attnInput, corefVec, i, 1);
   }
 }
 

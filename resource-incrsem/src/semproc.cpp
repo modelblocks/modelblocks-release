@@ -25,6 +25,7 @@
 #include <mutex>
 #include <chrono>
 #include <regex>
+#include <cmath>
 using namespace std;
 #include <armadillo>
 using namespace arma;
