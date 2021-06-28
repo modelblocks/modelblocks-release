@@ -259,7 +259,6 @@ void calcContext ( Tree<L>& tr,
                    map<string,int>& annot2tdisc, vector<trip<Sign,W,K>>& antecedentCandidates, int& tDisc, const int sentnum, map<string,HVec>& annot2kset,
 		   int& wordnum, bool isFailTree, std::set<int>& excludedIndices, Mapped& corefchains, // coref related: //TODO add corefchains to calcContext calls? 
        bool ABLATE_UNARY,                                             // whether or not to remove unary features for n,f,j submodels
-       bool& isNewArticle,
 		   int s=1, int d=0, string e="", L l=L() ) {                     // side, depth, unary (e.g. extraction) operators, ancestor label.
        
   static F          f;
@@ -353,7 +352,7 @@ void calcContext ( Tree<L>& tr,
         } //single candidate output
       } //all previous antecedent candidates output
 
-      cout << "F " << isNewArticle << " " << lfp << " " << f << "&" << e << "&" << k << " " << q << endl; // modF.getResponseIndex(f,e.c_str(),k);
+      cout << "F " << " " << lfp << " " << f << "&" << e << "&" << k << " " << q << endl; // modF.getResponseIndex(f,e.c_str(),k);
       //cout << "printing P training data for object l: " << l << " with linkless: " << removeLink(l) << " category: " << getCat(removeLink(l)) << endl;
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) /*getCat(l)*/     << endl;
       if (k != kAntUnk) {
@@ -380,7 +379,7 @@ void calcContext ( Tree<L>& tr,
   // At unary identity nonpreterminal...
   else if ( tr.size()==1 and getCat(tr)==getCat(tr.front()) ) {
     //cout << "recursing at unary identity nonpreterminal with l: " << l << endl; 
-    calcContext( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, isNewArticle, s, d, e, l );
+    calcContext( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, s, d, e, l );
   }
 
   // At unary nonpreterminal...
@@ -388,7 +387,7 @@ void calcContext ( Tree<L>& tr,
     //// cerr<<"#U"<<getCat(tr)<<" "<<getCat(tr.front())<<endl;
     e = e + getUnaryOp( tr );
     //cout << "recursing at unary nonpreterminal with l: " << l << endl;
-    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, isNewArticle, s, d, e, l );
+    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, s, d, e, l );
   }
 
   // At binary nonterminal...
@@ -397,14 +396,14 @@ void calcContext ( Tree<L>& tr,
     //// cerr<<"#B "<<getCat(tr)<<" "<<getCat(tr.front())<<" "<<getCat(tr.back())<<endl;
 
     if (isFailTree) {
-      calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, isNewArticle, 0, d+s );
-      calcContext ( tr.back(),  annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, isNewArticle, 1, d );
+      calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, 0, d+s );
+      calcContext ( tr.back(),  annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, 1, d );
       return;
     }
 
     // Traverse left child...
     //cout << "traversing left child..." << endl;
-    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, isNewArticle, 0, d+s );
+    calcContext ( tr.front(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, 0, d+s );
 
     J j          = s;
     cout << "~~~~ " << q.back().apex() << endl;
@@ -417,18 +416,17 @@ void calcContext ( Tree<L>& tr,
     // Print binary / join-phase predictors...
     JPredictorVec ljp( modJ, f, eF.c_str(), aLchild, q ); 
     cout << "==== " << q.getApex() << "   " << removeLink(tr) << " -> " << removeLink(tr.front()) << " " << removeLink(tr.back()) << endl;
-    cout << "J " << isNewArticle << " " << ljp << " " << j << "&" << e << "&" << oL << "&" << oR << endl;  // modJ.getResponseIndex(j,e.c_str(),oL,oR);
+    cout << "J " << " " << ljp << " " << j << "&" << e << "&" << oL << "&" << oR << endl;  // modJ.getResponseIndex(j,e.c_str(),oL,oR);
     cout << "A " << APredictorVec(f,j,eF.c_str(),e.c_str(),oL,aLchild,q)                << " : " << getCat(removeLink(l))          << endl;
     cout << "B " << BPredictorVec(f,j,eF.c_str(),e.c_str(),oL,oR,getCat(l),aLchild,q)   << " : " << getCat(removeLink(tr.back()))  << endl;
 
-    isNewArticle = false;
 
     // Update storestate...
     q = StoreState ( q, j, e.c_str(), oL, oR, getCat(removeLink(l)), getCat(removeLink(tr.back())) );
 
     // Traverse right child...
     //cout << "traversing right child..." << endl;
-    calcContext ( tr.back(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, isNewArticle, 1, d );
+    calcContext ( tr.back(), annot2tdisc, antecedentCandidates, tDisc, sentnum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, 1, d );
   }
 
   // At abrupt terminal (e.g. 'T' discourse)...
@@ -484,7 +482,6 @@ int main ( int nArgs, char* argv[] ) {
   Mapped corefchains; //init coref chain tracker for positive non-most recent antecedent tracking
   string line;
   stringstream ss;
-  bool isNewArticle = false;
   while ( cin && EOF!=cin.peek() ) {
     
     getline(cin, line);
@@ -499,7 +496,6 @@ int main ( int nArgs, char* argv[] ) {
         excludedIndices.clear();
         //Mapped::mapped.clear();
         corefchains.clear();
-        isNewArticle = true;
     }
 
     else if ( line != "" ) {
@@ -517,9 +513,8 @@ int main ( int nArgs, char* argv[] ) {
 	  int wordnum = 0;
       bool isFailTree = (removeLink(t.front()) == "FAIL") ? true : false;
       if( t.front().size() > 0 ) {
-        calcContext( t, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY, isNewArticle);
+        calcContext( t, annot2tdisc, antecedentCandidates, tDisc, discourselinenum, annot2kset, wordnum, isFailTree, excludedIndices, corefchains, ABLATE_UNARY );
       }
-      isNewArticle = false;
     }
   }
 }
