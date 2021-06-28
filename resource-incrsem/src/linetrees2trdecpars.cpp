@@ -353,7 +353,7 @@ void calcContext ( Tree<L>& tr,
         } //single candidate output
       } //all previous antecedent candidates output
 
-      cout << "F " << isNewArticle << " " << lfp << " " << f << "&" << e << "&" << k << endl; // modF.getResponseIndex(f,e.c_str(),k);
+      cout << "F " << isNewArticle << " " << lfp << " " << f << "&" << e << "&" << k << " " << q << endl; // modF.getResponseIndex(f,e.c_str(),k);
       //cout << "printing P training data for object l: " << l << " with linkless: " << removeLink(l) << " category: " << getCat(removeLink(l)) << endl;
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) /*getCat(l)*/     << endl;
       if (k != kAntUnk) {
