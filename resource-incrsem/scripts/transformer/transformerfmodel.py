@@ -132,6 +132,7 @@ class TransformerFModel(nn.Module):
 
 
             # base, filler, antecedent hvec embeddings
+            # TODO fix this -- max_seq_length isn't defined
             if self.ablate_sem:
                 hvb_embed = torch.zeros(
                     [max_seq_length, batch_size, self.sem_dim], dtype=torch.float
