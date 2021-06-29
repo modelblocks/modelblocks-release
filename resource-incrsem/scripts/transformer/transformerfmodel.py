@@ -2,6 +2,8 @@ import torch, math
 import torch.nn as nn
 import torch.nn.functional as F
 
+MAX_DEPTH = 7
+
 # source:
 # https://pytorch.org/tutorials/beginner/transformer_tutorial.html
 class PositionalEncoding(nn.Module):
@@ -59,15 +61,9 @@ class TransformerFModel(nn.Module):
         self.hvf_embeds = nn.Embedding(hvf_vocab_size, self.sem_dim)
         self.hva_embeds = nn.Embedding(hva_vocab_size, self.ant_dim)
 
-        # attn intput is (one-hot) depth, base syn cat embedding,
-        # base hvec embedding, and filler hvec embedding
-        attn_input_dim = 7 + self.syn_dim + 2*self.sem_dim
-        #self.query = nn.Linear(attn_input_dim, self.attn_q_dim, bias=True)
-        #self.key = nn.Linear(attn_input_dim, self.attn_k_dim, bias=True)
-        #self.value = nn.Linear(attn_input_dim, self.attn_v_dim, bias=True)
-        #self.query = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
-        #self.key = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
-        #self.value = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
+        # attn intput is (one-hot) depth, base syn cat embedding, and
+        # base hvec embedding
+        attn_input_dim = 7 + self.syn_dim + self.sem_dim
 
         # project the attention input to the right dimensionality
         self.pre_attn_fc = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
@@ -88,9 +84,13 @@ class TransformerFModel(nn.Module):
 
         # TODO make this resnet?
         # the input to fc1 is the output of the attention layer concatenated
-        # with the antecedent hVec embedding and the null antecedent indicator
-        # (hence the +1)
-        self.fc1 = nn.Linear(self.attn_dim+self.ant_dim+1, self.hidden_dim, bias=True)
+        # with the filler hVec embedding, antecedent hVec embedding, and the
+        # null antecedent indicator (hence the +1)
+        self.fc1 = nn.Linear(
+            self.attn_dim+self.sem_dim+self.ant_dim+1, 
+            self.hidden_dim,
+            bias=True
+        )
         self.dropout = nn.Dropout(self.dropout_prob)
         self.relu = F.relu
         self.fc2 = nn.Linear(self.hidden_dim, self.output_dim, bias=True)
@@ -112,90 +112,162 @@ class TransformerFModel(nn.Module):
         return hv_sparse
 
     
-    def get_per_sequence_x(self, batch_finfo):
-        #per_sequence_x = list()
-        per_seq_attn_input = list()
-        per_seq_coref_emb = list()
-        for seq in batch_finfo:
-            # base category embeddings
+#    def get_per_sequence_x(self, batch_finfo):
+#        #per_sequence_x = list()
+#        per_seq_attn_input = list()
+#        per_seq_coref_emb = list()
+#        for seq in batch_finfo:
+#            # base category embeddings
+#            if self.ablate_syn:
+#                catb_embed = torch.zeros(
+#                    [len(seq), self.syn_dim],
+#                    dtype=torch.float
+#                )
+#            else:
+#                catb = [fi.catb for fi in seq]
+#                catb = torch.LongTensor(catb)
+#                if self.use_gpu:
+#                    catb = catb.to('cuda')
+#                catb_embed = self.catb_embeds(catb)
+#
+#
+#            # base, filler, antecedent hvec embeddings
+#            if self.ablate_sem:
+#                hvb_embed = torch.zeros(
+#                    [max_seq_length, batch_size, self.sem_dim], dtype=torch.float
+#                )
+#                hvf_embed = torch.zeros(
+#                    [max_seq_length, batch_size, self.sem_dim], dtype=torch.float
+#                )
+#                hva_embed = torch.zeros(
+#                    [max_seq_length, batch_size, self.ant_dim], dtype=torch.float
+#                )
+#
+#            else:
+#                hvb = [fi.hvb for fi in seq]
+#                hvb_sparse = self.get_sparse_hv_matrix(
+#                    hvb, self.hvb_vocab_size
+#                )
+#                hvb_embed = torch.sparse.mm(hvb_sparse, self.hvb_embeds.weight)
+#
+#                hvf = [fi.hvf for fi in seq]
+#                hvf_sparse = self.get_sparse_hv_matrix(
+#                    hvf, self.hvf_vocab_size
+#                )
+#                hvf_embed = torch.sparse.mm(hvf_sparse, self.hvf_embeds.weight)
+#
+#                hva = [fi.hva for fi in seq]
+#                hva_sparse = self.get_sparse_hv_matrix(
+#                    hva, self.hva_vocab_size
+#                )
+#                hva_embed = torch.sparse.mm(hva_sparse, self.hva_embeds.weight)
+#
+#            hvb_top = torch.FloatTensor([fi.hvb_top for fi in seq]).reshape(-1, 1)
+#            hvf_top = torch.FloatTensor([fi.hvf_top for fi in seq]).reshape(-1, 1)
+#            hva_top = torch.FloatTensor([fi.hva_top for fi in seq]).reshape(-1, 1)
+#
+#            if self.use_gpu:
+#                hvb_top = hvb_top.to('cuda')
+#                hvf_top = hvf_top.to('cuda')
+#                hva_top = hva_top.to('cuda')
+#
+#            hvb_embed = hvb_embed + hvb_top
+#            hvf_embed = hvf_embed + hvf_top
+#            hva_embed = hva_embed + hva_top
+#
+#            # null antecendent and depth
+#            nulla = torch.FloatTensor([fi.nulla for fi in seq])
+#            depth = [fi.depth for fi in seq]
+#            depth = F.one_hot(torch.LongTensor(depth), self.max_depth).float()
+#
+#            if self.use_gpu:
+#                nulla = nulla.to('cuda')
+#                depth = depth.to('cuda')
+#
+#            seq_attn_input = torch.cat(
+#                (catb_embed, hvb_embed, hvf_embed, depth), dim=1
+#            ) 
+#            seq_coref_emb = torch.cat(
+#                (hva_embed, nulla.unsqueeze(dim=1)), dim=1
+#            )
+#
+#            per_seq_attn_input.append(seq_attn_input)
+#            per_seq_coref_emb.append(seq_coref_emb)
+#    
+#        return per_seq_attn_input, per_seq_coref_emb
+
+
+    def get_input_matrices(self, batch_finfo):
+        '''
+        Returns two matrices:
+        - The inputs that get passed into the attention layer
+        - The inputs that get concatenated with the attention output and
+            fed into the hidden layer
+        '''
+        per_stack_pre_attn_input = list()
+        per_stack_post_attn_input = list()
+
+        for finfo in batch_finfo:
+            stack = finfo.stack
+            # we want the beginning of the list to be the deepest fragment
+            stack.reverse()
+            hvb = [df.hvbase for df in stack]
+            d = [df.depth for df in stack]
+
+
             if self.ablate_syn:
                 catb_embed = torch.zeros(
-                    [len(seq), self.syn_dim],
+                    [len(stack), self.syn_dim],
                     dtype=torch.float
                 )
             else:
-                catb = [fi.catb for fi in seq]
+                catb = [df.catbase for df in stack]
                 catb = torch.LongTensor(catb)
                 if self.use_gpu:
                     catb = catb.to('cuda')
                 catb_embed = self.catb_embeds(catb)
 
+            # TODO past this point
+#            if self.ablate_sem:
+#                hvb_embed = torch.zeros(
+#                    [max_seq_length, batch_size, self.sem_dim], dtype=torch.float
+#                )
+#                hvf_embed = torch.zeros(
+#                    [max_seq_length, batch_size, self.sem_dim], dtype=torch.float
+#                )
+#                hva_embed = torch.zeros(
+#                    [max_seq_length, batch_size, self.ant_dim], dtype=torch.float
+#                )
+#
 
-            # base, filler, antecedent hvec embeddings
-            if self.ablate_sem:
-                hvb_embed = torch.zeros(
-                    [max_seq_length, batch_size, self.sem_dim], dtype=torch.float
-                )
-                hvf_embed = torch.zeros(
-                    [max_seq_length, batch_size, self.sem_dim], dtype=torch.float
-                )
-                hva_embed = torch.zeros(
-                    [max_seq_length, batch_size, self.ant_dim], dtype=torch.float
-                )
 
-            else:
-                hvb = [fi.hvb for fi in seq]
-                hvb_sparse = self.get_sparse_hv_matrix(
-                    hvb, self.hvb_vocab_size
-                )
-                hvb_embed = torch.sparse.mm(hvb_sparse, self.hvb_embeds.weight)
 
-                hvf = [fi.hvf for fi in seq]
-                hvf_sparse = self.get_sparse_hv_matrix(
-                    hvf, self.hvf_vocab_size
-                )
-                hvf_embed = torch.sparse.mm(hvf_sparse, self.hvf_embeds.weight)
 
-                hva = [fi.hva for fi in seq]
-                hva_sparse = self.get_sparse_hv_matrix(
-                    hva, self.hva_vocab_size
-                )
-                hva_embed = torch.sparse.mm(hva_sparse, self.hva_embeds.weight)
 
-            hvb_top = torch.FloatTensor([fi.hvb_top for fi in seq]).reshape(-1, 1)
-            hvf_top = torch.FloatTensor([fi.hvf_top for fi in seq]).reshape(-1, 1)
-            hva_top = torch.FloatTensor([fi.hva_top for fi in seq]).reshape(-1, 1)
+#        else:
+#            hvb = [fi.hvb for fi in seq]
+#            hvb_sparse = self.get_sparse_hv_matrix(
+#                hvb, self.hvb_vocab_size
+#            )
+#            hvb_embed = torch.sparse.mm(hvb_sparse, self.hvb_embeds.weight)
+#
+#            hvf = [fi.hvf for fi in seq]
+#            hvf_sparse = self.get_sparse_hv_matrix(
+#                hvf, self.hvf_vocab_size
+#            )
+#            hvf_embed = torch.sparse.mm(hvf_sparse, self.hvf_embeds.weight)
+#
+#            hva = [fi.hva for fi in seq]
+#            hva_sparse = self.get_sparse_hv_matrix(
+#                hva, self.hva_vocab_size
+#            )
+#            hva_embed = torch.sparse.mm(hva_sparse, self.hva_embeds.weight)
 
-            if self.use_gpu:
-                hvb_top = hvb_top.to('cuda')
-                hvf_top = hvf_top.to('cuda')
-                hva_top = hva_top.to('cuda')
+#            depth = [fi.depth for fi in seq]
+#            depth = F.one_hot(torch.LongTensor(depth), self.max_depth).float()
 
-            hvb_embed = hvb_embed + hvb_top
-            hvf_embed = hvf_embed + hvf_top
-            hva_embed = hva_embed + hva_top
 
-            # null antecendent and depth
-            nulla = torch.FloatTensor([fi.nulla for fi in seq])
-            depth = [fi.depth for fi in seq]
-            depth = F.one_hot(torch.LongTensor(depth), self.max_depth).float()
-
-            if self.use_gpu:
-                nulla = nulla.to('cuda')
-                depth = depth.to('cuda')
-
-            seq_attn_input = torch.cat(
-                (catb_embed, hvb_embed, hvf_embed, depth), dim=1
-            ) 
-            seq_coref_emb = torch.cat(
-                (hva_embed, nulla.unsqueeze(dim=1)), dim=1
-            )
-
-            per_seq_attn_input.append(seq_attn_input)
-            per_seq_coref_emb.append(seq_coref_emb)
-    
-        return per_seq_attn_input, per_seq_coref_emb
-
+        
 
     def get_padded_input_matrix(self, per_sequence_x):
         max_length = max(len(seq) for seq in per_sequence_x)
@@ -223,6 +295,10 @@ class TransformerFModel(nn.Module):
 
 
     def forward(self, batch_finfo):
+        # batch_finfo is a list of FInfo objects
+
+        # attn_input, post_attn_input = self.get_input_matrices(batch_finfo)
+
         # list of matrices, one matrix for each sequence
         per_seq_attn_input, per_seq_coref_emb = \
             self.get_per_sequence_x(batch_finfo)

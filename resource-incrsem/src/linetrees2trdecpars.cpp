@@ -36,6 +36,7 @@ bool STORESTATE_CHATTY = true;
 int FEATCONFIG = 0;
 bool INTERSENTENTIAL = true;
 #include <StoreState.hpp>
+// TODO import transformer models instead of MLP
 #include <SemProcModels_mlp.hpp>
 #include <Beam.hpp>
 #include <BerkUnkWord.hpp>
@@ -352,7 +353,7 @@ void calcContext ( Tree<L>& tr,
         } //single candidate output
       } //all previous antecedent candidates output
 
-      cout << "F " << " " << lfp << " " << f << "&" << e << "&" << k << " " << q << endl; // modF.getResponseIndex(f,e.c_str(),k);
+      cout << "F " << lfp << " " << f << "&" << e << "&" << k << " Q" << q << endl; // modF.getResponseIndex(f,e.c_str(),k);
       //cout << "printing P training data for object l: " << l << " with linkless: " << removeLink(l) << " category: " << getCat(removeLink(l)) << endl;
       cout << "P " << PPredictorVec(f,e.c_str(),k,q) << " : " << getCat(removeLink(l)) /*getCat(l)*/     << endl;
       if (k != kAntUnk) {

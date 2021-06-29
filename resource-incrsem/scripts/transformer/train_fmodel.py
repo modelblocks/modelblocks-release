@@ -15,14 +15,73 @@ PAD = '0&&PAD'
 class FInfo:
     pass
 
+# Records predicate context vectors and syntactic
+# categories for derivation fragments in the store state
+class DerivationFragment:
+    def __init__(self, hvec, category, depth):
+        self.hvbase = hvec
+        self.catbase = category
+        self.depth = depth
+
+    def __str__(self):
+        return 'hvbase:{} catbase:{} depth:{}'.format(self.hvbase, self.catbase, self.depth)
+
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
 def extract_first_kvec(hvec):
+    if hvec == '':
+        return ['']
     match = re.findall(r'^\[(.*?)\]', hvec)
     return match[0].split(',')
+
+
+def parse_stack(stack_str):
+    '''
+    Given a store state (stack) from decpars file, returns a list of
+    DerivationFragments containing categories and predicate context vectors
+    '''
+    # example inputs:
+    # 1. [R-aN-bN:in_0][R-aN-bN:in_1][R-aN-bN:in_2]:R-aN/[R-aN-bN:in_2]:N;
+    # 2. [R-aN-bN:in_0][R-aN-bN:in_1][R-aN-bN:in_2]:R-aN/[R-aN-bN:in_2]:N;:T;:T;["]:N-hV-hO/[N-b{N-aD}:an_2][]:N-aD-hV-hO;
+    # 3. [R-aN-bN:in_0][R-aN-bN:in_1][R-aN-bN:in_2]:R-aN/[R-aN-bN:in_2]:N;[N-b{N-aD}:an_2,A-aN-x:!num!_1,N-aD-bV-bO:review_1][N-aD-bV-bO:review_2][N-aD-bV-bO:review_3][N-aD-bV-bO:review_4]:N/[][B-aN-bN:!unk!_1,B-aN-bN:!unk!_2,N-aD:classic_1]:V-aN;[B-aN-bN:take_0][B-aN-bN:take_1][B-aN-bN:take_2]:V-aN/[B-aN-bN:take_2]:N;
+
+    # regices to parse a/a/a*/b;b;b*;
+    # (second group contains the sign we care about)
+    # re.findall('([^/]*;)*([^/]*);', u)
+
+    stack = list()
+    stack.append(DerivationFragment(['Top'], 'T', 0))
+    
+#    if stack_str == 'Q':
+#        return []
+    assert stack_str[0] == 'Q', stack_str
+    stack_str = stack_str[1:]
+    # the base of a derivation fragment is what comes before
+    # the last semicolon in a sequence of semicolons without
+    # intervening slashes
+    # e.g., in a/a/a/b;b;b;c/c/d; the last b and the d are both bases
+    # to find apices, use this regex:
+    # re.findall('([^;]*/)*([^;]*)/', stack_str)
+    fragment_bases = re.findall('([^/]*;)*([^/]*);', stack_str)
+    # the second group contains the base
+    fragment_bases = [group[1] for group in fragment_bases]
+
+    curr_depth = 1
+    for base in fragment_bases:
+        colon_ind = base.rfind(':')
+        predcon = base[:colon_ind]
+        category = base[colon_ind+1:]
+        base_hvec = extract_first_kvec(predcon)
+        df = DerivationFragment(base_hvec, category, curr_depth)
+        stack.append(df)
+        curr_depth += 1
+    print('----')
+    for df in stack:
+        print(df)
+    return stack
 
 
 def hvecIxReplace(hvec, hvec_to_ix):
@@ -37,50 +96,37 @@ def hvecIxReplace(hvec, hvec_to_ix):
 
 
 def prepare_data():
-    # list of lists; each outer list is an article
-    per_article_finfo = list()
+    all_finfo = list()
     
-    # list of f decisions for the current article
-    curr_finfo = list()
-    
-    is_first_line = True
     for line in sys.stdin:
-        is_new_article, depth, catb, hv_base, hv_filler, hv_ante, nulla, fdec = line.split()
-        is_new_article = bool(int(is_new_article))
-        if is_new_article:
-            if is_first_line:
-                is_first_line = False
-            else:
-                per_article_finfo.append(curr_finfo)
-                curr_finfo = list()
-
-        finfo = FInfo()
-        finfo.depth = int(depth)
-        finfo.catb = catb
-        finfo.hvb = extract_first_kvec(hv_base)
-        finfo.hvf = extract_first_kvec(hv_filler)
-        finfo.hva = extract_first_kvec(hv_ante)
-        finfo.nulla = int(nulla)
+        # TODO update linetrees2trdecpars so that it doesn't include pointless info
+        depth, _, _, hv_filler, hv_ante, nulla, fdec, stack = line.split()
+        depth = int(depth)
+        curr_finfo = FInfo()
+        curr_finfo.hvf = extract_first_kvec(hv_filler)
+        curr_finfo.hva = extract_first_kvec(hv_ante)
+        curr_finfo.nulla = int(nulla)
         # TODO is there any downside to not splitting the fdec into its
         # constitutents (match and hvec)?
-        finfo.fdec = fdec
-        curr_finfo.append(finfo)
+        curr_finfo.fdec = fdec
+        curr_finfo.stack = parse_stack(stack)
+        assert depth == 0 or curr_finfo.stack[-1].depth == depth, curr_finfo.stack[-1]
+        all_finfo.append(curr_finfo)
         
-
-    per_article_finfo.append(curr_finfo)
-           
-    all_hvb = set()
     all_hvf = set()
     all_hva = set()
     all_fdecs = set()
+    all_hvb = set()
     all_catb = set()
-    for article in per_article_finfo:
-        for finfo in article:
-            all_hvb.update(set(finfo.hvb))
-            all_hvf.update(set(finfo.hvf))
-            all_hva.update(set(finfo.hva))
-            all_fdecs.add(finfo.fdec)
-            all_catb.add(finfo.catb)
+    for finfo in all_finfo:
+        all_hvf.update(set(finfo.hvf))
+        all_hva.update(set(finfo.hva))
+        all_fdecs.add(finfo.fdec)
+        for df in finfo.stack:
+            hvb = df.hvbase
+            catb = df.catbase
+            all_hvb.update(set(hvb))
+            all_catb.add(catb)
 
     catb_to_ix = {cat: i for i, cat in enumerate(sorted(all_catb))}
     fdecs_to_ix = {fdecs: i for i, fdecs in enumerate(sorted(all_fdecs))}
@@ -91,14 +137,14 @@ def prepare_data():
     hva_to_ix = {hvec: i for i, hvec in enumerate(sorted(all_hva))}
 
     # replace strings with indices
-    for article in per_article_finfo:
-        for finfo in article:
-            finfo.catb = catb_to_ix[finfo.catb]
-            finfo.fdec = fdecs_to_ix[finfo.fdec]
-            finfo.hvb, finfo.hvb_top = hvecIxReplace(finfo.hvb, hvb_to_ix)
-            finfo.hvf, finfo.hvf_top = hvecIxReplace(finfo.hvf, hvf_to_ix)
-            finfo.hva, finfo.hva_top = hvecIxReplace(finfo.hva, hva_to_ix)
-    return per_article_finfo, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix
+    for finfo in all_finfo:
+        finfo.fdec = fdecs_to_ix[finfo.fdec]
+        finfo.hvf, finfo.hvf_top = hvecIxReplace(finfo.hvf, hvf_to_ix)
+        finfo.hva, finfo.hva_top = hvecIxReplace(finfo.hva, hva_to_ix)
+        for df in finfo.stack:
+            df.catbase = catb_to_ix[df.catbase]
+            df.hvbase, df.hvbase_top = hvecIxReplace(df.hvbase, hvb_to_ix)
+    return all_finfo, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix
 
 
 def get_train_seqs(per_article_finfo, window_size):
@@ -123,7 +169,7 @@ def pad_target_matrix(targets, symbol):
 
 
 def train(f_config):
-    per_article_finfo, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix = prepare_data()
+    all_finfo, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix = prepare_data()
     model = TransformerFModel(
                 f_config=f_config,
                 catb_vocab_size=len(catb_to_ix),
@@ -146,13 +192,12 @@ def train(f_config):
 
     criterion = nn.NLLLoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-    train_seqs = get_train_seqs(per_article_finfo, window_size)
     model.train()
 
     # TODO add validation on dev set
     for epoch in range(epochs):
         c0 = time.time()
-        random.shuffle(train_seqs)
+        random.shuffle(all_finfo)
         total_train_correct = 0
         total_train_loss = 0
         total_dev_loss = 0
@@ -160,7 +205,7 @@ def train(f_config):
         dev_acc = 0
         total_train_items = 0
 
-        for j in range(0, len(train_seqs), batch_size):
+        for j in range(0, len(all_finfo), batch_size):
             if use_gpu:
                 l2_loss = torch.cuda.FloatTensor([0])
             else:
@@ -170,63 +215,27 @@ def train(f_config):
                     continue
                 l2_loss += torch.mean(param.pow(2))
 
-            batch = train_seqs[j:j+batch_size]
-            target = [[fi.fdec for fi in seq] for seq in batch]
-            # L x N
-            # Note: padding of the input sequence happens within the
-            # forward method of the F model
-            target = pad_target_matrix(target, fdecs_to_ix[PAD])
-            if use_gpu:
-                target = target.to('cuda')
+            batch = all_finfo[j:j+batch_size]
+            target = [fi.fdec for fi in all_info]
 
-            # output dimension is L x N x E
-            # L: window length
+            # output dimension: N x E
             # N: batch size
             # E: output dimensionality (number of classes)
             output = model(batch)
 
-            # fdec dimension is L x N
-            _, fdec = torch.max(output.data, 2)
+            _, fdec = torch.max(output.data, 1)
 
-            # count all items where fdec matches target and target isn't padding
-            train_correct = ((fdec == target) * (target != fdecs_to_ix[PAD])).sum().item()
-            #train_correct = (fdec == target).sum().item()
+            train_correct = (fdec == target).sum().item()
             total_train_correct += train_correct
-            
-            # again, ignore padding
-            total_train_items += (target != fdecs_to_ix[PAD]).sum().item()
-            #total_train_items += target.numel()
-
-            
-            # NLLLoss requires target dimension to be N x L
-            # https://pytorch.org/docs/stable/generated/torch.nn.NLLLoss.html
-            target = torch.transpose(target, 0, 1) # LxN --> NxL
-                
-            # NLLLoss requires output dimension to be N x E x L
-            output = torch.transpose(output, 0, 2) # LxNxE --> ExNxL
-            output = torch.transpose(output, 0, 1) # ExNxL --> NxExL
-
-
-            # assign PAD class 0 weight so that it doesn't influence loss.
-            # equally weight all other classes
-            num_classes = output.shape[1]
-            # last class is PAD
-            assert fdecs_to_ix[PAD] == num_classes - 1
-            per_class_weight = 1/(num_classes-1)
-            class_weights = torch.FloatTensor([per_class_weight]*(num_classes-1) + [0])
-
-            if use_gpu:
-                class_weights = class_weights.to('cuda')
-
-            nll_loss = criterion(output, target)
+            nll_loss = criterion(output, batch_target)
             loss = nll_loss + l2_reg * l2_loss
             total_train_loss += loss.item()
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
-
+            
         eprint('Epoch {:04d} | AvgTrainLoss {:.4f} | TrainAcc {:.4f} | DevLoss {:.4f} | DevAcc {:.4f} | Time {:.4f}'.
-               format(epoch, total_train_loss / ((len(train_seqs) // batch_size) + 1), 100 * (total_train_correct / total_train_items),
+               format(epoch, total_train_loss / ((len(train_seqs) // batch_size) + 1), 100 * (total_train_correct / len(all_fdecs)),
                       total_dev_loss, dev_acc, time.time() - c0))
 
     return model, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix
@@ -315,5 +324,12 @@ if __name__ == '__main__':
     config.read(sys.argv[1])
     for section in config:
         eprint(section, dict(config[section]))
-    main(config)
+    all_finfo, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix = prepare_data()
+#    print('example 1')
+#    parse_stack('Q[R-aN-bN:in_0][R-aN-bN:in_1][R-aN-bN:in_2]:R-aN/[R-aN-bN:in_2]:N;')
+#    print('example 2')
+#    parse_stack('Q[R-aN-bN:in_0][R-aN-bN:in_1][R-aN-bN:in_2]:R-aN/[R-aN-bN:in_2]:N;:T;:T;["]:N-hV-hO/[N-b{N-aD}:an_2][]:N-aD-hV-hO;')
+#    print('example 3')
+#    parse_stack('Q[R-aN-bN:in_0][R-aN-bN:in_1][R-aN-bN:in_2]:R-aN/[R-aN-bN:in_2]:N;[N-b{N-aD}:an_2,A-aN-x:!num!_1,N-aD-bV-bO:review_1][N-aD-bV-bO:review_2][N-aD-bV-bO:review_3][N-aD-bV-bO:review_4]:N/[][B-aN-bN:!unk!_1,B-aN-bN:!unk!_2,N-aD:classic_1]:V-aN;[B-aN-bN:take_0][B-aN-bN:take_1][B-aN-bN:take_2]:V-aN/[B-aN-bN:take_2]:N;')
+#    main(config)
 
