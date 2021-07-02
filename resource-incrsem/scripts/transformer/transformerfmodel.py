@@ -1,28 +1,10 @@
-import torch, math
+import torch, math, sys
 import torch.nn as nn
 import torch.nn.functional as F
 
-MAX_DEPTH = 7
 
-# source:
-# https://pytorch.org/tutorials/beginner/transformer_tutorial.html
-class PositionalEncoding(nn.Module):
-
-    def __init__(self, dim, dropout=0.1, max_len=5000):
-        super(PositionalEncoding, self).__init__()
-        self.dropout = nn.Dropout(p=dropout)
-
-        pe = torch.zeros(max_len, dim)
-        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, dim, 2).float() * (-math.log(10000.0) / dim))
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0).transpose(0, 1)
-        self.register_buffer('pe', pe)
-
-    def forward(self, x):
-        x = x + self.pe[:x.size(0), :]
-        return self.dropout(x)
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 
 class TransformerFModel(nn.Module):
@@ -36,7 +18,6 @@ class TransformerFModel(nn.Module):
         self.dropout_prob = f_config.getfloat('DropoutProb')
         self.ablate_syn = f_config.getboolean('AblateSyn')
         self.ablate_sem = f_config.getboolean('AblateSem')
-        self.use_positional_encoding = f_config.getboolean('UsePositionalEncoding')
         # TODO this is int in the old config -- why?
         self.use_gpu = f_config.getboolean('UseGPU')
         # TODO add num_blocks option for multiple transformer blocks
@@ -52,7 +33,7 @@ class TransformerFModel(nn.Module):
         self.hvf_vocab_size = hvf_vocab_size
         self.hva_vocab_size = hva_vocab_size
         self.output_dim = output_dim
-        self.max_depth = 7
+        self.max_depth = 6
 
         # TODO should there just be one big embedding? inputs would be
         # multi-hot; not sure if that's easy
@@ -67,10 +48,6 @@ class TransformerFModel(nn.Module):
 
         # project the attention input to the right dimensionality
         self.pre_attn_fc = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
-
-        # this layer adds positional encodings to the output of pre_attn_fc
-        # its output is used for queries, keys, and values
-        self.positional_encoding = PositionalEncoding(self.attn_dim)
 
         # TODO define this as a block so you can have multiple attention layers
         self.attn =  nn.MultiheadAttention(
@@ -211,10 +188,8 @@ class TransformerFModel(nn.Module):
             stack = finfo.stack
             # we want the beginning of the list to be the deepest fragment
             stack.reverse()
-            hvb = [df.hvbase for df in stack]
-            d = [df.depth for df in stack]
 
-
+            # pre-attention inputs
             if self.ablate_syn:
                 catb_embed = torch.zeros(
                     [len(stack), self.syn_dim],
@@ -227,20 +202,89 @@ class TransformerFModel(nn.Module):
                     catb = catb.to('cuda')
                 catb_embed = self.catb_embeds(catb)
 
-            # TODO past this point
-#            if self.ablate_sem:
-#                hvb_embed = torch.zeros(
-#                    [max_seq_length, batch_size, self.sem_dim], dtype=torch.float
-#                )
-#                hvf_embed = torch.zeros(
-#                    [max_seq_length, batch_size, self.sem_dim], dtype=torch.float
-#                )
-#                hva_embed = torch.zeros(
-#                    [max_seq_length, batch_size, self.ant_dim], dtype=torch.float
-#                )
-#
+            if self.ablate_sem:
+                hvb_embed = torch.zeros(
+                    [len(stack), self.sem_dim],
+                    dtype=torch.float
+                )
 
+            else:
+                hvb = [df.hvbase for df in stack]
+                hvb_sparse = self.get_sparse_hv_matrix(
+                    hvb, self.hvb_vocab_size
+                )
+                hvb_embed = torch.sparse.mm(hvb_sparse, self.hvb_embeds.weight)
+            hvb_top = torch.FloatTensor([df.hvbase_top for df in stack]).reshape(-1, 1)
+            if self.use_gpu:
+                hvb_top = hvb_top.to('cuda')
+            hvb_embed = hvb_embed + hvb_top
 
+            d = [df.depth for df in stack]
+            d = F.one_hot(torch.LongTensor(d), self.max_depth+1).float()
+
+            if self.use_gpu:
+                d = d.to('cuda')
+
+            # shape: len(stack) x (syn_dim + sem_dim + max_depth+1)
+            stack_pre_attn_input = torch.cat(
+                (catb_embed, hvb_embed, d), dim=1
+            )
+
+            # pad the pre-attn input so that every stack's first dimension is
+            # max_depth + 1. The +1 is because the stack includes a fragment at
+            # depth 0
+            padding = torch.zeros(
+                [self.max_depth-len(stack)+1, stack_pre_attn_input.shape[1]],
+                dtype=torch.float
+            )
+            if self.use_gpu:
+                padding = padding.to('cuda')
+            stack_pre_attn_input = torch.cat((stack_pre_attn_input, padding))
+            per_stack_pre_attn_input.append(stack_pre_attn_input)
+
+            # post-attention inputs. these come from the deepest derivation
+            # fragment, like in the MLP F model
+            if self.ablate_sem:
+                hvf_embed = torch.zeros(
+                    [self.sem_dim], dtype=torch.float
+                )
+                hva_embed = torch.zeros(
+                    [self.ant_dim], dtype=torch.float
+                )
+
+            else:
+                hvf_sparse = self.get_sparse_hv_matrix(
+                    [finfo.hvf], self.hvf_vocab_size
+                )
+                hvf_embed = torch.sparse.mm(hvf_sparse, self.hvf_embeds.weight)
+                # reshape from (1, sem_dim) to (sem_dim)
+                hvf_embed = hvf_embed.reshape(self.sem_dim)
+
+                hva_sparse = self.get_sparse_hv_matrix(
+                    [finfo.hva], self.hva_vocab_size
+                )
+                hva_embed = torch.sparse.mm(hva_sparse, self.hva_embeds.weight)
+                # reshape from (1, ant_dim) to (ant_dim)
+                hva_embed = hva_embed.reshape(self.ant_dim)
+
+            nulla = torch.FloatTensor([finfo.nulla])
+            if self.use_gpu:
+                nulla = nulla.to('cuda')
+            # 1D Tensor of length sem_dim + ant_dim + 1
+            stack_post_attn_input = torch.cat((hvf_embed, hva_embed, nulla))
+            per_stack_post_attn_input.append(stack_post_attn_input)
+
+        
+        pre_attn_input = torch.stack(per_stack_pre_attn_input, dim=1)
+        assert pre_attn_input.shape == torch.Size(
+            [self.max_depth+1, len(batch_finfo), self.syn_dim+self.sem_dim+self.max_depth+1]
+        )
+        post_attn_input = torch.stack(per_stack_post_attn_input, dim=0)
+        assert post_attn_input.shape == torch.Size(
+            [len(batch_finfo), self.syn_dim+self.ant_dim+1]
+        )
+        return pre_attn_input, post_attn_input
+            
 
 
 
@@ -296,70 +340,37 @@ class TransformerFModel(nn.Module):
 
     def forward(self, batch_finfo):
         # batch_finfo is a list of FInfo objects
-
-        # attn_input, post_attn_input = self.get_input_matrices(batch_finfo)
-
-        # list of matrices, one matrix for each sequence
-        per_seq_attn_input, per_seq_coref_emb = \
-            self.get_per_sequence_x(batch_finfo)
-        # attn_input_3d and coref_emb_3d are 3D tensors of dimensionality SxNxE
-        # S: sequence length
-        # N: batch size (number of sequences)
-        # E: embedding size
-        attn_input_3d = self.get_padded_input_matrix(per_seq_attn_input)
-        coref_emb_3d = self.get_padded_input_matrix(per_seq_coref_emb)
-        return self.compute(attn_input_3d, coref_emb_3d)
+        attn_input, post_attn_input = self.get_input_matrices(batch_finfo)
+        #return self.compute(attn_input, post_attn_input)
+        # TODO make verbosity configurable
+        return self.compute(attn_input, post_attn_input, verbose=True)
 
 
-    def compute(self, attn_input, coref_emb, verbose=False):
+    def compute(self, attn_input, post_attn_input, verbose=False):
         # the same matrix is used as query, key, and value. Within the attn
         # layer this will be projected to a separate q, k, and v for each
         # attn head
-#        if verbose:
-#            print('F final word attn input:')
-#            for x in attn_input[-1, 0]:
-#                print(x.item())
-#            weights = self.state_dict()['pre_attn_fc.weight'].data.cpu().numpy()
-#            print('F pre attn fc weights shape:', weights.shape)
-#            print('F pre attn fc weights numpy:')
-#            print(weights)
-#            print('F pre attn fc weights:')
-#            # F is column-major order
-#            for x in weights.flatten('F'):
-#                print(x)
-#            print('F final word pre_attn_fc bias:')
-#            bias = self.state_dict()['pre_attn_fc.bias'].data.cpu().numpy()
-#            for x in bias:
-#                print(x)
         qkv = self.pre_attn_fc(attn_input)
-        if verbose:
-            print('F final word\'s qkv:')
-            for x in qkv[-1, 0]:
-                print(x.item())
-        if self.use_positional_encoding:
-            qkv = self.positional_encoding(qkv)
-        # use mask to hide future inputs
-        mask = self.get_attn_mask(len(attn_input))
+
         # second output is attn weights
-        #attn_output, _ = self.attn(q, k, v, attn_mask=mask)
-        attn_output, _ = self.attn(qkv, qkv, qkv, attn_mask=mask)
-        if verbose:
-            print('F final word\'s attn output:')
-            for x in attn_output[-1, 0]:
-                print(x.item())
-        x = torch.cat((attn_output, coref_emb), dim=2)
+        attn_output, _ = self.attn(qkv, qkv, qkv)
+
+        # the first row of attn_output is the result for the deepest
+        # derivation fragment. That's the only one we care about
+        attn_output = attn_output[0]
+        x = torch.cat((attn_output, post_attn_input), dim=1)
         x = self.fc1(x)
         x = self.dropout(x)
         x = self.relu(x)
         x = self.fc2(x)
-        result = F.log_softmax(x, dim=2)
-        if verbose:
-            for i in range(result.shape[0]):
-                log_scores = result[i, 0]
-                scores = torch.exp(log_scores)
-                norm_scores = scores/sum(scores)
-                print('F ==== output for word {} ===='.format(i))
-                for x in norm_scores:
-                    print(x.item())
+        result = F.log_softmax(x, dim=1)
+#        if verbose:
+#            for i in range(result.shape[0]):
+#                log_scores = result[i, 0]
+#                scores = torch.exp(log_scores)
+#                norm_scores = scores/sum(scores)
+#                print('F ==== output for word {} ===='.format(i))
+#                for x in norm_scores:
+#                    print(x.item())
         return result
 
