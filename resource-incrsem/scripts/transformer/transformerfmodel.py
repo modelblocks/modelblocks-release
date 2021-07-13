@@ -340,17 +340,30 @@ class TransformerFModel(nn.Module):
 
     def forward(self, batch_finfo):
         # batch_finfo is a list of FInfo objects
+
+        # attn input: L x N x E
+        # post_attn_input: N x E
         attn_input, post_attn_input = self.get_input_matrices(batch_finfo)
         #return self.compute(attn_input, post_attn_input)
         # TODO make verbosity configurable
-        return self.compute(attn_input, post_attn_input, verbose=True)
+        return self.compute(attn_input, post_attn_input)
 
 
     def compute(self, attn_input, post_attn_input, verbose=False):
         # the same matrix is used as query, key, and value. Within the attn
         # layer this will be projected to a separate q, k, and v for each
         # attn head
+
+        if verbose:
+            eprint('F ==== attn_input[0][0] ====')
+            eprint(attn_input[0][0])
+
+        # qkv: L x N x E
         qkv = self.pre_attn_fc(attn_input)
+
+        if verbose:
+            eprint('F ==== qkv ====')
+            eprint(qkv[0])
 
         # second output is attn weights
         attn_output, _ = self.attn(qkv, qkv, qkv)
@@ -358,6 +371,11 @@ class TransformerFModel(nn.Module):
         # the first row of attn_output is the result for the deepest
         # derivation fragment. That's the only one we care about
         attn_output = attn_output[0]
+
+        if verbose:
+            eprint('F ==== attn_output ====')
+            eprint(attn_output)
+
         x = torch.cat((attn_output, post_attn_input), dim=1)
         x = self.fc1(x)
         x = self.dropout(x)

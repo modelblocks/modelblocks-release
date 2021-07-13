@@ -558,9 +558,8 @@ int main ( int nArgs, char* argv[] ) {
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
 #ifdef TRANSFORMER
                 // be_tdec1 is the hypothesized store state from the previous time step
-                // Maybe it's necessary to pass modF in too; not sure yet
-                FPredictorVec lfpredictors( be_tdec1, hvAnt, not corefON );
-                arma::vec fresponses = modF.calcResponses( lfpredictors, word_index-1 );
+                FPredictorVec lfpredictors( hvAnt, not corefON, q_tdec1 );
+                arma::vec fresponses = modF.calcResponses( lfpredictors );
 #else
                 FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );
 //                if( VERBOSE>1 ) cout << "     f predictors: " << pair<const FModel&,const FPredictorVec&>( modF, lfpredictors ) << endl;

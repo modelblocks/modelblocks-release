@@ -63,12 +63,16 @@ def parse_stack(stack_str):
 #        stack_str = stack_str[stack_str.find(';')+1:]
     # to find apices, use this regex:
     # re.findall(^([^/;]+;)*([^/;]+)|;([^/;]+;)*([^/;]+))
-    fragment_bases = re.findall('/([^/;]+/)*([^/;]+)', stack_str)
-    # the second group contains the base
-    fragment_bases = [group[1] for group in fragment_bases]
+    # re.split(r'(?<=[^\\])/', r'a\/b/c') --> ['a\\/b', 'c']
+    #fragment_bases = re.findall('/([^/;]+/)*([^/;]+)', stack_str)
+    fragment_bases = re.findall(r'(?<=[^\\])/((\\/|[^/;])+(?<=[^\\])/)*((\\/|[^/;])+)', stack_str)
+    # the third group contains the base
+    fragment_bases = [group[2] for group in fragment_bases]
 
     curr_depth = 1
+    #eprint('stack str:', stack_str)
     for base in fragment_bases:
+        #eprint('base:', base)
         colon_ind = base.rfind(':')
         predcon = base[:colon_ind]
         category = base[colon_ind+1:]

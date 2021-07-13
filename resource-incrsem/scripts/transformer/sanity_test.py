@@ -21,35 +21,28 @@ def main(config):
                 output_dim=init_params['output_dim']
     )
 
-#    if use_gpu:
-#        model = model.cuda()
-
     model.eval()
     model.load_state_dict(torch.load(pytorch_fn))
 
     # S x N x E
-    seq_length = 5
-#    dummy_attn_input = torch.ones(seq_length, 1, 
-#        2*f_config.getint('SemDim') + f_config.getint('SynDim') + model.max_depth)
-#    dummy_coref_emb = torch.ones(seq_length, 1, f_config.getint('AntDim') + 1)
-    # the ith dummy vector is filled with 0.1 * (i+1)
-    # so  [0.1 0.1 0.1 ...], [0.2 0.2 0.2 ...], ...
-    dummy_attn_input = torch.FloatTensor(seq_length, 1, 
-        2*f_config.getint('SemDim') + f_config.getint('SynDim') + model.max_depth)
-    dummy_coref_emb = torch.FloatTensor(seq_length, 1, f_config.getint('AntDim') + 1)
-    for i in range(seq_length):
+    stack_length = 5
+    dummy_attn_input = torch.FloatTensor(stack_length, 1, 
+        f_config.getint('SemDim') + f_config.getint('SynDim') + model.max_depth+1)
+
+    dummy_post_attn_input = torch.ones(
+        1,
+        f_config.getint('AntDim') + f_config.getint('SemDim') + 1
+    )
+    for i in range(stack_length):
         for j in range(len(dummy_attn_input[i, 0])):
             dummy_attn_input[i, 0, j] = 0.1 * (i+1)
-        for j in range(len(dummy_coref_emb[i, 0])):
-            dummy_coref_emb[i, 0, j] = 0.1 * (i+1)
-    dummy_pred = model.compute(dummy_attn_input, dummy_coref_emb, verbose=True)
-    # only look at the last word
-    fdec_log_scores = dummy_pred[-1, 0]
+    fdec_log_scores = model.compute(dummy_attn_input, dummy_post_attn_input, verbose=True)
+    fdec_log_scores = torch.reshape(fdec_log_scores, (-1,))
     fdec_scores = torch.exp(fdec_log_scores)
     fdec_scores_normalized = fdec_scores/sum(fdec_scores)
-    print('Dummy output:')
+    eprint('Dummy output:')
     for fdec_prob in fdec_scores_normalized:
-        print(fdec_prob.item())
+        eprint(fdec_prob.item())
 
     
 if __name__ == '__main__':

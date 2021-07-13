@@ -17,25 +17,18 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-int getDepth( const BeamElement<HiddState>& be ) {
-    return be.getHidd().getStoreState().getDepth();
+int getDepth( const StoreState& ss ) {
+    return ss.getDepth();
 }
 
 
-CVar getCatBase( const BeamElement<HiddState>& be ) {
-    return be.getHidd().getStoreState().getBase().getCat();
+CVar getCatBase( const StoreState& ss ) {
+    return ss.getBase().getCat();
 }
 
 
-HVec getHvB( const BeamElement<HiddState>& be ) {
-    StoreState ss = be.getHidd().getStoreState();
+HVec getHvB( const StoreState& ss ) {
     return (( ss.getBase().getHVec().size() > 0 ) ? ss.getBase().getHVec() : hvBot);
-}
-
-
-HVec getHvF( const BeamElement<HiddState>& be ) {
-    StoreState ss = be.getHidd().getStoreState();
-    return (( ss.getBase().getCat().getNoloArity() && ss.getNoloBack().getHVec().size() != 0 ) ? ss.getNoloBack().getHVec() : hvBot);
 }
 
 
@@ -58,15 +51,17 @@ vec getPositionalEncoding( uint dim, uint wordIndex ) {
 class FPredictorVec {
 
   private:
-    const BeamElement<HiddState>& be;
     const HVec& hvA;
+    const HVec& hvF;
     bool nullA;
+    const StoreState& ss;
 
   public:
-    FPredictorVec( const BeamElement<HiddState>& belement, const HVec& hvAnt, bool nullAnt )
-      : be (belement),
-      hvA ((hvAnt.size() > 0) ? hvAnt : hvBot),
-      nullA (nullAnt) 
+    FPredictorVec(  const HVec& hvAnt, bool nullAnt, const StoreState& sState )
+      : hvA ((hvAnt.size() > 0) ? hvAnt : hvBot),
+      hvF (( sState.getBase().getCat().getNoloArity() && sState.getNoloBack().getHVec().size() != 0 ) ? sState.getNoloBack().getHVec() : hvBot),
+      nullA (nullAnt),
+      ss (sState)
     {
     }
 
@@ -74,20 +69,24 @@ class FPredictorVec {
       return nullA;
     }
 
-    const HVec getHvA() {
+    const HVec getHvA() const {
       return hvA; //antecedent
     }
 
-    const BeamElement<HiddState>& getBeamElement() const {
-        return be;
+    const HVec getHvF() const {
+      return hvF; //filler
+    }
+
+    const StoreState& getStoreState() const {
+        return ss;
     }
 
     friend ostream& operator<< ( ostream& os, const FPredictorVec& fpv ) {
       //const StoreState ss = fpv.getBeamElement().getHidd().getStoreState();
-      const int d = getDepth(fpv.be);
-      const CVar catBase = getCatBase(fpv.be);
-      const HVec hvB = getHvB(fpv.be);
-      const HVec hvF = getHvF(fpv.be);
+      const int d = getDepth(fpv.ss);
+      const CVar catBase = getCatBase(fpv.ss);
+      const HVec hvB = getHvB(fpv.ss);
+      const HVec hvF = fpv.getHvF();
         
       os << d << " " << catBase << " " << hvB << " " << hvF << " " << fpv.hvA << " " << fpv.nullA;
       return os;
@@ -152,7 +151,7 @@ class FModel {
     vec fbfv;
     vec fbsv;
 
-    vec computeResult( vector<vec> attnInput, vec corefVector, uint wordIndex, bool verbose ) const;
+    vec computeResult( vector<vec> attnInput, vec corefVector, bool verbose=0 ) const;
 
   public:
 
@@ -241,11 +240,11 @@ class FModel {
       //FFULL_WIDTH = 8 + 2*FSEM_SIZE + FSYN_SIZE + FANT_SIZE;
 
       // reshape weight matrices
-      uint pre_attn_dim = 7 + 2*FSEM_DIM + FSYN_DIM;
+      uint pre_attn_dim = 7 + FSEM_DIM + FSYN_DIM;
       uint attn_dim = fwp.size()/pre_attn_dim;
-      // output of attn layer is concatenated with hvAnt (dim = FANT_DIM)
-      // and nullA (dim = 1)
-      uint post_attn_dim = attn_dim + FANT_DIM + 1;
+      // output of attn layer is concatenated with hvF (dim=FSYN_DIM), 
+      // hvAnt (dim = FANT_DIM) and nullA (dim = 1)
+      uint post_attn_dim = attn_dim + FSEM_DIM + FANT_DIM + 1;
       uint hidden_dim = fwf.size()/post_attn_dim;
       uint output_dim = fws.size()/hidden_dim;
 
@@ -264,6 +263,11 @@ class FModel {
       fwom.reshape(attn_dim, attn_dim);
       fwfm.reshape(hidden_dim, post_attn_dim);
       fwsm.reshape(output_dim, hidden_dim);
+
+      cerr << "fwp size: " << fwp.size() << endl;
+      cerr << "pre_attn_dim: " << pre_attn_dim << endl;
+      cerr << "attn dim: " << attn_dim << endl;
+      cerr << "fbiv size: " << fbiv.size() << endl;
 
       // fbiv contains biases vectors for query, key, and value
       //fbqv = fbiv(span(0, attn_dim));
@@ -351,76 +355,101 @@ class FModel {
       return ( ( it != mfeki.end() ) ? it->second : uint(-1) );
     }
 
-    vec calcResponses( FPredictorVec& lfpredictors, int wordIndex ) const;
+    vec calcResponses( FPredictorVec& lfpredictors ) const;
 
     void testCalcResponses() const;
 };
 
-vec FModel::calcResponses( FPredictorVec& lfpredictors, int wordIndex ) const {
+vec FModel::calcResponses( FPredictorVec& lfpredictors ) const {
 // return distribution over FEK indices
+  const HVec hvF = lfpredictors.getHvF();
   const HVec hvA = lfpredictors.getHvA();
   const bool nullA = lfpredictors.getNullA();
+
+  const vec hvFEmb = getKVecEmbed(hvF, 'F');
   const vec hvAEmb = getKVecEmbed(hvA, 'A');
 
-  vec corefVec = join_cols(hvAEmb, zeros(1));
-  if (nullA) corefVec(hvAEmb.size()) = 1;
+  vec postAttnInput = join_cols(join_cols(hvFEmb, hvAEmb), zeros(1));
+  if (nullA) postAttnInput(FANT_DIM + FSEM_DIM) = 1;
 
-  const BeamElement<HiddState> be = lfpredictors.getBeamElement();
+  const StoreState ss = lfpredictors.getStoreState();
 
   vector<vec> attnInput;
-  
-  //uint MAX_WINDOW_SIZE = 20;
-  uint MAX_WINDOW_SIZE = 10;
-  uint wordOffset = 0;
-  // this moves backwards in time, starting with the word for which the
-  // response is being calculated. wordOffset tracks how many
-  // words back we've moved
-  for (const BeamElement<HiddState>* curr = &be; ( (curr != &BeamElement<HiddState>::beStableDummy) && (wordOffset < MAX_WINDOW_SIZE) ); curr=&curr->getBack(), wordOffset++) {
-    CVar catB = getCatBase(*curr);
-    HVec hvB = getHvB(*curr);
-    HVec hvF = getHvF(*curr);
-    uint d = getDepth(*curr);
-    
-    vec catBEmb = getCatEmbed(catB, 'B');
-    vec hvBEmb = getKVecEmbed(hvB, 'B');
-    vec hvFEmb = getKVecEmbed(hvF, 'F');
 
-    vec currAttnInput = join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), zeros(7)); 
-    currAttnInput(2*FSEM_DIM + FSYN_DIM + d) = 1;
-    // vector<> doesn't have an emplace_front method
+  CVar catB;
+  HVec hvB;
+  uint depth;
+  vec catBEmb;
+  vec hvBEmb;
+  
+  // TODO do we need to add a fake depth 0 sign to match the python?
+  for (uint i=0; i<ss.getDepth(); i++)
+  {
+    const DerivationFragment& currDf = ss.back(i);
+    // TODO eventually we should also include apex and fillers here, not just base
+    const Sign& dfBase = currDf.base().back();
+    catB = dfBase.getCat();
+    hvB = dfBase.getHVec();
+    depth = ss.getDepth() - i;
+    // TODO continue here
+    catBEmb = getCatEmbed(catB, 'B');
+    hvBEmb = getKVecEmbed(hvB, 'B');
+    vec currAttnInput = join_cols(join_cols(catBEmb, hvBEmb), zeros(7)); 
+    currAttnInput(FSEM_DIM + FSYN_DIM + depth) = 1;
     attnInput.emplace_back(currAttnInput);
   }
 
-  // reverse attnInput so that the last item is the most recent word
-  reverse(attnInput.begin(), attnInput.end());
+  // Add a "Top" fragment at depth 0. This ensures that there's something
+  // to feed into the attention layer at the beginning of a sentence when
+  // the stack is empty
+  catB = cTop;
+  hvB = hvTop;
+  depth = 0;
+  catBEmb = getCatEmbed(catB, 'B');
+  hvBEmb = getKVecEmbed(hvB, 'B');
+  vec currAttnInput = join_cols(join_cols(catBEmb, hvBEmb), zeros(7)); 
+  currAttnInput(FSEM_DIM + FSYN_DIM + depth) = 1;
+  attnInput.emplace_back(currAttnInput);
+
   
-  return computeResult(attnInput, corefVec, wordIndex, 0);
+//  for (const BeamElement<HiddState>* curr = &be; ( (curr != &BeamElement<HiddState>::beStableDummy) && (wordOffset < MAX_WINDOW_SIZE) ); curr=&curr->getBack(), wordOffset++) {
+//    CVar catB = getCatBase(*curr);
+//    HVec hvB = getHvB(*curr);
+//    HVec hvF = getHvF(*curr);
+//    uint d = getDepth(*curr);
+//    
+//    vec catBEmb = getCatEmbed(catB, 'B');
+//    vec hvBEmb = getKVecEmbed(hvB, 'B');
+//    vec hvFEmb = getKVecEmbed(hvF, 'F');
+//
+//    vec currAttnInput = join_cols(join_cols(join_cols(catBEmb, hvBEmb), hvFEmb), zeros(7)); 
+//    currAttnInput(2*FSEM_DIM + FSYN_DIM + d) = 1;
+//    // vector<> doesn't have an emplace_front method
+//    attnInput.emplace_back(currAttnInput);
+//  }
+//
+//  // reverse attnInput so that the last item is the most recent word
+//  reverse(attnInput.begin(), attnInput.end());
+  
+  return computeResult(attnInput, postAttnInput);
 }
 
 
 // returns distribution over FEK indices
-// attnInput contains the embeddings for previous words up to the current word
-// attnInput.back() is the current word that we are making an F decision for
-vec FModel::computeResult( vector<vec> attnInput, vec corefVec, uint wordIndex, bool verbose ) const {
-  bool usePositionalEncoding = false;
-  vec last = attnInput.back();
+vec FModel::computeResult( vector<vec> attnInput, vec postAttnInput, bool verbose ) const {
+  // attnInput.front is the deepest derivation fragment
+  vec first = attnInput.front();
+  //vec last = attnInput.back();
+  //
   if ( verbose ) {
-    //cerr << "F last" << last << endl;
+    cerr << "first: " << first << endl;
+    cerr << "fwpm size: " << fwpm.size() << endl;
+    cerr << "first size: " << first.size() << endl;
+    cerr << "fbpv size: " << fbpv.size() << endl;
+  }
 
-//    cerr << "F fwpm" << endl;
-//    cerr << "num rows: " << fwpm.n_rows << endl;
-//    cerr << "num cols: " << fwpm.n_cols << endl;
-//    for ( uint j=0; j<fwpm.n_cols; j++ ) {
-//      for ( uint i=0; i<fwpm.n_rows; i++ ) {
-//        cerr << fwpm(i, j) << endl;
-//      }
-//    }
-//    cerr << "F fbpv" << fbpv << endl;
-  }
-  vec proj = fwpm*last + fbpv;
-  if ( usePositionalEncoding ) {
-    proj = proj + getPositionalEncoding(fbpv.size(), wordIndex);
-  }
+  vec proj = fwpm*first + fbpv;
+
   if ( verbose ) {
     cerr << "F proj" << proj << endl;
   }
@@ -431,12 +460,12 @@ vec FModel::computeResult( vector<vec> attnInput, vec corefVec, uint wordIndex, 
 
   vector<vec> values;
   vector<double> scaledDotProds;
-  int currIndex = wordIndex - attnInput.size() + 1;
+  //int currIndex = wordIndex - attnInput.size() + 1;
   for ( vec curr : attnInput ) { 
     proj = fwpm*curr + fbpv;
-    if ( usePositionalEncoding ) {
-      proj = proj + getPositionalEncoding(fbpv.size(), currIndex++);
-    }
+//    if ( usePositionalEncoding ) {
+//      proj = proj + getPositionalEncoding(fbpv.size(), currIndex++);
+//    }
     vec key = fwkm*proj + fbkv;
     vec value = fwvm*proj + fbvv;
     values.emplace_back(value);
@@ -467,7 +496,7 @@ vec FModel::computeResult( vector<vec> attnInput, vec corefVec, uint wordIndex, 
     cerr << "F attnOutput" << attnOutput << endl;
   }
   // final bit is for nullA
-  vec hiddenInput = join_cols(attnOutput, corefVec);
+  vec hiddenInput = join_cols(attnOutput, postAttnInput);
   vec logScores = fwsm * relu(fwfm*hiddenInput + fbfv) + fbsv;
   vec scores = exp(logScores);
   double outputNorm = accu(scores);
@@ -483,24 +512,23 @@ vec FModel::computeResult( vector<vec> attnInput, vec corefVec, uint wordIndex, 
 // Python training code)
 void FModel::testCalcResponses() const {
   //vec corefVec = ones<vec>(FANT_DIM+1);
-  vec corefVec;
+  vec postAttnInput;
   vec currAttnInput;
   vector<vec> attnInput;
-  uint attnInputDim = 2*FSEM_DIM + FSYN_DIM + 7;
-  uint corefDim = FANT_DIM + 1;
-  uint seqLength = 5;
+  uint attnInputDim = FSEM_DIM + FSYN_DIM + 7;
+  uint postAttnDim = FANT_DIM + FSEM_DIM + 1;
+  uint stackSize = 5;
+  postAttnInput = vec(postAttnDim);
+  postAttnInput.fill(1);
   // the ith dummy input will be a vector of 0.1*(i+1)
   // [0.1 0.1 0.1 ...] [0.2 0.2 0.2 ...] ...
-  for ( uint i=0; (i<seqLength); i++ ) {
-    cerr << "F ==== output for word " << i << " ====" << endl;
+  for ( uint i=0; (i<stackSize); i++ ) {
     currAttnInput = vec(attnInputDim);
     currAttnInput.fill(0.1 * (i+1));
-    //attnInput.emplace_back(ones<vec>(2*FSEM_DIM + FSYN_DIM + 7));
     attnInput.emplace_back(currAttnInput);
-    corefVec = vec(corefDim);
-    corefVec.fill(0.1 * (i+1));
-    computeResult(attnInput, corefVec, i, 1);
   }
+  cerr << "F ==== output ====" << endl;
+  computeResult(attnInput, postAttnInput, 1);
 }
 
 

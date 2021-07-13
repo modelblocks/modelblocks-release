@@ -48,16 +48,16 @@ class FPredictorVec {
       return hvA; //antecedent
     }
     int getD() {
-        return d;
+      return d;
     }
     const HVec& getHvB() {
-        return hvB;
+      return hvB;
     }
     const HVec& getHvF() {
-        return hvF;
+      return hvF;
     }
     CVar getCatBase() {
-        return catBase;
+      return catBase;
     }
 
     friend ostream& operator<< ( ostream& os, const FPredictorVec& fpv ) {
