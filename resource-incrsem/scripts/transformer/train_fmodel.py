@@ -204,9 +204,6 @@ def train(f_config):
     epochs = f_config.getint('NEpochs')
     l2_reg = f_config.getfloat('L2Reg')
     learning_rate = f_config.getfloat('LearningRate')
-    if use_dev:
-        dev_all_finfo = prepare_dev_data(dev_decpars, catb_to_ix, fdecs_to_ix,
-             hvb_to_ix, hvf_to_ix, hva_to_ix)
     weight_decay = f_config.getfloat('WeightDecay')
 
     per_article_finfo, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix = prepare_data()
@@ -323,6 +320,7 @@ def train(f_config):
                 _, dev_fdec = torch.max(dev_output.data, 2)
 
                 dev_correct = ((dev_fdec == dev_target) * (dev_target != fdecs_to_ix[PAD])).sum().item()
+                total_dev_items = (dev_target != fdecs_to_ix[PAD]).sum().item()
 
                 # NLLLoss requires target dimension to be N x L
                 # https://pytorch.org/docs/stable/generated/torch.nn.NLLLoss.html
@@ -336,7 +334,7 @@ def train(f_config):
                 # equally weight all other classes
                 num_classes = dev_output.shape[1]
                 # last class is PAD
-                assert fdecs_to_ix[PAD] ==_num_classes - 1
+                assert fdecs_to_ix[PAD] == num_classes - 1
                 per_class_weight = 1/(num_classes-1)
                 class_weights = torch.FloatTensor([per_class_weight]*(num_classes-1) + [0])
                 if use_gpu:
@@ -344,14 +342,14 @@ def train(f_config):
 
                 criterion = nn.NLLLoss(weight=class_weights)
                 dev_loss = criterion(dev_output, dev_target).item()
-                dev_acc = 100 * (dev_correct / len(dev_all_finfo))
+                dev_acc = 100 * (dev_correct / total_dev_items)
         else:
             dev_acc = 0
             dev_loss = 0
 
         eprint('Epoch {:04d} | AvgTrainLoss {:.4f} | TrainAcc {:.4f} | DevLoss {:.4f} | DevAcc {:.4f} | Time {:.4f}'.
                format(epoch, total_train_loss / ((len(train_seqs) // batch_size) + 1), 100 * (total_train_correct / total_train_items),
-                      total_dev_loss, dev_acc, time.time() - c0))
+                      dev_loss, dev_acc, time.time() - c0))
 
     return model, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix
 
