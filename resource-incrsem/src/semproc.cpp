@@ -335,7 +335,9 @@ int main ( int nArgs, char* argv[] ) {
 
   // sanity test
   cerr << "F sanity test:\n" << endl;
+#ifdef TRANSFORMER
   modF.testCalcResponses();
+#endif
   //cerr << "F sanity test:\n" << modF.testCalcResponses() << endl;
 
   mutex mutexMLSList;
