@@ -27,13 +27,10 @@ def extract_first_kvec(hvec):
 
 def hvecIxReplace(hvec, hvec_to_ix):
     new_hvec = list()
-    top_count = 0
     for hv in hvec:
-        if hv == 'Top':
-            top_count += 1
-        elif hv not in ['Bot', '']:
+        if hv not in ['Bot', '']:
             new_hvec.append(hvec_to_ix[hv])
-    return new_hvec, top_count
+    return new_hvec
 
 
 def _initialize_finfo_list(infile):
@@ -85,9 +82,9 @@ def _map_finfo_list_to_ix(per_article_finfo, catb_to_ix, fdecs_to_ix, hvb_to_ix,
             try:
                 finfo.catb = catb_to_ix[finfo.catb]
                 finfo.fdec = fdecs_to_ix[finfo.fdec]
-                finfo.hvb, finfo.hvb_top = hvecIxReplace(finfo.hvb, hvb_to_ix)
-                finfo.hvf, finfo.hvf_top = hvecIxReplace(finfo.hvf, hvf_to_ix)
-                finfo.hva, finfo.hva_top = hvecIxReplace(finfo.hva, hva_to_ix)
+                finfo.hvb = hvecIxReplace(finfo.hvb, hvb_to_ix)
+                finfo.hvf = hvecIxReplace(finfo.hvf, hvf_to_ix)
+                finfo.hva = hvecIxReplace(finfo.hva, hva_to_ix)
             except KeyError:
                 # dev may contain fdecs, catbases, etc that haven't appeared in
                 # training data. Throw out any such data

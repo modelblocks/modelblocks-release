@@ -163,19 +163,6 @@ class TransformerFModel(nn.Module):
                 )
                 hva_embed = torch.sparse.mm(hva_sparse, self.hva_embeds.weight)
 
-            hvb_top = torch.FloatTensor([fi.hvb_top for fi in seq]).reshape(-1, 1)
-            hvf_top = torch.FloatTensor([fi.hvf_top for fi in seq]).reshape(-1, 1)
-            hva_top = torch.FloatTensor([fi.hva_top for fi in seq]).reshape(-1, 1)
-
-            if self.use_gpu:
-                hvb_top = hvb_top.to('cuda')
-                hvf_top = hvf_top.to('cuda')
-                hva_top = hva_top.to('cuda')
-
-            hvb_embed = hvb_embed + hvb_top
-            hvf_embed = hvf_embed + hvf_top
-            hva_embed = hva_embed + hva_top
-
             # null antecendent and depth
             nulla = torch.FloatTensor([fi.nulla for fi in seq])
             depth = [fi.depth for fi in seq]
