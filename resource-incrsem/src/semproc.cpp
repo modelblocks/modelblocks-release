@@ -333,12 +333,11 @@ int main ( int nArgs, char* argv[] ) {
 
   cerr<<"Models ready."<<endl;
 
+#ifdef TRANSFORMER
   // sanity test
   cerr << "F sanity test:\n" << endl;
-#ifdef TRANSFORMER
   modF.testCalcResponses();
 #endif
-  //cerr << "F sanity test:\n" << modF.testCalcResponses() << endl;
 
   mutex mutexMLSList;
   vector<thread> vtWorkers;  vtWorkers.reserve( numThreads );
