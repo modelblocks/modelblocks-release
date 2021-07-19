@@ -295,8 +295,8 @@ class FModel {
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> CVec;
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> KDenseVec;
   uint FSEM_SIZE = 20; 
-  uint FSYN_SIZE = 10;
-  uint FANT_SIZE = 10;
+  uint FSYN_SIZE = 20;
+  uint FANT_SIZE = 20;
   uint FFULL_WIDTH = 13;
   private:
 
@@ -612,7 +612,7 @@ class WModel {
           if (j == 'f') is >> mfcb >> "\n";
         }
       }
-      cerr << "done with Ws" << endl;
+      //cerr << "done with Ws" << endl;
       while ( is.peek()=='E' ) {
         Delimited<char> i;
         Delimited<EVar> e;
@@ -628,14 +628,14 @@ class WModel {
           mmev.try_emplace(e, vec(dv));
         }
       }
-      cerr << "done with Es" << endl;
+      //cerr << "done with Es" << endl;
       while ( is.peek()=='K' ) {
         Delimited<K> k;
         DenseVec dv = DenseVec(X_K_SIZE);
         is >> "K " >> k >> " " >> dv >> "\n";
         mxkv.try_emplace(k, vec(dv));
       }
-      cerr << "done with Ks" << endl;
+      //cerr << "done with Ks" << endl;
       while ( is.peek()=='P' ) {
         Delimited<char> i;
         Delimited<CVar> c;
@@ -651,14 +651,14 @@ class WModel {
           mmpv.try_emplace(c, vec(dv));
         }
       }
-      cerr << "done with Ps" << endl;
+      //cerr << "done with Ps" << endl;
       while ( is.peek()=='L' ) {
         string l;
         DenseVec dv = DenseVec(M_L_SIZE);
         is >> "L " >> l >> " " >> dv >> "\n";
         mmlv.try_emplace(l, vec(dv));
       }
-      cerr << "done with Ls" << endl;
+      //cerr << "done with Ls" << endl;
       while ( is.peek()=='C' ) {
         Delimited<char> i;
         string c;
@@ -677,13 +677,13 @@ class WModel {
           is >> mci[c] >> "\n";
         }
       }
-      cerr << "done with Cs" << endl;
+      //cerr << "done with Cs" << endl;
       while ( is.peek()=='R' ) {
         string x;
         is >> "R " >> x >> " ";
         is >> mmi[x] >> "\n";
       }
-      cerr << "done with Rs" << endl;
+      //cerr << "done with Rs" << endl;
       while ( is.peek()=='X' ) {
         string x;
         string p;
@@ -692,7 +692,7 @@ class WModel {
         pair<string,string> xppair (x,p);
         mxwp.try_emplace(xppair, wp);
       }
-      cerr << "done with Xs" << endl;
+      //cerr << "done with Xs" << endl;
       while ( is.peek()=='M' ) {
         string x;
         string p;
@@ -701,7 +701,7 @@ class WModel {
         pair<string,string> xppair (x,p);
         mxmp.try_emplace(xppair, mp);
       }
-      cerr << "done with Ms" << endl;
+      //cerr << "done with Ms" << endl;
       // initialize armadillo mat/vecs
       xihwm = xihw;
       xhhwm = xhhw;
@@ -736,7 +736,7 @@ class WModel {
       unsigned i = 0;
       while ( i < s.length() ){
         string str(1, s[i]);
-        cerr << "Processing character " << s[i] << "." << endl;
+        //cerr << "Processing character " << s[i] << "." << endl;
         if ( mci.find(str) == mci.end() ) {
           cerr << "Unknown character " << s[i] << " found in " << s << "." << endl;
           s.erase(std::remove(s.begin(), s.end(), s[i]), s.end());
@@ -828,7 +828,7 @@ class WModel {
         auto itp = mmpv.find( mp.second() );
         assert ( itp != mmpv.end() );
         auto itl = mmlv.find( mp.third() );
-        assert ( itp != mmlv.end() );
+        assert ( itl != mmlv.end() );
         mpmat.col(idx) = join_cols(join_cols(ite->second, itp->second), itl->second);
         idx ++;
       }
@@ -989,7 +989,7 @@ class WModel {
         list<pair<pair<string,string>,string>> lxmp = applyMorphRules(w_t);
         // loop over <<lemma, primcat>, rule>
         for ( const auto& xmp : lxmp ) {
-        cerr << "generated word " << w_t << " from lemma " << xmp.first.first << ", primcat " << xmp.first.second << ", rule " << xmp.second << endl;
+        //cerr << "generated word " << w_t << " from lemma " << xmp.first.first << ", primcat " << xmp.first.second << ", rule " << xmp.second << endl;
           DelimitedList<psLBrack,WPredictor,psSpace,psRBrack> lwp = getWPredictorList(xmp.first);
           rowvec xll = calcLemmaLikelihoods(xmp.first, xpmap);
           mat mllall = calcRuleLikelihoods(xmp.first, mpmap);
@@ -1065,7 +1065,7 @@ class JModel {
   typedef DelimitedCol<psLBrack, double, psComma, psRBrack> DenseVec;
   unsigned int jr0;
   unsigned int jr1;
-  uint JSYN_SIZE = 10; //placeholders - these will be overwritten when reading in the model
+  uint JSYN_SIZE = 20; //placeholders - these will be overwritten when reading in the model
   uint JSEM_SIZE = 20;
   uint JFULL_WIDTH = 13;
 
@@ -1104,7 +1104,7 @@ class JModel {
     // read in weights, embeddings, and JEOOs
     JModel(istream& is) : zeroCatEmb(13) {
       while ( is.peek()=='J' ) {
-        cerr << "found a J" << endl;
+        //cerr << "found a J" << endl;
         Delimited<char> c;
         is >> "J " >> c >> " ";
         if (c == 'F') is >> jwf >> "\n";
@@ -1112,7 +1112,7 @@ class JModel {
         if (c == 'S') is >> jws >> "\n";
         if (c == 's') is >> jbs >> "\n";
       }
-     cerr << "loaded J weights" << endl;
+     //cerr << "loaded J weights" << endl;
       while ( is.peek()=='C' ) {
         Delimited<char> c;
         Delimited<CVar> cv;
@@ -1123,7 +1123,7 @@ class JModel {
         JSYN_SIZE = vtemp.size();
         //is >> mcv.try_emplace(c,SYN_SIZE).first->second >> "\n";
       }
-      cerr << "loaded J Cs" << endl;
+      //cerr << "loaded J Cs" << endl;
       zeroCatEmb=arma::zeros(JSYN_SIZE);
       while ( is.peek()=='K' ) {
         Delimited<char> c;
@@ -1136,7 +1136,7 @@ class JModel {
         JSEM_SIZE = vtemp.size();
         //is >> mkdv.try_emplace(k,SEM_SIZE).first->second >> "\n";
       }
-      cerr << "loaded J Ks" << endl;
+      //cerr << "loaded J Ks" << endl;
       while ( is.peek()=='j' ) {
         Delimited<int> k;
         is >> "j " >> k >> " ";
@@ -1144,7 +1144,7 @@ class JModel {
         mjeooi[mijeoo[k]] = k;
         iNextResponse = k+1; //code review WS this should be handled more elegantly, since inextresponse is legacy
       }
-      cerr << "loaded Jresps" << endl;
+      //cerr << "loaded Jresps" << endl;
       //cout << "finished reading in J model..." << endl;
       jr0 = getResponseIndex( 0, EVar::eNil, 'N', O_I );
       jr1 = getResponseIndex( 1, EVar::eNil, 'N', O_I );

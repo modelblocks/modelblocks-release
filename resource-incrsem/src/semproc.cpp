@@ -173,13 +173,14 @@ map<int,map<int,map<int,int>>> readOracleCoref ( char * filename ) {
   //4 tab-delim input file fields: docid sentid wordid correctoffset
   map<int,map<int,map<int,int>>> oracle_dswo;
   int docid, sentid, wordid, correctoffset;
+  string word;
   string input;
   while ( true )
   {
     getline(iff,input);
     if (!iff) break;
     istringstream buffer(input);
-    buffer >> docid >> sentid >> wordid >> correctoffset;
+    buffer >> word >> docid >> sentid >> wordid >> correctoffset;
     if ( !buffer || !buffer.eof()) { break; }
     // do stuff with vars
     // see if docid exists in map and create if not
@@ -217,6 +218,7 @@ int main ( int nArgs, char* argv[] ) {
   JModel                        modJmutable;
   AModel                        modAmutable;
   BModel                        modBmutable;
+  map<int,map<int,map<int,int>>> oracle_dswo;
 
   { // Define model lists...
     list<DelimitedTrip<psX,WPredictor,psSpcColonSpc,W,psSpcEqualsSpc,Delimited<double>,psX>> lW;
@@ -229,16 +231,17 @@ int main ( int nArgs, char* argv[] ) {
       else if ( 0==strncmp(argv[a],"-b",2) ) BEAM_WIDTH = atoi(argv[a]+2);
 //      else if ( 0==strcmp(argv[a],"-c") ) OUTPUT_MEASURES = 1;
       else if ( 0==strncmp(argv[a],"-f",2) ) FEATCONFIG = atoi(argv[a]+2);
-      else if( '-'==argv[a][0] && 'c'==argv[a][1] && '\0'!=argv[a][2] ) COREF_WINDOW = atoi( argv[a]+2 );
+      else if ( 0==strncmp(argv[a],"-c",2) ) COREF_WINDOW = atoi( argv[a]+2 );
       //else if ( string(argv[a]) == "t" ) STORESTATE_TYPE = true;
-      else if( '-'==argv[a][0] && 'a'==argv[a][1] ) ABLATE_UNARY = true;
-      else if( '-'==argv[a][0] && 'n'==argv[a][1] && 'b'==argv[a][2]) NO_ENTITY_BLOCKING = true;
-      else if( '-'==argv[a][0] && 'n'==argv[a][1] && 'a'==argv[a][2]) NO_ANTUNK = true;
-      else if( '-'==argv[a][0] && 'r'==argv[a][1] && 'p'==argv[a][2]) REDUCED_PRTRM_CONTEXTS = true;
-      else if( '-'==argv[a][0] && 'o'==argv[a][1] ) {
+      else if ( 0==strncmp(argv[a],"-a",2) ) ABLATE_UNARY = true;
+      else if ( 0==strncmp(argv[a],"-nb",3) ) NO_ENTITY_BLOCKING = true;
+      else if ( 0==strncmp(argv[a],"-na",3) ) NO_ANTUNK = true;
+      else if ( 0==strncmp(argv[a],"-rp",3) ) REDUCED_PRTRM_CONTEXTS = true;
+      else if ( 0==strncmp(argv[a],"-o",2) ) {
         ORACLE_COREF = true;
-        map<int,map<int,map<int,int>>> oracle_dswo;
-        oracle_dswo = readOracleCoref(argv[a]+2);
+        oracle_dswo = readOracleCoref(argv[a]+2); //strip off "-o" and read in filename
+        cerr << "Running in oracle coreference mode using decisions from: " << argv[a]+2 << endl;
+        //cerr << "  Example correct offset for doc1, sent1, word12: " << oracle_dswo.at(1).at(1).at(12) << endl;
         }
       //else if (0==strncmp(argv[a][strlen(argv[a])-3]),"ini",3) ) { //must be at end of options before model file since negative substrings for small args will fail
       //else if ('i'==argv[a][strlen(argv[a])-3] && 'n'==argv[a][strlen(argv[a])-2] && 'i'==argv[a][strlen(argv[a])-1]  ) { //must be at end of options before model file since small args will fail indexing
@@ -301,7 +304,10 @@ int main ( int nArgs, char* argv[] ) {
 
 //  modJmutable.getResponseIndex( 0, EVar::eNil, O_N, O_I );
 //  modJmutable.getResponseIndex( 1, EVar::eNil, O_N, O_I );
-
+  const map<int,map<int,map<int,int>>>& coracle_dswo = oracle_dswo;
+  //cerr << "  outer scope: Example correct offset for doc1, sent1, word12: " << coracle_dswo.at(1).at(1).at(12) << endl;
+  //cerr << "  outer scope: Example correct offset for doc1, sent1, word1: " << coracle_dswo.at(1).at(1).at(1) << endl;
+  
   const EMat&   matE  = matEmutable;
   const OFunc&  funcO = funcOmutable;
   const NModel& modN  = modNmutable;
@@ -333,7 +339,7 @@ int main ( int nArgs, char* argv[] ) {
   // Pointers to 
   auto iartNextToProc = corpus.begin();
   auto iartNextToDump = corpus.begin();
-  uint numartNextToProc = 0;
+  uint numartNextToProc = 1;
 #else
   uint linenum = 0;
   // For each line in stdin...
@@ -342,8 +348,10 @@ int main ( int nArgs, char* argv[] ) {
 #endif
 
   // loop over threads (each thread gets an article)
-  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&corpus,&iartNextToProc,&iartNextToDump,&numartNextToProc,/*&articleMLSs,&articles,&linenum,*/&mutexMLSList,numThreads,&matE,&funcO,&modN,&modF,&modP,&modW,&modJ,&modA,&modB] (uint numt) {
+  for( uint numtglobal=0; numtglobal<numThreads; numtglobal++ ) vtWorkers.push_back( thread( [&corpus,&iartNextToProc,&iartNextToDump,&numartNextToProc,coracle_dswo,/*&articleMLSs,&articles,&linenum,*/&mutexMLSList,numThreads,&matE,&funcO,&modN,&modF,&modP,&modW,&modJ,&modA,&modB] (uint numt) {
 
+    //cerr << "  thread scope: Example correct offset for doc1, sent1, word12: " << coracle_dswo.at(1).at(1).at(12) << endl;
+    //cerr << "  thread scope: Example correct offset for doc1, sent1, word1: " << coracle_dswo.at(1).at(1).at(1) << endl;
     auto tpLastReport = chrono::high_resolution_clock::now();  // clock for thread heartbeats
     // WModel-related maps for each thread
     WModel::WWPPMap mapWWPP;
@@ -394,6 +402,7 @@ int main ( int nArgs, char* argv[] ) {
 
       DelimitedList<psX,BeamElement<HiddState>,psLine,psX> lbeWholeArticle;
       lbeWholeArticle.emplace_back(); //create null beamElement at start of article
+      int word_index;
 
       for (auto& lwSent : sents) {
         currline++;
@@ -417,6 +426,7 @@ int main ( int nArgs, char* argv[] ) {
         beams[0].tryAdd( lbeWholeArticle.back().getHidd(), lbeWholeArticle.back().getProbBack() );
         //beams[0].tryAdd( HiddState(), ProbBack<HiddState>() );
 
+        word_index = 1;
         // For each word...
         for ( auto& w_t : lwSent ) {
           try {
@@ -445,8 +455,17 @@ int main ( int nArgs, char* argv[] ) {
             //if (VERBOSE > 1) cout << "entering denom loop... " << &pbeAnt->getBack() << endl;
             //denominator loop over candidate antecedents
             for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { 
-              //TODO ignore incorrect candidate antecedents if oracle flag is on
-              //TODO prepare correct n decisions from nmlpdecpars, read in as map art->sent->word->correctoffset. somewhere outside of here.
+              if ( ORACLE_COREF == true ) { //in oracle mode
+                //cerr << "ndenom searching for oracle at: " << numart << " " << currline << " " << word_index << endl;
+                try {
+                  if ( (t-tAnt) != coracle_dswo.at(numart).at(currline).at(word_index) ) continue; // skip offset if not correct one
+                }
+                catch (const std::out_of_range& oor) {
+                  cerr << "ERROR: Out of Range error: " << oor.what() << endl;
+                  cerr << "was trying to access doc/sent/word: " << numart << " " << currline << " " << word_index << endl;
+                  continue; //most of the time should continue, not always.  figure out better error handling or underlying cause of this exception.
+                }
+              }
               if (pbeAnt->getHidd().getPrtrm().getCat() == cFail) { continue; }
               //if (VERBOSE > 1) cout << "entered denom loop... " << &pbeAnt->getBack() << endl;
               if ( pbeAnt->getHidd().getI() != 0 ) {
@@ -479,18 +498,24 @@ int main ( int nArgs, char* argv[] ) {
             //if (VERBOSE > 1) cout << "entering numerator loop..." << endl;
             //numerator loop over candidate antecedents. specific choice.
             for ( int tAnt = t; (&pbeAnt->getBack() != &BeamElement<HiddState>::beStableDummy) && (int(t-tAnt)<=COREF_WINDOW); tAnt--, pbeAnt = &pbeAnt->getBack()) { //numerator, iterate over candidate antecedent ks, following trellis backpointers.
-              //TODO ignore incorrect candidates if oracle flag is on
-              if (pbeAnt->getHidd().getPrtrm().getCat() == cFail) { 
-                if (VERBOSE>1) {
-                  cout << "skipping cFail antecedent at idx: " << tAnt << endl;
+              if ( ORACLE_COREF == true ) { //in oracle mode
+                //cerr << "nnumer searching for oracle at: " << numart << " " << currline << " " << word_index << endl;
+                try {
+                  if ( (t-tAnt) != coracle_dswo.at(numart).at(currline).at(word_index) ) continue; // skip offset if not correct one
                 }
+                catch (const std::out_of_range& oor) {
+                  cerr << "ERROR: Out of Range error: " << oor.what() << endl;
+                  cerr << "was trying to access doc/sent/word: " << numart << " " << currline << " " << word_index << endl;
+                  continue; //most of the time should continue, not always.  figure out better error handling or underlying cause of this exception.
+                }
+              }
+              if (pbeAnt->getHidd().getPrtrm().getCat() == cFail) { 
+                if (VERBOSE>1) { cout << "skipping cFail antecedent at idx: " << tAnt << endl; }
                 continue; 
               }
               //block indices as read from previous storestate's excludedIndices
               if (std::find(excludedIndices.begin(), excludedIndices.end(), tAnt) != excludedIndices.end()){
-                if (VERBOSE>1) {
-                  cout << "skipping excluded index: " << tAnt << endl;
-                }
+                if (VERBOSE>1) { cout << "skipping excluded index: " << tAnt << endl; }
                 continue;
               }
 
@@ -662,6 +687,7 @@ int main ( int nArgs, char* argv[] ) {
             for (auto w : lwSent) cerr << w << " ";
             cerr << endl;
           }//closes try
+        word_index++;
         } //closes for w lwSent  
         if ( numThreads == 1 ) cerr << endl;
         if ( VERBOSE ) cout << "MLS" << endl;

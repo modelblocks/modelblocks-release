@@ -35,10 +35,8 @@ else
 		shift
 	done
 	preds_STR=$(IFS="_" ; echo "${preds_STR[*]}");
-        echo "$preds_STR" > /dev/stderr
 	preds_add_STR=$(IFS=\+ ; echo "${preds_add[*]}");
 	preds_add_STR="-A $preds_add_STR";
-        echo "$preds_add_STR" > /dev/stderr
 	if [ ! -z "$preds_ablate" ]; then
 		preds_ablate_STR=$(IFS=\+ ; echo "${preds_ablate[*]}");
 		preds_ablate_STR="-a $preds_ablate_STR";
@@ -60,7 +58,9 @@ outdir="${base_filename/_part\./\.}"
 outfile="${base_filename/_part\./\.}"
 outfile+="_lmer.fitmodel.rdata";
 corpusname=$(cut -d'.' -f1 <<< "$(basename $prdmeasures)");
-tblfile="merged.tbl"
+tblfile="merged.$(date +"%Y_%m_%d_%I_%M_%p").tbl"
 python ../resource-rt/scripts/merge_tables.py $prdmeasures $resmeasures subject docid sentid sentpos word resid > $tblfile
+#python ../resource-rt/scripts/merge_tables.py $prdmeasures $resmeasures subject docid sentid sentpos word -H right > $tblfile
 python ../resource-rt/scripts/check_preds.py $tblfile $bform $preds_add_STR $preds_ablate_STR
 ../resource-lmefit/scripts/evmeasures2lmefit.r <(cat $tblfile) $outfile -b $bform $preds_add_STR $preds_ablate_STR -c $corpusname -e
+

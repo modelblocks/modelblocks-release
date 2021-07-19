@@ -238,7 +238,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 #          else:    G[ G.findNolo(hideps[i],d), '0' ] = lodeps[i]    ## top down on right child
       if a == d+'u': return  ## don't add 'u' node
       G.equate( G[d,l], l, a )
-    else: return  ## don't add 'u' node
+    else:
+      sys.stderr.write( 'ERROR: No analysis for annotated unnary expansion ' + sC + ' -> ' + sD + ' at ' + str(id) + '.\n' )
+      print(            'ERROR: No analysis for annotated unnary expansion ' + sC + ' -> ' + sD + ' at ' + str(id) )
+      return  ## don't add 'u' node
 
     ## add 'u' node
     if s==0:
@@ -301,6 +304,16 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     elif '-lM' in sE:                               ## Mb
       G.equate( G.result('S',d), 'S', c )
       G.equate( G.result('r',G.result('S',d)), '1\'', G.result('S',e) )
+    elif '-lC' in sD and '-lC' in sE:               ## Cd
+      G.equate( G.result('S',c), 'c', G.result('S',d) )
+      G.equate( G.result('S',c), 'c', G.result('S',e) )
+      G.equate( G.result('r',G.result('S',c)), 'c', G.result('r',G.result('S',d)) )
+      G.equate( G.result('r',G.result('S',c)), 'c', G.result('r',G.result('S',e)) )
+      G.equate( G.result('H',G.result('S',d)), 'H', G.result('S',c) )
+      G.equate( G.result('H',G.result('S',c)), 'H', G.result('S',e) )
+      for i in range( 1, len(gcgtree.deps(sC,'ab'))+1 ): #G.getArity(sC)+1 ):
+        G.equate( G.result(str(i)+'\'',G.result('S',c)), str(i)+'\'', G.result('S',d) )
+        G.equate( G.result(str(i)+'\'',G.result('S',c)), str(i)+'\'', G.result('S',e) )
     elif '-lC' in sD:                               ## Ca,Cb
       G.equate( G.result('S',c), 'S', e )
       G.equate( G.result('r',G.result('S',e)), 'c', G.result('r',G.result('S',d)) )
@@ -317,7 +330,7 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       G.equate( G.result('H',G.result('S',c)), 'H', G.result('S',e) )
       for i in range( 1, len(gcgtree.deps(sC,'ab'))+1 ):  #G.getArity(sC)+1 ):
         G.equate( G.result(str(i)+'\'',G.result('S',c)), str(i)+'\'', G.result('S',e) )
-      if sE.endswith('-g{V-gN}-lC'):                ## Cd
+      if sE.endswith('-g{V-gN}-lC'):                ## Ce
         G.equate( gcgtree.lastdep(sE), '0', G.result('A',e) )
 #        G.equate( G.result('W',G.result('S',d)), 'w', G.result('S',G.result('A',e)) )
 #        G.equate( G.result('s',G.result('W',G.result('S',d))), 't', G.result('W',G.result('S',d)) )
@@ -344,8 +357,10 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
         G[n,'0']+='-closed'  ## close off nolo
     elif '-lI' in sE:                               ## I
       G.equate( G.result('S',d), 'S', c )
-      if sD.startswith('N-b{V-g') or sD.startswith('N-b{I-aN-g'):                                 ## nominal clause
+      if sD.startswith('N-b{V-g{') or sD.startswith('N-b{I-aN-g{'):                               ## nominal clause with relation extraction
         G.equate( G.result('S',d), 'S', G.result('A',e) )
+      elif sD.startswith('N-b{V-g') or sD.startswith('N-b{I-aN-g'):                               ## nominal clause with nominal extraction
+        G.equate( G.result('r',G.result('S',d)), 'S', G.result('A',e) )
       elif '-b{I-aN-gN}' in sD:                                                                   ## tough construction
         G.equate( G.result('1\'',G.result('S',d)), 'S', G.result('A',e) )
         G.equate( G.result('S',e), str(G.getArity(sD))+'\'', G.result('S',d) )
@@ -457,6 +472,9 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           elif tag=='m':            G.equate( dest+'s', 'm', x+'r' )  ## discourse anaphor
           elif tag=='n' and r=='r': G.equate( dest+'r', 'n', x+'r' )
           elif tag=='n':            G.equate( dest+'s', 'n', x+'r' )
+          elif tag=='t' and r=='r':  ## scotch tape (suggested scope for lambda expressions, but not to be used for scoring)
+                                    G.equate( dest+'r', 's', x+'s' )
+                                    G.equate( dest+'r', 'tt', x+'s' ) # 'tainted' not truth-conditionally necessary
           elif tag=='t':  ## scotch tape (suggested scope for lambda expressions, but not to be used for scoring)
                                     G.equate( dest+'s', 's', x+'s' )
                                     G.equate( dest+'s', 'tt', x+'s' ) # 'tainted' not truth-conditionally necessary
@@ -476,26 +494,37 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
           ## replace macro lex rules with compositional rules...
           if   xrule == 'COPU'  :  xrule = '%|21=1'
           elif xrule == 'MDL'   :  xrule = '%|Qr0=%Q^Qr1=r^Qr2=^Er0=B:contain^Er1=^Er2=2r'
+          elif xrule == 'CONDL' :  xrule = '%|Qr0=%Q^Qr1=r^Qr2=^Er0=B:contain^Er1=^Er2=2r^Fr0=B:contain^Fr1=r^Fr2=1'
+          elif xrule == 'DPOSS' :  xrule = '%|Er0=B-aN-bN:have^Er1=2^Er2=1r'
           elif xrule == 'NOTHAVE' : xrule = '%|r0=D:noneQ^r1=Er^r2=E^Er0=B-aN-bN:have^Er1=1^Er2=2'
           elif xrule == 'NGEN'  :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'NEXI'  :  xrule = '%|Qr0=D:someQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
-          elif xrule == 'NORD'  :  xrule = '%|Qr0=%DecOne^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r^Rrh=SH'
-          elif xrule == 'NORDSUP' :  xrule = '%|Qr0=%DecOne^Qr1=2r^Qr2=2^ro=2r^31=2^3r1h=SH^Pr0=3r0^Pr1=r^Rr0=A:gt^Rr1=3r2^Rr2=Pr2'
-          elif xrule == 'NSUP'  :  xrule = '%|Qr0=D:moreQ^Er0=%ness^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2'
+          elif xrule == 'NUNI'  :  xrule = '%|Qr0=D:allQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er'+str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] )
+          elif xrule == 'NORD'  :  xrule = '%|Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^Rr0=A:prec^Rr1=2^Rr2=r^Rrh=SH'
+          elif xrule == 'NORDEXI' :  xrule = '%|Rr0=D:someQ^Rr1=r^Rr2=^Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^Pr0=A:prec^Pr1=2^Pr2=r^Prh=SH'
+          elif xrule == 'NORDSUP' :  xrule = '%|Qr0=%DecOneQ^Qr1=2r^Qr2=2^ro=2r^31=2^3r1h=SH^Pr0=3r0^Pr1=r^Rr0=A:gt^Rr1=3r2^Rr2=Pr2'
+          elif xrule == 'NSUP'  :  xrule = '%|Qr0=D:moreQ^Er0=%ness^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2' #^Qr2s=2^Qr1s=Qr2'  ## should induce this; should not crash if added; why not?
           elif xrule == 'NSUP3' :  xrule = '%|Qr0=D:moreQ^Er0=3r0^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2'
           elif xrule == 'NSUPEXI' :  xrule = '%|Rr0=D:someQ^Rr1=r^Rr2=^Qr0=D:moreQ^Er0=%ness^Er1=r^Er2=Qr1^Fr0=Er0^Fr1=2^Fr2=Qr2^Pr0=D:allQ^Pr1=2r^Pr2=2'
           elif xrule == 'NCOMP' :  xrule = '%|Er0=%^Er1=r^Er2=2^2w=^t=s' #^Q0=D:someDummyQ^Q1=31r^Q2=31'
+          elif xrule == 'NCOMP3' :  xrule = '%|Er0=%^Er1=2^Er2=3^3w=^t=s'
           elif xrule == 'NOUN'  :  xrule = '%|Er0=%^Er1=r' + ''.join( [ '^Er' +str(i  )+'='+str(i) for i in range(2,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
+          elif xrule == 'NQUANT' :  xrule = '%|Qr0=%Q^Qr1=r^Qr2='
           elif xrule == 'NRELEXI'  :  xrule = '%|Qr0=D:someQ^Qr1=r^Qr2=^Er0=%^Er1=r' + ''.join( [ '^Er' +str(i+1)+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
           elif xrule == 'NREL'  :  xrule = '%|Er0=%^Er1=r' + ''.join( [ '^Er' +str(i+1)+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] ) + '^Erh=SH'
           elif xrule == 'NREL2' :  xrule = '%|Er0=%^Er1=r^Er2=2'
           elif xrule == 'PGEN'  :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2=^r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'PRED1' :  xrule = '%|r0=%^r1=1'
+          elif xrule == 'PRED2' :  xrule = '%|r0=%^r1=2'  ## 'the form of a mountain'
           elif xrule == 'PRED12':  xrule = '%|r0=%^r1=1^r2=2'
+          elif xrule == 'PRED13':  xrule = '%|r0=%^r1=1^r2=3'
           elif xrule == 'PRED'  :  xrule = '%|r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
+          elif xrule == 'PRAIS' :  xrule = '%|21=1^r0=%' + ''.join( [ '^r' +str(i  )+'='+str(i) for i in range(1,G.getArity(G[x,'0'])+1) ] )
           elif xrule == 'QGEN'  :  xrule = '%|r0=D:genQ^r1=1r^r2=1'
           elif xrule == 'QUANT' :  xrule = '%|r0=%Q^r1=1r^r2=1'
           elif xrule == 'QUANT2' :  xrule = '%|r0=%Q^r1=2r^r2=2'
+          elif xrule == 'QUANT12' :  xrule = '%|r0=%Q^r1=1r^r2=1' #^r3=1'  ## number should be connected, but not sure if lambdafier can accommodate
+          elif xrule == 'QUANT23' :  xrule = '%|r0=%Q^r1=2r^r2=2' #^r3=1'  ## number should be connected, but not sure if lambdafier can accommodate
           elif xrule == 'WEAK2' :  xrule = '%|%^2=W'
           elif xrule == 'XEXI'  :  xrule = '%|Qr0=D:someQ^Qr1=r^Qr2='
           elif xrule == 'XGEN'  :  xrule = '%|Qr0=D:genQ^Qr1=r^Qr2='
@@ -629,7 +658,7 @@ class SemCueGraph( StoreStateCueGraph ):
     if t is not None:
       G = StoreStateCueGraph( t )
       for x,l in sorted( G.keys() ):
-        if l!='A' and l!='B' and l!='S' and l!='X' and l not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' and (l!='0' or x[-1] in 'ersABCDEFGHIJKLMNOPQRSTUVWXYZ') and l[-1]!='\'':
+        if l!='A' and l!='B' and l!='S' and l!='X' and l not in 'ABCDEFGHIJKLMNOPQRSTUVWWXYZ' and (l!='0' or x[-1] in 'ersABCDEFGHIJKLMNOPQRSTUVWXYZ') and l[-1]!='\'':
           H[x,l] = G[x,l]
 
 #  def add( H, t, sentnumprefix ):
@@ -644,7 +673,7 @@ class SemCueGraph( StoreStateCueGraph ):
       if (l in 'mnsuuw' or l == 'tt') and ( (G[x,l][0:4],'S') not in G or (G[G[x,l][0:4],'S'],'r') not in G ):
         sys.stderr.write( 'WARNING: destination ' + G[x,l] + ' of dependency ' + l + ' in ' + x + ' not complete referential state in graph!\n' )
     for x,l in sorted( G.keys() ):
-      if l in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'ersCDEFGHIJKLMNOPQRSTUVWXYZ':
+      if l in 'ABCDEFGHIJKLMNOPQRSTUVWWXYZ' or l[-1]=='\'' or l=='0' and x[-1] not in 'ersCDEFGHIJKLMNOPQRSTUVWXYZ':
         del G[x,l]
 
       '''

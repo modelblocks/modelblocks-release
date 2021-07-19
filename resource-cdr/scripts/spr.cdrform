@@ -20,9 +20,6 @@ ShiftedGammaShapeGT1.s(wlen)-Terminal.s(wlen) = Word length
 ShiftedGammaShapeGT1.s(unigram)-Terminal.s(unigram) = Unigram logprob
 ShiftedGammaShapeGT1.s(fwprob5surp)-Terminal.s(fwprob5surp) = 5-gram surprisal
 
-[impulse_to_irf]
-default = ShiftedGammaShapeGT1(alpha=2, beta=5, delta=-0.2, ran=T)
-
 [newpred_rangf]
 rangf = subject
 

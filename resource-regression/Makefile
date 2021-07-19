@@ -110,6 +110,10 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 %.resmeasures:  $(REGRESSION-SCRIPTS)/$$(subst .,,$$(suffix $$*)).cens_params.ini  $$(basename %).resmeasures  $(REGRESSION-SCRIPTS)/censor.py
 	cat $(word 2,$^)  |  python3 $(word 3,$^) -c $(word 1,$^)  >  $@
 
+%.coarse.prdmeasures: $$(basename %).prdmeasures $(REGRESSION-SCRIPTS)/removeNanFdurs.py
+	cat $(word 1,$^) | python3 $(word 2,$^) > $@
+%.coarse.resmeasures: $$(basename %).resmeasures 
+	cp $^ $@
 
 ## apply partitioning (prdmeasures unaffected)
 %_part.prdmeasures:  genmodel/$$(notdir $$(word 1, $$(subst ., ,$$*))).part_params.ini  $$(basename %).prdmeasures  $(REGRESSION-SCRIPTS)/partition.py  |  genmodel
