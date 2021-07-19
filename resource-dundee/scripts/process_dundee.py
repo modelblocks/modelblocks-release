@@ -278,6 +278,7 @@ if __name__ == '__main__':
 
     out['prevwasfix'] = (out['wdelta'] == 1).astype('int')
     out['nextwasfix'] = (out['wdelta'] == -1).astype('int')
+    out['resid'] = (out['time']*1000).astype('int')
 
     if args.verbose:
         sys.stderr.write('Writing output...\n')
@@ -289,6 +290,7 @@ if __name__ == '__main__':
         'docid',
         'sentpos',
         'sentid',
+        'resid',
         'time',
         'wdelta',
         'prevwasfix',

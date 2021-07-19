@@ -463,7 +463,8 @@ endef
 %.prdmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
 	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  >  $@
 %.resmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
-	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  >  $@
+	cp $(word 2,$^) $@
+#	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  >  $@
 #	ln -sf $(abspath $(word 2,$^)) $(abspath $@)
 
 
