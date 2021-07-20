@@ -18,13 +18,17 @@ class FInfo:
 # Records predicate context vectors and syntactic
 # categories for derivation fragments in the store state
 class DerivationFragment:
-    def __init__(self, hvec, category, depth):
-        self.hvbase = hvec
-        self.catbase = category
+    def __init__(self, a_hvec, a_category, b_hvec, b_category, depth):
+        self.hv_apex = a_hvec
+        self.cat_apex = a_category
+        self.hv_base = b_hvec
+        self.cat_base = b_category
         self.depth = depth
 
     def __str__(self):
-        return 'hvbase:{} catbase:{} depth:{}'.format(self.hvbase, self.catbase, self.depth)
+        return 'hvapex:{} catapex:{} hvbase:{} catbase:{} depth:{}'.format(
+            self.hv_apex, self.cat_apex, self.hv_base, self.cat_base, self.depth
+        )
 
 
 def eprint(*args, **kwargs):
@@ -49,40 +53,55 @@ def parse_stack(stack_str):
     # 3. Q[R-aN-bN:in_0][R-aN-bN:in_1][R-aN-bN:in_2]:R-aN/[R-aN-bN:in_2]:N;[N-b{N-aD}:an_2,A-aN-x:!num!_1,N-aD-bV-bO:review_1][N-aD-bV-bO:review_2][N-aD-bV-bO:review_3][N-aD-bV-bO:review_4]:N/[][B-aN-bN:!unk!_1,B-aN-bN:!unk!_2,N-aD:classic_1]:V-aN;[B-aN-bN:take_0][B-aN-bN:take_1][B-aN-bN:take_2]:V-aN/[B-aN-bN:take_2]:N;
 
     stack = list()
-    stack.append(DerivationFragment(['Top'], 'T', 0))
+    stack.append(DerivationFragment(['Top'], 'T', ['Top'], 'T', 0))
     
 #    if stack_str == 'Q':
 #        return []
     assert stack_str[0] == 'Q', stack_str
     stack_str = stack_str[1:]
 
-#    # TODO find a better solution for this
-#    # this is a very hacky fix for unusual cases like this one from WSJ:
-#    # :T;["]:N-h{I-aN}/[N-b{N-aD}:a_2][]:N-aD-h{I-aN};
-#    if stack_str.find(';') < stack_str.find('/'):
-#        stack_str = stack_str[stack_str.find(';')+1:]
-    # to find apices, use this regex:
-    # re.findall(^([^/;]+;)*([^/;]+)|;([^/;]+;)*([^/;]+))
-    # re.split(r'(?<=[^\\])/', r'a\/b/c') --> ['a\\/b', 'c']
-    #fragment_bases = re.findall('/([^/;]+/)*([^/;]+)', stack_str)
-    fragment_bases = re.findall(r'(?<=[^\\])/((\\/|[^/;])+(?<=[^\\])/)*((\\/|[^/;])+)', stack_str)
-    # the third group contains the base
-    fragment_bases = [group[2] for group in fragment_bases]
+    apex_matches =  re.findall(r'^([^/;]+;)*([^/;]+)|;([^/;]+;)*([^/;]+)', stack_str)
+    fragment_apices = list()
+    for match_list in apex_matches:
+        # match_list[1] captures the first apex in stack_str;
+        # match_list[3] captures subsequent apices
+        assert bool(match_list[1]) ^ bool(match_list[3])
+        if match_list[1]:
+            fragment_apices.append(match_list[1])
+        else:
+            fragment_apices.append(match_list[3])
 
-    curr_depth = 1
-    #eprint('stack str:', stack_str)
-    for base in fragment_bases:
-        #eprint('base:', base)
-        colon_ind = base.rfind(':')
-        predcon = base[:colon_ind]
-        category = base[colon_ind+1:]
-        base_hvec = extract_first_kvec(predcon)
-        df = DerivationFragment(base_hvec, category, curr_depth)
+    # this is more complicated to avoid being tricked by escaped forward
+    # slashes: \/
+    base_matches = re.findall(r'(?<=[^\\])/((\\/|[^/;])+(?<=[^\\])/)*((\\/|[^/;])+)', stack_str)
+    # the third group contains the base
+    fragment_bases = [group[2] for group in base_matches]
+
+    assert len(fragment_apices) == len(fragment_bases)
+
+    for i, apex in enumerate(fragment_apices):
+        # start with depth 1, since depth 0 is Top
+        depth = i+1
+
+        a_colon_ind = apex.rfind(':')
+        a_predcon = apex[:a_colon_ind]
+        a_category = apex[a_colon_ind+1:]
+        a_base_hvec = extract_first_kvec(a_predcon)
+
+        base = fragment_bases[i]
+        b_colon_ind = base.rfind(':')
+        b_predcon = base[:b_colon_ind]
+        b_category = base[b_colon_ind+1:]
+        b_base_hvec = extract_first_kvec(b_predcon)
+
+        df = DerivationFragment(
+            a_hvec, a_category, b_base_hvec, b_category, depth
+        )
         stack.append(df)
-        curr_depth += 1
+    
     return stack
 
-
+# TODO try removing top count
 def hvecIxReplace(hvec, hvec_to_ix):
     new_hvec = list()
     top_count = 0
@@ -101,8 +120,8 @@ def _initialize_finfo_list(infile):
         depth, _, _, hv_filler, hv_ante, nulla, fdec, stack = line.split()
         depth = int(depth)
         curr_finfo = FInfo()
-        curr_finfo.hvf = extract_first_kvec(hv_filler)
-        curr_finfo.hva = extract_first_kvec(hv_ante)
+        curr_finfo.hv_filler = extract_first_kvec(hv_filler)
+        curr_finfo.hv_ante = extract_first_kvec(hv_ante)
         curr_finfo.nulla = int(nulla)
         # TODO is there any downside to not splitting the fdec into its
         # constitutents (match and hvec)?
@@ -113,7 +132,9 @@ def _initialize_finfo_list(infile):
     return all_finfo
 
 
-def _map_finfo_list_to_ix(all_finfo, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix, dev=False):
+def _map_finfo_list_to_ix(all_finfo, cat_apex_to_ix, cat_base_to_ix,
+    fdecs_to_ix, hv_apex_to_ix, hv_base_to_ix, hv_filler_to_ix, hv_ante_to_ix,
+    dev=False):
     '''
     Replaces strings inside FInfo objects with their corresponding indices.
     These modifications are done in place rather than creating new
@@ -124,11 +145,21 @@ def _map_finfo_list_to_ix(all_finfo, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_
     for finfo in all_finfo:
         try:
             finfo.fdec = fdecs_to_ix[finfo.fdec]
-            finfo.hvf, finfo.hvf_top = hvecIxReplace(finfo.hvf, hvf_to_ix)
-            finfo.hva, finfo.hva_top = hvecIxReplace(finfo.hva, hva_to_ix)
+            finfo.hv_filler, finfo.hv_filler_top = hvecIxReplace(
+                finfo.hv_filler, hv_filler_to_ix
+            )
+            finfo.hv_ante, finfo.hv_ante_top = hvecIxReplace(
+                finfo.hv_ante, hv_ante_to_ix
+            )
             for df in finfo.stack:
-                df.catbase = catb_to_ix[df.catbase]
-                df.hvbase, df.hvbase_top = hvecIxReplace(df.hvbase, hvb_to_ix)
+                df.cat_apex = cat_apex_to_ix[df.cat_apex]
+                df.hv_apex, df.hv_apex_top = hvecIxReplace(
+                    df.hv_apex, hv_apex_to_ix
+                )
+                df.cat_base = cat_base_to_ix[df.cat_base]
+                df.hv_base, df.hv_base_top = hvecIxReplace(
+                    df.hv_base, hv_base_to_ix
+                )
         except KeyError:
             # dev may contain fdecs, catbases, etc that haven't appeared in
             # training data. Throw out any such data
@@ -158,46 +189,55 @@ def prepare_data():
 #        assert depth == 0 or curr_finfo.stack[-1].depth == depth, 'line: {}; depth from trdecpars: {}; depth from stack: {}'.format(line, depth, curr_finfo.stack[-1])
 #        all_finfo.append(curr_finfo)
 #        
-    all_hvf = set()
-    all_hva = set()
+    all_hv_filler = set()
+    all_hv_ante = set()
     all_fdecs = set()
-    all_hvb = set()
-    all_catb = set()
+    all_hv_apex = set()
+    all_cat_apex = set()
+    all_hv_base = set()
+    all_cat_base = set()
     for finfo in all_finfo:
-        all_hvf.update(set(finfo.hvf))
-        all_hva.update(set(finfo.hva))
+        all_hv_filler.update(set(finfo.hv_filler))
+        all_hv_ante.update(set(finfo.hv_ante))
         all_fdecs.add(finfo.fdec)
         for df in finfo.stack:
-            hvb = df.hvbase
-            catb = df.catbase
-            all_hvb.update(set(hvb))
-            all_catb.add(catb)
+            hv_apex = df.hv_apex
+            cat_apex = df.cat_apex
+            all_hv_apex.update(set(hv_apex))
+            all_cat_apex.add(cat_apex)
 
-    catb_to_ix = {cat: i for i, cat in enumerate(sorted(all_catb))}
+            hv_base = df.hv_base
+            cat_base = df.cat_base
+            all_hv_base.update(set(hv_base))
+            all_cat_base.add(cat_base)
+
+    cat_apex_to_ix = {cat: i for i, cat in enumerate(sorted(all_cat_apex))}
+    cat_base_to_ix = {cat: i for i, cat in enumerate(sorted(all_cat_base))}
     fdecs_to_ix = {fdecs: i for i, fdecs in enumerate(sorted(all_fdecs))}
+    # TODO verify that this isn't needed
     # ID for padding symbol added at end of sequence
-    fdecs_to_ix[PAD] = len(fdecs_to_ix)
-    hvb_to_ix = {hvec: i for i, hvec in enumerate(sorted(all_hvb))}
-    hvf_to_ix = {hvec: i for i, hvec in enumerate(sorted(all_hvf))}
-    hva_to_ix = {hvec: i for i, hvec in enumerate(sorted(all_hva))}
+    #fdecs_to_ix[PAD] = len(fdecs_to_ix)
+    hv_apex_to_ix = {hvec: i for i, hvec in enumerate(sorted(all_hv_apex))}
+    hv_base_to_ix = {hvec: i for i, hvec in enumerate(sorted(all_hv_base))}
+    hv_filler_to_ix = {hvec: i for i, hvec in enumerate(sorted(all_hv_filler))}
+    hv_ante_to_ix = {hvec: i for i, hvec in enumerate(sorted(all_hv_ante))}
 
     # replace strings with indices
-    all_finfo = _map_finfo_list_to_ix(all_finfo, catb_to_ix, fdecs_to_ix, 
-        hvb_to_ix, hvf_to_ix, hva_to_ix)
-#    for finfo in all_finfo:
-#        finfo.fdec = fdecs_to_ix[finfo.fdec]
-#        finfo.hvf, finfo.hvf_top = hvecIxReplace(finfo.hvf, hvf_to_ix)
-#        finfo.hva, finfo.hva_top = hvecIxReplace(finfo.hva, hva_to_ix)
-#        for df in finfo.stack:
-#            df.catbase = catb_to_ix[df.catbase]
-#            df.hvbase, df.hvbase_top = hvecIxReplace(df.hvbase, hvb_to_ix)
-    return all_finfo, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix
+    all_finfo = _map_finfo_list_to_ix(
+        all_finfo, cat_apex_to_ix, cat_base_to_ix, fdecs_to_ix, hv_apex_to_ix,
+        hv_base_to_ix, hv_filler_to_ix, hv_ante_to_ix
+    )
+    return all_finfo, cat_apex_to_ix, cat_base_to_ix, fdecs_to_ix, \
+        hv_apex_to_ix, hv_base_to_ix, hv_filler_to_ix, hv_ante_to_ix
 
 
-def prepare_dev_data(dev_decpars, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix):
+def prepare_dev_data(dev_decpars, cat_apex_to_ix, cat_base_to_ix, fdecs_to_ix,
+    hv_apex_to_ix, hv_base_to_ix, hv_filler_to_ix, hv_ante_to_ix):
     all_finfo = _initialize_finfo_list(open(dev_decpars))
-    all_finfo = _map_finfo_list_to_ix(all_finfo, catb_to_ix, fdecs_to_ix, 
-        hvb_to_ix, hvf_to_ix, hva_to_ix, dev=True)
+    all_finfo = _map_finfo_list_to_ix(
+        all_finfo, cat_apex_to_ix, cat_base_to_ix, fdecs_to_ix, hv_apex_to_ix,
+        hv_base_to_ix, hv_filler_to_ix, hv_ante_to_ix, dev=True
+    )
     return all_finfo
 
 
@@ -212,17 +252,22 @@ def train(f_config):
     learning_rate = f_config.getfloat('LearningRate')
     weight_decay = f_config.getfloat('WeightDecay')
 
-    all_finfo, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix = prepare_data()
+    all_finfo, cat_apex_to_ix, cat_base_to_ix, fdecs_to_ix, hv_apex_to_ix, \
+        hv_base_to_ix, hv_filler_to_ix, hv_ante_to_ix = prepare_data()
     if use_dev:
-        dev_all_finfo = prepare_dev_data(dev_decpars, catb_to_ix, fdecs_to_ix,
-             hvb_to_ix, hvf_to_ix, hva_to_ix)
+        dev_all_finfo = prepare_dev_data(
+            dev_decpars, cat_apex_to_ix, cat_base_to_ix, fdecs_to_ix,
+            hv_apex_to_ix, hv_base_to_ix, hv_filler_to_ix, hv_ante_to_ix)
 
+    # TODO need to update transformermodel.py to work with apex cats/hvecs
     model = TransformerFModel(
                 f_config=f_config,
-                catb_vocab_size=len(catb_to_ix),
-                hvb_vocab_size=len(hvb_to_ix),
-                hvf_vocab_size=len(hvf_to_ix),
-                hva_vocab_size=len(hva_to_ix), 
+                cat_apex_vocab_size=len(cat_apex_to_ix),
+                cat_base_vocab_size=len(cat_base_to_ix),
+                hv_apex_vocab_size=len(hv_apex_to_ix),
+                hv_base_vocab_size=len(hv_base_to_ix),
+                hv_filler_vocab_size=len(hv_filler_to_ix),
+                hv_ante_vocab_size=len(hv_ante_to_ix), 
                 output_dim=len(fdecs_to_ix)
     )
 
