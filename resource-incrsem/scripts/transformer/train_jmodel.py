@@ -319,8 +319,10 @@ def main(config):
 
     model.eval()
     params = [ 
-        ('pre_attn_fc.weight', 'J P'),
-        ('pre_attn_fc.bias', 'J p'),
+        ('query_fc.weight', 'J Q'),
+        ('query_fc.bias', 'J q'),
+        ('key_value_fc.weight', 'J K'),
+        ('key_value_fc.bias', 'J k'),
         ('attn.in_proj_weight', 'J I'),
         ('attn.in_proj_bias', 'J i'),
         ('attn.out_proj.weight', 'J O'),
