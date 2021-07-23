@@ -17,43 +17,6 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-int getDepth( const BeamElement<HiddState>& be ) {
-    return be.getHidd().getStoreState().getDepth();
-}
-
-
-CVar getCatBase( const BeamElement<HiddState>& be ) {
-    return be.getHidd().getStoreState().getBase().getCat();
-}
-
-
-HVec getHvB( const BeamElement<HiddState>& be ) {
-    StoreState ss = be.getHidd().getStoreState();
-    return (( ss.getBase().getHVec().size() > 0 ) ? ss.getBase().getHVec() : hvBot);
-}
-
-
-HVec getHvF( const BeamElement<HiddState>& be ) {
-    StoreState ss = be.getHidd().getStoreState();
-    return (( ss.getBase().getCat().getNoloArity() && ss.getNoloBack().getHVec().size() != 0 ) ? ss.getNoloBack().getHVec() : hvBot);
-}
-
-
-// returns a positional encoding for an embedding of dimensionality dim,
-// at position wordIndex in sequence
-vec getPositionalEncoding( uint dim, uint wordIndex ) {
-  vec encoding = vec(dim);
-  for ( uint i=0; i<dim; i++ ) {
-    if ( i % 2 == 0 ) {
-      encoding[i] = sin(wordIndex * exp(i * -log(10000) / dim));
-    }
-    else {
-      encoding[i] = cos(wordIndex * exp((i-1) * -log(10000) / dim));
-    }
-  }
-  return encoding;
-}
-
 
 class FPredictorVec {
 
