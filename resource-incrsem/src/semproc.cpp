@@ -54,12 +54,11 @@ uint FEATCONFIG = 0;
 #include <WModel_mlp.hpp>
 #include <JModel_mlp.hpp>
 #elif defined TRANSFORMER
-#include <mlp.hpp>
+#include <transformer.hpp>
 #include <NModel_mlp.hpp>
 #include <FModel_transformer.hpp>
 #include <WModel_mlp.hpp>
-// TODO switch to JModel_transformer.hpp
-#include <JModel_mlp.hpp>
+#include <JModel_transformer.hpp>
 #else
 #include <SemProcModels_sparse.hpp>
 #endif
@@ -559,7 +558,6 @@ int main ( int nArgs, char* argv[] ) {
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
 #ifdef TRANSFORMER
                 // be_tdec1 is the hypothesized store state from the previous time step
-                // Maybe it's necessary to pass modF in too; not sure yet
                 FPredictorVec lfpredictors( be_tdec1, hvAnt, not corefON );
                 arma::vec fresponses = modF.calcResponses( lfpredictors, word_index-1 );
 #else
@@ -634,9 +632,16 @@ int main ( int nArgs, char* argv[] ) {
                         const Sign& aLchild = qTermPhase.getApex();
                         if( VERBOSE>1 ) cout << "       qTermPhase=" << qTermPhase << endl;
 
+#ifdef TRANSFORMER
+                        JPredictorVec ljpredictors( be_tdec1 );
+                        arma::vec jresponses = modJ.calcResponses( ljpredictors, word_index-1 );
+#else
                         JPredictorVec ljpredictors( modJ, f, e_p_t, aLchild, qTermPhase );  // q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
 //                        if( VERBOSE>1 ) cout << "        j predictors: " << pair<const JModel&,const JPredictorVec&>( modJ, ljpredictors ) << endl;
                         arma::vec jresponses = modJ.calcResponses( ljpredictors );
+#endif
+
+
 
                         // For each possible no-join or join decision, and operator decisions...
                         for( unsigned int jresponse=0; jresponse<jresponses.size(); jresponse++ ) {  //JResponse jresponse; jresponse<JResponse::getDomain().getSize(); ++jresponse ) {
