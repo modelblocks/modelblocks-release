@@ -44,28 +44,10 @@ class TransformerJModel(nn.Module):
         # - filler hvec (sem_dim)
         # - left child cat (syn_dim)
         # - left child hvec (sem_dim)
-
-        # we make one projection for the query, and another projection for the
-        # key+value. queries have to be projected separately because they
-        # include the left-child hvec and category, which are not included
-        # as inputs for key + value
-        self.query_fc = nn.Linear(
-            self.max_depth + 2*self.syn_dim + 3*self.sem_dim,
-            self.attn_dim,
-            bias=True
-        )
-
-        self.key_value_fc = nn.Linear(
-            self.max_depth + self.syn_dim + 2*self.sem_dim,
-            self.attn_dim,
-            bias=True
-        )
-
-
-        #attn_input_dim = self.max_depth + 2*self.syn_dim + 3*self.sem_dim
+        attn_input_dim = self.max_depth + 2*self.syn_dim + 3*self.sem_dim
 
         # project the attention input to the right dimensionality
-        #self.pre_attn_fc = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
+        self.pre_attn_fc = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
 
         # this layer adds positional encodings to the output of pre_attn_fc
         # its output is used for queries, keys, and values
@@ -102,8 +84,7 @@ class TransformerJModel(nn.Module):
 
     
     def get_per_sequence_x(self, batch_jinfo):
-        per_sequence_q = list()
-        per_sequence_kv = list()
+        per_sequence_x = list()
         for seq in batch_jinfo:
             if self.ablate_syn:
                 cat_anc_embed = torch.zeros(
@@ -170,21 +151,14 @@ class TransformerJModel(nn.Module):
             if self.use_gpu:
                 depth = depth.to('cuda')
 
-            seq_q = torch.cat(
+            seq_x = torch.cat(
                 (cat_anc_embed, hv_anc_embed, hv_filler_embed, 
                  cat_lc_embed, hv_lc_embed, depth),
                 dim=1
             ) 
-
-            seq_kv = torch.cat(
-                (cat_anc_embed, hv_anc_embed, hv_filler_embed, 
-                 depth),
-                dim=1
-            ) 
-            per_sequence_q.append(seq_q)
-            per_sequence_kv.append(seq_kv)
+            per_sequence_x.append(seq_x)
     
-        return per_sequence_q, per_sequence_kv
+        return per_sequence_x
 
 
     def get_padded_input_matrix(self, per_sequence_x):
@@ -215,18 +189,20 @@ class TransformerJModel(nn.Module):
     # TODO implement this
     def forward(self, batch_jinfo):
         # list of matrices, one matrix for each sequence
-        per_sequence_q, per_sequence_kv = self.get_per_sequence_x(batch_jinfo)
+        per_sequence_x = self.get_per_sequence_x(batch_jinfo)
 
-        # q_3d and kv_3d are 3D tensors of dimensionality SxNxE
+        # attn_input is a 3D tensor of dimensionality SxNxE
         # S: sequence length
         # N: batch size (number of sequences)
         # E: embedding size
-        q_3d = self.get_padded_input_matrix(per_sequence_q)
-        kv_3d = self.get_padded_input_matrix(per_sequence_kv)
-        return self.compute(q_3d, kv_3d)
+        attn_input = self.get_padded_input_matrix(per_sequence_x)
+        return self.compute(attn_input)
 
 
-    def compute(self, q_input, kv_input, verbose=False):
+    def compute(self, attn_input, verbose=False):
+        # the same matrix is used as query, key, and value. Within the attn
+        # layer this will be projected to a separate q, k, and v for each
+        # attn head
 #        if verbose:
 #            print('F final word attn input:')
 #            for x in attn_input[-1, 0]:
@@ -243,19 +219,18 @@ class TransformerJModel(nn.Module):
 #            bias = self.state_dict()['pre_attn_fc.bias'].data.cpu().numpy()
 #            for x in bias:
 #                print(x)
-        q = self.query_fc(q_input)
-        kv = self.key_value_fc(kv_input)
-#        if verbose:
-#            print('F final word\'s qkv:')
-#            for x in qkv[-1, 0]:
-#                print(x.item())
-#        if self.use_positional_encoding:
-#            qkv = self.positional_encoding(qkv)
+        qkv = self.pre_attn_fc(attn_input)
+        if verbose:
+            print('F final word\'s qkv:')
+            for x in qkv[-1, 0]:
+                print(x.item())
+        if self.use_positional_encoding:
+            qkv = self.positional_encoding(qkv)
         # use mask to hide future inputs
-        mask = self.get_attn_mask(len(q))
+        mask = self.get_attn_mask(len(attn_input))
         # second output is attn weights
         #attn_output, _ = self.attn(q, k, v, attn_mask=mask)
-        attn_output, _ = self.attn(q, kv, kv, attn_mask=mask)
+        attn_output, _ = self.attn(qkv, qkv, qkv, attn_mask=mask)
         if verbose:
             print('F final word\'s attn output:')
             for x in attn_output[-1, 0]:
