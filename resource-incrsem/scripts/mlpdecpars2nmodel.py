@@ -223,7 +223,7 @@ class NModel(nn.Module):
         hvb_top = torch.FloatTensor(hvb_top)
         hva_top = torch.FloatTensor(hva_top)
 
-        if use_gpu >= 0:
+        if use_gpu > 0:
             cat_base_embed = cat_base_embed.to("cuda")
             cat_ante_embed = cat_ante_embed.to("cuda")
             hvb_top = hvb_top.to("cuda")
@@ -242,14 +242,14 @@ class NModel(nn.Module):
             hva_mat = torch.sparse.FloatTensor(torch.LongTensor([hva_mat.row.tolist(), hva_mat.col.tolist()]),
                                                torch.FloatTensor(hva_mat.data.astype(np.float32)),
                                                torch.Size(hva_mat.shape))
-            if use_gpu >= 0:
+            if use_gpu > 0:
                 hvb_mat = hvb_mat.to("cuda")
                 hva_mat = hva_mat.to("cuda")
 
             hvb_embed = torch.sparse.mm(hvb_mat, self.hvec_embeds.weight) + hvb_top
             hva_embed = torch.sparse.mm(hva_mat, self.hvec_embeds.weight) + hva_top
 
-            if use_gpu >= 0:
+            if use_gpu > 0:
                 hvb_embed = hvb_embed.to("cuda")
                 hva_embed = hva_embed.to("cuda")
 
@@ -302,7 +302,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
     assert outputdim == 2
     model = NModel(len(cat_to_ix), len(hvec_to_ix), syn_size, sem_size, hidden_dim, outputdim, dropout_prob) 
 
-    if use_gpu >= 0:
+    if use_gpu > 0:
         #depth = depth.to("cuda")
         cat_base_ixs = cat_base_ixs.to("cuda")
         cat_ante_ixs = cat_ante_ixs.to("cuda")
@@ -317,7 +317,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
         #target = target.to("cuda")
         #model = model.cuda()
 
-    if use_dev >= 0:
+    if use_dev > 0:
         #dev_depth, dev_cat_b_mat, dev_hvb_mat, dev_hvf_mat, dev_fdecs_ix, dev_hvb_top, dev_hvf_top = prepare_data_dev(
         #    dev_decpars_file, cat_to_ix, fdecs_to_ix, hvec_to_ix)
         dev_cat_b_ix, dev_cat_a_ix, dev_hvb_mat, dev_hva_mat, dev_hvb_top, dev_hva_top, dev_worddists, dev_sqworddists, dev_corefons, dev_labels = prepare_data_dev(dev_decpars_file, cat_to_ix, hvec_to_ix)
@@ -329,7 +329,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
         dev_corefons = torch.LongTensor(dev_corefons)
         dev_target = torch.LongTensor(dev_labels)
 
-        if use_gpu >= 0:
+        if use_gpu > 0:
             dev_cat_b_ix = dev_cat_b_ix.to("cuda")
             dev_cat_a_ix = dev_cat_a_ix.to("cuda")
             dev_worddists = dev_worddists.to("cuda")
@@ -363,7 +363,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
             #batch_d, batch_c, batch_target = depth[indices], cat_b_ix[indices], target[indices]
             batch_hvb_mat, batch_hva_mat = hvb_mat[np.array(indices), :], hva_mat[np.array(indices), :]
             batch_hvb_top, batch_hva_top = [hvb_top[i] for i in indices], [hva_top[i] for i in indices]
-            if use_gpu >= 0:
+            if use_gpu > 0:
                 l2_loss = torch.cuda.FloatTensor([0])
             else:
                 l2_loss = torch.FloatTensor([0])
@@ -387,7 +387,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
             optimizer.step()
             optimizer.zero_grad()
 
-        if use_dev >= 0:
+        if use_dev > 0:
             with torch.no_grad():
                 #dev_pred = model(dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_hvb_top, dev_hvf_top, use_gpu,
                 dev_pred = model(dev_cat_b_ix, dev_cat_a_ix, dev_hvb_mat, 

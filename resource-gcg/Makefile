@@ -137,13 +137,20 @@ endef
 ## remove morph tags for eval...
 %.nox.linetrees:  %.linetrees
 	cat $<  |  perl -pe 's/[-+]x[^-} ][^ |]*[|][^- ]*//g'  >  $@
-## casp currently set to gcg15 + long + morphed...
+
+## dummy linker for casp standard when no coref is available...
+%.linked.linetrees:  %.linetrees  genmodel/$$(word 1,$$(subst ., ,$$(notdir $$*))).nocoref
+	cat $<  >  $@
+
+## casp currently set to gcg15 + long + linked + morphed (without -x)...
 .PRECIOUS: %casp.linetrees
-%casp.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).gcg15.long.linetrees
-	cat $(word 2,$^)  |  perl $(word 1,$^) -x $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+%casp.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).gcg15.long.linked.linetrees
+	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+#	cat $(word 2,$^)  |  perl $(word 1,$^) -x $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 .PRECIOUS: %caspu.linetrees
-%caspu.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).gcg16.long.linetrees
-	cat $(word 2,$^)  |  perl $(word 1,$^) -x $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+%caspu.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).gcg16.long.linked.linetrees
+	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
+#	cat $(word 2,$^)  |  perl $(word 1,$^) -x $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 
 #### remove entries with no reannotation
 %.noempty.linetrees:  %.linetrees

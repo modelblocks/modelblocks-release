@@ -268,7 +268,7 @@ class JModel(nn.Module):
             cat_a_embed = self.cata_embeds(cat_a_ix)
             cat_l_embed = self.catl_embeds(cat_l_ix)
 
-        if use_gpu >= 0:
+        if use_gpu > 0:
             hva_top = hva_top.to("cuda")
             hvf_top = hvf_top.to("cuda")
             hvl_top = hvl_top.to("cuda")
@@ -280,7 +280,7 @@ class JModel(nn.Module):
             hvf_zeros = torch.zeros([hvf_top.shape[0], self.sem_size], dtype=torch.float)
             hvl_zeros = torch.zeros([hvl_top.shape[0], self.sem_size], dtype=torch.float)
 
-            if use_gpu >= 0:
+            if use_gpu > 0:
                 hva_zeros = hva_zeros.to("cuda")
                 hvf_zeros = hvf_zeros.to("cuda")
                 hvl_zeros = hvl_zeros.to("cuda")
@@ -302,7 +302,7 @@ class JModel(nn.Module):
             hvl_mat = torch.sparse.FloatTensor(torch.LongTensor([hvl_mat.row.tolist(), hvl_mat.col.tolist()]),
                                                torch.FloatTensor(hvl_mat.data.astype(np.float32)),
                                                torch.Size(hvl_mat.shape))
-            if use_gpu >= 0:
+            if use_gpu > 0:
                 hva_mat = hva_mat.to("cuda")
                 hvf_mat = hvf_mat.to("cuda")
                 hvl_mat = hvl_mat.to("cuda")
@@ -333,14 +333,14 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
     # model = JModel(len(cat_to_ix), len(hvec_to_ix), syn_size, sem_size, hidden_dim, len(jdecs_to_ix), dropout_prob)
     model = JModel(len(cata_to_ix), len(catl_to_ix), len(hveca_to_ix), len(hvecf_to_ix), len(hvecl_to_ix), syn_size, sem_size, hidden_dim, len(jdecs_to_ix), dropout_prob)
 
-    if use_gpu >= 0:
+    if use_gpu > 0:
         depth = depth.to("cuda")
         cat_a_ix = cat_a_ix.to("cuda")
         cat_l_ix = cat_l_ix.to("cuda")
         target = target.to("cuda")
         model = model.cuda()
 
-    if use_dev >= 0:
+    if use_dev > 0:
         # dev_depth, dev_cat_a_ix, dev_hva_mat, dev_hvf_mat, dev_cat_l_ix, dev_hvl_mat, dev_jdecs_ix, dev_hva_top, dev_hvf_top, dev_hvl_top = prepare_data_dev(
         #     dev_decpars_file, cat_to_ix, jdecs_to_ix, hvec_to_ix)
         dev_depth, dev_cat_a_ix, dev_hva_mat, dev_hvf_mat, dev_cat_l_ix, dev_hvl_mat, dev_jdecs_ix, dev_hva_top, dev_hvf_top, dev_hvl_top = prepare_data_dev(
@@ -350,7 +350,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
         dev_cat_l_ix = torch.LongTensor(dev_cat_l_ix)
         dev_target = torch.LongTensor(dev_jdecs_ix)
 
-        if use_gpu >= 0:
+        if use_gpu > 0:
             dev_depth = dev_depth.to("cuda")
             dev_cat_a_ix = dev_cat_a_ix.to("cuda")
             dev_cat_l_ix = dev_cat_l_ix.to("cuda")
@@ -383,7 +383,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
                                                                                           indices], [hvl_top[i] for i in
                                                                                                      indices]
 
-            if use_gpu >= 0:
+            if use_gpu > 0:
                 l2_loss = torch.cuda.FloatTensor([0])
             else:
                 l2_loss = torch.FloatTensor([0])
@@ -404,7 +404,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
             optimizer.step()
             optimizer.zero_grad()
 
-        if use_dev >= 0:
+        if use_dev > 0:
             with torch.no_grad():
                 dev_pred = model(dev_depth, dev_cat_a_ix, dev_hva_mat, dev_hvf_mat, dev_cat_l_ix, dev_hvl_mat,
                                  dev_hva_top, dev_hvf_top, dev_hvl_top, use_gpu, ablate_syn, ablate_sem)
@@ -453,7 +453,7 @@ def main(config):
     #     second_weights = list(model.parameters())[4].data.numpy()
     #     second_biases = list(model.parameters())[5].data.numpy()
 
-    if j_config.getint("GPU") >= 0:
+    if j_config.getint("GPU") > 0:
         cata_embeds = model.state_dict()["cata_embeds.weight"].data.cpu().numpy()
         catl_embeds = model.state_dict()["catl_embeds.weight"].data.cpu().numpy()
         hveca_embeds = model.state_dict()["hveca_embeds.weight"].data.cpu().numpy()

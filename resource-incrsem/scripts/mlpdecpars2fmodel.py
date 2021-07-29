@@ -227,7 +227,7 @@ class FModel(nn.Module):
         else:
             cat_b_embed = self.catb_embeds(cat_b_ix)
 
-        if use_gpu >= 0:
+        if use_gpu > 0:
             hvb_top = hvb_top.to("cuda")
             hvf_top = hvf_top.to("cuda")
             hva_top = hva_top.to("cuda")
@@ -239,7 +239,7 @@ class FModel(nn.Module):
             hvf_zeros = torch.zeros([hvb_top.shape[0], self.sem_size], dtype=torch.float)
             hva_zeros = torch.zeros([hva_top.shape[0], self.ant_size], dtype=torch.float)
 
-            if use_gpu >= 0:
+            if use_gpu > 0:
                 hvb_zeros = hvb_zeros.to("cuda")
                 hvf_zeros = hvf_zeros.to("cuda")
                 hva_zeros = hva_zeros.to("cuda")
@@ -262,7 +262,7 @@ class FModel(nn.Module):
                                                torch.FloatTensor(hva_mat.data.astype(np.float32)),
                                                torch.Size(hva_mat.shape))
 
-            if use_gpu >= 0:
+            if use_gpu > 0:
                 hvb_mat = hvb_mat.to("cuda")
                 hvf_mat = hvf_mat.to("cuda")
                 hva_mat = hva_mat.to("cuda")
@@ -288,14 +288,14 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidd
     model = FModel(len(catb_to_ix), len(hvecb_to_ix), len(hvecf_to_ix), len(hveca_to_ix), syn_size, sem_size, ant_size, hidden_dim, len(fdecs_to_ix), dropout_prob)
     nulla = torch.FloatTensor(nullA)
 
-    if use_gpu >= 0:
+    if use_gpu > 0:
         depth = depth.to("cuda")
         cat_b_ix = cat_b_ix.to("cuda")
         target = target.to("cuda")
         nulla = nulla.to("cuda")
         model = model.cuda()
 
-    if use_dev >= 0:
+    if use_dev > 0:
         dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_fdecs_ix, dev_hvb_top, dev_hvf_top, dev_hva_mat, dev_hva_top, dev_nullA = prepare_data_dev(
             dev_decpars_file, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix)
         dev_depth = F.one_hot(torch.LongTensor(dev_depth), 7).float()
@@ -303,7 +303,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidd
         dev_target = torch.LongTensor(dev_fdecs_ix)
         dev_nulla = torch.FloatTensor(dev_nullA)
 
-        if use_gpu >= 0:
+        if use_gpu > 0:
             dev_depth = dev_depth.to("cuda")
             dev_cat_b_ix = dev_cat_b_ix.to("cuda")
             dev_target = dev_target.to("cuda")
@@ -332,7 +332,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidd
             batch_hvb_mat, batch_hvf_mat, batch_hva_mat = hvb_mat[np.array(indices), :], hvf_mat[np.array(indices), :], hva_mat[np.array(indices), :]
             batch_hvb_top, batch_hvf_top, batch_hva_top = [hvb_top[i] for i in indices], [hvf_top[i] for i in indices], [hva_top[i] for i in indices]
 
-            if use_gpu >= 0:
+            if use_gpu > 0:
                 l2_loss = torch.cuda.FloatTensor([0])
             else:
                 l2_loss = torch.FloatTensor([0])
@@ -352,7 +352,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidd
             optimizer.step()
             optimizer.zero_grad()
 
-        if use_dev >= 0:
+        if use_dev > 0:
             with torch.no_grad():
                 model.eval()
                 dev_pred = model(dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_hvb_top, dev_hvf_top, dev_hva_mat, dev_hva_top, dev_nulla, use_gpu,
@@ -391,7 +391,7 @@ def main(config):
 
     model.eval()
 
-    if f_config.getint("GPU") >= 0:
+    if f_config.getint("GPU") > 0:
         catb_embeds = model.state_dict()["catb_embeds.weight"].data.cpu().numpy()
         hvecb_embeds = model.state_dict()["hvecb_embeds.weight"].data.cpu().numpy()
         hvecf_embeds = model.state_dict()["hvecf_embeds.weight"].data.cpu().numpy()

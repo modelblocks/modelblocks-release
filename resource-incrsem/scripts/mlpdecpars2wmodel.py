@@ -313,7 +313,7 @@ def train(use_dev, dev_file, use_gpu,
     modM = MModel(len(ex_to_ix), len(cat_to_ix), len(lcat_to_ix), len(char_to_ix), ex_size_m, cat_size_m, lcat_size_m,
                   char_size_m, hidden_dim_m, n_layers_m, dropout_prob_m, len(rule_to_ix))
 
-    if use_gpu >= 0:
+    if use_gpu > 0:
         input_ix_padded = input_ix_padded.to("cuda")
         target_ix_padded = target_ix_padded.to("cuda")
         ex_ix = ex_ix.to("cuda")
@@ -324,11 +324,11 @@ def train(use_dev, dev_file, use_gpu,
         modX = modX.cuda()
         modM = modM.cuda()
 
-    if use_dev >= 0:
+    if use_dev > 0:
         dev_ex_ix, dev_pred_ix, dev_cat_ix, dev_lcat_ix, dev_input_ix_padded, dev_target_ix_padded, dev_input_lens,\
         dev_rule_ix = prepare_data_dev(dev_file, ex_to_ix, pred_to_ix, cat_to_ix, lcat_to_ix, char_to_ix, rule_to_ix)
 
-        if use_gpu >= 0:
+        if use_gpu > 0:
             dev_input_ix_padded = dev_input_ix_padded.to("cuda")
             dev_target_ix_padded = dev_target_ix_padded.to("cuda")
             dev_ex_ix = dev_ex_ix.to("cuda")
@@ -362,7 +362,7 @@ def train(use_dev, dev_file, use_gpu,
             b_ex_ix, b_pred_ix, b_cat_ix, b_input_ix, b_target_ix, b_input_lens = \
                 ex_ix[idx], pred_ix[idx], cat_ix[idx], input_ix_padded[idx], target_ix_padded[idx], input_lens[idx]
 
-            if use_gpu >= 0:
+            if use_gpu > 0:
                 l2_loss = torch.cuda.FloatTensor([0])
             else:
                 l2_loss = torch.FloatTensor([0])
@@ -400,7 +400,7 @@ def train(use_dev, dev_file, use_gpu,
             modX_optim.step()
             modX_optim.zero_grad()
 
-        if use_dev >= 0:
+        if use_dev > 0:
             with torch.no_grad():
                 modX.eval()
                 dev_lemma_seq = modX(dev_ex_ix, dev_pred_ix, dev_cat_ix, dev_input_ix_padded, dev_input_lens, use_gpu)
@@ -450,7 +450,7 @@ def train(use_dev, dev_file, use_gpu,
                 ex_ix[idx], cat_ix[idx], lcat_ix[idx], input_ix_padded[idx], rule_ix[idx], \
                 input_lens[idx]
 
-            if use_gpu >= 0:
+            if use_gpu > 0:
                 l2_loss = torch.cuda.FloatTensor([0])
             else:
                 l2_loss = torch.FloatTensor([0])
@@ -474,7 +474,7 @@ def train(use_dev, dev_file, use_gpu,
             modM_optim.step()
             modM_optim.zero_grad()
 
-        if use_dev >= 0:
+        if use_dev > 0:
             with torch.no_grad():
                 modM.eval()
                 dev_rule = modM(dev_ex_ix, dev_cat_ix, dev_lcat_ix, dev_input_ix_padded, dev_input_lens, use_gpu)
@@ -519,7 +519,7 @@ def main(config):
     modX.eval()
     modM.eval()
 
-    if w_config.getint("GPU") >= 0:
+    if w_config.getint("GPU") > 0:
         # XModel parameters
         ex_embeds_x = modX.state_dict()["ex_embeds.weight"].data.cpu().numpy()
         pred_embeds_x = modX.state_dict()["pred_embeds.weight"].data.cpu().numpy()
