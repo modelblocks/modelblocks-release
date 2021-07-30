@@ -93,14 +93,17 @@ genmodel/brown%.linetrees: $$(DEP-TREEBANK) $(CONFIGDIR)/user-treebank-directory
 genmodel/brownTRAIN.linetrees: $(foreach sect,$(BROWNTRAINSECTS),genmodel/brown$(sect).linetrees) | genmodel
 	cat $^ > $@
 
-genmodel/wsj%.linetrees: $$(DEP-TREEBANK) $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/wsj/$$* \
+genmodel/wsj%.senttrees: $$(DEP-TREEBANK) $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/wsj/$$* \
 $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
-	cat $(word 2,$^)/*.mrg | perl $(word 3,$^) > $@
+	touch $@
+	rm $@
+	for f in $(word 2,$^)/*.mrg; do echo '!ARTICLE' >> $@; cat $$f | perl $(word 3,$^) >> $@; done
+#	cat $(word 2,$^)/*.mrg | perl $(word 3,$^) > $@
 genmodel/wsjv%.linetrees: $$(DEP-TREEBANK) $(CONFIGDIR)/user-treebank-vadas-directory.txt $$(shell cat $(CONFIGDIR)/user-treebank-vadas-directory.txt)/parsed/mrg/wsj/$$* \
 $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
 	cat $(word 2,$^)/*.mrg | perl $(word 3,$^) > $@
 
-%/wsj02to21.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,%/wsj$(sect).linetrees)
+%/wsj02to21.senttrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,%/wsj$(sect).senttrees)
 	cat $^ > $@
 %/wsj00to24.linetrees:  $(foreach sect,00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24,%/wsj$(sect).linetrees)
 	cat $^ > $@

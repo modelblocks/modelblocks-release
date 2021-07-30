@@ -68,29 +68,6 @@ bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt 
 #
 ################################################################################
 
-define KernelBlock 
-Corpus:
-  blocktitle: Corpus
-  paramtype: Dropdown
-TreeOpt:
-  blocktitle: Tree Options
-  nargs: '*'
-  paramtype: Dropdown
-TextCorpus:
-  blocktitle: Text Corpus
-  instance_of: Corpus
-  paramtype: Dropdown
-endef
-define TargetBlock
-EditableTrees:
-  blocktitle: Editable Trees
-  targetsuffix: .fromlinetrees.editabletrees
-  blockseq:
-  - blocktype: Corpus
-  - blocktype: TreeOpt
-    kwargs:
-      innerdelim: '.'
-endef
 #### obtain (flat) linetrees from (indented) editabletrees
 %.linetrees:  %.editabletrees  $(LTREES-SCRIPTS)/editabletrees2linetrees.pl
 	cat $<  |  perl -pe 's/^[0-9]*://'  |  perl $(word 2,$^)  >  $@
@@ -101,17 +78,6 @@ endef
 
 ### HAPPENS TOO MUCH; JUST CREATE MAKE ITEM IF YOU NEED IT
 ##### generalized operations on linetrees
-define TargetBlock
-Linetrees:
-  blockseq:
-  - blocktype: Corpus
-  - blocktype: TreeOpt
-    kwargs:
-      outerdelim: .
-      innerdelim: .
-  blocktitle: Linetrees
-  targetsuffix: .linetrees
-endef
 #%.linetrees:  $(LTREES-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
 #	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.lower.linetrees:  $(LTREES-SCRIPTS)/make-trees-lower.py  %.linetrees
@@ -121,132 +87,36 @@ endef
 	cat $< | python $(word 2, $^) > $@
 
 #### use only the first/last N trees
-define ParamVal
-First:
-  cascade: First
-  kernel: TreeOpt
-  text: Keep only the first n trees
-  value: ''
-endef
-define KernelBlock
-First:
-  blocktitle: First
-  nodelimiter: True
-  paramtype: Integer
-  paramval:
-  - after: true
-    descr: ''
-    text: First (n)
-    value: first
-endef
-%first.linetrees:  $$(basename %).linetrees
+%first.senttrees:  $$(basename %).senttrees
 	head -$(subst .,,$(suffix $*)) $<  >  $@
 
-define ParamVal
-Onward:
-  cascade: Onward
-  kernel: TreeOpt
-  text: Discard the first n trees
-  value: ''
-endef
-define KernelBlock
-Onward:
-  blocktitle: Onward
-  nodelimiter: True
-  paramtype: Integer
-  paramval:
-  - after: true
-    descr: ''
-    text: Onward (n)
-    value: onward
-endef
-%onward.linetrees: $$(basename %).linetrees
+%onward.senttrees: $$(basename %).senttrees
 	tail -n +$(subst .,,$(suffix $*)) $<  >  $@
 
-define ParamVal
-Last:
-  cascade: Last
-  kernel: TreeOpt
-  text: Keep only the last n trees
-  value: ''
-endef
-define KernelBlock
-Last:
-  blocktitle: Last
-  nodelimiter: True
-  paramtype: Integer
-  paramval:
-  - after: true
-    descr: ''
-    text: Last (n)
-    value: last
-endef
-%last.linetrees:  $$(basename %).linetrees
+%last.senttrees:  $$(basename %).senttrees
 	tail -$(subst .,,$(suffix $*)) $<  >  $@
 
-define ParamVal
-Maxword:
-  cascade: Maxwords
-  kernel: TreeOpt
-  text: Keep only trees with fewer than n words
-  value: ''
-endef
-define KernelBlock
-Maxwords:
-  blocktitle: Maxwords
-  nodelimiter: True
-  paramtype: Integer
-  paramval:
-  - after: true
-    descr: ''
-    text: Maxwords (n)
-    value: maxwords
-endef
-%maxwords.linetrees: $$(basename %).linetrees
+%maxwords.senttrees: $$(basename %).senttrees
 	cat $< | perl -na -e "if (split(/[\)]+/)<=1+$(subst .,,$(suffix $*))) {print $$_;}"  >  $@ 
 
 #### remove unary branches
-define ParamVal
-Nounary:
-  kernel: TreeOpt
-  text: Remove unary branches
-  value: nounary
-endef
-%.nounary.linetrees:  %.linetrees  $(LTREES-SCRIPTS)/killUnaries.pl
+%.nounary.senttrees:  %.senttrees  $(LTREES-SCRIPTS)/killUnaries.pl
 	cat $<  |  perl $(word 2,$^)  >  $@
 
 #### use treebank reannotation
-define ParamVal
-PTB:
-  descr: ''
-  kernel: Grammar
-  text: Penn Treebank
-  value: nodashtags
-endef
 %.nodashtags.linetrees:  %.linetrees
 	cat $<  |  perl -pe 's/([^\(])[-=][^ \)]+ /\1 /g'  >  $@
 
 #### obtain tokenized input sentences from linetrees
-define TargetBlock
-Linetoks:
-  blockseq:
-  - blocktype: Corpus
-  - blocktype: TreeOpt
-    kwargs:
-      outerdelim: .
-      innerdelim: .
-  blocktitle: Linetoks
-  targetsuffix: .linetoks
-endef
 
 #### This item is used to flatten trees from treebank corpora *in the genmodel directory* into tokenized parser input...
 #%.linetoks:  $(GENMODEL)/%.linetrees   #$(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.linetrees)))
-%.linetoks:  $(GENMODEL)/$$(notdir $$*.linetrees)   #$(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.linetrees)))
+%.senttoks:  $(GENMODEL)/$$(notdir $$*.senttrees)   #$(GENMODEL)/$$(subst +,-,$$(subst -,.,$$(notdir $$*.senttrees)))
 	cat $<  |  sed 's/(-NONE-[^)]*)//g'  \
 		|  sed 's/([^ ]* //g;s/)//g'  |  sed 's/  */ /g;s/^ *//;s/ *$$//;'  \
 		|  sed 's/!unf! *//g' >  $@
 #### This item is used to flatten trees from treebank corpora into tokenized parser input...
-%.linetoks:  %.linetrees
+%.senttoks:  %.senttrees
 	cat $<  |  sed 's/(-NONE-[^)]*)//g'  \
 		|  sed 's/([^ ]* //g;s/)//g'  |  sed 's/  */ /g;s/^ *//;s/ *$$//;'  \
 		|  sed 's/!unf! *//g' >  $@
@@ -255,6 +125,10 @@ endef
 
 %.delim.linetoks: %.linetoks $(LTREES-SCRIPTS)/linetoks2delimlinetoks.py
 	cat $< | python $(word 2,$^) > $@
+
+#### add leaves to non-copyright-infringing defoliated trees...
+%.senttrees:  %.notoks.senttrees  $(GENMODEL)/$$(word 1,$$(subst ., ,$$(notdir $$*))).senttoks  $(GCG-SCRIPTS)/plugLeaves.py
+	python2 $(word 3,$^) $(word 1,$^) $(word 2,$^)  >  $@
 
 #### reverse the order of tokens by sentence in an input linetoks file
 %.rev.linetoks: %.linetoks
@@ -271,22 +145,10 @@ endef
 		|  sed 's/!unf! *//g' >  $@
 
 #### unlabeled trees (for evaluation)
-define ParamVal
-Nolabel:
-  kernel: TreeOpt
-  text: Remove non-terminal category labels
-  value: nolabel
-endef
 %.nolabel.linetrees:  %.linetrees
 	cat $^  |  perl -pe 's/\(\)//'| perl -pe 's/\([^ ]*/\(X/g'  >  $@
 
-define ParamVal
-Nopunc:
-  kernel: TreeOpt
-  text: Remove punctuation
-  value: nopunc
-endef
-%.nopunc.linetrees: %.linetrees $(LTREES-SCRIPTS)/make-trees-nounary.pl
+%.nopunc.senttrees: %.senttrees $(LTREES-SCRIPTS)/make-trees-nounary.pl
 	cat $<  |  perl $(word 2, $^ ) |  perl -pe "s/ \([^ ()]+ (,|\.|\`\`|\`|--|-RRB-|-LRB-|-LCB-|-RCB-|''|'|\.\.\.|\?|\!|\:|\;)\)//g" | perl $(word 2, $^) > $@
 
 %.nopunc.linetoks: %.linetoks
@@ -305,12 +167,6 @@ endef
 %.induc.linetrees: %.nt.lower.nounary.nolabel.nopunc.linetrees
 	cat $< > $@
 
-define ParamVal
-Fromdeps:
-  kernel: TreeOpt
-  text: Extract trees from a dependency graph
-  value: fromdeps
-endef
 %.fromdeps.linetrees: %.tokdeps $(LTREES-SCRIPTS)/deps2trees.py
 	cat $< | sed 's/<num>/-NUM-/g' | python $(word 2, $^) -f stanford > $@
 
@@ -353,8 +209,8 @@ endef
 .PRECIOUS: %syneval
 %syneval:  bin/evalb \
            $(RESOURCE-GENERAL)/srcmodel/new.prm \
-           genmodel/$$(subst -,.,$$(basename $$(basename $$*)))$$(subst _,.,$$(suffix $$*))linetrees \
-           $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$(basename $$*))$$(subst _,.,$$(suffix $$*))linetrees
+           genmodel/$$(subst -,.,$$(basename $$(basename $$*)))$$(subst _,.,$$(suffix $$*))senttrees \
+           $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$(basename $$*))$$(subst _,.,$$(suffix $$*))senttrees
 	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
 
 ##### syntactic evaluation           #genmodel/$$(subst -,.,$$(basename $$(basename $$(basename $$(notdir $$*))))).linetrees  %.linetrees

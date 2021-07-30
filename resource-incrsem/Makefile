@@ -159,7 +159,7 @@ scripts/%.ini:  $(INCRSEM-SCRIPTS)/%.ini  |  scripts
 	cat $(word 2,$^)  |  perl $(word 1,$^) -t  >  $@
 
 ## remove op and morph tags for eval...
-%.nol.linetrees:  %.linetrees
+%.nol.senttrees:  %.senttrees
 	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/-x[^-} ][^ |]*[|][^- ]*//g'  >  $@
 #	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/%[^ %|]*\|//g;s/-x(?:(?!-[a-z])[^ }])*(?=[^\)]* )//g'  >  $@
 #	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/-x[^- \}]*%[^- ]*(?=[^\)]* )//g'  >  $@
@@ -171,7 +171,7 @@ scripts/%.ini:  $(INCRSEM-SCRIPTS)/%.ini  |  scripts
 #	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/-x[^- \}]*%[^- ]*(?=[^\)]* )//g'  >  $@
 
 ## remove !ARTICLE article delimiters
-%.nodelim.linetrees: %.linetrees
+%.nodelim.senttrees: %.senttrees
 	cat $< | grep -v '!ARTICLE' > $@
 
 ## remove scope and coref tags...
@@ -179,7 +179,7 @@ scripts/%.ini:  $(INCRSEM-SCRIPTS)/%.ini  |  scripts
 	cat $<  |  perl -pe 's/[-+](?:[nmstw]|nn+)[0-9]+(?=[^\)]* )//g;'  >  $@
 
 ## obtain lemma counts from trees...
-%.lemmacounts:  %.linetrees  $(INCRSEM-SCRIPTS)/printlemmas.py  $(INCRSEM-SCRIPTS)/printlemmas.d
+%.lemmacounts:  %.senttrees  $(INCRSEM-SCRIPTS)/printlemmas.py  $(INCRSEM-SCRIPTS)/printlemmas.d
 	cat $<  |  python $(word 2,$^)  |  LC_COLLATE=C sort  |  LC_COLLATE=C uniq -c  |  sed 's/^ *//'  >  $@
 
 ## obtain predictors and responses for all semantic processing models...
@@ -398,7 +398,7 @@ endef
 
 ## Create training example file from training corpus (% contains decpar flags)...
 .PRECIOUS: %_mlpdecpars
-%_mlpdecpars : $$(basename %).linetrees  \
+%_mlpdecpars : $$(basename %).senttrees  \
                $(BIN)/linetrees2mlpsemprocdecpars  \
                $$(basename %).lemmacounts
 	cat $<  |  $(word 2,$^) $(wordlist 1,99,$(subst _, ,$(subst .,,$(suffix $*)))) $(word 3,$^)  >  $@
@@ -685,7 +685,7 @@ endef
 
 .PRECIOUS: %parsed.tokdecs
 %parsed.tokdecs:  bin/$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$(subst +,-,$$(subst -,.,$$*)))))) \
-                  $$(basename %).delim.linetoks \
+                  $$(basename %).senttoks \
                   genmodel/$$(basename $$(subst +,-,$$(subst -,.,$$(subst .,,$$(suffix $$*)))))model  |  $(CONFIGDIR)/user-numthreads.txt
 	###############
 	### parsing ###
@@ -712,7 +712,7 @@ endef
 ##	cat $(word 2,$^)  |  $(word 1,$^) $(subst .,,$(suffix $(subst -,.,$*))) $(word 3,$^)  >  $@
 
 ## obtain linetrees from token decisions...
-%.linetrees:  %.tokdecs  $(INCRSEM-SCRIPTS)/tokdecs2linetrees.py
+%.senttrees:  %.tokdecs  $(INCRSEM-SCRIPTS)/tokdecs2linetrees.py
 	cat $<  |  python $(word 2,$^)  |  perl -pe 's/\[[^\]]*\]://g'  >  $@
 
 

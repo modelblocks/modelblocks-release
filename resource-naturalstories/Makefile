@@ -45,13 +45,6 @@
 #
 ################################################################################
 
-define ParamVal
-NaturalStories:
-  kernel: SPRCorpus
-  text: Natural Stories (self-paced reading corpus)
-  value: naturalstories
-endef
-
 .SUFFIXES:
 .SECONDEXPANSION:
 .DELETE_ON_ERROR:
@@ -94,8 +87,6 @@ NATSTORIES-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESC
 DEP-NATSTORIES = $(error $(NATSTORIES-ERROR))
 endif
 endif
-
-
 
 %/user-naturalstories-directory.txt: | %   
 	echo '/data/corpora/original/english/naturalstories' > $@
@@ -169,11 +160,21 @@ $(CDR-SCRIPTS)/compute_timestamps_from_RT.py $(CONFIGDIR)/user-naturalstories-di
 	python $(word 3, $^) <(cat $(word 1, $^) | sed 's/\t/ /g;s/peaked/peeked/g;' | python $(word 2, $^) WorkerId subject RT fdur) \
 	$(word 4, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' | python $(word 5, $^) > $@
   
-%naturalstories.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.linetrees %naturalstories.linetoks
-	python2 $^ > $@
+#%naturalstories.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.linetrees %naturalstories.linetoks
+#	python2 $^ > $@
+#
+#%naturalstories.coref.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.coref.linetrees %naturalstories.linetoks
+#	python2 $^ > $@
+#
+#genmodel/naturalstories.toktrees: genmodel/naturalstories.coref.fromlinetrees.editabletrees 
+#	cat $^ > $@
 
-%naturalstories.coref.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.coref.linetrees %naturalstories.linetoks
-	python2 $^ > $@
+#genmodel/naturalstories.senttoks: genmodel/naturalstories.penn.linetrees $(NATSTORIES-SCRIPTS)/penn2sents.py | genmodel
+#	cat $< | python2 $(word 2, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' > $@
 
-genmodel/naturalstories.toktrees: genmodel/naturalstories.coref.fromlinetrees.editabletrees 
-	cat $^ > $@
+genmodel/naturalstories.senttoks:  $(NATSTORDIR)/naturalstories_RTS/all_stories.tok  $(NATSTORIES-SCRIPTS)/tok2senttoks.py  $(TOKENIZERDIR)/ptb_tokenizer.sed  |  genmodel
+	cat $<  |  python2 $(word 2, $^)  |  $(word 3, $^)  |  sed "s/^' */' /;s/'Ex/' Ex/g;s/o ' clock/o'clock/g;s/gon na/gonna/g"  |  sed 's/! ARTICLE/!ARTICLE/'  |  sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;'  |  perl -pe 's/ +$$//g'  >  $@
+
+%naturalstories.casp.notoks.senttrees:  $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.coref.linetrees
+	cat $^  >  $@
+

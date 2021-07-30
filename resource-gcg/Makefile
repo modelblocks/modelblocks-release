@@ -60,7 +60,7 @@ endif
 #### misc reannotation (there are multiple copies in case we want to do more than one w/o cycles)
 %.comparativized.linetrees:  $(GCG-SCRIPTS)/make-trees-comparativized.pl  %.linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
-%.fixed.linetrees:  $(GCG-SCRIPTS)/make-trees-fixed.pl  %.linetrees
+%.fixed.senttrees:  $(GCG-SCRIPTS)/make-trees-fixed.pl  %.senttrees
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
 %.nommed.linetrees:  $(GCG-SCRIPTS)/make-trees-nommed.pl  %.linetrees
 	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
@@ -124,31 +124,31 @@ endef
 # 	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  perl -pe 's/.*\([-A-Z]+ .*//'  |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' | perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
         
 #### NOTE: inline seds dispose of reannotation failures, then remove -f tags, then shift -l tags to end
-.PRECIOUS: %.linetrees
-%.linetrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).fixed.linetrees  $(LTREES-SCRIPTS)/killUnaries.pl $(GCG-SCRIPTS)/makefailtrees.py
+.PRECIOUS: %.senttrees
+%.senttrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).fixed.senttrees  $(LTREES-SCRIPTS)/killUnaries.pl $(GCG-SCRIPTS)/makefailtrees.py
 	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  python $(word 4,$^) |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' |  perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
 #cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  perl -pe 's/.*\([^a-z]+ .*//'  |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' |  perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
 ## add !ARTICLE delimiters...
 %artdelim.linetrees:  $(GCG-SCRIPTS)/addDelimiter.py  $$(basename %).linetrees
 	cat $(word 2,$^)  |  python $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 ## add morph tags...
-%morphed.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).linetrees
+%morphed.senttrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).senttrees
 	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 ## remove morph tags for eval...
 %.nox.linetrees:  %.linetrees
 	cat $<  |  perl -pe 's/[-+]x[^-} ][^ |]*[|][^- ]*//g'  >  $@
 
 ## dummy linker for casp standard when no coref is available...
-%.linked.linetrees:  %.linetrees  genmodel/$$(word 1,$$(subst ., ,$$(notdir $$*))).nocoref
+%.linked.senttrees:  %.senttrees  genmodel/$$(word 1,$$(subst ., ,$$(notdir $$*))).nocoref
 	cat $<  >  $@
 
 ## casp currently set to gcg15 + long + linked + morphed (without -x)...
-.PRECIOUS: %casp.linetrees
-%casp.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).gcg15.long.linked.linetrees
+.PRECIOUS: %casp.senttrees
+%casp.senttrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).gcg15.long.linked.senttrees
 	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 #	cat $(word 2,$^)  |  perl $(word 1,$^) -x $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
-.PRECIOUS: %caspu.linetrees
-%caspu.linetrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).gcg16.long.linked.linetrees
+.PRECIOUS: %caspu.senttrees
+%caspu.senttrees:  $(GCG-SCRIPTS)/make-trees-morphed.pl  $$(basename %).gcg16.long.linked.senttrees
 	cat $(word 2,$^)  |  perl $(word 1,$^) $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 #	cat $(word 2,$^)  |  perl $(word 1,$^) -x $(subst _, ,$(subst .,,$(suffix $*)))  >  $@
 
@@ -158,7 +158,7 @@ endef
 
 %.nofail.linetrees: %.linetrees
 	cat $< | grep -v '(FAIL' > $@
-%.goldfailerr.linetrees: %.linetrees
+%.goldfailerr.senttrees: %.senttrees
 	cat $< | perl -pe 's/^\(FAIL.*/(FAIL err)/' > $@
 
 %.noqp.linetrees:  %.linetrees  $(GCG-SCRIPTS)/remove-qps.pl
@@ -189,7 +189,7 @@ endef
 	cat $< | perl $(word 2,$^) > $@
 
 #### lengthen trees to full gcg derivation...
-%.long.linetrees:  %.linetrees  $(GCG-SCRIPTS)/lengthentrees.py  $(GCG-SCRIPTS)/lengthentrees.d
+%.long.senttrees:  %.senttrees  $(GCG-SCRIPTS)/lengthentrees.py  $(GCG-SCRIPTS)/lengthentrees.d
 	cat $<  |  python $(word 2,$^)  >  $@
 
 #### Remove traces
@@ -215,7 +215,7 @@ endef
 #### annotation release format...
 %.toktrees:  $(GCG-SCRIPTS)/port-semantics.perl  %.annot-syn  %.annot-sem
 	perl $^  >  $@
-%.linetrees:  %.toktrees  $(LTREES-SCRIPTS)/editabletrees2linetrees.pl
+%.senttrees:  %.toktrees  $(LTREES-SCRIPTS)/editabletrees2senttrees.pl
 	cat $<  |  perl $(word 2,$^)  >  $@
 #### indentation formats for annotation...
 %.fromtoktrees.annot-syn:  %.toktrees
@@ -224,7 +224,7 @@ endef
 	cat $(word 1,$^)  |  perl $(word 2,$^) | perl $(word 3,$^) | perl $(word 4,$^) | perl $(word 5,$^) >  $@
 
 #### auto lengthener repair...
-%.lengthrepaired.linetrees:  %.annot-syn  $(LTREES-SCRIPTS)/editabletrees2linetrees.pl  $(GCG-SCRIPTS)/fix_lengthener_errors.py
+%.lengthrepaired.senttrees:  %.annot-syn  $(LTREES-SCRIPTS)/editabletrees2senttrees.pl  $(GCG-SCRIPTS)/fix_lengthener_errors.py
 	cat $<  |  perl $(word 2,$^)  |  python3 $(word 3,$^)  >  $@
 
 #### DEPRECATED: obtain sentence-aligned space-delimited variable (semantic) dependencies
@@ -241,10 +241,10 @@ endef
 
 #### obtain discourse-aligned space-delimited cued-association graphs
 .PRECIOUS: %.discgraphs
-%.discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
+%.discgraphs:  %.senttrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
 	cat $<  |  sed 's/\^g//g' | python $(word 3,$^) -e  >  $@
 # not for end-users, just for debugging:
-%.verbose-discgraphs:  %.linetrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
+%.verbose-discgraphs:  %.senttrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
 	cat $<  |  sed 's/\^g//g' | python $(word 3,$^) -d -e  >  $@
 
 # #### obtain pdf drawing of discgraph   (neato/dot)

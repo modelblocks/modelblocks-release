@@ -11,14 +11,14 @@ curSent = words.next().split()
 
 def plugWords(T):
     global curSent
-    for x in T.ch:
-        if len(x.ch) == 0:
-            if len(curSent) > 0:
-                x.c = curSent.pop(0)
-            else:
-                curSent = words.next().split()
-                x.c = curSent.pop(0)
+    if len(T.ch) == 0:
+        if len(curSent) > 0:
+            T.c = curSent.pop(0)
         else:
+            curSent = words.next().split()
+            T.c = curSent.pop(0)
+    else:
+        for x in T.ch:
             plugWords(x)
 
 T = tree.Tree()
