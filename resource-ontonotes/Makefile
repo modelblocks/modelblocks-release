@@ -112,7 +112,7 @@ $(ONTONOTESDIR)/data/files/data/english/annotations/nw/wsj/$$* $(ONTONOTES-SCRIP
 $$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/data/files/data/english/annotations/nw/wsj/$$*/*.coref)))  |  genmodel
 #	tail -n +1 $(wordlist 4, $(words $^), $^)  |  python $(word 3,$^)  >  $@
 
-%.linked.linetrees:  $(ONTONOTES-SCRIPTS)/coref2linkedlinetrees.py  $$(word 1,$$(subst ., ,%)).coref  %.linetrees
+%.linked.senttrees:  $(ONTONOTES-SCRIPTS)/coref2linkedlinetrees.py  $$(word 1,$$(subst ., ,%)).coref  %.senttrees
 	#cat $(word 2,$^)  |  python $(word 1,$^)  $(word 3,$^)  >  $@
 	python $(word 1,$^)  $(word 3,$^)  $(word 2,$^)  >  $@
 
@@ -133,7 +133,7 @@ $(ONTONOTESDIR)/data/files/data/english/annotations/nw/wsj/$$* \
 $$(sort $$(wildcard $(ONTONOTESDIR)/data/files/data/english/annotations/nw/wsj/$$*/*.coref))  |  genmodel
 	cat $(wordlist 4, $(words $^), $^)  |  perl -p  $<  >  $@
 
-genmodel/corontowsj%.editabletrees: $$(DEP-ONTONOTES) $(CONFIGDIR)/user-ontonotes-directory.txt \
+genmodel/corontowsj%.toktrees: $$(DEP-ONTONOTES) $(CONFIGDIR)/user-ontonotes-directory.txt \
 $(ONTONOTESDIR)/data/files/data/english/annotations/nw/wsj/$$* $(ONTONOTES-SCRIPTS)/addArticleDelims.py  \
 $$(sort $$(subst .coref,.parse,$$(wildcard $(ONTONOTESDIR)/data/files/data/english/annotations/nw/wsj/$$*/*.coref)))  |  genmodel 
 	tail -n +1 $(wordlist 4, $(words $^), $^)  |  python $(word 3,$^)  >  $@
@@ -146,15 +146,15 @@ genmodel/ontowsj02to21.%.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 1
 genmodel/ontowsjdev.%.linetrees: $(foreach sect,01 22 24,genmodel/ontowsj$(sect).%.linetrees)
 	cat $^  >  $@
 
-.PRECIOUS: genmodel/conllwsjdev.%.linetrees
-genmodel/conllwsjdev.%.linetrees: $(foreach sect,00 01 22 24,genmodel/ontowsj$(sect).%.linetrees)
+.PRECIOUS: genmodel/conllwsjdev.%.senttrees
+genmodel/conllwsjdev.%.senttrees: $(foreach sect,00 01 22 24,genmodel/ontowsj$(sect).%.senttrees)
 	cat $^  >  $@
 
 #.PRECIOUS: genmodel/corontowsj02to21.%.linetrees
 #genmodel/corontowsj02to21.%.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/corontowsj$(sect).%.linetrees)
 #	cat $^  >  $@
-.PRECIOUS: genmodel/corontowsj02to21.casp.prtrm.linked.linetrees
-genmodel/corontowsj02to21.casp.prtrm.linked.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/corontowsj$(sect).casp.prtrm.linked.linetrees)
+.PRECIOUS: genmodel/corontowsj02to21.casp.senttrees
+genmodel/corontowsj02to21.casp.senttrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,genmodel/corontowsj$(sect).casp.senttrees)
 	cat $^  >  $@
 
 .PRECIOUS: genmodel/corontowsj02to21.gcg15.long.linked.linetrees
@@ -168,8 +168,8 @@ genmodel/corontowsj02to21.gcg15.long.linked.linetrees:  $(foreach sect,02 03 04 
 genmodel/corontowsjdev.casp.prtrm.linked.linetrees: $(foreach sect,01 22 24,genmodel/corontowsj$(sect).casp.prtrm.linked.linetrees)
 	cat $^  >  $@
 
-.PRECIOUS: genmodel/corconllwsjdev.casp.prtrm.linked.linetrees
-genmodel/corconllwsjdev.casp.prtrm.linked.linetrees: $(foreach sect,00 01 22 24,genmodel/corontowsj$(sect).casp.prtrm.linked.linetrees)
+.PRECIOUS: genmodel/corconllwsjdev.casp.senttrees
+genmodel/corconllwsjdev.casp.senttrees: $(foreach sect,00 01 22 24,genmodel/corontowsj$(sect).casp.senttrees)
 	cat $^  >  $@
 
 .PRECIOUS: genmodel/corconllwsjdev.gcg15.long.linked.linetrees

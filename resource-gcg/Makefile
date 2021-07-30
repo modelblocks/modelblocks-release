@@ -215,7 +215,7 @@ endef
 #### annotation release format...
 %.toktrees:  $(GCG-SCRIPTS)/port-semantics.perl  %.annot-syn  %.annot-sem
 	perl $^  >  $@
-%.senttrees:  %.toktrees  $(LTREES-SCRIPTS)/editabletrees2senttrees.pl
+%.senttrees:  %.toktrees  $(LTREES-SCRIPTS)/editabletrees2linetrees.pl
 	cat $<  |  perl $(word 2,$^)  >  $@
 #### indentation formats for annotation...
 %.fromtoktrees.annot-syn:  %.toktrees
