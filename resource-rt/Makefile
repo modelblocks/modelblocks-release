@@ -295,19 +295,19 @@ genmodel/rename_cols.params: | genmodel
 	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
 
 # Computes left-corner predictors
-%.lc.tokmeasures: %.linetoks $(RT-SCRIPTS)/calcEmbd.py %.gold.nopunc.-u0_-c0_mlpdecpars
-	cat $< | python $(word 2, $^) $(word 3, $^) > $@
+%.lc.tokmeasures:  %.senttoks  $(RT-SCRIPTS)/calcEmbd.py  %.casp.nopunc.-u0_-c0_mlpdecpars
+	cat $<  |  grep -v '!ARTICLE'  |  python $(word 2, $^) $(word 3, $^)  >  $@
     
-%.lc.tokmeasures: %.linetoks $(RT-SCRIPTS)/calcEmbd.py %.nopunc.-u0_-c0_mlpdecpars
-	cat $< | python $(word 2, $^) $(word 3, $^) > $@
+%.lc.tokmeasures:  %.senttoks  $(RT-SCRIPTS)/calcEmbd.py  %.nopunc.-u0_-c0_mlpdecpars
+	cat $<  |  python $(word 2, $^) $(word 3, $^)  >  $@
 
 # Pastes DLT predictors to existing identically tokenized tokmeasures file
 %.dlt.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).dlt.tokmeasures
 	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
  
 # Computes DLT predictors
-%.dlt.tokmeasures: %.casp.senttrees $(RT-SCRIPTS)/calcDLT.py
-	cat $<  |  grep -v '!ARTICLE'  |  python2 $(word 2, $^) > $@
+%.dlt.tokmeasures:  %.casp.senttrees  $(RT-SCRIPTS)/calcDLT.py
+	cat $<  |  grep -v '!ARTICLE'  |  python2 $(word 2, $^)  >  $@
 #%.dlt.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
 #	cat $< | python2 $(word 2, $^) > $@
 
@@ -366,8 +366,8 @@ $(RT-SCRIPTS)/filter_cols.py
 	mv $^ $@
 
 # Returns syntactic categories from gold "nol4train" linetrees
-%.syncat.tokmeasures: %.gold.nol4train.linetrees $(RT-SCRIPTS)/getSyncat.py
-	cat $< | python $(word 2, $^) > $@
+%.syncat.tokmeasures: %.casp.nol4train.senttrees $(RT-SCRIPTS)/getSyncat.py
+	cat $<  |  grep -v '!ARTICLE'  |  python $(word 2, $^)  >  $@
 
 # Pastes syntactic categories to existing identically tokenized tokmeasures file
 %.syncat.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).syncat.tokmeasures

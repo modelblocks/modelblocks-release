@@ -165,7 +165,7 @@ scripts/%.ini:  $(INCRSEM-SCRIPTS)/%.ini  |  scripts
 #	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/-x[^- \}]*%[^- ]*(?=[^\)]* )//g'  >  $@
 
 ## note that 'nol' has been changed to 'nol4train'
-%.nol4train.linetrees:  %.linetrees
+%.nol4train.senttrees:  %.senttrees
 	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/-x[^-} ][^ |]*[|][^- ]*//g'  >  $@
 #	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/%[^ %|]*\|//g;s/-x(?:(?!-[a-z])[^ }])*(?=[^\)]* )//g'  >  $@
 #	cat $<  |  perl -pe 's/[-+]l.(?=[^\)]* )//g;s/-x[^- \}]*%[^- ]*(?=[^\)]* )//g'  >  $@

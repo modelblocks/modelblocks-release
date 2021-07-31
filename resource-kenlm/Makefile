@@ -225,15 +225,15 @@ $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmo
 	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
 
 %-kenlm.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLMDIR)/bin/query \
-$$(basename %).lineitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
+$$(basename %).sentitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
 $(KENLMMODDIR)/gigaword$$(suffix $$*).kenlm \
 $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
-	$(word 1, $^) -\n $(word 4,$^) < $(word 2,$^) | python3 $(word 3,$^) --fwprobs - | \
+	$(word 1, $^) -\n $(word 4,$^) <( cat $(word 2,$^) | grep -v '~ARTICLE' ) | python3 $(word 3,$^) --fwprobs - | \
 	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
 
-%.unigram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLM-SCRIPTS)/unigram.py $(KENLMMODDIR)/gigaword.1.fw.kenlm %.lineitems \
+%.unigram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLM-SCRIPTS)/unigram.py $(KENLMMODDIR)/gigaword.1.fw.kenlm %.sentitems \
 $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
-	python2 $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+	python2 $(word 1, $^) $(word 2, $^) <( cat $(word 3, $^) | grep -v '!ARTICLE' ) > $@
 
 ## not to spec
 .PRECIOUS: %.kenlm.ngram.itemmeasures
