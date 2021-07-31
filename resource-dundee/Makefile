@@ -162,8 +162,8 @@ genmodel/dundee.%.evmeasures: $(RT-SCRIPTS)/concat_tables.py $(foreach subj, $(D
 #	cat $< | python $(word 3, $^) fdur fdurFP | paste -d' ' - <(awk -f $(word 4, $^) -v cols=fdur:fileid $(word 2, $^) | \
 #	python $(word 3, $^) fdur fdurGP fileid docid) | python $(word 5, $^) | python $(word 6, $^) > $@
 
-%dundee.evmeasures: $$(DEP-DUNDEE) $(DUNDEE-SCRIPTS)/process_dundee.py $(DUNDEEDIR) %dundee.lineitems
-	python3 $^ > $@
+%dundee.evmeasures: $$(DEP-DUNDEE) $(DUNDEE-SCRIPTS)/process_dundee.py $(DUNDEEDIR) %dundee.sentitems
+	python3 $(word 1,$^) $(word 2,$^) <( cat $(word 3,$^) | grep -v '!ARTICLE' )  >  $@
 
 
 ################################################################################
@@ -197,7 +197,7 @@ genmodel/dundee.linetoks: $$(foreach sect,$$(DUNDEESECTS),genmodel/dundee$$(sect
 	cat <(echo word) <(cat $(word 3, $^) | awk '!/^WORD/')  |  python2 $(word 2, $^) $< -e latin-1  > $@
 
 
-genmodel/dundee%.senttoks:  $(RESOURCE-DUNDEE)/srcmodel/dundee.text.headers  $(DUNDEEDIR)/tx%wrdp.dat  $(DUNDEE-SCRIPTS)/findBreaks.py  $(GENERAL-SCRIPTS)/convert_latin-1.py   $(TOKENIZERDIR)/ptb_tokenizer.sed
+genmodel/dundee%.sentitems:  $(RESOURCE-DUNDEE)/srcmodel/dundee.text.headers  $(DUNDEEDIR)/tx%wrdp.dat  $(DUNDEE-SCRIPTS)/findBreaks.py  $(GENERAL-SCRIPTS)/convert_latin-1.py
 	cat $(word 1,$^) $(word 2,$^)  |  perl -pe 's/ +/ /g'  |  python2 $(word 3,$^)  \
   | perl -pe "s/\(/-LRB- /g;s/\)/ -RRB-/g;s/  / /g;s/^ //"  |  python3 $(word 4,$^)  \
 	| sed 's/garbage\/sentimental/garbage \/ sentimental/g' \
@@ -210,10 +210,11 @@ genmodel/dundee%.senttoks:  $(RESOURCE-DUNDEE)/srcmodel/dundee.text.headers  $(D
 	| sed 's/in-the-box/in- the- box/g' \
 	| sed 's/potato-and/potato- and/g' \
 	| sed 's/Faction\/Dogs/Faction \/ Dogs/g' \
-	| sed 's/three- year-old/three- year- old/g' \
-  | perl -pe "s/(\W)'(\w)/\1' \2/g"  |  $(word 5,$^)  |  perl -pe "s/can not/cannot/g;s/lock- ' em-up/lock-'em-up/g;s/ d ' / d'/g;s/([^ ])\. '/\1 \. '/g;s/([^ ])\. -/\1 \. -/g;s/''/' '/g;s/Qa ' ida/Qa'ida/g;s/-LSB- /-LSB-/g;s/ -RSB-/-RSB-/g;s/4 ' s/4 's/g;s/let's/let 's/g;s/ O ' / O'/g;s/o ' clock/o'clock/g;s/\bY ' know/Y' know/g;s/\.\. \./.../g"  |  sed "s/^' */' /g;s/$$ /$$/g"  |  sed 's/! ARTICLE/!ARTICLE/'  |  sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g'  |  perl -pe 's/ +$$//g'  >  $@
-genmodel/dundee.senttoks:  $$(foreach sect,$$(DUNDEESECTS),genmodel/dundee$$(sect).senttoks) | genmodel
-	cat $^ > $@
+	| sed 's/three- year-old/three- year- old/g' > $@
+%dundee.sentitems:  $$(foreach sect,$$(DUNDEESECTS),%dundee$$(sect).sentitems) | genmodel
+	cat $^  >  $@
+%dundee.senttoks:  %dundee.sentitems  $(TOKENIZERDIR)/ptb_tokenizer.sed
+	cat $<  |  perl -pe "s/(\W)'(\w)/\1' \2/g"  |  $(word 2,$^)  |  perl -pe "s/can not/cannot/g;s/lock- ' em-up/lock-'em-up/g;s/ d ' / d'/g;s/([^ ])\. '/\1 \. '/g;s/([^ ])\. -/\1 \. -/g;s/''/' '/g;s/Qa ' ida/Qa'ida/g;s/-LSB- /-LSB-/g;s/ -RSB-/-RSB-/g;s/4 ' s/4 's/g;s/let's/let 's/g;s/ O ' / O'/g;s/o ' clock/o'clock/g;s/\bY ' know/Y' know/g;s/\.\. \./.../g"  |  sed "s/^' */' /g;s/$$ /$$/g"  |  sed 's/! ARTICLE/!ARTICLE/'  |  sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g'  |  perl -pe 's/ +$$//g'  >  $@
 %dundee.casp.notoks.senttrees:  $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees
 	cat $^  >  $@
 

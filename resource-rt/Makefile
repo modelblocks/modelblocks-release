@@ -434,8 +434,8 @@ RTCoreEvmeasures:
       innerdelim: .
 endef
 
-%.itemmeasures: %.lineitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
-	cat $<  |  python $(word 2, $^) >  $@
+%.itemmeasures: %.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
+	cat $<  |  grep -v '!ARTICLE'  |  python $(word 2, $^) >  $@
 
 %parsed.itemmeasures: %parsed.tokmeasures  $$(basename %).itemmeasures  $(RT-SCRIPTS)/roll_toks.py
 	cat $< | python2 $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1  >  $@
