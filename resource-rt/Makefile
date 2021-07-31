@@ -306,11 +306,10 @@ genmodel/rename_cols.params: | genmodel
 	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
  
 # Computes DLT predictors
-%.dlt.tokmeasures: %.gold.linetrees $(RT-SCRIPTS)/calcDLT.py
-	cat $< | python2 $(word 2, $^) > $@
-
-%.dlt.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
-	cat $< | python2 $(word 2, $^) > $@
+%.dlt.tokmeasures: %.casp.senttrees $(RT-SCRIPTS)/calcDLT.py
+	cat $<  |  grep -v '!ARTICLE'  |  python2 $(word 2, $^) > $@
+#%.dlt.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
+#	cat $< | python2 $(word 2, $^) > $@
 
 # Pastes GloVe predictors to existing identically tokenized tokmeasures file
 %.glove.tokmeasures: $$(basename $$(basename %)).tokmeasures $$(word 1, $$(subst ., ,%)).gigaword$$(suffix $$(basename $$*))$$(suffix $$*).glove.tokmeasures
