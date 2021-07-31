@@ -196,6 +196,27 @@ genmodel/dundee.linetoks: $$(foreach sect,$$(DUNDEESECTS),genmodel/dundee$$(sect
 %dundee.lineitems: %dundee.linetoks $(RT-SCRIPTS)/toks2sents.py %dundee.textdata
 	cat <(echo word) <(cat $(word 3, $^) | awk '!/^WORD/')  |  python2 $(word 2, $^) $< -e latin-1  > $@
 
+
+genmodel/dundee%.senttoks:  $(RESOURCE-DUNDEE)/srcmodel/dundee.text.headers  $(DUNDEEDIR)/tx%wrdp.dat  $(DUNDEE-SCRIPTS)/findBreaks.py  $(GENERAL-SCRIPTS)/convert_latin-1.py   $(TOKENIZERDIR)/ptb_tokenizer.sed
+	cat $(word 1,$^) $(word 2,$^)  |  perl -pe 's/ +/ /g'  |  python2 $(word 3,$^)  \
+  | perl -pe "s/\(/-LRB- /g;s/\)/ -RRB-/g;s/  / /g;s/^ //"  |  python3 $(word 4,$^)  \
+	| sed 's/garbage\/sentimental/garbage \/ sentimental/g' \
+	| sed 's/Oxford-educated/Oxford- educated/g' \
+	| sed 's/4'\''s/4 '\''s/g' \
+	| sed 's/'\''s-find-a-cure-fast/'\''s- find- a- cure- fast/g' \
+	| sed 's/\([Aa]\)lcohol-related/\1lcohol- related/g' \
+	| sed 's/and-mouth/and- mouth/g' \
+	| sed 's/fork-lift/fork- lift/g' \
+	| sed 's/in-the-box/in- the- box/g' \
+	| sed 's/potato-and/potato- and/g' \
+	| sed 's/Faction\/Dogs/Faction \/ Dogs/g' \
+	| sed 's/three- year-old/three- year- old/g' \
+  | perl -pe "s/(\W)'(\w)/\1' \2/g"  |  $(word 5,$^)  |  perl -pe "s/can not/cannot/g;s/lock- ' em-up/lock-'em-up/g;s/ d ' / d'/g;s/([^ ])\. '/\1 \. '/g;s/([^ ])\. -/\1 \. -/g;s/''/' '/g;s/Qa ' ida/Qa'ida/g;s/-LSB- /-LSB-/g;s/ -RSB-/-RSB-/g;s/4 ' s/4 's/g;s/let's/let 's/g;s/ O ' / O'/g;s/o ' clock/o'clock/g;s/\bY ' know/Y' know/g;s/\.\. \./.../g"  |  sed "s/^' */' /g;s/$$ /$$/g"  |  sed 's/! ARTICLE/!ARTICLE/'  |  sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g'  |  perl -pe 's/ +$$//g'  >  $@
+genmodel/dundee.senttoks:  $$(foreach sect,$$(DUNDEESECTS),genmodel/dundee$$(sect).senttoks) | genmodel
+	cat $^ > $@
+%dundee.casp.notoks.senttrees:  $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees
+	cat $^  >  $@
+
 ################################################################################
 #
 #  Recipes for gold-standard annotated dundee corpus
@@ -216,3 +237,6 @@ genmodel/dundee.delim.linetoks: $(LTREES-SCRIPTS)/linetrees2linetoks.py genmodel
 
 %.goldrules: %.linetrees $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(GENERAL-SCRIPTS)/trees2rules.pl
 	cat $(word 1, $^) | perl $(word 2, $^) | perl $(word 3, $^) | sort | uniq -c > $@
+
+
+
