@@ -77,8 +77,16 @@ endif
 %.preds.conll: $(CONLL-SCRIPTS)/tokdecs2conllcoref.py %.tokdecs 
 	python3 $< $(word 2, $^) > $@
 
-%coreval: $(CONLL-SCRIPTS)/manual_coref_evaluation.py \
-             genmodel/$$(subst -,.,$$(basename $$(basename $$*)))$$(subst _,.,$$(suffix $$*))key.conll \
-             %preds.conll \
-             %tokdecs
+# %coreval: $(CONLL-SCRIPTS)/manual_coref_evaluation.py \
+#              genmodel/$$(subst -,.,$$(basename $$(basename $$*)))$$(subst _,.,$$(suffix $$*))key.conll \
+#              %preds.conll \
+#              %tokdecs
+# 	python $^ > $@
+
+%.coreval: $(CONLL-SCRIPTS)/manual_coref_evaluation.py \
+             genmodel/$$(subst -,.,$$(basename $$(basename $$*))).key.conll \
+             $$(dir %)$$(subst -,.,$$(basename $$(basename $$*)))$$(suffix $$*).preds.conll \
+             $$(dir %)$$(subst -,.,$$(basename $$(basename $$*)))$$(suffix $$*).tokdecs
 	python $^ > $@
+
+
