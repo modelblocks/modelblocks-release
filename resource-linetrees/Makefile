@@ -179,12 +179,12 @@ bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt 
 %.conll: %.linetrees $(LTREES-SCRIPTS)/get_pos.py
 	cat $< | python $(word 2, $^) -i > $@
 
-#### use only the first/last N trees
-%first.linetoks:  $$(basename %).linetoks
+#### use only the first/last N sents
+%first.senttoks:  $$(basename %).senttoks
 	head -$(subst .,,$(suffix $*)) $<  >  $@
-%onward.linetoks: $$(basename %).linetoks
+%onward.senttoks: $$(basename %).senttoks
 	tail -n +$(subst .,,$(suffix $*)) $<  >  $@
-%last.linetoks:  $$(basename %).linetoks
+%last.senttoks:  $$(basename %).senttoks
 	tail -$(subst .,,$(suffix $*)) $<  >  $@
 #### (DEPRECATED) use only the first/last N trees
 %first.sents:  $$(basename %).sents
@@ -195,7 +195,7 @@ bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt 
 	tail -$(subst .,,$(suffix $*)) $<  >  $@
 
 #### rules
-%.rules: %.linetrees  $(LTREES-SCRIPTS)/trees2rules.pl
+%.rules: %.senttrees  $(LTREES-SCRIPTS)/trees2rules.pl
 	cat $<  |  perl $(word 2,$^)  >  $@
 #	cat $< | sed 's/:/-COLON-/g;s/=/-EQUALS-/g' |  perl $(word 2,$^)  >  $@
 
@@ -204,6 +204,13 @@ bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt 
 
 %.head.model: %.model $(LTREES-SCRIPTS)/rules2headmodel.py
 	cat $< | python3 $(word 2, $^) > $@
+
+
+################################################################################
+#
+#  Items for parse evaluation
+#
+################################################################################    
 
 ## TO SPEC
 .PRECIOUS: %syneval
@@ -310,6 +317,13 @@ $$(subst ..,.,$$(subst -,.,$$(subst .,,$$(suffix $$(basename %))))$$(subst -,.,$
 $$(subst ..,.,$$(subst -,.,$$(subst .,, $$(suffix $$(basename %))))$$(subst -,.,$$(suffix $$*)).linetrees) $$(RESOURCE-LTREES)/scripts/filter_reannot_fails.py | genmodel
 	$< -p $(word 2, $^) $(word 3, $^) <(cat $(word 4, $^) | python $(word 5, $^) $(word 3, $^)) > $@
 # $(wordlist 2,4, $^) > $@
+
+
+################################################################################
+#
+#  Items for significance testing
+#
+################################################################################    
 
 #### signif testing
 %.bootstrapsignif:  $(LTREES-SCRIPTS)/compare.pl \

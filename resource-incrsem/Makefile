@@ -244,17 +244,6 @@ scripts/%.ini:  $(INCRSEM-SCRIPTS)/%.ini  |  scripts
 	cat $(word 1,$^)  |  grep -v '()'  |  python $(word 2,$^)  >  $@
 
 ## convert linetrees to tokdecs
-define TargetBlock
-Tokdecs:
-  blocktitle: Tokdecs (from linetrees)
-  targetsuffix: .fromlinetrees.tokdeps
-  blockseq:
-  - blocktype: Corpus
-  - blocktype: TreeOpt
-    kwargs:
-      outerdelim: .
-      innerdelim: .
-endef
 %.fromlinetrees.tokdecs: %.linetrees  $(INCRSEM-SCRIPTS)/linetrees2tokdecs.py
 	cat $(word 1, $^) | python $(word 2,$^) > $@
 
@@ -661,27 +650,6 @@ FmodelLabelIndexUnked.pkl: $(INCRSEM-SCRIPTS)/getFlabelIndex.py genmodel/simplew
 %semproc-py-parsed.output:  $(INCRSEM-SCRIPTS)/semproc.py  $$(basename %).linetoks  genmodel/$$(basename $$(subst -,.,$$(subst .,,$$(suffix $$*)))).semprocmodel
 	cat $(word 2,$^)  |  python $(word 1,$^) $(word 3,$^)  >  $@
 
-define ParamVal
-Synproc:
-  kernel: Parser
-  text: Incremental syntactic processing parser (synproc)
-  value: synproc
-endef
-define TargetBlock
-ParseTokdecs:
-  blocktitle: Parse (Tokdecs)
-  targetsuffix: _parsed.tokdecs
-  family: Parse
-  blockseq:
-  - blocktype: Corpus
-    kwargs:
-      instancename: Test
-  - blocktype: String
-    value: .
-  - blocktype: ParseParams
-    kwargs:
-      innerdelim: '-'
-endef
 
 .PRECIOUS: %parsed.tokdecs
 %parsed.tokdecs:  bin/$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$(subst +,-,$$(subst -,.,$$*)))))) \

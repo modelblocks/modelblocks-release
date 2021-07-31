@@ -116,23 +116,23 @@ genmodel/naturalstories.futureMetrics.params: | genmodel
 genmodel/naturalstories.rm_unfix_items.params: | genmodel
 	echo '-f fdur' > $@
 
-%/naturalstories.penn.linetrees: $$(DEP-NATSTORIES) $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(NATSTORDIR)/parses/penn/all-parses.txt.penn \
-$(CONFIGDIR)/user-naturalstories-directory.txt | %
-	cat $(word 2, $^) | perl $(word 1, $^) > $@
-
-genmodel/naturalstories.linetoks: genmodel/naturalstories.penn.linetrees $(NATSTORIES-SCRIPTS)/penn2sents.py | genmodel
-	cat $< | python2 $(word 2, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' > $@
-
-%/naturalstories.delim.linetoks: $$(DEP-TOKENIZER) genmodel/naturalstories.delim.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed | %
-	cat $< | $(word 2, $^) | sed 's/! ARTICLE/!ARTICLE/' | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' | perl -pe 's/ +$$//g' > $@
-
-%naturalstories.items: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.tsv $(RT-SCRIPTS)/get_rttokenization.py \
-$(CONFIGDIR)/user-naturalstories-directory.txt
-	cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word, 2, $^) item zone > $@
-
-%/naturalstories.lineitems: $$(DEP-NATSTORIES) %/naturalstories.linetoks $(RT-SCRIPTS)/toks2sents.py \
-$(NATSTORDIR)/naturalstories_RTS/all_stories.tok $(CONFIGDIR)/user-naturalstories-directory.txt | %
-	cat $(word 3, $^) | sed 's/\t/ /g;s/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' | python2 $(word 2, $^) $(word 1, $^) > $@
+# %/naturalstories.penn.linetrees: $$(DEP-NATSTORIES) $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(NATSTORDIR)/parses/penn/all-parses.txt.penn \
+# $(CONFIGDIR)/user-naturalstories-directory.txt | %
+# 	cat $(word 2, $^) | perl $(word 1, $^) > $@
+# 
+# genmodel/naturalstories.linetoks: genmodel/naturalstories.penn.linetrees $(NATSTORIES-SCRIPTS)/penn2sents.py | genmodel
+# 	cat $< | python2 $(word 2, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' > $@
+# 
+# %/naturalstories.delim.linetoks: $$(DEP-TOKENIZER) genmodel/naturalstories.delim.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed | %
+# 	cat $< | $(word 2, $^) | sed 's/! ARTICLE/!ARTICLE/' | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' | perl -pe 's/ +$$//g' > $@
+# 
+# %naturalstories.items: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.tsv $(RT-SCRIPTS)/get_rttokenization.py \
+# $(CONFIGDIR)/user-naturalstories-directory.txt
+# 	cat $(word 1, $^) | perl -ne 's/,(?=[A-Z]|[a-z]|[0-9])/ /g;print;' | python $(word, 2, $^) item zone > $@
+# 
+# %/naturalstories.lineitems: $$(DEP-NATSTORIES) %/naturalstories.linetoks $(RT-SCRIPTS)/toks2sents.py \
+# $(NATSTORDIR)/naturalstories_RTS/all_stories.tok $(CONFIGDIR)/user-naturalstories-directory.txt | %
+# 	cat $(word 3, $^) | sed 's/\t/ /g;s/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' | python2 $(word 2, $^) $(word 1, $^) > $@
  
 %/naturalstories.itemmeasures: $$(DEP-NATSTORIES) %/naturalstories.sentitems $(NATSTORIES-SCRIPTS)/docids_by_item.py $(NATSTORDIR)/naturalstories_RTS/all_stories.tok
 	cat $(word 1, $^)  |  grep -v '!ARTICLE'  |  python $(word 2, $^) $(word 3, $^)  >  $@
@@ -159,7 +159,14 @@ $(RT-SCRIPTS)/rename_cols.py $(NATSTORIES-SCRIPTS)/merge_natstor.py %naturalstor
 $(CDR-SCRIPTS)/compute_timestamps_from_RT.py $(CONFIGDIR)/user-naturalstories-directory.txt
 	python $(word 3, $^) <(cat $(word 1, $^) | sed 's/\t/ /g;s/peaked/peeked/g;' | python $(word 2, $^) WorkerId subject RT fdur) \
 	$(word 4, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;' | python $(word 5, $^) > $@
+
   
+################################################################################
+#
+#  Sents files
+#
+################################################################################    
+
 #%naturalstories.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.linetrees %naturalstories.linetoks
 #	python2 $^ > $@
 #
@@ -172,10 +179,20 @@ $(CDR-SCRIPTS)/compute_timestamps_from_RT.py $(CONFIGDIR)/user-naturalstories-di
 #genmodel/naturalstories.senttoks: genmodel/naturalstories.penn.linetrees $(NATSTORIES-SCRIPTS)/penn2sents.py | genmodel
 #	cat $< | python2 $(word 2, $^) | sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;' > $@
 
+
 %naturalstories.sentitems:  $(NATSTORDIR)/naturalstories_RTS/all_stories.tok  $(NATSTORIES-SCRIPTS)/tok2sentitems.py  |  genmodel
 	cat $<  |  python2 $(word 2, $^)  >  $@
+
 %naturalstories.senttoks:  %naturalstories.sentitems  $(TOKENIZERDIR)/ptb_tokenizer.sed  |  genmodel
 	cat $<  |  $(word 2, $^)  |  sed "s/^' */' /;s/'Ex/' Ex/g;s/o ' clock/o'clock/g;s/gon na/gonna/g"  |  sed 's/! ARTICLE/!ARTICLE/'  |  sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;'  |  perl -pe 's/ +$$//g'  >  $@
+
+
+################################################################################
+#
+#  Recipes for gold-standard annotated dundee corpus
+#
+################################################################################
+
 %naturalstories.casp.notoks.senttrees:  $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.coref.linetrees
 	cat $^  >  $@
 

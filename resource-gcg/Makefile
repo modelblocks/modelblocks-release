@@ -67,57 +67,11 @@ endif
 %.linetrees.validation:  %.linetrees  $(GCG-SCRIPTS)/validate-linetrees.py  $(GCG-SCRIPTS)/validate-linetrees.d
 	cat $<  |  python $(word 2,$^)  >  $@
 
-define ParamVal
-GCG:
-  cascade:
-  - GCGSpec
-  - Decoupled
-  descr: ''
-  kernel: Grammar
-  text: Generalized Categorial Grammar (GCG)
-  value: gcg
-GCG13:
-  kernel: GCGSpec
-  text: 2013 spec
-  value: '13'
-GCG14:
-  kernel: GCGSpec
-  text: 2014 spec
-  value: '14'
-GCG15:
-  kernel: GCGSpec
-  text: 2015 spec
-  value: '15'
-GCG16:
-  kernel: GCGSpec
-  text: 2016 spec
-  value: '16'
-endef
-define KernelBlock
-GCGSpec:
-  blocktitle: GCG
-  paramtype: Dropdown
-  nodelimiter: true
-endef
 ### THIS HAPPENS ALL THE TIME; JUST CREATE MAKE ITEM IF YOU NEED IT
 # .PRECIOUS: %.linetrees
 #%.linetrees:  $(GCG-SCRIPTS)/make-trees-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).linetrees
 #	cat $(word 2,$^)  |  perl $(word 1,$^)  >  $@
   
-#### gcg reannotation
-define ParamVal
-Decoupled:
-  kernel:
-  -  TreeOpt
-  -  Decoupled
-  text: Non-nommed trees
-  value: decoupled
-endef
-define KernelBlock
-Decoupled:
-  blocktitle: Decoupled
-  paramtype: Boolean
-endef
 
 # obsolete, use nommed if desired
 # %.decoupled.linetrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl $$(basename %).fixed.linetrees $(LTREES-SCRIPTS)/killUnaries.pl

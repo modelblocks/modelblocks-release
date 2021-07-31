@@ -168,34 +168,33 @@ genmodel/dundee.%.evmeasures: $(RT-SCRIPTS)/concat_tables.py $(foreach subj, $(D
 
 ################################################################################
 #
-#  Dundee sents files
+#  Sents files
 #
 ################################################################################    
 
-genmodel/dundee%.linetoks: $$(DEP-DUNDEE) $(DUNDEEDIR)/tx$$*wrdp.dat $(DUNDEE-SCRIPTS)/builddundeecorpus.py \
-$(GENERAL-SCRIPTS)/convert_latin-1.py $(CONFIGDIR)/user-dundee-directory.txt
-	cat $(word 1, $^) | python2 $(word 2,$^) -e latin-1 > $@.raw
-	cat $@.raw | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" | python3 $(word 3,$^) | \
-	sed 's/garbage\/sentimental/garbage \/ sentimental/g' \
-	| sed 's/Oxford-educated/Oxford- educated/g' \
-	| sed 's/4'\''s/4 '\''s/g' \
-	| sed 's/'\''s-find-a-cure-fast/'\''s- find- a- cure- fast/g' \
-	| sed 's/\([Aa]\)lcohol-related/\1lcohol- related/g' \
-	| sed 's/and-mouth/and- mouth/g' \
-	| sed 's/fork-lift/fork- lift/g' \
-	| sed 's/in-the-box/in- the- box/g' \
-	| sed 's/potato-and/potato- and/g' \
-	| sed 's/Faction\/Dogs/Faction \/ Dogs/g' \
-	| sed 's/three- year-old/three- year- old/g' \
-	> $@
-	rm -f $@.raw
-
-genmodel/dundee.linetoks: $$(foreach sect,$$(DUNDEESECTS),genmodel/dundee$$(sect).linetoks) | genmodel
-	cat $^ > $@
-
-%dundee.lineitems: %dundee.linetoks $(RT-SCRIPTS)/toks2sents.py %dundee.textdata
-	cat <(echo word) <(cat $(word 3, $^) | awk '!/^WORD/')  |  python2 $(word 2, $^) $< -e latin-1  > $@
-
+# genmodel/dundee%.linetoks: $$(DEP-DUNDEE) $(DUNDEEDIR)/tx$$*wrdp.dat $(DUNDEE-SCRIPTS)/builddundeecorpus.py \
+# $(GENERAL-SCRIPTS)/convert_latin-1.py $(CONFIGDIR)/user-dundee-directory.txt
+# 	cat $(word 1, $^) | python2 $(word 2,$^) -e latin-1 > $@.raw
+# 	cat $@.raw | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;s/^ //" | python3 $(word 3,$^) | \
+# 	sed 's/garbage\/sentimental/garbage \/ sentimental/g' \
+# 	| sed 's/Oxford-educated/Oxford- educated/g' \
+# 	| sed 's/4'\''s/4 '\''s/g' \
+# 	| sed 's/'\''s-find-a-cure-fast/'\''s- find- a- cure- fast/g' \
+# 	| sed 's/\([Aa]\)lcohol-related/\1lcohol- related/g' \
+# 	| sed 's/and-mouth/and- mouth/g' \
+# 	| sed 's/fork-lift/fork- lift/g' \
+# 	| sed 's/in-the-box/in- the- box/g' \
+# 	| sed 's/potato-and/potato- and/g' \
+# 	| sed 's/Faction\/Dogs/Faction \/ Dogs/g' \
+# 	| sed 's/three- year-old/three- year- old/g' \
+# 	> $@
+# 	rm -f $@.raw
+# 
+# genmodel/dundee.linetoks: $$(foreach sect,$$(DUNDEESECTS),genmodel/dundee$$(sect).linetoks) | genmodel
+# 	cat $^ > $@
+# 
+# %dundee.lineitems: %dundee.linetoks $(RT-SCRIPTS)/toks2sents.py %dundee.textdata
+# 	cat <(echo word) <(cat $(word 3, $^) | awk '!/^WORD/')  |  python2 $(word 2, $^) $< -e latin-1  > $@
 
 genmodel/dundee%.sentitems:  $(RESOURCE-DUNDEE)/srcmodel/dundee.text.headers  $(DUNDEEDIR)/tx%wrdp.dat  $(DUNDEE-SCRIPTS)/findBreaks.py  $(GENERAL-SCRIPTS)/convert_latin-1.py
 	cat $(word 1,$^) $(word 2,$^)  |  perl -pe 's/ +/ /g'  |  python2 $(word 3,$^)  \
@@ -213,10 +212,9 @@ genmodel/dundee%.sentitems:  $(RESOURCE-DUNDEE)/srcmodel/dundee.text.headers  $(
 	| sed 's/three- year-old/three- year- old/g' > $@
 %dundee.sentitems:  $$(foreach sect,$$(DUNDEESECTS),%dundee$$(sect).sentitems) | genmodel
 	cat $^  >  $@
+
 %dundee.senttoks:  %dundee.sentitems  $(TOKENIZERDIR)/ptb_tokenizer.sed
 	cat $<  |  perl -pe "s/(\W)'(\w)/\1' \2/g"  |  $(word 2,$^)  |  perl -pe "s/can not/cannot/g;s/lock- ' em-up/lock-'em-up/g;s/ d ' / d'/g;s/([^ ])\. '/\1 \. '/g;s/([^ ])\. -/\1 \. -/g;s/''/' '/g;s/Qa ' ida/Qa'ida/g;s/-LSB- /-LSB-/g;s/ -RSB-/-RSB-/g;s/4 ' s/4 's/g;s/let's/let 's/g;s/ O ' / O'/g;s/o ' clock/o'clock/g;s/\bY ' know/Y' know/g;s/\.\. \./.../g"  |  sed "s/^' */' /g;s/$$ /$$/g"  |  sed 's/! ARTICLE/!ARTICLE/'  |  sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g'  |  perl -pe 's/ +$$//g'  >  $@
-%dundee.casp.notoks.senttrees:  $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees
-	cat $^  >  $@
 
 ################################################################################
 #
@@ -224,20 +222,22 @@ genmodel/dundee%.sentitems:  $(RESOURCE-DUNDEE)/srcmodel/dundee.text.headers  $(
 #
 ################################################################################
 
-%dundee.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees %dundee.linetoks
-	python $^ | awk 'NF' | awk '!/ARTICLE/' > $@
+# %dundee.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees %dundee.linetoks
+# 	python $^ | awk 'NF' | awk '!/ARTICLE/' > $@
+# 
+# %dundee.delim.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees %dundee.linetoks
+# 	python $^ | awk 'NF' > $@
+# 
+# genmodel/dundee.delim.linetoks: $(LTREES-SCRIPTS)/linetrees2linetoks.py genmodel/dundee.delim.gold.linetrees
+# 	python $^ > $@
+# 
+# %dundee.edit.editabletrees: $$(dir %)dundee.gold.linetrees bin/indent
+# 	cat $(word 1, $^) | bin/indent > $@
+# 
+# %.goldrules: %.linetrees $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(GENERAL-SCRIPTS)/trees2rules.pl
+# 	cat $(word 1, $^) | perl $(word 2, $^) | perl $(word 3, $^) | sort | uniq -c > $@
 
-%dundee.delim.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees %dundee.linetoks
-	python $^ | awk 'NF' > $@
-
-genmodel/dundee.delim.linetoks: $(LTREES-SCRIPTS)/linetrees2linetoks.py genmodel/dundee.delim.gold.linetrees
-	python $^ > $@
-
-%dundee.edit.editabletrees: $$(dir %)dundee.gold.linetrees bin/indent
-	cat $(word 1, $^) | bin/indent > $@
-
-%.goldrules: %.linetrees $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(GENERAL-SCRIPTS)/trees2rules.pl
-	cat $(word 1, $^) | perl $(word 2, $^) | perl $(word 3, $^) | sort | uniq -c > $@
-
+%dundee.casp.notoks.senttrees:  $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees
+	cat $^  >  $@
 
 

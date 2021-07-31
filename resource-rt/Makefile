@@ -268,21 +268,6 @@ endef
 #
 ################################################################################
 
-define KernelBlock
-RTCorpus:
-  blocktitle: Reading Time Corpus
-  instance_of: Corpus
-  paramtype: Dropdown
-ETCorpus:
-  blocktitle: Eye-Tracking Corpus
-  instance_of: RTCorpus
-  paramtype: Dropdown
-SPRCorpus:
-  blocktitle: SPR Corpus
-  instance_of: RTCorpus
-  paramtype: Dropdown
-endef
-
 ## copy partition ini into project genmodel directory
 scripts/%.lmerform: $(RT-SCRIPTS)/%.lmerform |  scripts
 	cp $< $@
@@ -408,30 +393,6 @@ $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.item
 %.docids.itemmeasures: %.itemmeasures $$(word 1,$$(subst ., ,%)).docids.itemmeasures $(RT-SCRIPTS)/merge_tables.py
 	python $(word 3, $^) $(word 1, $^) $(word 2, $^) word sentpos sentid > $@
 
-
-define CompositeBlock
-RTDataParams:
-  blockseq:
-  - blocktype: RTCorpus
-  - blocktype: ParseParams
-    kwargs:
-      innerdelim: '-'
-      instancename: Surprisal Metrics
-  - blocktype: NgramParams
-    kwargs:
-      innerdelim: '-'
-  blocktitle: Reading Time Data Parameters
-endef
-define TargetBlock
-RTCoreEvmeasures:
-  blocktitle: Reading Time Data
-  targetsuffix: .core.evmeasures
-  family: Event Data
-  blockseq:
-  - blocktype: RTDataParams
-    kwargs:
-      innerdelim: .
-endef
 
 %.itemmeasures: %.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
 	cat $<  |  grep -v '!ARTICLE'  |  python $(word 2, $^) >  $@
