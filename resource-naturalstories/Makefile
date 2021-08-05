@@ -181,10 +181,10 @@ $(CDR-SCRIPTS)/compute_timestamps_from_RT.py $(CONFIGDIR)/user-naturalstories-di
 
 
 %naturalstories.sentitems:  $(NATSTORDIR)/naturalstories_RTS/all_stories.tok  $(NATSTORIES-SCRIPTS)/tok2sentitems.py  |  genmodel
-	cat $<  |  python2 $(word 2, $^)  >  $@
+	cat $<  |  python2 $(word 2, $^)  |  sed 's/peaked/peeked/g'  >  $@
 
 %naturalstories.senttoks:  %naturalstories.sentitems  $(TOKENIZERDIR)/ptb_tokenizer.sed  |  genmodel
-	cat $<  |  $(word 2, $^)  |  sed "s/^' */' /;s/'Ex/' Ex/g;s/o ' clock/o'clock/g;s/gon na/gonna/g"  |  sed 's/! ARTICLE/!ARTICLE/'  |  sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g;s/peaked/peeked/g;'  |  perl -pe 's/ +$$//g'  >  $@
+	cat $<  |  $(word 2, $^)  |  sed "s/^' */' /;s/'Ex/' Ex/g;s/o ' clock/o'clock/g;s/gon na/gonna/g"  |  sed 's/! ARTICLE/!ARTICLE/'  |  perl -pe 's/ +$$//g'  >  $@
 
 
 ################################################################################

@@ -1,4 +1,4 @@
-fdurSP
+log(fdurSP)
 z.(sentpos) + z.(wlen) + z.(wdelta) + z.(prevwasfix) 
 z.(sentpos) + z.(wlen) + z.(wdelta) + z.(prevwasfix)
 (1 | word) + (1 | sentid)
