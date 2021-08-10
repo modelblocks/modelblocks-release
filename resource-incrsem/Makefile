@@ -386,10 +386,10 @@ scripts/%.ini:  $(INCRSEM-SCRIPTS)/%.ini  |  scripts
 	cat $<  |  $(word 2,$^) $(wordlist 2,99,$(subst _, ,$(suffix $*))) $(word 3,$^)  >  $@
 
 ## Create training example file from training corpus (% contains decpar flags)...
-.PRECIOUS: %_mlpdecpars
-%_mlpdecpars : $$(basename %).senttrees  \
-               $(BIN)/linetrees2mlpsemprocdecpars  \
-               $$(basename %).lemmacounts
+.PRECIOUS: %mlpdecpars
+%mlpdecpars : $$(basename %).senttrees  \
+              $(BIN)/linetrees2mlpsemprocdecpars  \
+              $$(basename %).lemmacounts
 	cat $<  |  $(word 2,$^) $(wordlist 1,99,$(subst _, ,$(subst .,,$(suffix $*)))) $(word 3,$^)  >  $@
 ## remove non-coref pronouns from F predictors (for ontonotes)...
 .PRECIOUS: %_ontocorfix_mlpdecpars

@@ -354,6 +354,10 @@ $(RT-SCRIPTS)/filter_cols.py
 %.syncat.tokmeasures: %.casp.nol4train.senttrees $(RT-SCRIPTS)/getSyncat.py
 	cat $<  |  grep -v '!ARTICLE'  |  python $(word 2, $^)  >  $@
 
+# Returns syntactic categories from gold "nol4train" linetrees
+%.semop.tokmeasures: %.casp.-c0_mlpdecpars $(RT-SCRIPTS)/getSemOp.py
+	cat $<  |  python $(word 2, $^)  >  $@
+
 # Pastes syntactic categories to existing identically tokenized tokmeasures file
 %.syncat.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).syncat.tokmeasures
 	cat $< | paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) > $@
