@@ -62,7 +62,7 @@ uint FEATCONFIG = 0;
 #else
 #include <SemProcModels_sparse.hpp>
 #endif
-//#include <Beam.hpp>
+#include <Trellis.hpp>
 
 int COREF_WINDOW = INT_MAX;
 bool ABLATE_UNARY = false;
@@ -80,74 +80,13 @@ const W wEmpty = W("");
 
 ////////////////////////////////////////////////////////////////////////////////
 
-uint BEAM_WIDTH      = 1000;
+// BEAM_WIDTH is declared in include/Trellis.hpp
+//uint BEAM_WIDTH      = 1000;
 uint VERBOSE         = 0;
 uint OUTPUT_MEASURES = true;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class Trellis : public vector<Beam<HiddState>> {
-  public:
-    Trellis ( ) : vector<Beam<HiddState>>() { reserve(100); }
-    Beam<HiddState>& operator[] ( uint i ) { if ( i==size() ) emplace_back(BEAM_WIDTH); return vector<Beam<HiddState>>::operator[](i); }
-    void setMostLikelySequence ( DelimitedList<psX,BeamElement<HiddState>,psLine,psX>& lbe, const JModel& jm ) {
-      static StoreState ssLongFail( cFail, cFail );
-//      static StoreState ssLongFail;  ssLongFail.emplace( ssLongFail.end() );  ssLongFail.back().apex().emplace_back(hvBot,cFail,S_A);  ssLongFail.back().base().emplace_back(hvBot,cFail,S_B);
-      // Add top of last timestep beam to front of mls list...
-      lbe.clear(); if( back().size()>0 ) lbe.push_front( *back().begin() );
-      // Follow backpointers from trellis and add each to front of mls list...
-      if( lbe.size()>0 ) for( int t=size()-2; t>=0; t-- ) lbe.push_front( lbe.front().getBack() );
-      // Add dummy element at end...
-      if( lbe.size()>0 ) lbe.emplace_back( BeamElement<HiddState>() );
-      cerr << "lbe.size(): " << lbe.size() << endl;
-      // If parse fails...
-      if( lbe.size()==0 ) {
-        cerr << "parse failed (lbe.size() = 0) " << "trellis size(): " << size() << endl;
-        // Print a right branching structure...
-        for( int t=size()-2; t>=0; t-- ) { 
-          lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 1, EVar::eNil, K::kBot, jm.getResponse1(), ssLongFail ) ) ); // fork and join
-        }
-//        cerr << "size of lbe after push_fronts: " << lbe.size() << endl;
-        lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 1, EVar::eNil, K::kBot, jm.getResponse0(), ssLongFail ) );       // front: fork no-join
-        lbe.back( ) = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 0, EVar::eNil, K::kBot, jm.getResponse1(), StoreState() ) );     // back: join no-fork
-//        cerr << "size of lbe after front and back assignments: " << lbe.size() << endl;
-        if( size()==2 ) {  //special case if single word, fork and join
-//          cerr << "assigning front of fail lbe" << endl;
-          lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 1, EVar::eNil, K::kBot, jm.getResponse1(), StoreState() ) );   // unary case: fork and join
-        }
-        // Add dummy element (not sure why this is needed)...
-        lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 0, EVar::eNil, K::kBot, jm.getResponse0(), StoreState() ) ) ); // no-fork, no-join?
-        //start experiment - next two lines switch front element to nofork,join, add additional dummy at rear
-        //TODO to revert, comment out next two, comment in pushfront above
-        lbe.emplace_back( BeamElement<HiddState>() );
-        //end epxeriment
-
-//        cerr << "size of lbe after dummy push_front: " << lbe.size() << endl;
-        cerr<<"parse failed"<<endl;
-        // does lbe here consist of a single sentence or of the whole article?
-      }
-      // For each element of MLE after first dummy element...
-      //for ( auto& be : lbe ) { cerr << "beam element hidd: " << be.getHidd() << endl; } //TODO confirm includes all words, count initial/final dummies
-      int u=-1; for( auto& be : lbe ) if( ++u>0 and u<int(size()) ) {
-        // Calc surprisal as diff in exp of beam totals of successive elements, minus constant...
-        double probPrevTot = 0.0;
-        double probCurrTot = 0.0;
-        for( auto& beP : at(u-1) ) probPrevTot += exp( beP.getProb() - at(u-1).begin()->getProb() );
-        for( auto& beC : at(u  ) ) probCurrTot += exp( beC.getProb() - at(u-1).begin()->getProb() ); 
-        be.setProb() = log2(probPrevTot) - log2(probCurrTot);     // store surp into prob field of beam item
-      }
-      //    return lbe;
-    }
-};
-
-/*
-   class StreamTrellis : public vector<Beam> {
-   public:
-   StreamTrellis ( ) : vector<Beam>(2) { }       // previous and next beam.
-   Beam&       operator[] ( uint i )       { return vector<Beam>::operator[](i%2); }
-   const Beam& operator[] ( uint i ) const { return vector<Beam>::operator[](i%2); }
-   };
-   */
 
 const BeamElement<HiddState>* getNextAntecedent (const BeamElement<HiddState>* antPtr) {
     //updates antPtr to point to next antecedent back, using i index to count back that many words/timesteps
@@ -333,9 +272,10 @@ int main ( int nArgs, char* argv[] ) {
   cerr<<"Models ready."<<endl;
 
 #ifdef TRANSFORMER
-  // sanity test
-  cerr << "F sanity test:\n" << endl;
-  modF.testCalcResponses();
+  //cerr << "F sanity test:\n" << endl;
+  //modF.testCalcResponses();
+  //cerr << "J sanity test:\n" << endl;
+  //modJ.testCalcResponses();
 #endif
 
   mutex mutexMLSList;
@@ -633,8 +573,8 @@ int main ( int nArgs, char* argv[] ) {
                         if( VERBOSE>1 ) cout << "       qTermPhase=" << qTermPhase << endl;
 
 #ifdef TRANSFORMER
-                        JPredictorVec ljpredictors( be_tdec1 );
-                        arma::vec jresponses = modJ.calcResponses( ljpredictors, word_index-1 );
+                        JPredictorVec ljpredictors( be_tdec1, f, aLchild );
+                        arma::vec jresponses = modJ.calcResponses( ljpredictors, word_index-1, 0 );
 #else
                         JPredictorVec ljpredictors( modJ, f, e_p_t, aLchild, qTermPhase );  // q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
 //                        if( VERBOSE>1 ) cout << "        j predictors: " << pair<const JModel&,const JPredictorVec&>( modJ, ljpredictors ) << endl;
