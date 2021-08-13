@@ -36,12 +36,14 @@ def _initialize_jinfo_list(infile):
 
         jinfo = JInfo()
         jinfo.depth = int(depth)
-        jinfo.cat_anc = cat_anc
-        jinfo.hv_anc = extract_first_kvec(hv_anc)
-        jinfo.hv_filler = extract_first_kvec(hv_filler)
-        jinfo.cat_lc = cat_lc
-        jinfo.hv_lc = extract_first_kvec(hv_lc)
-        jinfo.jdec = jdec
+        # "raw" members are strings/lists of strings that haven't been
+        # mapped to IDs yet
+        jinfo.raw_cat_anc = cat_anc
+        jinfo.raw_hv_anc = extract_first_kvec(hv_anc)
+        jinfo.raw_hv_filler = extract_first_kvec(hv_filler)
+        jinfo.raw_cat_lc = cat_lc
+        jinfo.raw_hv_lc = extract_first_kvec(hv_lc)
+        jinfo.raw_jdec = jdec
         curr_jinfo.append(jinfo)
 
     per_sentence_jinfo.append(curr_jinfo)
@@ -62,12 +64,12 @@ def _map_jinfo_list_to_ix(per_sentence_jinfo, cat_anc_to_ix, hv_anc_to_ix,
         new_sentence_jinfo = list()
         for jinfo in sentence_jinfo:
             try:
-                jinfo.cat_anc = cat_anc_to_ix[jinfo.cat_anc]
-                jinfo.hv_anc = hvecIxReplace(jinfo.hv_anc, hv_anc_to_ix)
-                jinfo.hv_filler = hvecIxReplace(jinfo.hv_filler, hv_filler_to_ix)
-                jinfo.cat_lc = cat_lc_to_ix[jinfo.cat_lc]
-                jinfo.hv_lc = hvecIxReplace(jinfo.hv_lc, hv_lc_to_ix)
-                jinfo.jdec = jdecs_to_ix[jinfo.jdec]
+                jinfo.cat_anc = cat_anc_to_ix[jinfo.raw_cat_anc]
+                jinfo.hv_anc = hvecIxReplace(jinfo.raw_hv_anc, hv_anc_to_ix)
+                jinfo.hv_filler = hvecIxReplace(jinfo.raw_hv_filler, hv_filler_to_ix)
+                jinfo.cat_lc = cat_lc_to_ix[jinfo.raw_cat_lc]
+                jinfo.hv_lc = hvecIxReplace(jinfo.raw_hv_lc, hv_lc_to_ix)
+                jinfo.jdec = jdecs_to_ix[jinfo.raw_jdec]
             except KeyError:
                 # dev may contain jdecs, cats, etc that haven't appeared in
                 # training data. Throw out any such data
@@ -89,12 +91,12 @@ def prepare_data():
     all_jdecs = set()
     for sentence in per_sentence_jinfo:
         for jinfo in sentence:
-            all_cat_anc.add(jinfo.cat_anc)
-            all_hv_anc.update(set(jinfo.hv_anc))
-            all_hv_filler.update(set(jinfo.hv_filler))
-            all_cat_lc.add(jinfo.cat_lc)
-            all_hv_lc.update(jinfo.hv_lc)
-            all_jdecs.add(jinfo.jdec)
+            all_cat_anc.add(jinfo.raw_cat_anc)
+            all_hv_anc.update(set(jinfo.raw_hv_anc))
+            all_hv_filler.update(set(jinfo.raw_hv_filler))
+            all_cat_lc.add(jinfo.raw_cat_lc)
+            all_hv_lc.update(jinfo.raw_hv_lc)
+            all_jdecs.add(jinfo.raw_jdec)
 
     cat_anc_to_ix = {cat: i for i, cat in enumerate(sorted(all_cat_anc))}
     hv_anc_to_ix = {hvec: i for i, hvec in enumerate(sorted(all_hv_anc))}
@@ -116,7 +118,7 @@ def prepare_data():
 
 def prepare_dev_data(dev_decpars, cat_anc_to_ix, hv_anc_to_ix, hv_filler_to_ix,
     cat_lc_to_ix, hv_lc_to_ix, jdecs_to_ix):
-    per_sentence_jinfo = _initialize_jinfo_list(open(dev_decpars))
+    per_sentence_jinfo = _initialize_jinfo_list(dev_decpars)
     per_sentence_jinfo = _map_jinfo_list_to_ix(
         per_sentence_jinfo, cat_anc_to_ix, hv_anc_to_ix, hv_filler_to_ix,
         cat_lc_to_ix, hv_lc_to_ix, jdecs_to_ix, dev=True
@@ -178,7 +180,7 @@ def train(j_config):
 
     if use_dev:
         dev_per_sentence_jinfo = prepare_dev_data(
-            dev_decpars, cat_anc_to_ix, hv_anc_to_ix, hv_filler_to_ix,
+            open(dev_decpars), cat_anc_to_ix, hv_anc_to_ix, hv_filler_to_ix,
             cat_lc_to_ix, hv_lc_to_ix, jdecs_to_ix
         )
         dev_seqs = get_jinfo_seqs(dev_per_sentence_jinfo, window_size)
@@ -379,7 +381,13 @@ def main(config):
             'hv_filler_vocab_size': len(hv_filler_to_ix),
             'cat_lc_vocab_size': len(cat_lc_to_ix),
             'hv_lc_vocab_size': len(hv_lc_to_ix),
-            'output_dim': len(jdecs_to_ix)
+            'output_dim': len(jdecs_to_ix),
+            'cat_anc_to_ix': cat_anc_to_ix,
+            'hv_anc_to_ix': hv_anc_to_ix,
+            'hv_filler_to_ix': hv_filler_to_ix,
+            'cat_lc_to_ix': cat_lc_to_ix,
+            'hv_lc_to_ix': hv_lc_to_ix,
+            'jdecs_to_ix': jdecs_to_ix
         }
         pickle.dump(extra_params, open(extra_params_fn, 'wb'))
 

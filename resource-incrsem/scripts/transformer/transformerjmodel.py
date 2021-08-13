@@ -5,6 +5,9 @@ import torch.nn.functional as F
 from transformerfmodel import PositionalEncoding
 from train_fmodel import eprint
 
+def print_weight(w):
+    print(round(w, 4))
+
 class TransformerJModel(nn.Module):
     def __init__(self, j_config, cat_anc_vocab_size, hv_anc_vocab_size,
                  hv_filler_vocab_size, cat_lc_vocab_size, hv_lc_vocab_size,
@@ -83,9 +86,9 @@ class TransformerJModel(nn.Module):
         return hv_sparse
 
     
-    def get_per_sequence_x(self, batch_jinfo):
+    def get_per_sequence_x(self, batch_jinfo, verbose=False):
         per_sequence_x = list()
-        for seq in batch_jinfo:
+        for i, seq in enumerate(batch_jinfo):
             if self.ablate_syn:
                 cat_anc_embed = torch.zeros(
                     [len(seq), self.syn_dim],
@@ -151,6 +154,27 @@ class TransformerJModel(nn.Module):
             if self.use_gpu:
                 depth = depth.to('cuda')
 
+            if verbose and i == 0:
+                print('J ======== first sequence\'s inputs ======== ')
+                for j, emb in enumerate(cat_anc_embed):
+                    print('\nJ ==== word {} ==== '.format(j))
+                    print('\nJ cat anc emb:')
+                    for x in emb:
+                        print_weight(x.item())
+                    print('\nJ hv anc emb:')
+                    for x in hv_anc_embed[j]:
+                        print_weight(x.item())
+                    print('\nJ hv filler emb:')
+                    for x in hv_filler_embed[j]:
+                        print_weight(x.item())
+                    print('\nJ cat lc emb:')
+                    for x in cat_lc_embed[j]:
+                        print_weight(x.item())
+                    print('\nJ hv lc emb:')
+                    for x in hv_lc_embed[j]:
+                        print_weight(x.item())
+                        
+
             seq_x = torch.cat(
                 (cat_anc_embed, hv_anc_embed, hv_filler_embed, 
                  cat_lc_embed, hv_lc_embed, depth),
@@ -186,44 +210,23 @@ class TransformerJModel(nn.Module):
         return torch.triu(mask, diagonal=1)
 
 
-    # TODO implement this
-    def forward(self, batch_jinfo):
+    def forward(self, batch_jinfo, verbose=False):
         # list of matrices, one matrix for each sequence
-        per_sequence_x = self.get_per_sequence_x(batch_jinfo)
+        per_sequence_x = self.get_per_sequence_x(batch_jinfo, verbose)
 
         # attn_input is a 3D tensor of dimensionality SxNxE
         # S: sequence length
         # N: batch size (number of sequences)
         # E: embedding size
         attn_input = self.get_padded_input_matrix(per_sequence_x)
-        return self.compute(attn_input)
+        return self.compute(attn_input, verbose)
 
 
     def compute(self, attn_input, verbose=False):
         # the same matrix is used as query, key, and value. Within the attn
         # layer this will be projected to a separate q, k, and v for each
         # attn head
-#        if verbose:
-#            print('F final word attn input:')
-#            for x in attn_input[-1, 0]:
-#                print(x.item())
-#            weights = self.state_dict()['pre_attn_fc.weight'].data.cpu().numpy()
-#            print('F pre attn fc weights shape:', weights.shape)
-#            print('F pre attn fc weights numpy:')
-#            print(weights)
-#            print('F pre attn fc weights:')
-#            # F is column-major order
-#            for x in weights.flatten('F'):
-#                print(x)
-#            print('F final word pre_attn_fc bias:')
-#            bias = self.state_dict()['pre_attn_fc.bias'].data.cpu().numpy()
-#            for x in bias:
-#                print(x)
         qkv = self.pre_attn_fc(attn_input)
-        if verbose:
-            print('F final word\'s qkv:')
-            for x in qkv[-1, 0]:
-                print(x.item())
         if self.use_positional_encoding:
             qkv = self.positional_encoding(qkv)
         # use mask to hide future inputs
@@ -231,22 +234,33 @@ class TransformerJModel(nn.Module):
         # second output is attn weights
         #attn_output, _ = self.attn(q, k, v, attn_mask=mask)
         attn_output, _ = self.attn(qkv, qkv, qkv, attn_mask=mask)
-        if verbose:
-            print('F final word\'s attn output:')
-            for x in attn_output[-1, 0]:
-                print(x.item())
         x = self.fc1(attn_output)
         x = self.dropout(x)
         x = self.relu(x)
         x = self.fc2(x)
         result = F.log_softmax(x, dim=2)
         if verbose:
+            # note: this assumes that there is only one sequence in the batch
             for i in range(result.shape[0]):
+                print('\nJ ==== word {} ===='.format(i))
+                attn_input_i = attn_input[i, 0]
+                print('J attn input')
+                for x in attn_input_i:
+                    print_weight(x.item())
+                qkv_i = qkv[i, 0]
+                print('\nJ qkv')
+                for x in qkv_i:
+                    print_weight(x.item())
+                attn_output_i = attn_output[i, 0]
+                print('\nJ attn output')
+                for x in attn_output_i:
+                    print_weight(x.item())
                 log_scores = result[i, 0]
                 scores = torch.exp(log_scores)
                 norm_scores = scores/sum(scores)
-                print('F ==== output for word {} ===='.format(i))
+                print('\nJ result')
                 for x in norm_scores:
-                    print(x.item())
+                    print_weight(x.item())
+                print()
         return result
 
