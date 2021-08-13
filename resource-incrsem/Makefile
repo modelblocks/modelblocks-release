@@ -476,18 +476,18 @@ endef
               $(INCRSEM-SCRIPTS)/relfreq.py
 	cat $<  |  grep '^B'  |  python3 $(word 2,$^)  >  $@
 
-## Create component Transformer model file from training example file (% contains decpar flags and mlp ini filename)...
+## Create component Transformer model file from training example file (% contains decpar flags and tr ini filename)...
 .PRECIOUS: %_ftrmodel
 %_ftrmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_trdecpars  \
               $(INCRSEM-SCRIPTS)/transformer/train_fmodel.py \
               scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))f.ini
 	cat $<  |  grep '^F'  |  sed 's/^F //'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
-# TODO add jtrmodel
-#.PRECIOUS: %_jmlpmodel
-#%_jmlpmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_mlpdecpars  \
-#              $(INCRSEM-SCRIPTS)/mlpdecpars2jmodel.py  \
-#              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini
-#	cat $<  |  grep '^J'  |  sed 's/^J//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
+
+.PRECIOUS: %_jtrmodel
+%_jtrmodel : $$(basename %).$$(subst .,_,$$(basename $$(subst _,.,$$(subst .,,$$(suffix $$*)))))_trdecpars  \
+              $(INCRSEM-SCRIPTS)/transformer/train_jmodel.py \
+              scripts/$$(subst .,,$$(suffix $$(subst _,., $$*)))j.ini
+	cat $<  |  grep '^J'  |  sed 's/^J//'  |  python3 -u $(word 2,$^) $(word 3,$^)  >  $@  2>  $@.log
 
 ## Create dsp model out of component models...
 .PRECIOUS: %_densemprocmodel
@@ -500,9 +500,8 @@ endef
 	cat $^  >  $@
 
 ## Create transformer model out of component models. Components other than F and J are the same as MLP
-# TODO switch jmlpmodel to jtrmodel
 .PRECIOUS: %_trsemprocmodel
-%_trsemprocmodel : %_nmlpmodel  %_ftrmodel  %_pmlpmodel  %_wmlpmodel  %_jmlpmodel  %_amlpmodel  %_bmlpmodel
+%_trsemprocmodel : %_nmlpmodel  %_ftrmodel  %_pmlpmodel  %_wmlpmodel  %_jtrmodel  %_amlpmodel  %_bmlpmodel
 	cat $^  >  $@
 
 ## Parse with: wsj02.wsj02to21-bestgcn_bestdsp_densemproc-parsed.tokdecs
