@@ -17,46 +17,49 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-const HVec getHvLchild( const BeamElement<HiddState>& be ) {
+//const HVec getHvLchild( const BeamElement<HiddState>& be ) {
+const HVec getHvLchild( const BeamElement<HiddState>* pbe ) {
   HVec hvLchild;
   // If we don't fork (i.e., lexical match decision = 1), the left child
   // is the apex of the deepest derivation fragment from the previous time
   // step
-  if ( be.getHidd().getF() == 0 ) {
-    StoreState ssPrev = be.getBack().getHidd().getStoreState();
+  if ( pbe->getHidd().getF() == 0 ) {
+    StoreState ssPrev = pbe->getBack().getHidd().getStoreState();
     hvLchild = (( ssPrev.getApex().getHVec().size() > 0 ) ? ssPrev.getApex().getHVec() : hvBot);
 
   }
   // If we do fork (i.e., lexical match decision = 0), the left child is
   // the predicted preterminal node
   else {
-    hvLchild = be.getHidd().getPrtrm().getHVec();
+    hvLchild = pbe->getHidd().getPrtrm().getHVec();
   }
   return hvLchild;
 }
 
 
-const CVar getCatLchild( const BeamElement<HiddState>& be ) {
+//const CVar getCatLchild( const BeamElement<HiddState>& be ) {
+const CVar getCatLchild( const BeamElement<HiddState>* pbe ) {
   CVar catLchild;
 
   // Same logic as getHvLchild()
-  if ( be.getHidd().getF() == 0 ) {
-    catLchild = be.getBack().getHidd().getStoreState().getBase().getCat();
+  if ( pbe->getHidd().getF() == 0 ) {
+    catLchild = pbe->getBack().getHidd().getStoreState().getApex().getCat();
   }
   else {
-    catLchild = be.getHidd().getPrtrm().getCat();
+    catLchild = pbe->getHidd().getPrtrm().getCat();
   }
   return catLchild;
 }
 
 
-const HVec getHvAncestor( const BeamElement<HiddState>& be ) {
+//const HVec getHvAncestor( const BeamElement<HiddState>& be ) {
+const HVec getHvAncestor( const BeamElement<HiddState>* pbe ) {
   HVec hvAnc;
   // If we don't fork (i.e., lexical match decision = 1), the ancestor is
   // the base of the second deepest derivation fragment from the previous
   // time step
-  if ( be.getHidd().getF() == 0 ) {
-    StoreState ssPrev = be.getBack().getHidd().getStoreState();
+  if ( pbe->getHidd().getF() == 0 ) {
+    StoreState ssPrev = pbe->getBack().getHidd().getStoreState();
     // getBase(1) retrieves the base of the second deepest derivation fragment
     hvAnc = (( ssPrev.getBase(1).getHVec().size() > 0 ) ? ssPrev.getBase(1).getHVec() : hvBot);
 
@@ -64,24 +67,38 @@ const HVec getHvAncestor( const BeamElement<HiddState>& be ) {
   // If we do fork (i.e., lexical match decision = 0), the ancestor is
   // the base of the deepest derivation fragment from the previous time step
   else {
-    StoreState ssPrev = be.getBack().getHidd().getStoreState();
+    StoreState ssPrev = pbe->getBack().getHidd().getStoreState();
     hvAnc = (( ssPrev.getBase().getHVec().size() > 0 ) ? ssPrev.getBase().getHVec() : hvBot);
   }
   return hvAnc;
 }
 
 
-const CVar getCatAncestor( const BeamElement<HiddState>& be ) {
+//const CVar getCatAncestor( const BeamElement<HiddState>& be ) {
+const CVar getCatAncestor( const BeamElement<HiddState>* pbe ) {
   CVar catAnc;
 
   // Same logic as getHvAncestor()
-  if ( be.getHidd().getF() == 0 ) {
-    catAnc = be.getBack().getHidd().getStoreState().getBase(1).getCat();
+  if ( pbe->getHidd().getF() == 0 ) {
+    catAnc = pbe->getBack().getHidd().getStoreState().getBase(1).getCat();
   }
   else {
-    catAnc = be.getBack().getHidd().getStoreState().getBase().getCat();
+    catAnc = pbe->getBack().getHidd().getStoreState().getBase().getCat();
   }
   return catAnc;
+}
+
+// similar to getHvF in transformer.hpp but uses a pointer as input
+HVec getHvFiller( const BeamElement<HiddState>* pbe ) {
+    StoreState ss = pbe->getHidd().getStoreState();
+    return (( ss.getBase().getCat().getNoloArity() && ss.getNoloBack().getHVec().size() != 0 ) ? ss.getNoloBack().getHVec() : hvBot);
+}
+
+
+uint getD( const BeamElement<HiddState>* pbe ) {
+  uint depth = pbe->getBack().getHidd().getStoreState().getDepth();
+  if ( pbe->getHidd().getF() == 1 ) depth++;
+  return depth;
 }
 
 
@@ -89,38 +106,69 @@ class JPredictorVec {
 
   private:
     const BeamElement<HiddState>& be;
-    //const HVec hvLchild;
-    //CVar catLchild;
+    const F f;
+    const HVec hvLchild;
+    const CVar catLchild;
 
   public:
-//    JPredictorVec( const BeamElement<HiddState>& belement, const LeftChildSign& aLchild )
-//      : be (belement),
-//    {
-//      hvLchild  = ( aLchild.getHVec().size()==0 ) ? hvBot : aLchild.getHVec();
-//      catLchild = ( aLchild.getHVec().size()==0 ) ? cBot : aLchild.getCat();
-//    }
-    JPredictorVec( const BeamElement<HiddState>& belement )
-      : be (belement) { }
+    JPredictorVec( const BeamElement<HiddState>& belement, const F eff, const Sign& aLchild )
+      : be (belement), 
+      f (eff),
+      hvLchild  (( aLchild.getHVec().size()==0 ) ? hvBot : aLchild.getHVec()),
+      catLchild (( aLchild.getHVec().size()==0 ) ? cBot : aLchild.getCat())
+    {}
 
-    const BeamElement<HiddState>& getBeamElement() const {
-        return be;
+    const F getF() const {
+      return f;
     }
 
-//    const HVec getHvLchild() {
-//      return hvLchild;
-//    }
-//
-//    CVar getCatLchild() {
-//        return catLchild;
-//    }
+    const BeamElement<HiddState>& getBeamElement() const {
+      return be;
+    }
+
+    const CVar getCatAncestor() const {
+      uint backOffset = 0;
+      if ( f == 0 ) backOffset = 1;
+      StoreState ss = be.getHidd().getStoreState();
+      return ss.getBase(backOffset).getCat();
+    }
+
+    const HVec getHvAncestor() const {
+      uint backOffset = 0;
+      if ( f == 0 ) backOffset = 1;
+      StoreState ss = be.getHidd().getStoreState();
+      return (( ss.getBase(backOffset).getHVec().size() > 0 ) ? ss.getBase(backOffset).getHVec() : hvBot);
+    }
+
+    const HVec getHvFiller() const {
+      uint backOffset = 0;
+      if ( f == 0 ) backOffset = 1;
+      StoreState ss = be.getHidd().getStoreState();
+      return (( ss.getBase(backOffset).getCat().getNoloArity() && ss.getNoloBack(backOffset).getHVec().size() != 0 ) ? ss.getNoloBack(backOffset).getHVec() : hvBot);
+    }
+
+    const CVar getCatLchild() const {
+      return catLchild;
+    }
+
+    const HVec getHvLchild() const {
+      return hvLchild;
+    }
+
+    const uint getDepth() const {
+      uint depth = be.getHidd().getStoreState().getDepth();
+      if ( f == 1 ) depth++;
+      return depth;
+    }
+
 
     friend ostream& operator<< ( ostream& os, const JPredictorVec& jpv ) {
-      const int d = getDepth(jpv.be);
-      const CVar catAncstr = getCatAncestor(jpv.be);
-      const HVec hvAncstr = getHvAncestor(jpv.be);
-      const HVec hvFiller = getHvF(jpv.be);
-      const CVar catLchild = getCatLchild(jpv.be);
-      const HVec hvLchild = getHvLchild(jpv.be);
+      const int d = jpv.getDepth();
+      const CVar catAncstr = jpv.getCatAncestor();
+      const HVec hvAncstr = jpv.getHvAncestor();
+      const HVec hvFiller = jpv.getHvFiller();
+      const CVar catLchild = jpv.getCatLchild();
+      const HVec hvLchild = jpv.getHvLchild();
         
       os << d << " " << catAncstr << " " << hvAncstr << " " << hvFiller << " " << catLchild << " " << hvLchild;
       return os;
@@ -287,11 +335,11 @@ class JModel {
       // reshape weight matrices
       //uint pre_attn_q_dim = 7 + 2*JSYN_DIM + 3*JSEM_DIM;
       //uint pre_attn_kv_dim = 7 + JSYN_DIM + 2*JSEM_DIM;
-      uint pre_attn_dim = 7 + JSYN_DIM + 2*JSEM_DIM;
+      uint pre_attn_dim = 7 + 2*JSYN_DIM + 3*JSEM_DIM;
       uint attn_dim = jwp.size()/pre_attn_dim;
-      // output of attn layer is concatenated with catLchild and hvLchild
-      uint post_attn_dim = pre_attn_dim + JSYN_DIM + JSEM_DIM;
-      uint hidden_dim = jwf.size()/post_attn_dim;
+      //// output of attn layer is concatenated with catLchild and hvLchild
+      //uint post_attn_dim = pre_attn_dim + JSYN_DIM + JSEM_DIM;
+      uint hidden_dim = jwf.size()/attn_dim;
       uint output_dim = jws.size()/hidden_dim;
 
       //jwpqm.reshape(attn_dim, pre_attn_q_dim);
@@ -306,7 +354,7 @@ class JModel {
       jwvm = jwim.rows(2*attn_dim, 3*attn_dim-1);
 
       jwom.reshape(attn_dim, attn_dim);
-      jwfm.reshape(hidden_dim, post_attn_dim);
+      jwfm.reshape(hidden_dim, attn_dim);
       jwsm.reshape(output_dim, hidden_dim);
 
       // fbiv contains biases vectors for query, key, and value
@@ -345,8 +393,11 @@ class JModel {
       vec KVecEmbed = arma::zeros(JSEM_DIM);
       if (c == 'A') {
         for ( auto& kV : hv.at(0) ) {
-          if ( kV == K::kTop) {
-            KVecEmbed += arma::ones(JSEM_DIM);
+//          if ( kV == K::kTop) {
+//            KVecEmbed += arma::ones(JSEM_DIM);
+//            continue;
+//          }
+          if ( kV == K::kBot) {
             continue;
           }
           auto it = mkadv.find( kV );
@@ -359,8 +410,11 @@ class JModel {
       }
       else if (c == 'F') {
         for ( auto& kV : hv.at(0) ) {
-          if ( kV == K::kTop) {
-            KVecEmbed += arma::ones(JSEM_DIM);
+//          if ( kV == K::kTop) {
+//            KVecEmbed += arma::ones(JSEM_DIM);
+//            continue;
+//          }
+          if ( kV == K::kBot) {
             continue;
           }
           auto it = mkfdv.find( kV );
@@ -373,8 +427,11 @@ class JModel {
       }
       else if (c == 'L') {
         for ( auto& kV : hv.at(0) ) {
-          if ( kV == K::kTop) {
-            KVecEmbed += arma::ones(JSEM_DIM);
+//          if ( kV == K::kTop) {
+//            KVecEmbed += arma::ones(JSEM_DIM);
+//            continue;
+//          }
+          if ( kV == K::kBot) {
             continue;
           }
           auto it = mkldv.find( kV );
@@ -401,56 +458,109 @@ class JModel {
       const auto& it = mjeooi.find( JEOO(j,e,oL,oR) );  assert( it != mjeooi.end() );  return( ( it != mjeooi.end() ) ? it->second : uint(-1) );
     }
 
-    vec calcResponses( JPredictorVec& ljpredictors, int wordIndex ) const;
+    vec calcResponses( JPredictorVec& ljpredictors, int wordIndex, bool verbose ) const;
 
     void testCalcResponses() const;
 };
 
-vec JModel::calcResponses( JPredictorVec& ljpredictors, int wordIndex ) const {
+vec JModel::calcResponses( JPredictorVec& ljpredictors, int wordIndex, bool verbose ) const {
 
-//  const HVec hvLchild = ljpredictors.getHvLchild();
-//  const vec hvLchildEmb = getKVecEmbed(hvLchild, 'A');
-//  const CVar catLchild = ljpredictors.getCatLchild();
-//  const vec catLchildEmb = getCatEmbed(hvLchild, 'A');
-//  vec lchildVec = join_cols(catLchildEmb, hvLchildEmb);
-  const BeamElement<HiddState> be = ljpredictors.getBeamElement();
+  //const BeamElement<HiddState> be = ljpredictors.getBeamElement();
+  const BeamElement<HiddState>* pbe = &ljpredictors.getBeamElement();
 
   vector<vec> attnInput;
-  
-  //uint MAX_WINDOW_SIZE = 20;
-  uint MAX_WINDOW_SIZE = 10;
-  uint wordOffset = 0;
-  // this moves backwards in time, starting with the word for which the
-  // response is being calculated. wordOffset tracks how many
-  // words back we've moved
-  for (const BeamElement<HiddState>* curr = &be; ( (curr != &BeamElement<HiddState>::beStableDummy) && (wordOffset < MAX_WINDOW_SIZE) ); curr=&curr->getBack(), wordOffset++) {
-    CVar catAnc = getCatAncestor(*curr);
-    HVec hvAnc = getHvAncestor(*curr);
-    HVec hvFiller = getHvF(*curr);
-    CVar catLchild = getCatLchild(*curr);
-    HVec hvLchild = getHvLchild(*curr);
-    uint d = getDepth(*curr);
-    
-    vec catAncEmb = getCatEmbed(catAnc, 'A');
-    vec hvAncEmb = getKVecEmbed(hvAnc, 'A');
-    vec hvFillerEmb = getKVecEmbed(hvFiller, 'F');
-    vec catLchildEmb = getCatEmbed(catLchild, 'L');
-    vec hvLchildEmb = getKVecEmbed(hvLchild, 'L');
 
-    vec currAttnInput = join_cols(join_cols(join_cols(join_cols(join_cols(catAncEmb, hvAncEmb), hvFillerEmb), catLchildEmb), hvLchildEmb), zeros(7)); 
-    currAttnInput(3*JSEM_DIM + 2*JSYN_DIM + d) = 1;
+  // find attention input for the word for which the j response is being
+  // calculated
+  
+  // If no-fork, then the ancestor is the second deepest fragment
+  // in the store state. If yes-fork, it is the deepest fragment
+  StoreState ss = pbe->getHidd().getStoreState();
+  F f = ljpredictors.getF();
+  uint backOffset = 0;
+  if ( f == 0 ) backOffset = 1;
+  CVar catAnc = ss.getBase(backOffset).getCat();
+  HVec hvAnc = (( ss.getBase(backOffset).getHVec().size() > 0 ) ? ss.getBase(backOffset).getHVec() : hvBot);
+  HVec hvFiller = (( ss.getBase(backOffset).getCat().getNoloArity() && ss.getNoloBack(backOffset).getHVec().size() != 0 ) ? ss.getNoloBack(backOffset).getHVec() : hvBot);
+  CVar catLchild = ljpredictors.getCatLchild();
+  HVec hvLchild = ljpredictors.getHvLchild();
+
+  vec catAncEmb = getCatEmbed(catAnc, 'A');
+  vec hvAncEmb = getKVecEmbed(hvAnc, 'A');
+  vec hvFillerEmb = getKVecEmbed(hvFiller, 'F');
+  vec catLchildEmb = getCatEmbed(catLchild, 'L');
+  vec hvLchildEmb = getKVecEmbed(hvLchild, 'L');
+
+  if ( verbose ) {
+    cerr << "\nJ catAnc of current word: " << catAnc << endl;
+    cerr << "\nJ catAncEmb of current word\n" << catAncEmb << endl;
+    cerr << "\nJ hvAnc of current word: " << hvAnc << endl;
+    cerr << "\nJ hvAncEmb of current word\n" << hvAncEmb << endl;
+    cerr << "\nJ hvFiller of current word: " << hvFiller << endl;
+    cerr << "\nJ hvFillerEmb of current word\n" << hvFillerEmb << endl;
+    cerr << "\nJ catLchild of current word: " << catLchild << endl;
+    cerr << "\nJ catLchildEmb of current word\n" << catLchildEmb << endl;
+    cerr << "\nJ hvLchild of current word: " << hvLchild << endl;
+    cerr << "\nJ hvLchildEmb of current word\n" << hvLchildEmb << endl;
+    cerr << "\nJ latest word hidd\n" << pbe->getHidd() << endl;
+  }
+
+  uint depth = pbe->getHidd().getStoreState().getDepth();
+  //cerr << "\nJ latest word depth pre f adjustment\n" << depth << endl;
+  if ( f == 1 ) depth++;
+
+  vec currAttnInput = join_cols(join_cols(join_cols(join_cols(join_cols(catAncEmb, hvAncEmb), hvFillerEmb), catLchildEmb), hvLchildEmb), zeros(7)); 
+  currAttnInput(3*JSEM_DIM + 2*JSYN_DIM + depth) = 1;
+  if ( verbose ) {
+    cerr << "\nJ latest word depth\n" << depth << endl;
+    cerr << "\nJ latest word attn input\n" << currAttnInput << endl;
+  }
+  // vector<> doesn't have an emplace_front method
+  //attnInput.emplace_back(currAttnInput);
+  attnInput.push_back(currAttnInput);
+
+  uint MAX_WINDOW_SIZE = 13;
+  uint wordOffset = 1;
+
+  // find attention input for previous words up to MAX_WINDOW_SIZE
+  // before the new word
+  for (const BeamElement<HiddState>* curr = pbe; ( (&curr->getBack() != &BeamElement<HiddState>::beStableDummy) && (wordOffset < MAX_WINDOW_SIZE) ); curr=&curr->getBack(), wordOffset++) {
+
+
+    catAnc = getCatAncestor(curr);
+    hvAnc = getHvAncestor(curr);
+    hvFiller = getHvFiller(curr);
+    catLchild = getCatLchild(curr);
+    hvLchild = getHvLchild(curr);
+    depth = getD(curr);
+    if ( verbose ) {
+      cerr << "\nJ curr attn hvLchild " << wordOffset << " words back\n" << hvLchild << endl;
+      cerr << "\nJ curr attn depth " << wordOffset << " words back\n" << depth << endl;
+      cerr << "\nJ curr hidd" << wordOffset << " words back\n" << curr->getHidd() << endl;
+    }
+ 
+    catAncEmb = getCatEmbed(catAnc, 'A');
+    hvAncEmb = getKVecEmbed(hvAnc, 'A');
+    hvFillerEmb = getKVecEmbed(hvFiller, 'F');
+    catLchildEmb = getCatEmbed(catLchild, 'L');
+    hvLchildEmb = getKVecEmbed(hvLchild, 'L');
+ 
+    currAttnInput = join_cols(join_cols(join_cols(join_cols(join_cols(catAncEmb, hvAncEmb), hvFillerEmb), catLchildEmb), hvLchildEmb), zeros(7)); 
+    currAttnInput(3*JSEM_DIM + 2*JSYN_DIM + depth) = 1;
+    if ( verbose ) {
+      cerr << "\nJ curr attn input " << wordOffset << " words back\n" << currAttnInput << endl;
+    }
     // vector<> doesn't have an emplace_front method
-    attnInput.emplace_back(currAttnInput);
+    //attnInput.emplace_back(currAttnInput);
+    attnInput.push_back(currAttnInput);
   }
 
   // reverse attnInput so that the last item is the most recent word
   reverse(attnInput.begin(), attnInput.end());
   
-  return computeResult(attnInput, wordIndex, 0);
+  return computeResult(attnInput, wordIndex, verbose);
 }
 
-
-// TODO continue here (stuff below is from F transformer)
 
 // return distribution over JEOO indices
 // attnInput contains the embeddings for previous words up to the current word
@@ -459,26 +569,20 @@ vec JModel::computeResult( vector<vec> attnInput, uint wordIndex, bool verbose )
   bool usePositionalEncoding = false;
   vec last = attnInput.back();
   if ( verbose ) {
-    //cerr << "F last" << last << endl;
-
-//    cerr << "F fwpm" << endl;
-//    cerr << "num rows: " << fwpm.n_rows << endl;
-//    cerr << "num cols: " << fwpm.n_cols << endl;
-//    for ( uint j=0; j<fwpm.n_cols; j++ ) {
-//      for ( uint i=0; i<fwpm.n_rows; i++ ) {
-//        cerr << fwpm(i, j) << endl;
-//      }
-//    }
-//    cerr << "F fbpv" << fbpv << endl;
+    cerr << "J length of attnInput: " << attnInput.size() << endl;
+    cerr << "J attn input of current word\n" << last << endl;
   }
   vec proj = jwpm*last + jbpv;
   if ( usePositionalEncoding ) {
     proj = proj + getPositionalEncoding(jbpv.size(), wordIndex);
   }
   if ( verbose ) {
-    cerr << "J proj" << proj << endl;
+    cerr << "J proj\n" << proj << endl;
   }
   const vec query = jwqm*proj + jbqv;
+  if ( verbose ) {
+    cerr << "J query after linear\n" << query << endl;
+  }
   // used to scale the attention softmax (see section 3.2.1 of Attention
   // Is All You Need)
   const double scalingFactor = sqrt(jbqv.size());
@@ -487,11 +591,17 @@ vec JModel::computeResult( vector<vec> attnInput, uint wordIndex, bool verbose )
   vector<double> scaledDotProds;
   int currIndex = wordIndex - attnInput.size() + 1;
   for ( vec curr : attnInput ) { 
+    if ( verbose ) {
+      cerr << "J attnInput (progresses from first to last)\n" << curr << endl;
+    }
     proj = jwpm*curr + jbpv;
     if ( usePositionalEncoding ) {
       proj = proj + getPositionalEncoding(jbpv.size(), currIndex++);
     }
     vec key = jwkm*proj + jbkv;
+    if ( verbose ) {
+      cerr << "J key (progresses from first to last)\n" << key << endl;
+    }
     vec value = jwvm*proj + jbvv;
     values.emplace_back(value);
     scaledDotProds.emplace_back(dot(query, key)/scalingFactor);
@@ -502,9 +612,17 @@ vec JModel::computeResult( vector<vec> attnInput, uint wordIndex, bool verbose )
     sdp(i) = scaledDotProds[i];
   }
 
+  if ( verbose ) {
+    cerr << "J pre-softmax attn output weights\n" << sdp << endl;
+  }
+
   vec sdpExp = exp(sdp);
   double norm = accu(sdpExp);
   vec sdpSoftmax = sdpExp/norm;
+
+  if ( verbose ) {
+    cerr << "J scaled dot product softmax\n" << sdpSoftmax << endl;
+  }
 
   // calculate scaled_softmax(QK)*V
   vec attnResult = zeros<vec>(jbvv.size());
@@ -515,10 +633,14 @@ vec JModel::computeResult( vector<vec> attnInput, uint wordIndex, bool verbose )
     attnResult += weight*val;
   }
 
+  if ( verbose ) {
+    cerr << "J attn result\n" << attnResult << endl;
+  }
+
   vec attnOutput = jwom*attnResult + jbov;
 
   if ( verbose ) {
-    cerr << "J attnOutput" << attnOutput << endl;
+    cerr << "J attnOutput\n" << attnOutput << endl;
   }
   //vec hiddenInput = join_cols(attnOutput, corefVec);
   vec logScores = jwsm * relu(jwfm*attnOutput + jbfv) + jbsv;
@@ -526,7 +648,7 @@ vec JModel::computeResult( vector<vec> attnInput, uint wordIndex, bool verbose )
   double outputNorm = accu(scores);
   vec result = scores/outputNorm;
   if ( verbose ) {
-    cerr << "J result" << result << endl;
+    cerr << "J result\n" << result << endl;
   }
   return result;
 } 
@@ -543,7 +665,7 @@ void JModel::testCalcResponses() const {
   // the ith dummy input will be a vector of 0.1*(i+1)
   // [0.1 0.1 0.1 ...] [0.2 0.2 0.2 ...] ...
   for ( uint i=0; (i<seqLength); i++ ) {
-    cerr << "J ==== output for word " << i << " ====" << endl;
+    cerr << "J ==== word " << i << " ====" << endl;
     currAttnInput = vec(attnInputDim);
     currAttnInput.fill(0.1 * (i+1));
     attnInput.emplace_back(currAttnInput);
