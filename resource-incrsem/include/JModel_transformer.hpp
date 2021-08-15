@@ -18,15 +18,23 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 //const HVec getHvLchild( const BeamElement<HiddState>& be ) {
-const HVec getHvLchild( const BeamElement<HiddState>* pbe ) {
+const HVec getHvLchild( const BeamElement<HiddState>* pbe, const EMat& matE, const OFunc& funcO ) {
   HVec hvLchild;
   // If we don't fork (i.e., lexical match decision = 1), the left child
   // is the apex of the deepest derivation fragment from the previous time
   // step
   if ( pbe->getHidd().getF() == 0 ) {
+    // TODO if hvLChild here is ["], need to retrieve semantics of base of fragment?
     StoreState ssPrev = pbe->getBack().getHidd().getStoreState();
     hvLchild = (( ssPrev.getApex().getHVec().size() > 0 ) ? ssPrev.getApex().getHVec() : hvBot);
 
+    // Add in semantics predicted by F step
+    //EVar e = pbe->getHidd().getForkE();
+    K k = pbe->getHidd().getForkK();
+    HVec hvF = HVec( k, matE, funcO );
+    hvLchild.add( hvF );
+    // TODO may need to add something like this from StoreState line 531
+    //applyUnariesBotUp( back().apex(), evJ );                   // Calc apex contexts.
   }
   // If we do fork (i.e., lexical match decision = 0), the left child is
   // the predicted preterminal node
@@ -41,7 +49,6 @@ const HVec getHvLchild( const BeamElement<HiddState>* pbe ) {
 const CVar getCatLchild( const BeamElement<HiddState>* pbe ) {
   CVar catLchild;
 
-  // Same logic as getHvLchild()
   if ( pbe->getHidd().getF() == 0 ) {
     catLchild = pbe->getBack().getHidd().getStoreState().getApex().getCat();
   }
@@ -109,13 +116,17 @@ class JPredictorVec {
     const F f;
     const HVec hvLchild;
     const CVar catLchild;
+    const EMat& matE;
+    const OFunc& funcO;
 
   public:
-    JPredictorVec( const BeamElement<HiddState>& belement, const F eff, const Sign& aLchild )
+    JPredictorVec( const BeamElement<HiddState>& belement, const F eff, const Sign& aLchild, const EMat& matrixE, const OFunc& functionO )
       : be (belement), 
       f (eff),
       hvLchild  (( aLchild.getHVec().size()==0 ) ? hvBot : aLchild.getHVec()),
-      catLchild (( aLchild.getHVec().size()==0 ) ? cBot : aLchild.getCat())
+      catLchild (( aLchild.getHVec().size()==0 ) ? cBot : aLchild.getCat()),
+      matE (matrixE),
+      funcO (functionO)
     {}
 
     const F getF() const {
@@ -161,6 +172,13 @@ class JPredictorVec {
       return depth;
     }
 
+    const EMat& getMatE() const {
+      return matE;
+    }
+
+    const OFunc& getFuncO() const {
+      return funcO;
+    }
 
     friend ostream& operator<< ( ostream& os, const JPredictorVec& jpv ) {
       const int d = jpv.getDepth();
@@ -467,6 +485,8 @@ vec JModel::calcResponses( JPredictorVec& ljpredictors, int wordIndex, bool verb
 
   //const BeamElement<HiddState> be = ljpredictors.getBeamElement();
   const BeamElement<HiddState>* pbe = &ljpredictors.getBeamElement();
+  const EMat matE = ljpredictors.getMatE();
+  const OFunc funcO = ljpredictors.getFuncO();
 
   vector<vec> attnInput;
 
@@ -531,7 +551,7 @@ vec JModel::calcResponses( JPredictorVec& ljpredictors, int wordIndex, bool verb
     hvAnc = getHvAncestor(curr);
     hvFiller = getHvFiller(curr);
     catLchild = getCatLchild(curr);
-    hvLchild = getHvLchild(curr);
+    hvLchild = getHvLchild(curr, matE, funcO);
     depth = getD(curr);
     if ( verbose ) {
       cerr << "\nJ curr attn hvLchild " << wordOffset << " words back\n" << hvLchild << endl;

@@ -267,7 +267,7 @@ int main ( int nArgs, char* argv[] ) {
       StoreState qTermPhase( qPretrm, f_t );
       const Sign& aLchild = qTermPhase.getApex();
 
-      JPredictorVec ljpredictors( be_tdec1, f_t, aLchild );
+      JPredictorVec ljpredictors( be_tdec1, f_t, aLchild, matE, funcO );
       arma::vec jresponses = modJ.calcResponses( ljpredictors, word_index-1, 1 );
 
       bool jeoo_found = false;
