@@ -346,7 +346,7 @@ int main ( int nArgs, char* argv[] ) {
       // Update store state and beam element
       ////////////////
       StoreState ss( qTermPhase, j, e, opL, opR, a_cvar, b_cvar );
-      beams[t].tryAdd( HiddState( aPretrm, f_t ,e_p_t, k_p_t, jresponse, ss, 0, w_t ), ProbBack<HiddState>( 0.0, be_tdec1 ) );
+      beams[t].tryAdd( HiddState( aPretrm, f_t ,e_p_t, k_p_t, jresponse, ss, aLchild, 0, w_t ), ProbBack<HiddState>( 0.0, be_tdec1 ) );
     }
   }
 } 

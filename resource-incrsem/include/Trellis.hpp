@@ -38,18 +38,18 @@ class Trellis : public vector<Beam<HiddState>> {
         cerr << "parse failed (lbe.size() = 0) " << "trellis size(): " << size() << endl;
         // Print a right branching structure...
         for( int t=size()-2; t>=0; t-- ) { 
-          lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 1, EVar::eNil, K::kBot, jm.getResponse1(), ssLongFail ) ) ); // fork and join
+          lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 1, EVar::eNil, K::kBot, jm.getResponse1(), ssLongFail, Sign(hvBot,cFail,S_A) ) ) ); // fork and join
         }
 //        cerr << "size of lbe after push_fronts: " << lbe.size() << endl;
-        lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 1, EVar::eNil, K::kBot, jm.getResponse0(), ssLongFail ) );       // front: fork no-join
-        lbe.back( ) = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 0, EVar::eNil, K::kBot, jm.getResponse1(), StoreState() ) );     // back: join no-fork
+        lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 1, EVar::eNil, K::kBot, jm.getResponse0(), ssLongFail, Sign(hvBot,cFail,S_A) ) );       // front: fork no-join
+        lbe.back( ) = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 0, EVar::eNil, K::kBot, jm.getResponse1(), StoreState(), Sign(hvBot,cFail,S_A) ) );     // back: join no-fork
 //        cerr << "size of lbe after front and back assignments: " << lbe.size() << endl;
         if( size()==2 ) {  //special case if single word, fork and join
 //          cerr << "assigning front of fail lbe" << endl;
-          lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 1, EVar::eNil, K::kBot, jm.getResponse1(), StoreState() ) );   // unary case: fork and join
+          lbe.front() = BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 1, EVar::eNil, K::kBot, jm.getResponse1(), StoreState(), Sign(hvBot,cFail,S_A) ) );   // unary case: fork and join
         }
         // Add dummy element (not sure why this is needed)...
-        lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 0, EVar::eNil, K::kBot, jm.getResponse0(), StoreState() ) ) ); // no-fork, no-join?
+        lbe.push_front( BeamElement<HiddState>( ProbBack<HiddState>(), HiddState( Sign(hvBot,cFail,S_A), 0, EVar::eNil, K::kBot, jm.getResponse0(), StoreState(), Sign(hvBot,cFail,S_A) ) ) ); // no-fork, no-join?
         //start experiment - next two lines switch front element to nofork,join, add additional dummy at rear
         //TODO to revert, comment out next two, comment in pushfront above
         lbe.emplace_back( BeamElement<HiddState>() );

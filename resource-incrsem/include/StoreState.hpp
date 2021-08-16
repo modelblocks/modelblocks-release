@@ -717,18 +717,19 @@ void BaseWithCarriers::set ( CVar cA, CVar cB, O opL, O opR, StoreState& ss, con
 char psSpaceF[]       = " f";
 char psAmpersand[]    = "&";
 
-class HiddState : public DelimitedOct<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Delimited<int>,psSpace,ObsWord,psX> {
+class HiddState : public DelimitedNon<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Sign,psSpace,Delimited<int>,psSpace,ObsWord,psX> {
   public:
-    HiddState ( )                                                                    : DelimitedOct<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Delimited<int>,psSpace,ObsWord,psX>()             { }
-    HiddState ( const Sign& a, F f, EVar e, K k, JResponse jr, const StoreState& q , int i=0, ObsWord w=nonWord) : DelimitedOct<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Delimited<int>,psSpace,W,psX>(a,f,e,k,jr,q,i,w) { }
+    HiddState ( )                                                                    : DelimitedNon<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Sign,psSpace,Delimited<int>,psSpace,ObsWord,psX>()             { }
+    HiddState ( const Sign& a, F f, EVar e, K k, JResponse jr, const StoreState& q, const Sign& al, int i=0, ObsWord w=nonWord) : DelimitedNon<psX,Sign,psSpaceF,F,psAmpersand,EVar,psAmpersand,K,psSpace,JResponse,psSpace,StoreState,psSpace,Sign,psSpace,Delimited<int>,psSpace,W,psX>(a,f,e,k,jr,q,al,i,w) { }
     const Sign& getPrtrm ()           const { return first(); }
     F getF ()                         const { return second(); }
     EVar getForkE ()                  const { return third(); }
     K getForkK ()                     const { return fourth(); }
     const JResponse& getJResp()       const { return fifth(); }
     const StoreState& getStoreState() const { return sixth(); }
-    const Delimited<int>& getI()      const { return seventh(); }
-    const W& getWord()                const { return eighth(); }
+    const Sign& getLchild()           const { return seventh(); }
+    const Delimited<int>& getI()      const { return eighth(); }
+    const W& getWord()                const { return ninth(); }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -851,13 +852,13 @@ class AModel : public map<APredictorVec,map<A,double>> {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class BPredictorVec : public DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX> {
+class BPredictorVec : public DelimitedOkt<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX> {
  public:
   BPredictorVec ( ) { }
   BPredictorVec ( D d, F f, J j, EVar e, O oL, O oR, CVar cP, CVar cL ) :
-    DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( d, f, j, e, oL, oR, cP, cL ) { }
+    DelimitedOkt<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( d, f, j, e, oL, oR, cP, cL ) { }
   BPredictorVec ( F f, J j, EVar eF, EVar eJ, O opL, O opR, CVar cParent, const LeftChildSign& aLchild, const StoreState& ss ) :
-    DelimitedOct<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()-j, f, j, eJ, opL, opR, cParent, aLchild.getCat() ) { }
+    DelimitedOkt<psX,D,psSpace,F,psSpace,J,psSpace,Delimited<EVar>,psSpace,O,psSpace,O,psSpace,Delimited<CVar>,psSpace,Delimited<CVar>,psX>( ss.getDepth()-j, f, j, eJ, opL, opR, cParent, aLchild.getCat() ) { }
 };
 
 class BModel : public map<BPredictorVec,map<B,double>> {

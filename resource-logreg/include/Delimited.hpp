@@ -445,14 +445,25 @@ class sept : public sext<T,U,V,W,X,pair<Y,Z>> {
 };
 
 template< class S, class T, class U, class V, class W, class X, class Y, class Z >
-class oct : public sept<S,T,U,V,W,X,pair<Y,Z>> {
+class okt : public sept<S,T,U,V,W,X,pair<Y,Z>> {
  public:
-  oct( ) { }
-  oct( const S& s, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y, const Z& z ) { this->first()=s; this->second()=t; this->third()=u; this->fourth()=v; this->fifth()=w; this->sixth()=x; this->seventh()=y; this->eighth()=z; }
+  okt( ) { }
+  okt( const S& s, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y, const Z& z ) { this->first()=s; this->second()=t; this->third()=u; this->fourth()=v; this->fifth()=w; this->sixth()=x; this->seventh()=y; this->eighth()=z; }
   Y&       seventh ( )       { return sept<S,T,U,V,W,X,pair<Y,Z>>::seventh().first;  }
   Z&       eighth  ( )       { return sept<S,T,U,V,W,X,pair<Y,Z>>::seventh().second; }
   const Y& seventh ( ) const { return sept<S,T,U,V,W,X,pair<Y,Z>>::seventh().first;  }
   const Z& eighth  ( ) const { return sept<S,T,U,V,W,X,pair<Y,Z>>::seventh().second; }
+};
+
+template< class R, class S, class T, class U, class V, class W, class X, class Y, class Z >
+class non : public okt<R,S,T,U,V,W,X,pair<Y,Z>> {
+ public:
+  non( ) { }
+  non( const R& r, const S& s, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y, const Z& z ) { this->first()=r; this->second()=s; this->third()=t; this->fourth()=u; this->fifth()=v; this->sixth()=w; this->seventh()=x; this->eighth()=y; this->ninth()=z; }
+  Y&       eighth  ( )       { return okt<R,S,T,U,V,W,X,pair<Y,Z>>::eighth().first;  }
+  Z&       ninth   ( )       { return okt<R,S,T,U,V,W,X,pair<Y,Z>>::eighth().second; }
+  const Y& eighth  ( ) const { return okt<R,S,T,U,V,W,X,pair<Y,Z>>::eighth().first;  }
+  const Z& ninth   ( ) const { return okt<R,S,T,U,V,W,X,pair<Y,Z>>::eighth().second; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -595,11 +606,11 @@ class DelimitedSept : public sept<T,U,V,W,X,Y,Z> {
 ////////////////////////////////////////////////////////////////////////////////
 
 template< const char* psD1,class S,const char* psD2,class T,const char* psD3,class U,const char* psD4,class V,const char* psD5,class W,const char* psD6,class X,const char* psD7,class Y,const char* psD8,class Z,const char* psD9 >
-class DelimitedOct : public oct<S,T,U,V,W,X,Y,Z> {
-  typedef DelimitedOct<psD1,S,psD2,T,psD3,U,psD4,V,psD5,W,psD6,X,psD7,Y,psD8,Z,psD9> TUPLE;
+class DelimitedOkt : public okt<S,T,U,V,W,X,Y,Z> {
+  typedef DelimitedOkt<psD1,S,psD2,T,psD3,U,psD4,V,psD5,W,psD6,X,psD7,Y,psD8,Z,psD9> TUPLE;
  public:
-  DelimitedOct ( )                                                                                                : oct<S,T,U,V,W,X,Y,Z>()                { }
-  DelimitedOct ( const S& s, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y, const Z& z ) : oct<S,T,U,V,W,X,Y,Z>(s,t,u,v,w,x,y,z) { }
+  DelimitedOkt ( )                                                                                                : okt<S,T,U,V,W,X,Y,Z>()                { }
+  DelimitedOkt ( const S& s, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y, const Z& z ) : okt<S,T,U,V,W,X,Y,Z>(s,t,u,v,w,x,y,z) { }
   friend pair<istream&,TUPLE&> operator>> ( istream& is, TUPLE& t ) {
     return pair<istream&,TUPLE&>(is,t);
   }
@@ -611,6 +622,28 @@ class DelimitedOct : public oct<S,T,U,V,W,X,Y,Z> {
   }
   friend ostream& operator<< ( ostream& os, const TUPLE& t ) {
     return os << psD1 << t.first() << psD2 << t.second() << psD3 << t.third() << psD4 << t.fourth() << psD5 << t.fifth() << psD6 << t.sixth() << psD7 << t.seventh() << psD8 << t.eighth() << psD9;
+  }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+template< const char* psD1,class R,const char* psD2,class S,const char* psD3,class T,const char* psD4,class U,const char* psD5,class V,const char* psD6,class W,const char* psD7,class X,const char* psD8,class Y,const char* psD9,class Z,const char* psD10 >
+class DelimitedNon : public non<R,S,T,U,V,W,X,Y,Z> {
+  typedef DelimitedNon<psD1,R,psD2,S,psD3,T,psD4,U,psD5,V,psD6,W,psD7,X,psD8,Y,psD9,Z,psD10> TUPLE;
+ public:
+  DelimitedNon ( )                                                                                                : non<R,S,T,U,V,W,X,Y,Z>()                { }
+  DelimitedNon ( const R& r, const S& s, const T& t, const U& u, const V& v, const W& w, const X& x, const Y& y, const Z& z ) : non<R,S,T,U,V,W,X,Y,Z>(r,s,t,u,v,w,x,y,z) { }
+  friend pair<istream&,TUPLE&> operator>> ( istream& is, TUPLE& t ) {
+    return pair<istream&,TUPLE&>(is,t);
+  }
+  friend istream& operator>> ( pair<istream&, TUPLE&> ist, const char* psDelim ) {
+    return ist.first >> ist.second.first() >> psD2 >> ist.second.second() >> psD3 >> ist.second.third() >> psD4 >> ist.second.fourth() >> psD5 >> ist.second.fifth() >> psD6 >> ist.second.sixth() >> psD7 >> ist.second.seventh() >> psD8 >> ist.second.eighth() >> psD9 >> ist.second.ninth() >> psDelim;
+  }
+  friend bool operator>> ( pair<istream&,TUPLE&> ist, const vector<const char*>& vpsDelim ) {
+    return ist.first >> ist.second.first() >> psD2 >> ist.second.second() >> psD3 >> ist.second.third() >> psD4 >> ist.second.fourth() >> psD5 >> ist.second.fifth() >> psD6 >> ist.second.sixth() >> psD7 >> ist.second.seventh() >> psD8 >> ist.second.eighth() >> psD9 >> ist.second.ninth() >> vpsDelim;
+  }
+  friend ostream& operator<< ( ostream& os, const TUPLE& t ) {
+    return os << psD1 << t.first() << psD2 << t.second() << psD3 << t.third() << psD4 << t.fourth() << psD5 << t.fifth() << psD6 << t.sixth() << psD7 << t.seventh() << psD8 << t.eighth() << psD9 << t.ninth() << psD10;
   }
 };
 
