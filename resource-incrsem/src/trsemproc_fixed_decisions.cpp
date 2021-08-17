@@ -156,6 +156,7 @@ int main ( int nArgs, char* argv[] ) {
   vector<string> tokStrs;
   DelimitedVector<psX,ObsWord,psSpace,psX> tokWs;
   string fek_str;
+  string prtrm_cat_str;
   W w_t;
   string jeoo_str;
   string a_cvar_str;
@@ -199,8 +200,12 @@ int main ( int nArgs, char* argv[] ) {
 
     if ( cin.peek() != 'W' ) throw "Wrong input format.";
     tokWs = getTokWs();
+    ostringstream oss_curr;
+    oss_curr << tokWs[3];
+    prtrm_cat_str = oss_curr.str();
     w_t = tokWs[7];
     cout << "\n ==== word: " << w_t << " ==== " << endl;
+    cout << "preterm cat: " << prtrm_cat_str << endl;
 
     if ( cin.peek() != 'J' ) throw "Wrong input format.";
     tokStrs = getTokStrings();
@@ -237,13 +242,16 @@ int main ( int nArgs, char* argv[] ) {
         e_p_t = ektpr_p_t.first.first();
         k_p_t = ektpr_p_t.first.second(); // context of current preterminal
         c_p_t = ektpr_p_t.first.third();  // label of current preterminal
+        ostringstream oss_curr;
+        oss_curr << c_p_t;
+        string prtrm_cat_str_curr = oss_curr.str();
 
         // For each possible no-fork or fork decision...
         for ( auto& f : {0,1} ) {
           ostringstream oss_curr;
           oss_curr << f << "&" << e_p_t << "&" << k_p_t;
           string fek_str_curr = oss_curr.str();
-          if ( fek_str_curr != fek_str ) continue;
+          if ( (prtrm_cat_str_curr != prtrm_cat_str) || (fek_str_curr != fek_str) ) continue;
           else {
             f_t = f;
             fek_found = true;
@@ -263,11 +271,13 @@ int main ( int nArgs, char* argv[] ) {
       ////////////////
 
       StoreState qPretrm( q_tdec1, f_t, true, hvTop, e_p_t, k_p_t, c_p_t, matE, funcO );
+      cout << "qPretrm: " << qPretrm << endl;
       const Sign& aPretrm = qPretrm.getApex();
       StoreState qTermPhase( qPretrm, f_t );
       const Sign& aLchild = qTermPhase.getApex();
+      cout << "L child sign: " << aLchild;
 
-      JPredictorVec ljpredictors( be_tdec1, f_t, aLchild, matE, funcO );
+      JPredictorVec ljpredictors( be_tdec1, f_t, aLchild );
       arma::vec jresponses = modJ.calcResponses( ljpredictors, word_index-1, 1 );
 
       bool jeoo_found = false;
