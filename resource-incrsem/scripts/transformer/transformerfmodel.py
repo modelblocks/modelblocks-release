@@ -2,6 +2,8 @@ import torch, math
 import torch.nn as nn
 import torch.nn.functional as F
 
+from train_fmodel import eprint
+
 # source:
 # https://pytorch.org/tutorials/beginner/transformer_tutorial.html
 class PositionalEncoding(nn.Module):
@@ -228,26 +230,26 @@ class TransformerFModel(nn.Module):
         # layer this will be projected to a separate q, k, and v for each
         # attn head
 #        if verbose:
-#            print('F final word attn input:')
+#            eprint('F final word attn input:')
 #            for x in attn_input[-1, 0]:
-#                print(x.item())
+#                eprint(x.item())
 #            weights = self.state_dict()['pre_attn_fc.weight'].data.cpu().numpy()
-#            print('F pre attn fc weights shape:', weights.shape)
-#            print('F pre attn fc weights numpy:')
-#            print(weights)
-#            print('F pre attn fc weights:')
+#            eprint('F pre attn fc weights shape:', weights.shape)
+#            eprint('F pre attn fc weights numpy:')
+#            eprint(weights)
+#            eprint('F pre attn fc weights:')
 #            # F is column-major order
 #            for x in weights.flatten('F'):
-#                print(x)
-#            print('F final word pre_attn_fc bias:')
+#                eprint(x)
+#            eprint('F final word pre_attn_fc bias:')
 #            bias = self.state_dict()['pre_attn_fc.bias'].data.cpu().numpy()
 #            for x in bias:
-#                print(x)
+#                eprint(x)
         qkv = self.pre_attn_fc(attn_input)
         if verbose:
-            print('F final word\'s qkv:')
+            eprint('F final word\'s qkv:')
             for x in qkv[-1, 0]:
-                print(x.item())
+                eprint(x.item())
         if self.use_positional_encoding:
             qkv = self.positional_encoding(qkv)
         # use mask to hide future inputs
@@ -256,9 +258,9 @@ class TransformerFModel(nn.Module):
         #attn_output, _ = self.attn(q, k, v, attn_mask=mask)
         attn_output, _ = self.attn(qkv, qkv, qkv, attn_mask=mask)
         if verbose:
-            print('F final word\'s attn output:')
+            eprint('F final word\'s attn output:')
             for x in attn_output[-1, 0]:
-                print(x.item())
+                eprint(x.item())
         x = torch.cat((attn_output, coref_emb), dim=2)
         x = self.fc1(x)
         x = self.dropout(x)
@@ -270,8 +272,8 @@ class TransformerFModel(nn.Module):
                 log_scores = result[i, 0]
                 scores = torch.exp(log_scores)
                 norm_scores = scores/sum(scores)
-                print('F ==== output for word {} ===='.format(i))
+                eprint('F ==== output for word {} ===='.format(i))
                 for x in norm_scores:
-                    print(x.item())
+                    eprint(x.item())
         return result
 

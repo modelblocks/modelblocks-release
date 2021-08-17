@@ -6,7 +6,7 @@ from transformerfmodel import PositionalEncoding
 from train_fmodel import eprint
 
 def print_weight(w):
-    print(round(w, 4))
+    eprint(round(w, 4))
 
 class TransformerJModel(nn.Module):
     def __init__(self, j_config, cat_anc_vocab_size, hv_anc_vocab_size,
@@ -155,24 +155,24 @@ class TransformerJModel(nn.Module):
                 depth = depth.to('cuda')
 
             if verbose and i == 0:
-                print('J ======== first sequence\'s inputs ======== ')
+                eprint('J ======== first sequence\'s inputs ======== ')
                 for j, emb in enumerate(cat_anc_embed):
-                    print('\nJ ==== word {} ==== '.format(j))
-                    print('\nJ cat anc emb:')
+                    eprint('\nJ ==== word {} ==== '.format(j))
+                    eprint('\nJ cat anc emb:')
                     for x in emb:
-                        print_weight(x.item())
-                    print('\nJ hv anc emb:')
+                        eprint_weight(x.item())
+                    eprint('\nJ hv anc emb:')
                     for x in hv_anc_embed[j]:
-                        print_weight(x.item())
-                    print('\nJ hv filler emb:')
+                        eprint_weight(x.item())
+                    eprint('\nJ hv filler emb:')
                     for x in hv_filler_embed[j]:
-                        print_weight(x.item())
-                    print('\nJ cat lc emb:')
+                        eprint_weight(x.item())
+                    eprint('\nJ cat lc emb:')
                     for x in cat_lc_embed[j]:
-                        print_weight(x.item())
-                    print('\nJ hv lc emb:')
+                        eprint_weight(x.item())
+                    eprint('\nJ hv lc emb:')
                     for x in hv_lc_embed[j]:
-                        print_weight(x.item())
+                        eprint_weight(x.item())
                         
 
             seq_x = torch.cat(
@@ -242,25 +242,25 @@ class TransformerJModel(nn.Module):
         if verbose:
             # note: this assumes that there is only one sequence in the batch
             for i in range(result.shape[0]):
-                print('\nJ ==== word {} ===='.format(i))
+                eprint('\nJ ==== word {} ===='.format(i))
                 attn_input_i = attn_input[i, 0]
-                print('J attn input')
+                eprint('J attn input')
                 for x in attn_input_i:
                     print_weight(x.item())
                 qkv_i = qkv[i, 0]
-                print('\nJ qkv')
+                eprint('\nJ qkv')
                 for x in qkv_i:
                     print_weight(x.item())
                 attn_output_i = attn_output[i, 0]
-                print('\nJ attn output')
+                eprint('\nJ attn output')
                 for x in attn_output_i:
                     print_weight(x.item())
                 log_scores = result[i, 0]
                 scores = torch.exp(log_scores)
                 norm_scores = scores/sum(scores)
-                print('\nJ result')
+                eprint('\nJ result')
                 for x in norm_scores:
                     print_weight(x.item())
-                print()
+                eprint()
         return result
 
