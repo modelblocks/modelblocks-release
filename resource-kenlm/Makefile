@@ -179,41 +179,6 @@ $(CONFIGDIR)/user-kenlm-directory.txt | genmodel
 	$(word 1, $^) -a 64 -q 8 -b 8 -T kenlmtmp -S 1G trie $(word 2, $^) $@
 	rm -rf kenlmtmp
 
-define ParamVal
-KENLM:
-  kernel: NgramModel
-  text: KENLM
-  value: kenlm
-endef
-define KernelBlock
-NgramModel:
-  blocktitle: N-gram model
-  paramtype: Dropdown
-NgramOrder:
-  blocktitle: N-gram order
-  paramtype: Integer
-  paramval:
-  - text: N-gram order
-    value: ''
-endef
-define CompositeBlock
-NgramParams:
-  blockseq:
-  - blocktype: NgramOrder
-  - blocktype: NgramModel
-  blocktitle: N-gram Parameters
-endef
-define TargetBlock
-NgramProbs:
-  blocktitle: N-gram Probabilities
-  targetsuffix: .ngram.itemmeasures
-  blockseq:
-  - blocktype: Corpus
-  - blocktype: NgramParams
-    kwargs:
-      outerdelim: '.'
-      innerdelim: '.'
-endef
 
 ## TO SPEC
 .PRECIOUS: %-kenlm.itemmeasures

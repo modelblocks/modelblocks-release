@@ -3,8 +3,11 @@
 
 import io
 import sys
+import codecs
 
-input_stream = io.TextIOWrapper(sys.stdin.buffer, encoding='latin-1')
+#sys.stdout = codecs.getwriter( 'utf8' )( sys.stdout )
 
+input_stream = io.TextIOWrapper( sys.stdin.buffer, encoding='CP437' ) #'latin-1' )
+#input_stream = sys.stdin
 for line in input_stream:
-  sys.stdout.write(line)
+  sys.stdout.write( line )  #.encode('utf-8').decode('latin-1') )

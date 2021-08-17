@@ -24,8 +24,10 @@ python3 -m cdr.bin.predict $config_path -p "$2;$3"
 
 cp "$1_outdir/CDR/preds_1.txt" "genmodel/$(get_base $1).$(echo $pred_partition)_prd.resmeasures"
 cp "$1_outdir/CDR/obs_1.txt"  "genmodel/$(get_base $1).$(echo $pred_partition)_obs.resmeasures"
+#cp "$3" "genmodel/$(get_base $1).$(echo $pred_partition)_obs.resmeasures"
 
 #cat "$1_outdir/CDR/losses_mse_1.txt"
 cat "$1_outdir/CDR/squared_error_1.txt"
 # New version use squared_error_1.txt
+#cat $1_outdir/CDR/loglik_*.txt
 
