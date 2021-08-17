@@ -3,7 +3,7 @@ from collections import Counter
 import torch.nn as nn
 import torch.optim as optim
 
-from transformerfmodel import TransformerFModel
+from transformerfmodel import TransformerFModel, eprint
 
 #PAD = '<PAD>'
 # The C++ code expects a certain format for each fdec, so this is
@@ -16,8 +16,6 @@ class FInfo:
     pass
 
 
-def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
 
 
 def extract_first_kvec(hvec):

@@ -3,7 +3,8 @@ from collections import Counter
 import torch.nn as nn
 import torch.optim as optim
 
-from train_fmodel import eprint, extract_first_kvec, hvecIxReplace
+from transformerfmodel import eprint
+from train_fmodel import extract_first_kvec, hvecIxReplace
 from transformerjmodel import TransformerJModel
 
 # The C++ code expects a certain format for each jdec, so this is

@@ -2,8 +2,7 @@ import torch, math
 import torch.nn as nn
 import torch.nn.functional as F
 
-from transformerfmodel import PositionalEncoding
-from train_fmodel import eprint
+from transformerfmodel import PositionalEncoding, eprint
 
 def print_weight(w):
     eprint(round(w, 4))

@@ -1,8 +1,9 @@
-import torch, math
+import torch, math, sys
 import torch.nn as nn
 import torch.nn.functional as F
 
-from train_fmodel import eprint
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 # source:
 # https://pytorch.org/tutorials/beginner/transformer_tutorial.html
