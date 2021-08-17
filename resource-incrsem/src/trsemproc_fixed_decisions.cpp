@@ -18,6 +18,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define ARMA_64BIT_WORD
+//#define FTRANSFORMER
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -41,7 +42,11 @@ uint FEATCONFIG = 0;
 #include <StoreState.hpp>
 #include <transformer.hpp>
 #include <NModel_mlp.hpp>
+#ifdef FTRANSFORMER
 #include <FModel_transformer.hpp>
+#else
+#include <FModel_mlp.hpp>
+#endif
 #include <WModel_mlp.hpp>
 #include <JModel_transformer.hpp>
 #include <Trellis.hpp>
@@ -227,8 +232,13 @@ int main ( int nArgs, char* argv[] ) {
       // F decision
       ////////////////
 
+#ifdef FTRANSFORMER
       FPredictorVec lfpredictors( be_tdec1, hvTop, 0 );
       arma::vec fresponses = modF.calcResponses( lfpredictors, word_index-1 );
+#else
+      FPredictorVec lfpredictors( modF, hvTop, 0, q_tdec1 );
+      arma::vec fresponses = modF.calcResponses( lfpredictors );
+#endif
 
       modW.calcPredictorLikelihoods(w_t, mapWWPP, mapXP, mapMP, mapWPP);
       mapWWPP.try_emplace(w_t, mapWPP);
