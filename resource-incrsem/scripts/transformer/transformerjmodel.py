@@ -4,8 +4,10 @@ import torch.nn.functional as F
 
 from transformerfmodel import PositionalEncoding, eprint
 
-def print_weight(w):
-    eprint(round(w, 4))
+def print_tensor(t, maxlen=10):
+    eprint('Printing first {} items...'.format(maxlen))
+    for w in t[:maxlen]:
+        eprint(round(w.item(), 8))
 
 class TransformerJModel(nn.Module):
     def __init__(self, j_config, cat_anc_vocab_size, hv_anc_vocab_size,
@@ -158,21 +160,15 @@ class TransformerJModel(nn.Module):
                 for j, emb in enumerate(cat_anc_embed):
                     eprint('\nJ ==== word {} ==== '.format(j))
                     eprint('\nJ cat anc emb:')
-                    for x in emb:
-                        eprint_weight(x.item())
+                    print_tensor(emb)
                     eprint('\nJ hv anc emb:')
-                    for x in hv_anc_embed[j]:
-                        eprint_weight(x.item())
+                    print_tensor(hv_anc_embed[j])
                     eprint('\nJ hv filler emb:')
-                    for x in hv_filler_embed[j]:
-                        eprint_weight(x.item())
+                    print_tensor(hv_filler_embed[j])
                     eprint('\nJ cat lc emb:')
-                    for x in cat_lc_embed[j]:
-                        eprint_weight(x.item())
+                    print_tensor(cat_lc_embed[j])
                     eprint('\nJ hv lc emb:')
-                    for x in hv_lc_embed[j]:
-                        eprint_weight(x.item())
-                        
+                    print_tensor(hv_lc_embed[j])
 
             seq_x = torch.cat(
                 (cat_anc_embed, hv_anc_embed, hv_filler_embed, 
@@ -244,22 +240,16 @@ class TransformerJModel(nn.Module):
                 eprint('\nJ ==== word {} ===='.format(i))
                 attn_input_i = attn_input[i, 0]
                 eprint('J attn input')
-                for x in attn_input_i:
-                    print_weight(x.item())
-                qkv_i = qkv[i, 0]
+                print_tensor(attn_input_i)
                 eprint('\nJ qkv')
-                for x in qkv_i:
-                    print_weight(x.item())
-                attn_output_i = attn_output[i, 0]
+                print_tensor(qkv[i, 0])
                 eprint('\nJ attn output')
-                for x in attn_output_i:
-                    print_weight(x.item())
+                print_tensor(attn_output[i, 0])
                 log_scores = result[i, 0]
                 scores = torch.exp(log_scores)
                 norm_scores = scores/sum(scores)
                 eprint('\nJ result')
-                for x in norm_scores:
-                    print_weight(x.item())
+                print_tensor(norm_scores)
                 eprint()
         return result
 
