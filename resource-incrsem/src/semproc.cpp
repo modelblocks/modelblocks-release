@@ -404,7 +404,7 @@ int main ( int nArgs, char* argv[] ) {
             const StoreState& q_tdec1    = be_tdec1.getHidd().sixth();  // prev storestate
             if( VERBOSE>1 ) cout << "  from (" << be_tdec1.getHidd() << ")" << endl;
             const ProbBack<HiddState> pbDummy = ProbBack<HiddState>(0.0, be_tdec1); //dummy element for most recent timestep
-            const HiddState hsDummy = HiddState(Sign(/*hvTop,CVar(),S()*/),F(),EVar(),K(),JResponse(),StoreState(),0 ); //dummy hidden state with kTop semantics
+            const HiddState hsDummy = HiddState(Sign(/*hvTop,CVar(),S()*/),F(),EVar(),K(),JResponse(),StoreState(),Sign(),0 ); //dummy hidden state with kTop semantics
             const BeamElement<HiddState> beDummy = BeamElement<HiddState>(pbDummy, hsDummy); //at timestep t, represents null antecedent
             const BeamElement<HiddState>* pbeAnt = &beDummy;
             //calculate denominator / normalizing constant over all antecedent timesteps
@@ -574,7 +574,7 @@ int main ( int nArgs, char* argv[] ) {
                         if( VERBOSE>1 ) cout << "       qTermPhase=" << qTermPhase << endl;
 
 #ifdef TRANSFORMER
-                        JPredictorVec ljpredictors( be_tdec1, f, aLchild, matE, funcO );
+                        JPredictorVec ljpredictors( be_tdec1, f, aLchild );
                         arma::vec jresponses = modJ.calcResponses( ljpredictors, word_index-1, 0 );
 #else
                         JPredictorVec ljpredictors( modJ, f, e_p_t, aLchild, qTermPhase );  // q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
