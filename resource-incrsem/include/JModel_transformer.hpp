@@ -213,6 +213,8 @@ class JModel {
     static const uint JSYN_DIM_DEFAULT = 20;
     uint JSEM_DIM;
     uint JSYN_DIM;
+    uint num_heads;
+    uint head_dim;
 
     map<CVar,vec> mcav; // map between ancestor syntactic category and embeds
     map<CVar,vec> mclv; // map between left-child syntactic category and embeds
@@ -297,6 +299,11 @@ class JModel {
         if (c == 'f') is >> jbf >> "\n"; 
         if (c == 'S') is >> jws >> "\n";
         if (c == 's') is >> jbs >> "\n"; 
+        if (c == 'H') {
+          Delimited<int> h;
+          is >> h >> "\n";
+          num_heads = h;
+        }
       }
 
       JSYN_DIM = JSYN_DIM_DEFAULT;
@@ -385,6 +392,8 @@ class JModel {
       jbqv = jbiv(span(0, attn_dim-1));
       jbkv = jbiv(span(attn_dim, 2*attn_dim-1));
       jbvv = jbiv(span(2*attn_dim, 3*attn_dim-1));
+      
+      head_dim = jbqv.size()/num_heads;
     }
 
 
@@ -614,53 +623,92 @@ vec JModel::computeResult( vector<vec> attnInput, uint wordIndex, bool verbose )
   }
   // used to scale the attention softmax (see section 3.2.1 of Attention
   // Is All You Need)
-  const double scalingFactor = sqrt(jbqv.size());
+  const double scalingFactor = sqrt(head_dim);
 
-  vector<vec> values;
-  vector<double> scaledDotProds;
-  int currIndex = wordIndex - attnInput.size() + 1;
-  for ( vec curr : attnInput ) { 
-    if ( verbose ) {
-      cerr << "J attnInput (progresses from first to last)\n" << curr << endl;
-    }
+//  vector<vec> values;
+//  vector<double> scaledDotProds;
+
+//  vector<vec>[num_heads] values;
+
+  // we only care about the latest word's query, hence vec instead of mat
+  vec queries[num_heads];
+  // each matrix is the list of q/k/v for a single attn head
+  mat keys[num_heads];
+  mat values[num_heads];
+
+  for ( uint i=0; i<num_heads; i++ ) {
+    vec q_i = query(span( i*head_dim, (i+1)*head_dim-1 ));
+    queries[i] = q_i/scalingFactor;
+    //queries[i] = query(span( i*head_dim, (i+1)*head_dim-1 )/scalingFactor);
+    // set dimensions for key and value matrices
+    keys[i] = mat(attnInput.size(), head_dim);
+    values[i] = mat(attnInput.size(), head_dim);
+  }
+  
+//  vector<double>[num_heads] scaledDotProds;
+//  int currIndex = wordIndex - attnInput.size() + 1;
+//  for ( vec curr : attnInput ) { 
+  vec curr;
+  for ( uint j=0; j<attnInput.size(); j++ ) { 
+    vec curr = attnInput[j];
+//    if ( verbose ) {
+//      cerr << "J attnInput (progresses from first to last)\n" << curr << endl;
+//    }
     proj = jwpm*curr + jbpv;
-    if ( usePositionalEncoding ) {
-      proj = proj + getPositionalEncoding(jbpv.size(), currIndex++);
-    }
+//    if ( usePositionalEncoding ) {
+//      proj = proj + getPositionalEncoding(jbpv.size(), currIndex++);
+//    }
     vec key = jwkm*proj + jbkv;
-    if ( verbose ) {
-      cerr << "J key (progresses from first to last)\n" << key << endl;
-    }
+//    if ( verbose ) {
+//      cerr << "J key (progresses from first to last)\n" << key << endl;
+//    }
     vec value = jwvm*proj + jbvv;
-    values.emplace_back(value);
-    scaledDotProds.emplace_back(dot(query, key)/scalingFactor);
+    // iterate over attention heads
+    for ( uint i=0; i < num_heads; i++ ) {
+      keys[i].row(j) = key(span( i*head_dim, (i+1)*head_dim-1 ));
+      values[i].row(j) = value(span( i*head_dim, (i+1)*head_dim-1 ));
+     // scaledDotProds[i].emplace_back(dot(query_i, key_i)/scalingFactor);
+    }
+//    values.emplace_back(value);
+//    scaledDotProds.emplace_back(dot(query, key)/scalingFactor);
   }
 
-  vec sdp = vec(scaledDotProds.size());
-  for ( uint i=0; (i < scaledDotProds.size()); i++ ) {
-    sdp(i) = scaledDotProds[i];
+//  vec sdp = vec(scaledDotProds.size());
+//  for ( uint i=0; (i < scaledDotProds.size()); i++ ) {
+//    sdp(i) = scaledDotProds[i];
+//  }
+
+  vec attnResult = vec(jbqv.size());
+  for ( uint i=0; i<num_heads; i++ ) {
+    // find softmax. sdp = scaled dot product
+    vec sdp = keys[i] * queries[i];
+    vec sdpExp = exp(sdp);
+    double norm = accu(sdpExp);
+    vec sdpSoftmax = sdpExp/norm;
+    // (head_dim x seq_length) x (seq_legth x 1) => (head_dim x 1)
+    vec perHeadAttnResult = values[i].t() * sdpSoftmax;
+    attnResult(span( i*head_dim, (i+1)*head_dim-1 )) = perHeadAttnResult;
   }
 
-  if ( verbose ) {
-    cerr << "J pre-softmax attn output weights\n" << sdp << endl;
-  }
+  
 
-  vec sdpExp = exp(sdp);
-  double norm = accu(sdpExp);
-  vec sdpSoftmax = sdpExp/norm;
+//  if ( verbose ) {
+//    cerr << "J pre-softmax attn output weights\n" << sdp << endl;
+//  }
 
-  if ( verbose ) {
-    cerr << "J scaled dot product softmax\n" << sdpSoftmax << endl;
-  }
 
-  // calculate scaled_softmax(QK)*V
-  vec attnResult = zeros<vec>(jbvv.size());
+//  if ( verbose ) {
+//    cerr << "J scaled dot product softmax\n" << sdpSoftmax << endl;
+//  }
 
-  for ( uint i=0; (i < values.size()); i++ ) {
-    double weight = sdpSoftmax(i);
-    vec val = values[i];
-    attnResult += weight*val;
-  }
+//  // calculate scaled_softmax(QK)*V
+//  vec attnResult = zeros<vec>(jbvv.size());
+//
+//  for ( uint i=0; (i < values.size()); i++ ) {
+//    double weight = sdpSoftmax(i);
+//    vec val = values[i];
+//    attnResult += weight*val;
+//  }
 
   if ( verbose ) {
     cerr << "J attn result\n" << attnResult << endl;

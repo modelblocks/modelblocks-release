@@ -334,12 +334,18 @@ def main(config):
         ('fc2.bias', 'J s')
     ]
 
+    # TODO remove this
+    eprint('State dict keys:', model.state_dict().keys())
+
     for param, prefix in params:
         if j_config.getboolean('UseGPU'):
             weights = model.state_dict()[param].data.cpu().numpy()
         else:
             weights = model.state_dict()[param].data.numpy()
         print(prefix, ','.join(map(str, weights.flatten('F').tolist())))
+
+    # write out other info needed by the C++ code
+    print('J H', model.num_heads)
 
     if not j_config.getboolean('AblateSyn'):
         if j_config.getboolean('UseGPU'):
