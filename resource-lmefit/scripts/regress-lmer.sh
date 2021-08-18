@@ -58,7 +58,7 @@ outdir="${base_filename/_part\./\.}"
 outfile="${base_filename/_part\./\.}"
 outfile+="_lmer.fitmodel.rdata";
 corpusname=$(cut -d'.' -f1 <<< "$(basename $prdmeasures)");
-tblfile="merged.$(date +"%Y_%m_%d_%I_%M_%p").tbl"
+tblfile="${base_filename/_part\./\.}merged.$(date +"%Y_%m_%d_%I_%M_%p").tbl"
 python ../resource-rt/scripts/merge_tables.py $prdmeasures $resmeasures subject docid sentid sentpos word resid > $tblfile
 #python ../resource-rt/scripts/merge_tables.py $prdmeasures $resmeasures subject docid sentid sentpos word -H right > $tblfile
 python ../resource-rt/scripts/check_preds.py $tblfile $bform $preds_add_STR $preds_ablate_STR
