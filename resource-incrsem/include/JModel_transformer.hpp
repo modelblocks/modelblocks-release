@@ -665,8 +665,10 @@ vec JModel::computeResult( vector<vec> attnInput, uint wordIndex, bool verbose )
     vec value = jwvm*proj + jbvv;
     // iterate over attention heads
     for ( uint i=0; i < num_heads; i++ ) {
-      keys[i].row(j) = key(span( i*head_dim, (i+1)*head_dim-1 ));
-      values[i].row(j) = value(span( i*head_dim, (i+1)*head_dim-1 ));
+      mat key_i = key(span( i*head_dim, (i+1)*head_dim-1 ));
+      keys[i].row(j) = key_i.t();
+      mat value_i = value(span( i*head_dim, (i+1)*head_dim-1 ));
+      values[i].row(j) = value_i.t();
      // scaledDotProds[i].emplace_back(dot(query_i, key_i)/scalingFactor);
     }
 //    values.emplace_back(value);
