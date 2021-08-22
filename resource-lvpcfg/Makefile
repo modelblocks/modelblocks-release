@@ -109,41 +109,16 @@ $(BERKPARSEDIR)/berkeleyParser.jar  |  bin  #$$(abspath $$(dir $$@))
 ################################################################################
 
 #### add extra paren and change '-' ops to '+' for berkeley trainer
-%.extrparplusops.linetrees:  %.linetrees
+%.extrparplusops.senttrees:  %.senttrees
 	cat $<  |  egrep '^\('  |  sed 's/^\((.*\)$$/(\1)/g'  |  perl -pe 's/\-(?=[a-z][^\)]* )/+/g;s/\-PRTRM/+PRTRM/g'  >  $@
-
-#### sm grammar using berkeley trainer
-## no validation -- external jarfile
-define ParamVal
-SM:
-  cascade: SplitMerge
-  kernel: ModelOpt
-  text: Split-merge iterations
-  value: ''
-endef
-define KernelBlock
-ModelOpt:
-  blocktitle: Model Options
-  paramtype: Dropdown
-  nargs: '*'
-SplitMerge:
-  blocktitle: SplitMerge
-  nodelimiter: true
-  paramtype: Integer
-  paramval:
-  - after: true
-    descr: ''
-    text: Split Merge Iterations
-    value: sm
-endef
 
 .PRECIOUS: %sm.gr
 %sm.gr: $$(DEP-BERKPARSE) $(CONFIGDIR)/user-javaflags.txt  $(CONFIGDIR)/user-berkeleyparserjar-directory.txt  \
-$(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees
+$(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.senttrees
 	java  $(shell cat $(word 1,$^))  -cp $(word 3,$^)  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 4,$^)  -treebank SINGLEFILE  -out $@
 ## validation -- external version
 %sm.gr: $$(DEP-BERKPARSE) $(CONFIGDIR)/user-javaflags.txt  $(CONFIGDIR)/user-berkeleyparserjar-directory.txt  \
-$(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees $$(basename %)last.extrparplusops.linetrees
+$(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.senttrees $$(basename %)last.extrparplusops.senttrees
 	java  $(shell cat $(word 1,$^))  -cp $(word 3,$^)  edu.berkeley.nlp.PCFGLA.GrammarTrainer  -SMcycles $(subst .,,$(suffix $*))  -path $(word 4,$^)  -validation $(word 5,$^)  -treebank SINGLEFILE  -out $@
 
 #### silly shortcut for berkeley parser
@@ -209,7 +184,7 @@ $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.linetrees $$(b
 	cat $<  |  perl -pe 's/\+(?=[^\)]* )/\-/g'  |  perl -pe 's/^ *\( *//;s/ *\) *$$//;s/-\d+ / /g'  >  $@
 
 #### Remove Berkeley split-merge annotation information
-%.noberkstuff.linetrees: %.linetrees
+%.noberkstuff.senttrees: %.senttrees
 	cat $^ | perl -pe 's/\^[^ ]*//g;s/_[0-9]+ / /g' | perl -pe 's/ *\( *\) *//' | python $(RESOURCE-LVPCFG)/scripts/removeAt.py > $@ 
 
 
