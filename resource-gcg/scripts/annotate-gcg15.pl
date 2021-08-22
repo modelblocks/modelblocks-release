@@ -252,7 +252,7 @@ debug("p-rule ", "$_");
         (s/\^(A-aN(?!-x))([^ ]*?)(-g[^ ]*)?(-fSBAR[^ ]*(?= <WH)) (<.*)\^/\^\1\2\3\4 <N\2-lI-fNIL \5>\^/ && ($j=13)) ||
 
         #### unary expand N...-fNNS? to N-aD... with elision of determiner
-        (s/\^(?=[^ ]*-fNNS )N(?!-a)([^ ]*?)($CODA) ([^<\[]*)\^/\^N\1\2 <N-aD\1-lI-fNIL \3>\^/ && ($j=13.5)) ||
+        (s/\^(?=[^ ]*-fNNS? )N(?!-a)([^ ]*?)($CODA) ([^<\[]*)\^/\^N\1\2 <N-aD\1-lI-fNIL \3>\^/ && ($j=13.5)) ||
 
         ######################################################################
         ## 2. HIGH BRANCHING / LOW PRECEDENCE FINAL CONSTITUENT

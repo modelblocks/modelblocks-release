@@ -469,6 +469,16 @@ scripts/%.ini:  $(INCRSEM-SCRIPTS)/%.ini  |  scripts
 
 ## Parse with: wsj02.wsj02to21-bestgcn_bestdsp_densemproc-parsed.tokdecs
 
+########################################
+#
+#  data analysis
+#
+########################################
+
+%predcounts:  %mlpdecpars
+	cat $<  |  grep '^F'  |  perl -pe 's/.*&//'  |  LC_COLLATE=C sort  |  LC_COLLATE=C uniq -c  >  $@
+
+
 ################################################################################
 
 

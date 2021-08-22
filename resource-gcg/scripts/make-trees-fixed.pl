@@ -90,6 +90,8 @@ while ( <> ) {
     s/PRP it\) \) \(VP \(VBD missed\)  \(NP \(-NONE- \*-3/PRP it\) \) \(VP \(VBD missed\)  \(NP \(-NONE- \*T\*-3/;
     # line 8567
     s/PRP it\) \) \(VP \(VBZ is\) \(RB n't\)  \(NP-PRD \(-NONE- \*-1/PRP it\) \) \(VP \(VBZ is\) \(RB n't\)  \(NP-PRD \(-NONE- \*T\*-1/;
+    # line 10593 (of wsj02to21)
+    s/(\(NP \(NP \(JJ grilled.* pudding\)\)) \(, ,\) \(PP (.* tea)\)/\(NP \1\) \(, ,\) \2/;
     # line 10700
     s/PRP he\) \) \(VP \(VBD was\)  \(NP-LOC-PRD \(-NONE- \*-1/PRP he\) \) \(VP \(VBD was\)  \(NP-LOC-PRD \(-NONE- \*T\*-1/;
     # line 13344
