@@ -7,3 +7,5 @@ $pip install fire
 $pip install regex
 $pip install requests==2.21.0
 $pip install tqdm==4.31.1
+$pip install pandas
+

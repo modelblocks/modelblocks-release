@@ -532,7 +532,7 @@ genmodel/simplewikiFULLAUTO.gcg15.morphed.1000unked.justAM.unlinked.train.semlct
 #
 ########################################
 
-%.prtrm.linetrees: %.linetrees      ## also change comma and colon to non-delimiter symbols
+%.prtrm.senttrees: %.senttrees      ## also change comma and colon to non-delimiter symbols
 	cat $<  |  perl -pe 's/\(([^\(\) ]*) ([^\(\) ]*)\)/\(\1-PRTRM \2\)/g;s/\([^ ]*,[^ -]*/\(Pc/g;s/\(:/\(Pk/g'  >  $@
 %.pptrm.linetrees: %.linetrees      ## also change comma and colon to non-delimiter symbols
 	cat $<  |  perl -pe 's/\(([^\(\) ]*) ([^\(\) ]*)\)/\(\1-PRTRM \2\)/g;s/\(([^\(\) ]*) (\([^\(\)]*\))\)/\(\1-PRTRM \2\)/g;s/\(([^\(\) ]*) (\([^\(\) ]* \([^\(\)]*\)\))\)/\(\1-PRTRM \2\)/g;s/((?:-l.|-x)*)(-PRTRM)/\2\1/g;s/\([^ ]*,[^ ]* /\(Pc /g;s/\(: /\(Pk /g'  >  $@

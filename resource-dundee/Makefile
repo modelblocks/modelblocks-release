@@ -40,19 +40,6 @@
 
 ################################################################################
 #
-#  MB-DOC 
-#
-################################################################################
-
-define ParamVal
-Dundee:
-  kernel: ETCorpus
-  text: Dundee (eye-tracking corpus)
-  value: dundee
-endef
-
-################################################################################
-#
 #  Macros & variables
 #
 ################################################################################
@@ -122,7 +109,7 @@ genmodel/%.ini: $(DUNDEE-SCRIPTS)/%.ini
 %.wordcounts: %.linetoks $(DUNDEE-SCRIPTS)/buildlexicon.py
 	python3 $(word 2,$^) $< -u5 > $@
 
-genmodel/dundee.%.textdata: $$(DEP-DUNDEE) $(DUNDEEDIR)/tx%wrdp.dat $(CONFIGDIR)/user-dundee-directory.txt $(GENERAL-SCRIPTS)/convert_latin-1.py | genmodel
+genmodel/dundee.%.textdata: $$(DEP-DUNDEE) $(DUNDEEDIR)/tx%wrdp.dat $(CONFIGDIR)/user-dundee-directory.txt $(GENERAL-SCRIPTS)/convert_cp437.py | genmodel
 	echo 'WORD ' > $@
 	cat $(word 1, $^) | perl -pe "s/\(/-LRB-/g;s/\)/-RRB-/g;s/  / /g;" | python3 $(word 3, $^) >> $@
 
@@ -196,8 +183,8 @@ genmodel/dundee.%.evmeasures: $(RT-SCRIPTS)/concat_tables.py $(foreach subj, $(D
 # %dundee.lineitems: %dundee.linetoks $(RT-SCRIPTS)/toks2sents.py %dundee.textdata
 # 	cat <(echo word) <(cat $(word 3, $^) | awk '!/^WORD/')  |  python2 $(word 2, $^) $< -e latin-1  > $@
 
-genmodel/dundee%.sentitems:  $(RESOURCE-DUNDEE)/srcmodel/dundee.text.headers  $(DUNDEEDIR)/tx%wrdp.dat  $(DUNDEE-SCRIPTS)/findBreaks.py  $(GENERAL-SCRIPTS)/convert_latin-1.py
-	cat $(word 1,$^) $(word 2,$^)  |  perl -pe 's/ +/ /g'  |  python2 $(word 3,$^)  |  python3 $(word 4,$^) > $@
+genmodel/dundee%.sentitems:  $(RESOURCE-DUNDEE)/srcmodel/dundee.text.headers  $(DUNDEEDIR)/tx%wrdp.dat  $(GENERAL-SCRIPTS)/convert_cp437.py  $(DUNDEE-SCRIPTS)/findBreaks.py
+	cat $(word 1,$^) $(word 2,$^)  |  perl -pe 's/ +/ /g'  |  python3 $(word 3,$^)  |  python3 $(word 4,$^) > $@
 %dundee.sentitems:  $$(foreach sect,$$(DUNDEESECTS),%dundee$$(sect).sentitems) | genmodel
 	cat $^  >  $@
 
