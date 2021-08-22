@@ -932,6 +932,9 @@ debug("p-rule ", "$_");
   # elim -lI (default)...
   s/-lI//g;
 
+  # elim -x...
+  s/-x(?=[^)]* )//g;
+
   # output
   print $_;
 }
