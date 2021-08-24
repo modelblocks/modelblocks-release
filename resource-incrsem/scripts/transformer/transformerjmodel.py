@@ -9,6 +9,44 @@ def print_tensor(t, maxlen=10):
     for w in t[:maxlen]:
         eprint(round(w.item(), 8))
 
+
+# TODO move this to transformerfmodel
+class TransformerLayer(nn.Module):
+    def __init__(self, attn_dim, num_heads, ff_dim, dropout_prob, use_gpu):
+        super(TransformerLayer, self).__init__()
+        self.attn =  nn.MultiheadAttention(
+            embed_dim=attn_dim,
+            num_heads=num_heads,
+            bias=True
+        )
+        # TODO make this resnet?
+        self.feedforward = nn.Linear(attn_dim, ff_dim, bias=True)
+        self.dropout_prob = dropout_prob
+        self.dropout = nn.Dropout(self.dropout_prob)
+        self.relu = F.relu
+        self.use_gpu = use_gpu
+
+
+    def get_attn_mask(self, seq_length):
+        # entries marked as True are what we want to mask
+        mask = torch.ones(seq_length, seq_length, dtype=bool)
+        if self.use_gpu:
+            mask = mask.to('cuda')
+        return torch.triu(mask, diagonal=1)
+
+
+    def forward(self, x, verbose=False):
+        # use mask to hide future inputs
+        mask = self.get_attn_mask(len(x))
+
+        # second output is attn weights
+        # the input matrix is used for queries, keys, and values
+        x, _ = self.attn(x, x, x, attn_mask=mask)
+        x = self.feedforward(x)
+        x = self.dropout(x)
+        return self.relu(x)
+
+
 class TransformerJModel(nn.Module):
     def __init__(self, j_config, cat_anc_vocab_size, hv_anc_vocab_size,
                  hv_filler_vocab_size, cat_lc_vocab_size, hv_lc_vocab_size,
@@ -23,7 +61,7 @@ class TransformerJModel(nn.Module):
         self.use_positional_encoding = j_config.getboolean('UsePositionalEncoding')
         # TODO this is int in the old config -- why?
         self.use_gpu = j_config.getboolean('UseGPU')
-        # TODO add num_blocks option for multiple transformer blocks
+        self.num_transformer_layers = j_config.getint('NumTransformerLayers')
         self.num_heads = j_config.getint('NumHeads')
         self.attn_dim = j_config.getint('AttnDim')
         # TODO decide whether to use this at runtime or just for
@@ -57,18 +95,19 @@ class TransformerJModel(nn.Module):
         # its output is used for queries, keys, and values
         self.positional_encoding = PositionalEncoding(self.attn_dim)
 
-        # TODO define this as a block so you can have multiple attention layers
-        self.attn =  nn.MultiheadAttention(
-            embed_dim=self.attn_dim,
-            num_heads=self.num_heads,
-            bias=True
-        )
-
-        # TODO make this resnet?
-        self.fc1 = nn.Linear(self.attn_dim, self.hidden_dim, bias=True)
-        self.dropout = nn.Dropout(self.dropout_prob)
-        self.relu = F.relu
-        self.fc2 = nn.Linear(self.hidden_dim, self.output_dim, bias=True)
+        self.transformer_layers = nn.ModuleList()
+        for i in range(self.num_transformer_layers):
+            self.transformer_layers.append(
+                TransformerLayer(
+                    attn_dim=self.attn_dim,
+                    num_heads=self.num_heads,
+                    ff_dim=self.hidden_dim,
+                    dropout_prob=self.dropout_prob,
+                    use_gpu=self.use_gpu
+                )
+            )
+                    
+        self.output_fc = nn.Linear(self.hidden_dim, self.output_dim, bias=True)
 
 
     def get_sparse_hv_matrix(self, hv, vocab_size):
@@ -197,14 +236,6 @@ class TransformerJModel(nn.Module):
         return x
 
 
-    def get_attn_mask(self, seq_length):
-        # entries marked as True are what we want to mask
-        mask = torch.ones(seq_length, seq_length, dtype=bool)
-        if self.use_gpu:
-            mask = mask.to('cuda')
-        return torch.triu(mask, diagonal=1)
-
-
     def forward(self, batch_jinfo, verbose=False):
         # list of matrices, one matrix for each sequence
         per_sequence_x = self.get_per_sequence_x(batch_jinfo, verbose)
@@ -218,22 +249,16 @@ class TransformerJModel(nn.Module):
 
 
     def compute(self, attn_input, verbose=False):
-        # the same matrix is used as query, key, and value. Within the attn
-        # layer this will be projected to a separate q, k, and v for each
-        # attn head
-        qkv = self.pre_attn_fc(attn_input)
+        x = self.pre_attn_fc(attn_input)
         if self.use_positional_encoding:
-            qkv = self.positional_encoding(qkv)
-        # use mask to hide future inputs
-        mask = self.get_attn_mask(len(attn_input))
-        # second output is attn weights
-        #attn_output, _ = self.attn(q, k, v, attn_mask=mask)
-        attn_output, _ = self.attn(qkv, qkv, qkv, attn_mask=mask)
-        x = self.fc1(attn_output)
-        x = self.dropout(x)
-        x = self.relu(x)
-        x = self.fc2(x)
-        result = F.log_softmax(x, dim=2)
+            x = self.positional_encoding(x)
+
+        # TODO
+        for tr_layer in self.transformer_layers:
+            x = tr_layer(x, verbose)
+            
+        result = self.output_fc(x)
+        result = F.log_softmax(result, dim=2)
         if verbose:
             # note: this assumes that there is only one sequence in the batch
             for i in range(result.shape[0]):
@@ -241,10 +266,10 @@ class TransformerJModel(nn.Module):
                 attn_input_i = attn_input[i, 0]
                 eprint('J attn input')
                 print_tensor(attn_input_i)
-                eprint('\nJ qkv')
-                print_tensor(qkv[i, 0])
-                eprint('\nJ attn output')
-                print_tensor(attn_output[i, 0])
+#                eprint('\nJ qkv')
+#                print_tensor(qkv[i, 0])
+#                eprint('\nJ attn output')
+#                print_tensor(attn_output[i, 0])
                 log_scores = result[i, 0]
                 scores = torch.exp(log_scores)
                 norm_scores = scores/sum(scores)

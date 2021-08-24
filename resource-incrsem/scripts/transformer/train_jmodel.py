@@ -317,22 +317,30 @@ def main(config):
     save_pytorch = j_config.getboolean('SaveTorchModel')
     pytorch_fn = j_config.get('TorchFilename')
     extra_params_fn = j_config.get('ExtraParamsFilename')
+    num_transformer_layers = j_config.getint('NumTransformerLayers')
     model, cat_anc_to_ix, hv_anc_to_ix, hv_filler_to_ix, cat_lc_to_ix, \
         hv_lc_to_ix, jdecs_to_ix = train(j_config)
 
     model.eval()
-    params = [ 
+
+    params = list()
+    params.extend([
         ('pre_attn_fc.weight', 'J P'),
-        ('pre_attn_fc.bias', 'J p'),
-        ('attn.in_proj_weight', 'J I'),
-        ('attn.in_proj_bias', 'J i'),
-        ('attn.out_proj.weight', 'J O'),
-        ('attn.out_proj.bias', 'J o'),
-        ('fc1.weight', 'J F'),
-        ('fc1.bias', 'J f'),
-        ('fc2.weight', 'J S'),
-        ('fc2.bias', 'J s')
-    ]
+        ('pre_attn_fc.bias', 'J p')
+    ])
+    for i in range(num_transformer_layers):
+        params.extend([
+            (f'transformer_layers.{i}.attn.in_proj_weight', f'J I {i}'),
+            (f'transformer_layers.{i}.attn.in_proj_bias', f'J i {i}'),
+            (f'transformer_layers.{i}.attn.out_proj.weight', f'J O {i}'),
+            (f'transformer_layers.{i}.attn.out_proj.bias', f'J o {i}'),
+            (f'transformer_layers.{i}.feedforward.weight', f'J F {i}'),
+            (f'transformer_layers.{i}.feedforward.bias', f'J f {i}'),
+        ])
+    params.extend([ 
+        ('output_fc.weight', 'J S'),
+        ('output_fc.bias', 'J s')
+    ])
 
     # TODO remove this
     eprint('State dict keys:', model.state_dict().keys())
