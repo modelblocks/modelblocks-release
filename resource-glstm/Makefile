@@ -56,4 +56,6 @@ glstm_env: $(RESOURCE-GLSTM)/glstm_conda_env.sh
 	### This target assumes active (glstm_env) conda environment #####
 	### Please run "make glstm_env" and "conda activate glstm_env" ###
 	##################################################################
+	#export LD_LIBRARY_PATH=$(CONDA_PREFIX)/lib64
 	python3 $(word 2,$^) --checkpoint $(shell cat $|)/hidden650_batch128_dropout0.2_lr20.0.pt --path $(word 1,$^) --data $(RESOURCE-GLSTM)/src >  $@  2>  $@.log
+

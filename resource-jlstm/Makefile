@@ -50,9 +50,9 @@ endif
 jlstm_env: $(RESOURCE-JLSTM)/jlstm_conda_env.sh
 	$(SHELL) $(word 1, $^)
 
-jlstm: bin
-	cp -r $(JLSTM-SCRIPTS)/* $<
-	cd $< && bazel build -c opt lm_1b/... && cd ..
+jlstm:  |  bin
+	cp -r $(JLSTM-SCRIPTS)/* $|
+	cd $| && bazel build -c opt lm_1b/... && cd ..
 
 .PRECIOUS: %.jlstm.tokmeasures jlstm
 %.jlstm.tokmeasures:  %.senttoks jlstm  |  $(CONFIGDIR)/user-jlstm-directory.txt
@@ -60,6 +60,8 @@ jlstm: bin
 	### This target assumes active (jlstm_env) conda environment #####
 	### Please run "make jlstm_env" and "conda activate jlstm_env" ###
 	##################################################################
+	#export LD_LIBRARY_PATH=$(CONDA_PREFIX)/lib64
 	bin/bazel-bin/lm_1b/lm_1b_eval --mode eval --pbtxt $(shell cat $|)/graph-2016-09-10.pbtxt \
 	                               --vocab_file $(shell cat $|)/vocab-2016-09-10.txt  --input_data $(word 1,$^) \
                                    --ckpt '$(shell cat $|)/ckpt-*' > $@  2> $@.log
+
