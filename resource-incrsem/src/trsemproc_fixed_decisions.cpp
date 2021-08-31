@@ -101,7 +101,6 @@ DelimitedVector<psX,ObsWord,psSpace,psX> getTokWs() {
 
 int main ( int nArgs, char* argv[] ) {
 
-
   string sentDelim = "!SENTENCE";
 
   // Define model structures...

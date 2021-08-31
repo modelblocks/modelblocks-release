@@ -8,6 +8,7 @@ def print_tensor(t, maxlen=10):
     eprint('Printing first {} items...'.format(maxlen))
     for w in t[:maxlen]:
         eprint(round(w.item(), 8))
+    eprint()
 
 
 # TODO move this to transformerfmodel
@@ -44,6 +45,17 @@ class TransformerLayer(nn.Module):
         x, _ = self.attn(x, x, x, attn_mask=mask)
         x = self.feedforward(x)
         x = self.dropout(x)
+        if verbose:
+            for i in range(x.shape[0]):
+                eprint('J word {} pre-relu feedforward output'.format(i))
+                print_tensor(x[i, 0])
+
+        if verbose:
+            ff_out = self.relu(x)
+            for i in range(ff_out.shape[0]):
+                eprint('J word {} feedforward output'.format(i))
+                print_tensor(ff_out[i, 0])
+            
         return self.relu(x)
 
 
@@ -95,6 +107,7 @@ class TransformerJModel(nn.Module):
         # its output is used for queries, keys, and values
         self.positional_encoding = PositionalEncoding(self.attn_dim)
 
+        # TODO hidden_dim and attn_dim need to be the same I think
         self.transformer_layers = nn.ModuleList()
         for i in range(self.num_transformer_layers):
             self.transformer_layers.append(
@@ -253,8 +266,12 @@ class TransformerJModel(nn.Module):
         if self.use_positional_encoding:
             x = self.positional_encoding(x)
 
-        # TODO
-        for tr_layer in self.transformer_layers:
+        for i, tr_layer in enumerate(self.transformer_layers):
+            if verbose:
+                eprint('\n ==== transformer layer {} ===='.format(i))
+                for i in range(x.shape[0]):
+                    eprint('J word {} curr attn inputs'.format(i))
+                    print_tensor(x[i, 0])
             x = tr_layer(x, verbose)
             
         result = self.output_fc(x)

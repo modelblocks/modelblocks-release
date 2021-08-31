@@ -23,6 +23,7 @@ void print_vec(vec vector, uint maxlen=10) {
   for ( uint i=0; (i<maxlen) && (i<len); i++ ) {
     cerr << vector(i) << endl;
   }
+  cerr << endl;
 }
 
 // TODO probably okay to pass in actual BeamElement, not pointer
@@ -215,6 +216,7 @@ class JModel {
     uint JSYN_DIM;
     uint num_heads;
     uint head_dim;
+    uint attn_dim;
 
     map<CVar,vec> mcav; // map between ancestor syntactic category and embeds
     map<CVar,vec> mclv; // map between left-child syntactic category and embeds
@@ -228,45 +230,36 @@ class JModel {
     unsigned int iNextResponse  = 0;
 
     // weights
-    /*
-    DelimitedVector<psX, double, psComma, psX> jwpq; // pre-attention query projection
-    DelimitedVector<psX, double, psComma, psX> jwpkv; // pre-attention key/value projection
-    */
     DelimitedVector<psX, double, psComma, psX> jwp; // pre-attention projection
-    DelimitedVector<psX, double, psComma, psX> jwi; // attention input projection -- concatenation of query, key, and value matrices
-    DelimitedVector<psX, double, psComma, psX> jwo; // attention output projection
-    DelimitedVector<psX, double, psComma, psX> jwf; // first feedforward
-    DelimitedVector<psX, double, psComma, psX> jws; // second feedforward
+    vector<vector<double>> jwi; // attention input projection (concatenation of 
+                                // query, key, and value matrices) for each transformer layer
+    vector<vector<double>> jwo; // attention output projection for each transformer layer
+    vector<vector<double>> jwf; // feedforward for each transformer layer
+    DelimitedVector<psX, double, psComma, psX> jws; // final feedforward
 
-    //mat jwpqm;
-    //mat jwpkvm;
     mat jwpm;
-    mat jwim;
-    mat jwqm; // query
-    mat jwkm; // key
-    mat jwvm; // value
-    mat jwom;
-    mat jwfm;
+    vector<mat> jwim;
+    vector<mat> jwqm; // query
+    vector<mat> jwkm; // key
+    vector<mat> jwvm; // value
+    vector<mat> jwom;
+    vector<mat> jwfm;
     mat jwsm;
 
     // biases
-    //DelimitedVector<psX, double, psComma, psX> jbpq; // pre-attention query projection
-    //DelimitedVector<psX, double, psComma, psX> jbpkv; // pre-attention key/value projection
     DelimitedVector<psX, double, psComma, psX> jbp; // pre-attention projection
-    DelimitedVector<psX, double, psComma, psX> jbi; // attention input projection
-    DelimitedVector<psX, double, psComma, psX> jbo; // attention output projection
-    DelimitedVector<psX, double, psComma, psX> jbf; // first feedforward
-    DelimitedVector<psX, double, psComma, psX> jbs; // second feedforward
+    vector<vector<double>> jbi; // attention input projection for each transformer layer
+    vector<vector<double>> jbo; // attention output projection for each transformer layer
+    vector<vector<double>> jbf; // feedforward for each transformer layer
+    DelimitedVector<psX, double, psComma, psX> jbs; // final feedforward
 
-    //vec jbpqv;
-    //vec jbpkvv;
     vec jbpv;
-    vec jbiv;
-    vec jbqv; // query
-    vec jbkv; // key
-    vec jbvv; // value
-    vec jbov;
-    vec jbfv;
+    vector<vec> jbiv;
+    vector<vec> jbqv; // query
+    vector<vec> jbkv; // key
+    vector<vec> jbvv; // value
+    vector<vec> jbov;
+    vector<vec> jbfv;
     vec jbsv;
 
     vec computeResult( vector<vec> attnInput, uint wordIndex, bool verbose ) const;
@@ -291,12 +284,54 @@ class JModel {
         */
         if (c == 'P') is >> jwp >> "\n";
         if (c == 'p') is >> jbp >> "\n"; 
-        if (c == 'I') is >> jwi >> "\n";
-        if (c == 'i') is >> jbi >> "\n"; 
-        if (c == 'O') is >> jwo >> "\n";
-        if (c == 'o') is >> jbo >> "\n"; 
-        if (c == 'F') is >> jwf >> "\n";
-        if (c == 'f') is >> jbf >> "\n"; 
+        if (c == 'I') {
+          Delimited<int> i;
+          DelimitedVector<psX, double, psComma, psX> vtemp;  
+          is >> i >> " ";
+          is >> vtemp >> "\n";
+          assert (i == (int)jwi.size());
+          jwi.push_back(vtemp);
+        }
+        if (c == 'i') {
+          Delimited<int> i;
+          DelimitedVector<psX, double, psComma, psX> vtemp;  
+          is >> i >> " ";
+          is >> vtemp >> "\n";
+          assert (i == (int)jbi.size());
+          jbi.push_back(vtemp);
+        }
+        if (c == 'O') {
+          Delimited<int> i;
+          DelimitedVector<psX, double, psComma, psX> vtemp;  
+          is >> i >> " ";
+          is >> vtemp >> "\n";
+          assert (i == (int)jwo.size());
+          jwo.push_back(vtemp);
+        }
+        if (c == 'o') {
+          Delimited<int> i;
+          DelimitedVector<psX, double, psComma, psX> vtemp;  
+          is >> i >> " ";
+          is >> vtemp >> "\n";
+          assert (i == (int)jbo.size());
+          jbo.push_back(vtemp);
+        }
+        if (c == 'F') {
+          Delimited<int> i;
+          DelimitedVector<psX, double, psComma, psX> vtemp;  
+          is >> i >> " ";
+          is >> vtemp >> "\n";
+          assert (i == (int)jwf.size());
+          jwf.push_back(vtemp);
+        }
+        if (c == 'f') {
+          Delimited<int> i;
+          DelimitedVector<psX, double, psComma, psX> vtemp;  
+          is >> i >> " ";
+          is >> vtemp >> "\n";
+          assert (i == (int)jbf.size());
+          jbf.push_back(vtemp);
+        }
         if (c == 'S') is >> jws >> "\n";
         if (c == 's') is >> jbs >> "\n"; 
         if (c == 'H') {
@@ -350,27 +385,42 @@ class JModel {
       //jwpqm = jwpq;
       //jwpkvm = jwpkv;
       jwpm = jwp;
-      jwim = jwi;
-      jwom = jwo;
-      jwfm = jwf;
+      for ( vector<double> v : jwi ) {
+        mat m = v;
+        jwim.push_back(m);
+      }
+      for ( vector<double> v : jwo ) {
+        mat m = v;
+        jwom.push_back(m);
+      }
+      for ( vector<double> v : jwf ) {
+        mat m = v;
+        jwfm.push_back(m);
+      }
+//      jwim = jwi;
+//      jwom = jwo;
+//      jwfm = jwf;
       jwsm = jws;
 
-      //jbpqv = jbpq;
-      //jbpkvv = jbpkv;
       jbpv = jbp;
-      jbiv = jbi;
-      jbov = jbo;
-      jbfv = jbf;
+      for ( vector<double> v : jbi ) {
+        vec vvec = v;
+        jbiv.push_back(vvec);
+      }
+      for ( vector<double> v : jbo ) {
+        vec vvec = v;
+        jbov.push_back(vvec);
+      }
+      for ( vector<double> v : jbf ) {
+        vec vvec = v;
+        jbfv.push_back(vvec);
+      }
       jbsv = jbs;
 
       // reshape weight matrices
-      //uint pre_attn_q_dim = 7 + 2*JSYN_DIM + 3*JSEM_DIM;
-      //uint pre_attn_kv_dim = 7 + JSYN_DIM + 2*JSEM_DIM;
       uint pre_attn_dim = 7 + 2*JSYN_DIM + 3*JSEM_DIM;
-      uint attn_dim = jwp.size()/pre_attn_dim;
-      //// output of attn layer is concatenated with catLchild and hvLchild
-      //uint post_attn_dim = pre_attn_dim + JSYN_DIM + JSEM_DIM;
-      uint hidden_dim = jwf.size()/attn_dim;
+      attn_dim = jwp.size()/pre_attn_dim;
+      uint hidden_dim = jwf[0].size()/attn_dim;
       uint output_dim = jws.size()/hidden_dim;
 
       //jwpqm.reshape(attn_dim, pre_attn_q_dim);
@@ -379,21 +429,31 @@ class JModel {
 
       // fwim contains query, key, and value projection matrices,
       // each of dimension attn_dim x attn_dim
-      jwim.reshape(3*attn_dim, attn_dim);
-      jwqm = jwim.rows(0, attn_dim-1);
-      jwkm = jwim.rows(attn_dim, 2*attn_dim-1);
-      jwvm = jwim.rows(2*attn_dim, 3*attn_dim-1);
+      for ( mat m : jwim ) {
+        m.reshape(3*attn_dim, attn_dim);
+        jwqm.push_back(m.rows(0, attn_dim-1));
+        jwkm.push_back(m.rows(attn_dim, 2*attn_dim-1));
+        jwvm.push_back(m.rows(2*attn_dim, 3*attn_dim-1));
+      }
 
-      jwom.reshape(attn_dim, attn_dim);
-      jwfm.reshape(hidden_dim, attn_dim);
+      for (uint i=0; i<jwom.size(); i++) {
+        jwom[i].reshape(attn_dim, attn_dim);
+      }
+
+      for (uint i=0; i<jwfm.size(); i++) {
+        jwfm[i].reshape(hidden_dim, attn_dim);
+      }
+
       jwsm.reshape(output_dim, hidden_dim);
 
       // fbiv contains biases vectors for query, key, and value
-      jbqv = jbiv(span(0, attn_dim-1));
-      jbkv = jbiv(span(attn_dim, 2*attn_dim-1));
-      jbvv = jbiv(span(2*attn_dim, 3*attn_dim-1));
+      for ( vec v : jbiv ) {
+        jbqv.push_back(v(span(0, attn_dim-1)));
+        jbkv.push_back(v(span(attn_dim, 2*attn_dim-1)));
+        jbvv.push_back(v(span(2*attn_dim, 3*attn_dim-1)));
+      }
       
-      head_dim = jbqv.size()/num_heads;
+      head_dim = attn_dim / num_heads;
     }
 
 
@@ -532,13 +592,17 @@ vec JModel::calcResponses( JPredictorVec& ljpredictors, int wordIndex, bool verb
     print_vec(catAncEmb);
     // TODO switch later stuff to print_vec
     cerr << "\nJ hvAnc of current word: " << hvAnc << endl;
-    cerr << "\nJ hvAncEmb of current word\n" << hvAncEmb << endl;
+    cerr << "\nJ hvAncEmb of current word:" << endl;
+    print_vec(hvAncEmb);
     cerr << "\nJ hvFiller of current word: " << hvFiller << endl;
-    cerr << "\nJ hvFillerEmb of current word\n" << hvFillerEmb << endl;
+    cerr << "\nJ hvFillerEmb of current word:" << endl;
+    print_vec(hvFillerEmb);
     cerr << "\nJ catLchild of current word: " << catLchild << endl;
-    cerr << "\nJ catLchildEmb of current word\n" << catLchildEmb << endl;
+    cerr << "\nJ catLchildEmb of current word:" << endl;
+    print_vec(catLchildEmb);
     cerr << "\nJ hvLchild of current word: " << hvLchild << endl;
-    cerr << "\nJ hvLchildEmb of current word\n" << hvLchildEmb << endl;
+    cerr << "\nJ hvLchildEmb of current word:" << endl;
+    print_vec(hvLchildEmb);
     cerr << "\nJ latest word hidd\n" << pbe->getHidd() << endl;
   }
 
@@ -549,7 +613,6 @@ vec JModel::calcResponses( JPredictorVec& ljpredictors, int wordIndex, bool verb
   vec currAttnInput = join_cols(join_cols(join_cols(join_cols(join_cols(catAncEmb, hvAncEmb), hvFillerEmb), catLchildEmb), hvLchildEmb), zeros(7)); 
   currAttnInput(3*JSEM_DIM + 2*JSYN_DIM + depth) = 1;
   if ( verbose ) {
-    cerr << "\nJ latest word depth\n" << depth << endl;
     cerr << "\nJ latest word attn input\n" << currAttnInput << endl;
   }
   // vector<> doesn't have an emplace_front method
@@ -571,12 +634,6 @@ vec JModel::calcResponses( JPredictorVec& ljpredictors, int wordIndex, bool verb
     //hvLchild = getHvLchild(curr, matE, funcO);
     hvLchild = getHvLchild(curr);
     depth = getD(curr);
-    if ( verbose ) {
-      cerr << "\nJ curr attn hvLchild " << wordOffset << " words back\n" << hvLchild << endl;
-      cerr << "\nJ curr attn depth " << wordOffset << " words back\n" << depth << endl;
-      cerr << "\nJ curr hidd" << wordOffset << " words back\n" << curr->getHidd() << endl;
-    }
- 
     catAncEmb = getCatEmbed(catAnc, 'A');
     hvAncEmb = getKVecEmbed(hvAnc, 'A');
     hvFillerEmb = getKVecEmbed(hvFiller, 'F');
@@ -585,9 +642,6 @@ vec JModel::calcResponses( JPredictorVec& ljpredictors, int wordIndex, bool verb
  
     currAttnInput = join_cols(join_cols(join_cols(join_cols(join_cols(catAncEmb, hvAncEmb), hvFillerEmb), catLchildEmb), hvLchildEmb), zeros(7)); 
     currAttnInput(3*JSEM_DIM + 2*JSYN_DIM + depth) = 1;
-    if ( verbose ) {
-      cerr << "\nJ curr attn input " << wordOffset << " words back\n" << currAttnInput << endl;
-    }
     // vector<> doesn't have an emplace_front method
     //attnInput.emplace_back(currAttnInput);
     attnInput.push_back(currAttnInput);
@@ -605,124 +659,148 @@ vec JModel::calcResponses( JPredictorVec& ljpredictors, int wordIndex, bool verb
 // attnInput.back() is the current word that we are making an J decision for
 vec JModel::computeResult( vector<vec> attnInput, uint wordIndex, bool verbose ) const {
   bool usePositionalEncoding = false;
-  vec last = attnInput.back();
-  if ( verbose ) {
-    cerr << "J length of attnInput: " << attnInput.size() << endl;
-    cerr << "J attn input of current word\n" << last << endl;
+
+  //vector<vec> currAttnInputs;
+  //mat currAttnInputs(attnInput.size(), jbpv.size());
+  mat currAttnInputs(jbpv.size(), attnInput.size());
+
+  for ( uint i=0; i<attnInput.size(); i++ ) {
+    vec proj = jwpm*attnInput[i] + jbpv;
+    if ( usePositionalEncoding ) {
+      proj = proj + getPositionalEncoding(jbpv.size(), i);
+    }
+    currAttnInputs.col(i) = proj;
   }
-  vec proj = jwpm*last + jbpv;
-  if ( usePositionalEncoding ) {
-    proj = proj + getPositionalEncoding(jbpv.size(), wordIndex);
-  }
-  if ( verbose ) {
-    cerr << "J proj\n" << proj << endl;
-  }
-  const vec query = jwqm*proj + jbqv;
-  if ( verbose ) {
-    cerr << "J query after linear\n" << query << endl;
-  }
+
+  uint numTransformerLayers = jwqm.size();
   // used to scale the attention softmax (see section 3.2.1 of Attention
   // Is All You Need)
   const double scalingFactor = sqrt(head_dim);
+  for ( uint trLayer=0; trLayer<numTransformerLayers; trLayer++ ) {
 
-//  vector<vec> values;
-//  vector<double> scaledDotProds;
-
-//  vector<vec>[num_heads] values;
-
-  // we only care about the latest word's query, hence vec instead of mat
-  vec queries[num_heads];
-  // each matrix is the list of q/k/v for a single attn head
-  mat keys[num_heads];
-  mat values[num_heads];
-
-  for ( uint i=0; i<num_heads; i++ ) {
-    vec q_i = query(span( i*head_dim, (i+1)*head_dim-1 ));
-    queries[i] = q_i/scalingFactor;
-    //queries[i] = query(span( i*head_dim, (i+1)*head_dim-1 )/scalingFactor);
-    // set dimensions for key and value matrices
-    keys[i] = mat(attnInput.size(), head_dim);
-    values[i] = mat(attnInput.size(), head_dim);
-  }
-  
-//  vector<double>[num_heads] scaledDotProds;
-//  int currIndex = wordIndex - attnInput.size() + 1;
-//  for ( vec curr : attnInput ) { 
-  vec curr;
-  for ( uint j=0; j<attnInput.size(); j++ ) { 
-    vec curr = attnInput[j];
-//    if ( verbose ) {
-//      cerr << "J attnInput (progresses from first to last)\n" << curr << endl;
-//    }
-    proj = jwpm*curr + jbpv;
-//    if ( usePositionalEncoding ) {
-//      proj = proj + getPositionalEncoding(jbpv.size(), currIndex++);
-//    }
-    vec key = jwkm*proj + jbkv;
-//    if ( verbose ) {
-//      cerr << "J key (progresses from first to last)\n" << key << endl;
-//    }
-    vec value = jwvm*proj + jbvv;
-    // iterate over attention heads
-    for ( uint i=0; i < num_heads; i++ ) {
-      mat key_i = key(span( i*head_dim, (i+1)*head_dim-1 ));
-      keys[i].row(j) = key_i.t();
-      mat value_i = value(span( i*head_dim, (i+1)*head_dim-1 ));
-      values[i].row(j) = value_i.t();
-     // scaledDotProds[i].emplace_back(dot(query_i, key_i)/scalingFactor);
+    if ( verbose ) {
+      cerr << " ==== transformer layer " << trLayer << " ====" << endl;
     }
-//    values.emplace_back(value);
-//    scaledDotProds.emplace_back(dot(query, key)/scalingFactor);
-  }
 
-//  vec sdp = vec(scaledDotProds.size());
-//  for ( uint i=0; (i < scaledDotProds.size()); i++ ) {
-//    sdp(i) = scaledDotProds[i];
-//  }
+    if ( verbose ) {
+      for ( uint j=0; j<attnInput.size(); j++ ) { 
+        cerr << "J word " << j << " curr attn inputs" << endl;
+        print_vec(currAttnInputs.col(j));
+      }
+    }
 
-  vec attnResult = vec(jbqv.size());
-  for ( uint i=0; i<num_heads; i++ ) {
-    // find softmax. sdp = scaled dot product
-    vec sdp = keys[i] * queries[i];
-    vec sdpExp = exp(sdp);
-    double norm = accu(sdpExp);
-    vec sdpSoftmax = sdpExp/norm;
-    // (head_dim x seq_length) x (seq_legth x 1) => (head_dim x 1)
-    vec perHeadAttnResult = values[i].t() * sdpSoftmax;
-    attnResult(span( i*head_dim, (i+1)*head_dim-1 )) = perHeadAttnResult;
-  }
+    // each matrix contains the q/k/v for a single attn head
+    mat queries[num_heads];
+    mat keys[num_heads];
+    mat values[num_heads];
 
-  
+    // initialize q/k/v matrices
+    for ( uint i=0; i<num_heads; i++ ) {
+      queries[i] = mat(attnInput.size(), head_dim);
+      keys[i] = mat(attnInput.size(), head_dim);
+      values[i] = mat(attnInput.size(), head_dim);
+    }
+    
+    vec curr;
+    for ( uint j=0; j<attnInput.size(); j++ ) { 
+      vec curr = currAttnInputs.col(j);
 
-//  if ( verbose ) {
-//    cerr << "J pre-softmax attn output weights\n" << sdp << endl;
-//  }
+      mat jwqm_i = jwqm[trLayer];
+      vec jbqv_i = jbqv[trLayer];
+      vec query = jwqm_i*curr+ jbqv_i;
 
+      mat jwkm_i = jwkm[trLayer];
+      vec jbkv_i = jbkv[trLayer];
+      vec key = jwkm_i*curr+ jbkv_i;
 
-//  if ( verbose ) {
-//    cerr << "J scaled dot product softmax\n" << sdpSoftmax << endl;
-//  }
+      mat jwvm_i = jwvm[trLayer];
+      vec jbvv_i = jbvv[trLayer];
+      vec value = jwvm_i*curr+ jbvv_i;
+      // iterate over attention heads
+      for ( uint i=0; i < num_heads; i++ ) {
+        mat query_i = query(span( i*head_dim, (i+1)*head_dim-1 ));
+        queries[i].row(j) = query_i.t();
 
-//  // calculate scaled_softmax(QK)*V
-//  vec attnResult = zeros<vec>(jbvv.size());
-//
-//  for ( uint i=0; (i < values.size()); i++ ) {
-//    double weight = sdpSoftmax(i);
-//    vec val = values[i];
-//    attnResult += weight*val;
-//  }
+        mat key_i = key(span( i*head_dim, (i+1)*head_dim-1 ));
+        keys[i].row(j) = key_i.t();
 
-  if ( verbose ) {
-    cerr << "J attn result\n" << attnResult << endl;
-  }
+        mat value_i = value(span( i*head_dim, (i+1)*head_dim-1 ));
+        values[i].row(j) = value_i.t();
+      }
+    }
 
-  vec attnOutput = jwom*attnResult + jbov;
+    mat attnResult(attnInput.size(), attn_dim);
+    // compute attn output head by head
+    for ( uint i=0; i<num_heads; i++ ) {
+      // sdp = scaled dot product
+      mat sdp = (queries[i] * keys[i].t()) / scalingFactor;
+      if ( verbose ) {
+        cerr << "J attn head " << i << endl;
+        cerr << "J pre-softmax attn output weights:" << endl;
+        for ( uint k=0; k<attnInput.size(); k++ ) {
+          cerr << "J word " << k << endl;
+          print_vec(sdp.row(k).t());
+        }
+      }
+      sdp = exp(sdp);
+      // take softmax of each row
+      for ( uint j=0; j<attnInput.size(); j++ ) { 
+        vec sdp_j = sdp.row(j).t();
+        // mask any words later in time than the current word
+        for ( uint k=j+1; k<attnInput.size(); k++ ) {
+          sdp_j(k) = 0;
+        }
+        double norm = accu(sdp_j);
+        sdp.row(j) = (sdp_j/norm).t();
+      }
+      // (seqLegth x seqLength) * (seqLength x headDim)  => (seqLength x headDim)
+      mat perHeadAttnResult = sdp * values[i];
+      attnResult.cols( i*head_dim, (i+1)*head_dim-1 ) = perHeadAttnResult;
+    }
 
-  if ( verbose ) {
-    cerr << "J attnOutput\n" << attnOutput << endl;
-  }
-  //vec hiddenInput = join_cols(attnOutput, corefVec);
-  vec logScores = jwsm * relu(jwfm*attnOutput + jbfv) + jbsv;
+    if ( verbose ) {
+      for ( uint j=0; j<attnInput.size(); j++ ) { 
+        cerr << "J word " << j << " attn result" << endl;
+        print_vec(attnResult.row(j).t());
+      }
+    }
+
+    mat jwom_i = jwom[trLayer];
+    vec jbov_i = jbov[trLayer];
+    mat attnOutput = jwom_i*attnResult.t();
+    attnOutput = attnOutput.each_col() + jbov_i;
+
+    if ( verbose ) {
+      for ( uint j=0; j<attnInput.size(); j++ ) { 
+        cerr << "J word " << j << " attn output" << endl;
+        print_vec(attnOutput.col(j));
+      }
+    }
+
+    mat jwfm_i = jwfm[trLayer];
+    vec jbfv_i = jbfv[trLayer];
+    mat m = jwfm_i*attnOutput;
+    m = m.each_col() + jbfv_i;
+    if ( verbose ) {
+      for ( uint j=0; j<attnInput.size(); j++ ) { 
+        cerr << "J word " << j << " pre-relu feedforward output" << endl;
+        print_vec(m.col(j));
+      }
+    }
+    currAttnInputs = relu(m);
+    if ( verbose ) {
+      for ( uint j=0; j<attnInput.size(); j++ ) { 
+        cerr << "J word " << j << " feedforward output" << endl;
+        print_vec(currAttnInputs.col(j));
+      }
+    }
+
+  } // end for trLayer
+
+  // we only want the result from the last word
+  vec finalWordFfOutput = currAttnInputs.col(attnInput.size() - 1);
+
+  vec logScores = jwsm * finalWordFfOutput + jbsv;
   vec scores = exp(logScores);
   double outputNorm = accu(scores);
   vec result = scores/outputNorm;
