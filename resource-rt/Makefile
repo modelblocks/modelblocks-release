@@ -423,7 +423,7 @@ $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.item
 	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  >  $@
 
 ## PRD/RESMEASURES SPEC
-.PRECIOUS: %.prdmeasures
+#.PRECIOUS: %.prdmeasures
 %.prdmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
 	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  >  $@
 %.resmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
