@@ -17,8 +17,8 @@
 
 # Import packages
 library(lme4)
-library(languageR)
-library(optimx)
+#library(languageR)
+#library(optimx)
 library(ggplot2)
 library(optparse)
 # The below scripts cannot be distributed with Modelblocks
