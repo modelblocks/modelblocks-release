@@ -249,8 +249,9 @@ class CorefPredictors:
 
 def main():
     #print("Beginning feature extraction...")
-    with open(sys.argv[1], 'r') as iff:
-        lines = iff.readlines()
+#    with open(sys.argv[1], 'r') as iff:
+#        lines = iff.readlines()
+    lines = sys.stdin.readlines()
 
     cp = CorefPredictors(lines)
     cp.get_predictors()
