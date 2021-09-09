@@ -317,7 +317,7 @@ genmodel/rename_cols.params: | genmodel
 	cat $< | paste -d' ' - <(cat $(word 2, $^) | sed 's/\t/ /g') > $@
 
 # Computes coreference predictors 
-%.coref.tokmeasures: $(RT-SCRIPTS)/extract_coref_predictors.py %.coref.fromlinetrees.numbered.editabletrees
+%.coref.tokmeasures: $(RT-SCRIPTS)/extract_coref_predictors.py %.casp.fromsenttrees.numbered.toktrees
 	python $^ > $@
 
 # Pastes parser complexity predictors to existing identically tokenized tokmeasures file
