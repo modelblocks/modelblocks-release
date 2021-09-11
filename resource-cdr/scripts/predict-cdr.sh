@@ -18,7 +18,7 @@ pred_partition="${pred_partition/_part/}"
 
 cdr_dir=$(cat ../config/user-cdr-directory.txt)
 
-export PYTHONPATH=$PYTHONPATH:cdr_dir
+export PYTHONPATH=$PYTHONPATH:$cdr_dir
 
 python3 -m cdr.bin.predict $config_path -p "$2;$3"
 
