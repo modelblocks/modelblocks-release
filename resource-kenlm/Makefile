@@ -186,8 +186,8 @@ $(CONFIGDIR)/user-kenlm-directory.txt | genmodel
 $$(basename %).sentitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
 $(KENLMMODDIR)/gigaword$$(suffix $$*).kenlm.bin \
 $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
-	$(word 1, $^) -\n $(word 4,$^) <( cat $(word 2,$^) | grep -v '!ARTICLE' ) | python3 $(word 3,$^) --fwprobs - | \
-	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
+	cat $(word 2,$^)  |  grep -v '!ARTICLE'  |  $(word 1, $^) -\n $(word 4,$^)  |  python3 $(word 3,$^) --fwprobs -  |  \
+	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  >  $@
 
 %-kenlm.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLMDIR)/bin/query \
 $$(basename %).sentitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
