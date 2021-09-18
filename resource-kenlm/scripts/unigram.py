@@ -18,4 +18,4 @@ with open(sys.argv[2],'r') as f:
         print '%s %s' %(word, -model[word])
       else:
         ##if we don't know a word, treat as UNK
-        print '%s %s' %('<unk>', -model['<unk>'])
+        print '%s %s' %(word, -model['<unk>'])
