@@ -1,4 +1,4 @@
 log(fdur)
-z.(wlen)
-z.(wlen)
+z.(sentpos) + z.(wlen)
+z.(sentpos) + z.(wlen)
 (1 | word) + (1 | sentid:subject)
