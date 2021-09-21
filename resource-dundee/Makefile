@@ -150,7 +150,8 @@ genmodel/dundee.%.evmeasures: $(RT-SCRIPTS)/concat_tables.py $(foreach subj, $(D
 #	python $(word 3, $^) fdur fdurGP fileid docid) | python $(word 5, $^) | python $(word 6, $^) > $@
 
 %dundee.evmeasures: $$(DEP-DUNDEE) $(DUNDEE-SCRIPTS)/process_dundee.py $(DUNDEEDIR) %dundee.sentitems
-	python3 $(word 1,$^) $(word 2,$^) <( cat $(word 3,$^) | grep -v '!ARTICLE' )  >  $@
+	#python3 $(word 1,$^) $(word 2,$^) <( cat $(word 3,$^) | grep -v '!ARTICLE' )  >  $@
+	python3 $(word 1,$^) $(word 2,$^) <( cat $(word 3,$^) )  >  $@
 
 
 ################################################################################

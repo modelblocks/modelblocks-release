@@ -88,7 +88,7 @@ for name in config:
 if not baseline_found and len(main_effects) > 0:
     sys.stderr.write('No CDR models in config file are flagged with suffix "_BASELINE". Effects %s will not be added/ablated in any models.\n' %main_effects)
 
-config['global_settings'] = {'outdir': outdir}
+config['global_settings'] = {'outdir': outdir, 'use_gpu_if_available': True}
 
 if 'impulse_to_irf' in config:
     del config['impulse_to_irf']

@@ -22,17 +22,28 @@ if __name__ == '__main__':
         sys.stderr.write('Processing stimulus data...\n')
         sys.stderr.flush()
 
+    i = 0
     k = 0
+    l = -1
+    m = 1
     with open(args.lineitems_path, 'r') as f:
-        for i, line in enumerate(f):
-            for j, w in enumerate(line.strip().split()):
-                textdata.append({
-                    'word': w,
-                    'sentid': i,
-                    'sentpos': j + 1,
-                    'startofsentence': int(j == 0)
-                })
-                k += 1
+        for line in f:
+            if line.strip() == "!ARTICLE":
+                l += 1
+                m = 1
+            else:
+                for j, w in enumerate(line.strip().split()):
+                    textdata.append({
+                        'word': w,
+                        'sentid': i,
+                        'sentpos': j + 1,
+                        'discid': l,
+                        'discpos': m,
+                        'startofsentence': int(j == 0)
+                    })
+                    k += 1
+                    m += 1
+                i += 1
 
     k = 0
     start_ix = []
@@ -288,6 +299,8 @@ if __name__ == '__main__':
         'word',
         'subject',
         'docid',
+        'discpos',
+        'discid',
         'sentpos',
         'sentid',
         'resid',

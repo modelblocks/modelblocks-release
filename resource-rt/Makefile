@@ -1,4 +1,5 @@
 ################################################################################
+################################################################################
 ##                                                                            ##
 ##  This file is part of ModelBlocks. Copyright 2009, ModelBlocks developers. ##
 ##                                                                            ##
@@ -399,7 +400,8 @@ $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.item
 
 
 %.itemmeasures: %.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
-	cat $<  |  grep -v '!ARTICLE'  |  python $(word 2, $^) >  $@
+	cat $<  |  python $(word 2, $^) >  $@
+	#cat $<  |  grep -v '!ARTICLE'  |  python $(word 2, $^) >  $@
 
 %parsed.itemmeasures: %parsed.tokmeasures  $$(basename %).itemmeasures  $(RT-SCRIPTS)/roll_toks.py
 	cat $< | perl -pe 's/-LRB-/(/g;s/-RRB-/)/g;s/-LSB-/[/g;s/-RSB-/]/g' | python2 $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp -e latin-1  >  $@
