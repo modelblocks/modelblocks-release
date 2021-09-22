@@ -18,7 +18,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define ARMA_64BIT_WORD
-//#define FTRANSFORMER
+#define FTRANSFORMER
+// #define JTRANSFORMER
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -48,7 +49,11 @@ uint FEATCONFIG = 0;
 #include <FModel_mlp.hpp>
 #endif
 #include <WModel_mlp.hpp>
+#ifdef JTRANSFORMER
 #include <JModel_transformer.hpp>
+#else
+#include <JModel_mlp.hpp>
+#endif
 #include <Trellis.hpp>
 
 int COREF_WINDOW = INT_MAX;
@@ -232,8 +237,8 @@ int main ( int nArgs, char* argv[] ) {
       ////////////////
 
 #ifdef FTRANSFORMER
-      FPredictorVec lfpredictors( be_tdec1, hvTop, 0 );
-      arma::vec fresponses = modF.calcResponses( lfpredictors, word_index-1 );
+      FPredictorVec lfpredictors( be_tdec1, hvTop, 1 );
+      arma::vec fresponses = modF.calcResponses( lfpredictors, word_index-1, 1 );
 #else
       FPredictorVec lfpredictors( modF, hvTop, 0, q_tdec1 );
       arma::vec fresponses = modF.calcResponses( lfpredictors );
@@ -286,8 +291,13 @@ int main ( int nArgs, char* argv[] ) {
       const Sign& aLchild = qTermPhase.getApex();
       cout << "L child sign: " << aLchild;
 
+#ifdef JTRANSFORMER
       JPredictorVec ljpredictors( be_tdec1, f_t, aLchild );
       arma::vec jresponses = modJ.calcResponses( ljpredictors, word_index-1, 1 );
+#else
+      JPredictorVec ljpredictors( modJ, f_t, e_p_t, aLchild, qTermPhase );
+      arma::vec jresponses = modJ.calcResponses( ljpredictors );
+#endif
 
       bool jeoo_found = false;
       J j;

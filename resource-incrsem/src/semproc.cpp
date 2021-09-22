@@ -56,10 +56,11 @@ uint FEATCONFIG = 0;
 #elif defined TRANSFORMER
 #include <transformer.hpp>
 #include <NModel_mlp.hpp>
-#include <FModel_mlp.hpp>
-//#include <FModel_transformer.hpp>
+//#include <FModel_mlp.hpp>
+#include <FModel_transformer.hpp>
 #include <WModel_mlp.hpp>
-#include <JModel_transformer.hpp>
+#include <JModel_mlp.hpp>
+//#include <JModel_transformer.hpp>
 #else
 #include <SemProcModels_sparse.hpp>
 #endif
@@ -497,15 +498,15 @@ int main ( int nArgs, char* argv[] ) {
               if ( VERBOSE>1 ) cout << "    N  npv: " << npv << " : 1 = " << numerator << "/" << ndenom << "=" << nprob << endl;
               //NPredictorVec npv( modN, pbeAnt->getHidd().getPrtrm(), corefON, t - tAnt, q_tdec1, ABLATE_UNARY );
               if( beams[t].size()<BEAM_WIDTH || lgpr_tdec1 + log(nprob) > beams[t].rbegin()->getProb() ) {
-//#ifdef TRANSFORMER
-//                // be_tdec1 is the hypothesized store state from the previous time step
-//                FPredictorVec lfpredictors( be_tdec1, hvAnt, not corefON );
-//                arma::vec fresponses = modF.calcResponses( lfpredictors, word_index-1 );
-//#else
+#ifdef TRANSFORMER
+                // be_tdec1 is the hypothesized store state from the previous time step
+                FPredictorVec lfpredictors( be_tdec1, hvAnt, not corefON );
+                arma::vec fresponses = modF.calcResponses( lfpredictors, word_index-1, 0 );
+#else
                 FPredictorVec lfpredictors( modF, hvAnt, not corefON, q_tdec1 );
 //                if( VERBOSE>1 ) cout << "     f predictors: " << pair<const FModel&,const FPredictorVec&>( modF, lfpredictors ) << endl;
                 arma::vec fresponses = modF.calcResponses( lfpredictors );
-//#endif
+#endif
 
                 //get most recent observed word for which k of fek F decision was 'unk'.
                 const BeamElement<HiddState>* antPtr = pbeAnt;
@@ -573,14 +574,14 @@ int main ( int nArgs, char* argv[] ) {
                         const Sign& aLchild = qTermPhase.getApex();
                         if( VERBOSE>1 ) cout << "       qTermPhase=" << qTermPhase << endl;
 
-#ifdef TRANSFORMER
-                        JPredictorVec ljpredictors( be_tdec1, f, aLchild );
-                        arma::vec jresponses = modJ.calcResponses( ljpredictors, word_index-1, 0 );
-#else
+//#ifdef TRANSFORMER
+//                        JPredictorVec ljpredictors( be_tdec1, f, aLchild );
+//                        arma::vec jresponses = modJ.calcResponses( ljpredictors, word_index-1, 0 );
+//#else
                         JPredictorVec ljpredictors( modJ, f, e_p_t, aLchild, qTermPhase );  // q_tdec1.calcJoinPredictors( ljpredictors, f, e_p_t, aLchild, false ); // predictors for join
 //                        if( VERBOSE>1 ) cout << "        j predictors: " << pair<const JModel&,const JPredictorVec&>( modJ, ljpredictors ) << endl;
                         arma::vec jresponses = modJ.calcResponses( ljpredictors );
-#endif
+//#endif
 
 
 
