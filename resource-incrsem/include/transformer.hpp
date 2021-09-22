@@ -19,6 +19,16 @@
 
 // This file contains functions used by the *Model_transformer.hpp classes.
 
+// For debugging
+void print_vec(vec vector, uint maxlen=10) {
+  cerr << "Printing first " << maxlen << " items..." << endl;
+  uint len = vector.size();
+  for ( uint i=0; (i<maxlen) && (i<len); i++ ) {
+    cerr << vector(i) << endl;
+  }
+  cerr << endl;
+}
+
 // ReLU function
 arma::mat relu( const arma::mat& km ) {
   if ( km.max() < 0 ) return zeros( arma::size(km) );

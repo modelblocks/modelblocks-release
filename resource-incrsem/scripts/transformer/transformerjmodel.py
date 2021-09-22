@@ -2,61 +2,9 @@ import torch, math
 import torch.nn as nn
 import torch.nn.functional as F
 
-from transformerfmodel import PositionalEncoding, eprint
+from transformerfmodel import eprint, print_tensor, \
+    TransformerLayer, PositionalEncoding
 
-def print_tensor(t, maxlen=10):
-    eprint('Printing first {} items...'.format(maxlen))
-    for w in t[:maxlen]:
-        eprint(round(w.item(), 8))
-    eprint()
-
-
-# TODO move this to transformerfmodel
-class TransformerLayer(nn.Module):
-    def __init__(self, attn_dim, num_heads, ff_dim, dropout_prob, use_gpu):
-        super(TransformerLayer, self).__init__()
-        self.attn =  nn.MultiheadAttention(
-            embed_dim=attn_dim,
-            num_heads=num_heads,
-            bias=True
-        )
-        # TODO make this resnet?
-        self.feedforward = nn.Linear(attn_dim, ff_dim, bias=True)
-        self.dropout_prob = dropout_prob
-        self.dropout = nn.Dropout(self.dropout_prob)
-        self.relu = F.relu
-        self.use_gpu = use_gpu
-
-
-    def get_attn_mask(self, seq_length):
-        # entries marked as True are what we want to mask
-        mask = torch.ones(seq_length, seq_length, dtype=bool)
-        if self.use_gpu:
-            mask = mask.to('cuda')
-        return torch.triu(mask, diagonal=1)
-
-
-    def forward(self, x, verbose=False):
-        # use mask to hide future inputs
-        mask = self.get_attn_mask(len(x))
-
-        # second output is attn weights
-        # the input matrix is used for queries, keys, and values
-        x, _ = self.attn(x, x, x, attn_mask=mask)
-        x = self.feedforward(x)
-        x = self.dropout(x)
-        if verbose:
-            for i in range(x.shape[0]):
-                eprint('J word {} pre-relu feedforward output'.format(i))
-                print_tensor(x[i, 0])
-
-        if verbose:
-            ff_out = self.relu(x)
-            for i in range(ff_out.shape[0]):
-                eprint('J word {} feedforward output'.format(i))
-                print_tensor(ff_out[i, 0])
-            
-        return self.relu(x)
 
 
 class TransformerJModel(nn.Module):
@@ -172,7 +120,7 @@ class TransformerJModel(nn.Module):
                     [len(seq), self.sem_dim], dtype=torch.float
                 )
                 hv_lc_embed = torch.zeros(
-                    [len(seq), self.ant_dim], dtype=torch.float
+                    [len(seq), self.sem_dim], dtype=torch.float
                 )
 
             else:

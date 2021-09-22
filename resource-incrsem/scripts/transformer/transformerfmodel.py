@@ -5,6 +5,61 @@ import torch.nn.functional as F
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
+
+def print_tensor(t, maxlen=10):
+    eprint('Printing first {} items...'.format(maxlen))
+    for w in t[:maxlen]:
+        eprint(round(w.item(), 8))
+    eprint()
+
+
+class TransformerLayer(nn.Module):
+    def __init__(self, attn_dim, num_heads, ff_dim, dropout_prob, use_gpu):
+        super(TransformerLayer, self).__init__()
+        self.attn =  nn.MultiheadAttention(
+            embed_dim=attn_dim,
+            num_heads=num_heads,
+            bias=True
+        )
+        # TODO make this resnet?
+        self.feedforward = nn.Linear(attn_dim, ff_dim, bias=True)
+        self.dropout_prob = dropout_prob
+        self.dropout = nn.Dropout(self.dropout_prob)
+        self.relu = F.relu
+        self.use_gpu = use_gpu
+
+
+    def get_attn_mask(self, seq_length):
+        # entries marked as True are what we want to mask
+        mask = torch.ones(seq_length, seq_length, dtype=bool)
+        if self.use_gpu:
+            mask = mask.to('cuda')
+        return torch.triu(mask, diagonal=1)
+
+
+    def forward(self, x, verbose=False):
+        # use mask to hide future inputs
+        mask = self.get_attn_mask(len(x))
+
+        # second output is attn weights
+        # the input matrix is used for queries, keys, and values
+        x, _ = self.attn(x, x, x, attn_mask=mask)
+        x = self.feedforward(x)
+        x = self.dropout(x)
+        if verbose:
+            for i in range(x.shape[0]):
+                eprint('J word {} pre-relu feedforward output'.format(i))
+                print_tensor(x[i, 0])
+
+        if verbose:
+            ff_out = self.relu(x)
+            for i in range(ff_out.shape[0]):
+                eprint('J word {} feedforward output'.format(i))
+                print_tensor(ff_out[i, 0])
+            
+        return self.relu(x)
+
+
 # source:
 # https://pytorch.org/tutorials/beginner/transformer_tutorial.html
 class PositionalEncoding(nn.Module):
@@ -40,12 +95,9 @@ class TransformerFModel(nn.Module):
         self.use_positional_encoding = f_config.getboolean('UsePositionalEncoding')
         # TODO this is int in the old config -- why?
         self.use_gpu = f_config.getboolean('UseGPU')
-        # TODO add num_blocks option for multiple transformer blocks
+        self.num_transformer_layers = f_config.getint('NumTransformerLayers')
         self.num_heads = f_config.getint('NumHeads')
         self.attn_dim = f_config.getint('AttnDim')
-        #self.attn_q_dim = f_config.getint('AttnQDim')
-        #self.attn_k_dim = f_config.getint('AttnKDim')
-        #self.attn_v_dim = f_config.getint('AttnVDim')
         # TODO decide whether to use this at runtime or just for
         # training
         self.attn_window_size = f_config.getint('AttnWindowSize')
@@ -55,8 +107,6 @@ class TransformerFModel(nn.Module):
         self.output_dim = output_dim
         self.max_depth = 7
 
-        # TODO should there just be one big embedding? inputs would be
-        # multi-hot; not sure if that's easy
         self.catb_embeds = nn.Embedding(catb_vocab_size, self.syn_dim)
         self.hvb_embeds = nn.Embedding(hvb_vocab_size, self.sem_dim)
         self.hvf_embeds = nn.Embedding(hvf_vocab_size, self.sem_dim)
@@ -65,12 +115,6 @@ class TransformerFModel(nn.Module):
         # attn intput is (one-hot) depth, base syn cat embedding,
         # base hvec embedding, and filler hvec embedding
         attn_input_dim = 7 + self.syn_dim + 2*self.sem_dim
-        #self.query = nn.Linear(attn_input_dim, self.attn_q_dim, bias=True)
-        #self.key = nn.Linear(attn_input_dim, self.attn_k_dim, bias=True)
-        #self.value = nn.Linear(attn_input_dim, self.attn_v_dim, bias=True)
-        #self.query = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
-        #self.key = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
-        #self.value = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
 
         # project the attention input to the right dimensionality
         self.pre_attn_fc = nn.Linear(attn_input_dim, self.attn_dim, bias=True)
@@ -79,25 +123,28 @@ class TransformerFModel(nn.Module):
         # its output is used for queries, keys, and values
         self.positional_encoding = PositionalEncoding(self.attn_dim)
 
-        # TODO define this as a block so you can have multiple attention layers
-        self.attn =  nn.MultiheadAttention(
-            embed_dim=self.attn_dim,
-            #embed_dim=self.attn_q_dim,
-            num_heads=self.num_heads,
-            #kdim=self.attn_k_dim,
-            #vdim=self.attn_v_dim,
-            bias=True
-        )
-
+        # TODO hidden_dim and attn_dim need to be the same I think
         # TODO make this resnet?
-        # the input to fc1 is the output of the attention layer concatenated
+        self.transformer_layers = nn.ModuleList()
+        for i in range(self.num_transformer_layers):
+            self.transformer_layers.append(
+                TransformerLayer(
+                    attn_dim=self.attn_dim,
+                    num_heads=self.num_heads,
+                    ff_dim=self.hidden_dim,
+                    dropout_prob=self.dropout_prob,
+                    use_gpu=self.use_gpu
+                )
+            )
+
+        # NOTE: in the earlier implemenetation that only allowed for a single
+        # attnetion layer, the antecedent stuff was added before the first
+        # feedforward:
+        #self.fc1 = nn.Linear(self.attn_dim+self.ant_dim+1, self.hidden_dim, bias=True)
+        # the input to fc2 is the output of the transformer layers concatenated
         # with the antecedent hVec embedding and the null antecedent indicator
         # (hence the +1)
-        self.fc1 = nn.Linear(self.attn_dim+self.ant_dim+1, self.hidden_dim, bias=True)
-        self.dropout = nn.Dropout(self.dropout_prob)
-        self.relu = F.relu
-        self.fc2 = nn.Linear(self.hidden_dim, self.output_dim, bias=True)
-
+        self.output_fc = nn.Linear(self.hidden_dim+self.ant_dim+1, self.output_dim, bias=True)
 
     def get_sparse_hv_matrix(self, hv, vocab_size):
         rows = list()
@@ -135,16 +182,15 @@ class TransformerFModel(nn.Module):
 
 
             # base, filler, antecedent hvec embeddings
-            # TODO fix this -- max_seq_length isn't defined
             if self.ablate_sem:
                 hvb_embed = torch.zeros(
-                    [max_seq_length, batch_size, self.sem_dim], dtype=torch.float
+                    [len(seq), self.sem_dim], dtype=torch.float
                 )
                 hvf_embed = torch.zeros(
-                    [max_seq_length, batch_size, self.sem_dim], dtype=torch.float
+                    [len(seq), self.sem_dim], dtype=torch.float
                 )
                 hva_embed = torch.zeros(
-                    [max_seq_length, batch_size, self.ant_dim], dtype=torch.float
+                    [len(seq), self.ant_dim], dtype=torch.float
                 )
 
             else:
@@ -213,7 +259,7 @@ class TransformerFModel(nn.Module):
         return torch.triu(mask, diagonal=1)
 
 
-    def forward(self, batch_finfo):
+    def forward(self, batch_finfo, verbose=False):
         # list of matrices, one matrix for each sequence
         per_seq_attn_input, per_seq_coref_emb = \
             self.get_per_sequence_x(batch_finfo)
@@ -223,58 +269,54 @@ class TransformerFModel(nn.Module):
         # E: embedding size
         attn_input_3d = self.get_padded_input_matrix(per_seq_attn_input)
         coref_emb_3d = self.get_padded_input_matrix(per_seq_coref_emb)
-        return self.compute(attn_input_3d, coref_emb_3d)
+        return self.compute(attn_input_3d, coref_emb_3d, verbose)
 
 
     def compute(self, attn_input, coref_emb, verbose=False):
-        # the same matrix is used as query, key, and value. Within the attn
-        # layer this will be projected to a separate q, k, and v for each
-        # attn head
-#        if verbose:
-#            eprint('F final word attn input:')
-#            for x in attn_input[-1, 0]:
-#                eprint(x.item())
-#            weights = self.state_dict()['pre_attn_fc.weight'].data.cpu().numpy()
-#            eprint('F pre attn fc weights shape:', weights.shape)
-#            eprint('F pre attn fc weights numpy:')
-#            eprint(weights)
-#            eprint('F pre attn fc weights:')
-#            # F is column-major order
-#            for x in weights.flatten('F'):
-#                eprint(x)
-#            eprint('F final word pre_attn_fc bias:')
-#            bias = self.state_dict()['pre_attn_fc.bias'].data.cpu().numpy()
-#            for x in bias:
-#                eprint(x)
-        qkv = self.pre_attn_fc(attn_input)
         if verbose:
-            eprint('F final word\'s qkv:')
-            for x in qkv[-1, 0]:
-                eprint(x.item())
+            for i in range(attn_input.shape[0]):
+                eprint('F word {} pre-fwpm attn input'.format(i))
+                print_tensor(attn_input[i, 0])
+        x = self.pre_attn_fc(attn_input)
         if self.use_positional_encoding:
-            qkv = self.positional_encoding(qkv)
-        # use mask to hide future inputs
-        mask = self.get_attn_mask(len(attn_input))
-        # second output is attn weights
-        #attn_output, _ = self.attn(q, k, v, attn_mask=mask)
-        attn_output, _ = self.attn(qkv, qkv, qkv, attn_mask=mask)
+            x = self.positional_encoding(x)
         if verbose:
-            eprint('F final word\'s attn output:')
-            for x in attn_output[-1, 0]:
-                eprint(x.item())
-        x = torch.cat((attn_output, coref_emb), dim=2)
-        x = self.fc1(x)
-        x = self.dropout(x)
-        x = self.relu(x)
-        x = self.fc2(x)
-        result = F.log_softmax(x, dim=2)
+            for i in range(x.shape[0]):
+                eprint('F word {} proj'.format(i))
+                print_tensor(x[i, 0])
+
+        for i, tr_layer in enumerate(self.transformer_layers):
+            if verbose:
+                eprint('\n ==== transformer layer {} ===='.format(i))
+                for i in range(x.shape[0]):
+                    eprint('F word {} curr attn inputs'.format(i))
+                    print_tensor(x[i, 0])
+            x = tr_layer(x, verbose)
+
+        x = torch.cat((x, coref_emb), dim=2)
+        ff2_output = self.output_fc(x)
+        result = F.log_softmax(ff2_output, dim=2)
+
         if verbose:
+            # note: this assumes that there is only one sequence in the batch
             for i in range(result.shape[0]):
-                log_scores = result[i, 0]
-                scores = torch.exp(log_scores)
-                norm_scores = scores/sum(scores)
-                eprint('F ==== output for word {} ===='.format(i))
-                for x in norm_scores:
-                    eprint(x.item())
+                eprint('\nF ==== word {} ===='.format(i))
+                attn_input_i = attn_input[i, 0]
+                eprint('F attn input')
+                print_tensor(attn_input_i)
+
+                second_ff_input_i = x[i, 0]
+                eprint('F second ff input')
+                print_tensor(second_ff_input_i, 1000)
+
+                second_ff_output_i = ff2_output[i, 0]
+                eprint('F second ff output')
+                print_tensor(second_ff_output_i)
+
+                log_softmax = result[i, 0]
+                scores = torch.exp(log_softmax)
+                eprint('\nF scores')
+                print_tensor(scores)
+                eprint()
         return result
 

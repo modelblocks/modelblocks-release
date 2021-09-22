@@ -17,14 +17,6 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-void print_vec(vec vector, uint maxlen=10) {
-  cerr << "Printing first " << maxlen << " items..." << endl;
-  uint len = vector.size();
-  for ( uint i=0; (i<maxlen) && (i<len); i++ ) {
-    cerr << vector(i) << endl;
-  }
-  cerr << endl;
-}
 
 // TODO probably okay to pass in actual BeamElement, not pointer
 //const HVec getHvLchild( const BeamElement<HiddState>& be ) {
@@ -590,7 +582,6 @@ vec JModel::calcResponses( JPredictorVec& ljpredictors, int wordIndex, bool verb
     cerr << "\nJ catAnc of current word: " << catAnc << endl;
     cerr << "\nJ catAncEmb of current word:" << endl;
     print_vec(catAncEmb);
-    // TODO switch later stuff to print_vec
     cerr << "\nJ hvAnc of current word: " << hvAnc << endl;
     cerr << "\nJ hvAncEmb of current word:" << endl;
     print_vec(hvAncEmb);

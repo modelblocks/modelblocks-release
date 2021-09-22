@@ -73,6 +73,9 @@ class FModel {
     uint FSEM_DIM;
     uint FSYN_DIM;
     uint FANT_DIM;
+    uint num_heads;
+    uint head_dim;
+    uint attn_dim;
 
     map<CVar,vec> mcbv;                        // map between syntactic category and embeds
     map<KVec,vec> mkbdv;                  // map between KVec and embeds
@@ -86,63 +89,115 @@ class FModel {
 
     // weights
     DelimitedVector<psX, double, psComma, psX> fwp; // pre-attention feedforward
-    DelimitedVector<psX, double, psComma, psX> fwi; // attention input projection -- contains query, key, and value matrices
-    DelimitedVector<psX, double, psComma, psX> fwo; // attention output projection
-    DelimitedVector<psX, double, psComma, psX> fwf; // first feedforward
+    vector<vector<double>> fwi; // attention input projection (concatenation of 
+    vector<vector<double>> fwo; // attention output projection for each transformer layer
+    vector<vector<double>> fwf; // feedforward for each transformer layer
+//    DelimitedVector<psX, double, psComma, psX> fwi; // attention input projection -- contains query, key, and value matrices
+//    DelimitedVector<psX, double, psComma, psX> fwo; // attention output projection
+//    DelimitedVector<psX, double, psComma, psX> fwf; // first feedforward
     DelimitedVector<psX, double, psComma, psX> fws; // second feedforward
-    // biases
-    DelimitedVector<psX, double, psComma, psX> fbp; // pre-attention feedforward
-    DelimitedVector<psX, double, psComma, psX> fbi; // attention input projection
-    DelimitedVector<psX, double, psComma, psX> fbo; // attention output projection
-    DelimitedVector<psX, double, psComma, psX> fbf; // first feedforward
-    DelimitedVector<psX, double, psComma, psX> fbs; // second feedforward
 
     mat fwpm;
-    mat fwim;
-    mat fwqm; // query
-    mat fwkm; // key
-    mat fwvm; // value
-    mat fwom;
-    mat fwfm;
+    vector<mat> fwim;
+    vector<mat> fwqm; // query
+    vector<mat> fwkm; // key
+    vector<mat> fwvm; // value
+    vector<mat> fwom;
+    vector<mat> fwfm;
     mat fwsm;
 
+    // biases
+    DelimitedVector<psX, double, psComma, psX> fbp; // pre-attention feedforward
+    vector<vector<double>> fbi; // attention input projection for each transformer layer
+    vector<vector<double>> fbo; // attention output projection for each transformer layer
+    vector<vector<double>> fbf; // feedforward for each transformer layer
+//    DelimitedVector<psX, double, psComma, psX> fbi; // attention input projection
+//    DelimitedVector<psX, double, psComma, psX> fbo; // attention output projection
+//    DelimitedVector<psX, double, psComma, psX> fbf; // first feedforward
+    DelimitedVector<psX, double, psComma, psX> fbs; // second feedforward
+
     vec fbpv;
-    vec fbiv;
-    vec fbqv; // query
-    vec fbkv; // key
-    vec fbvv; // value
-    vec fbov;
-    vec fbfv;
+    vector<vec> fbiv;
+    vector<vec> fbqv; // query
+    vector<vec> fbkv; // key
+    vector<vec> fbvv; // value
+    vector<vec> fbov;
+    vector<vec> fbfv;
     vec fbsv;
 
     vec computeResult( vector<vec> attnInput, vec corefVector, uint wordIndex, bool verbose ) const;
 
   public:
 
-    FModel( ) 
-      //: FSEM_DIM_DEFAULT (20),
-      //: FSYN_DIM_DEFAULT (20),
-      //FANT_DIM_DEFAULT (20) 
-      { }
+    FModel( ) { }
 
-    FModel( istream& is )
-      //: FSEM_DIM_DEFAULT (20),
-      //: FSYN_DIM_DEFAULT (20),
-      //FANT_DIM_DEFAULT (20) 
-    {
+    FModel( istream& is ) {
       while ( is.peek()=='F' ) {
         Delimited<char> c;
         is >> "F " >> c >> " ";
         if (c == 'P') is >> fwp >> "\n";
         if (c == 'p') is >> fbp >> "\n"; 
-        if (c == 'I') is >> fwi >> "\n";
-        if (c == 'i') is >> fbi >> "\n"; 
-        if (c == 'O') is >> fwo >> "\n";
-        if (c == 'o') is >> fbo >> "\n"; 
-        if (c == 'F') is >> fwf >> "\n";
-        if (c == 'f') is >> fbf >> "\n"; 
+        if (c == 'I') {
+          Delimited<int> i;
+          DelimitedVector<psX, double, psComma, psX> vtemp;  
+          is >> i >> " ";
+          is >> vtemp >> "\n";
+          assert (i == (int)fwi.size());
+          fwi.push_back(vtemp);
+        }
+        if (c == 'i') {
+          Delimited<int> i;
+          DelimitedVector<psX, double, psComma, psX> vtemp;  
+          is >> i >> " ";
+          is >> vtemp >> "\n";
+          assert (i == (int)fbi.size());
+          fbi.push_back(vtemp);
+        }
+        if (c == 'O') {
+          Delimited<int> i;
+          DelimitedVector<psX, double, psComma, psX> vtemp;  
+          is >> i >> " ";
+          is >> vtemp >> "\n";
+          assert (i == (int)fwo.size());
+          fwo.push_back(vtemp);
+        }
+        if (c == 'o') {
+          Delimited<int> i;
+          DelimitedVector<psX, double, psComma, psX> vtemp;  
+          is >> i >> " ";
+          is >> vtemp >> "\n";
+          assert (i == (int)fbo.size());
+          fbo.push_back(vtemp);
+        }
+        if (c == 'F') {
+          Delimited<int> i;
+          DelimitedVector<psX, double, psComma, psX> vtemp;  
+          is >> i >> " ";
+          is >> vtemp >> "\n";
+          assert (i == (int)fwf.size());
+          fwf.push_back(vtemp);
+        }
+        if (c == 'f') {
+          Delimited<int> i;
+          DelimitedVector<psX, double, psComma, psX> vtemp;  
+          is >> i >> " ";
+          is >> vtemp >> "\n";
+          assert (i == (int)fbf.size());
+          fbf.push_back(vtemp);
+        }
+//        if (c == 'I') is >> fwi >> "\n";
+//        if (c == 'i') is >> fbi >> "\n"; 
+//        if (c == 'O') is >> fwo >> "\n";
+//        if (c == 'o') is >> fbo >> "\n"; 
+//        if (c == 'F') is >> fwf >> "\n";
+//        if (c == 'f') is >> fbf >> "\n"; 
         if (c == 'S') is >> fws >> "\n";
         if (c == 's') is >> fbs >> "\n"; 
+        if (c == 'H') {
+          Delimited<int> h;
+          is >> h >> "\n";
+          num_heads = h;
+        }
       }
 
       FSYN_DIM = FSYN_DIM_DEFAULT;
@@ -188,15 +243,39 @@ class FModel {
       }
 
       fwpm = fwp;
-      fwim = fwi;
-      fwom = fwo;
-      fwfm = fwf;
+      for ( vector<double> v : fwi ) {
+        mat m = v;
+        fwim.push_back(m);
+      }
+      for ( vector<double> v : fwo ) {
+        mat m = v;
+        fwom.push_back(m);
+      }
+      for ( vector<double> v : fwf ) {
+        mat m = v;
+        fwfm.push_back(m);
+      }
+//      fwim = fwi;
+//      fwom = fwo;
+//      fwfm = fwf;
       fwsm = fws;
 
       fbpv = fbp;
-      fbiv = fbi;
-      fbov = fbo;
-      fbfv = fbf;
+      for ( vector<double> v : fbi ) {
+        vec vvec = v;
+        fbiv.push_back(vvec);
+      }
+      for ( vector<double> v : fbo ) {
+        vec vvec = v;
+        fbov.push_back(vvec);
+      }
+      for ( vector<double> v : fbf ) {
+        vec vvec = v;
+        fbfv.push_back(vvec);
+      }
+//      fbiv = fbi;
+//      fbov = fbo;
+//      fbfv = fbf;
       fbsv = fbs;
 
       //cerr << "FSEM: " << FSEM_SIZE << " FSYN: " << FSYN_SIZE << " FANT: " << FANT_SIZE << endl;
@@ -205,36 +284,43 @@ class FModel {
 
       // reshape weight matrices
       uint pre_attn_dim = 7 + 2*FSEM_DIM + FSYN_DIM;
-      uint attn_dim = fwp.size()/pre_attn_dim;
+      attn_dim = fwp.size()/pre_attn_dim;
       // output of attn layer is concatenated with hvAnt (dim = FANT_DIM)
       // and nullA (dim = 1)
-      uint post_attn_dim = attn_dim + FANT_DIM + 1;
-      uint hidden_dim = fwf.size()/post_attn_dim;
-      uint output_dim = fws.size()/hidden_dim;
+      //uint post_attn_dim = attn_dim + FANT_DIM + 1;
+      uint hidden_dim = fwf[0].size()/attn_dim;
+      // input to final feedforward is output of last fwfm concatenated
+      // with coref vector and nullAnt bit
+      uint fws_input_dim = hidden_dim + FANT_DIM + 1;
+      uint output_dim = fws.size()/fws_input_dim;
 
       fwpm.reshape(attn_dim, pre_attn_dim);
 
       // fwim contains query, key, and value projection matrices,
       // each of dimension attn_dim x attn_dim
-      fwim.reshape(3*attn_dim, attn_dim);
-      //fwqm = fwim.rows(0, attn_dim);
-      //fwkm = fwim.rows(attn_dim, 2*attn_dim);
-      //fwvm = fwim.rows(2*attn_dim, 3*attn_dim);
-      fwqm = fwim.rows(0, attn_dim-1);
-      fwkm = fwim.rows(attn_dim, 2*attn_dim-1);
-      fwvm = fwim.rows(2*attn_dim, 3*attn_dim-1);
+      for ( mat m : fwim ) {
+        m.reshape(3*attn_dim, attn_dim);
+        fwqm.push_back(m.rows(0, attn_dim-1));
+        fwkm.push_back(m.rows(attn_dim, 2*attn_dim-1));
+        fwvm.push_back(m.rows(2*attn_dim, 3*attn_dim-1));
+      }
+      for (uint i=0; i<fwom.size(); i++) {
+        fwom[i].reshape(attn_dim, attn_dim);
+      }
 
-      fwom.reshape(attn_dim, attn_dim);
-      fwfm.reshape(hidden_dim, post_attn_dim);
-      fwsm.reshape(output_dim, hidden_dim);
+      for (uint i=0; i<fwfm.size(); i++) {
+        fwfm[i].reshape(hidden_dim, attn_dim);
+      }
+
+      fwsm.reshape(output_dim, fws_input_dim);
 
       // fbiv contains biases vectors for query, key, and value
-      //fbqv = fbiv(span(0, attn_dim));
-      //fbkv = fbiv(span(attn_dim, 2*attn_dim));
-      //fbvv = fbiv(span(2*attn_dim, 3*attn_dim));
-      fbqv = fbiv(span(0, attn_dim-1));
-      fbkv = fbiv(span(attn_dim, 2*attn_dim-1));
-      fbvv = fbiv(span(2*attn_dim, 3*attn_dim-1));
+      for ( vec v : fbiv ) {
+        fbqv.push_back(v(span(0, attn_dim-1)));
+        fbkv.push_back(v(span(attn_dim, 2*attn_dim-1)));
+        fbvv.push_back(v(span(2*attn_dim, 3*attn_dim-1)));
+      }
+      head_dim = attn_dim / num_heads;
     }
 
     const FEK& getFEK( unsigned int i ) const {
@@ -258,8 +344,11 @@ class FModel {
       if (c == 'B') {
         KVecEmbed = arma::zeros(FSEM_DIM);
         for ( auto& kV : hv.at(0) ) {
-          if ( kV == K::kTop) {
-            KVecEmbed += arma::ones(FSEM_DIM);
+//          if ( kV == K::kTop) {
+//            KVecEmbed += arma::ones(FSEM_DIM);
+//            continue;
+//          }
+          if ( kV == K::kBot) {
             continue;
           }
           auto it = mkbdv.find( kV );
@@ -273,8 +362,11 @@ class FModel {
       else if (c == 'F') {
         KVecEmbed = arma::zeros(FSEM_DIM);
         for ( auto& kV : hv.at(0) ) {
-          if ( kV == K::kTop) {
-            KVecEmbed += arma::ones(FSEM_DIM);
+//          if ( kV == K::kTop) {
+//            KVecEmbed += arma::ones(FSEM_DIM);
+//            continue;
+//          }
+          if ( kV == K::kBot) {
             continue;
           }
           auto it = mkfdv.find( kV );
@@ -288,8 +380,11 @@ class FModel {
       else if (c == 'A') {
         KVecEmbed = arma::zeros(FANT_DIM);
         for ( auto& kV : hv.at(0) ) {
-          if ( kV == K::kTop) {
-            KVecEmbed += arma::ones(FANT_DIM);
+//          if ( kV == K::kTop) {
+//            KVecEmbed += arma::ones(FANT_DIM);
+//            continue;
+//          }
+          if ( kV == K::kBot) {
             continue;
           }
           auto it = mkadv.find( kV );
@@ -314,12 +409,12 @@ class FModel {
       return ( ( it != mfeki.end() ) ? it->second : uint(-1) );
     }
 
-    vec calcResponses( FPredictorVec& lfpredictors, int wordIndex ) const;
+    vec calcResponses( FPredictorVec& lfpredictors, int wordIndex, bool verbose ) const;
 
     void testCalcResponses() const;
 };
 
-vec FModel::calcResponses( FPredictorVec& lfpredictors, int wordIndex ) const {
+vec FModel::calcResponses( FPredictorVec& lfpredictors, int wordIndex, bool verbose ) const {
 // return distribution over FEK indices
   const HVec hvA = lfpredictors.getHvA();
   const bool nullA = lfpredictors.getNullA();
@@ -357,7 +452,7 @@ vec FModel::calcResponses( FPredictorVec& lfpredictors, int wordIndex ) const {
   // reverse attnInput so that the last item is the most recent word
   reverse(attnInput.begin(), attnInput.end());
   
-  return computeResult(attnInput, corefVec, wordIndex, 0);
+  return computeResult(attnInput, corefVec, wordIndex, verbose);
 }
 
 
@@ -365,80 +460,260 @@ vec FModel::calcResponses( FPredictorVec& lfpredictors, int wordIndex ) const {
 // attnInput contains the embeddings for previous words up to the current word
 // attnInput.back() is the current word that we are making an F decision for
 vec FModel::computeResult( vector<vec> attnInput, vec corefVec, uint wordIndex, bool verbose ) const {
+  if ( verbose ) {
+    for ( uint j=0; j<attnInput.size(); j++ ) { 
+      cerr << "F word " << j << " pre-fwpm attn input" << endl;
+      print_vec(attnInput[j]);
+    }
+//    cerr << "F linear bias" << endl;
+//    print_vec(fbpv);
+//    cerr << "F linear weight first col" << endl;
+//    print_vec(fwpm.col(0));
+  }
   bool usePositionalEncoding = false;
-  vec last = attnInput.back();
-  if ( verbose ) {
-    //cerr << "F last" << last << endl;
+  mat currAttnInputs(fbpv.size(), attnInput.size());
 
-//    cerr << "F fwpm" << endl;
-//    cerr << "num rows: " << fwpm.n_rows << endl;
-//    cerr << "num cols: " << fwpm.n_cols << endl;
-//    for ( uint j=0; j<fwpm.n_cols; j++ ) {
-//      for ( uint i=0; i<fwpm.n_rows; i++ ) {
-//        cerr << fwpm(i, j) << endl;
-//      }
-//    }
-//    cerr << "F fbpv" << fbpv << endl;
+  for ( uint i=0; i<attnInput.size(); i++ ) {
+    vec proj = fwpm*attnInput[i] + fbpv;
+    if ( verbose ) {
+//      cerr << "F word " << i << " thing 1" << endl;
+//      print_vec(fwpm.col(0));
+//      cerr << "F word " << i << " thing 2" << endl;
+//      //print_vec(attnInput[i]);
+//      cerr << attnInput[i] << endl;
+//      cerr << "F word " << i << " product, no bias" << endl;
+//      print_vec(fwpm*attnInput[i]);
+      cerr << "F word " << i << " proj" << endl;
+      print_vec(proj);
+    }
+    if ( usePositionalEncoding ) {
+      proj = proj + getPositionalEncoding(fbpv.size(), i);
+    }
+    currAttnInputs.col(i) = proj;
   }
-  vec proj = fwpm*last + fbpv;
-  if ( usePositionalEncoding ) {
-    proj = proj + getPositionalEncoding(fbpv.size(), wordIndex);
-  }
-  if ( verbose ) {
-    cerr << "F proj" << proj << endl;
-  }
-  const vec query = fwqm*proj + fbqv;
+
+  uint numTransformerLayers = fwqm.size();
   // used to scale the attention softmax (see section 3.2.1 of Attention
   // Is All You Need)
-  const double scalingFactor = sqrt(fbqv.size());
+  const double scalingFactor = sqrt(head_dim);
+  for ( uint trLayer=0; trLayer<numTransformerLayers; trLayer++ ) {
 
-  vector<vec> values;
-  vector<double> scaledDotProds;
-  int currIndex = wordIndex - attnInput.size() + 1;
-  for ( vec curr : attnInput ) { 
-    proj = fwpm*curr + fbpv;
-    if ( usePositionalEncoding ) {
-      proj = proj + getPositionalEncoding(fbpv.size(), currIndex++);
+    if ( verbose ) {
+      cerr << " ==== transformer layer " << trLayer << " ====" << endl;
     }
-    vec key = fwkm*proj + fbkv;
-    vec value = fwvm*proj + fbvv;
-    values.emplace_back(value);
-    scaledDotProds.emplace_back(dot(query, key)/scalingFactor);
-  }
 
-  vec sdp = vec(scaledDotProds.size());
-  for ( uint i=0; (i < scaledDotProds.size()); i++ ) {
-    sdp(i) = scaledDotProds[i];
-  }
+    if ( verbose ) {
+      for ( uint j=0; j<attnInput.size(); j++ ) { 
+        cerr << "F word " << j << " curr attn inputs" << endl;
+        print_vec(currAttnInputs.col(j));
+      }
+    }
 
-  vec sdpExp = exp(sdp);
-  double norm = accu(sdpExp);
-  vec sdpSoftmax = sdpExp/norm;
+    // each matrix contains the q/k/v for a single attn head
+    mat queries[num_heads];
+    mat keys[num_heads];
+    mat values[num_heads];
 
-  // calculate scaled_softmax(QK)*V
-  vec attnResult = zeros<vec>(fbvv.size());
+    // initialize q/k/v matrices
+    for ( uint i=0; i<num_heads; i++ ) {
+      queries[i] = mat(attnInput.size(), head_dim);
+      keys[i] = mat(attnInput.size(), head_dim);
+      values[i] = mat(attnInput.size(), head_dim);
+    }
+    
+    vec curr;
+    for ( uint j=0; j<attnInput.size(); j++ ) { 
+      vec curr = currAttnInputs.col(j);
 
-  for ( uint i=0; (i < values.size()); i++ ) {
-    double weight = sdpSoftmax(i);
-    vec val = values[i];
-    attnResult += weight*val;
-  }
+      mat fwqm_i = fwqm[trLayer];
+      vec fbqv_i = fbqv[trLayer];
+      vec query = fwqm_i*curr+ fbqv_i;
 
-  vec attnOutput = fwom*attnResult + fbov;
+      mat fwkm_i = fwkm[trLayer];
+      vec fbkv_i = fbkv[trLayer];
+      vec key = fwkm_i*curr+ fbkv_i;
 
+      mat fwvm_i = fwvm[trLayer];
+      vec fbvv_i = fbvv[trLayer];
+      vec value = fwvm_i*curr+ fbvv_i;
+      // iterate over attention heads
+      for ( uint i=0; i < num_heads; i++ ) {
+        mat query_i = query(span( i*head_dim, (i+1)*head_dim-1 ));
+        queries[i].row(j) = query_i.t();
+
+        mat key_i = key(span( i*head_dim, (i+1)*head_dim-1 ));
+        keys[i].row(j) = key_i.t();
+
+        mat value_i = value(span( i*head_dim, (i+1)*head_dim-1 ));
+        values[i].row(j) = value_i.t();
+      }
+    }
+
+    mat attnResult(attnInput.size(), attn_dim);
+    // compute attn output head by head
+    for ( uint i=0; i<num_heads; i++ ) {
+      // sdp = scaled dot product
+      mat sdp = (queries[i] * keys[i].t()) / scalingFactor;
+      if ( verbose ) {
+        cerr << "F attn head " << i << endl;
+        cerr << "F pre-softmax attn output weights:" << endl;
+        for ( uint k=0; k<attnInput.size(); k++ ) {
+          cerr << "F word " << k << endl;
+          print_vec(sdp.row(k).t());
+        }
+      }
+      sdp = exp(sdp);
+      // take softmax of each row
+      for ( uint j=0; j<attnInput.size(); j++ ) { 
+        vec sdp_j = sdp.row(j).t();
+        // mask any words later in time than the current word
+        for ( uint k=j+1; k<attnInput.size(); k++ ) {
+          sdp_j(k) = 0;
+        }
+        double norm = accu(sdp_j);
+        sdp.row(j) = (sdp_j/norm).t();
+      }
+      // (seqLegth x seqLength) * (seqLength x headDim)  => (seqLength x headDim)
+      mat perHeadAttnResult = sdp * values[i];
+      attnResult.cols( i*head_dim, (i+1)*head_dim-1 ) = perHeadAttnResult;
+    }
+
+    if ( verbose ) {
+      for ( uint j=0; j<attnInput.size(); j++ ) { 
+        cerr << "F word " << j << " attn result" << endl;
+        print_vec(attnResult.row(j).t());
+      }
+    }
+
+    mat fwom_i = fwom[trLayer];
+    vec fbov_i = fbov[trLayer];
+    mat attnOutput = fwom_i*attnResult.t();
+    attnOutput = attnOutput.each_col() + fbov_i;
+
+    if ( verbose ) {
+      for ( uint j=0; j<attnInput.size(); j++ ) { 
+        cerr << "F word " << j << " attn output" << endl;
+        print_vec(attnOutput.col(j));
+      }
+    }
+
+    mat fwfm_i = fwfm[trLayer];
+    vec fbfv_i = fbfv[trLayer];
+    mat m = fwfm_i*attnOutput;
+    m = m.each_col() + fbfv_i;
+    if ( verbose ) {
+      for ( uint j=0; j<attnInput.size(); j++ ) { 
+        cerr << "F word " << j << " pre-relu feedforward output" << endl;
+        print_vec(m.col(j));
+      }
+    }
+    currAttnInputs = relu(m);
+    if ( verbose ) {
+      for ( uint j=0; j<attnInput.size(); j++ ) { 
+        cerr << "F word " << j << " feedforward output" << endl;
+        print_vec(currAttnInputs.col(j));
+      }
+    }
+
+  } // end for trLayer
+
+  // we only want the result from the last word
+//  vec hiddenInput = join_cols(attnOutput, corefVec);
+  vec finalWordFfOutput = currAttnInputs.col(attnInput.size() - 1);
+  vec secondFfInput = join_cols(finalWordFfOutput, corefVec);
   if ( verbose ) {
-    cerr << "F attnOutput" << attnOutput << endl;
+    cerr << "F second ff input:" << endl;
+    //print_vec(secondFfInput);
+    cerr << secondFfInput << endl;
   }
-  // final bit is for nullA
-  vec hiddenInput = join_cols(attnOutput, corefVec);
-  vec logScores = fwsm * relu(fwfm*hiddenInput + fbfv) + fbsv;
+
+  vec logScores = fwsm * secondFfInput + fbsv;
+  if ( verbose ) {
+    cerr << "F second ff output:" << endl;
+    print_vec(logScores);
+    //cerr << logScores << endl;
+  }
   vec scores = exp(logScores);
   double outputNorm = accu(scores);
   vec result = scores/outputNorm;
   if ( verbose ) {
-    cerr << "F result" << result << endl;
+    cerr << "F result\n" << result << endl;
   }
   return result;
+//  bool usePositionalEncoding = false;
+//  vec last = attnInput.back();
+//  if ( verbose ) {
+//    //cerr << "F last" << last << endl;
+//
+////    cerr << "F fwpm" << endl;
+////    cerr << "num rows: " << fwpm.n_rows << endl;
+////    cerr << "num cols: " << fwpm.n_cols << endl;
+////    for ( uint j=0; j<fwpm.n_cols; j++ ) {
+////      for ( uint i=0; i<fwpm.n_rows; i++ ) {
+////        cerr << fwpm(i, j) << endl;
+////      }
+////    }
+////    cerr << "F fbpv" << fbpv << endl;
+//  }
+//  vec proj = fwpm*last + fbpv;
+//  if ( usePositionalEncoding ) {
+//    proj = proj + getPositionalEncoding(fbpv.size(), wordIndex);
+//  }
+//  if ( verbose ) {
+//    cerr << "F proj" << proj << endl;
+//  }
+//  const vec query = fwqm*proj + fbqv;
+//  // used to scale the attention softmax (see section 3.2.1 of Attention
+//  // Is All You Need)
+//  const double scalingFactor = sqrt(fbqv.size());
+//
+//  vector<vec> values;
+//  vector<double> scaledDotProds;
+//  int currIndex = wordIndex - attnInput.size() + 1;
+//  for ( vec curr : attnInput ) { 
+//    proj = fwpm*curr + fbpv;
+//    if ( usePositionalEncoding ) {
+//      proj = proj + getPositionalEncoding(fbpv.size(), currIndex++);
+//    }
+//    vec key = fwkm*proj + fbkv;
+//    vec value = fwvm*proj + fbvv;
+//    values.emplace_back(value);
+//    scaledDotProds.emplace_back(dot(query, key)/scalingFactor);
+//  }
+//
+//  vec sdp = vec(scaledDotProds.size());
+//  for ( uint i=0; (i < scaledDotProds.size()); i++ ) {
+//    sdp(i) = scaledDotProds[i];
+//  }
+//
+//  vec sdpExp = exp(sdp);
+//  double norm = accu(sdpExp);
+//  vec sdpSoftmax = sdpExp/norm;
+//
+//  // calculate scaled_softmax(QK)*V
+//  vec attnResult = zeros<vec>(fbvv.size());
+//
+//  for ( uint i=0; (i < values.size()); i++ ) {
+//    double weight = sdpSoftmax(i);
+//    vec val = values[i];
+//    attnResult += weight*val;
+//  }
+//
+//  vec attnOutput = fwom*attnResult + fbov;
+//
+//  if ( verbose ) {
+//    cerr << "F attnOutput" << attnOutput << endl;
+//  }
+//  // final bit is for nullA
+//  vec hiddenInput = join_cols(attnOutput, corefVec);
+//  vec logScores = fwsm * relu(fwfm*hiddenInput + fbfv) + fbsv;
+//  vec scores = exp(logScores);
+//  double outputNorm = accu(scores);
+//  vec result = scores/outputNorm;
+//  if ( verbose ) {
+//    cerr << "F result" << result << endl;
+//  }
+//  return result;
 } 
 
 

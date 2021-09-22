@@ -387,6 +387,7 @@ def main(config):
     for jdec, ix in sorted(jdecs_to_ix.items()):
         print('j ' + str(ix) + ' ' + str(jdec))
 
+    # TODO clean this up (no reason to have all the _size stuff anymore)
     if save_pytorch:
         torch.save(model.state_dict(), pytorch_fn)
         # these are needed to initialize the model if we want to reload it

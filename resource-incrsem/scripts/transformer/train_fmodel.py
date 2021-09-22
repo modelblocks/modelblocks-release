@@ -51,18 +51,17 @@ def _initialize_finfo_list(infile):
 
         finfo = FInfo()
         finfo.depth = int(depth)
-        finfo.catb = catb
-        finfo.hvb = extract_first_kvec(hv_base)
-        finfo.hvf = extract_first_kvec(hv_filler)
-        finfo.hva = extract_first_kvec(hv_ante)
+        finfo.raw_catb = catb
+        finfo.raw_hvb = extract_first_kvec(hv_base)
+        finfo.raw_hvf = extract_first_kvec(hv_filler)
+        finfo.raw_hva = extract_first_kvec(hv_ante)
         finfo.nulla = int(nulla)
         # TODO is there any downside to not splitting the fdec into its
         # constitutents (match and hvec)?
-        finfo.fdec = fdec
+        finfo.raw_fdec = fdec
         curr_finfo.append(finfo)
 
     per_article_finfo.append(curr_finfo)
-
     return per_article_finfo
 
 
@@ -78,11 +77,11 @@ def _map_finfo_list_to_ix(per_article_finfo, catb_to_ix, fdecs_to_ix, hvb_to_ix,
         new_article_finfo = list()
         for finfo in article_finfo:
             try:
-                finfo.catb = catb_to_ix[finfo.catb]
-                finfo.fdec = fdecs_to_ix[finfo.fdec]
-                finfo.hvb = hvecIxReplace(finfo.hvb, hvb_to_ix)
-                finfo.hvf = hvecIxReplace(finfo.hvf, hvf_to_ix)
-                finfo.hva = hvecIxReplace(finfo.hva, hva_to_ix)
+                finfo.catb = catb_to_ix[finfo.raw_catb]
+                finfo.fdec = fdecs_to_ix[finfo.raw_fdec]
+                finfo.hvb = hvecIxReplace(finfo.raw_hvb, hvb_to_ix)
+                finfo.hvf = hvecIxReplace(finfo.raw_hvf, hvf_to_ix)
+                finfo.hva = hvecIxReplace(finfo.raw_hva, hva_to_ix)
             except KeyError:
                 # dev may contain fdecs, catbases, etc that haven't appeared in
                 # training data. Throw out any such data
@@ -135,11 +134,11 @@ def prepare_data():
     all_catb = set()
     for article in per_article_finfo:
         for finfo in article:
-            all_hvb.update(set(finfo.hvb))
-            all_hvf.update(set(finfo.hvf))
-            all_hva.update(set(finfo.hva))
-            all_fdecs.add(finfo.fdec)
-            all_catb.add(finfo.catb)
+            all_hvb.update(set(finfo.raw_hvb))
+            all_hvf.update(set(finfo.raw_hvf))
+            all_hva.update(set(finfo.raw_hva))
+            all_fdecs.add(finfo.raw_fdec)
+            all_catb.add(finfo.raw_catb)
 
     catb_to_ix = {cat: i for i, cat in enumerate(sorted(all_catb))}
     fdecs_to_ix = {fdecs: i for i, fdecs in enumerate(sorted(all_fdecs))}
@@ -163,7 +162,7 @@ def prepare_data():
 
 
 def prepare_dev_data(dev_decpars, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix):
-    per_article_finfo = _initialize_finfo_list(open(dev_decpars))
+    per_article_finfo = _initialize_finfo_list(dev_decpars)
     per_article_finfo = _map_finfo_list_to_ix(per_article_finfo, catb_to_ix,
         fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix, dev=True)
     return per_article_finfo
@@ -220,11 +219,12 @@ def train(f_config):
     train_seqs = get_finfo_seqs(per_article_finfo, window_size)
 
     if use_dev:
-        dev_per_article_finfo = prepare_dev_data(dev_decpars, catb_to_ix, fdecs_to_ix,
-             hvb_to_ix, hvf_to_ix, hva_to_ix)
+        dev_per_article_finfo = prepare_dev_data(
+            open(dev_decpars), catb_to_ix, fdecs_to_ix,
+            hvb_to_ix, hvf_to_ix, hva_to_ix
+        )
         dev_seqs = get_finfo_seqs(dev_per_article_finfo, window_size)
 
-    # TODO add validation on dev set
     for epoch in range(epochs):
         model.train()
         c0 = time.time()
@@ -355,27 +355,29 @@ def main(config):
     save_pytorch = f_config.getboolean('SaveTorchModel')
     pytorch_fn = f_config.get('TorchFilename')
     extra_params_fn = f_config.get('ExtraParamsFilename')
+    num_transformer_layers = f_config.getint('NumTransformerLayers')
     model, catb_to_ix, fdecs_to_ix, hvb_to_ix, hvf_to_ix, hva_to_ix = train(f_config)
 
     model.eval()
-    params = [ 
-        #('query.weight', 'F Q'),
-        #('query.bias', 'F q'),
-        #('key.weight', 'F K' ),
-        #('key.bias', 'F k'),
-        #('value.weight', 'F V' ),
-        #('value.bias', 'F v'),
+
+    params = list()
+    params.extend([ 
         ('pre_attn_fc.weight', 'F P'),
-        ('pre_attn_fc.bias', 'F p'),
-        ('attn.in_proj_weight', 'F I'),
-        ('attn.in_proj_bias', 'F i'),
-        ('attn.out_proj.weight', 'F O'),
-        ('attn.out_proj.bias', 'F o'),
-        ('fc1.weight', 'F F'),
-        ('fc1.bias', 'F f'),
-        ('fc2.weight', 'F S'),
-        ('fc2.bias', 'F s')
-    ]
+        ('pre_attn_fc.bias', 'F p')
+    ])
+    for i in range(num_transformer_layers):
+        params.extend([
+            (f'transformer_layers.{i}.attn.in_proj_weight', f'F I {i}'),
+            (f'transformer_layers.{i}.attn.in_proj_bias', f'F i {i}'),
+            (f'transformer_layers.{i}.attn.out_proj.weight', f'F O {i}'),
+            (f'transformer_layers.{i}.attn.out_proj.bias', f'F o {i}'),
+            (f'transformer_layers.{i}.feedforward.weight', f'F F {i}'),
+            (f'transformer_layers.{i}.feedforward.bias', f'F f {i}'),
+        ])
+    params.extend([ 
+        ('output_fc.weight', 'F S'),
+        ('output_fc.bias', 'F s')
+    ])
 
     for param, prefix in params:
         if f_config.getboolean('UseGPU'):
@@ -383,6 +385,9 @@ def main(config):
         else:
             weights = model.state_dict()[param].data.numpy()
         print(prefix, ','.join(map(str, weights.flatten('F').tolist())))
+
+    # write out other info needed by the C++ code
+    print('F H', model.num_heads)
 
     if not f_config.getboolean('AblateSyn'):
         if f_config.getboolean('UseGPU'):
@@ -418,11 +423,11 @@ def main(config):
         torch.save(model.state_dict(), pytorch_fn)
         # these are needed to initialize the model if we want to reload it
         extra_params = {
-            'catb_vocab_size': len(catb_to_ix),
-            'hvb_vocab_size': len(hvb_to_ix),
-            'hvf_vocab_size': len(hvf_to_ix),
-            'hva_vocab_size': len(hva_to_ix),
-            'output_dim': len(fdecs_to_ix)
+            'catb_to_ix': catb_to_ix,
+            'hvb_to_ix': hvb_to_ix,
+            'hvf_to_ix': hvf_to_ix,
+            'hva_to_ix': hva_to_ix,
+            'fdecs_to_ix': fdecs_to_ix
         }
         pickle.dump(extra_params, open(extra_params_fn, 'wb'))
 
