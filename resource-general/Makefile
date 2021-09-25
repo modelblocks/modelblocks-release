@@ -165,6 +165,9 @@ NATSTORIESFMRI-SCRIPTS := $(RESOURCE-NATSTORIESFMRI)/scripts
 RESOURCE-PASSAGES := $(abspath $(MBDIR)/resource-passages)
 PASSAGES-SCRIPTS := $(RESOURCE-PASSAGES)/scripts
 
+RESOURCE-PREDRWHO := $(abspath $(MBDIR)/resource-predrwho)
+PREDRWHO-SCRIPTS := $(RESOURCE-PREDRWHO)/scripts
+
 RESOURCE-ONTONOTES := $(abspath $(MBDIR)/resource-ontonotes)
 ONTONOTES-SCRIPTS := $(RESOURCE-ONTONOTES)/scripts
 
@@ -272,6 +275,7 @@ include $(RESOURCE-WORD2VEC)/Makefile
 include $(RESOURCE-WORDNET)/Makefile
 include $(RESOURCE-COREF-CONLL)/Makefile
 include $(RESOURCE-CONLLSCORER)/Makefile
+include $(RESOURCE-PREDRWHO)/Makefile
 endef
 
 ################################################################################
