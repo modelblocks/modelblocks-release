@@ -186,7 +186,7 @@ genmodel/dundee.%.evmeasures: $(RT-SCRIPTS)/concat_tables.py $(foreach subj, $(D
 
 genmodel/dundee%.sentitems:  $(RESOURCE-DUNDEE)/srcmodel/dundee.text.headers  $(DUNDEEDIR)/tx%wrdp.dat  $(GENERAL-SCRIPTS)/convert_cp437.py  $(DUNDEE-SCRIPTS)/findBreaks.py
 	cat $(word 1,$^) $(word 2,$^)  |  perl -pe 's/ +/ /g'  |  python3 $(word 3,$^)  |  python3 $(word 4,$^) > $@
-%dundee.sentitems:  $$(foreach sect,$$(DUNDEESECTS),%dundee$$(sect).sentitems) | genmodel
+%dundee.sentitems:  $$(foreach sect,$$(DUNDEESECTS),genmodel/dundee$$(sect).sentitems) | genmodel
 	cat $^  >  $@
 
 ## s/\(/-LRB- /g;s/\)/ -RRB-/g;        |  sed 's/``/'\''/g;s/'\'\''/'\''/g;s/(/-LRB-/g;s/)/-RRB-/g'

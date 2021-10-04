@@ -665,7 +665,7 @@ FmodelLabelIndexUnked.pkl: $(INCRSEM-SCRIPTS)/getFlabelIndex.py genmodel/simplew
 
 .PRECIOUS: %parsed.tokdecs
 %parsed.tokdecs:  bin/$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$(subst +,-,$$(subst -,.,$$*)))))) \
-                  $$(basename %).senttoks \
+                  $$(basename $$(abspath $$*)).senttoks \
                   genmodel/$$(basename $$(subst +,-,$$(subst -,.,$$(subst .,,$$(suffix $$*)))))model  |  $(CONFIGDIR)/user-numthreads.txt
 	###############
 	### parsing ###

@@ -442,12 +442,12 @@ $(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 ## TO SPEC:
 .PRECIOUS: %_lrtsignif
 %_lrtsignif: $$(DEP-RHACKS)  $(LMEFIT-SCRIPTS)/lmefit2lrtsignif.r \
-             $$(basename $$(basename $$*)).-a$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*))))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
-             $$(basename $$(basename $$*)).-A$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*))))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
-             $(abspath $(RHACKS-SCRIPTS)/mer-utils.R)  $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
+             $$(abspath $$(basename $$(basename $$*))).-a$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*))))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
+             $$(abspath $$(basename $$(basename $$*))).-A$$(filter-out -$$(pc),$$(subst _, ,$$(subst .,,$$(suffix $$*))))_$$(subst .,,$$(suffix $$(basename $$*))).rdata \
+             $$(abspath $(RHACKS-SCRIPTS)/mer-utils.R)  $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
              $(LMEFIT-SCRIPTS)/lmetools.r \
-             $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
-             $(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
+             $$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+             $$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	$(wordlist 1,3,$^) $(filter -%,$(subst _, ,$(subst .,,$(suffix $*)))) > $@
 
 
