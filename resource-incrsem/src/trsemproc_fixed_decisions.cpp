@@ -19,7 +19,7 @@
 
 #define ARMA_64BIT_WORD
 #define FTRANSFORMER
-// #define JTRANSFORMER
+#define JTRANSFORMER
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -105,7 +105,6 @@ DelimitedVector<psX,ObsWord,psSpace,psX> getTokWs() {
 }
 
 int main ( int nArgs, char* argv[] ) {
-
   string sentDelim = "!SENTENCE";
 
   // Define model structures...

@@ -496,6 +496,11 @@ vec FModel::computeResult( vector<vec> attnInput, vec corefVec, uint wordIndex, 
   // used to scale the attention softmax (see section 3.2.1 of Attention
   // Is All You Need)
   const double scalingFactor = sqrt(head_dim);
+
+  // alibi positional encodings, from this paper:
+  // https://arxiv.org/pdf/2108.12409.pdf
+  // TODO make it impossible to do both sinusoidal encodings and alibi
+  vector<mat> alibiMats  = getAlibiMatrices( num_heads, attnInput.size() );
   for ( uint trLayer=0; trLayer<numTransformerLayers; trLayer++ ) {
 
     if ( verbose ) {
@@ -554,6 +559,8 @@ vec FModel::computeResult( vector<vec> attnInput, vec corefVec, uint wordIndex, 
     for ( uint i=0; i<num_heads; i++ ) {
       // sdp = scaled dot product
       mat sdp = (queries[i] * keys[i].t()) / scalingFactor;
+      // add in linear bias for positional encoding
+      sdp = sdp + alibiMats[i];
       if ( verbose ) {
         cerr << "F attn head " << i << endl;
         cerr << "F pre-softmax attn output weights:" << endl;
