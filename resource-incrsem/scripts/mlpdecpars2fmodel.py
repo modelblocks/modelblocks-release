@@ -1,5 +1,5 @@
 import sys, configparser, torch, re, os, time
-from collections import Counter
+from collections import Counter, defaultdict
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -11,7 +11,7 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-def prepare_data():
+def prepare_data(extend_output):
     data = [line.strip() for line in sys.stdin]
     depth, catBase, hvBase, hvFiller, fDecs, hvBFirst, hvFFirst, hvAnte, hvAFirst, nullA = ([] for _ in range(10))
 
@@ -47,7 +47,28 @@ def prepare_data():
     flat_hvF = [hvec for sublist in hvFFirst for hvec in sublist if hvec not in ["", "Bot", "Top"]]
     flat_hvA = [hvec for sublist in hvAFirst for hvec in sublist if hvec not in ["", "Bot", "Top"]]
     catb_to_ix = {cat: i for i, cat in enumerate(sorted(set(catBase)))}
-    fdecs_to_ix = {fdecs: i for i, fdecs in enumerate(sorted(set(fDecs)))}
+
+    # 1&&R-aN-bN:in_0
+    if extend_output:
+        c2k = defaultdict(set)
+        orig_fd_set = set(fDecs)
+        new_fd_set = set()
+
+        for fdec in orig_fd_set:
+            if ":" in fdec:
+                c2k[fdec.split(":")[0].split("&")[-1]].add(fdec.split(":")[1])
+
+        for fdec in orig_fd_set:
+            if fdec.split(":")[0].split("&")[-1] in c2k:
+                for pred in c2k[fdec.split(":")[0].split("&")[-1]]:
+                    new_fd_set.add(fdec.split(":")[0] + ":" + pred)
+            else:
+                new_fd_set.add(fdec)
+
+        fdecs_to_ix = {fdecs: i for i, fdecs in enumerate(sorted(new_fd_set))}
+    else:
+        fdecs_to_ix = {fdecs: i for i, fdecs in enumerate(sorted(set(fDecs)))}
+
     hvecb_to_ix = {hvec: i for i, hvec in enumerate(sorted(set(flat_hvB)))}
     hvecf_to_ix = {hvec: i for i, hvec in enumerate(sorted(set(flat_hvF)))}
     hveca_to_ix = {hvec: i for i, hvec in enumerate(sorted(set(flat_hvA)))}
@@ -280,8 +301,8 @@ class FModel(nn.Module):
 
 
 def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidden_dim, dropout_prob, num_epochs, batch_size, learning_rate,
-          weight_decay, l2_reg, ablate_syn, ablate_sem):
-    depth, cat_b_ix, hvb_mat, hvf_mat, catb_to_ix, fdecs_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix, hvb_top, hvf_top, hva_mat, hva_top, nullA = prepare_data()
+          weight_decay, l2_reg, ablate_syn, ablate_sem, extend_output):
+    depth, cat_b_ix, hvb_mat, hvf_mat, catb_to_ix, fdecs_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix, hvb_top, hvf_top, hva_mat, hva_top, nullA = prepare_data(extend_output)
     depth = F.one_hot(torch.LongTensor(depth), 7).float()
     cat_b_ix = torch.LongTensor(cat_b_ix)
     target = torch.LongTensor(fdecs_ix)
@@ -386,8 +407,8 @@ def main(config):
                                                       f_config.getint("NEpochs"), f_config.getint("BatchSize"),
                                                       f_config.getfloat("LearningRate"),
                                                       f_config.getfloat("WeightDecay"), f_config.getfloat("L2Reg"),
-                                                      f_config.getboolean("AblateSyn"),
-                                                      f_config.getboolean("AblateSem"))
+                                                      f_config.getboolean("AblateSyn"), f_config.getboolean("AblateSem"),
+                                                      f_config.getboolean("ExtendOutput"))
 
     model.eval()
 
