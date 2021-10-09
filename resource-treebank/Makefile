@@ -86,11 +86,14 @@ endif
 #
 ################################################################################
     
-genmodel/brown%.linetrees: $$(DEP-TREEBANK) $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/brown/$$* $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
+genmodel/brown%.senttrees: $$(DEP-TREEBANK) $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/brown/$$* $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
+	touch $@
+	rm $@
+	for f in $(word 2,$^)/*.mrg; do echo '!ARTICLE' >> $@; cat $$f | sed 's/\[/-LSB-/g;s/\]/-RSB-/g;' | perl $(word 3,$^) >> $@; done
 #	echo $^
-	cat $(word 2,$^)/*.mrg | sed 's/\[/-LSB-/g;s/\]/-RSB-/g;' | perl $(word 3,$^) > $@
+#	cat $(word 2,$^)/*.mrg | sed 's/\[/-LSB-/g;s/\]/-RSB-/g;' | perl $(word 3,$^) > $@
 
-genmodel/brownTRAIN.linetrees: $(foreach sect,$(BROWNTRAINSECTS),genmodel/brown$(sect).linetrees) | genmodel
+genmodel/brownTRAIN.senttrees: $(foreach sect,$(BROWNTRAINSECTS),genmodel/brown$(sect).senttrees) | genmodel
 	cat $^ > $@
 
 genmodel/wsj%.senttrees: $$(DEP-TREEBANK) $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/wsj/$$* \
@@ -118,6 +121,8 @@ $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
 	cat $^ > $@
 
 ## Empty coref file for linked modifier, for generic casp item (gcg15.long.linked.morphed)...
+genmodel/brown%.nocoref:
+	touch $@
 genmodel/wsj%.nocoref:
 	touch $@
 
