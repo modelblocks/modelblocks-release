@@ -324,6 +324,12 @@ recastEffects <- function(data, splitcols=NULL, indicatorlevel=NULL, groupingfac
     for (x in colnames(data)[grepl('surp',colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
+    for (x in colnames(data)[grepl('entropy',colnames(data))]) {
+        data[[x]] <- as.numeric(as.character(data[[x]]))
+    }
+    for (x in colnames(data)[grepl('entred',colnames(data))]) {
+        data[[x]] <- as.numeric(as.character(data[[x]]))
+    }
     for (x in colnames(data)[grepl('prob',colnames(data))]) {
         data[[x]] <- as.numeric(as.character(data[[x]]))
     }
