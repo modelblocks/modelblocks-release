@@ -5,7 +5,7 @@ import pandas as pd
 import argparse
 
 argparser = argparse.ArgumentParser('''
-Tiles stimuli by subject into experiment data.        
+Tiles stimuli by subject and fROI into experiment data.        
 ''')
 argparser.add_argument('stimuli', help='Path to data table containing stimuli')
 argparser.add_argument('responses', help='Path to data table containing by-subject responses')
