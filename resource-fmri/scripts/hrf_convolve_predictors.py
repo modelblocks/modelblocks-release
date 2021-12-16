@@ -1,5 +1,54 @@
 import sys, argparse, pandas as pd, numpy as np
-from mvpa2.misc.data_generators import double_gamma_hrf as hrf
+
+
+# Source: https://github.com/PyMVPA/PyMVPA/blob/master/mvpa2/misc/fx.py#L17
+def single_gamma_hrf(t, A=5.4, W=5.2, K=1.0):
+    """Hemodynamic response function model.
+    The version consists of a single gamma function (also see
+    double_gamma_hrf()).
+    Parameters
+    ----------
+    t : float
+      Time.
+    A : float
+      Time to peak.
+    W : float
+      Full-width at half-maximum.
+    K : float
+      Scaling factor.
+    """
+    A = float(A)
+    W = float(W)
+    K = float(K)
+    return \
+        K * (t / A) ** ((A ** 2) / (W ** 2) * 8.0 * np.log(2.0)) \
+        * np.e ** ((t - A) / -((W ** 2) / A / 8.0 / np.log(2.0)))
+
+
+# Source: https://github.com/PyMVPA/PyMVPA/blob/master/mvpa2/misc/fx.py#L43
+def double_gamma_hrf(t, A1=5.4, W1=5.2, K1=1.0, A2=10.8, W2=7.35, K2=0.35):
+    """Hemodynamic response function model.
+    The version is using two gamma functions (also see single_gamma_hrf()).
+    Parameters
+    ----------
+    t : float
+      Time.
+    A : float
+      Time to peak.
+    W : float
+      Full-width at half-maximum.
+    K : float
+      Scaling factor.
+    Parameters A, W and K exists individually for each of both gamma
+    functions.
+    """
+    A1 = float(A1)
+    W1 = float(W1)
+    K1 = float(K1)
+    A2 = float(A2)
+    W2 = float(W2)
+    K2 = float(K2)
+    return single_gamma_hrf(t, A1, W1, K1) - single_gamma_hrf(t, A2, W2, K2)
 
 
 if __name__ == '__main__':
@@ -44,7 +93,7 @@ if __name__ == '__main__':
         response_times = tr * args.step + args.start
         D = response_times[..., None] - impulse_times[None, ...]
         G_mask = D >= 0
-        G = hrf(D)
+        G = double_gamma_hrf(D)
         G = np.where(G_mask, G, 0)
         if duration is not None:
             X = X.multiply(duration, axis=0)
