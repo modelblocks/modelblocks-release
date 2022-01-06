@@ -176,8 +176,13 @@ $(RT-SCRIPTS)/merge_tables.py
 
 .PRECIOUS: %.hrf.prdmeasures
 %.hrf.prdmeasures : %.hrf.all-itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
-$(RT-SCRIPTS)/merge_tables.py
-	cat $< | python $(word 3, $^) $< $(word 2, $^) sampleid > $@
+$(RT-SCRIPTS)/merge_tables.py $(RT-SCRIPTS)/add_evid_col.py
+	python $(word 3, $^) $< $(word 2, $^) sampleid | python $(word 4, $^) -i docid subject tr > $@
+
+.PRECIOUS: %.hrf.resmeasures
+%.hrf.resmeasures:  %.hrf.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures \
+$(RT-SCRIPTS)/add_evid_col.py
+	cat $(word 2,$^) | python $(word 3, $^) -i docid subject tr > $@
 
 .PRECIOUS: %.tiled.core.evmeasures
 %.tiled.core.evmeasures: $(FMRI-SCRIPTS)/tile_stimuli.py %.itemmeasures $$(word 1,$$(subst ., ,%)).evmeasures
