@@ -101,8 +101,8 @@ if __name__ == '__main__':
         X_conv = pd.DataFrame(X_conv, columns=cols)
         X_conv['time'] = response_times
         X_conv['tr'] = tr
-        for col, val in zip(args.grouping_columns, series_names[i]):
-            X_conv[col] = val
+        for col in args.grouping_columns:
+            X_conv[col] = series_names[i]
         out.append(X_conv)
 
     out = pd.concat(out, axis=0)
