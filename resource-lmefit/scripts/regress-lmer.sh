@@ -53,7 +53,12 @@ else
 	dname="";
 fi
 
-base_filename="$dname$(basename $prdmeasures _part.prdmeasures)_$(basename $bform .lmerform)_$preds_STR"
+#base_filename="$dname$(basename $prdmeasures _part.prdmeasures)_$(basename $bform .lmerform)_$preds_STR"
+base_filename="$dname$(basename $prdmeasures _part.prdmeasures)_$(basename $bform .lmerform)"
+if [ -n "$preds_STR" ]; then
+    base_filename+="_$preds_STR"
+fi
+
 outdir="${base_filename/_part\./\.}"
 outfile="${base_filename/_part\./\.}"
 outfile+="_lmer.fitmodel.rdata";
