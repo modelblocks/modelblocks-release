@@ -32,8 +32,14 @@ for line in sys.stdin:
         emod = 0
         earg = 0
         # category of base of deepest derivation fragment
-        basecat = line.split(':')[-1][:-2]
-    if line.startswith('P'): syncat = line.split()[-1]
+        basecat = line.strip().split(':')[-1][:-1]
+        # stack ending in :: means deepest base cat is ":"
+        if not basecat:
+            basecat = "COLON"
+    if line.startswith('P'): 
+        syncat = line.split()[-1]
+        # to avoid pesky downstream errors reading quotation marks in CSV
+        if syncat == '"': syncat = "QUOTE"
     if( line.startswith('F') ):
         if 'M' in line.split()[-1].split('&')[1]: emod = 1
         if re.search( '\d', line.split()[-1].split('&')[1] ): earg = 1
