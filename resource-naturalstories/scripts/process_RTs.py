@@ -13,7 +13,7 @@ X = X[ ~((X['item']==3) & (X['zone']==offset+1)) ]
 ## Shift the "zone" (index) down by two for all words
 X[ 'zone' ] -= 2
 ## Shift the "zone" (index) down by an additional one for all words in story 3 following the empty token
-X.loc[ (X['item']==3) & (X['zone']>offset), 'zone' ] -= 1
+X.loc[ (X['item']==3) & (X['zone']>=offset), 'zone' ] -= 1
 
 ## inner merge the word and RT arrays, using all shared columns as keys
 X = X.merge(W,how='inner')  #,on=['item','zone'])
