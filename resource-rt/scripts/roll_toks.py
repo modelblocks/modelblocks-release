@@ -11,13 +11,14 @@ parser.add_argument('gold_path', metavar='gold', type=str, nargs=1, \
     help='Path to file containing target (gold) tokenization')
 parser.add_argument('skip_cols', metavar='col', type=str, nargs='*', \
     help='Names of columns to skip in the rolling process (the value in the first row will be kept)')
-parser.add_argument('-e', '--enc', dest='enc', action='store', default='utf-8', \
-    help='Character encoding to use (defaults to utf-8)')
+# specifying the endcoding shouldn't be necessary for python 3:
+# https://stackoverflow.com/questions/16549332/python-3-how-to-specify-stdin-encoding
+#parser.add_argument('-e', '--enc', dest='enc', action='store', default='utf-8', \
+#    help='Character encoding to use (defaults to utf-8)')
 parser.add_argument('-k', '--key', dest='key', action='store', default='word', \
     help='Name of key column whose tokens will be rolled (defaults to "word")')
 args = parser.parse_args()
-sys.stdin = codecs.getreader(args.enc)(sys.stdin)
-sys.stdout = codecs.getwriter(args.enc)(sys.stdout)
+
 
 def roll(r1, r2, skip, key):
     r2.append('1')
@@ -42,9 +43,10 @@ def roll(r1, r2, skip, key):
                     r1[i] = r2[i]
     return r1
 
+
 def main():
     gold = []
-    with codecs.open(args.gold_path[0],'r', encoding=args.enc) as file:
+    with open(args.gold_path[0],'r') as file:
         for line in file:
             gold.append(line.strip().split(' '))
     g = 1
