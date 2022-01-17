@@ -271,7 +271,7 @@ def process_tok(buffer, line, i, prev, debug=True):
     
     reinstlen, reinstdr, reinstdrv = [node.retrievalLen('min', measure, 'reinst') for measure in length_measures]
     preds += [reinstlen, reinstdr, reinstdrv]
-    
+
     Ad, Bd, Adm1, Bdm1 = node.get_ab()
     AdPrim = get_primitive_cat(Ad)
     BdPrim = get_primitive_cat(Bd)
@@ -345,12 +345,12 @@ def drv(pos, word):
 def get_primitive_cat(s):
     if s == 'N-b{N-aD}':
         return 'D'
+    if s == 'null' or s == '':
+        return 'null'
     if s[0] in ['B', 'G', 'L']:
         return 'Vnon'
     if s[0] in ['N', 'V', 'A', 'R', 'D', 'X', 'S']:
         return s[0]
-    if s == 'null':
-        return s
     return 'O'
 
 
