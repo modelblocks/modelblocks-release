@@ -240,9 +240,6 @@ cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=
 }
 
 addColumns <- function(data) {
-    for (x in colnames(data)[grepl('dlt',colnames(data))]) {
-        data[[paste(x, 'bin', sep='')]] <- sapply(data[[x]], binEffect)
-    }
     for (x in colnames(data)[grepl('prob',colnames(data))]) {
         data[[paste(x, 'surp', sep='')]] <- as.numeric(as.character(-data[[x]]))
     }

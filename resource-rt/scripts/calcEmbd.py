@@ -177,10 +177,10 @@ class StoreNode(object):
             belowedgetype = n.edgetype
             n = n.above
          
-        return ad if ad != None else 'null', \
-               bd if bd != None else 'null', \
-               adm1 if adm1 != None else 'null', \
-               bdm1 if bdm1 != None else 'null'
+        return ad if ad else 'null', \
+               bd if bd else 'null', \
+               adm1 if adm1 else 'null', \
+               bdm1 if bdm1 else 'null'
                 
     def top(self):
         n = self
