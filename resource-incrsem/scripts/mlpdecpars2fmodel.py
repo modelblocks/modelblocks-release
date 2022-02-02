@@ -5,15 +5,21 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 from scipy.sparse import csr_matrix
+from gpt2_contextualized_embeddings import get_gpt2_embeddings
 
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-def prepare_data(extend_output):
+def prepare_data(sentitems, senttoks, extend_output):
     data = [line.strip() for line in sys.stdin]
     depth, catBase, hvBase, hvFiller, fDecs, hvBFirst, hvFFirst, hvAnte, hvAFirst, nullA = ([] for _ in range(10))
+
+    # WARNING: this list takes a ton of memory because each token embedding
+    # is 768-dimensional
+    result_dict = get_gpt2_embeddings(sentitems, senttoks)
+    embeddings = result_dict["embeddings"]
 
     for line in data:
         d, cb, hvb, hvf, hva, nulla, fd = line.split(" ")
@@ -25,6 +31,8 @@ def prepare_data(extend_output):
         nullA.append(int(nulla))
         fDecs.append(fd)
     eprint("Linesplit complete")
+
+    assert len(depth) == len(embeddings), "len(depth): {} len(embeddings): {}".format(len(depth), len(embeddings))
 
     # Extract first KVec from sparse HVec
     for kvec in hvBase:
@@ -130,7 +138,7 @@ def prepare_data(extend_output):
     eprint("Number of input antecedent KVecs: {}".format(len(hveca_to_ix)))
     eprint("Number of output F categories: {}".format(len(fdecs_to_ix)))
 
-    return depth, cat_b_ix, hvb_mat, hvf_mat, catb_to_ix, fdecs_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix, hvb_top, hvf_top, hva_mat, hva_top, nullA
+    return depth, cat_b_ix, hvb_mat, hvf_mat, catb_to_ix, fdecs_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix, hvb_top, hvf_top, hva_mat, hva_top, nullA, embeddings
 
 
 def prepare_data_dev(dev_decpars_file, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix):
@@ -217,7 +225,7 @@ def prepare_data_dev(dev_decpars_file, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hve
 
 
 class FModel(nn.Module):
-    def __init__(self, catb_vocab_size, hvecb_vocab_size, hvecf_vocab_size, hveca_vocab_size, syn_size, sem_size, ant_size, hidden_dim, output_dim, dropout_prob):
+    def __init__(self, catb_vocab_size, hvecb_vocab_size, hvecf_vocab_size, hveca_vocab_size, syn_size, sem_size, ant_size, emb_size, hidden_dim, output_dim, dropout_prob):
         super(FModel, self).__init__()
         self.syn_size = syn_size
         self.sem_size = sem_size
@@ -231,15 +239,16 @@ class FModel(nn.Module):
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
         self.dropout_prob = dropout_prob
-        self.fc1 = nn.Linear(8 + syn_size + 2 * sem_size + ant_size, self.hidden_dim, bias=True)
+        self.fc1 = nn.Linear(8 + syn_size + 2 * sem_size + ant_size + emb_size, self.hidden_dim, bias=True)
         self.dropout = nn.Dropout(self.dropout_prob)
         self.relu = F.relu
         self.fc2 = nn.Linear(self.hidden_dim, self.output_dim, bias=True)
 
-    def forward(self, d_onehot, cat_b_ix, hvb_mat, hvf_mat, hvb_top, hvf_top, hva_mat, hva_top, nullA, use_gpu, ablate_syn, ablate_sem):
+    def forward(self, d_onehot, cat_b_ix, hvb_mat, hvf_mat, hvb_top, hvf_top, hva_mat, hva_top, nullA, emb, use_gpu, ablate_syn, ablate_sem):
         hvb_top = torch.FloatTensor(hvb_top)
         hvf_top = torch.FloatTensor(hvf_top)
         hva_top = torch.FloatTensor(hva_top)
+        emb = torch.stack(emb)
         #nullA   = torch.FloatTensor(nullA) #TODO expected CPU, got CUDA
 
         if ablate_syn:
@@ -253,6 +262,7 @@ class FModel(nn.Module):
             hvf_top = hvf_top.to("cuda")
             hva_top = hva_top.to("cuda")
             cat_b_embed = cat_b_embed.to("cuda")
+            emb = emb.to("cuda")
             #nullA = nullA.to("cuda")
 
         if ablate_sem:
@@ -292,7 +302,7 @@ class FModel(nn.Module):
             hvf_embed = torch.sparse.mm(hvf_mat, self.hvecf_embeds.weight) + hvf_top
             hva_embed = torch.sparse.mm(hva_mat, self.hveca_embeds.weight) + hva_top
 
-        x = torch.cat((cat_b_embed, hvb_embed, hvf_embed, hva_embed, nullA.unsqueeze(dim=1), d_onehot), 1) 
+        x = torch.cat((cat_b_embed, hvb_embed, hvf_embed, hva_embed, nullA.unsqueeze(dim=1), d_onehot, emb), 1) 
         x = self.fc1(x)
         x = self.dropout(x)
         x = self.relu(x)
@@ -300,13 +310,15 @@ class FModel(nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidden_dim, dropout_prob, num_epochs, batch_size, learning_rate,
+def train(sentitems, senttoks, use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidden_dim, dropout_prob, num_epochs, batch_size, learning_rate,
           weight_decay, l2_reg, ablate_syn, ablate_sem, extend_output):
-    depth, cat_b_ix, hvb_mat, hvf_mat, catb_to_ix, fdecs_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix, hvb_top, hvf_top, hva_mat, hva_top, nullA = prepare_data(extend_output)
+    depth, cat_b_ix, hvb_mat, hvf_mat, catb_to_ix, fdecs_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix, hvb_top, hvf_top, hva_mat, hva_top, nullA, embeddings = prepare_data(sentitems, senttoks, extend_output)
     depth = F.one_hot(torch.LongTensor(depth), 7).float()
+    emb_size = len(embeddings[0])
+    eprint("embedding size:", emb_size)
     cat_b_ix = torch.LongTensor(cat_b_ix)
     target = torch.LongTensor(fdecs_ix)
-    model = FModel(len(catb_to_ix), len(hvecb_to_ix), len(hvecf_to_ix), len(hveca_to_ix), syn_size, sem_size, ant_size, hidden_dim, len(fdecs_to_ix), dropout_prob)
+    model = FModel(len(catb_to_ix), len(hvecb_to_ix), len(hvecf_to_ix), len(hveca_to_ix), syn_size, sem_size, ant_size, emb_size, hidden_dim, len(fdecs_to_ix), dropout_prob)
     nulla = torch.FloatTensor(nullA)
 
     if use_gpu > 0:
@@ -315,6 +327,8 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidd
         target = target.to("cuda")
         nulla = nulla.to("cuda")
         model = model.cuda()
+        for emb in embeddings:
+            emb = emb.to("cuda")
 
     if use_dev > 0:
         dev_depth, dev_cat_b_ix, dev_hvb_mat, dev_hvf_mat, dev_fdecs_ix, dev_hvb_top, dev_hvf_top, dev_hva_mat, dev_hva_top, dev_nullA = prepare_data_dev(
@@ -352,6 +366,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidd
             batch_d, batch_c, batch_target, batch_nulla = depth[indices], cat_b_ix[indices], target[indices], nulla[indices]
             batch_hvb_mat, batch_hvf_mat, batch_hva_mat = hvb_mat[np.array(indices), :], hvf_mat[np.array(indices), :], hva_mat[np.array(indices), :]
             batch_hvb_top, batch_hvf_top, batch_hva_top = [hvb_top[i] for i in indices], [hvf_top[i] for i in indices], [hva_top[i] for i in indices]
+            batch_emb = [embeddings[i] for i in indices]
 
             if use_gpu > 0:
                 l2_loss = torch.cuda.FloatTensor([0])
@@ -362,7 +377,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidd
                     continue
                 l2_loss += torch.mean(param.pow(2))
 
-            output = model(batch_d, batch_c, batch_hvb_mat, batch_hvf_mat, batch_hvb_top, batch_hvf_top, batch_hva_mat, batch_hva_top, batch_nulla, use_gpu, ablate_syn, ablate_sem)
+            output = model(batch_d, batch_c, batch_hvb_mat, batch_hvf_mat, batch_hvb_top, batch_hvf_top, batch_hva_mat, batch_hva_top, batch_nulla, batch_emb, use_gpu, ablate_syn, ablate_sem)
             _, fdec = torch.max(output.data, 1)
             train_correct = (fdec == batch_target).sum().item()
             total_train_correct += train_correct
@@ -396,10 +411,10 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidd
     return model, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix
 
 
-def main(config):
+def main(config, sentitems, senttoks):
     f_config = config["FModel"]
     torch.manual_seed(f_config.getint("Seed"))
-    model, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix = train(f_config.getint("Dev"), f_config.get("DevFile"),
+    model, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix = train(sentitems, senttoks, f_config.getint("Dev"), f_config.get("DevFile"),
                                                       f_config.getint("GPU"),
                                                       f_config.getint("SynSize"), f_config.getint("SemSize"),
                                                       f_config.getint("AntSize"), f_config.getint("HiddenSize"), 
@@ -456,6 +471,8 @@ def main(config):
 if __name__ == "__main__":
     config = configparser.ConfigParser(allow_no_value=True)
     config.read(sys.argv[1])
+    sentitems = sys.argv[2]
+    senttoks = sys.argv[3]
     for section in config:
         eprint(section, dict(config[section]))
-    main(config)
+    main(config, sentitems, senttoks)
