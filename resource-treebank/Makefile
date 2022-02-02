@@ -113,6 +113,12 @@ $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
 %/wsjv02to21.linetrees:  $(foreach sect,02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21,%/wsjv$(sect).linetrees)
 	cat $^ > $@
 
+#genmodel/wsj%.senttoks: genmodel/wsj%.gcg15.senttrees $(TREEBANK-SCRIPTS)/senttrees2toks.py $(TREEBANK-SCRIPTS)/retokenize.sed
+#	cat $< | python $(word 2, $^) | sed -f $(word 3, $^) > $@
+
+genmodel/wsj%.sentitems: genmodel/wsj%.senttoks $(TREEBANK-SCRIPTS)/untokenize.sed
+	cat $< |  sed -f $(word 2, $^) > $@
+
 genmodel/swbd%.linetrees: $$(DEP-TREEBANK) $(CONFIGDIR)/user-treebank-directory.txt $(TREEBANKDIR)/parsed/mrg/swbd/$$* \
 $(LTREES-SCRIPTS)/editabletrees2linetrees.pl | genmodel
 	cat $(word 2, $^)/*.mrg | perl $(word 3, $^) | awk '/^\s*\(/' > $@

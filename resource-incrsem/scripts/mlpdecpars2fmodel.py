@@ -384,7 +384,8 @@ def train(sentitems, senttoks, use_dev, dev_decpars_file, use_gpu, syn_size, sem
             nll_loss = criterion(output, batch_target)
             loss = nll_loss + l2_reg * l2_loss
             total_train_loss += loss.item()
-            loss.backward()
+            #loss.backward()
+            loss.backward(retain_graph=True)
             optimizer.step()
             optimizer.zero_grad()
 
