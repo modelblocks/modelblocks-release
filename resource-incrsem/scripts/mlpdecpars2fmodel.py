@@ -12,13 +12,13 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-def prepare_data(sentitems, senttoks, extend_output):
+def prepare_data(senttoks, extend_output):
     data = [line.strip() for line in sys.stdin]
     depth, catBase, hvBase, hvFiller, fDecs, hvBFirst, hvFFirst, hvAnte, hvAFirst, nullA = ([] for _ in range(10))
 
     # WARNING: this list takes a ton of memory because each token embedding
     # is 768-dimensional
-    result_dict = get_gpt2_embeddings(sentitems, senttoks)
+    result_dict = get_gpt2_embeddings(senttoks)
     embeddings = result_dict["embeddings"]
 
     for line in data:
@@ -310,9 +310,9 @@ class FModel(nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-def train(sentitems, senttoks, use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidden_dim, dropout_prob, num_epochs, batch_size, learning_rate,
+def train(senttoks, use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, ant_size, hidden_dim, dropout_prob, num_epochs, batch_size, learning_rate,
           weight_decay, l2_reg, ablate_syn, ablate_sem, extend_output):
-    depth, cat_b_ix, hvb_mat, hvf_mat, catb_to_ix, fdecs_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix, hvb_top, hvf_top, hva_mat, hva_top, nullA, embeddings = prepare_data(sentitems, senttoks, extend_output)
+    depth, cat_b_ix, hvb_mat, hvf_mat, catb_to_ix, fdecs_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix, hvb_top, hvf_top, hva_mat, hva_top, nullA, embeddings = prepare_data(senttoks, extend_output)
     depth = F.one_hot(torch.LongTensor(depth), 7).float()
     emb_size = len(embeddings[0])
     eprint("embedding size:", emb_size)
@@ -412,10 +412,10 @@ def train(sentitems, senttoks, use_dev, dev_decpars_file, use_gpu, syn_size, sem
     return model, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix
 
 
-def main(config, sentitems, senttoks):
+def main(config, senttoks):
     f_config = config["FModel"]
     torch.manual_seed(f_config.getint("Seed"))
-    model, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix = train(sentitems, senttoks, f_config.getint("Dev"), f_config.get("DevFile"),
+    model, catb_to_ix, fdecs_to_ix, hvecb_to_ix, hvecf_to_ix, hveca_to_ix = train(senttoks, f_config.getint("Dev"), f_config.get("DevFile"),
                                                       f_config.getint("GPU"),
                                                       f_config.getint("SynSize"), f_config.getint("SemSize"),
                                                       f_config.getint("AntSize"), f_config.getint("HiddenSize"), 
@@ -472,8 +472,7 @@ def main(config, sentitems, senttoks):
 if __name__ == "__main__":
     config = configparser.ConfigParser(allow_no_value=True)
     config.read(sys.argv[1])
-    sentitems = sys.argv[2]
-    senttoks = sys.argv[3]
+    senttoks = sys.argv[2]
     for section in config:
         eprint(section, dict(config[section]))
-    main(config, sentitems, senttoks)
+    main(config, senttoks)

@@ -139,13 +139,16 @@ def wordpiece_emb_2_word_emb(wordpiece_embs, wordpiece_text, words):
     return word_embs
 
 
-def get_word_embeddings(tokenizer, model, input_str, input_tok, layer):
+def get_word_embeddings(tokenizer, model, input_tok, layer):
+    # TODO currently we separate each token with a space. This means that
+    # punctuation like periods and parentheses is separated from nearby
+    # words, which is a different format from the text GPT-2 expects. Might
+    # be worth untokenizing the input text (but that complicates aligning
+    # the GPT-2 embeddings with the tokenized text)
+    input_str = " ".join(input_tok)
     input_ids = tokenizer(input_str, return_tensors="pt")["input_ids"][0]
     input_id_text = tokenizer.convert_ids_to_tokens(input_ids)
     windowed_input_ids = get_subword_windows(input_ids)
-    #outputs = model(**inputs, output_hidden_states=True)
-    #outputs = model(input_ids, output_hidden_states=True)
-    #embs = list(outputs["hidden_states"][-1][0])
     per_window_embs = list()
     for window in windowed_input_ids:
         outputs = model(window, output_hidden_states=True)
@@ -165,50 +168,42 @@ def print_article_embeddings(toks, embeddings, article_ix):
     for i, tok in enumerate(toks):
         emb = embeddings[i]
         emb_str = " ".join(str(x.item()) for x in emb)
-        print("{} {} {}".format(article_ix, tok, emb_str))
+        print("{} {} {}".format(article_ix[i], tok, emb_str))
 
 
-def get_gpt2_embeddings(sentitems, senttoks, gpt2_version="gpt2", layer=-1):
+def get_gpt2_embeddings(senttoks, gpt2_version="gpt2", layer=-1):
     model = GPT2LMHeadModel.from_pretrained(gpt2_version)
     tokenizer = GPT2Tokenizer.from_pretrained(gpt2_version)
 
-    items = open(sentitems)
     toks = open(senttoks)
-    assert items.readline().strip() == "!ARTICLE" \
-        and toks.readline().strip() == "!ARTICLE"
+    assert toks.readline().strip() == "!ARTICLE"
 
     all_toks = list()
     all_embeddings = list()
     all_article_ix = list()
 
-    curr_input_str = ""
     curr_input_toks = list()
     curr_article_ix = 0
     
-    for l_item in items:
-        l_item = l_item.strip()
-        l_tok = toks.readline().strip()
-        if l_item == "!ARTICLE":
-            assert l_tok == "!ARTICLE"
-            embeddings = get_word_embeddings(tokenizer, model, curr_input_str,
+    for l_tok in toks:
+        l_tok = l_tok.strip()
+        if l_tok == "!ARTICLE":
+            embeddings = get_word_embeddings(tokenizer, model,
                 curr_input_toks, layer)
             all_embeddings.extend(embeddings)
             all_article_ix.extend([curr_article_ix]*len(curr_input_toks))
             all_toks.extend(curr_input_toks)
             curr_input_toks = list()
-            curr_input_str = ""
             curr_article_ix += 1
-        elif curr_input_str:
-            curr_input_str += " " + l_item
-            curr_input_toks.extend(l_tok.split())
         else:
-            curr_input_str = l_item
-            curr_input_toks = l_tok.split()
-    embeddings = get_word_embeddings(tokenizer, model, curr_input_str,
-        curr_input_toks, layer)
+            curr_input_toks.extend(l_tok.split())
+
+    embeddings = get_word_embeddings(tokenizer, model, curr_input_toks,
+        layer)
     all_embeddings.extend(embeddings)
     all_article_ix.extend([curr_article_ix]*len(curr_input_toks))
     all_toks.extend(curr_input_toks)
+
     return {
         "tokens": all_toks,
         "embeddings": all_embeddings,
@@ -218,14 +213,12 @@ def get_gpt2_embeddings(sentitems, senttoks, gpt2_version="gpt2", layer=-1):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("sentitems", type=str)
     parser.add_argument("senttoks", type=str)
     parser.add_argument("--gpt2_version", type=str, default="gpt2",
         choices=["gpt2", "gpt2-medium", "gpt2-large", "gpt2-xl"])
     parser.add_argument("--layer", type=int, default=-1)
     args = parser.parse_args()
-    result = get_gpt2_embeddings(args.sentitems, args.senttoks,
-        args.gpt2_version)
+    result = get_gpt2_embeddings(args.senttoks, args.gpt2_version)
     print_article_embeddings(result["tokens"], result["embeddings"],
         result["article_indices"])
 
