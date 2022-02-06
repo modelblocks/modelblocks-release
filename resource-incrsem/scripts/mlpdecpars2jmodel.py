@@ -5,16 +5,22 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 from scipy.sparse import csr_matrix
++from gpt2_contextualized_embeddings import get_gpt2_embeddings
 
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-def prepare_data():
+def prepare_data(senttoks, extend_output):
     data = [line.strip() for line in sys.stdin]
     depth, catAncstr, hvAncstr, hvFiller, catLchild, hvLchild, jDecs, hvAFirst, hvFFirst, hvLFirst = ([] for _ in
                                                                                                       range(10))
+
+    # WARNING: this list takes a ton of memory because each token embedding
+    # is 768-dimensional
+    result_dict = get_gpt2_embeddings(senttoks)
+    embeddings = result_dict["embeddings"]
 
     for line in data:
         d, ca, hva, hvf, cl, hvl, jd = line.split(" ")
@@ -26,6 +32,8 @@ def prepare_data():
         hvLchild.append(hvl)
         jDecs.append(jd)
     eprint("Linesplit complete")
+
+    assert len(depth) == len(embeddings), "len(depth): {} len(embeddings): {}".format(len(depth), len(embeddings))
 
     # Extract first KVec from sparse HVec
     for kvec in hvAncstr:
@@ -127,7 +135,7 @@ def prepare_data():
     eprint("Number of output J categories: {}".format(len(jdecs_to_ix)))
 
     # return depth, cat_a_ix, hva_mat, hvf_mat, cat_l_ix, hvl_mat, cat_to_ix, jdecs_ix, jdecs_to_ix, hvec_to_ix, hva_top, hvf_top, hvl_top
-    return depth, cat_a_ix, hva_mat, hvf_mat, cat_l_ix, hvl_mat, cata_to_ix, catl_to_ix, jdecs_ix, jdecs_to_ix, hveca_to_ix, hvecf_to_ix, hvecl_to_ix, hva_top, hvf_top, hvl_top
+    return depth, cat_a_ix, hva_mat, hvf_mat, cat_l_ix, hvl_mat, cata_to_ix, catl_to_ix, jdecs_ix, jdecs_to_ix, hveca_to_ix, hvecf_to_ix, hvecl_to_ix, hva_top, hvf_top, hvl_top, embeddings
 
 
 # def prepare_data_dev(dev_decpars_file, cat_to_ix, jdecs_to_ix, hvec_to_ix):
@@ -232,7 +240,7 @@ def prepare_data_dev(dev_decpars_file, cata_to_ix, catl_to_ix, jdecs_to_ix, hvec
 
 class JModel(nn.Module):
     # def __init__(self, cat_vocab_size, hvec_vocab_size, syn_size, sem_size, hidden_dim, output_dim, dropout_prob):
-    def __init__(self, cata_vocab_size, catl_vocab_size, hveca_vocab_size, hvecf_vocab_size, hvecl_vocab_size, syn_size, sem_size, hidden_dim, output_dim, dropout_prob):
+    def __init__(self, cata_vocab_size, catl_vocab_size, hveca_vocab_size, hvecf_vocab_size, hvecl_vocab_size, syn_size, sem_size, emb_size, hidden_dim, output_dim, dropout_prob):
         super(JModel, self).__init__()
         # self.hvec_vocab_size = hvec_vocab_size
         self.syn_size = syn_size
@@ -248,15 +256,17 @@ class JModel(nn.Module):
         self.output_dim = output_dim
         self.dropout_prob = dropout_prob
         self.fc1 = nn.Linear(7 + 2 * syn_size + 3 * sem_size, self.hidden_dim, bias=True)
+        self.fc1 = nn.Linear(7 + 2 * syn_size + 3 * sem_size + emb_size, self.hidden_dim, bias=True)
         self.dropout = nn.Dropout(self.dropout_prob)
         self.relu = F.relu
         self.fc2 = nn.Linear(self.hidden_dim, self.output_dim, bias=True)
 
-    def forward(self, d_onehot, cat_a_ix, hva_mat, hvf_mat, cat_l_ix, hvl_mat, hva_top, hvf_top, hvl_top, use_gpu,
+    def forward(self, d_onehot, cat_a_ix, hva_mat, hvf_mat, cat_l_ix, hvl_mat, hva_top, hvf_top, hvl_top, emb, use_gpu,
                 ablate_syn, ablate_sem):
         hva_top = torch.FloatTensor(hva_top)
         hvf_top = torch.FloatTensor(hvf_top)
         hvl_top = torch.FloatTensor(hvl_top)
+        emb = torch.stack(emb)
 
         if ablate_syn:
             cat_a_embed = torch.zeros([len(cat_a_ix), self.syn_size], dtype=torch.float)
@@ -274,6 +284,7 @@ class JModel(nn.Module):
             hvl_top = hvl_top.to("cuda")
             cat_a_embed = cat_a_embed.to("cuda")
             cat_l_embed = cat_l_embed.to("cuda")
+            emb = emb.to("cuda")
 
         if ablate_sem:
             hva_zeros = torch.zeros([hva_top.shape[0], self.sem_size], dtype=torch.float)
@@ -314,7 +325,7 @@ class JModel(nn.Module):
             hvf_embed = torch.sparse.mm(hvf_mat, self.hvecf_embeds.weight) + hvf_top
             hvl_embed = torch.sparse.mm(hvl_mat, self.hvecl_embeds.weight) + hvl_top
 
-        x = torch.cat((cat_a_embed, hva_embed, hvf_embed, cat_l_embed, hvl_embed, d_onehot), 1)
+        x = torch.cat((cat_a_embed, hva_embed, hvf_embed, cat_l_embed, hvl_embed, d_onehot, emb), 1)
         x = self.fc1(x)
         x = self.dropout(x)
         x = self.relu(x)
@@ -322,16 +333,17 @@ class JModel(nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dropout_prob, num_epochs, batch_size,
+def train(senttoks, use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dropout_prob, num_epochs, batch_size,
           learning_rate, weight_decay, l2_reg, ablate_syn, ablate_sem):
     # depth, cat_a_ix, hva_mat, hvf_mat, cat_l_ix, hvl_mat, cat_to_ix, jdecs_ix, jdecs_to_ix, hvec_to_ix, hva_top, hvf_top, hvl_top = prepare_data()
-    depth, cat_a_ix, hva_mat, hvf_mat, cat_l_ix, hvl_mat, cata_to_ix, catl_to_ix, jdecs_ix, jdecs_to_ix, hveca_to_ix, hvecf_to_ix, hvecl_to_ix, hva_top, hvf_top, hvl_top = prepare_data()
+    depth, cat_a_ix, hva_mat, hvf_mat, cat_l_ix, hvl_mat, cata_to_ix, catl_to_ix, jdecs_ix, jdecs_to_ix, hveca_to_ix, hvecf_to_ix, hvecl_to_ix, hva_top, hvf_top, hvl_top, embeddings = prepare_data()
     depth = F.one_hot(torch.LongTensor(depth), 7).float()
+    emb_size = len(embeddings[0])
     cat_a_ix = torch.LongTensor(cat_a_ix)
     cat_l_ix = torch.LongTensor(cat_l_ix)
     target = torch.LongTensor(jdecs_ix)
     # model = JModel(len(cat_to_ix), len(hvec_to_ix), syn_size, sem_size, hidden_dim, len(jdecs_to_ix), dropout_prob)
-    model = JModel(len(cata_to_ix), len(catl_to_ix), len(hveca_to_ix), len(hvecf_to_ix), len(hvecl_to_ix), syn_size, sem_size, hidden_dim, len(jdecs_to_ix), dropout_prob)
+    model = JModel(len(cata_to_ix), len(catl_to_ix), len(hveca_to_ix), len(hvecf_to_ix), len(hvecl_to_ix), syn_size, sem_size, emb_size, idden_dim, len(jdecs_to_ix), dropout_prob)
 
     if use_gpu > 0:
         depth = depth.to("cuda")
@@ -339,6 +351,8 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
         cat_l_ix = cat_l_ix.to("cuda")
         target = target.to("cuda")
         model = model.cuda()
+        for emb in embeddings:
+            emb = emb.to("cuda")
 
     if use_dev > 0:
         # dev_depth, dev_cat_a_ix, dev_hva_mat, dev_hvf_mat, dev_cat_l_ix, dev_hvl_mat, dev_jdecs_ix, dev_hva_top, dev_hvf_top, dev_hvl_top = prepare_data_dev(
@@ -382,6 +396,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
             batch_hva_top, batch_hvf_top, batch_hvl_top = [hva_top[i] for i in indices], [hvf_top[i] for i in
                                                                                           indices], [hvl_top[i] for i in
                                                                                                      indices]
+            batch_emb = [embeddings[i] for i in indices]
 
             if use_gpu > 0:
                 l2_loss = torch.cuda.FloatTensor([0])
@@ -393,7 +408,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
                 l2_loss += torch.mean(param.pow(2))
 
             output = model(batch_d, batch_a, batch_hva_mat, batch_hvf_mat, batch_l, batch_hvl_mat, batch_hva_top,
-                           batch_hvf_top, batch_hvl_top, use_gpu, ablate_syn, ablate_sem)
+                           batch_hvf_top, batch_hvl_top, batch_emb, use_gpu, ablate_syn, ablate_sem)
             _, jdec = torch.max(output.data, 1)
             train_correct = (jdec == batch_target).sum().item()
             total_train_correct += train_correct
@@ -401,6 +416,7 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
             loss = nll_loss + l2_reg * l2_loss
             total_train_loss += loss.item()
             loss.backward()
+#            loss.backward(retain_graph=True)
             optimizer.step()
             optimizer.zero_grad()
 
@@ -426,10 +442,11 @@ def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dr
     # return model, cat_to_ix, jdecs_to_ix, hvec_to_ix
     return model, cata_to_ix, catl_to_ix, jdecs_to_ix, hveca_to_ix, hvecf_to_ix, hvecl_to_ix
 
-def main(config):
+def main(config, senttoks):
     j_config = config["JModel"]
     torch.manual_seed(j_config.getint("Seed"))
-    model, cata_to_ix, catl_to_ix, jdecs_to_ix, hveca_to_ix, hvecf_to_ix, hvecl_to_ix = train(j_config.getint("Dev"), j_config.get("DevFile"),
+    model, cata_to_ix, catl_to_ix, jdecs_to_ix, hveca_to_ix, hvecf_to_ix, hvecl_to_ix = train(senttoks,
+                                                      j_config.getint("Dev"), j_config.get("DevFile"),
                                                       j_config.getint("GPU"), j_config.getint("SynSize"),
                                                       j_config.getint("SemSize"), j_config.getint("HiddenSize"),
                                                       j_config.getfloat("DropoutProb"), j_config.getint("NEpochs"),
@@ -504,6 +521,7 @@ def main(config):
 if __name__ == "__main__":
     config = configparser.ConfigParser(allow_no_value=True)
     config.read(sys.argv[1])
+    senttoks = sys.argv[2]
     for section in config:
         eprint(section, dict(config[section]))
-    main(config)
+    main(config, senttoks)
