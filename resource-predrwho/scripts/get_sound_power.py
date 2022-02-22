@@ -36,10 +36,11 @@ if DEBUG:
 sys.stderr.write('\n')
 
 if args.interval:
-    # At a sampling rate of 22050 Hz, there are 441 rmse measurements within a 1 second sampling window
-    ix = (np.arange(len(power)) / (441. * args.interval)).astype(int) 
+    # At a sampling rate of 44100 Hz, there are 882 rmse measurements
+    #  within a 1 second sampling window given the hop length of 50
+    ix = (np.arange(len(power)) / (882. * args.interval)).astype(int) 
     splits = np.where(ix[1:] != ix[:-1])[0] + 1
-    time = splits.astype(float) / 441.
+    time = splits.astype(float) / 882.
     chunks = np.array([x.mean() for x in np.split(power, splits)][1:])
     df = pd.DataFrame({'time': time, 'soundPower%sms' % int(args.interval * 1000): chunks})
     

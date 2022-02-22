@@ -129,6 +129,9 @@ bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt 
 #### add leaves to non-copyright-infringing defoliated trees...
 %.senttrees:  %.notoks.senttrees  $(GENMODEL)/$$(word 1,$$(subst ., ,$$(notdir $$*))).senttoks  $(GCG-SCRIPTS)/plugLeaves.py
 	python2 $(word 3,$^) $(word 1,$^) $(word 2,$^)  >  $@
+#### remove leaves from senttrees...
+%.fromsenttrees.notoks.senttrees:  %.senttrees
+	cat $<  |  perl -pe 's/ [^)(]+/ LEAF!/g'  >  $@
 
 #### reverse the order of tokens by sentence in an input linetoks file
 %.rev.linetoks: %.linetoks

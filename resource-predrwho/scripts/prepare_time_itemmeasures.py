@@ -1,6 +1,5 @@
 import sys, json
 
-# word sentid sentpos
 itemmeasures = open(sys.argv[1])
 # word time
 time_info = open(sys.argv[2])
@@ -15,14 +14,14 @@ for l in time_info:
     start_times.append(time)
 
 header_cols = itemmeasures.readline().strip().split()
-# word sentid sentpos
-assert len(header_cols) == 3
+# word sentid sentpos discid discpos docid
+assert len(header_cols) == 6
 header_cols.append('time')
 print(' '.join(header_cols))
 
 for i, l in enumerate(itemmeasures):
-    w, sentid, sentpos = l.strip().split()
+    w, sentid, sentpos, discid, discpos, docid = l.strip().split()
     assert w == words[i], 'itemmeasures word: {} time_info word: {}'.format(w, words[i])
-    print(' '.join([w, sentid, sentpos, start_times[i]]))
+    print(' '.join([w, sentid, sentpos, discid, discpos, docid, start_times[i]]))
 
 

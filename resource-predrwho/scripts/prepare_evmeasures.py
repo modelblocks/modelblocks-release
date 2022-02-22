@@ -1,28 +1,29 @@
-import sys, numpy
+import sys, numpy, math
 import pandas as pd
 from collections import defaultdict
 
 T_MIN = 1
-T_MAX = 213
+T_MAX = 226
 
 # wide-format dataframe
-df = pd.read_csv(open(sys.argv[1]))
+#df = pd.read_csv(open(sys.argv[1]))
+df = pd.read_csv(sys.stdin)
 
 ## Normalize each row -- this takes a while to run
-print('Normalizing each timecourse...', file=sys.stderr)
-
-for index, row in df.iterrows():
-    print('\r{}/{}'.format(index+1, len(df)), file=sys.stderr, end='')
-    raw_bolds = list()
-    for t in range(T_MIN, T_MAX+1):
-        raw_bolds.append(df.loc[index, 'T_{}'.format(t)])
-    mean = numpy.mean(raw_bolds)
-    sd = numpy.std(raw_bolds)
-    for t in range(T_MIN, T_MAX+1):
-        curr = df.loc[index, 'T_{}'.format(t)]
-        df.loc[index, 'T_{}'.format(t)] = (curr-mean) / sd
-
-print('\nReorganizing into long format...', file=sys.stderr)
+#print('Normalizing each timecourse...', file=sys.stderr)
+#
+#for index, row in df.iterrows():
+#    print('\r{}/{}'.format(index+1, len(df)), file=sys.stderr, end='')
+#    raw_bolds = list()
+#    for t in range(T_MIN, T_MAX+1):
+#        raw_bolds.append(df.loc[index, 'T_{}'.format(t)])
+#    mean = numpy.mean(raw_bolds)
+#    sd = numpy.std(raw_bolds)
+#    for t in range(T_MIN, T_MAX+1):
+#        curr = df.loc[index, 'T_{}'.format(t)]
+#        df.loc[index, 'T_{}'.format(t)] = (curr-mean) / sd
+#
+#print('\nReorganizing into long format...', file=sys.stderr)
 
 # key -> ROI -> time series
 data = defaultdict(dict)
@@ -33,6 +34,9 @@ for index, row in df.iterrows():
     roi_bold = list()
     for t in range(T_MIN, T_MAX+1):
         bold_t = row['T_{}'.format(t)]
+        # don't add padding to time series
+        if pd.isna(bold_t):
+            break
         roi_bold.append(bold_t)
     data[key][roi] = roi_bold
 
@@ -42,11 +46,14 @@ assert all( s == roi_sets[0] for s in roi_sets )
 
 rois = sorted(roi_sets[0])
 roi_bold_cols = ['bold_'+roi for roi in rois]
-col_labels = ['subject', 'story', 'run', 'tr', 'time', 'splitVal15', 'sampleid'] + roi_bold_cols
+#col_labels = ['subject', 'story', 'run', 'tr', 'time', 'splitVal15', 'sampleid'] + roi_bold_cols
+col_labels = ['subject', 'docid', 'run', 'tr', 'time', 'splitVal15', 'sampleid'] + roi_bold_cols
 print(' '.join(col_labels))
 
 for key in data:
-    for t in range(T_MIN, T_MAX+1):
+    max_t_of_key = T_MIN + len(data[key][rois[0]]) - 1
+    #for t in range(T_MIN, T_MAX+1):
+    for t in range(T_MIN, max_t_of_key+1):
         # t is the index of the sample. Samples are taken two seconds
         # apart
         tr = t-1

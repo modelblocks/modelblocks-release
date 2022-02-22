@@ -51,6 +51,16 @@ scripts/%.lmerform:  $(PREDRWHO-SCRIPTS)/%.lmerform  |  scripts
 %jeanne.sentitems: $(RESOURCE-PREDRWHO)/jeanne_sentences | genmodel
 	cp $< $@
 
+# itemmeasures
+%tree.itemmeasures: %tree.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py $(PREDRWHO-SCRIPTS)/add_docid.py | genmodel
+	cat $< | python $(word 2, $^) | python $(word 3, $^) Tree > $@
+
+%dinner.itemmeasures: %dinner.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py $(PREDRWHO-SCRIPTS)/add_docid.py | genmodel
+	cat $< | python $(word 2, $^) | python $(word 3, $^) Dinner > $@
+
+%jeanne.itemmeasures: %jeanne.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py $(PREDRWHO-SCRIPTS)/add_docid.py | genmodel
+	cat $< | python $(word 2, $^) | python $(word 3, $^) Jeanne > $@
+
 # senttoks
 %tree.senttoks: %tree.sentitems $(TOKENIZERDIR)/ptb_tokenizer.sed | genmodel
 	cat $<  |  $(word 2, $^)  |  sed "s/^' */' /;s/'Ex/' Ex/g;s/o ' clock/o'clock/g;s/gon na/gonna/g"  |  sed 's/! ARTICLE/!ARTICLE/'  |  perl -pe 's/ +$$//g'  >  $@
@@ -82,14 +92,24 @@ scripts/%.lmerform:  $(PREDRWHO-SCRIPTS)/%.lmerform  |  scripts
 	python $(word 3, $^) $< $(word 2, $^) > $@
 
 # evmeasures
-%tree.evmeasures: $(RESOURCE-PREDRWHO)/all_stories_bold_raw $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
-	python $(word 2, $^) <(cat <(head -n1 $<) <(grep ISCmega_tree $< | sed s/ISCmega_tree/tree/)) > $@
+#%tree.evmeasures: $(RESOURCE-PREDRWHO)/all_stories_bold_raw $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
+#	python $(word 2, $^) <(cat <(head -n1 $<) <(grep ISCmega_tree $< | sed s/ISCmega_tree/Tree/)) > $@
+#	
+#%dinner.evmeasures: $(RESOURCE-PREDRWHO)/mdlangaud.csv $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
+#	python $(word 2, $^) <(cat <(head -n1 $<) <(grep ISCmega_dinner $< | sed s/ISCmega_dinner/Dinner/)) > $@
+#
+#%jeanne.evmeasures: $(RESOURCE-PREDRWHO)/mdlangaud.csv $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
+#	python $(word 2, $^) <(cat <(head -n1 $<) <(grep ISCmega_jeanne $< | sed s/ISCmega_jeanne/Jeanne/)) > $@
 
-%dinner.evmeasures: $(RESOURCE-PREDRWHO)/all_stories_bold_raw $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
-	python $(word 2, $^) <(cat <(head -n1 $<) <(grep ISCmega_dinner $< | sed s/ISCmega_dinner/dinner/)) > $@
+%tree.evmeasures: $(RESOURCE-PREDRWHO)/mdlangaud.csv $(PREDRWHO-SCRIPTS)/rename_rois.py $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
+	cat <(head -n1 $<) <(grep ISCmega_tree $< | sed s/ISCmega_tree/Tree/) | python $(word 2, $^) | python $(word 3, $^)  > $@
 
-%jeanne.evmeasures: $(RESOURCE-PREDRWHO)/all_stories_bold_raw $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
-	python $(word 2, $^) <(cat <(head -n1 $<) <(grep ISCmega_jeanne $< | sed s/ISCmega_jeanne/jeanne/)) > $@
+%dinner.evmeasures: $(RESOURCE-PREDRWHO)/mdlangaud.csv $(PREDRWHO-SCRIPTS)/rename_rois.py $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
+	cat <(head -n1 $<) <(grep ISCmega_dinner $< | sed s/ISCmega_dinner/Dinner/) | python $(word 2, $^) | python $(word 3, $^)  > $@
+
+%jeanne.evmeasures: $(RESOURCE-PREDRWHO)/mdlangaud.csv $(PREDRWHO-SCRIPTS)/rename_rois.py $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
+	cat <(head -n1 $<) <(grep ISCmega_jeanne  $< | sed s/ISCmega_jeanne/Jeanne/) | python $(word 2, $^) | python $(word 3, $^)  > $@
+
 
 # per-region linetoks
 %tree_Aud.linetoks: %tree.linetoks
@@ -205,31 +225,31 @@ jeanne_MD%.itemmeasures: jeanne%.itemmeasures
 
 # per-region evmeasures
 %tree_Aud.evmeasures: %tree.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Aud_.* > $@
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Aud.* > $@
 
 %tree_Lang.evmeasures: %tree.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Lang_.* > $@
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Lang.* > $@
 
 %tree_MD.evmeasures: %tree.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k MD_.* > $@
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k MD.* > $@
 
 %dinner_Aud.evmeasures: %dinner.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Aud_.* > $@
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Aud.* > $@
 
 %dinner_Lang.evmeasures: %dinner.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Lang_.* > $@
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Lang.* > $@
 
 %dinner_MD.evmeasures: %dinner.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k MD_.* > $@
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k MD.* > $@
 
 %jeanne_Aud.evmeasures: %jeanne.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Aud_.* > $@
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Aud.* > $@
 
 %jeanne_Lang.evmeasures: %jeanne.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Lang_.* > $@
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Lang.* > $@
 
 %jeanne_MD.evmeasures: %jeanne.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k MD_.* > $@
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k MD.* > $@
 
 # partition parameters
 genmodel/tree.part_params.ini: $(PREDRWHO-SCRIPTS)/predrwho.part_params.ini
