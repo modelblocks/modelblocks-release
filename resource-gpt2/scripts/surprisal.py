@@ -29,7 +29,7 @@ def get_per_subword_surprisal(*, corpus, hparams, encoder):
             # dimension is batch_size x vocab_size
             logits = next_outputs['logits'][:, -1, :]
             softmax = tf.nn.softmax(logits)
-            surp = tf.math.scalar_mul(-1, tf.math.log(softmax[0, chunk]))
+            surp = tf.math.scalar_mul(-1, tf.math.log(softmax[0, chunk])/tf.math.log(tf.constant(2, dtype="float32")))
             # TODO assuming here that batch size is 1.
             # find a better solultion
             return [
