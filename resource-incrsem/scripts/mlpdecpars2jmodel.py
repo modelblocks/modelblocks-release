@@ -5,24 +5,43 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 from scipy.sparse import csr_matrix
-+from gpt2_contextualized_embeddings import get_gpt2_embeddings
+from gpt2_contextualized_embeddings import get_gpt2_embeddings
 
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-def prepare_data(senttoks, extend_output):
-    data = [line.strip() for line in sys.stdin]
+#def prepare_data(senttoks):
+def prepare_data():
+    j_data = list()
+    per_article_toks = list()
+    curr_article_toks = list()
+
+    x = sys.stdin.readline()
+    assert "!ARTICLE" in x, "x: " + x
+    for line in sys.stdin:
+        line = line.strip()
+        if "!ARTICLE" in line:
+            per_article_toks.append(curr_article_toks)
+            curr_article_toks = list()
+        elif line.startswith("J "):
+            j_data.append(line[2:])
+        elif line.startswith("W "):
+            curr_article_toks.append(line.split()[-1])
+    per_article_toks.append(curr_article_toks)
+
+    #data = [line.strip() for line in sys.stdin]
     depth, catAncstr, hvAncstr, hvFiller, catLchild, hvLchild, jDecs, hvAFirst, hvFFirst, hvLFirst = ([] for _ in
                                                                                                       range(10))
 
     # WARNING: this list takes a ton of memory because each token embedding
     # is 768-dimensional
-    result_dict = get_gpt2_embeddings(senttoks)
+    #result_dict = get_gpt2_embeddings(senttoks)
+    result_dict = get_gpt2_embeddings(per_article_toks)
     embeddings = result_dict["embeddings"]
 
-    for line in data:
+    for line in j_data:
         d, ca, hva, hvf, cl, hvl, jd = line.split(" ")
         depth.append(int(d))
         catAncstr.append(ca)
@@ -333,7 +352,9 @@ class JModel(nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-def train(senttoks, use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dropout_prob, num_epochs, batch_size,
+#def train(senttoks, use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dropout_prob, num_epochs, batch_size,
+#          learning_rate, weight_decay, l2_reg, ablate_syn, ablate_sem):
+def train(use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidden_dim, dropout_prob, num_epochs, batch_size,
           learning_rate, weight_decay, l2_reg, ablate_syn, ablate_sem):
     # depth, cat_a_ix, hva_mat, hvf_mat, cat_l_ix, hvl_mat, cat_to_ix, jdecs_ix, jdecs_to_ix, hvec_to_ix, hva_top, hvf_top, hvl_top = prepare_data()
     depth, cat_a_ix, hva_mat, hvf_mat, cat_l_ix, hvl_mat, cata_to_ix, catl_to_ix, jdecs_ix, jdecs_to_ix, hveca_to_ix, hvecf_to_ix, hvecl_to_ix, hva_top, hvf_top, hvl_top, embeddings = prepare_data()
@@ -343,7 +364,7 @@ def train(senttoks, use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidd
     cat_l_ix = torch.LongTensor(cat_l_ix)
     target = torch.LongTensor(jdecs_ix)
     # model = JModel(len(cat_to_ix), len(hvec_to_ix), syn_size, sem_size, hidden_dim, len(jdecs_to_ix), dropout_prob)
-    model = JModel(len(cata_to_ix), len(catl_to_ix), len(hveca_to_ix), len(hvecf_to_ix), len(hvecl_to_ix), syn_size, sem_size, emb_size, idden_dim, len(jdecs_to_ix), dropout_prob)
+    model = JModel(len(cata_to_ix), len(catl_to_ix), len(hveca_to_ix), len(hvecf_to_ix), len(hvecl_to_ix), syn_size, sem_size, emb_size, hidden_dim, len(jdecs_to_ix), dropout_prob)
 
     if use_gpu > 0:
         depth = depth.to("cuda")
@@ -415,8 +436,8 @@ def train(senttoks, use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidd
             nll_loss = criterion(output, batch_target)
             loss = nll_loss + l2_reg * l2_loss
             total_train_loss += loss.item()
-            loss.backward()
-#            loss.backward(retain_graph=True)
+#            loss.backward()
+            loss.backward(retain_graph=True)
             optimizer.step()
             optimizer.zero_grad()
 
@@ -442,10 +463,12 @@ def train(senttoks, use_dev, dev_decpars_file, use_gpu, syn_size, sem_size, hidd
     # return model, cat_to_ix, jdecs_to_ix, hvec_to_ix
     return model, cata_to_ix, catl_to_ix, jdecs_to_ix, hveca_to_ix, hvecf_to_ix, hvecl_to_ix
 
-def main(config, senttoks):
+#def main(config, senttoks):
+def main(config):
     j_config = config["JModel"]
     torch.manual_seed(j_config.getint("Seed"))
-    model, cata_to_ix, catl_to_ix, jdecs_to_ix, hveca_to_ix, hvecf_to_ix, hvecl_to_ix = train(senttoks,
+    #model, cata_to_ix, catl_to_ix, jdecs_to_ix, hveca_to_ix, hvecf_to_ix, hvecl_to_ix = train(senttoks,
+    model, cata_to_ix, catl_to_ix, jdecs_to_ix, hveca_to_ix, hvecf_to_ix, hvecl_to_ix = train(
                                                       j_config.getint("Dev"), j_config.get("DevFile"),
                                                       j_config.getint("GPU"), j_config.getint("SynSize"),
                                                       j_config.getint("SemSize"), j_config.getint("HiddenSize"),
@@ -521,7 +544,8 @@ def main(config, senttoks):
 if __name__ == "__main__":
     config = configparser.ConfigParser(allow_no_value=True)
     config.read(sys.argv[1])
-    senttoks = sys.argv[2]
+    #senttoks = sys.argv[2]
     for section in config:
         eprint(section, dict(config[section]))
-    main(config, senttoks)
+    #main(config, senttoks)
+    main(config)

@@ -29,7 +29,7 @@ def combine_window_embeddings(window_embeddings, context_size=1024):
     # previous window, so throw them out
     subword_embeddings = window_embeddings[0]
     for w in window_embeddings[1:]:
-        subword_embeddings.append(w[int(context_size/2):])
+        subword_embeddings.extend(w[int(context_size/2):])
     return subword_embeddings
 
 def word_wordpiece_alignment(words, wordpieces):
@@ -149,12 +149,17 @@ def get_word_embeddings(tokenizer, model, input_tok, layer):
     input_ids = tokenizer(input_str, return_tensors="pt")["input_ids"][0]
     input_id_text = tokenizer.convert_ids_to_tokens(input_ids)
     windowed_input_ids = get_subword_windows(input_ids)
+    eprint("window lengths:", list(len(w) for w in windowed_input_ids))
     per_window_embs = list()
     for window in windowed_input_ids:
+        eprint("\t window length:", len(window))
         outputs = model(window, output_hidden_states=True)
         embs = list(outputs["hidden_states"][layer])
+        eprint("\t embs length:", len(embs))
         per_window_embs.append(embs)
     combined_embs = combine_window_embeddings(per_window_embs)
+    eprint("input id text length", len(input_id_text))
+    eprint("combined embs length:", len(combined_embs))
 
     # combined_embs contains one embedding per word piece. Roll these
     # together so there's one embedding per token in the input linetoks
@@ -171,44 +176,68 @@ def print_article_embeddings(toks, embeddings, article_ix):
         print("{} {} {}".format(article_ix[i], tok, emb_str))
 
 
-def get_gpt2_embeddings(senttoks, gpt2_version="gpt2", layer=-1):
+def get_gpt2_embeddings(per_article_toks, gpt2_version="gpt2", layer=-1):
     model = GPT2LMHeadModel.from_pretrained(gpt2_version)
     tokenizer = GPT2Tokenizer.from_pretrained(gpt2_version)
-
-    toks = open(senttoks)
-    assert toks.readline().strip() == "!ARTICLE"
 
     all_toks = list()
     all_embeddings = list()
     all_article_ix = list()
-
-    curr_input_toks = list()
     curr_article_ix = 0
-    
-    for l_tok in toks:
-        l_tok = l_tok.strip()
-        if l_tok == "!ARTICLE":
-            embeddings = get_word_embeddings(tokenizer, model,
-                curr_input_toks, layer)
-            all_embeddings.extend(embeddings)
-            all_article_ix.extend([curr_article_ix]*len(curr_input_toks))
-            all_toks.extend(curr_input_toks)
-            curr_input_toks = list()
-            curr_article_ix += 1
-        else:
-            curr_input_toks.extend(l_tok.split())
 
-    embeddings = get_word_embeddings(tokenizer, model, curr_input_toks,
-        layer)
-    all_embeddings.extend(embeddings)
-    all_article_ix.extend([curr_article_ix]*len(curr_input_toks))
-    all_toks.extend(curr_input_toks)
+    for article_toks in per_article_toks:
+        embeddings = get_word_embeddings(tokenizer, model,
+            article_toks, layer)
+        all_embeddings.extend(embeddings)
+        all_article_ix.extend([curr_article_ix]*len(article_toks))
+        all_toks.extend(article_toks)
+        curr_article_ix += 1
 
     return {
         "tokens": all_toks,
         "embeddings": all_embeddings,
         "article_indices": all_article_ix
     }
+
+
+#def get_gpt2_embeddings(senttoks, gpt2_version="gpt2", layer=-1):
+#    model = GPT2LMHeadModel.from_pretrained(gpt2_version)
+#    tokenizer = GPT2Tokenizer.from_pretrained(gpt2_version)
+#
+#    toks = open(senttoks)
+#    assert toks.readline().strip() == "!ARTICLE"
+#
+#    all_toks = list()
+#    all_embeddings = list()
+#    all_article_ix = list()
+#
+#    curr_input_toks = list()
+#    curr_article_ix = 0
+#    
+#    for l_tok in toks:
+#        l_tok = l_tok.strip()
+#        if l_tok == "!ARTICLE":
+#            embeddings = get_word_embeddings(tokenizer, model,
+#                curr_input_toks, layer)
+#            all_embeddings.extend(embeddings)
+#            all_article_ix.extend([curr_article_ix]*len(curr_input_toks))
+#            all_toks.extend(curr_input_toks)
+#            curr_input_toks = list()
+#            curr_article_ix += 1
+#        else:
+#            curr_input_toks.extend(l_tok.split())
+#
+#    embeddings = get_word_embeddings(tokenizer, model, curr_input_toks,
+#        layer)
+#    all_embeddings.extend(embeddings)
+#    all_article_ix.extend([curr_article_ix]*len(curr_input_toks))
+#    all_toks.extend(curr_input_toks)
+#
+#    return {
+#        "tokens": all_toks,
+#        "embeddings": all_embeddings,
+#        "article_indices": all_article_ix
+#    }
 
 
 def main():
@@ -218,7 +247,20 @@ def main():
         choices=["gpt2", "gpt2-medium", "gpt2-large", "gpt2-xl"])
     parser.add_argument("--layer", type=int, default=-1)
     args = parser.parse_args()
-    result = get_gpt2_embeddings(args.senttoks, args.gpt2_version)
+
+    per_article_toks = list()
+    st = open(senttoks)
+    curr_toks = list()
+    assert st.readline().strip() == "!ARTICLE"
+    for l in st:
+        if l == "!ARTICLE":
+            per_article_toks.append(curr_toks)
+            curr_toks = list()
+        else:
+            curr_toks.extend(l.split())
+    per_article_toks.append(curr_toks)
+
+    result = get_gpt2_embeddings(per_article_toks, args.gpt2_version)
     print_article_embeddings(result["tokens"], result["embeddings"],
         result["article_indices"])
 
