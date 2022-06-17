@@ -4,7 +4,7 @@ import pandas as pd
 import argparse
 
 
-network_names = ['Lang', 'MDlangloc', 'MDspatwm', 'DMNlangloc', 'DMNspatwm', 'AC', 'LHip', 'RHip']
+network_names = ['Lang', 'MDlangloc', 'MDspatwm', 'DMNlangloc', 'DMNspatwm', 'AC', 'LHip', 'RHip', 'Aud']
 
 
 def compute_network(name):

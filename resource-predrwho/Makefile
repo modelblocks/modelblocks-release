@@ -38,6 +38,28 @@
 .SECONDEXPANSION:
 .DELETE_ON_ERROR:
 
+ifndef MAKECONFIG
+CONFIG := $(CONFIGDIR)/user-naturalstories-fmri-directory.txt
+ifeq (,$(firstword $(wildcard $(CONFIG))))
+$(info $(call CONFIGWARN,$(CONFIG)))
+DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
+endif
+NATSTORFMRIDIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(NATSTORFMRIDIR))))
+RESOURCE-NAME := The Natural Stories Corpus (fMRI)
+define RESOURCE-DESCR =
+
+NAME: The Natural Stories Corpus (fMRI)
+MB POINTER FILE: config/user-naturalstories-fmri-directory.txt
+AVAILABILITY: Unreleased
+DESCRIPTION: fMRI data collected from acoustic presentation of the
+Natural Stories corpus
+endef
+NATSTORIESFMRI-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-NATSTORIESFMRI = $(error $(NATSTORIESFMRI-ERROR))
+endif
+endif
+
 scripts/%.lmerform:  $(PREDRWHO-SCRIPTS)/%.lmerform  |  scripts
 	cp $^ $@
 
@@ -92,23 +114,14 @@ scripts/%.lmerform:  $(PREDRWHO-SCRIPTS)/%.lmerform  |  scripts
 	python $(word 3, $^) $< $(word 2, $^) > $@
 
 # evmeasures
-#%tree.evmeasures: $(RESOURCE-PREDRWHO)/all_stories_bold_raw $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
-#	python $(word 2, $^) <(cat <(head -n1 $<) <(grep ISCmega_tree $< | sed s/ISCmega_tree/Tree/)) > $@
-#	
-#%dinner.evmeasures: $(RESOURCE-PREDRWHO)/mdlangaud.csv $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
-#	python $(word 2, $^) <(cat <(head -n1 $<) <(grep ISCmega_dinner $< | sed s/ISCmega_dinner/Dinner/)) > $@
-#
-#%jeanne.evmeasures: $(RESOURCE-PREDRWHO)/mdlangaud.csv $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
-#	python $(word 2, $^) <(cat <(head -n1 $<) <(grep ISCmega_jeanne $< | sed s/ISCmega_jeanne/Jeanne/)) > $@
+%tree.evmeasures: $(NATSTORFMRIDIR)/NaturalStories_TimeSeries_NoFilter_QA_20211203.csv $(NATSTORIESFMRI-SCRIPTS)/prepare_evmeasures.py | genmodel
+	cat <(head -n1 $<) <(grep ISCmega_tree $< | sed s/ISCmega_tree/Tree/) | python $(word 2, $^) > $@
 
-%tree.evmeasures: $(RESOURCE-PREDRWHO)/mdlangaud.csv $(PREDRWHO-SCRIPTS)/rename_rois.py $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
-	cat <(head -n1 $<) <(grep ISCmega_tree $< | sed s/ISCmega_tree/Tree/) | python $(word 2, $^) | python $(word 3, $^)  > $@
+%dinner.evmeasures: $(NATSTORFMRIDIR)/NaturalStories_TimeSeries_NoFilter_QA_20211203.csv $(NATSTORIESFMRI-SCRIPTS)/prepare_evmeasures.py | genmodel
+	cat <(head -n1 $<) <(grep ISCmega_dinner $< | sed s/ISCmega_dinner/Dinner/) | python $(word 2, $^) > $@
 
-%dinner.evmeasures: $(RESOURCE-PREDRWHO)/mdlangaud.csv $(PREDRWHO-SCRIPTS)/rename_rois.py $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
-	cat <(head -n1 $<) <(grep ISCmega_dinner $< | sed s/ISCmega_dinner/Dinner/) | python $(word 2, $^) | python $(word 3, $^)  > $@
-
-%jeanne.evmeasures: $(RESOURCE-PREDRWHO)/mdlangaud.csv $(PREDRWHO-SCRIPTS)/rename_rois.py $(PREDRWHO-SCRIPTS)/prepare_evmeasures.py | genmodel
-	cat <(head -n1 $<) <(grep ISCmega_jeanne  $< | sed s/ISCmega_jeanne/Jeanne/) | python $(word 2, $^) | python $(word 3, $^)  > $@
+%jeanne.evmeasures: $(NATSTORFMRIDIR)/NaturalStories_TimeSeries_NoFilter_QA_20211203.csv $(NATSTORIESFMRI-SCRIPTS)/prepare_evmeasures.py | genmodel
+	cat <(head -n1 $<) <(grep ISCmega_jeanne  $< | sed s/ISCmega_jeanne/Jeanne/) | python $(word 2, $^) > $@
 
 
 # per-region linetoks
@@ -224,32 +237,32 @@ jeanne_MD%.itemmeasures: jeanne%.itemmeasures
 	cp $(word 1, $^) $@
 
 # per-region evmeasures
-%tree_Aud.evmeasures: %tree.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Aud.* > $@
+%tree_Aud.evmeasures: %tree.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Aud.* | python $(word 3, $^) - > $@
 
-%tree_Lang.evmeasures: %tree.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Lang.* > $@
+%tree_Lang.evmeasures: %tree.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Lang.* | python $(word 3, $^) - > $@
 
-%tree_MD.evmeasures: %tree.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k MD.* > $@
+%tree_MD.evmeasures: %tree.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k MD.* | python $(word 3, $^) - > $@
 
-%dinner_Aud.evmeasures: %dinner.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Aud.* > $@
+%dinner_Aud.evmeasures: %dinner.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Aud.* | python $(word 3, $^) - > $@
 
-%dinner_Lang.evmeasures: %dinner.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Lang.* > $@
+%dinner_Lang.evmeasures: %dinner.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Lang.* | python $(word 3, $^) - > $@
 
-%dinner_MD.evmeasures: %dinner.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k MD.* > $@
+%dinner_MD.evmeasures: %dinner.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k MD.* | python $(word 3, $^) - > $@
 
-%jeanne_Aud.evmeasures: %jeanne.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Aud.* > $@
+%jeanne_Aud.evmeasures: %jeanne.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Aud.* | python $(word 3, $^) - > $@
 
-%jeanne_Lang.evmeasures: %jeanne.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Lang.* > $@
+%jeanne_Lang.evmeasures: %jeanne.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k Lang.* | python $(word 3, $^) - > $@
 
-%jeanne_MD.evmeasures: %jeanne.evmeasures $(GENERAL-SCRIPTS)/melt.py | genmodel
-	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k MD.* > $@
+%jeanne_MD.evmeasures: %jeanne.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
+	cat $< | python $(word 2, $^) - "bold_.*" -p 5 -k MD.* | python $(word 3, $^) - > $@
 
 # partition parameters
 genmodel/tree.part_params.ini: $(PREDRWHO-SCRIPTS)/predrwho.part_params.ini
@@ -270,22 +283,58 @@ genmodel/%_Lang.part_params.ini: genmodel/%.part_params.ini
 genmodel/%_MD.part_params.ini: genmodel/%.part_params.ini
 	cp $< $@
 
-# TODO generalize resource-fmri/scripts/tile_stimuli.py and get rid of
+# Soundpower -- these make items require you to generate
+# %.soundpower.prdmeasures elsewhere
+%_Aud.soundpower.prdmeasures: %.soundpower.prdmeasures %_Aud.evmeasures $(FMRI-SCRIPTS)/tile_stimuli.py 
+	python $(word 3, $^) $(word 1, $^) $(word 2, $^) > $@
+
+%_Lang.soundpower.prdmeasures: %.soundpower.prdmeasures %_Lang.evmeasures $(FMRI-SCRIPTS)/tile_stimuli.py 
+	python $(word 3, $^) $(word 1, $^) $(word 2, $^) > $@
+
+%_MD.soundpower.prdmeasures: %.soundpower.prdmeasures %_MD.evmeasures $(FMRI-SCRIPTS)/tile_stimuli.py 
+	python $(word 3, $^) $(word 1, $^) $(word 2, $^) > $@
+
+
+## Old soundpower stuff -- shouldn't be needed anymore
+#%dinner_Aud.soundpower.prdmeasures: /home/clark.3664/projects/drwho_stepping_stone/dinner/dinner.wav %dinner_Aud.evmeasures $(PREDRWHO-SCRIPTS)/get_sound_power.py
+#	cat $(word 2, $^) | python $(word 3, $^) $(word 1, $^) 0.1 > $@
+#
+#%dinner_Lang.soundpower.prdmeasures: /home/clark.3664/projects/drwho_stepping_stone/dinner/dinner.wav %dinner_Lang.evmeasures $(PREDRWHO-SCRIPTS)/get_sound_power.py
+#	cat $(word 2, $^) | python $(word 3, $^) $(word 1, $^) 0.1 > $@
+#
+#%dinner_MD.soundpower.prdmeasures: /home/clark.3664/projects/drwho_stepping_stone/dinner/dinner.wav %dinner_MD.evmeasures $(PREDRWHO-SCRIPTS)/get_sound_power.py
+#	cat $(word 2, $^) | python $(word 3, $^) $(word 1, $^) 0.1 > $@
+#
+#%jeanne_Aud.soundpower.prdmeasures: /home/clark.3664/projects/drwho_stepping_stone/jeanne/jeanne.wav %jeanne_Aud.evmeasures $(PREDRWHO-SCRIPTS)/get_sound_power.py
+#	cat $(word 2, $^) | python $(word 3, $^) $(word 1, $^) 0.1 > $@
+#
+#%jeanne_Lang.soundpower.prdmeasures: /home/clark.3664/projects/drwho_stepping_stone/jeanne/jeanne.wav %jeanne_Lang.evmeasures $(PREDRWHO-SCRIPTS)/get_sound_power.py
+#	cat $(word 2, $^) | python $(word 3, $^) $(word 1, $^) 0.1 > $@
+#
+#%jeanne_MD.soundpower.prdmeasures: /home/clark.3664/projects/drwho_stepping_stone/jeanne/jeanne.wav %jeanne_MD.evmeasures $(PREDRWHO-SCRIPTS)/get_sound_power.py
+#	cat $(word 2, $^) | python $(word 3, $^) $(word 1, $^) 0.1 > $@
+#
+#%tree_Aud.soundpower.prdmeasures: /home/clark.3664/projects/drwho_stepping_stone/tree/tree.wav %tree_Aud.evmeasures $(PREDRWHO-SCRIPTS)/get_sound_power.py
+#	cat $(word 2, $^) | python $(word 3, $^) $(word 1, $^) 0.1 > $@
+#
+#%tree_Lang.soundpower.prdmeasures: /home/clark.3664/projects/drwho_stepping_stone/tree/tree.wav %tree_Lang.evmeasures $(PREDRWHO-SCRIPTS)/get_sound_power.py
+#	cat $(word 2, $^) | python $(word 3, $^) $(word 1, $^) 0.1 > $@
+#
+#%tree_MD.soundpower.prdmeasures: /home/clark.3664/projects/drwho_stepping_stone/tree/tree.wav %tree_MD.evmeasures $(PREDRWHO-SCRIPTS)/get_sound_power.py
+#	cat $(word 2, $^) | python $(word 3, $^) $(word 1, $^) 0.1 > $@
+
+
+# shouldn't be needed any more -- this is covered by resource-fmri/scripts/tile_stimuli.py
 # $(PREDRWHO-SCRIPTS)/tile_stimuli.py
-.PRECIOUS: %.fmri-bywrd.prdmeasures
-genmodel/tree%.fmri-bywrd.prdmeasures: $(PREDRWHO-SCRIPTS)/tile_stimuli.py genmodel/tree%.all-itemmeasures \
-genmodel/tree$$(word 1,$$(subst ., ,%)).evmeasures
-	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
-
-genmodel/dinner%.fmri-bywrd.prdmeasures: $(PREDRWHO-SCRIPTS)/tile_stimuli.py genmodel/dinner%.all-itemmeasures \
-genmodel/dinner$$(word 1,$$(subst ., ,%)).evmeasures
-	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
-
-genmodel/jeanne%.fmri-bywrd.prdmeasures: $(PREDRWHO-SCRIPTS)/tile_stimuli.py genmodel/jeanne%.all-itemmeasures \
-genmodel/jeanne$$(word 1,$$(subst ., ,%)).evmeasures
-	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
-
-# sound power TODO
-#%.soundpower.prdmeasures: %.evmeasures $(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(CONFIGDIR)/user-naturalstories-directory.txt $(NATSTORDIR)/audio/*.wav
-	#cat $(word 1, $^) | python $(word 2, $^) $(wordlist 4, $(words $^), $^) -I 0.250 > $@
-
+#.PRECIOUS: %.fmri-bywrd.prdmeasures
+#genmodel/tree%.fmri-bywrd.prdmeasures: $(PREDRWHO-SCRIPTS)/tile_stimuli.py genmodel/tree%.all-itemmeasures \
+#genmodel/tree$$(word 1,$$(subst ., ,%)).evmeasures
+#	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+#
+#genmodel/dinner%.fmri-bywrd.prdmeasures: $(PREDRWHO-SCRIPTS)/tile_stimuli.py genmodel/dinner%.all-itemmeasures \
+#genmodel/dinner$$(word 1,$$(subst ., ,%)).evmeasures
+#	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+#
+#genmodel/jeanne%.fmri-bywrd.prdmeasures: $(PREDRWHO-SCRIPTS)/tile_stimuli.py genmodel/jeanne%.all-itemmeasures \
+#genmodel/jeanne$$(word 1,$$(subst ., ,%)).evmeasures
+#	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@

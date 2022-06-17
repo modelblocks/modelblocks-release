@@ -13,7 +13,8 @@ args = argparser.parse_args()
 
 stimuli = pd.read_csv(args.stimuli, sep=' ')
 responses = pd.read_csv(args.responses, sep=' ')
-id_cols = ['subject', 'run']
+#id_cols = ['subject', 'run']
+id_cols = ['subject', 'run', 'docid']
 melted = False
 if 'fROI' in responses.columns:
     id_cols.append('fROI')
@@ -29,6 +30,7 @@ for i in range(len(subj_run_pairs)):
     #stimuli_cur = stimuli[stimuli.run == run]
     stimuli_cur = stimuli.copy()
     stimuli_cur['subject'] = subject
+    stimuli_cur['run'] = run
     if melted:
         fROI = subj_run_pairs.fROI.iloc[i]
         stimuli_cur['fROI'] = fROI

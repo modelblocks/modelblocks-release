@@ -11,24 +11,23 @@ args = argparser.parse_args()
 
 stimuli = pd.read_csv(args.stimuli, sep=' ')
 responses = pd.read_csv(args.responses, sep=' ')
-id_cols = ['subject', 'docid']
-melted = False
-if 'fROI' in responses.columns:
-    id_cols.append('fROI')
-    melted = True
+possible_id_cols = ['subject', 'docid', 'run', 'fROI']
+id_cols = list()
+for col in possible_id_cols:
+    if col in responses.columns:
+        id_cols.append(col)
+
 ids = responses[id_cols]
-subj_doc_pairs = ids.loc[(ids.shift() != ids).any(axis=1)]
+unique_ids = ids.loc[(ids.shift() != ids).any(axis=1)]
 
 out = []
 
-for i in range(len(subj_doc_pairs)):
-    subject = subj_doc_pairs.subject.iloc[i]
-    docid = subj_doc_pairs.docid.iloc[i]
+for i in range(len(unique_ids)):
+    docid = unique_ids.docid.iloc[i]
     stimuli_cur = stimuli[stimuli.docid == docid]
-    stimuli_cur['subject'] = subject
-    if melted:
-        fROI = subj_doc_pairs.fROI.iloc[i]
-        stimuli_cur['fROI'] = fROI
+    for col in id_cols:
+        col_val = unique_ids[col].iloc[i]
+        stimuli_cur[col] = col_val
     out.append(stimuli_cur)
 
 out = pd.concat(out, axis=0)

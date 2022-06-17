@@ -8,16 +8,20 @@ import argparse
 argparser = argparse.ArgumentParser('''
         Utility for computing sound power metrics from the Natural Stories audio stimuli
 ''')
-argparser.add_argument('files', nargs='+', help='Paths to audio files for processing')
-argparser.add_argument('-I', '--interval', type=float, default=None, help='Interval step at which to extract sound power measures (used for deconvolving sound power using DTSR). If unspecified, extract at each word onset. If speficied, power measures are rescaled by interval value to ensure valid convolution.')
-argparser.add_argument('-c', '--convolve', action='store_true', help='Generate an additional column for sound power convolved with the canonical HRF')
+argparser.add_argument('files', nargs='+', 
+    help='Paths to audio files for processing')
+argparser.add_argument('-I', '--interval', type=float, default=None, 
+    help='Interval step at which to extract sound power measures (used for deconvolving sound power using DTSR). If unspecified, extract at each word onset. If speficied, power measures are rescaled by interval value to ensure valid convolution.')
+argparser.add_argument('-c', '--convolve', action='store_true', 
+    help='Generate an additional column for sound power convolved with the canonical HRF')
 args = argparser.parse_args()
 
 DEBUG = False
 if DEBUG:
     from matplotlib import pyplot as plt
 
-name = re.compile('^.*/?([^ /])+\.wav *$')
+#name = re.compile('^.*/?([^ /])+\.wav *$')
+name = re.compile('([^ /]+)\.wav')
 ix2name = ['Boar', 'Aqua', 'MatchstickSeller', 'KingOfBirds', 'Elvis', 'MrSticky', 'HighSchool', 'Roswell', 'Tulips', 'Tourettes']
 
 df = pd.read_csv(sys.stdin, sep=' ', skipinitialspace=True)
@@ -28,7 +32,7 @@ for i in range(len(ix2docid)):
 
 if args.interval:
     keys = []
-    for x in ['subject', 'docid', 'fROI']:
+    for x in ['subject', 'docid', 'fROI', 'run']:
         if x in df.columns:
             keys.append(x)
 
@@ -36,7 +40,8 @@ power = {}
 max_len = 0
 for i in range(len(args.files)):
     path = args.files[i]
-    n = ix2name[int(name.match(path).group(1)) - 1]
+    #n = ix2name[int(name.match(path).group(1)) - 1]
+    n = ix2name[int(name.search(path).group(1)) - 1]
     sys.stderr.write('\rProcessing audio file "%s" (%d/%d)        ' %(n, i + 1, len(args.files)))
     y, sr = librosa.load(path)
     # Newer versions of librosa (e.g., 0.7.1) use "rms" rather than "rmse"
@@ -64,12 +69,19 @@ if args.interval:
         ix = (np.arange(len(power[docid])) / (441. * args.interval)).astype(int)
         splits = np.where(ix[1:] != ix[:-1])[0] + 1
         time = splits.astype(float) / 441.
+        print('docid: {}'.format(docid), file=sys.stderr)
+        print(time, file=sys.stderr)
         chunks = np.array([x.mean() for x in np.split(power[docid], splits)][1:])
         intervals_cur = pd.DataFrame({'time': time, 'soundPower%sms' % int(args.interval * 1000): chunks})
+        print(intervals_cur, file=sys.stderr)
         intervals_cur['docid'] = docid
         intervals.append(intervals_cur)
     intervals = pd.concat(intervals, axis=0)
     df = df.merge(intervals, on='docid', how='left')
+
+print(df, file=sys.stderr)
+print('time:', file=sys.stderr)
+print(df.time, file=sys.stderr)
     
 power_ix = (df.time * 441).astype('int') # At a sampling rate of 22050 Hz, there are 441 rmse measurements within a 1 second sampling window
 power_ix = np.array(power_ix)
