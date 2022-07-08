@@ -294,6 +294,8 @@ genmodel/rename_cols.params: | genmodel
 # Computes DLT predictors
 %.dlt.tokmeasures:  %.casp.senttrees  $(RT-SCRIPTS)/calcDLT.py
 	cat $<  |  grep -v '!ARTICLE'  |  python2 $(word 2, $^)  >  $@
+%.gold.dlt.tokmeasures:  %.gold.senttrees  $(RT-SCRIPTS)/calcDLT.py
+	cat $<  |  grep -v '!ARTICLE'  |  python2 $(word 2, $^)  >  $@
 #%.dlt.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
 #	cat $< | python2 $(word 2, $^) > $@
 
