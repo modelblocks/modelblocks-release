@@ -39,7 +39,7 @@
 
 
 #### copy lmerform to local scripts directory...
-scripts/%.lmerform:  $(LMEFIT-SCRIPTS)/%.lmerform  |  scripts
+scripts/%.lmerform scripts/%.nmrelmerform:  $(LMEFIT-SCRIPTS)/%.lmerform  |  scripts
 	cp $^ $@
 
 ################################################################################
@@ -80,7 +80,12 @@ $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
 $(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	cp $< $@
 
-bin/predict-lmer: $(LMEFIT-SCRIPTS)/predict-lmer.sh $(LMEFIT-SCRIPTS)/lmetools.r \
+bin/regress-nmrelmer: $(LMEFIT-SCRIPTS)/regress-nmrelmer.sh $(LMEFIT-SCRIPTS)/lmetools.r \
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
+	cp $< $@
+
+bin/predict-lmer bin/predict-nmrelmer: $(LMEFIT-SCRIPTS)/predict-lmer.sh $(LMEFIT-SCRIPTS)/lmetools.r \
 $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
 $(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
 	cp $< $@
