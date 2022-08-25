@@ -27,7 +27,6 @@
 #  include $(RESOURCE-TOKENIZER)/Makefile
 #  include $(RESOURCE-LTREES)/Makefile
 #  include $(RESOURCE-GCG)/Makefile
-#  include $(RESOURCE-RT)/Makefile
 #  include $(RESOURCE-LVPCFG)/Makefile
 #  include $(RESOURCE-LCPARSE)/Makefile
 #  include $(RESOURCE-BNC)/Makefile
@@ -36,7 +35,6 @@
 #  include $(RESOURCE-KENLM)/Makefile
 #  include $(RESOURCE-SRILM)/Makefile
 #  include $(RESOURCE-INCRSEM)/Makefile
-#  include $(RESOURCE-NATSTORIES)/Makefile
 #
 ################################################################################
 
@@ -50,6 +48,7 @@
 .SECONDEXPANSION:
 .DELETE_ON_ERROR:
 
+
 ################################################################################
 #
 #  User-specific parameter files (not shared; created by default with default values)
@@ -60,61 +59,57 @@
 ################################################################################
 
 ifndef MAKECONFIG
-CONFIG := $(CONFIGDIR)/user-tom-directory.txt
+CONFIG := $(CONFIGDIR)/user-provo-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(call CONFIGWARN,$(CONFIG)))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
-TOMDIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(TOMDIR))))
-RESOURCE-NAME := The Saxe Theory of Mind corpus
+PROVODIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(PROVODIR))))
+RESOURCE-NAME := The Provo eye-tracking corpus
 define RESOURCE-DESCR =
 
-NAME: The Saxe Theory of Mind corpus
-MB POINTER FILE: config/user-tom-directory.txt
-AVAILABILITY: Unreleased
-DESCRIPTION: Materials used by Dodell-Feder et al., (2010)
+NAME: The Provo eye-tracking corpus
+MB POINTER FILE: config/user-provo-directory.txt
+AVAILABILITY: Public
+DESCRIPTION: A corpus of eye-tracking measures from Luke & Christianson (2016)
 endef
-TOM-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
-DEP-TOM = $(error $(TOM-ERROR))
+PROVO-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-PROVO = $(error $(PROVO-ERROR))
 endif
 endif
 
 
+    
+%/user-provo-directory.txt: | %
+	echo '/data/corpora/original/english/provo' > $@
+    
+################################################################################
+#
+#  Eye-tracking data formatting items
+#
+################################################################################
 
-%/user-tom-directory.txt: | %   
-	echo '/data/corpora/original/english/saxe_tom' > $@
+## copy partition ini into project genmodel directory
+genmodel/%.ini: $(PROVO-SCRIPTS)/%.ini
+	cp $< $@
+
+%/provo.evmeasures: $$(DEP-PROVO) $(PROVODIR)/Provo_Corpus-Additional_Eyetracking_Data-Fixation_Report.csv $(PROVO-SCRIPTS)/process_provo.py | %
+	cat $< | python3 $(word 2,$^) > $@
+
 
 ################################################################################
 #
-#  Recipes
+#  Sents files
 #
-################################################################################
+################################################################################    
 
-%tom.itemmeasures: $$(DEP-TOM) $(TOMDIR)/tom.itemmeasures $(CONFIGDIR)/user-tom-directory.txt | %
-	cp $< $@
+%/provo.itemmeasures: $$(DEP-PROVO) $(PROVODIR)/Provo_Corpus-Predictability_Norms.csv $(PROVO-SCRIPTS)/get_provo_itemmeasures.py
+	cat $< | python3 $(word 2, $^) > $@
 
-genmodel/tom.lineitems: genmodel/tom.itemmeasures $(GENERAL-SCRIPTS)/itemmeasures2lineitems.py | genmodel
-	cat $< | python $(word 2, $^) > $@
+%/provo.sentitems: %/provo.itemmeasures $(PROVO-SCRIPTS)/get_provo_sentitems.py
+	cat $< | python3 $(word 2, $^) > $@
 
-%tom.linetoks: $$(DEP-TOKENIZER) %tom.lineitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
-	cat $< | $(word 2, $^) | sed 's/ $$//g'> $@
-
-%tom.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-TOM)/srcmodel/tom.stripped.linetrees %tom.linetoks
-	python $^ > $@
-
-%tom2deen.itemmeasures: $$(DEP-TOM) $(TOMDIR)/tom2deen.itemmeasures $(CONFIGDIR)/user-tom-directory.txt | %
-	cp $< $@
-
-#genmodel/tom2deen.itemmeasures: $(RESOURCE-TOM)/srcmodel/tom2deen.itemmeasures
-#	cp $^
-
-genmodel/tom2deen.sentitems: genmodel/tom2deen.itemmeasures $(GENERAL-SCRIPTS)/itemmeasures2lineitems.py | genmodel
-	cat $< | python $(word 2, $^) > $@
-
-%tom2deen.senttoks: $$(DEP-TOKENIZER) %tom2deen.sentitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
-	cat $< | $(word 2, $^) | sed 's/ $$//g'> $@
-
-%tom2deen.casp.senttrees: $(RESOURCE-TOM)/srcmodel/tom2deen.editabletrees $(RESOURCE-LTREES)/scripts/editabletrees2linetrees.pl $(RESOURCE-GCG)/scripts/lengthentrees.py
-	cat $< | perl $(word 2, $^) | python $(word 3, $^) > $@
+%/provo.senttoks: %/provo.sentitems $(TOKENIZERDIR)/ptb_tokenizer.sed
+	cat $< | $(word 2, $^) | perl -pe 's/ +$$//g' > $@
 

@@ -96,6 +96,12 @@ CDR-SCRIPTS := $(RESOURCE-CDR)/scripts
 RESOURCE-DUNDEE := $(abspath $(MBDIR)/resource-dundee)
 DUNDEE-SCRIPTS := $(RESOURCE-DUNDEE)/scripts
 
+RESOURCE-PROVO := $(abspath $(MBDIR)/resource-provo)
+PROVO-SCRIPTS := $(RESOURCE-PROVO)/scripts
+
+RESOURCE-GECO := $(abspath $(MBDIR)/resource-geco)
+GECO-SCRIPTS := $(RESOURCE-GECO)/scripts
+
 RESOURCE-EPIC := $(abspath $(MBDIR)/resource-epic)
 EPIC-SCRIPTS := $(RESOURCE-EPIC)/scripts
 
@@ -161,6 +167,9 @@ NATSTORIES-SCRIPTS := $(RESOURCE-NATSTORIES)/scripts
 
 RESOURCE-NATSTORIESFMRI := $(abspath $(MBDIR)/resource-naturalstoriesfmri)
 NATSTORIESFMRI-SCRIPTS := $(RESOURCE-NATSTORIESFMRI)/scripts
+
+RESOURCE-NATSTORIESFMRI2 := $(abspath $(MBDIR)/resource-naturalstoriesfmri2)
+NATSTORIESFMRI2-SCRIPTS := $(RESOURCE-NATSTORIESFMRI2)/scripts
 
 RESOURCE-PASSAGES := $(abspath $(MBDIR)/resource-passages)
 PASSAGES-SCRIPTS := $(RESOURCE-PASSAGES)/scripts
@@ -259,11 +268,14 @@ include $(RESOURCE-BMMM)/Makefile
 include $(RESOURCE-CCL)/Makefile
 include $(RESOURCE-CHILDES)/Makefile
 include $(RESOURCE-DUNDEE)/Makefile
+include $(RESOURCE-PROVO)/Makefile
+include $(RESOURCE-GECO)/Makefile
 include $(RESOURCE-CONLEN)/Makefile
 include $(RESOURCE-TOM)/Makefile
 include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
 include $(RESOURCE-NATSTORIESFMRI)/Makefile
+include $(RESOURCE-NATSTORIESFMRI2)/Makefile
 include $(RESOURCE-PASSAGES)/Makefile
 include $(RESOURCE-ONTONOTES)/Makefile
 include $(RESOURCE-RHACKS)/Makefile
