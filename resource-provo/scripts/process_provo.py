@@ -3,6 +3,15 @@ import io
 import numpy as np
 import pandas as pd
 
+def get_run(x):
+    print(x)
+    trial_start = x.TRIAL_START_TIME
+    starts = sorted(list(trial_start.unique()))
+    run = trial_start.apply(lambda x, starts=starts: starts.index(x))
+    out = pandas.DataFrame({'run': run}, index=x.index)
+
+    return out
+
 def get_fdurs(x):
     subjects = x.subject.values
     docids = x.docid.values
@@ -200,19 +209,31 @@ df.word[df.word == '.'] = 'OFFSCREEN'
 df['trial_ix'] = df.CURRENT_FIX_INTEREST_AREA_INDEX.str.replace('.', '0').astype(int) - 1
 df['time'] = (df.TRIAL_START_TIME.astype(int) + df.PREVIOUS_SAC_END_TIME.str.replace('.', '0').astype(int)) / 1000
 df.time = (df.time - df.groupby('RECORDING_SESSION_LABEL').time.transform('min')).round(3)
+run = []
+for key, x in df.groupby(['subject', 'docid']):
+    trial_start = x.TRIAL_START_TIME
+    starts = sorted(list(trial_start.unique()))
+    _run = trial_start.apply(lambda x, starts=starts: starts.index(x))
+    run.append(pd.Series(_run, index=x.index))
+run = pd.concat(run)
+run = run.sort_index() 
+df['run'] = run + 1
+df = df[df.run < 2]  # Delete repeat exposures
+del df['run']
+df = df.sort_values(['subject', 'time'])
 df['blinkbeforefix'] = df.CURRENT_FIX_BLINK_AROUND.isin(['BEFORE', 'BOTH']).astype(int)
 df['blinkafterfix'] = df.CURRENT_FIX_BLINK_AROUND.isin(['AFTER', 'BOTH']).astype(int)
 gb = df.groupby(['subject', 'docid'])
 df['offscreenbeforefix'] = (gb.word.shift(1) == 'OFFSCREEN').astype(int)
 df['offscreenafterfix'] = (gb.word.shift(-1) == 'OFFSCREEN').astype(int)
 df['startoffile'] = (df.docid != gb.docid.shift(1)).astype(int)
-df['endfile'] = (df.docid != gb.docid.shift(-1)).astype(int)
+df['endoffile'] = (df.docid != gb.docid.shift(-1)).astype(int)
 
 
 del df['RECORDING_SESSION_LABEL']
 del df['page']
-del df['TRIAL_START_TIME']
-del df['PREVIOUS_SAC_END_TIME']
+#del df['TRIAL_START_TIME']
+#del df['PREVIOUS_SAC_END_TIME']
 del df['CURRENT_FIX_INTEREST_AREA_LABEL']
 del df['CURRENT_FIX_INTEREST_AREA_INDEX']
 del df['CURRENT_FIX_BLINK_AROUND']
@@ -220,6 +241,7 @@ del df['CURRENT_FIX_BLINK_AROUND']
 df = df[df.word != 'OFFSCREEN']
 gb = df.groupby(['subject', 'docid'])
 df['fdurSP'] = ((gb.time.shift(-1) - df.time) * 1000).astype(float)
+df['fdurSPa'] = df.fdurSP
 sel = df.fdurSP.isna()
 df.fdurSP = np.where(sel, df.CURRENT_FIX_DURATION, df.fdurSP)
 df.fdurSP = df.fdurSP.astype(int)
@@ -240,7 +262,7 @@ for col in fdurs:
         sel = ~df.fdurGP.isna()
         df[col] = df[col].where(sel, other=np.nan)
 
-del df['CURRENT_FIX_DURATION']
+#del df['CURRENT_FIX_DURATION']
 
 df.to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN')
 

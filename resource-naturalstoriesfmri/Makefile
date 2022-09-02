@@ -114,6 +114,15 @@ endif
 genmodel/%.ini: $(NATSTORIESFMRI-SCRIPTS)/%.ini
 	cp $< $@
 
+genmodel/dinner.senttoks: $(NATSTORFMRIDIR)/dinner.senttoks
+	cp $^ $@
+
+genmodel/jeanne.senttoks: $(NATSTORFMRIDIR)/jeanne.senttoks
+	cp $^ $@
+
+genmodel/tree.senttoks: $(NATSTORFMRIDIR)/tree.senttoks
+	cp $^ $@
+
 genmodel/%_Lang.part_params.ini: genmodel/%.part_params.ini
 	cp $< $@
 

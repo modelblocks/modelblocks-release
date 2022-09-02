@@ -65,7 +65,7 @@ def main():
             row = row_next + ['0']
         else:
             row = roll(row, row_next, skip, skey)
-        assert len(row[skey]) <= len(gold[g][gkey]), 'Roll failure : %s expected, %s provided. Token line %d, item line %d.' % (gold[g][gkey].encode(args.enc), row[skey].encode(args.enc), i, g)
+        assert len(row[skey]) <= len(gold[g][gkey]), 'Roll failure : %s expected, %s provided. Token line %d, item line %d.' % (gold[g][gkey], row[skey], i, g)
         if row[skey] == gold[g][gkey]:
             print(' '.join(row))
             row = None

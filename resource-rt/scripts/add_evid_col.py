@@ -25,10 +25,11 @@ if __name__ == '__main__':
     #df.key = df.groupby(args.grouping_columns).key.cumsum().apply('{0:05d}'.format)
     for col in args.id_columns[::-1]:
         #df.key = df[col].astype('str').str.cat(df.key, sep='-')
-        if (df.evid == '').all():
-            df.evid = col + "-" + df[col].astype("str")
-        else:
-            df.evid = df.evid + "_" + col + "-" + df[col].astype("str")
+        if col in df:
+            if (df.evid == '').all():
+                df.evid = col + "-" + df[col].astype("str")
+            else:
+                df.evid = df.evid + "_" + col + "-" + df[col].astype("str")
         #df.key = df[col].astype('str').str.cat(df.key, sep='-')
         
     df.to_csv(sys.stdout, ' ', index=False, na_rep='NaN')

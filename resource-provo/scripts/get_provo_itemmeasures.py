@@ -26,7 +26,7 @@ sentid = []
 docid = []
 for key, _df in gb:
     _word = _df.Text.iloc[0].split()
-    _word = [x.replace('Õ', "'") for x in _word]
+    _word = [x.replace('Õ', "'").replace('"', "'",) for x in _word]
     _sentid = sent_indices[key]
     if len(_sentid) == len(_word) - 1:
         if _word[0] == 'Voltaire':
@@ -46,7 +46,10 @@ word = np.concatenate(word, axis=0)
 sentid = np.concatenate(sentid, axis=0)
 
 out = pd.DataFrame({'word': word, 'docid': docid, 'sentid': sentid})
-out['sentpos'] = out.groupby(sentid).cumcount()
+out['sentpos'] = out.groupby(sentid).cumcount() + 1
+out['trial_ix'] = out.groupby(docid).cumcount()
+out['startofsentence'] = (out.sentpos == 1).astype('int')
+out['endofsentence'] = out.startofsentence.shift(-1).fillna(1).astype('int')
 
 out.to_csv(sys.stdout, index=False, sep=' ', na_rep='NaN')
     
