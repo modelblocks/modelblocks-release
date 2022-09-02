@@ -232,8 +232,8 @@ df['endoffile'] = (df.docid != gb.docid.shift(-1)).astype(int)
 
 del df['RECORDING_SESSION_LABEL']
 del df['page']
-#del df['TRIAL_START_TIME']
-#del df['PREVIOUS_SAC_END_TIME']
+del df['TRIAL_START_TIME']
+del df['PREVIOUS_SAC_END_TIME']
 del df['CURRENT_FIX_INTEREST_AREA_LABEL']
 del df['CURRENT_FIX_INTEREST_AREA_INDEX']
 del df['CURRENT_FIX_BLINK_AROUND']
@@ -262,7 +262,7 @@ for col in fdurs:
         sel = ~df.fdurGP.isna()
         df[col] = df[col].where(sel, other=np.nan)
 
-#del df['CURRENT_FIX_DURATION']
+del df['CURRENT_FIX_DURATION']
 
 df.to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN')
 
