@@ -55,7 +55,8 @@ data_out <- data_out %>%
   rename(onright=on_right, totalrt=total_rt, isattentive=is.attentive, aftermistake=after_mistake) %>%
   mutate(subject=paste0('s', as.character(sprintf('%03d', subject)))) %>%
   mutate(correct=case_when(correct == 'yes' ~ 1, TRUE ~ 0)) %>%
-  select(subject, docid, item, zone, time, word, distractor, onright, correct, rt, totalrt, isattentive, sentposmistake, aftermistake) %>%
+  mutate(incorrect=1-correct) %>%
+  select(subject, docid, item, zone, time, word, distractor, onright, incorrect, rt, totalrt, isattentive, sentposmistake, aftermistake) %>%
   # select(!c(sentence, topic, strategy)) %>%
   write.table(stdout(), sep=' ', quote=FALSE, row.names=FALSE, na="NaN") 
 
