@@ -174,6 +174,9 @@ NATSTORIESFMRI-SCRIPTS := $(RESOURCE-NATSTORIESFMRI)/scripts
 RESOURCE-NATSTORIESFMRI2 := $(abspath $(MBDIR)/resource-naturalstoriesfmri2)
 NATSTORIESFMRI2-SCRIPTS := $(RESOURCE-NATSTORIESFMRI2)/scripts
 
+RESOURCE-BROWN := $(abspath $(MBDIR)/resource-brown)
+BROWN-SCRIPTS := $(RESOURCE-BROWN)/scripts
+
 RESOURCE-PASSAGES := $(abspath $(MBDIR)/resource-passages)
 PASSAGES-SCRIPTS := $(RESOURCE-PASSAGES)/scripts
 
@@ -280,6 +283,7 @@ include $(RESOURCE-NATSTORIES)/Makefile
 include $(RESOURCE-NATSTORIESMAZE)/Makefile
 include $(RESOURCE-NATSTORIESFMRI)/Makefile
 include $(RESOURCE-NATSTORIESFMRI2)/Makefile
+include $(RESOURCE-BROWN)/Makefile
 include $(RESOURCE-PASSAGES)/Makefile
 include $(RESOURCE-ONTONOTES)/Makefile
 include $(RESOURCE-RHACKS)/Makefile
