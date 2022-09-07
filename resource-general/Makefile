@@ -165,6 +165,9 @@ LVPCFG-SCRIPTS := $(RESOURCE-LVPCFG)/scripts
 RESOURCE-NATSTORIES := $(abspath $(MBDIR)/resource-naturalstories)
 NATSTORIES-SCRIPTS := $(RESOURCE-NATSTORIES)/scripts
 
+RESOURCE-NATSTORIESMAZE := $(abspath $(MBDIR)/resource-naturalstoriesmaze)
+NATSTORIESMAZE-SCRIPTS := $(RESOURCE-NATSTORIESMAZE)/scripts
+
 RESOURCE-NATSTORIESFMRI := $(abspath $(MBDIR)/resource-naturalstoriesfmri)
 NATSTORIESFMRI-SCRIPTS := $(RESOURCE-NATSTORIESFMRI)/scripts
 
@@ -274,6 +277,7 @@ include $(RESOURCE-CONLEN)/Makefile
 include $(RESOURCE-TOM)/Makefile
 include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
+include $(RESOURCE-NATSTORIESMAZE)/Makefile
 include $(RESOURCE-NATSTORIESFMRI)/Makefile
 include $(RESOURCE-NATSTORIESFMRI2)/Makefile
 include $(RESOURCE-PASSAGES)/Makefile
