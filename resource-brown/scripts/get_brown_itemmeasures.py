@@ -1,5 +1,6 @@
 import sys
 import pandas as pd
+import csv
 
 sents = []
 sentid = 0
@@ -33,5 +34,5 @@ sents['endofsentence'] = sents.startofsentence.shift(-1).fillna(1).astype('int')
 sents['wlen'] = sents.word.str.len()
 sents['resid'] = sents['sentpos']
 
-sents.to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN')
+sents.to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN', quoting=csv.QUOTE_NONE)
 

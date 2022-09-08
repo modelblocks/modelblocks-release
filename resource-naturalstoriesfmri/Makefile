@@ -114,14 +114,17 @@ endif
 genmodel/%.ini: $(NATSTORIESFMRI-SCRIPTS)/%.ini
 	cp $< $@
 
-genmodel/dinner.senttoks: $(NATSTORFMRIDIR)/dinner.senttoks
+genmodel/dinner.senttoks: $(RESOURCE-NATSTORIESFMRI)/srcmodel/dinner.senttoks
 	cp $^ $@
 
-genmodel/jeanne.senttoks: $(NATSTORFMRIDIR)/jeanne.senttoks
+genmodel/jeanne.senttoks: $(RESOURCE-NATSTORIESFMRI)/srcmodel/jeanne.senttoks
 	cp $^ $@
 
-genmodel/tree.senttoks: $(NATSTORFMRIDIR)/tree.senttoks
+genmodel/tree.senttoks: $(RESOURCE-NATSTORIESFMRI)/srcmodel/tree.senttoks
 	cp $^ $@
+
+%jeanne.casp.senttrees: $(RESOURCE-NATSTORIESFMRI)/srcmodel/jeanne.editabletrees $(RESOURCE-LTREES)/scripts/editabletrees2linetrees.pl $(RESOURCE-GCG)/scripts/lengthentrees.py
+	cat $< | perl $(word 2, $^) | python $(word 3, $^) > $@
 
 genmodel/%_Lang.part_params.ini: genmodel/%.part_params.ini
 	cp $< $@
