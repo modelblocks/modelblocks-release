@@ -24,6 +24,8 @@ sents = []
 word = []
 sentid = []
 docid = []
+provo_textid = []
+provo_wordnumber = []
 for key, _df in gb:
     _word = _df.Text.iloc[0].split()
     _word = [x.replace('Õ', "'").replace('"', "'",) for x in _word]
@@ -40,12 +42,24 @@ for key, _df in gb:
     assert len(_word) == len(_sentid), 'Length mismatch. Got %s words and %d sentids' % (len(_word), len(_sentid))
     word.append(_word)
     sentid.append(_sentid)
+    provo_textid.append([key] * len(_word))
+    provo_wordnumber.append(np.arange(len(_word)) + 1)
     docid += ['d%s' % key] * len(_word)
 
 word = np.concatenate(word, axis=0)
 sentid = np.concatenate(sentid, axis=0)
+provo_textid = np.concatenate(provo_textid)
+provo_wordnumber = np.concatenate(provo_wordnumber)
 
-out = pd.DataFrame({'word': word, 'docid': docid, 'sentid': sentid})
+out = pd.DataFrame(
+    {
+        'word': word,
+        'docid': docid,
+        'sentid': sentid,
+        'text_id': provo_textid,
+        'Word_Number': provo_wordnumber,
+    }
+)
 out['sentpos'] = out.groupby(sentid).cumcount() + 1
 out['trial_ix'] = out.groupby(docid).cumcount()
 out['startofsentence'] = (out.sentpos == 1).astype('int')

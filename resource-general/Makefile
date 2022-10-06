@@ -102,6 +102,9 @@ PROVO-SCRIPTS := $(RESOURCE-PROVO)/scripts
 RESOURCE-GECO := $(abspath $(MBDIR)/resource-geco)
 GECO-SCRIPTS := $(RESOURCE-GECO)/scripts
 
+RESOURCE-REPETITION := $(abspath $(MBDIR)/resource-repetition)
+REPETITION-SCRIPTS := $(RESOURCE-REPETITION)/scripts
+
 RESOURCE-EPIC := $(abspath $(MBDIR)/resource-epic)
 EPIC-SCRIPTS := $(RESOURCE-EPIC)/scripts
 
@@ -276,6 +279,7 @@ include $(RESOURCE-CHILDES)/Makefile
 include $(RESOURCE-DUNDEE)/Makefile
 include $(RESOURCE-PROVO)/Makefile
 include $(RESOURCE-GECO)/Makefile
+include $(RESOURCE-REPETITION)/Makefile
 include $(RESOURCE-CONLEN)/Makefile
 include $(RESOURCE-TOM)/Makefile
 include $(RESOURCE-DMV)/Makefile

@@ -282,7 +282,7 @@ naturalstoriesfmri_Lang_MDspatWM%.itemmeasures: naturalstories%.itemmeasures
 
 
 
-%.sp.itemmeasures: $$(DEP-NATSTORIES) %.itemmeasures $(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(CONFIGDIR)/user-naturalstories-directory.txt $(NATSTORDIR)/audio/*.wav
+%.sp.itemmeasures: $$(DEP-NATSTORIES) %.t.itemmeasures $(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(CONFIGDIR)/user-naturalstories-directory.txt $(NATSTORDIR)/audio/*.wav
 	cat $(word 1, $^) | python $(word 2, $^) $(wordlist 4, $(words $^), $^) > $@
 
 

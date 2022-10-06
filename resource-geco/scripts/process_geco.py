@@ -37,6 +37,7 @@ mapper = {
     'PART': 'docid',
     'TRIAL': 'trialid',
     'WORD': 'word',
+    'WORD_ID': 'geco_word_id',
     'WORD_ID_WITHIN_TRIAL': 'trialpos',
     'WORD_FIRST_FIXATION_TIME': 'time',
     'WORD_GAZE_DURATION': 'fdurFP',

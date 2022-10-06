@@ -10,8 +10,8 @@ def main():
     data1 = pd.read_csv(args.f1[0],sep=' ',skipinitialspace=True)
     data2 = pd.read_csv(args.f2[0],sep=' ',skipinitialspace=True)
 
-    no_dups = [c for c in data2.columns.values if c not in data1.columns.values] + ['docid', 'trialid', 'trialpos']
-    data2 = data2.filter(items=no_dups)
+    no_dups = [c for c in data1.columns.values if c not in data2.columns.values] + ['docid', 'trialid', 'trialpos']
+    data1 = data1.filter(items=no_dups)
 
     frames = []
 

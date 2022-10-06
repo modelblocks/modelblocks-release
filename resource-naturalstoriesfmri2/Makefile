@@ -193,8 +193,8 @@ naturalstoriesfmri2_Lang_MD%.tokmeasures: naturalstories%.tokmeasures
 naturalstoriesfmri2_Lang_MD%.itemmeasures: naturalstories%.itemmeasures
 	cp $(word 1, $^) $@
 
-%naturalstoriesfmri2_Lang_MD.evmeasures: %naturalstoriesfmri2.evmeasures
-	cp $^ 
+%naturalstoriesfmri2_Lang_MD.evmeasures: %naturalstoriesfmri2_Lang.evmeasures %naturalstoriesfmri2_MD.evmeasures
+	cat $(word 1, $^) <(tail -n +2 $(word 2, $^)) > $@
 
 %.sp.itemmeasures: $$(DEP-NATSTORIES) %.itemmeasures $(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(CONFIGDIR)/user-naturalstories-directory.txt $(NATSTORDIR)/audio/*.wav
 	cat $(word 1, $^) | python $(word 2, $^) $(wordlist 4, $(words $^), $^) > $@

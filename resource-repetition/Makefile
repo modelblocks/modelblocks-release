@@ -27,7 +27,6 @@
 #  include $(RESOURCE-TOKENIZER)/Makefile
 #  include $(RESOURCE-LTREES)/Makefile
 #  include $(RESOURCE-GCG)/Makefile
-#  include $(RESOURCE-RT)/Makefile
 #  include $(RESOURCE-LVPCFG)/Makefile
 #  include $(RESOURCE-LCPARSE)/Makefile
 #  include $(RESOURCE-BNC)/Makefile
@@ -60,41 +59,44 @@
 ################################################################################
 
 ifndef MAKECONFIG
-CONFIG := $(CONFIGDIR)/user-brown-directory.txt
+CONFIG := $(CONFIGDIR)/user-repetition-directory.txt
 ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(call CONFIGWARN,$(CONFIG)))
+$(info $(call CONFIGWARN, $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
-BROWNDIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(NATSTORMAZEDIR))))
-RESOURCE-NAME := The Brown SPR Corpus
+REPETITIONDIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(REPETITIONDIR))))
+RESOURCE-NAME := The Provo eye-tracking corpus
 define RESOURCE-DESCR =
 
-NAME: The Brown SPR Corpus
-MB POINTER FILE: config/user-brown-directory.txt
-AVAILABILITY: https://drive.google.com/file/d/1e-anJ4laGlTY-E0LNook1EzKBU2S1jI8
-DESCRIPTION: The SPR data of Smith & Levy 2013
+NAME: The Sentence Repetition SPR corpus
+MB POINTER FILE: config/user-repetition-directory.txt
+AVAILABILITY: None
+DESCRIPTION: A corpus of SPR measures from a study on sentence repetition effects
 endef
-BROWN-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
-DEP-BROWN = $(error $(BROWN-ERROR))
+REPETITION-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-REPETITION = $(error $(REPETITION-ERROR))
 endif
 endif
 
-%/user-brown-directory.txt: | %   
-	echo '/data/corpora/original/english/SPR_brown' > $@
 
+    
+%/user-repetition-directory.txt: | %
+	echo '/data/corpora/original/english/repetition' > $@
+    
 ################################################################################
 #
-#  Reading time data formatting items
+#  Eye-tracking data formatting items
 #
 ################################################################################
 
 ## copy partition ini into project genmodel directory
-genmodel/%.ini: $(BROWN-SCRIPTS)/%.ini  |  scripts
+genmodel/%.ini: $(REPETITION-SCRIPTS)/%.ini
 	cp $< $@
 
-%brown.evmeasures: $$(DEP-BROWN) $(BROWNDIR)/corpora/brown_spr.csv $(BROWN-SCRIPTS)/process_brown.py %brown.itemmeasures
-	cat $< | python3 $(word 2, $^) $(word 3, $^) > $@
+%/repetition.evmeasures: $$(DEP-REPETITION) $(REPETITION-SCRIPTS)/merge_repetition.py $(REPETITIONDIR)/Provo_Corpus-Additional_Eyetracking_Data-Fixation_Report.csv $(REPETITION-SCRIPTS)/process_repetition.py \
+%/repetition.itemmeasures | %
+	python $< <(cat $(word 2, $^) | python3 $(word 3,$^)) $(word 4, $^) > $@
 
 
 ################################################################################
@@ -103,12 +105,9 @@ genmodel/%.ini: $(BROWN-SCRIPTS)/%.ini  |  scripts
 #
 ################################################################################    
 
-brown%itemmeasures: $$(DEP-BROWN) $(BROWNDIR)/corpora/bnc_brown.txt $(BROWN-SCRIPTS)/get_brown_itemmeasures.py $(BROWNDIR)/human_rts/bnc-brown/bnc-brown.csv \
-$(BROWNDIR)/corpora/brown_spr.csv | %
-	cat $< | python3 $(word 2, $^) $(word 3, $^) $(word 4, $^) > $@
-
-%brown.sentitems: %brown.itemmeasures $(BROWN-SCRIPTS)/get_brown_sentitems.py | %
+%/repetition.sentitems: %/repetition.itemmeasures $(REPETITION-SCRIPTS)/get_repetition_sentitems.py
 	cat $< | python3 $(word 2, $^) > $@
 
-%brown.senttoks: %brown.sentitems $(TOKENIZERDIR)/ptb_tokenizer.sed | %
+%/repetition.senttoks: %/repetition.sentitems $(TOKENIZERDIR)/ptb_tokenizer.sed
 	cat $< | $(word 2, $^) | perl -pe 's/ +$$//g' > $@
+
