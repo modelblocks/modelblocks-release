@@ -58,32 +58,7 @@
 #
 ################################################################################
 
-ifndef MAKECONFIG
-CONFIG := $(CONFIGDIR)/user-repetition-directory.txt
-ifeq (,$(firstword $(wildcard $(CONFIG))))
-$(info $(call CONFIGWARN, $(CONFIG)))
-DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
-endif
-REPETITIONDIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(REPETITIONDIR))))
-RESOURCE-NAME := The Provo eye-tracking corpus
-define RESOURCE-DESCR =
-
-NAME: The Sentence Repetition SPR corpus
-MB POINTER FILE: config/user-repetition-directory.txt
-AVAILABILITY: None
-DESCRIPTION: A corpus of SPR measures from a study on sentence repetition effects
-endef
-REPETITION-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
-DEP-REPETITION = $(error $(REPETITION-ERROR))
-endif
-endif
-
-
-    
-%/user-repetition-directory.txt: | %
-	echo '/data/corpora/original/english/repetition' > $@
-    
+   
 ################################################################################
 #
 #  Eye-tracking data formatting items
@@ -94,9 +69,8 @@ endif
 genmodel/%.ini: $(REPETITION-SCRIPTS)/%.ini
 	cp $< $@
 
-%/repetition.evmeasures: $$(DEP-REPETITION) $(REPETITION-SCRIPTS)/merge_repetition.py $(REPETITIONDIR)/Provo_Corpus-Additional_Eyetracking_Data-Fixation_Report.csv $(REPETITION-SCRIPTS)/process_repetition.py \
-%/repetition.itemmeasures | %
-	python $< <(cat $(word 2, $^) | python3 $(word 3,$^)) $(word 4, $^) > $@
+%/repetitionpilot.evmeasures: $(RESOURCE-REPETITION)/srcmodel/repetition_pilot_src.csv  $(REPETITION-SCRIPTS)/get_evmeasures_pilot.py | %
+	cat $< | python3 $(word 2, $^) > $@
 
 
 ################################################################################
@@ -105,9 +79,15 @@ genmodel/%.ini: $(REPETITION-SCRIPTS)/%.ini
 #
 ################################################################################    
 
-%/repetition.sentitems: %/repetition.itemmeasures $(REPETITION-SCRIPTS)/get_repetition_sentitems.py
-	cat $< | python3 $(word 2, $^) > $@
+%/repetition.sentitems: $(RESOURCE-REPETITION)/srcmodel/repetition.sentitems | %
+	cp $< $@
 
 %/repetition.senttoks: %/repetition.sentitems $(TOKENIZERDIR)/ptb_tokenizer.sed
-	cat $< | $(word 2, $^) | perl -pe 's/ +$$//g' > $@
+	cat $< | $(word 2, $^) | perl -pe 's/ +$$//g;s/``/"/g' > $@
+
+%/repetition.casp.senttrees: $(RESOURCE-REPETITION)/srcmodel/repetition.editabletrees $(LTREES-SCRIPTS)/editabletrees2linetrees.pl $(RESOURCE-GCG)/scripts/lengthentrees.py
+	cat $< | perl $(word 2, $^) | python $(word 3,$^)  >  $@
+
+repetitionpilot%.itemmeasures: repetition%.itemmeasures
+	cp $(word 1, $^) $@
 
