@@ -1716,7 +1716,7 @@
             (V-gN (N-lA I)
                   (V-aN-gN (V-aN-bN meant))))
          (V-aN (V-aN-b{B-aN} was)
-               (B-aN-lA (B-aN-lB have)
+               (B-aN-lA (B-aN-bB have)
                         (B-lA (N-lA (N-b{N-aD} a)
                                     (N-aD-lA (N-aD lawyer)))
                               (B-aN (B-aN (B-aN-bN do)
