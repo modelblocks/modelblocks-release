@@ -1725,7 +1725,7 @@
                                     (R-aN-lM (R-aN-bN for)
                                              (N-lA (N you))))))))
       (.-lM (. .)))
-(S-lS (.-lM (. ``))
+(S-lS (.-lM (. "))
       (R-aN (R-aN (R-aN-lM (R-aN Just))
                   (R-aN (R-aN-b{R-aN as)
                         (R-aN-lA (R-aN quickly))))
