@@ -151,16 +151,16 @@ endif
 %.kenlm: $$(DEP-KENLM) $(CONFIGDIR)/user-kenlm-directory.txt $(KENLMDIR)/bin/lmplz \
 $$(basename %).linetoks.bz2 $(CONFIGDIR)/user-kenlm-flags.txt
 	mkdir kenlmtmp
-	$(word 2,$^) -o $(subst .,,$(suffix $*)) $(shell cat $(word 4,$^)) < $(word 3, $^) > $@
+	$(word 2,$^) -o $(subst .,,$(suffix $*)) $(shell cat $(word 4,$^)) --skip_symbols < $(word 3, $^) > $@
 	rm -rf kenlmtmp
 
-#.PRECIOUS: %.fw.kenlm
-## especially good for unigram models since kenlm doesn't permit those to be made into binaries
-#%.fw.kenlm: $$(DEP-KENLM) $(KENLMDIR)/bin/lmplz $$(basename %).linetoks.bz2 \
-#$(CONFIGDIR)/user-kenlm-directory.txt | genmodel
-#	mkdir kenlmtmp
-#	$(word 1, $^) -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 20G < $(word 2, $^) > $@
-#	rm -rf kenlmtmp
+.PRECIOUS: %.fw.kenlm
+# especially good for unigram models since kenlm doesn't permit those to be made into binaries
+%.fw.kenlm: $$(DEP-KENLM) $(KENLMDIR)/bin/lmplz $$(basename %).linetoks.bz2 \
+$(CONFIGDIR)/user-kenlm-directory.txt | genmodel
+	mkdir kenlmtmp
+	$(word 1, $^) -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 20G --skip_symbols < $(word 2, $^) > $@
+	rm -rf kenlmtmp
 
 .PRECIOUS: %.kenlm.bin
 # uses array pointer compression
@@ -200,6 +200,10 @@ $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmo
 $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
 	python2 $(word 1, $^) $(word 2, $^) <( cat $(word 3, $^) | grep -v '!ARTICLE' ) > $@
 
+%-unigram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLM-SCRIPTS)/unigram.py $$(subst .,,$$(suffix %)).1.fw.kenlm $$(basename %).sentitems \
+$(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
+	python2 $(word 1, $^) $(word 2, $^) <( cat $(word 3, $^) | grep -v '!ARTICLE' ) > $@
+
 ## not to spec
 .PRECIOUS: %.kenlm.ngram.itemmeasures
 %.kenlm.ngram.itemmeasures: $$(DEP-KENLM) $(KENLMDIR)/bin/query \
@@ -233,6 +237,12 @@ $(RT-SCRIPTS)/filter_cols.py
 
 %.kenlm.unigram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLM-SCRIPTS)/unigram.py $(KENLMMODDIR)/gigaword.1.fw.kenlm %.lineitems \
 $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
+	echo $(dir, $*)/$(suffix $*).1.fw.kenlm
 	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+
+%.Kenlm.unigram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLM-SCRIPTS)/unigram.py $$(dir $$*)/$$(suffix $$*).1.fw.kenlm $$(basename %).lineitems \
+$(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
+	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+
 
 

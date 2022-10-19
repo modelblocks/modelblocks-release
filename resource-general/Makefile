@@ -126,6 +126,9 @@ GENERAL-SCRIPTS := $(RESOURCE-GENERAL)/scripts
 RESOURCE-GIGAWORD := $(abspath $(MBDIR)/resource-gigaword)
 GIGAWORD-SCRIPTS := $(RESOURCE-GIGAWORD)/scripts
 
+RESOURCE-OPENWEBTEXT := $(abspath $(MBDIR)/resource-openwebtext)
+OPENWEBTEXT-SCRIPTS := $(RESOURCE-OPENWEBTEXT)/scripts
+
 RESOURCE-GLOVE := $(abspath $(MBDIR)/resource-glove)
 GLOVE-SCRIPTS := $(RESOURCE-GLOVE)/scripts
 
@@ -257,6 +260,7 @@ include $(RESOURCE-LCPARSE)/Makefile
 include $(RESOURCE-BNC)/Makefile
 include $(RESOURCE-TREEBANK)/Makefile
 include $(RESOURCE-GIGAWORD)/Makefile
+include $(RESOURCE-OPENWEBTEXT)/Makefile
 include $(RESOURCE-GLOVE)/Makefile
 include $(RESOURCE-GLSTM)/Makefile
 include $(RESOURCE-GPT2)/Makefile
