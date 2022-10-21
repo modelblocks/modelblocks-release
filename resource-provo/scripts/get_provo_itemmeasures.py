@@ -3,11 +3,24 @@ import io
 import numpy as np
 import pandas as pd
 
+def get_cloze(df):
+    sel = df.Word == df.Response
+    df = df[sel]
+    if len(df):
+        return df.Response_Proportion.sum()
+    return 0.
+
+def get_count(df):
+    return df.Total_Response_Count.max()
+
 stdin = io.TextIOWrapper(sys.stdin.buffer, encoding='latin-1')
 
 df = pd.read_csv(stdin)
+cloze = df.groupby(['Text_ID', 'Word_Number']).apply(get_cloze)
+count = df.groupby(['Text_ID', 'Word_Number']).apply(get_count)
+cloze = pd.concat([cloze, count], axis=1).reset_index().rename(lambda x: 'clozeprob' if x == 0 else 'Total_Response_Count' if x == 1 else x, axis=1)
 
-sent_info = df[['Text_ID', 'Sentence_Number', 'Word_Number']].drop_duplicates()
+sent_info = df[['Text_ID', 'Sentence_Number', 'Word_Number', 'Response_Count']].drop_duplicates(['Text_ID', 'Sentence_Number', 'Word_Number'])
 gb = sent_info.groupby('Text_ID')
 sent_indices = {}
 i = 0
@@ -65,7 +78,21 @@ out['trial_ix'] = out.groupby(docid).cumcount()
 out['startofsentence'] = (out.sentpos == 1).astype('int')
 out['endofsentence'] = out.startofsentence.shift(-1).fillna(1).astype('int')
 
+out = pd.merge(out, cloze, left_on=['text_id', 'Word_Number'], right_on=['Text_ID', 'Word_Number'], how='left')
+clozeprob = out.clozeprob
+clozeprob = np.where(clozeprob.isna(), 0., clozeprob)
+out.clozeprob = clozeprob
+count = out.Total_Response_Count
+count = np.where(count.isna(), 40, count).astype(int)
+out.Total_Response_Count = count
+count = out.Total_Response_Count
+gt0 = (out.clozeprob <= 0).astype(float)
+smoothing_factor = count / (count + 1)
+base_prob = gt0 / (count + 1)
+out.clozeprob = out.clozeprob * smoothing_factor + base_prob
+out['clozesurp'] = -np.log(out.clozeprob)
+
+del out['Text_ID']
+
 out.to_csv(sys.stdout, index=False, sep=' ', na_rep='NaN')
     
-
-
