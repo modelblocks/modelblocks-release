@@ -92,6 +92,10 @@ base_prob = gt0 / (count + 1)
 out.clozeprob = out.clozeprob * smoothing_factor + base_prob
 out['clozesurp'] = -np.log(out.clozeprob)
 
+name2discid = {x: i for i, x in enumerate(sorted(list(out['docid'].unique())))}
+out['discid'] = out.docid.map(name2discid)
+out['discpos'] = out.groupby('discid').cumcount() + 1
+
 del out['Text_ID']
 
 out.to_csv(sys.stdout, index=False, sep=' ', na_rep='NaN')

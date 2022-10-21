@@ -154,13 +154,13 @@ $$(basename %).linetoks.bz2 $(CONFIGDIR)/user-kenlm-flags.txt
 	$(word 2,$^) -o $(subst .,,$(suffix $*)) $(shell cat $(word 4,$^)) --skip_symbols < $(word 3, $^) > $@
 	rm -rf kenlmtmp
 
-.PRECIOUS: %.fw.kenlm
-# especially good for unigram models since kenlm doesn't permit those to be made into binaries
-%.fw.kenlm: $$(DEP-KENLM) $(KENLMDIR)/bin/lmplz $$(basename %).linetoks.bz2 \
-$(CONFIGDIR)/user-kenlm-directory.txt | genmodel
-	mkdir kenlmtmp
-	$(word 1, $^) -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 20G --skip_symbols < $(word 2, $^) > $@
-	rm -rf kenlmtmp
+#.PRECIOUS: %.fw.kenlm
+## especially good for unigram models since kenlm doesn't permit those to be made into binaries
+#%.fw.kenlm: $$(DEP-KENLM) $(KENLMDIR)/bin/lmplz $$(basename %).linetoks.bz2 \
+#$(CONFIGDIR)/user-kenlm-directory.txt | genmodel
+#	mkdir kenlmtmp
+#	$(word 1, $^) -o $(subst .,,$(suffix $*)) -T kenlmtmp -S 20G --skip_symbols < $(word 2, $^) > $@
+#	rm -rf kenlmtmp
 
 .PRECIOUS: %.kenlm.bin
 # uses array pointer compression

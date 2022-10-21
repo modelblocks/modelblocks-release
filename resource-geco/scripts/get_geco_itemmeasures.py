@@ -277,6 +277,12 @@ df['endoffile'] = df.startoffile.shift(-1).fillna(1).astype(int)
 df['startofscreen'] = (df.trialid != df.trialid.shift(1)).fillna(1).astype(int)
 df['endofscreen'] = df.startofscreen.shift(-1).fillna(1).astype(int)
 
+discid = df.docid + df.trialid.apply(lambda x: '%03d' % x)
+name2discid = {x: i for i, x in enumerate(sorted(list(discid.unique())))}
+discid = discid.map(name2discid)
+df['discid'] = discid
+df['discpos'] = df.groupby('discid').cumcount() + 1
+
 del df['incr']
 del df['SENTENCE']
 del df['SENTENCE_ID']

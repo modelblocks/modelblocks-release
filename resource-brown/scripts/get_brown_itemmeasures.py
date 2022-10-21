@@ -39,5 +39,9 @@ sents['endofsentence'] = sents.startofsentence.shift(-1).fillna(1).astype('int')
 sents['wlen'] = sents.word.str.len()
 sents['resid'] = sents['sentpos']
 
+name2discid = {x: i for i, x in enumerate(sorted(list(sents.docid.unique())))}
+sents['discid'] = sents.docid.map(name2discid)
+sents['discpos'] = sents.groupby('discid').cumcount() + 1
+
 sents.to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN', quoting=csv.QUOTE_NONE)
 
