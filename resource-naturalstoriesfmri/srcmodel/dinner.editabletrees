@@ -778,7 +778,7 @@
                            (N-aD (N-aD behavior)))
                      (V-aN (V-aN-b{A-aN} is)
                            (A-aN-lA (N-iN-lN what)
-                                    (V-gN-lA (N-lA I)
+                                    (V-gN (N-lA I)
                                              (V-aN-gN (V-aN-bC know)
                                                       (C-gN-lA (N-lA it)
                                                                (V-aN-gN (V-aN-bN has)
