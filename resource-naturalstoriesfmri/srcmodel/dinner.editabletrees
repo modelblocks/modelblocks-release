@@ -181,7 +181,7 @@
                                  (V-rN-lN (R-aN-rN-lN where)
                                           (V-g{R-aN} (N-lA you)
                                                      (V-aN-g{R-aN} (V-aN-b{L-aN} 've)
-                                                                   (L-aN-g{R-aN}-lA (L-aN-g{R-aN}-lA been)))))))))
+                                                                   (L-aN-g{R-aN}-lA (L-aN-g{R-aN} been)))))))))
       (.-lM (. .)))
 (S-lS (S (N-lA I)
          (V-aN (V-aN-b{I-aN} want)
