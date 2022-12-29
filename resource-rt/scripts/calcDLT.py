@@ -72,10 +72,11 @@ def argsFromString(string):
     for char in string:
         if char == '-' and braceDepth == 0:
             if currentArg != '':
-                if currentOp in argMap:
-                    argMap[currentOp].append(stripBraces(currentArg))
-                else:
-                    argMap[currentOp] = [stripBraces(currentArg)]
+                if currentOp != 'n': # A coreference annotation
+                    if currentOp in argMap:
+                        argMap[currentOp].append(stripBraces(currentArg))
+                    else:
+                        argMap[currentOp] = [stripBraces(currentArg)]
             currentOp = ''
             currentArg = ''
         else:
@@ -163,7 +164,7 @@ def objGap(t):
         return False
     label = argsFromString(t.c)
     slabel = argsFromString(t.p.ch[0].c)
-    if 'l' in slabel and 'N' in slabel['l'] \
+    if 'l' in slabel and ('N' in slabel['l'] or 'G' in slabel['l'] or 'H' in slabel['l'] or 'R' in slabel['l']) \
             and 'a' in label and 'N' in label['a'] \
             and 'g' in label and 'N' in label['g']:
         return True
@@ -197,7 +198,7 @@ def calcCosts(t, MOD):
                     t = t.p
                     stop = nonhead or t.p is None
                     continue
-            if 'l' in slabel and 'N' in slabel['l']:
+            if 'l' in slabel and ('N' in slabel['l'] or 'G' in slabel['l'] or 'H' in slabel['l'] or 'R' in slabel['l']):
                 t = t.p
                 stop = nonhead or t.p is None
                 continue
@@ -211,7 +212,7 @@ def calcCosts(t, MOD):
             else:
                 depdirSem = 'bwd'
             if nonhead:
-                if 'N' in label['l'] and objGap:
+                if ('N' in label['l'] or 'G' in label['l'] or 'H' in label['l'] or 'R' in label['l']) and objGap:
                     if args.DEBUG:
                         print '====='
                         print 'Object gap from "%s" to "%s"' % (e.ch[0].c, s.ch[0].c)
@@ -351,6 +352,8 @@ def cWeight(T, vMod):
     return weight
   
 def followH(T, dp=False):
+    if terminal(T):
+        return T
     label = argsFromString(T.c)
     out = None
     if 'h' in label:
@@ -363,11 +366,13 @@ def followH(T, dp=False):
     return out
 
 def followG(T, dp=False):
+    if terminal(T):
+        return T
     label = argsFromString(T.c)
     out = None
     if 'g' in label:
         for x in T.ch:
-            out = followH(x, dp=dp)
+            out = followG(x, dp=dp)
             if out is not None:
                 break
     if out is None:
@@ -375,11 +380,13 @@ def followG(T, dp=False):
     return out
 
 def followN(T, dp=False):
+    if terminal(T):
+        return T
     label = argsFromString(T.c)
     out = None
     if 'r' in label and 'N' in label['r']:
         for x in T.ch:
-            out = followH(x, dp=dp)
+            out = followN(x, dp=dp)
             if out is not None:
                 break
     if out is None:
@@ -389,28 +396,31 @@ def followN(T, dp=False):
 def getFwdDeps(T, terms_cur, dp=True):
     out = {}
     out_gap = {}
-    if len(T.ch) == 2:
+    ch = T.ch
+    while len(ch) == 1:
+        ch = ch[0].ch
+    if len(ch) == 2:
         deps = []
         gap_deps = []
-        left = T.ch[0]
-        right = T.ch[1]
+        left = ch[0]
+        right = ch[1]
         label_cur = argsFromString(T.c)
         label_left = argsFromString(left.c)
         label_right = argsFromString(right.c)
-        if ('l' in label_left and 'A' in label_left['l']) \
-                or ('l' in label_right and 'A' in label_right['l']) \
+        if ('l' in label_left and ('A' in label_left['l'] or 'U' in label_left['l'])) \
+                or ('l' in label_right and ('A' in label_right['l'] or 'U' in label_right['l'])) \
                 or ('l' in label_left and 'M' in label_left['l']) \
                 or ('l' in label_right and 'C' in label_right['l']):
             deps.append((head(left, dp=dp), head(right, dp=dp)))
         elif (('C' in label_cur['head'] or 'V' in label_cur['head'])) and ('r' in label_cur and 'N' in label_cur['r']) \
-                and ('l' in label_cur and 'N' in label_cur['l']):
+                and ('l' in label_cur and ('N' in label_cur['l'] or 'G' in label_cur['l'] or 'H' in label_cur['l'] or 'R' in label_cur['l'])):
             deps.append((first(left), followG(right, dp=dp)))
             gap_deps.append((first(left), head(right, dp=dp)))
         elif 'i' in label_left and 'N' in label_left['i']:
             gap_deps.append((first(left), followG(right, dp=dp)))
-        elif 'l' in label_right and 'N' in label_right['l'] and 'h' in label_left:
+        elif 'l' in label_right and ('N' in label_right['l'] or 'G' in label_right['l'] or 'H' in label_right['l'] or 'R' in label_right['l']) and 'h' in label_left:
             gap_deps.append((followH(left), head(right, dp=dp)))
-        
+       
         for dep in deps:
             if not isPunc(dep[0]) and not isPunc(dep[1]):
                 start = getIdx(dep[0], terms_cur)
@@ -425,7 +435,7 @@ def getFwdDeps(T, terms_cur, dp=True):
                 if end not in out_gap:
                     out_gap[end] = start
 
-    for x in T.ch:
+    for x in ch:
         deps, gap_deps = getFwdDeps(x, terms_cur)
         
         for dep in deps:
@@ -537,4 +547,5 @@ for line in sys.stdin:
         cvCosts = []
         T = tree.Tree()
         T.read(line)
+        T.dlt_collapse()
         printToks(T)

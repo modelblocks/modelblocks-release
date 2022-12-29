@@ -240,4 +240,22 @@ class Tree:
         if lColor:
             annotatedCat = re.sub('(\-[l][A-Z])', '{\\\\' + lColor + r' \1}', annotatedCat) 
         return annotatedCat
-    
+
+    def traverse(self):
+        first = True
+        if first:
+           yield self
+        ch = self.ch
+        while len(ch) == 1:
+            ch = ch[0].ch
+        for ch in ch:
+           for x in ch.traverse():
+               yield x
+
+    def dlt_collapse(self):
+        if len(self.ch) == 1 and len(self.ch[0].ch) and not (self.c.startswith('A-aN') and self.ch[0].c.startswith('N')):
+            self.ch = self.ch[0].ch
+            for c in self.ch:
+                c.p = self
+        for c in self.ch:
+            c.dlt_collapse()

@@ -12,7 +12,9 @@ ops = {
     "Z": 0,
     "EnoVnoHO": 0,
     "EnoVhNoHO": 0,
-    "EnoVHO": 0
+    "EnoVHO": 0,
+    "PredPos": 0,
+    "PredPosAOnly": 0
 }
 
 for i in {"", "g", "h"}:
@@ -113,6 +115,20 @@ for line in sys.stdin:
         ops["EnoVmodlex"] = ops["EnoVlex"] and emod 
         ops["EnoVarggrm"] = ops["EnoVgrm"] and earg 
         ops["EnoVmodgrm"] = ops["EnoVgrm"] and emod 
+
+        # PredPos is -1 if the predicate comes before its argument (Ma or Ab)
+        # 1 if predicate comes after argument (Mb or Aa)
+        # 0 otherwise
+        
+        # PredPosAOnly excludes Ma and Mb
+        if ops["Ma"]: ops["PredPos"] = -1
+        elif ops["Ab"]:
+            ops["PredPos"] = -1
+            ops["PredPosAOnly"] = -1
+        elif ops["Mb"]: ops["PredPos"] = 1
+        elif ops["Aa"]:
+            ops["PredPos"] = 1
+            ops["PredPosAOnly"] = 1
 
         print(w + " " + syncat + " " + basecat, end="")  
         for op in sorted(ops):

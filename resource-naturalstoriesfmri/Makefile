@@ -114,6 +114,15 @@ endif
 genmodel/%.ini: $(NATSTORIESFMRI-SCRIPTS)/%.ini
 	cp $< $@
 
+%jeanne.casp.senttrees: $(RESOURCE-NATSTORIESFMRI)/srcmodel/jeanne.editabletrees $(RESOURCE-LTREES)/scripts/editabletrees2linetrees.pl $(RESOURCE-GCG)/scripts/lengthentrees.py
+	cat $< | perl $(word 2, $^) | python $(word 3, $^) > $@
+
+%dinner.casp.senttrees: $(RESOURCE-NATSTORIESFMRI)/srcmodel/dinner.editabletrees $(RESOURCE-LTREES)/scripts/editabletrees2linetrees.pl $(RESOURCE-GCG)/scripts/lengthentrees.py
+	cat $< | perl $(word 2, $^) | python $(word 3, $^) > $@
+
+%tree.casp.senttrees: $(RESOURCE-NATSTORIESFMRI)/srcmodel/tree.editabletrees $(RESOURCE-LTREES)/scripts/editabletrees2linetrees.pl $(RESOURCE-GCG)/scripts/lengthentrees.py
+	cat $< | perl $(word 2, $^) | python $(word 3, $^) > $@
+
 genmodel/%_Lang.part_params.ini: genmodel/%.part_params.ini
 	cp $< $@
 
@@ -270,7 +279,7 @@ naturalstoriesfmri_Lang_MDspatWM%.itemmeasures: naturalstories%.itemmeasures
 
 
 
-%.sp.itemmeasures: $$(DEP-NATSTORIES) %.itemmeasures $(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(CONFIGDIR)/user-naturalstories-directory.txt $(NATSTORDIR)/audio/*.wav
+%.sp.itemmeasures: $$(DEP-NATSTORIES) %.t.itemmeasures $(NATSTORIESFMRI-SCRIPTS)/get_sound_power.py $(CONFIGDIR)/user-naturalstories-directory.txt $(NATSTORDIR)/audio/*.wav
 	cat $(word 1, $^) | python $(word 2, $^) $(wordlist 4, $(words $^), $^) > $@
 
 
