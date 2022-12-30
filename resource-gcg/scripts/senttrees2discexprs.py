@@ -3,6 +3,13 @@ import re
 import tree
 
 
+def getNoloArity( cat ):
+  cat = re.sub( '-x.*', '', cat )
+  while '{' in cat:
+    cat = re.sub('\{[^\{\}]*\}','X',cat)
+  return len(re.findall('-[ghirv]',cat))
+
+
 def getLemma( c, w ):
   s = re.sub('-l.','',c) + ':' + w.lower()
   eqns = re.sub( '-x.*:', ':', s )
@@ -40,37 +47,45 @@ def getScopes( t ):
   else: print( 'ERROR: too many children in ', t )
 
 
-def translate( t, lsVars=[] ):
+def translate( t, lsLoca=[], lsNolo=[] ):
 #  global nSent
 #  global nWord
-
+#  print( t, lsLoca, lsNolo )
   if len(t.ch) == 1 and len(t.ch[0].ch) == 0:
 #    nWord += 1
     pred = getLemma( t.c, t.ch[0].c )
-#    print( nSent, nWord, pred )
-    return( 'True' if pred == '' else pred + ' ' + t.sVar + ' '.join(lsVars) )
+    pred = 'Ident' if pred == '' else pred
+    return( pred if len(lsLoca)==0 else '(' + ' '.join(reversed(lsLoca + [pred])) + ')' )
   elif len(t.ch) == 1:
-    return( translate(t.ch[0],lsVars) )
+    if   '-lE' in t.ch[0].c  and  len(t.ch[0].c) >= len(t.c):  return( translate(t.ch[0],lsLoca+[lsNolo[-1]],lsNolo[:-1]) )
+    elif '-lE' in t.ch[0].c  and  len(t.ch[0].c) <  len(t.c):  return( '(Mod ' + translate(t.ch[0],lsLoca,lsNolo[:-1]) + ' ' + lsNolo[-1] + ')' )
+    elif '-lV' in t.ch[0].c:  return( translate(t.ch[0],lsLoca[1:],lsNolo+[lsLoca[0]]) )
+    else: return( translate(t.ch[0],lsLoca,lsNolo) )
   elif len(t.ch) == 2:
-    if   '-lA' in t.ch[0].c:  return( '[' + translate(t.ch[0]) + '] (\\' + t.ch[0].sVar + ' ' + translate(t.ch[1],[t.ch[0].sVar]+lsVars) + ')' )
-    elif '-lA' in t.ch[1].c:  return( '[' + translate(t.ch[1]) + '] (\\' + t.ch[1].sVar + ' ' + translate(t.ch[0],[t.ch[1].sVar]+lsVars) + ')' )
-    elif '-lU' in t.ch[0].c:  return( '[' + translate(t.ch[0]) + '] (\\' + t.ch[0].sVar + ' ' + translate(t.ch[1],[t.ch[0].sVar]+lsVars) + ')' )
-    elif '-lU' in t.ch[1].c:  return( '[' + translate(t.ch[1]) + '] (\\' + t.ch[1].sVar + ' ' + translate(t.ch[0],[t.ch[1].sVar]+lsVars) + ')' )
-    elif '-lM' in t.ch[0].c:  return( translate(t.ch[0],[t.ch[1].sVar]) + ' ^ ' + translate(t.ch[1],lsVars) )
-    elif '-lM' in t.ch[1].c:  return( translate(t.ch[0],lsVars) + ' ^ ' + translate(t.ch[1],[t.ch[0].sVar]) )
-    elif '-lC' in t.ch[0].c:  return( translate(t.ch[0],lsVars) + ' ^ ' + translate(t.ch[1],lsVars) )
-    elif '-lC' in t.ch[1].c:  return( translate(t.ch[0],lsVars) + ' ^ ' + translate(t.ch[1],lsVars) )
-    else: print( 'ERROR: unhandled rule in ', t )
+    m = getNoloArity(t.ch[0].c)
+#    print( '********', t.ch[0].c, m, lsNolo[:m], lsNolo[m:] )
+    if   '-lA' in t.ch[0].c:  return( translate( t.ch[1], lsLoca + [translate(t.ch[0],[],lsNolo[:m])], lsNolo[m:] ) )
+    elif '-lA' in t.ch[1].c:  return( translate( t.ch[0], lsLoca + [translate(t.ch[1],[],lsNolo[m:])], lsNolo[:m] ) )
+    elif '-lU' in t.ch[0].c:  return( translate( t.ch[1], lsLoca + [translate(t.ch[0],lsLoca,lsNolo[:m])], lsNolo[m:] ) )
+    elif '-lU' in t.ch[1].c:  return( translate( t.ch[0], lsLoca + [translate(t.ch[1],lsLoca,lsNolo[m:])], lsNolo[:m] ) )
+    elif '-lI' in t.ch[0].c:  return( translate( t.ch[1], lsLoca + [translate(t.ch[0],[],['???'])], lsNolo ) )
+    elif '-lI' in t.ch[1].c:  return( translate( t.ch[0], lsLoca + [translate(t.ch[1],[],['???'])], lsNolo ) )
+    elif '-lM' in t.ch[0].c:  return( '(Mod ' + translate(t.ch[1],lsLoca,lsNolo[m:]) + ' ' + translate(t.ch[0],[],lsNolo[:m]) + ')' )
+    elif '-lM' in t.ch[1].c:  return( '(Mod ' + translate(t.ch[0],lsLoca,lsNolo[:m]) + ' ' + translate(t.ch[1],[],lsNolo[m:]) + ')' )
+    elif '-lC' in t.ch[0].c:  return( '(And ' + translate(t.ch[0],lsLoca,lsNolo) + ' ' + translate(t.ch[1],lsLoca,lsNolo) + ')' )
+    elif '-lC' in t.ch[1].c:  return( translate(t.ch[1],lsLoca,lsNolo) )
+    elif '-lG' in t.ch[0].c:  return( translate(t.ch[1],lsLoca,[translate(t.ch[0])] + lsNolo) )
+    elif '-lH' in t.ch[1].c:  return( translate(t.ch[0],lsLoca,[translate(t.ch[1])] + lsNolo) )
+    elif '-lR' in t.ch[0].c:  return( '(Mod ' + translate(t.ch[1],lsLoca,lsNolo) + ' ' + translate(t.ch[0],[],['(\\t \\u t x ^ u x)']) + ')' )
+    elif '-lR' in t.ch[1].c:  return( '(Mod ' + translate(t.ch[0],lsLoca,lsNolo) + ' ' + translate(t.ch[1],[],['(\\t \\u t x ^ u x)']) + ')' )
+    else: print( 'ERROR: unhandled rule from ' + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
   else: print( 'ERROR: too many children in ', t )
-#
-#  for st in t.ch:
-#    translate( st, lVars )
 
 for line in sys.stdin:
 
   if '!ARTICLE' in line:
     nSent = 0
-    print( line )
+    print( line[:-1] )
 
   else:
     t = tree.Tree()
@@ -79,7 +94,7 @@ for line in sys.stdin:
     nSent += 1
     nWord = 0
 
-    getScopes( t )
+#    getScopes( t )
     print( translate(t) )
 
 
