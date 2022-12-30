@@ -2,6 +2,17 @@ import sys
 import re
 import tree
 
+################################################################################
+##
+##  I. HELPER FUNCTIONS
+##
+################################################################################
+
+########################################
+#
+#  I1. get number of nonlocal arguments...
+#
+########################################
 
 def getNoloArity( cat ):
   cat = re.sub( '-x.*', '', cat )
@@ -9,6 +20,12 @@ def getNoloArity( cat ):
     cat = re.sub('\{[^\{\}]*\}','X',cat)
   return len(re.findall('-[ghirv]',cat))
 
+
+########################################
+#
+#  I2. get predicate (lemma) from word...
+#
+########################################
 
 def getLemma( c, w ):
   s = re.sub('-l.','',c) + ':' + w.lower()
@@ -28,10 +45,14 @@ def getLemma( c, w ):
   return eqns
 
 
+########################################
+#
+#  I3. set scopes and variable numbers...
+#
+########################################
+
 nSent = 0
 nWord = 0
-
-
 ScopesDown = {}
 def getScopes( t ):
   global nWord
@@ -41,16 +62,67 @@ def getScopes( t ):
   for st in t.ch:
     getScopes( st )
 
-  if   len(t.ch) == 0: t.sVar = 'x' + str(nWord)
-  elif len(t.ch) == 1: t.sVar = t.ch[0].sVar
-  elif len(t.ch) == 2: t.sVar = t.ch[0].sVar if '-l' not in t.ch[0].c else t.ch[1].sVar if '-l' not in t.ch[1].c else None
+  if   len(t.ch) == 0:
+    t.sVar = str(nWord)
+    nWord += 1
+  elif len(t.ch) == 1:
+    t.sVar = t.ch[0].sVar
+  elif len(t.ch) == 2:
+    t.sVar = t.ch[0].sVar if '-l' not in t.ch[0].c else t.ch[1].sVar if '-l' not in t.ch[1].c else None
   else: print( 'ERROR: too many children in ', t )
 
 
+########################################
+#
+#  I4. recursively translate tree to logic...
+#
+########################################
+
+def translate( t, lsNolo=[] ):
+
+  print( t )
+  print( '    ', lsNolo )
+
+  if len(t.ch) == 1 and len(t.ch[0].ch) == 0:
+#    nWord += 1
+    pred = getLemma( t.c, t.ch[0].c )
+    return( 'Ident' if pred == '' else pred )
+
+  elif len(t.ch) == 1:
+    if   '-lE' in t.ch[0].c and len(t.ch[0].c) >= len(t.c):  return( '(' + translate( t.ch[0], lsNolo[:-1] ) + ' ' + lsNolo[-1] + ')' )
+    elif '-lE' in t.ch[0].c and len(t.ch[0].c) <  len(t.c):  return( '(Mod ' + translate( t.ch[0], lsNolo[:-1] ) + ' ' + lsNolo[-1] + ')' )
+    elif '-lV' in t.ch[0].c:  return( '(Pasv x' + t.sVar + ' ' + translate(t.ch[0],['(Trace x'+t.sVar+')'] + lsNolo) + ')' )
+    elif '-lZ' in t.ch[0].c:  return( '(Prop ' + translate(t.ch[0],lsNolo) + ')' )
+    else: return( translate(t.ch[0],lsNolo) )
+
+  elif len(t.ch) == 2:
+    m = getNoloArity(t.ch[0].c)
+#    print( '********', t.ch[0].c, m, lsNolo[:m], lsNolo[m:] )
+    if   '-lD' in t.ch[0].c or t.ch[0].c[0] in ',;:.!?':  return( translate(t.ch[1],lsNolo) )
+    elif '-lD' in t.ch[1].c or t.ch[1].c[0] in ',;:.!?':  return( translate(t.ch[0],lsNolo) )
+    elif '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  return( '(' + translate( t.ch[1], lsNolo[m:] ) + ' ' + translate( t.ch[0], lsNolo[:m] ) + ')' )
+    elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  return( '(' + translate( t.ch[0], lsNolo[:m] ) + ' ' + translate( t.ch[1], lsNolo[m:] ) + ')' )
+    elif '-lI' in t.ch[0].c:  return( '(' + translate( t.ch[1], lsNolo[m:] ) + ' ' + translate( t.ch[0], ['(Trace x'+t.ch[1].sVar+')'] + lsNolo[:m] ) + ')' )
+    elif '-lI' in t.ch[1].c:  return( '(' + translate( t.ch[0], lsNolo[:m] ) + ' ' + translate( t.ch[1], ['(Trace x'+t.ch[0].sVar+')'] + lsNolo[m:] ) + ')' )
+    elif '-lM' in t.ch[0].c:  return( '(Mod ' + translate( t.ch[1], lsNolo[m:] ) + ' ' + translate( t.ch[0], lsNolo[:m] ) + ')' )
+    elif '-lM' in t.ch[1].c:  return( '(Mod ' + translate( t.ch[0], lsNolo[:m] ) + ' ' + translate( t.ch[1], lsNolo[m:] ) + ')' )
+    elif '-lC' in t.ch[0].c:  return( '(And ' + translate( t.ch[0], lsNolo ) + ' ' + translate( t.ch[1], lsNolo ) + ')' )
+    elif '-lC' in t.ch[1].c:  return( translate(t.ch[1],lsNolo) )
+    elif '-lG' in t.ch[0].c:  return( '(Store x' + t.sVar + ' ' + translate(t.ch[0]) + ' ' + translate(t.ch[1],['(Trace x'+t.sVar+')'] + lsNolo) )
+    elif '-lH' in t.ch[1].c:  return( '(Store x' + t.sVar + ' ' + translate(t.ch[1]) + ' ' + translate(t.ch[0],['(Trace x'+t.sVar+')'] + lsNolo) )
+    elif '-lR' in t.ch[0].c:  return( '(Mod ' + translate(t.ch[1],lsNolo) + ' ' + translate(t.ch[0],['(Trace x'+t.ch[1].sVar+')']) + ')' )
+    elif '-lR' in t.ch[1].c:  return( '(Mod ' + translate(t.ch[0],lsNolo) + ' ' + translate(t.ch[1],['(Trace x'+t.ch[0].sVar+')']) + ')' )
+#    elif '-x%|' == t.ch[0].c[-4:]:  return( translate( t.ch[1], lsLoca, lsNolo  ) )  ## conjunction punctuation.
+    else: print( 'ERROR: unhandled rule from ' + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
+  else: print( 'ERROR: too many children in ', t )
+
+
+'''
 def translate( t, lsLoca=[], lsNolo=[] ):
 #  global nSent
 #  global nWord
-#  print( t, lsLoca, lsNolo )
+  print( t )
+  print( '    ', lsLoca, lsNolo )
   if len(t.ch) == 1 and len(t.ch[0].ch) == 0:
 #    nWord += 1
     pred = getLemma( t.c, t.ch[0].c )
@@ -84,6 +156,13 @@ def translate( t, lsLoca=[], lsNolo=[] ):
     elif '-x%|' == t.ch[0].c[-4:]:  return( translate( t.ch[1], lsLoca, lsNolo  ) )  ## conjunction punctuation.
     else: print( 'ERROR: unhandled rule from ' + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
   else: print( 'ERROR: too many children in ', t )
+'''
+
+################################################################################
+##
+##  II. MAIN LOOP
+##
+################################################################################
 
 for line in sys.stdin:
 
@@ -98,7 +177,8 @@ for line in sys.stdin:
     nSent += 1
     nWord = 0
 
-#    getScopes( t )
+    print( '===========' )
+    getScopes( t )
     print( translate(t) )
 
 
