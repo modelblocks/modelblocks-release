@@ -2,6 +2,12 @@ import sys
 import re
 import tree
 
+VERBOSE = False    ## print debugging info.
+for a in sys.argv:
+  if a=='-d':
+    VERBOSE = True
+
+
 ################################################################################
 ##
 ##  I. HELPER FUNCTIONS
@@ -51,8 +57,8 @@ def getLemma( c, w ):
 #
 ########################################
 
-nSent = 0
-nWord = 0
+#nSent = 0
+#nWord = 0
 def getScopes( t, Scopes, nWord=0, aboveAllInSitu=True ):
 #  global nWord
 
@@ -64,8 +70,8 @@ def getScopes( t, Scopes, nWord=0, aboveAllInSitu=True ):
     nWord = getScopes( st, Scopes, nWord, aboveAllInSitu )
 
   if len(t.ch) == 0:
-    t.sVar = str(nWord)
     nWord += 1
+    t.sVar = str(nWord)
   elif len(t.ch) == 1:
     t.sVar = t.ch[0].sVar
   elif len(t.ch) == 2:
@@ -91,8 +97,8 @@ def getScopes( t, Scopes, nWord=0, aboveAllInSitu=True ):
 
 def translate( t, Scopes, lsNolo=[] ):
 
-  print( t )
-  print( '    ', lsNolo )
+  if VERBOSE: print( t )
+  if VERBOSE: print( '     non-locals: ', lsNolo )
 
 #  ## Raise...
 #  if '-lA' in t.c and t.sVar in Scopes:
@@ -119,14 +125,14 @@ def translate( t, Scopes, lsNolo=[] ):
   ## Binary branch...
   elif len(t.ch) == 2:
     m = getNoloArity(t.ch[0].c)
-#    print( '********', t.ch[0].c, m, lsNolo[:m], lsNolo[m:] )
+    print( '********', t.ch[0].c, t.ch[1].c, m, lsNolo[:m], lsNolo[m:] )
     ## Quant raising...
     if   '-lA' in t.ch[0].c and t.ch[0].sVar in Scopes:
       t.raised = [( translate( t.ch[0], Scopes, lsNolo[:m] ), t.ch[0].sVar )]
       output = '(' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ' (RaiseTrace x'+t.ch[0].sVar+'))'
     elif '-lA' in t.ch[1].c and t.ch[1].sVar in Scopes: 
-      t.raised = [( translate( t.ch[1], Scopes, lsNolo[:m] ), t.ch[1].sVar )]
-      output = '(' + translate( t.ch[0], Scopes, lsNolo[m:] ) + ' (RaiseTrace x'+t.ch[1].sVar+'))'
+      t.raised = [( translate( t.ch[1], Scopes, lsNolo[m:] ), t.ch[1].sVar )]
+      output = '(' + translate( t.ch[0], Scopes, lsNolo[:m] ) + ' (RaiseTrace x'+t.ch[1].sVar+'))'
     ## In-situ...
     elif '-lD' in t.ch[0].c or t.ch[0].c[0] in ',;:.!?':  output = translate( t.ch[1], Scopes, lsNolo )
     elif '-lD' in t.ch[1].c or t.ch[1].c[0] in ',;:.!?':  output = translate( t.ch[0], Scopes, lsNolo )
@@ -139,6 +145,7 @@ def translate( t, Scopes, lsNolo=[] ):
     elif '-lC' in t.ch[0].c:  output = '(And ' + translate( t.ch[0], Scopes, lsNolo ) + ' ' + translate( t.ch[1], Scopes, lsNolo ) + ')'
     elif '-lC' in t.ch[1].c:  output = translate( t.ch[1], Scopes, lsNolo )
     elif '-lG' in t.ch[0].c:  output = '(Store x' + t.ch[0].sVar + ' ' + translate( t.ch[0], Scopes, lsNolo[:m] ) + ' ' + translate( t.ch[1], Scopes, ['(Trace x'+t.ch[0].sVar+')'] + lsNolo[m:] )
+    elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = '(Store x' + t.ch[1].sVar + ' (SelfStore x' + t.ch[0].sVar + ' ' + translate( t.ch[1], Scopes, lsNolo[m:] + ['(Trace x'+t.ch[0].sVar+')'] ) + ') ' + translate( t.ch[0], Scopes, ['(Trace x'+t.ch[1].sVar+')'] + lsNolo[:m] )
     elif '-lH' in t.ch[1].c:  output = '(Store x' + t.ch[1].sVar + ' ' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ' ' + translate( t.ch[0], Scopes, ['(Trace x'+t.ch[1].sVar+')'] + lsNolo[:m] )
     elif '-lR' in t.ch[0].c:  output = '(Mod ' + translate( t.ch[1], Scopes, lsNolo ) + ' ' + translate( t.ch[0], Scopes, ['(Trace x'+t.ch[1].sVar+')'] ) + ')'
     elif '-lR' in t.ch[1].c:  output = '(Mod ' + translate( t.ch[0], Scopes, lsNolo ) + ' ' + translate( t.ch[1], Scopes, ['(Trace x'+t.ch[0].sVar+')'] ) + ')'
@@ -148,12 +155,12 @@ def translate( t, Scopes, lsNolo=[] ):
 
   else: print( 'ERROR: too many children in ', t )
 
-  print( '     raised: ', t.raised )
+  if VERBOSE: print( '     raised: ', t.raised )
   if t.aboveAllInSitu:
     while len(t.raised) > 0:
       l = [ r for r in t.raised if r[1] not in Scopes.values() ]
       if len(l) > 0:
-        print( 'killing', l[0] )
+        if VERBOSE: print( 'killing', l[0] )
         output = '(' + l[0][0] + ' (\\x' + l[0][1] + ' True) (\\x' + l[0][1] + ' ' + output + ')'
         del Scopes[ l[0][1] ]
         t.raised.remove( l[0] )
@@ -211,23 +218,25 @@ def translate( t, lsLoca=[], lsNolo=[] ):
 ##
 ################################################################################
 
-for line in sys.stdin:
+for nLine,line in enumerate( sys.stdin ):
 
   if '!ARTICLE' in line:
-    nSent = 0
-    print( line[:-1] )
+#    nSent = 0
+    if VERBOSE: print( line[:-1] )
 
   else:
     t = tree.Tree()
     t.read( line )
 
-    nSent += 1
-    nWord = 0
+#    nSent += 1
+#    nWord = 0
 
-    print( '===========' )
+    if VERBOSE: print( '===========' )
     Scopes = {}
+#    try:
     getScopes( t, Scopes )
-    print( 'Scopes', Scopes )
+    if VERBOSE: print( 'Scopes', Scopes )
     print( translate(t,Scopes) )
-
+#    except Exception as e:
+#      print( 'ERROR ' + str(e) + ' on input line ' + str(nLine) + ': ' + line ) 
 
