@@ -146,7 +146,8 @@ def translate( t, Scopes, lsNolo=[] ):
 #    elif '-x%|' == t.ch[0].c[-4:]:  output = translate( t.ch[1], lsLoca, lsNolo  ) )  ## conjunction punctuation.
     else: print( 'ERROR: unhandled rule from ' + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
 
-    t.raised += t.ch[0].raised + t.ch[1].raised
+    print( 'ready to die!', t )
+    t.raised += (t.ch[0].raised if hasattr(t.ch[0],'raised') else []) + (t.ch[1].raised if hasattr(t.ch[1],'raised') else [])
 
   else: print( 'ERROR: too many children in ', t )
 
