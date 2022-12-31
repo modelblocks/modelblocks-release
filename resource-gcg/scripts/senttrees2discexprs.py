@@ -53,16 +53,17 @@ def getLemma( c, w ):
 
 nSent = 0
 nWord = 0
-ScopesDown = {}
-def getScopes( t ):
-  global nWord
+def getScopes( t, Scopes, nWord=0, aboveAllInSitu=True ):
+#  global nWord
 
-  ScopesDown = {}
-
+  t.aboveAllInSitu = aboveAllInSitu
+  if len(t.ch) == 2 and aboveAllInSitu:
+    if '-lA' in t.ch[0].c: aboveAllInSitu = False
+    if '-lA' in t.ch[1].c: aboveAllInSitu = False
   for st in t.ch:
-    getScopes( st )
+    nWord = getScopes( st, Scopes, nWord, aboveAllInSitu )
 
-  if   len(t.ch) == 0:
+  if len(t.ch) == 0:
     t.sVar = str(nWord)
     nWord += 1
   elif len(t.ch) == 1:
@@ -71,6 +72,16 @@ def getScopes( t ):
     t.sVar = t.ch[0].sVar if '-l' not in t.ch[0].c else t.ch[1].sVar if '-l' not in t.ch[1].c else None
   else: print( 'ERROR: too many children in ', t )
 
+  if '-yQ' in t.c:
+    Scopes[t.sVar] = '0'
+  m = re.search( '-s([0-9][0-9])?([0-9][0-9])', t.c )
+  if m != None:
+    sDest = str(int(m.group(2)))
+    if sDest not in Scopes: Scopes[sDest] = '0'
+    Scopes[t.sVar] = sDest
+
+  return( nWord )
+
 
 ########################################
 #
@@ -78,43 +89,77 @@ def getScopes( t ):
 #
 ########################################
 
-def translate( t, lsNolo=[] ):
+def translate( t, Scopes, lsNolo=[] ):
 
   print( t )
   print( '    ', lsNolo )
 
+#  ## Raise...
+#  if '-lA' in t.c and t.sVar in Scopes:
+#    t.raised = [translate( t, Scopes,
+
+  t.raised = []
+
+  ## Pre-terminal branch...
   if len(t.ch) == 1 and len(t.ch[0].ch) == 0:
 #    nWord += 1
     pred = getLemma( t.c, t.ch[0].c )
-    return( 'Ident' if pred == '' else pred )
+    output = 'Ident' if pred == '' else pred
 
+  ## Unary branch...
   elif len(t.ch) == 1:
-    if   '-lE' in t.ch[0].c and len(t.ch[0].c) >= len(t.c):  return( '(' + translate( t.ch[0], lsNolo[:-1] ) + ' ' + lsNolo[-1] + ')' )
-    elif '-lE' in t.ch[0].c and len(t.ch[0].c) <  len(t.c):  return( '(Mod ' + translate( t.ch[0], lsNolo[:-1] ) + ' ' + lsNolo[-1] + ')' )
-    elif '-lV' in t.ch[0].c:  return( '(Pasv x' + t.sVar + ' ' + translate(t.ch[0],['(Trace x'+t.sVar+')'] + lsNolo) + ')' )
-    elif '-lZ' in t.ch[0].c:  return( '(Prop ' + translate(t.ch[0],lsNolo) + ')' )
-    else: return( translate(t.ch[0],lsNolo) )
+    if   '-lE' in t.ch[0].c and len(t.ch[0].c) >= len(t.c):  output = '(' + translate( t.ch[0], Scopes, lsNolo[:-1] ) + ' ' + lsNolo[-1] + ')'
+    elif '-lE' in t.ch[0].c and len(t.ch[0].c) <  len(t.c):  output = '(Mod ' + translate( t.ch[0], Scopes, lsNolo[:-1] ) + ' ' + lsNolo[-1] + ')'
+    elif '-lV' in t.ch[0].c:  output = '(Pasv x' + t.sVar + ' ' + translate( t.ch[0], Scopes, ['(Trace x'+t.sVar+')'] + lsNolo ) + ')'
+    elif '-lZ' in t.ch[0].c:  output = '(Prop ' + translate( t.ch[0], Scopes, lsNolo ) + ')'
+    else: output = translate( t.ch[0], Scopes, lsNolo )
+    t.raised = t.ch[0].raised
 
+  ## Binary branch...
   elif len(t.ch) == 2:
     m = getNoloArity(t.ch[0].c)
 #    print( '********', t.ch[0].c, m, lsNolo[:m], lsNolo[m:] )
-    if   '-lD' in t.ch[0].c or t.ch[0].c[0] in ',;:.!?':  return( translate(t.ch[1],lsNolo) )
-    elif '-lD' in t.ch[1].c or t.ch[1].c[0] in ',;:.!?':  return( translate(t.ch[0],lsNolo) )
-    elif '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  return( '(' + translate( t.ch[1], lsNolo[m:] ) + ' ' + translate( t.ch[0], lsNolo[:m] ) + ')' )
-    elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  return( '(' + translate( t.ch[0], lsNolo[:m] ) + ' ' + translate( t.ch[1], lsNolo[m:] ) + ')' )
-    elif '-lI' in t.ch[0].c:  return( '(SelfStore x' + t.ch[1].sVar + ' ' + translate( t.ch[1], lsNolo[m:] ) + ' ' + translate( t.ch[0], ['(Trace x'+t.ch[1].sVar+')'] + lsNolo[:m] ) + ')' )
-    elif '-lI' in t.ch[1].c:  return( '(SelfStore x' + t.ch[0].sVar + ' ' + translate( t.ch[0], lsNolo[:m] ) + ' ' + translate( t.ch[1], ['(Trace x'+t.ch[0].sVar+')'] + lsNolo[m:] ) + ')' )
-    elif '-lM' in t.ch[0].c:  return( '(Mod ' + translate( t.ch[1], lsNolo[m:] ) + ' ' + translate( t.ch[0], lsNolo[:m] ) + ')' )
-    elif '-lM' in t.ch[1].c:  return( '(Mod ' + translate( t.ch[0], lsNolo[:m] ) + ' ' + translate( t.ch[1], lsNolo[m:] ) + ')' )
-    elif '-lC' in t.ch[0].c:  return( '(And ' + translate( t.ch[0], lsNolo ) + ' ' + translate( t.ch[1], lsNolo ) + ')' )
-    elif '-lC' in t.ch[1].c:  return( translate(t.ch[1],lsNolo) )
-    elif '-lG' in t.ch[0].c:  return( '(Store x' + t.sVar + ' ' + translate(t.ch[0]) + ' ' + translate(t.ch[1],['(Trace x'+t.sVar+')'] + lsNolo) )
-    elif '-lH' in t.ch[1].c:  return( '(Store x' + t.sVar + ' ' + translate(t.ch[1]) + ' ' + translate(t.ch[0],['(Trace x'+t.sVar+')'] + lsNolo) )
-    elif '-lR' in t.ch[0].c:  return( '(Mod ' + translate(t.ch[1],lsNolo) + ' ' + translate(t.ch[0],['(Trace x'+t.ch[1].sVar+')']) + ')' )
-    elif '-lR' in t.ch[1].c:  return( '(Mod ' + translate(t.ch[0],lsNolo) + ' ' + translate(t.ch[1],['(Trace x'+t.ch[0].sVar+')']) + ')' )
-#    elif '-x%|' == t.ch[0].c[-4:]:  return( translate( t.ch[1], lsLoca, lsNolo  ) )  ## conjunction punctuation.
+
+    ## Quant raising...
+    if   '-lA' in t.ch[0].c and t.ch[0].sVar in Scopes:
+      t.raised = [( translate( t.ch[0], Scopes, lsNolo[:m] ), t.ch[0].sVar )]
+      output = '(' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ' (RaiseTrace x'+t.ch[0].sVar+'))'
+    elif '-lA' in t.ch[1].c and t.ch[1].sVar in Scopes: 
+      t.raised = [( translate( t.ch[1], Scopes, lsNolo[:m] ), t.ch[1].sVar )]
+      output = '(' + translate( t.ch[0], Scopes, lsNolo[m:] ) + ' (RaiseTrace x'+t.ch[1].sVar+'))'
+
+    ## In-situ...
+    if   '-lD' in t.ch[0].c or t.ch[0].c[0] in ',;:.!?':  output = translate( t.ch[1], Scopes, lsNolo )
+    elif '-lD' in t.ch[1].c or t.ch[1].c[0] in ',;:.!?':  output = translate( t.ch[0], Scopes, lsNolo )
+    elif '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  output = '(' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ' ' + translate( t.ch[0], Scopes, lsNolo[:m] ) + ')'
+    elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  output = '(' + translate( t.ch[0], Scopes, lsNolo[:m] ) + ' ' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ')'
+    elif '-lI' in t.ch[0].c:  output = '(' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ' (SelfStore x' + t.ch[1].sVar + ' ' + translate( t.ch[0], Scopes, ['(Trace x'+t.ch[1].sVar+')'] + lsNolo[:m] ) + '))'
+    elif '-lI' in t.ch[1].c:  output = '(' + translate( t.ch[0], Scopes, lsNolo[:m] ) + ' (SelfStore x' + t.ch[0].sVar + ' ' + translate( t.ch[1], Scopes, ['(Trace x'+t.ch[0].sVar+')'] + lsNolo[m:] ) + '))'
+    elif '-lM' in t.ch[0].c:  output = '(Mod ' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ' ' + translate( t.ch[0], Scopes, lsNolo[:m] ) + ')'
+    elif '-lM' in t.ch[1].c:  output = '(Mod ' + translate( t.ch[0], Scopes, lsNolo[:m] ) + ' ' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ')'
+    elif '-lC' in t.ch[0].c:  output = '(And ' + translate( t.ch[0], Scopes, lsNolo ) + ' ' + translate( t.ch[1], Scopes, lsNolo ) + ')'
+    elif '-lC' in t.ch[1].c:  output = translate( t.ch[1], Scopes, lsNolo )
+    elif '-lG' in t.ch[0].c:  output = '(Store x' + t.sVar + ' ' + translate( t.ch[0], Scopes, lsNolo[:m] ) + ' ' + translate( t.ch[1], Scopes, ['(Trace x'+t.ch[0].sVar+')'] + lsNolo[m:] )
+    elif '-lH' in t.ch[1].c:  output = '(Store x' + t.sVar + ' ' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ' ' + translate( t.ch[0], Scopes, ['(Trace x'+t.ch[1].sVar+')'] + lsNolo[:m] )
+    elif '-lR' in t.ch[0].c:  output = '(Mod ' + translate( t.ch[1], Scopes, lsNolo ) + ' ' + translate( t.ch[0], Scopes, ['(Trace x'+t.ch[1].sVar+')'] ) + ')'
+    elif '-lR' in t.ch[1].c:  output = '(Mod ' + translate( t.ch[0], Scopes, lsNolo ) + ' ' + translate( t.ch[1], Scopes, ['(Trace x'+t.ch[0].sVar+')'] ) + ')'
+#    elif '-x%|' == t.ch[0].c[-4:]:  output = translate( t.ch[1], lsLoca, lsNolo  ) )  ## conjunction punctuation.
     else: print( 'ERROR: unhandled rule from ' + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
+
+    t.raised += t.ch[0].raised + t.ch[1].raised
+
   else: print( 'ERROR: too many children in ', t )
+
+  if t.aboveAllInSitu:
+    while len(t.raised) > 0:
+      l = [ r for r in t.raised if r[1] not in Scopes.values() ]
+      if len(l) > 0:
+        print( 'killing', l[0] )
+        output = '(' + l[0][0] + ' (\\x' + l[0][1] + ' True) (\\x' + l[0][1] + ' ' + output + ')'
+        del Scopes[ l[0][1] ]
+        t.raised.remove( l[0] )
+
+  return( output )
 
 
 '''
@@ -178,7 +223,9 @@ for line in sys.stdin:
     nWord = 0
 
     print( '===========' )
-    getScopes( t )
-    print( translate(t) )
+    Scopes = {}
+    getScopes( t, Scopes )
+    print( 'Scopes', Scopes )
+    print( translate(t,Scopes) )
 
 
