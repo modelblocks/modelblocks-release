@@ -113,13 +113,13 @@ def translate( t, Scopes, lsNolo=[] ):
     elif '-lV' in t.ch[0].c:  output = '(Pasv x' + t.sVar + ' ' + translate( t.ch[0], Scopes, ['(Trace x'+t.sVar+')'] + lsNolo ) + ')'
     elif '-lZ' in t.ch[0].c:  output = '(Prop ' + translate( t.ch[0], Scopes, lsNolo ) + ')'
     else: output = translate( t.ch[0], Scopes, lsNolo )
+    ## Propagate child stores...
     t.raised = t.ch[0].raised
 
   ## Binary branch...
   elif len(t.ch) == 2:
     m = getNoloArity(t.ch[0].c)
 #    print( '********', t.ch[0].c, m, lsNolo[:m], lsNolo[m:] )
-
     ## Quant raising...
     if   '-lA' in t.ch[0].c and t.ch[0].sVar in Scopes:
       t.raised = [( translate( t.ch[0], Scopes, lsNolo[:m] ), t.ch[0].sVar )]
@@ -127,9 +127,8 @@ def translate( t, Scopes, lsNolo=[] ):
     elif '-lA' in t.ch[1].c and t.ch[1].sVar in Scopes: 
       t.raised = [( translate( t.ch[1], Scopes, lsNolo[:m] ), t.ch[1].sVar )]
       output = '(' + translate( t.ch[0], Scopes, lsNolo[m:] ) + ' (RaiseTrace x'+t.ch[1].sVar+'))'
-
     ## In-situ...
-    if   '-lD' in t.ch[0].c or t.ch[0].c[0] in ',;:.!?':  output = translate( t.ch[1], Scopes, lsNolo )
+    elif '-lD' in t.ch[0].c or t.ch[0].c[0] in ',;:.!?':  output = translate( t.ch[1], Scopes, lsNolo )
     elif '-lD' in t.ch[1].c or t.ch[1].c[0] in ',;:.!?':  output = translate( t.ch[0], Scopes, lsNolo )
     elif '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  output = '(' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ' ' + translate( t.ch[0], Scopes, lsNolo[:m] ) + ')'
     elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  output = '(' + translate( t.ch[0], Scopes, lsNolo[:m] ) + ' ' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ')'
@@ -139,18 +138,17 @@ def translate( t, Scopes, lsNolo=[] ):
     elif '-lM' in t.ch[1].c:  output = '(Mod ' + translate( t.ch[0], Scopes, lsNolo[:m] ) + ' ' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ')'
     elif '-lC' in t.ch[0].c:  output = '(And ' + translate( t.ch[0], Scopes, lsNolo ) + ' ' + translate( t.ch[1], Scopes, lsNolo ) + ')'
     elif '-lC' in t.ch[1].c:  output = translate( t.ch[1], Scopes, lsNolo )
-    elif '-lG' in t.ch[0].c:  output = '(Store x' + t.sVar + ' ' + translate( t.ch[0], Scopes, lsNolo[:m] ) + ' ' + translate( t.ch[1], Scopes, ['(Trace x'+t.ch[0].sVar+')'] + lsNolo[m:] )
-    elif '-lH' in t.ch[1].c:  output = '(Store x' + t.sVar + ' ' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ' ' + translate( t.ch[0], Scopes, ['(Trace x'+t.ch[1].sVar+')'] + lsNolo[:m] )
+    elif '-lG' in t.ch[0].c:  output = '(Store x' + t.ch[0].sVar + ' ' + translate( t.ch[0], Scopes, lsNolo[:m] ) + ' ' + translate( t.ch[1], Scopes, ['(Trace x'+t.ch[0].sVar+')'] + lsNolo[m:] )
+    elif '-lH' in t.ch[1].c:  output = '(Store x' + t.ch[1].sVar + ' ' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ' ' + translate( t.ch[0], Scopes, ['(Trace x'+t.ch[1].sVar+')'] + lsNolo[:m] )
     elif '-lR' in t.ch[0].c:  output = '(Mod ' + translate( t.ch[1], Scopes, lsNolo ) + ' ' + translate( t.ch[0], Scopes, ['(Trace x'+t.ch[1].sVar+')'] ) + ')'
     elif '-lR' in t.ch[1].c:  output = '(Mod ' + translate( t.ch[0], Scopes, lsNolo ) + ' ' + translate( t.ch[1], Scopes, ['(Trace x'+t.ch[0].sVar+')'] ) + ')'
-#    elif '-x%|' == t.ch[0].c[-4:]:  output = translate( t.ch[1], lsLoca, lsNolo  ) )  ## conjunction punctuation.
     else: print( 'ERROR: unhandled rule from ' + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
-
-    print( 'ready to die!', t )
+    ## Propagate child stores...
     t.raised += (t.ch[0].raised if hasattr(t.ch[0],'raised') else []) + (t.ch[1].raised if hasattr(t.ch[1],'raised') else [])
 
   else: print( 'ERROR: too many children in ', t )
 
+  print( '     raised: ', t.raised )
   if t.aboveAllInSitu:
     while len(t.raised) > 0:
       l = [ r for r in t.raised if r[1] not in Scopes.values() ]
@@ -159,6 +157,9 @@ def translate( t, Scopes, lsNolo=[] ):
         output = '(' + l[0][0] + ' (\\x' + l[0][1] + ' True) (\\x' + l[0][1] + ' ' + output + ')'
         del Scopes[ l[0][1] ]
         t.raised.remove( l[0] )
+      else:
+        print( 'ERROR: no raisers (', t.raised, ') allowed by scope list (', Scopes, ')' )
+        break
 
   return( output )
 
