@@ -125,12 +125,12 @@ def translate( t, Scopes, lsNolo=[] ):
   ## Binary branch...
   elif len(t.ch) == 2:
     m = getNoloArity(t.ch[0].c)
-    print( '********', t.ch[0].c, t.ch[1].c, m, lsNolo[:m], lsNolo[m:] )
+    if VERBOSE: print( '********', t.ch[0].c, t.ch[1].c, m, lsNolo[:m], lsNolo[m:] )
     ## Quant raising...
-    if   '-lA' in t.ch[0].c and t.ch[0].sVar in Scopes:
+    if   ('-lA' in t.ch[0].c or '-lU' in t.ch[0].c or '-lC' in t.ch[0].c) and t.ch[0].sVar in Scopes:
       t.raised = [( translate( t.ch[0], Scopes, lsNolo[:m] ), t.ch[0].sVar )]
       output = '(' + translate( t.ch[1], Scopes, lsNolo[m:] ) + ' (RaiseTrace x'+t.ch[0].sVar+'))'
-    elif '-lA' in t.ch[1].c and t.ch[1].sVar in Scopes: 
+    elif ('-lA' in t.ch[1].c or '-lU' in t.ch[1].c or '-lC' in t.ch[1].c) and t.ch[1].sVar in Scopes: 
       t.raised = [( translate( t.ch[1], Scopes, lsNolo[m:] ), t.ch[1].sVar )]
       output = '(' + translate( t.ch[0], Scopes, lsNolo[:m] ) + ' (RaiseTrace x'+t.ch[1].sVar+'))'
     ## In-situ...
@@ -165,7 +165,7 @@ def translate( t, Scopes, lsNolo=[] ):
         del Scopes[ l[0][1] ]
         t.raised.remove( l[0] )
       else:
-        print( 'ERROR: no raisers (', t.raised, ') allowed by scope list (', Scopes, ')' )
+        print( 'ERROR: noting in quant store', t.raised, 'allowed by scope list', Scopes )
         break
 
   return( output )
@@ -222,21 +222,24 @@ for nLine,line in enumerate( sys.stdin ):
 
   if '!ARTICLE' in line:
 #    nSent = 0
-    if VERBOSE: print( line[:-1] )
+    print( line[:-1] )
 
   else:
     t = tree.Tree()
     t.read( line )
+    print( line )
 
 #    nSent += 1
 #    nWord = 0
 
-    if VERBOSE: print( '===========' )
+    print( '----------' )
     Scopes = {}
 #    try:
     getScopes( t, Scopes )
     if VERBOSE: print( 'Scopes', Scopes )
     print( translate(t,Scopes) )
+    print( )
+    print( '==========' )
 #    except Exception as e:
 #      print( 'ERROR ' + str(e) + ' on input line ' + str(nLine) + ': ' + line ) 
 
