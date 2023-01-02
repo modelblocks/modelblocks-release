@@ -127,9 +127,13 @@ def translate( t, Scopes, Raised=[], lsNolo=[] ):
   if VERBOSE: print( ' '*indent, 'non-locals:', lsNolo )
   if VERBOSE: print( ' '*indent, 'raised:', Raised )
 
-  ## B.i. Quant raising...
+  ## B.i. Store quantifier...
   t.qstore = []
-  if t.sVar in Scopes and t.sVar not in Raised:
+  ## If can scope in situ, remove from scopes and translate further...
+  if t.sVar in Scopes and t.sVar not in Raised and t.sVar not in Scopes.values():
+    del Scopes[ t.sVar ]
+  ## If scoped and cannot be in situ, store...
+  if t.sVar in Scopes and t.sVar not in Raised and t.sVar in Scopes.values():
     markSites( t, Scopes )
     s = translate( t, Scopes, Raised+[t.sVar], lsNolo )
     t.qstore = [( t.qstore, s, t.sVar )]
@@ -164,7 +168,7 @@ def translate( t, Scopes, Raised=[], lsNolo=[] ):
     elif '-lI' in t.ch[1].c:  output = ( translate( t.ch[0], Scopes, Raised, lsNolo[:m] ), ( 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Raised, [( 'Trace', 'x'+t.ch[0].sVar )] + lsNolo[m:] ) ) )
     elif '-lM' in t.ch[0].c:  output = ( 'Mod', translate( t.ch[1], Scopes, Raised, lsNolo[m:] ), translate( t.ch[0], Scopes, Raised, lsNolo[:m] ) )
     elif '-lM' in t.ch[1].c:  output = ( 'Mod', translate( t.ch[0], Scopes, Raised, lsNolo[:m] ), translate( t.ch[1], Scopes, Raised, lsNolo[m:] ) )
-    elif '-lC' in t.ch[0].c:  output = ( 'And', translate( t.ch[0], Scopes, Raised, lsNolo ), translate( t.ch[1], Scopes, Raised, lsNolo ) )
+    elif '-lC' in t.ch[0].c:  output = ( 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Raised, lsNolo ), translate( t.ch[1], Scopes, Raised, lsNolo ) )
     elif '-lC' in t.ch[1].c:  output = translate( t.ch[1], Scopes, Raised, lsNolo )
     elif '-lG' in t.ch[0].c:  output = ( 'Store', 'x'+t.ch[0].sVar, translate( t.ch[0], Scopes, Raised, lsNolo[:m] ), translate( t.ch[1], Scopes, Raised, [( 'Trace', 'x'+t.ch[0].sVar )] + lsNolo[m:] ) )
     elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = ( 'Store', 'x'+t.ch[1].sVar, ( 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Raised, lsNolo[m:] + [('Trace', 'x'+t.ch[0].sVar )] ) ),
@@ -179,14 +183,15 @@ def translate( t, Scopes, Raised=[], lsNolo=[] ):
   ## B.v. Fail...
   else: print( '\nERROR: too many children in ', t )
 
-  ## C. Quant retrieval...
+  ## C. Retrieve quantifier...
+  if VERBOSE: print( ' '*indent, 'cat and scopes:', t.c, Scopes )
   if VERBOSE: print( ' '*indent, 'quant store: ', t.qstore )
   if t.aboveAllInSitu:
     while len(t.qstore) > 0:
       l = [ r for r in t.qstore if r[2] not in Scopes.values() ]
       if len(l) > 0:
-        if VERBOSE: print( ' '*indent, '\nretrieving', l[0] )
-        output = ( 'Requantify', l[0][1], ('\\x'+l[0][2], 'True' ),  ('\\x'+l[0][2], output, 'U', 'U') )
+        if VERBOSE: print( ' '*indent, 'retrieving:', l[0] )
+        output = ( '\\r'+l[0][2], '\\s'+l[0][2], l[0][1], ('\\x'+l[0][2], 'True' ),  ('\\x'+l[0][2], output, 'r'+l[0][2], 's'+l[0][2]) )
         del Scopes[ l[0][2] ]
         t.qstore += l[0][0]
         t.qstore.remove( l[0] )
@@ -194,7 +199,7 @@ def translate( t, Scopes, Raised=[], lsNolo=[] ):
 #        print( '\nERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
         break
 
-  if VERBOSE: print( ' '*indent, 'returning', output )
+  if VERBOSE: print( ' '*indent, 'returning:', output )
   indent -= 2
   return( output )
 
