@@ -64,11 +64,11 @@ def getLemma( c, w ):
 #
 ########################################
 
-def getScopes( t, Scopes, nWord=0 ):
+def setHeadScopeAnaph( t, Scopes, Anaphs, nWord=0 ):
 
   ## Recurse...
   for st in t.ch:
-    nWord = getScopes( st, Scopes, nWord )
+    nWord = setHeadScopeAnaph( st, Scopes, Anaphs, nWord )
 
   ## Account head words as done in gcg annotation guidelines, in order to track scope...
   if len(t.ch) == 0:
@@ -80,7 +80,7 @@ def getScopes( t, Scopes, nWord=0 ):
     t.sVar = t.ch[0].sVar if '-lU' in t.ch[0].c else t.ch[1].sVar if '-lU' in t.ch[1].c else t.ch[0].sVar if '-l' not in t.ch[0].c else t.ch[1].sVar if '-l' not in t.ch[1].c else None
   else: print( '\nERROR: too many children in ', t )
 
-  ## Store scopes...
+  ## Store scopes and anaphora...
   if '-yQ' in t.c:
     Scopes[t.sVar] = '0'
   m = re.search( '-s([0-9][0-9])?([0-9][0-9])', t.c )
@@ -88,6 +88,13 @@ def getScopes( t, Scopes, nWord=0 ):
     sDest = str(int(m.group(2)))
     if sDest not in Scopes: Scopes[sDest] = '0'
     Scopes[t.sVar] = sDest
+  m = re.search( '-[nm]([0-9][0-9])?([0-9][0-9])', t.c )
+  if m != None:
+    Anaphs[t.sVar] = str(int(m.group(2)))
+
+  t.bMax = True
+  for st in t.ch:
+    st.bMax = ( st.sVar!= t.sVar )
 
   return( nWord )
 
@@ -100,7 +107,7 @@ def getScopes( t, Scopes, nWord=0 ):
 
 def markSites( t, Scopes, aboveAllInSitu=True ):
 
-  ## Mark until argument...
+  ## Mark until un-scoped argument...
   t.aboveAllInSitu = aboveAllInSitu
   if len(t.ch) == 2 and aboveAllInSitu and getLocalArity(t.c)==0:
     if ('-lA' in t.ch[0].c or '-lU' in t.ch[0].c) and t.ch[0].sVar not in Scopes: aboveAllInSitu = False
@@ -118,41 +125,44 @@ def markSites( t, Scopes, aboveAllInSitu=True ):
 ########################################
 
 indent = 0
-def translate( t, Scopes, Raised=[], lsNolo=[] ):
+def translate( t, Scopes, Anaphs, Raised=[], lsNolo=[] ):
 
   ## 1. Verbose reporting...
   global indent
   indent += 2
-  if VERBOSE: print( ' '*indent, 'tree:', t )
+  if VERBOSE: print( ' '*indent, 'var,max,tree:', t.sVar, t.bMax, t )
   if VERBOSE: print( ' '*indent, 'non-locals:', lsNolo )
   if VERBOSE: print( ' '*indent, 'raised:', Raised )
 
   ## 2.a. Store quantifier...
   t.qstore = []
-  ## If can scope in situ, remove from scopes and translate further...
-  if t.sVar in Scopes and t.sVar not in Raised and t.sVar not in Scopes.values():
-    del Scopes[ t.sVar ]
+#  ## If can scope in situ, remove from scopes and carry on translating...
+##  if t.sVar in Scopes and t.sVar not in Raised and t.sVar not in Scopes.values():
+#  if t.bMax and t.sVar in Scopes and t.sVar not in Scopes.values():
+#    del Scopes[ t.sVar ]
   ## If scoped and cannot be in situ, store...
-  if t.sVar in Scopes and t.sVar not in Raised and t.sVar in Scopes.values():
+#  if t.sVar in Scopes and t.sVar not in Raised and t.sVar in Scopes.values():
+  if t.bMax and t.sVar in Scopes and t.sVar in Scopes.values():
     markSites( t, Scopes )
-    s = translate( t, Scopes, Raised+[t.sVar], lsNolo )
-    t.qstore = [( t.qstore, s, t.sVar )]
-    output = [ 'RaiseTrace', 'x'+t.sVar ]
-#    t.aboveAllInSitu = False
-
-  ## 2.b. Pre-terminal branch...
-  elif len(t.ch) == 1 and len(t.ch[0].ch) == 0:
+#    s = translate( t, Scopes, Anaphs, Raised+[t.sVar], lsNolo )
+#    t.qstore = [( t.qstore, s, t.sVar )]
+#    output = [ 'RaiseTrace', 'x'+t.sVar ]
+##    t.aboveAllInSitu = False
+#
+#  ## 2.b. Pre-terminal branch...
+#  elif len(t.ch) == 1 and len(t.ch[0].ch) == 0:
+  if len(t.ch) == 1 and len(t.ch[0].ch) == 0:
     pred = getLemma( t.c, t.ch[0].c )
     output = 'Ident' if pred == '' else '@'+pred
 
   ## 3.c. Unary branch...
   elif len(t.ch) == 1:
-    if   '-lE' in t.ch[0].c and len(t.ch[0].c) >= len(t.c):  output = [ translate( t.ch[0], Scopes, Raised, lsNolo[:-1] ), lsNolo[-1] ]
-    elif '-lE' in t.ch[0].c and len(t.ch[0].c) <  len(t.c):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Raised, lsNolo[:-1] ), lsNolo[-1] ]
-    elif '-lV' in t.ch[0].c:  output = [ 'Pasv', 'x'+ t.sVar, translate( t.ch[0], Scopes, Raised, [( 'Trace', 'x'+t.sVar )] + lsNolo ) ]
-    elif '-lZ' in t.ch[0].c:  output = [ 'Prop', translate( t.ch[0], Scopes, Raised, lsNolo ) ]
-    elif getLocalArity(t.c) < getLocalArity(t.ch[0].c): output = [ translate( t.ch[0], Scopes, Raised, lsNolo ), 'Some' ]
-    else: output = translate( t.ch[0], Scopes, Raised, lsNolo )
+    if   '-lE' in t.ch[0].c and len(t.ch[0].c) >= len(t.c):  output = [ translate( t.ch[0], Scopes, Anaphs, Raised, lsNolo[:-1] ), lsNolo[-1] ]
+    elif '-lE' in t.ch[0].c and len(t.ch[0].c) <  len(t.c):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, Raised, lsNolo[:-1] ), lsNolo[-1] ]
+    elif '-lV' in t.ch[0].c:  output = [ 'Pasv', 'x'+ t.sVar, translate( t.ch[0], Scopes, Anaphs, Raised, [( 'Trace', 'x'+t.sVar )] + lsNolo ) ]
+    elif '-lZ' in t.ch[0].c:  output = [ 'Prop', translate( t.ch[0], Scopes, Anaphs, Raised, lsNolo ) ]
+    elif getLocalArity(t.c) < getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, Raised, lsNolo ), 'Some' ]
+    else:  output = translate( t.ch[0], Scopes, Anaphs, Raised, lsNolo )
     ## Propagate child stores...
     t.qstore = t.ch[0].qstore
 
@@ -161,30 +171,38 @@ def translate( t, Scopes, Raised=[], lsNolo=[] ):
     m = getNoloArity(t.ch[0].c)
     if VERBOSE: print( ' '*indent, 'child cats and nolos:', t.ch[0].c, t.ch[1].c, m, lsNolo[:m], lsNolo[m:] )
     ## In-situ...
-    if   '-lD' in t.ch[0].c or t.ch[0].c[0] in ',;:.!?':  output = translate( t.ch[1], Scopes, Raised, lsNolo )
-    elif '-lD' in t.ch[1].c or t.ch[1].c[0] in ',;:.!?':  output = translate( t.ch[0], Scopes, Raised, lsNolo )
-    elif '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Raised, lsNolo[m:] ), translate( t.ch[0], Scopes, Raised, lsNolo[:m] ) ]
-    elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Raised, lsNolo[:m] ), translate( t.ch[1], Scopes, Raised, lsNolo[m:] ) ]
-    elif '-lI' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Raised, lsNolo[m:] ), [ 'SelfStore', 'x'+t.ch[1].sVar, translate( t.ch[0], Scopes, Raised, [( 'Trace', 'x'+t.ch[1].sVar )] + lsNolo[:m] ) ] ]
-    elif '-lI' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Raised, lsNolo[:m] ), [ 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Raised, [( 'Trace', 'x'+t.ch[0].sVar )] + lsNolo[m:] ) ] ]
-    elif '-lM' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Raised, lsNolo[m:] ), translate( t.ch[0], Scopes, Raised, lsNolo[:m] ) ]
-    elif '-lM' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Raised, lsNolo[:m] ), translate( t.ch[1], Scopes, Raised, lsNolo[m:] ) ]
-    elif '-lC' in t.ch[0].c:  output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Raised, lsNolo ), translate( t.ch[1], Scopes, Raised, lsNolo ) ]
-    elif '-lC' in t.ch[1].c:  output = translate( t.ch[1], Scopes, Raised, lsNolo )
-    elif '-lG' in t.ch[0].c:  output = [ 'Store', 'x'+t.ch[0].sVar, translate( t.ch[0], Scopes, Raised, lsNolo[:m] ), translate( t.ch[1], Scopes, Raised, [( 'Trace', 'x'+t.ch[0].sVar )] + lsNolo[m:] ) ]
-    elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = [ 'Store', 'x'+t.ch[1].sVar, [ 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Raised, lsNolo[m:] + [('Trace', 'x'+t.ch[0].sVar )] ) ],
-                                                                        translate( t.ch[0], Scopes, Raised, [('Trace', 'x'+t.ch[1].sVar )] + lsNolo[:m] ) ]
-    elif '-lH' in t.ch[1].c:  output = [ 'Store', 'x'+t.ch[1].sVar, translate( t.ch[1], Scopes, Raised, lsNolo[m:] ), translate( t.ch[0], Scopes, Raised, [( 'Trace', 'x'+t.ch[1].sVar )] + lsNolo[:m] ) ]
-    elif '-lR' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Raised, lsNolo ), translate( t.ch[0], Scopes, Raised, [( 'Trace', 'x'+t.ch[1].sVar )] ) ]
-    elif '-lR' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Raised, lsNolo ), translate( t.ch[1], Scopes, Raised, [( 'Trace', 'x'+t.ch[0].sVar )] ) ]
-    else: print( '\nERROR: unhandled rule from ' + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
+    if   '-lD' in t.ch[0].c or t.ch[0].c[0] in ',;:.!?':  output = translate( t.ch[1], Scopes, Anaphs, Raised, lsNolo )
+    elif '-lD' in t.ch[1].c or t.ch[1].c[0] in ',;:.!?':  output = translate( t.ch[0], Scopes, Anaphs, Raised, lsNolo )
+    elif '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, Raised, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, Raised, lsNolo[:m] ) ]
+    elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, Raised, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, Raised, lsNolo[m:] ) ]
+    elif '-lI' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, Raised, lsNolo[m:] ), [ 'SelfStore', 'x'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, Raised, [( 'Trace', 'x'+t.ch[1].sVar )] + lsNolo[:m] ) ] ]
+    elif '-lI' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, Raised, lsNolo[:m] ), [ 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, Raised, [( 'Trace', 'x'+t.ch[0].sVar )] + lsNolo[m:] ) ] ]
+    elif '-lM' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, Raised, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, Raised, lsNolo[:m] ) ]
+    elif '-lM' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, Raised, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, Raised, lsNolo[m:] ) ]
+    elif '-lC' in t.ch[0].c:  output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, Raised, lsNolo ), translate( t.ch[1], Scopes, Anaphs, Raised, lsNolo ) ]
+    elif '-lC' in t.ch[1].c:  output = translate( t.ch[1], Scopes, Anaphs, Raised, lsNolo )
+    elif '-lG' in t.ch[0].c:  output = [ 'Store', 'x'+t.ch[0].sVar, translate( t.ch[0], Scopes, Anaphs, Raised, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, Raised, [( 'Trace', 'x'+t.ch[0].sVar )] + lsNolo[m:] ) ]
+    elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = [ 'Store', 'x'+t.ch[1].sVar, [ 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, Raised, lsNolo[m:] + [('Trace', 'x'+t.ch[0].sVar )] ) ],
+                                                                        translate( t.ch[0], Scopes, Anaphs, Raised, [('Trace', 'x'+t.ch[1].sVar )] + lsNolo[:m] ) ]
+    elif '-lH' in t.ch[1].c:  output = [ 'Store', 'x'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, Raised, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, Raised, [( 'Trace', 'x'+t.ch[1].sVar )] + lsNolo[:m] ) ]
+    elif '-lR' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, Raised, lsNolo ), translate( t.ch[0], Scopes, Anaphs, Raised, [( 'Trace', 'x'+t.ch[1].sVar )] ) ]
+    elif '-lR' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, Raised, lsNolo ), translate( t.ch[1], Scopes, Anaphs, Raised, [( 'Trace', 'x'+t.ch[0].sVar )] ) ]
+    else:  print( '\nERROR: unhandled rule from ' + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
     ## Propagate child stores...
     t.qstore += (t.ch[0].qstore if hasattr(t.ch[0],'qstore') else []) + (t.ch[1].qstore if hasattr(t.ch[1],'qstore') else [])
 
   ## 2.e. Fail...
   else: print( '\nERROR: too many children in ', t )
 
-  ## 3. Retrieve quantifier...
+  '''
+  ## 3. Mark anaphora...
+  if t.bMax and t.sVar in Anaphs:
+    output = [ 'Anaphor', t.sVar, output ]
+  if t.bMax and t.sVar in Anaphs.values():
+    output = [ 'Antecedent', t.sVar, output ]
+  '''
+
+  ## 4. Retrieve quantifier...
   if VERBOSE: print( ' '*indent, 'cat and scopes:', t.c, Scopes )
   if VERBOSE: print( ' '*indent, 'quant store: ', t.qstore )
   if t.aboveAllInSitu:
@@ -198,6 +216,14 @@ def translate( t, Scopes, Raised=[], lsNolo=[] ):
         t.qstore.remove( l[0] )
       else:
         break
+
+  ## 5. If scoped and cannot be in situ, store...
+  ## If can scope in situ, remove from scopes and carry on translating...
+  if t.bMax and t.sVar in Scopes and t.sVar not in Scopes.values():
+    del Scopes[ t.sVar ]
+  if t.bMax and t.sVar in Scopes and t.sVar in Scopes.values():
+    t.qstore = [( t.qstore, output, t.sVar )]
+    output = [ 'RaiseTrace', 'x'+t.sVar ]
 
   if VERBOSE: print( ' '*indent, 'returning:', output )
   indent -= 2
@@ -312,27 +338,27 @@ def simplify( t ):
 ################################################################################
 
 nSent = None
+Anaphs = None
 for nLine,line in enumerate( sys.stdin ):
 
   print( '========== line ' + str(nLine) + ' ==========' )
+  print( line[:-1] )
 
   if '!ARTICLE' in line:
     nSent = 0
-    print( line[:-1] )
+    Anaphs = {}
 
   else:
+    nSent += 1
+    Scopes = {}
     t = tree.Tree()
     t.read( line )
-    print( line )
-
-    nSent += 1
 
     print( '----------' )
-    Scopes = {}
-    getScopes( t, Scopes )
+    setHeadScopeAnaph( t, Scopes, Anaphs )
     markSites( t, Scopes )
     if VERBOSE: print( 'Scopes', Scopes )
-    out = translate(t,Scopes)
+    out = translate( t, Scopes, Anaphs )
     if t.qstore != []: print( '\nERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
     print( out )
 
