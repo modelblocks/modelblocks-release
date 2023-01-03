@@ -16,7 +16,7 @@ for a in sys.argv:
 
 ########################################
 #
-#  I1. get number of nonlocal arguments...
+#  IA. get number of nonlocal arguments...
 #
 ########################################
 
@@ -36,7 +36,7 @@ def getLocalArity( cat ):
 
 ########################################
 #
-#  I2. get predicate (lemma) from word...
+#  IB. get predicate (lemma) from word...
 #
 ########################################
 
@@ -60,7 +60,7 @@ def getLemma( c, w ):
 
 ########################################
 #
-#  I3. set scopes and variable numbers...
+#  IC. set scopes and variable numbers...
 #
 ########################################
 
@@ -94,7 +94,7 @@ def getScopes( t, Scopes, nWord=0 ):
 
 ########################################
 #
-#  I4. mark sites for raising above all in-situs...
+#  ID. mark sites for raising above all in-situs...
 #
 ########################################
 
@@ -113,21 +113,21 @@ def markSites( t, Scopes, aboveAllInSitu=True ):
 
 ########################################
 #
-#  I5. recursively translate tree to logic...
+#  IE. recursively translate tree to logic...
 #
 ########################################
 
 indent = 0
 def translate( t, Scopes, Raised=[], lsNolo=[] ):
 
-  ## A. Verbose reporting...
+  ## 1. Verbose reporting...
   global indent
   indent += 2
   if VERBOSE: print( ' '*indent, 'tree:', t )
   if VERBOSE: print( ' '*indent, 'non-locals:', lsNolo )
   if VERBOSE: print( ' '*indent, 'raised:', Raised )
 
-  ## B.i. Store quantifier...
+  ## 2.a. Store quantifier...
   t.qstore = []
   ## If can scope in situ, remove from scopes and translate further...
   if t.sVar in Scopes and t.sVar not in Raised and t.sVar not in Scopes.values():
@@ -140,12 +140,12 @@ def translate( t, Scopes, Raised=[], lsNolo=[] ):
     output = [ 'RaiseTrace', 'x'+t.sVar ]
 #    t.aboveAllInSitu = False
 
-  ## B.ii. Pre-terminal branch...
+  ## 2.b. Pre-terminal branch...
   elif len(t.ch) == 1 and len(t.ch[0].ch) == 0:
     pred = getLemma( t.c, t.ch[0].c )
     output = 'Ident' if pred == '' else '@'+pred
 
-  ## B.iii. Unary branch...
+  ## 3.c. Unary branch...
   elif len(t.ch) == 1:
     if   '-lE' in t.ch[0].c and len(t.ch[0].c) >= len(t.c):  output = [ translate( t.ch[0], Scopes, Raised, lsNolo[:-1] ), lsNolo[-1] ]
     elif '-lE' in t.ch[0].c and len(t.ch[0].c) <  len(t.c):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Raised, lsNolo[:-1] ), lsNolo[-1] ]
@@ -156,7 +156,7 @@ def translate( t, Scopes, Raised=[], lsNolo=[] ):
     ## Propagate child stores...
     t.qstore = t.ch[0].qstore
 
-  ## B.iv. Binary branch...
+  ## 2.d. Binary branch...
   elif len(t.ch) == 2:
     m = getNoloArity(t.ch[0].c)
     if VERBOSE: print( ' '*indent, 'child cats and nolos:', t.ch[0].c, t.ch[1].c, m, lsNolo[:m], lsNolo[m:] )
@@ -181,10 +181,10 @@ def translate( t, Scopes, Raised=[], lsNolo=[] ):
     ## Propagate child stores...
     t.qstore += (t.ch[0].qstore if hasattr(t.ch[0],'qstore') else []) + (t.ch[1].qstore if hasattr(t.ch[1],'qstore') else [])
 
-  ## B.v. Fail...
+  ## 2.e. Fail...
   else: print( '\nERROR: too many children in ', t )
 
-  ## C. Retrieve quantifier...
+  ## 3. Retrieve quantifier...
   if VERBOSE: print( ' '*indent, 'cat and scopes:', t.c, Scopes )
   if VERBOSE: print( ' '*indent, 'quant store: ', t.qstore )
   if t.aboveAllInSitu:
@@ -211,35 +211,32 @@ def translate( t, Scopes, Raised=[], lsNolo=[] ):
 ##
 ################################################################################
 
-'''
-def unpack( t ):
-  print( 'trying', t )
-  if isinstance(t,str): return t
-  elif t[0] == 'And1': return( ( '\\q', '\\r', '\\s', ('^', ( unpack(t[1]), 'q', 'r', 's' ), ( unpack(t[2]), 'q', 'r', 's' ) ) ) )
-  elif t[0] == 'And0': return( ( '\\q', '\\r', ('^', ( unpack(t[1]), 'r', 's' ), ( unpack(t[2]), 'r', 's' ) ) ) )
-  elif t[0] == 'Mod1': return( ( '\\q', '\\r', '\\s', ( unpack(t[1]), 'q', ( '\\x', ( '^', ('r', 'x' ), ( unpack(t[2]), ( '\\t', '\\u', '^', ('t','x'), ('u','x') ), 'U', 'U' ) ) ), 's' ) ) )
-  elif t[0] == 'Mod0': return( ( '\\r', '\\s', ( unpack(t[1]), ( '\\x', ( '^', ('r', 'x' ), ( unpack(t[2]), ( '\\t', '\\u', '^', ('t','x'), ('u','x') ), 'U', 'U' ) ) ), 's' ) ) )
-  elif t[0][0]=='@' and ':' in t[0] and getLocalArity( t[0].split(':')[0] ) == 1: return( ( ('\\r', '\\s', unpack(t[1]), 'U', ( '\\x', 'Some', ( '\\e', '^', ( unpack(t[0][1:]), 'x', 'e' ), ('r','e') ), 's' ) ) ) )
-  elif t[0][0]=='@' and ':' in t[0] and getLocalArity( t[0].split(':')[0] ) == 2: return( ( ('\\r', '\\s', unpack(t[2]), 'U', ( '\\x', unpack(t[1]), 'U', ( '\\y', 'Some', ( '\\e', '^', ( unpack(t[0][1:]), 'e', 'x', 'y' ), ('r','e') ), 's' ) ) ) ) )
-  elif len(t)==4: return( ( unpack(t[0]), unpack(t[1]), unpack(t[2]), unpack(t[3]) ) )
-  elif len(t)==3: return( ( unpack(t[0]), unpack(t[1]), unpack(t[2]) ) )
-  elif len(t)==2: return( ( unpack(t[0]), unpack(t[1]) ) )
-  else: print( 'ERROR: cannot unpack: ' + str(t) )
-'''
+########################################
+#
+#  IIA. Replace constants with lambda functions...
+#
+########################################
 
+Univ = [ '\\z', 'True' ]
 
 def unpack( t ):
   if not isinstance(t,str):
     return([ unpack(st) for st in t ])
-  elif t=='And0': return( [ '\\f', '\\g',        '\\r', '\\s', ['^', [ 'g', 'r', 's' ],      [ 'f', 'r', 's' ] ] ] )
+  elif t=='And0': return( [ '\\f', '\\g',        '\\r', '\\s', ['^', [ 'g',      'r', 's' ], [ 'f',      'r', 's' ] ] ] )
   elif t=='And1': return( [ '\\f', '\\g', '\\q', '\\r', '\\s', ['^', [ 'g', 'q', 'r', 's' ], [ 'f', 'q', 'r', 's' ] ] ] )
-  elif t=='Mod0': return( [ '\\f', '\\g',        '\\r', '\\s', [ 'f',      [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], 'U', 'U' ] ] ], 's' ] ] )
-  elif t=='Mod1': return( [ '\\f', '\\g', '\\q', '\\r', '\\s', [ 'f', 'q', [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], 'U', 'U' ] ] ], 's' ] ] )
-  elif t.split(':')[0] == '@N-b{N-aD}': return( [ '\\q', '\\r', '\\s', t[1:], [ '\\x', '^', ['r','x'], ['q',['\\xx','Equal','xx','x'],'U'] ], 's' ] )
-  elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 1: return( [        '\\q', '\\r', '\\s', 'q', 'U', [ '\\x',                    'Some', [ '\\e', '^', [t[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
-  elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 2: return( [ '\\p', '\\q', '\\r', '\\s', 'q', 'U', [ '\\x', 'p', 'U', [ '\\y', 'Some', [ '\\e', '^', [t[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
+  elif t=='Mod0': return( [ '\\f', '\\g',        '\\r', '\\s', [ 'f',      [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ] ], 's' ] ] )
+  elif t=='Mod1': return( [ '\\f', '\\g', '\\q', '\\r', '\\s', [ 'f', 'q', [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ] ], 's' ] ] )
+  elif t.split(':')[0] == '@N-b{N-aD}': return( [ '\\f', '\\r', '\\s', t[1:], [ '\\x', '^', ['r','x'], ['f','Some',['\\xx','Equal','xx','x'],Univ] ], 's' ] )
+  elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 1: return( [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x',                     'Some', [ '\\e', '^', [t[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
+  elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 2: return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'Some', [ '\\e', '^', [t[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
   else: return( t )
 
+
+########################################
+#
+#  IIB. Replace in beta reduce...
+#
+########################################
 
 def replace( t, old, new ):
   if VERBOSE: print( 'replacing:', old, 'with', new, 'in', t )
@@ -252,6 +249,12 @@ def replace( t, old, new ):
   else:
     return( [ replace( st, old, new ) for st in t ] )
 
+
+########################################
+#
+#  IIC. Beta reduce...
+#
+########################################
 
 def betaReduce( t ):
   if VERBOSE: print( 'reducing:', t )
@@ -274,27 +277,6 @@ def betaReduce( t ):
     t[:] = t[0]
     betaReduce( t )
 
-'''
-def binarize( t ):
-  if isinstance(t,str): return( t )
-  elif len(t)==2: return( [ binarize(t[0]), binarize(t[1]) ] )
-  elif t[0][0]=='\\': return( [ binarize(t[0]), binarize(t[1:]) ] )
-  else: return( [ binarize(t[:-1]), binarize(t[-1]) ] )
-
-
-def replace( t, old, new ):
-  if t == old: return( new )
-  elif isinstance(t,str): return( t )
-  elif '\\' == t[0][0] and t[0][1:] == old: return( [ t[0], t[1] ] )
-  else: return( [ replace(t[0],old,new), replace(t[1],old,new) ] )
-
-
-def reduce( t ):
-  if isinstance(t,str): return( t )
-  elif isinstance(t[0],str): return( [ t[0], reduce(t[1]) ] )
-  elif t[0][0][0] == '\\': return( reduce( replace( t[0][1], t[0][0][1:], t[1] ) ) )
-  else: return( [ reduce(t[0]), reduce(t[1]) ] )
-'''
 
 ################################################################################
 ##
