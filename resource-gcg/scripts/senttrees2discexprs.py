@@ -226,6 +226,7 @@ def unpack( t ):
   elif t=='And1': return( [ '\\f', '\\g', '\\q', '\\r', '\\s', ['^', [ 'g', 'q', 'r', 's' ], [ 'f', 'q', 'r', 's' ] ] ] )
   elif t=='Mod0': return( [ '\\f', '\\g',        '\\r', '\\s', [ 'f',      [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ] ], 's' ] ] )
   elif t=='Mod1': return( [ '\\f', '\\g', '\\q', '\\r', '\\s', [ 'f', 'q', [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ] ], 's' ] ] )
+  elif t.split(':')[0] == '@N-aD': return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z', '^', [ 'Some', [ '\\e', t[1:],'e','z' ], Univ ], ['r','z'] ], 's' ] )
   elif t.split(':')[0] == '@N-b{N-aD}': return( [ '\\f', '\\r', '\\s', t[1:], [ '\\x', '^', ['r','x'], ['f','Some',['\\xx','Equal','xx','x'],Univ] ], 's' ] )
   elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 1: return( [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x',                     'Some', [ '\\e', '^', [t[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
   elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 2: return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'Some', [ '\\e', '^', [t[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
@@ -239,7 +240,7 @@ def unpack( t ):
 ########################################
 
 def replace( t, old, new ):
-  if VERBOSE: print( 'replacing:', old, 'with', new, 'in', t )
+#  if VERBOSE: print( 'replacing:', old, 'with', new, 'in', t )
   if t == old:
     return( new )
   elif isinstance(t,str):
@@ -308,7 +309,7 @@ for nLine,line in enumerate( sys.stdin ):
     out = translate(t,Scopes)
     if t.qstore != []: print( '\nERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
     print( out )
-    out = unpack(out)
+    out = [ unpack(out), Univ, Univ ]
     betaReduce( out )
     print( out )
     print( )
