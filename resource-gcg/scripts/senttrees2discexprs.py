@@ -235,8 +235,9 @@ def unpack( t ):
   elif t=='And1': return( [ '\\f', '\\g', '\\q', '\\r', '\\s', ['^', [ 'g', 'q', 'r', 's' ], [ 'f', 'q', 'r', 's' ] ] ] )
   elif t=='Mod0': return( [ '\\f', '\\g',        '\\r', '\\s', [ 'f',      [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], 'U', 'U' ] ] ], 's' ] ] )
   elif t=='Mod1': return( [ '\\f', '\\g', '\\q', '\\r', '\\s', [ 'f', 'q', [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], 'U', 'U' ] ] ], 's' ] ] )
-  elif t[0]=='@' and getLocalArity( t[1:].split(':')[0] ) == 1: return( [        '\\q', '\\r', '\\s', 'q', 'U', [ '\\x',                    'Some', [ '\\e', '^', [t[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
-  elif t[0]=='@' and getLocalArity( t[1:].split(':')[0] ) == 2: return( [ '\\p', '\\q', '\\r', '\\s', 'q', 'U', [ '\\x', 'p', 'U', [ '\\y', 'Some', [ '\\e', '^', [t[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
+  elif t.split(':')[0] == '@N-b{N-aD}': return( [ '\\q', '\\r', '\\s', t[1:], [ '\\x', '^', ['r','x'], ['q',['\\xx','Equal','xx','x'],'U'] ], 's' ] )
+  elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 1: return( [        '\\q', '\\r', '\\s', 'q', 'U', [ '\\x',                    'Some', [ '\\e', '^', [t[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
+  elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 2: return( [ '\\p', '\\q', '\\r', '\\s', 'q', 'U', [ '\\x', 'p', 'U', [ '\\y', 'Some', [ '\\e', '^', [t[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
   else: return( t )
 
 
@@ -252,32 +253,26 @@ def replace( t, old, new ):
     return( [ replace( st, old, new ) for st in t ] )
 
 
-def reduce( t ):
+def betaReduce( t ):
   if VERBOSE: print( 'reducing:', t )
   ## If string, skip...
   if isinstance(t,str):
     return
-  ## If initial term is string, reduce children...
+  ## If initial term is string, betaReduce children...
   elif isinstance(t[0],str):
     for st in t:
-      reduce( st )
+      betaReduce( st )
   ## Flatten initial application... 
   elif t[0][0][0]!='\\':
-    u = t[0] + t[1:]
-    t.clear()
-    t.extend(u)
-    reduce( t )
+    t[:] = t[0] + t[1:]
+    betaReduce( t )
   ## Substitute second term for initial lambda variable of initial (abstraction) term...
   elif len(t) >= 2:
-    u = [ replace( t[0][1:], t[0][0][1:], t[1] ) ] + t[2:]
-    t.clear()
-    t.extend(u)
-    reduce( t )
+    t[:] = [ replace( t[0][1:], t[0][0][1:], t[1] ) ] + t[2:]
+    betaReduce( t )
   else:
-    u = t[0]
-    t.clear()
-    t.extend(u)
-    reduce( t )
+    t[:] = t[0]
+    betaReduce( t )
 
 '''
 def binarize( t ):
@@ -331,10 +326,8 @@ for nLine,line in enumerate( sys.stdin ):
     out = translate(t,Scopes)
     if t.qstore != []: print( '\nERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
     print( out )
-#    print( unpack(out) )
-#    print( binarize(out) )
-    out = unpack( out )
-    reduce( out )
+    out = unpack(out)
+    betaReduce( out )
     print( out )
     print( )
 
