@@ -16,7 +16,7 @@ for a in sys.argv:
 
 ########################################
 #
-#  IA. get number of nonlocal arguments...
+#  IA. get number of local/nonlocal arguments...
 #
 ########################################
 
@@ -197,7 +197,6 @@ def translate( t, Scopes, Raised=[], lsNolo=[] ):
         t.qstore += l[0][0]
         t.qstore.remove( l[0] )
       else:
-#        print( '\nERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
         break
 
   if VERBOSE: print( ' '*indent, 'returning:', output )
@@ -220,17 +219,19 @@ def translate( t, Scopes, Raised=[], lsNolo=[] ):
 Univ = [ '\\z', 'True' ]
 
 def unpack( t ):
-  if not isinstance(t,str):
-    return([ unpack(st) for st in t ])
-  elif t=='And0': return( [ '\\f', '\\g',        '\\r', '\\s', ['^', [ 'g',      'r', 's' ], [ 'f',      'r', 's' ] ] ] )
-  elif t=='And1': return( [ '\\f', '\\g', '\\q', '\\r', '\\s', ['^', [ 'g', 'q', 'r', 's' ], [ 'f', 'q', 'r', 's' ] ] ] )
-  elif t=='Mod0': return( [ '\\f', '\\g',        '\\r', '\\s', [ 'f',      [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ] ], 's' ] ] )
-  elif t=='Mod1': return( [ '\\f', '\\g', '\\q', '\\r', '\\s', [ 'f', 'q', [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ] ], 's' ] ] )
-  elif t.split(':')[0] == '@N-aD': return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z', '^', [ 'Some', [ '\\e', t[1:],'e','z' ], Univ ], ['r','z'] ], 's' ] )
-  elif t.split(':')[0] == '@N-b{N-aD}': return( [ '\\f', '\\r', '\\s', t[1:], [ '\\x', '^', ['r','x'], ['f','Some',['\\xx','Equal','xx','x'],Univ] ], 's' ] )
-  elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 1: return( [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x',                     'Some', [ '\\e', '^', [t[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
-  elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 2: return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'Some', [ '\\e', '^', [t[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
-  else: return( t )
+  if not isinstance(t,str):  return([ unpack(st) for st in t ])
+  elif t=='And0':  return( [ '\\f', '\\g',        '\\r', '\\s', ['^', [ 'g',      'r', 's' ], [ 'f',      'r', 's' ] ] ] )
+  elif t=='And1':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', ['^', [ 'g', 'q', 'r', 's' ], [ 'f', 'q', 'r', 's' ] ] ] )
+  elif t=='Mod0':  return( [ '\\f', '\\g',        '\\r', '\\s', [ 'f',      [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ] ], 's' ] ] )
+  elif t=='Mod1':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', [ 'f', 'q', [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ] ], 's' ] ] )
+  elif t=='Prop':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', [ 'p', Univ, ['\\y','Equal','y','x'] ] ] ] )
+#  elif t=='Prop':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', '^', [ 'p', Univ, ['\\y','Equal','y','x'] ], ['r','x'] ] ] )
+  elif t.split(':')[0] == '@N-aD':  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z', '^', [ 'Some', [ '\\e', t[1:],'e','z' ], Univ ], ['r','z'] ], 's' ] )
+  elif t.split(':')[0] == '@N-b{N-aD}':  return( [ '\\f', '\\r', '\\s', t[1:], [ '\\x', '^', ['r','x'], ['f','Some',['\\xx','Equal','xx','x'],Univ] ], 's' ] )
+  elif t.split(':')[0] == '@B-aN-b{A-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [t[1:],'e'], ['r','e'] ], 's' ] )
+  elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 1:  return( [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x',                     'Some', [ '\\e', '^', [t[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
+  elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 2:  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'Some', [ '\\e', '^', [t[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
+  else:  return( t )
 
 
 ########################################
@@ -279,6 +280,31 @@ def betaReduce( t ):
     betaReduce( t )
 
 
+########################################
+#
+#  IID. Conjunction elimination...
+#
+########################################
+
+def simplify( t ):
+  if isinstance(t,str):  return
+  if len(t)==3 and t[0]=='^' and t[1]==['True']:
+    t[:] = t[2]
+    simplify( t )
+  elif len(t)==3 and t[0]=='^' and t[2]==['True']:
+    t[:] = t[1]
+    simplify( t )
+  elif len(t)==4 and t[0][0]=='\\' and t[1]=='^' and t[2]==['True']:
+    t[:] = [ t[0], t[3] ]
+    simplify( t )
+  elif len(t)==4 and t[0][0]=='\\' and t[1]=='^' and t[3]==['True']:
+    t[:] = [ t[0], t[2] ]
+    simplify( t )
+  else:
+    for st in t:
+      simplify( st )
+
+
 ################################################################################
 ##
 ##  III. MAIN LOOP
@@ -309,8 +335,10 @@ for nLine,line in enumerate( sys.stdin ):
     out = translate(t,Scopes)
     if t.qstore != []: print( '\nERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
     print( out )
+
+    print( '----------' )
     out = [ unpack(out), Univ, Univ ]
     betaReduce( out )
+    simplify( out )
     print( out )
-    print( )
 
