@@ -211,6 +211,7 @@ def translate( t, Scopes, Raised=[], lsNolo=[] ):
 ##
 ################################################################################
 
+'''
 def unpack( t ):
   print( 'trying', t )
   if isinstance(t,str): return t
@@ -224,15 +225,81 @@ def unpack( t ):
   elif len(t)==3: return( ( unpack(t[0]), unpack(t[1]), unpack(t[2]) ) )
   elif len(t)==2: return( ( unpack(t[0]), unpack(t[1]) ) )
   else: print( 'ERROR: cannot unpack: ' + str(t) )
-
-
-'''
 '''
 
 
-#def reduce( t ):
-  
+def unpack( t ):
+  if not isinstance(t,str):
+    return([ unpack(st) for st in t ])
+  elif t=='And0': return( [ '\\f', '\\g',        '\\r', '\\s', ['^', [ 'g', 'r', 's' ],      [ 'f', 'r', 's' ] ] ] )
+  elif t=='And1': return( [ '\\f', '\\g', '\\q', '\\r', '\\s', ['^', [ 'g', 'q', 'r', 's' ], [ 'f', 'q', 'r', 's' ] ] ] )
+  elif t=='Mod0': return( [ '\\f', '\\g',        '\\r', '\\s', [ 'f',      [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], 'U', 'U' ] ] ], 's' ] ] )
+  elif t=='Mod1': return( [ '\\f', '\\g', '\\q', '\\r', '\\s', [ 'f', 'q', [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], 'U', 'U' ] ] ], 's' ] ] )
+  elif t[0]=='@' and getLocalArity( t[1:].split(':')[0] ) == 1: return( [        '\\q', '\\r', '\\s', 'q', 'U', [ '\\x',                    'Some', [ '\\e', '^', [t[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
+  elif t[0]=='@' and getLocalArity( t[1:].split(':')[0] ) == 2: return( [ '\\p', '\\q', '\\r', '\\s', 'q', 'U', [ '\\x', 'p', 'U', [ '\\y', 'Some', [ '\\e', '^', [t[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
+  else: return( t )
 
+
+def replace( t, old, new ):
+  if VERBOSE: print( 'replacing:', old, 'with', new, 'in', t )
+  if t == old:
+    return( new )
+  elif isinstance(t,str):
+    return( t )
+  elif any( [ st[0]=='\\' and st[1:]==old for st in t ] ):
+    return( t )
+  else:
+    return( [ replace( st, old, new ) for st in t ] )
+
+
+def reduce( t ):
+  if VERBOSE: print( 'reducing:', t )
+  ## If string, skip...
+  if isinstance(t,str):
+    return
+  ## If initial term is string, reduce children...
+  elif isinstance(t[0],str):
+    for st in t:
+      reduce( st )
+  ## Flatten initial application... 
+  elif t[0][0][0]!='\\':
+    u = t[0] + t[1:]
+    t.clear()
+    t.extend(u)
+    reduce( t )
+  ## Substitute second term for initial lambda variable of initial (abstraction) term...
+  elif len(t) >= 2:
+    u = [ replace( t[0][1:], t[0][0][1:], t[1] ) ] + t[2:]
+    t.clear()
+    t.extend(u)
+    reduce( t )
+  else:
+    u = t[0]
+    t.clear()
+    t.extend(u)
+    reduce( t )
+
+'''
+def binarize( t ):
+  if isinstance(t,str): return( t )
+  elif len(t)==2: return( [ binarize(t[0]), binarize(t[1]) ] )
+  elif t[0][0]=='\\': return( [ binarize(t[0]), binarize(t[1:]) ] )
+  else: return( [ binarize(t[:-1]), binarize(t[-1]) ] )
+
+
+def replace( t, old, new ):
+  if t == old: return( new )
+  elif isinstance(t,str): return( t )
+  elif '\\' == t[0][0] and t[0][1:] == old: return( [ t[0], t[1] ] )
+  else: return( [ replace(t[0],old,new), replace(t[1],old,new) ] )
+
+
+def reduce( t ):
+  if isinstance(t,str): return( t )
+  elif isinstance(t[0],str): return( [ t[0], reduce(t[1]) ] )
+  elif t[0][0][0] == '\\': return( reduce( replace( t[0][1], t[0][0][1:], t[1] ) ) )
+  else: return( [ reduce(t[0]), reduce(t[1]) ] )
+'''
 
 ################################################################################
 ##
@@ -265,5 +332,9 @@ for nLine,line in enumerate( sys.stdin ):
     if t.qstore != []: print( '\nERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
     print( out )
 #    print( unpack(out) )
+#    print( binarize(out) )
+    out = unpack( out )
+    reduce( out )
+    print( out )
     print( )
 
