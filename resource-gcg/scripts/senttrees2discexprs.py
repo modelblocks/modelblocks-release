@@ -3,9 +3,10 @@ import re
 import tree
 
 VERBOSE = False    ## print debugging info.
+ANAPH = True
 for a in sys.argv:
-  if a=='-d':
-    VERBOSE = True
+  if a=='-d':  VERBOSE = True
+  if a=='-n':  ANAPH = False
 
 
 ################################################################################
@@ -149,7 +150,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   elif len(t.ch) == 1:
     if   '-lE' in t.ch[0].c and len(t.ch[0].c) >= len(t.c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] ), lsNolo[-1] ]
     elif '-lE' in t.ch[0].c and len(t.ch[0].c) <  len(t.c):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] ), lsNolo[-1] ]
-    elif '-lV' in t.ch[0].c:  output = [ 'Pasv', 'x'+ t.sVar, translate( t.ch[0], Scopes, Anaphs, [( 'Trace', 'x'+t.sVar )] + lsNolo ) ]
+    elif '-lV' in t.ch[0].c:  output = [ 'Pasv', 'x'+ t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ]
     elif '-lZ' in t.ch[0].c:  output = [ 'Prop', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
     elif getLocalArity(t.c) < getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ]
     else:  output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
@@ -165,18 +166,18 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lD' in t.ch[1].c or t.ch[1].c[0] in ',;:.!?':  output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
     elif '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
     elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
-    elif '-lI' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), [ 'SelfStore', 'x'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [( 'Trace', 'x'+t.ch[1].sVar )] + lsNolo[:m] ) ] ]
-    elif '-lI' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [( 'Trace', 'x'+t.ch[0].sVar )] + lsNolo[m:] ) ] ]
+    elif '-lI' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), [ 'SelfStore', 'x'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ) ] ]
+    elif '-lI' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ) ] ]
     elif '-lM' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
     elif '-lM' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
     elif '-lC' in t.ch[0].c:  output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
     elif '-lC' in t.ch[1].c:  output = translate( t.ch[1], Scopes, Anaphs, lsNolo )
-    elif '-lG' in t.ch[0].c:  output = [ 'Store', 'x'+t.ch[0].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, [( 'Trace', 'x'+t.ch[0].sVar )] + lsNolo[m:] ) ]
-    elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = [ 'Store', 'x'+t.ch[1].sVar, [ 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [('Trace', 'x'+t.ch[0].sVar )] ) ],
-                                                                        translate( t.ch[0], Scopes, Anaphs, [('Trace', 'x'+t.ch[1].sVar )] + lsNolo[:m] ) ]
-    elif '-lH' in t.ch[1].c:  output = [ 'Store', 'x'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, [( 'Trace', 'x'+t.ch[1].sVar )] + lsNolo[:m] ) ]
-    elif '-lR' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, lsNolo ), translate( t.ch[0], Scopes, Anaphs, [( 'Trace', 'x'+t.ch[1].sVar )] ) ]
-    elif '-lR' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, [( 'Trace', 'x'+t.ch[0].sVar )] ) ]
+    elif '-lG' in t.ch[0].c:  output = [ 'Store', 'x'+t.ch[0].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ) ]
+    elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = [ 'Store', 'x'+t.ch[1].sVar, [ 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ] ) ],
+                                                                        translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ) ]
+    elif '-lH' in t.ch[1].c:  output = [ 'Store', 'x'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ) ]
+    elif '-lR' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, lsNolo ), translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] ) ]
+    elif '-lR' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] ) ]
     else:  print( '\nERROR: unhandled rule from ' + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
     ## Propagate child stores...
     t.qstore += (t.ch[0].qstore if hasattr(t.ch[0],'qstore') else []) + (t.ch[1].qstore if hasattr(t.ch[1],'qstore') else [])
@@ -185,9 +186,9 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   else: print( '\nERROR: too many children in ', t )
 
   ## 3. Mark anaphora...
-  if t.bMax and t.sVar in Anaphs:
+  if ANAPH and t.bMax and t.sVar in Anaphs:
     output = [ 'Anaphor', Anaphs[t.sVar], output ]
-  if t.bMax and t.sVar in Anaphs.values():
+  if ANAPH and t.bMax and t.sVar in Anaphs.values():
     output = [ 'Antecedent', t.sVar, output ]
 
   ## 4. Retrieve quantifier...
@@ -238,11 +239,13 @@ def unpack( t ):
   elif t=='And1':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', ['^', [ 'g', 'q', 'r', 's' ], [ 'f', 'q', 'r', 's' ] ] ] )
   elif t=='Mod0':  return( [ '\\f', '\\g',        '\\r', '\\s', [ 'f',      [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ] ], 's' ] ] )
   elif t=='Mod1':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', [ 'f', 'q', [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ] ], 's' ] ] )
-  elif t=='Prop':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', [ 'p', Univ, ['\\y','Equal','y','x'] ] ] ] )
+  elif t=='Prop':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Equal','y','x'] ] ] )
 #  elif t=='Prop':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', '^', [ 'p', Univ, ['\\y','Equal','y','x'] ], ['r','x'] ] ] )
   elif t.split(':')[0] == '@N-aD':  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z', '^', [ 'Some', [ '\\e', t[1:],'e','z' ], Univ ], ['r','z'] ], 's' ] )
   elif t.split(':')[0] == '@N-b{N-aD}':  return( [ '\\f', '\\r', '\\s', t[1:], [ '\\x', '^', ['r','x'], ['f','Some',['\\xx','Equal','xx','x'],Univ] ], 's' ] )
   elif t.split(':')[0] == '@B-aN-b{A-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [t[1:],'e'], ['r','e'] ], 's' ] )
+  elif t.split(':')[0] == '@B-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [t[1:],'e'], ['r','e'] ], 's' ] )
+  elif t.split(':')[0] == '@I-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [t[1:],'e'], ['r','e'] ], 's' ] )
   elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 1:  return( [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x',                     'Some', [ '\\e', '^', [t[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
   elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 2:  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'Some', [ '\\e', '^', [t[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
   else:  return( t )
