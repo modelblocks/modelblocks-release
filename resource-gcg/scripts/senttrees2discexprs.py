@@ -144,7 +144,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   ## 2.b. Pre-terminal branch...
   if len(t.ch) == 1 and len(t.ch[0].ch) == 0:
     pred = getLemma( t.c, t.ch[0].c )
-    output = 'Ident' if pred == '' else '@'+pred
+    output = 'IdentSome' if pred == '' and t.c == 'N-b{N-aD}-x%|'  else 'Ident' if pred == ''  else '@'+pred
 
   ## 3.c. Unary branch...
   elif len(t.ch) == 1:
@@ -240,6 +240,8 @@ def unpack( t ):
   elif t=='Mod0':  return( [ '\\f', '\\g',        '\\r', '\\s', [ 'f',      [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ] ], 's' ] ] )
   elif t=='Mod1':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', [ 'f', 'q', [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ] ], 's' ] ] )
   elif t=='Prop':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Equal','y','x'] ] ] )
+  elif t=='Ident':  return( [ '\\f', 'f' ] )
+  elif t=='IdentSome':  return( [ '\\f', 'f', 'Some' ] )
 #  elif t=='Prop':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', '^', [ 'p', Univ, ['\\y','Equal','y','x'] ], ['r','x'] ] ] )
   elif t.split(':')[0] == '@N-aD':  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z', '^', [ 'Some', [ '\\e', t[1:],'e','z' ], Univ ], ['r','z'] ], 's' ] )
   elif t.split(':')[0] == '@N-b{N-aD}':  return( [ '\\f', '\\r', '\\s', t[1:], [ '\\x', '^', ['r','x'], ['f','Some',['\\xx','Equal','xx','x'],Univ] ], 's' ] )
@@ -284,6 +286,7 @@ def betaReduce( expr ):
   for i in range(len(expr)):
     if expr[i][0]!='\\':
       break
+  if VERBOSE: print( 'i =', i )
   ## If initial term is string, betaReduce children...
   if isinstance(expr[i],str):
     for subexpr in expr:
