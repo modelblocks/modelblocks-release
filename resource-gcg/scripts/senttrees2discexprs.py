@@ -64,16 +64,16 @@ def getLemma( c, w ):
 #
 ########################################
 
-def setHeadScopeAnaph( t, Scopes, Anaphs, nWord=0 ):
+def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, nWord=0 ):
 
   ## Recurse...
   for st in t.ch:
-    nWord = setHeadScopeAnaph( st, Scopes, Anaphs, nWord )
+    nWord = setHeadScopeAnaph( st, nSent, Scopes, Anaphs, nWord )
 
   ## Account head words as done in gcg annotation guidelines, in order to track scope...
   if len(t.ch) == 0:
     nWord += 1
-    t.sVar = str(nWord)
+    t.sVar = str(nSent*100+nWord)
   elif len(t.ch) == 1:
     t.sVar = t.ch[0].sVar
   elif len(t.ch) == 2:
@@ -81,16 +81,18 @@ def setHeadScopeAnaph( t, Scopes, Anaphs, nWord=0 ):
   else: print( '\nERROR: too many children in ', t )
 
   ## Store scopes and anaphora...
+  ## Scopes...
   if '-yQ' in t.c:
     Scopes[t.sVar] = '0'
   m = re.search( '-s([0-9][0-9])?([0-9][0-9])', t.c )
   if m != None:
-    sDest = str(int(m.group(2)))
+    sDest = str( (nSent if m.group(1)==None else int(m.group(1))) * 100 + int(m.group(2)) )
     if sDest not in Scopes: Scopes[sDest] = '0'
     Scopes[t.sVar] = sDest
+  ## Anaphora...
   m = re.search( '-[nm]([0-9][0-9])?([0-9][0-9])', t.c )
   if m != None:
-    Anaphs[t.sVar] = str(int(m.group(2)))
+    Anaphs[t.sVar] = str( (nSent if m.group(1)==None else int(m.group(1))) * 100 + int(m.group(2)) )
 
   t.bMax = True
   for st in t.ch:
@@ -336,34 +338,49 @@ def simplify( t ):
 ##
 ################################################################################
 
-nSent = None
-Anaphs = None
-for nLine,line in enumerate( sys.stdin ):
+nArticle = -1
 
-  print( '========== line ' + str(nLine) + ' ==========' )
-  print( line[:-1] )
+## For each article...
+while True:
 
-  if '!ARTICLE' in line:
-    nSent = 0
-    Anaphs = {}
+  nArticle += 1
+  Scopes = {}
+  Anaphs = {}
+  Trees = []
 
-  else:
-    nSent += 1
-    Scopes = {}
+  ## For each tree in article...
+  for nLine,line in enumerate( sys.stdin ):
+
+    print( '========== Article ' + str(nArticle) + ' Tree ' + str(nLine) + ' ==========' )
+    print( line[:-1] )
+
+    if '!ARTICLE' in line:  break
+
     t = tree.Tree()
     t.read( line )
-
-    print( '----------' )
-    setHeadScopeAnaph( t, Scopes, Anaphs )
+    Trees += [ t ]
+    setHeadScopeAnaph( t, nLine, Scopes, Anaphs )
     markSites( t, Scopes )
+
+  ## Process trees given anaphs...
+  for nLine,t in enumerate( Trees ):
+
+    print( '========== Article ' + str(nArticle) + ' Tree ' + str(nLine) + ' ==========' )
+    print( t )
+  
+    print( '----------' )
     if VERBOSE: print( 'Scopes', Scopes )
     out = translate( t, Scopes, Anaphs )
     if t.qstore != []: print( '\nERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
     print( out )
-
+  
     print( '----------' )
-    out = [ unpack(out), Univ, Univ ]
-    betaReduce( out )
-    simplify( out )
-    print( out )
+    fullExpr = [ unpack(out), Univ, Univ ]
+    betaReduce( fullExpr )
+    simplify( fullExpr )
+    print( fullExpr )
+
+  if '!ARTICLE' not in line:
+    break
+
 
