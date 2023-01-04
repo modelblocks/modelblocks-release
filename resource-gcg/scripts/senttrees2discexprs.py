@@ -135,23 +135,12 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   if VERBOSE: print( ' '*indent, 'var,max,tree:', t.sVar, t.bMax, t )
   if VERBOSE: print( ' '*indent, 'non-locals:', lsNolo )
 
-  ## 2.a. Store quantifier...
+  ## 2.a. If scoped and cannot be in situ, mark possible sites...
   t.qstore = []
-#  ## If can scope in situ, remove from scopes and carry on translating...
-##  if t.sVar in Scopes and t.sVar not in Raised and t.sVar not in Scopes.values():
-#  if t.bMax and t.sVar in Scopes and t.sVar not in Scopes.values():
-#    del Scopes[ t.sVar ]
-  ## If scoped and cannot be in situ, store...
-#  if t.sVar in Scopes and t.sVar not in Raised and t.sVar in Scopes.values():
   if t.bMax and t.sVar in Scopes and t.sVar in Scopes.values():
     markSites( t, Scopes )
-#    s = translate( t, Scopes, Anaphs, Raised+[t.sVar], lsNolo )
-#    t.qstore = [( t.qstore, s, t.sVar )]
-#    output = [ 'RaiseTrace', 'x'+t.sVar ]
-##    t.aboveAllInSitu = False
-#
-#  ## 2.b. Pre-terminal branch...
-#  elif len(t.ch) == 1 and len(t.ch[0].ch) == 0:
+
+  ## 2.b. Pre-terminal branch...
   if len(t.ch) == 1 and len(t.ch[0].ch) == 0:
     pred = getLemma( t.c, t.ch[0].c )
     output = 'Ident' if pred == '' else '@'+pred
@@ -195,13 +184,11 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   ## 2.e. Fail...
   else: print( '\nERROR: too many children in ', t )
 
-  '''
   ## 3. Mark anaphora...
   if t.bMax and t.sVar in Anaphs:
-    output = [ 'Anaphor', t.sVar, output ]
+    output = [ 'Anaphor', Anaphs[t.sVar], output ]
   if t.bMax and t.sVar in Anaphs.values():
     output = [ 'Antecedent', t.sVar, output ]
-  '''
 
   ## 4. Retrieve quantifier...
   if VERBOSE: print( ' '*indent, 'cat and scopes:', t.c, Scopes )
@@ -285,26 +272,30 @@ def replace( t, old, new ):
 #
 ########################################
 
-def betaReduce( t ):
-  if VERBOSE: print( 'reducing:', t )
+def betaReduce( expr ):
+  if VERBOSE: print( 'reducing:', expr )
   ## If string, skip...
-  if isinstance(t,str):
+  if isinstance(expr,str):
     return
+  ## Find first non-lambda
+  for i in range(len(expr)):
+    if expr[i][0]!='\\':
+      break
   ## If initial term is string, betaReduce children...
-  elif isinstance(t[0],str):
-    for st in t:
-      betaReduce( st )
+  if isinstance(expr[i],str):
+    for subexpr in expr:
+      betaReduce( subexpr )
   ## Flatten initial application... 
-  elif t[0][0][0]!='\\':
-    t[:] = t[0] + t[1:]
-    betaReduce( t )
+  elif expr[i][0][0]!='\\':
+    expr[:] = expr[:i] + expr[i] + expr[i+1:]
+    betaReduce( expr )
   ## Substitute second term for initial lambda variable of initial (abstraction) term...
-  elif len(t) >= 2:
-    t[:] = [ replace( t[0][1:], t[0][0][1:], t[1] ) ] + t[2:]
-    betaReduce( t )
+  elif len(expr) > i+1:
+    expr[:] = expr[:i] + [ replace( expr[i][1:], expr[i][0][1:], expr[i+1] ) ] + expr[i+2:]
+    betaReduce( expr )
   else:
-    t[:] = t[0]
-    betaReduce( t )
+    expr[:] = expr[:i] + expr[i]
+    betaReduce( expr )
 
 
 ########################################
@@ -351,8 +342,8 @@ while True:
   ## For each tree in article...
   for nLine,line in enumerate( sys.stdin ):
 
-    print( '========== Article ' + str(nArticle) + ' Tree ' + str(nLine) + ' ==========' )
-    print( line[:-1] )
+#    print( '========== Article ' + str(nArticle) + ' Tree ' + str(nLine) + ' ==========' )
+#    print( line[:-1] )
 
     if '!ARTICLE' in line:  break
 
@@ -370,12 +361,12 @@ while True:
   
     print( '----------' )
     if VERBOSE: print( 'Scopes', Scopes )
-    out = translate( t, Scopes, Anaphs )
+    shortExpr = translate( t, Scopes, Anaphs )
     if t.qstore != []: print( '\nERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
-    print( out )
+    print( shortExpr )
   
     print( '----------' )
-    fullExpr = [ unpack(out), Univ, Univ ]
+    fullExpr = [ unpack(shortExpr), Univ, Univ ]
     betaReduce( fullExpr )
     simplify( fullExpr )
     print( fullExpr )
