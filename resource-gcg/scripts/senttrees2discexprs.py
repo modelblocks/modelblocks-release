@@ -185,8 +185,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lC' in t.ch[0].c:  output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
     elif '-lC' in t.ch[1].c:  output = translate( t.ch[1], Scopes, Anaphs, lsNolo )
 #    elif '-lG' in t.ch[0].c:  output = [ 'Store', 'x'+t.ch[0].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ) ]
-    elif '-lG' in t.ch[0].c and getNoloArity(t.ch[0].c)==0:  output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), Univ, [ '\\x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ), 'r', 's' ] ]
-    elif '-lG' in t.ch[0].c and getNoloArity(t.ch[0].c)==1:  output = [ translate( t.ch[1], Scopes, Anaphs, [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ] + lsNolo[m:] ) ]
+    elif '-lG' in t.ch[0].c and getLocalArity(t.ch[0].c)==0:  output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), Univ, [ '\\x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ), 'r', 's' ] ]
+    elif '-lG' in t.ch[0].c and getLocalArity(t.ch[0].c)==1:  output = [ translate( t.ch[1], Scopes, Anaphs, [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ] + lsNolo[m:] ) ]
     elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = [ 'Store', 'x'+t.ch[1].sVar, [ 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ] ) ],
                                                                         translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ) ]
 #    elif '-lH' in t.ch[1].c:  output = [ 'Store', 'x'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ) ]
