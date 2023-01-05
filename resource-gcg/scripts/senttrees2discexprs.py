@@ -4,10 +4,11 @@ import tree
 
 VERBOSE = False    ## print debugging info.
 ANAPH = True
+SKIPS = []
 for a in sys.argv:
   if a=='-d':  VERBOSE = True
   if a=='-n':  ANAPH = False
-
+  if a.startswith('-s'):  SKIPS += [ int(a[2:]) ]
 
 ################################################################################
 ##
@@ -195,7 +196,9 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 ##    elif '-lH' in t.ch[1].c:  output = [ 'Store', 'x'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ) ]
 #    elif '-lH' in t.ch[1].c and getLocalArity(t.c)==1:  output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), Univ, [ '\\x'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ), 'q', 'r', 's' ] ]
 #    elif '-lH' in t.ch[1].c and getLocalArity(t.c)==0:  output = [        '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), Univ, [ '\\x'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ),      'r', 's' ] ]
-    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0:  output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[m:] ), 'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[:m] ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==1:  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ), 'q', 'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+    elif '-lR' in t.ch[0].c and getLocalArity(t.c)==0:  output = [        '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),      'r', [ '\\x'+t.ch[1].sVar, '^', [ translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m-1] ), Univ, Univ ], ['s','x'+t.ch[1].sVar] ] ]
 #    elif '-lR' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, lsNolo ), translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] ) ]
 #    elif '-lR' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] ) ]
     else:  print( '\nERROR: unhandled rule from ' + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
@@ -385,6 +388,11 @@ while True:
     Trees += [ t ]
     setHeadScopeAnaph( t, nLine, Scopes, Anaphs )
     markSites( t, Scopes )
+
+  ## Skip articles...
+  if nArticle in SKIPS:
+    print( 'NOTE: skipping article', nArticle, 'as specified in command line arguments.' )
+    continue
 
   ## Process trees given anaphs...
   for nLine,t in enumerate( Trees ):
