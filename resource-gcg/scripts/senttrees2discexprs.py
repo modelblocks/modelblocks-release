@@ -149,6 +149,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif pred == '' and t.c == 'Ne-x%|':         output = 'Some'
     elif pred == '':                             output = 'Ident'
     elif t.c == 'R-aN-rN-xR%|A%':                output = [ '@'+pred, lsNolo[-1] ]
+    elif t.c == 'N-rN':                          output = [ '@'+pred, lsNolo[-1] ]
     else:                                        output = '@'+pred
 #    output = '@'+pred if pred != '' else ('IdentSome' if t.c == 'N-b{N-aD}-x%|'  else  'Some' if t.c == 'Ne-x%|'  else 'Ident')
 
@@ -209,10 +210,13 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 ##    elif '-lH' in t.ch[1].c:  output = [ 'Store', 'x'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ) ]
 #    elif '-lH' in t.ch[1].c and getLocalArity(t.c)==1:  output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), Univ, [ '\\x'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ), 'q', 'r', 's' ] ]
 #    elif '-lH' in t.ch[1].c and getLocalArity(t.c)==0:  output = [        '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), Univ, [ '\\x'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ),      'r', 's' ] ]
+    ## Relative clause modification by C-rN-lR...
     elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==0:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
-    ## I-aN-gN-lR (e.g. 'a job to do _') -- event should be in future...
+    ## Relative clause modification by I-aN-gN-lR (e.g. 'a job to do _') -- event should be in future...
     elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==1:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:]   ), 'Some', Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+    ## Relative clause modification of verb phrase...
     elif '-lR' in t.ch[1].c and getLocalArity(t.c)==1:  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ), 'q', 'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+    ## Relative clause modification of complete phrase or clause...
     elif '-lR' in t.ch[0].c and getLocalArity(t.c)==0:  output = [        '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),      'r', [ '\\x'+t.ch[1].sVar, '^', [ translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m-1] ), Univ, Univ ], ['s','x'+t.ch[1].sVar] ] ]
 #    elif '-lR' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, lsNolo ), translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] ) ]
 #    elif '-lR' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] ) ]
@@ -232,7 +236,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   ## 4. Retrieve quantifier...
   if VERBOSE: print( ' '*indent, 'cat and scopes:', t.c, Scopes )
   if VERBOSE: print( ' '*indent, 'quant store: ', t.qstore )
-  if t.aboveAllInSitu:
+  if t.aboveAllInSitu and getLocalArity(t.c) == 0:
     while len(t.qstore) > 0:
       l = [ r for r in t.qstore if r[2] not in Scopes.values() ]
       if len(l) > 0:
@@ -271,52 +275,52 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 
 Univ = [ '\\z', 'True' ]
 
-def unpack( t ):
-  if not isinstance(t,str):  return([ unpack(st) for st in t ])
-  elif t=='And0':  return( [ '\\f', '\\g',        '\\r', '\\s', ['^', [ 'g',      'r', 's' ], [ 'f',      'r', 's' ] ] ] )
-  elif t=='And1':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', ['^', [ 'g', 'q', 'r', 's' ], [ 'f', 'q', 'r', 's' ] ] ] )
-  elif t=='Mod0':  return( [ '\\f', '\\g',        '\\r', '\\s', [ 'f',      [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ] ], 's' ] ] )
-  elif t=='Mod1':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', [ 'f', 'q', [ '\\x', [ '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ] ], 's' ] ] )
-  elif t=='Prop':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Equal','y','x'] ] ] )
-#  elif t=='Pasv':  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Equal','y','x'] ] ] )
-  elif t=='Ident':  return( [ '\\f', 'f' ] )
-  elif t=='IdentSome':  return( [ '\\f', 'f', 'Some' ] )
-#  elif t=='Store':  return( [ '\\n', '\\f', '\\q', '\\r', '\\s', 'q', Univ, ['\\x','f','r','s'] ] )
-  elif t=='Trace':  return( [ '\\v', '\\t', '\\u', '^', ['t','v'], ['u','v'] ] )
-  elif t=='RaiseTrace':  return( [ '\\v', '\\t', '\\u', '^', ['t','v'], ['u','v'] ] )
-#  elif t=='SelfStore':  return( [ '\\v', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+?????
+def unpack( expr ):
+  if not isinstance( expr, str ):  return([ unpack(subexpr) for subexpr in expr ])
+  elif expr == 'And0':  return( [ '\\f', '\\g',        '\\r', '\\s', '^', [ 'g',      'r', 's' ], [ 'f',      'r', 's' ] ] )
+  elif expr == 'And1':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', '^', [ 'g', 'q', 'r', 's' ], [ 'f', 'q', 'r', 's' ] ] )
+  elif expr == 'Mod0':  return( [ '\\f', '\\g',        '\\r', '\\s', 'f',      [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
+  elif expr == 'Mod1':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'f', 'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
+  elif expr == 'Prop':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Equal','y','x'] ] ] )
+#  elif expr == 'Pasv':  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Equal','y','x'] ] ] )
+  elif expr == 'Ident':  return( [ '\\f', 'f' ] )
+  elif expr == 'IdentSome':  return( [ '\\f', 'f', 'Some' ] )
+#  elif expr == 'Store':  return( [ '\\n', '\\f', '\\q', '\\r', '\\s', 'q', Univ, ['\\x','f','r','s'] ] )
+  elif expr == 'Trace':  return( [ '\\v', '\\t', '\\u', '^', ['t','v'], ['u','v'] ] )
+  elif expr == 'RaiseTrace':  return( [ '\\v', '\\t', '\\u', '^', ['t','v'], ['u','v'] ] )
+#  elif expr == 'SelfStore':  return( [ '\\v', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+?????
   ## ACCOMMODATE SLOPPY ANNOTATION of 'N' instead of 'N-aD'...
-  elif t.split(':')[0] == '@N':  return( [ '\\r', '\\s', 'Some', [ '\\z', '^', [ 'Some', [ '\\e', t[1:],'e','z' ], Univ ], ['r','z'] ], 's' ] )
-  elif t.split(':')[0] == '@N-aD':  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z', '^', [ 'Some', [ '\\e', t[1:],'e','z' ], Univ ], ['r','z'] ], 's' ] )
-  elif t.split(':')[0] == '@N-b{N-aD}':  return( [ '\\f', '\\r', '\\s', t[1:], [ '\\x', '^', ['r','x'], ['f','Some',['\\xx','Equal','xx','x'],Univ] ], 's' ] )
-  elif t.split(':')[0] == '@N-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', t[1:], [ '\\x', '^', ['r','x'], ['f','q',['\\xx','Equal','xx','x'],Univ] ], 's' ] )
-#  elif t.split(':')[0] == '@B-aN-b{A-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [t[1:],'e'], ['r','e'] ], 's' ] )
-#  elif t.split(':')[0] == '@B-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [t[1:],'e'], ['r','e'] ], 's' ] )
-#  elif t.split(':')[0] == '@I-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [t[1:],'e'], ['r','e'] ], 's' ] )
-  elif t.split(':')[0] == '@N-rN':  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\e', '^', [t[1:],'e','x'], ['r','e'] ], 's' ] ] )
-  elif t.split(':')[0] == '@A-aN-rN':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'Some', [ '\\e', '^', [t[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
-#  elif t.split(':')[0] == '@B-aN-bA':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\e', '^', [ t[1:], 'e', 'x', [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'] ], 's' ] ] )
+  elif expr.split(':')[0] == '@N':  return( [ '\\r', '\\s', 'Some', [ '\\z', '^', [ 'Some', [ '\\e', expr[1:],'e','z' ], Univ ], ['r','z'] ], 's' ] )
+  elif expr.split(':')[0] == '@N-aD':  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\zz', '^', [ 'Some', [ '\\e', expr[1:],'e','zz' ], Univ ], ['r','zz'] ], 's' ] )
+  elif expr.split(':')[0] == '@N-b{N-aD}':  return( [ '\\f', '\\r', '\\s', expr[1:], [ '\\x', '^', ['r','x'], ['f','Some',['\\xx','Equal','xx','x'],Univ] ], 's' ] )
+  elif expr.split(':')[0] == '@N-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\x', '^', ['r','x'], ['f','q',['\\xx','Equal','xx','x'],Univ] ], 's' ] )
+#  elif expr.split(':')[0] == '@B-aN-b{A-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
+#  elif expr.split(':')[0] == '@B-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
+#  elif expr.split(':')[0] == '@I-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
+  elif expr.split(':')[0] == '@N-rN':  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\e', '^', [expr[1:],'e','x'], ['r','e'] ], 's' ] ] )
+  elif expr.split(':')[0] == '@A-aN-rN':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'Some', [ '\\e', '^', [expr[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
+#  elif expr.split(':')[0] == '@B-aN-bA':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\e', '^', [ expr[1:], 'e', 'x', [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'] ], 's' ] ] )
   ## Intransitive...
-  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]*(-[lx].*)?:', t ) != None:
-    return( [               '\\q', '\\r', '\\s', 'q', Univ, [ '\\x',                                        'Some', [ '\\e', '^', [t[1:],'e','x'        ], ['r','e'] ], 's'     ] ] )
+  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]*(-[lx].*)?:', expr ) != None:
+    return( [               '\\q', '\\r', '\\s', 'q', Univ, [ '\\x',                                        'Some', [ '\\e', '^', [expr[1:],'e','x'        ], ['r','e'] ], 's'     ] ] )
   ## Transitive...
-  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab][DNOPa-z]+(-[lx].*)?:', t ) != None:
-    return( [        '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y',                    'Some', [ '\\e', '^', [t[1:],'e','x','y'    ], ['r','e'] ], 's'   ] ] ] )
+  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab][DNOPa-z]+(-[lx].*)?:', expr ) != None:
+    return( [        '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y',                    'Some', [ '\\e', '^', [expr[1:],'e','x','y'    ], ['r','e'] ], 's'   ] ] ] )
   ## Ditransitive...
-  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab][A-Za-z]+-[ab][A-Za-z]+(-[lx].*)?:', t ) != None:
-    return( [ '\\o', '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'o', Univ, ['\\z', 'Some', [ '\\e', '^', [t[1:],'e','x','y','z'], ['r','e'] ], 's' ] ] ] ] )
+  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab][A-Za-z]+-[ab][A-Za-z]+(-[lx].*)?:', expr ) != None:
+    return( [ '\\o', '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'o', Univ, ['\\z', 'Some', [ '\\e', '^', [expr[1:],'e','x','y','z'], ['r','e'] ], 's' ] ] ] ] )
   ## Raising...
-  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}(-[lx].*)?:', t ) != None:
-    return( [        '\\f', '\\q', '\\r', '\\s',                                                          'f', 'q', [ '\\e', '^', [t[1:],'e'            ], ['r','e'] ], 's'       ] )
+  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}(-[lx].*)?:', expr ) != None:
+    return( [        '\\f', '\\q', '\\r', '\\s',                                                          'f', 'q', [ '\\e', '^', [expr[1:],'e'            ], ['r','e'] ], 's'       ] )
   ## Sent comp...
-  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab][ABCEFGIVQRSVa-z]+(-[lx].*)?:', t ) != None:
-    return( [        '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\e', '^', [ t[1:], 'e', 'x', [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'] ], 's' ] ] )
+  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab][ABCEFGIVQRSVa-z]+(-[lx].*)?:', expr ) != None:
+    return( [        '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\e', '^', [ expr[1:], 'e', 'x', [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'] ], 's' ] ] )
   ## Tough construction...
-  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab]{I-aN-gN}(-[lx].*)?:', t ) != None:
-    return( [        '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Gen', [ '\\e', 'f', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], 'Some', 'r', [ '\\d', '^', ['s','d'], ['Equal','d','e'] ] ], [ '\\e',t[1:],'e'] ] ] )
-#  elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 1:  return( [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x',                     'Some', [ '\\e', '^', [t[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
-#  elif t[0]=='@' and getLocalArity( t.split(':')[0] ) == 2:  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'Some', [ '\\e', '^', [t[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
-  else:  return( t )
+  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab]{I-aN-gN}(-[lx].*)?:', expr ) != None:
+    return( [        '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Gen', [ '\\e', 'f', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], 'Some', 'r', [ '\\d', '^', ['s','d'], ['Equal','d','e'] ] ], [ '\\e',expr[1:],'e'] ] ] )
+#  elif expr[0]=='@' and getLocalArity( t.split(':')[0] ) == 1:  return( [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x',                     'Some', [ '\\e', '^', [expr[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
+#  elif expr[0]=='@' and getLocalArity( t.split(':')[0] ) == 2:  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'Some', [ '\\e', '^', [expr[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
+  else:  return( expr )
 
 
 ########################################
@@ -436,6 +440,8 @@ while True:
   Anaphs = {}
   Trees = []
 
+#  if nArticle == 17: VERBOSE = True
+
   ## For each tree in article...
   for nLine,line in enumerate( sys.stdin ):
 
@@ -469,6 +475,9 @@ while True:
   
     print( '----------' )
     fullExpr = [ unpack(shortExpr), Univ, Univ ]
+    print( fullExpr )
+
+    print( '----------' )
     betaReduce( fullExpr )
     print( fullExpr )
 
