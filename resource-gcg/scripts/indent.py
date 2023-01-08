@@ -14,7 +14,7 @@ for nLine,line in enumerate( sys.stdin ):
       Indents.append(i)
       ready = '('
     elif c in CLOSES:
-      if len(Indents) == 0:  sys.stderr.write( 'ERROR: Too many \'' + c + '\' in line ' + str(nLine) + ': ' + line + '\n' )
+      if len(Indents) == 0:  sys.stdout.write( 'ERROR: Too many \'' + c + '\' in line ' + str(nLine) + ': ' + line + '\n' )
       sys.stdout.write( c )
       i += 1
       Indents.pop()
