@@ -155,19 +155,21 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 
   ## 3.c. Unary branch...
   elif len(t.ch) == 1:
-    if   '-lE' in t.ch[0].c and len(t.ch[0].c) >= len(t.c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] ), lsNolo[-1] ]
-    elif '-lE' in t.ch[0].c and len(t.ch[0].c) <  len(t.c):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] ), lsNolo[-1] ]
-    elif '-lV' in t.ch[0].c:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ), 'Some', 'r', 's' ] ]
+    form = re.sub( '-[lmnstuwxy][^ ]*', '', t.ch[0].c + ' ' + t.c )
+    if   '-lE' in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] ), lsNolo[-1] ]
+    elif '-lE' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] ), lsNolo[-1] ]
+    elif '-lV' in t.ch[0].c and re.search( '^L-aN-vN((?:-[ghirv][^ ]*)?) A-aN\\1$', form ) != None:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ), 'Some', 'r', 's' ] ]
 #   elif '-lV' in t.ch[0].c:  output = [ 'Pasv', 'x'+ t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ]
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 1:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'p' ]
+    elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 2:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'q', 'p' ]
     ## ACCOMMODATE SLOPPY ANNOTATION of '-lZ' with arg elision...
     elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Prop', [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ] ]
     elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Prop', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
     elif '-lz' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Prop', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
-    elif getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ]
-    elif getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
+    elif '-l' not in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ]
+    elif '-l' not in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
     else:
-      print( 'Assuming', t.c, '->', t.ch[0].c, getLocalArity(t.c), getLocalArity(t.ch[0].c), 'is simple type change' )
+      print( 'WARNING: Assuming', t.c, '->', t.ch[0].c, getLocalArity(t.c), getLocalArity(t.ch[0].c), 'is simple type change' )
       output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
     ## Propagate child stores...
     t.qstore = t.ch[0].qstore
@@ -277,10 +279,11 @@ Univ = [ '\\z', 'True' ]
 
 def unpack( expr ):
   if not isinstance( expr, str ):  return([ unpack(subexpr) for subexpr in expr ])
-  elif expr == 'And0':  return( [ '\\f', '\\g',        '\\r', '\\s', '^', [ 'g',      'r', 's' ], [ 'f',      'r', 's' ] ] )
-  elif expr == 'And1':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', '^', [ 'g', 'q', 'r', 's' ], [ 'f', 'q', 'r', 's' ] ] )
-  elif expr == 'Mod0':  return( [ '\\f', '\\g',        '\\r', '\\s', 'f',      [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
-  elif expr == 'Mod1':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'f', 'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
+  elif expr == 'And0':  return( [ '\\f', '\\g',               '\\r', '\\s', '^', [ 'g',           'r', 's' ], [ 'f',           'r', 's' ] ] )
+  elif expr == 'And1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', '^', [ 'g',      'q', 'r', 's' ], [ 'f',      'q', 'r', 's' ] ] )
+  elif expr == 'And2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', '^', [ 'g', 'p', 'q', 'r', 's' ], [ 'f', 'p', 'q', 'r', 's' ] ] )
+  elif expr == 'Mod0':  return( [ '\\f', '\\g',               '\\r', '\\s', 'f',      [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
+  elif expr == 'Mod1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', 'f', 'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Prop':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Equal','y','x'] ] ] )
 #  elif expr == 'Pasv':  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Equal','y','x'] ] ] )
   elif expr == 'Ident':  return( [ '\\f', 'f' ] )
