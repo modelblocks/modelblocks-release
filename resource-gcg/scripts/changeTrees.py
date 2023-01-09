@@ -5,14 +5,14 @@ import tree
 def change( t ):
 
   ## Fix adjectives combining with nouns to get noun phrases...
-  if len(t.ch)==2 and re.search( '^.*-lM N-aD(-[lmnstuwxy].*) N(-[lmnstuwxy].*)$', t.ch[0].c + ' ' + t.ch[1].c + ' ' + t.c ) != None:
+  if len(t.ch)==2 and re.search( '^.*-lM N-aD(-[lmnstuwxy].*)? N(-[lmnstuwxy].*)?$', t.ch[0].c + ' ' + t.ch[1].c + ' ' + t.c ) != None:
     tmp = [ t.ch[0], t.ch[1] ]
     t.ch = [ tree.Tree() ]
     t.ch[0].c = 'N-aD'
     t.ch[0].ch = tmp
 
   ## Fix post-modifiers combining with nouns to get noun phrases...
-  if len(t.ch)==2 and re.search( '^N-aD(-[lmnstuwxy].*) .*-lM N(-[lmnstuwxy].*)$', t.ch[0].c + ' ' + t.ch[1].c + ' ' + t.c ) != None:
+  if len(t.ch)==2 and re.search( '^N-aD(-[lmnstuwxy].*)? .*-lM N(-[lmnstuwxy].*)?$', t.ch[0].c + ' ' + t.ch[1].c + ' ' + t.c ) != None:
     tmp = t.ch[0]
     t.ch[0] = tree.Tree()
     t.ch[0].c = 'N'
