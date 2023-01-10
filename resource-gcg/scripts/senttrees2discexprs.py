@@ -239,6 +239,10 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   ## 4. Retrieve quantifier...
   if VERBOSE: print( ' '*indent, 'cat and scopes:', t.c, Scopes )
   if VERBOSE: print( ' '*indent, 'quant store: ', t.qstore )
+  ## If not stored but can scope in situ, remove from scopes and carry on translating...
+  if t.bMax and t.sVar in Scopes and t.sVar not in Scopes.values():
+    del Scopes[ t.sVar ]
+  ## If stored and can scope in situ, remove from scopes and carry on translating...
   if t.aboveAllInSitu and getLocalArity(t.c) == 0:
     while len(t.qstore) > 0:
       l = [ r for r in t.qstore if r[2] not in Scopes.values() ]
@@ -248,13 +252,13 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
         del Scopes[ l[0][2] ]
         t.qstore += l[0][0]
         t.qstore.remove( l[0] )
+        ## If not stored but can scope in situ, remove from scopes and carry on translating...
+        if t.bMax and t.sVar in Scopes and t.sVar not in Scopes.values():
+          del Scopes[ t.sVar ]
       else:
         break
 
   ## 5. If scoped and cannot be in situ, store...
-  ## If can scope in situ, remove from scopes and carry on translating...
-  if t.bMax and t.sVar in Scopes and t.sVar not in Scopes.values():
-    del Scopes[ t.sVar ]
   if t.bMax and t.sVar in Scopes and t.sVar in Scopes.values():
     t.qstore = [( t.qstore, output, t.sVar )]
     output = [ 'RaiseTrace', 'x'+t.sVar ]
@@ -450,7 +454,7 @@ while True:
   Anaphs = {}
   Trees = []
 
-#  if nArticle == 17: VERBOSE = True
+#  if nArticle == 75: VERBOSE = True
 
   ## For each tree in article...
   for nLine,line in enumerate( sys.stdin ):
@@ -481,7 +485,9 @@ while True:
     print( '----------' )
     if VERBOSE: print( 'Scopes', Scopes )
     shortExpr = translate( t, Scopes, Anaphs )
-    if t.qstore != []: print( '\nERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
+    if t.qstore != []:
+      print( 'ERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
+      exit(0)
     print( shortExpr )
   
     print( '----------' )
