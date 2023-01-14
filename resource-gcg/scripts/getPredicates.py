@@ -1,28 +1,16 @@
 import sys
 import re
+import lex
 
-def getLemma( c, w ):
-  s = re.sub('-l.','',c) + ':' + w.lower()
-  eqns = re.sub( '-x.*:', ':', s )
-  for xrule in re.split( '-x', c )[1:] :
-    ## apply compositional lex rules...
-    m = re.search( '(.*)%(.*)%(.*)\|(.*)%(.*)%(.*)', xrule )
-    if m is not None:
-      eqns = re.sub( '^'+m.group(1)+'(.*)'+m.group(2)+'(.*)'+m.group(3)+'$', m.group(4)+'\\1'+m.group(5)+'\\2'+m.group(6), eqns )
-      continue
-    m = re.search( '(.*)%(.*)\|(.*)%(.*)', xrule )
-    if m is not None:
-      eqns = re.sub( '^'+m.group(1)+'(.*)'+m.group(2)+'$', m.group(3)+'\\1'+m.group(4), eqns )
-      continue
-    m = re.search( '.*%.*\|(.*)', xrule )
-    if m is not None: eqns = m.group(1)
-  return eqns
+DEBUG = False
+for a in sys.argv:
+  if a=='-d':  DEBUG = True
 
-
+## For each line...
 for line in sys.stdin:
+  ## For each paired preterminal and terminal...
   for preterm,term in re.findall( '\(([^\(\) ]+) ([^\(\) ]+)\)', line ):
     term = term.lower()
-#    if '-LRB-' in preterm and preterm != '-LRB-':  print( preterm, '----', term, '----', line )
-#    print( preterm, term )
-    print( getLemma( preterm, term ) )
+    if DEBUG:  print( lex.getFn( preterm, term ), preterm )
+    else:      print( lex.getFn( preterm, term ) )
 

@@ -1,6 +1,7 @@
 import sys
 import re
 import tree
+import lex
 
 VERBOSE = False    ## print debugging info.
 ANAPH = True
@@ -18,7 +19,7 @@ for a in sys.argv:
 
 ########################################
 #
-#  IA. get number of local/nonlocal arguments...
+#  I.A. get number of local/nonlocal arguments...
 #
 ########################################
 
@@ -38,31 +39,7 @@ def getLocalArity( cat ):
 
 ########################################
 #
-#  IB. get predicate (lemma) from word...
-#
-########################################
-
-def getLemma( c, w ):
-  s = re.sub('-l.','',c) + ':' + w.lower()
-  eqns = re.sub( '-x.*:', ':', s )
-  for xrule in re.split( '-x', c )[1:] :
-    ## apply compositional lex rules...
-    m = re.search( '(.*)%(.*)%(.*)\|(.*)%(.*)%(.*)', xrule )
-    if m is not None:
-      eqns = re.sub( '^'+m.group(1)+'(.*)'+m.group(2)+'(.*)'+m.group(3)+'$', m.group(4)+'\\1'+m.group(5)+'\\2'+m.group(6), eqns )
-      continue
-    m = re.search( '(.*)%(.*)\|(.*)%(.*)', xrule )
-    if m is not None:
-      eqns = re.sub( '^'+m.group(1)+'(.*)'+m.group(2)+'$', m.group(3)+'\\1'+m.group(4), eqns )
-      continue
-    m = re.search( '.*%.*\|(.*)', xrule )
-    if m is not None: eqns = m.group(1)
-  return eqns
-
-
-########################################
-#
-#  IC. set scopes and variable numbers...
+#  I.B. set scopes and variable numbers...
 #
 ########################################
 
@@ -105,7 +82,7 @@ def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, nWord=0 ):
 
 ########################################
 #
-#  ID. mark sites for raising above all in-situs...
+#  I.C. mark sites for raising above all in-situs...
 #
 ########################################
 
@@ -124,7 +101,7 @@ def markSites( t, Scopes, aboveAllInSitu=True ):
 
 ########################################
 #
-#  IE. recursively translate tree to logic...
+#  I.D. recursively translate tree to logic...
 #
 ########################################
 
@@ -144,7 +121,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 
   ## 2.b. Pre-terminal branch...
   if len(t.ch) == 1 and len(t.ch[0].ch) == 0:
-    pred = getLemma( t.c, t.ch[0].c )
+    pred = lex.getFn( t.c, t.ch[0].c )
     if   pred == '' and t.c == 'N-b{N-aD}-x%|':  output = 'IdentSome'
     elif pred == '' and t.c == 'Ne-x%|':         output = 'Some'
     elif pred == '':                             output = 'Ident'
@@ -276,7 +253,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 
 ########################################
 #
-#  IIA. Replace constants with lambda functions...
+#  II.A. Replace constants with lambda functions...
 #
 ########################################
 
@@ -339,7 +316,7 @@ def unpack( expr ):
 
 ########################################
 #
-#  IIB. Replace in beta reduce...
+#  II.B. Replace in beta reduce...
 #
 ########################################
 
@@ -357,7 +334,7 @@ def replace( expr, old, new ):
 
 ########################################
 #
-#  IIC. Beta reduce...
+#  II.C. Beta reduce...
 #
 ########################################
 
@@ -390,7 +367,7 @@ def betaReduce( expr ):
 
 ########################################
 #
-#  IID. Conjunction elimination...
+#  II.D. Conjunction elimination...
 #
 ########################################
 
