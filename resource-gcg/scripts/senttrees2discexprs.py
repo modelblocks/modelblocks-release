@@ -286,28 +286,28 @@ def unpack( expr ):
   elif expr.split(':')[0] == '@A-aN-rN':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'Some', [ '\\e', '^', [expr[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
 #  elif expr.split(':')[0] == '@B-aN-bA':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\e', '^', [ expr[1:], 'e', 'x', [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'] ], 's' ] ] )
   ## Intransitive...
-  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]*(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@[A-Za-z0-9]+-[ab][A-Za-z]*(-[lx].*)?:', expr ) != None:
     return( [               '\\q', '\\r', '\\s', 'q', Univ, [ '\\x',                                        'Some', [ '\\e', '^', [expr[1:],'e','x'        ], ['r','e'] ], 's'     ] ] )
   ## Transitive...
-  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab][DNOPa-z]+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@[A-Za-z0-9]+-[ab][A-Za-z]+-[ab][DNOPa-z]+(-[lx].*)?:', expr ) != None:
     return( [        '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y',                    'Some', [ '\\e', '^', [expr[1:],'e','x','y'    ], ['r','e'] ], 's'   ] ] ] )
   ## Ditransitive...
-  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab][A-Za-z]+-[ab][A-Za-z]+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@[A-Za-z0-9]+-[ab][A-Za-z]+-[ab][A-Za-z]+-[ab][A-Za-z]+(-[lx].*)?:', expr ) != None:
     return( [ '\\o', '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'o', Univ, ['\\z', 'Some', [ '\\e', '^', [expr[1:],'e','x','y','z'], ['r','e'] ], 's' ] ] ] ] )
   ## Raising...
-  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@[A-Za-z0-9]+-[ab][A-Za-z]+-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}(-[lx].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s',                                                          'f', 'q', [ '\\e', '^', [expr[1:],'e'            ], ['r','e'] ], 's'       ] )
   ## Sent comp...
-  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab][ABCEFGIVQRSVa-z]+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@[A-Za-z0-9]+-[ab][A-Za-z]+-[ab][ABCEFGIVQRSVa-z]+(-[lx].*)?:', expr ) != None:
     return( [        '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\e', '^', [ expr[1:], 'e', 'x', [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'] ], 's' ] ] )
   ## Tough constructions...
-  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab]{I-aN-gN}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@[A-Za-z0-9]+-[ab][A-Za-z]+-[ab]{I-aN-gN}(-[lx].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Gen', [ '\\e', 'f', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], 'Some', 'r', [ '\\d', '^', ['s','d'], ['Equal','d','e'] ] ], [ '\\e',expr[1:],'e'] ] ] )
   ## Embedded question...
-  elif re.search( '^@[A-Za-z]+-[ab][A-Za-z]+-[ab]{V-iN}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@[A-Za-z0-9]+-[ab][A-Za-z]+-[ab]{V-iN}(-[lx].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'f', [ '\\t', '\\u', '^', ['t','z'], ['u','z'] ], Univ, [ '\d', 'Some', 'r', ['\\e', '^', [expr[1:],'e','x','d'], ['s','d'] ] ] ] ] )
   ## Bare relatives (bad take as eventuality of V is not constrained by wh-noun)...
-  elif re.search( '^@[A-Za-z]+-[ab]{V-gN}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@[A-Za-z0-9]+-[ab]{V-gN}(-[lx].*)?:', expr ) != None:
     return( [        '\\f',        '\\r', '\\s', 'Some', [ '\\z', '^', [ '^', [ 'Some', ['\\e',expr[1:],'e','z'], Univ ], ['r','z'] ], [ 'f', [ '\\t', '\\u', '^', ['t','z'], ['u','z'] ], Univ, Univ ] ], 's' ] )
 #  elif expr[0]=='@' and getLocalArity( t.split(':')[0] ) == 1:  return( [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x',                     'Some', [ '\\e', '^', [expr[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
 #  elif expr[0]=='@' and getLocalArity( t.split(':')[0] ) == 2:  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'Some', [ '\\e', '^', [expr[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )

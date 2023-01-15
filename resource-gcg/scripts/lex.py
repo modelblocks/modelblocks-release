@@ -23,9 +23,9 @@ def getFn( c, w ):
     if m is not None:
       expr = m.group(1)
       continue
-#    ## If non-morphological macro, cram onto function...
-#    for m in re.findall( '^[A-Z0-9]+$', xrule ):
-#      expr = expr[0] + xrule + expr[1:]
+    ## If non-morphological macro, cram onto function...
+    for m in re.findall( '^[A-Z0-9]+$', xrule ):
+      expr = expr[0] + xrule + expr[1:]
   expr = re.sub( '([AB])-aD-bO', '\\1-aN-bN', expr )
   expr = re.sub( '([AB])-aD', '\\1-aN', expr )
   return expr
