@@ -279,7 +279,11 @@ def unpack( expr ):
   elif expr.split(':')[0] == '@N-aD':  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\zz', '^', [ 'Some', [ '\\e', expr[1:],'e','zz' ], Univ ], ['r','zz'] ], 's' ] )
   elif expr.split(':')[0] == '@N-b{N-aD}':  return( [ '\\f', '\\r', '\\s', expr[1:], [ '\\x', 'f', 'Some', 'r', ['\\xx','Equal','xx','x'] ], 's' ] )
   elif expr.split(':')[0] == '@N-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\x', 'f', 'q', 'r', ['\\xx','Equal','xx','x'] ], 's' ] )
-  elif expr.split(':')[0] == '@NNORD-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x', '^', [ 'f', 'q', 'r', ['\\xx','Equal','xx','x'] ], [ expr[1:]+'MinusOne', [ '\\y', '^', [ 'f', 'q', 'r', ['\\yy','Equal','yy','y'] ], ['Prec','x','y'] ], 's' ] ] ] )
+  elif expr.split(':')[0] == '@NNORD-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x', '^', [ 'f', 'q', 'r', ['\\xx','Equal','xx','x'] ],
+                                                                                                               [ expr[1:]+'MinusOne', [ '\\y', '^', [ 'f', 'q', 'r', ['\\yy','Equal','yy','y'] ], ['Prec','x','y'] ], 's' ] ] ] )
+  elif expr.split(':')[0] == '@Acomp-aN-b{V-g{V-aN}}':
+    return( [ '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'f', [ '\\p', '\\t', '\\u', 'p', Univ, [ '\\y', '^', ['u','y'], [ 'More', ['\\z','Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','x','z']],'u'],
+                                                                                                                                        ['\\z','Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','y','z']],'u'] ] ] ], 'r', 's' ] ] )
 #  elif expr.split(':')[0] == '@B-aN-b{A-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
 #  elif expr.split(':')[0] == '@B-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
 #  elif expr.split(':')[0] == '@I-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
