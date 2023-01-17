@@ -6,10 +6,12 @@ import lex
 VERBOSE = False    ## print debugging info.
 ANAPH = True
 SKIPS = []
+ONLY = -1
 for a in sys.argv:
   if a=='-d':  VERBOSE = True
   if a=='-n':  ANAPH = False
-  if a.startswith('-s'):  SKIPS += [ int(a[2:]) ]
+  if a[:2]=='-s':  SKIPS += [ int( a[2:] ) ]
+  if a[:2]=='-o':  ONLY = int( a[2:] )
 
 ################################################################################
 ##
@@ -121,6 +123,10 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 
   ## 2.b. Pre-terminal branch...
   if len(t.ch) == 1 and len(t.ch[0].ch) == 0:
+    if '=' in t.c:
+      print( 'pre-empting', t.c )
+      t.c = re.sub( '-x.*', '', t.c )  ## Pre-empt any equations.
+      print( 'pre-empted', t.c )
     pred = lex.getFn( t.c, t.ch[0].c )
     if   pred == '' and t.c == 'N-b{N-aD}-x%|':  output = 'IdentSome'
     elif pred == '' and t.c == 'Ne-x%|':         output = 'Some'
@@ -184,8 +190,9 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 ##    elif '-lG' in t.ch[0].c:  output = [ 'Store', 'x'+t.ch[0].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ) ]
 #    elif '-lG' in t.ch[0].c and getLocalArity(t.ch[0].c)==0:  output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), Univ, [ '\\x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ), 'r', 's' ] ]
 #    elif '-lG' in t.ch[0].c and getLocalArity(t.ch[0].c)==1:  output = [ translate( t.ch[1], Scopes, Anaphs, [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ] + lsNolo[m:] ) ]
-    elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = [ 'Store', 'x'+t.ch[1].sVar, [ 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ] ) ],
-                                                                        translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ) ]
+    elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = translate( t.ch[0], Scopes, Anaphs, [ [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\z'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','z'+t.ch[1].sVar] ] + lsNolo[:m] ) ] ] ] + lsNolo[:m] )
+#    elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = [ 'Store', 'x'+t.ch[1].sVar, [ 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ] ) ],
+#                                                                        translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ) ]
     elif '-lH' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ) ] + lsNolo[:m-1] ) ]
 ##    elif '-lH' in t.ch[1].c:  output = [ 'Store', 'x'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ) ]
 #    elif '-lH' in t.ch[1].c and getLocalArity(t.c)==1:  output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), Univ, [ '\\x'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ), 'q', 'r', 's' ] ]
@@ -280,7 +287,7 @@ def unpack( expr ):
 #  elif expr == 'SelfStore':  return( [ '\\v', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+?????
   elif re.search( '^@N(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@N-aD':  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
-  elif expr.split(':')[0] == '@N-b{N-aD}':  return( [ '\\f', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'Some', 'r', ['\\xx','Equal','xx','x'+sVar] ], 's' ] )
+  elif expr.split(':')[0] == '@N-b{N-aD}':  return( [ '\\f', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'Some', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@N-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@NNORD-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ],
                                                                                                                [ expr[1:]+'MinusOne', [ '\\y'+sVar, '^', [ 'f', 'q', 'r', ['\\y','Equal','y','y'+sVar] ], ['Prec','x'+sVar,'y'+sVar] ], 's' ] ] ] )
@@ -305,6 +312,12 @@ def unpack( expr ):
   ## Raising...
   elif re.search( '^@[A-Za-z0-9]+-[ab][A-Za-z]+-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}(-[lx].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s',                                                                    'f', 'q', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar                           ], ['r','e'+sVar] ], 's'       ] )
+  ## Range modifier (??)...
+  elif re.search( '^@[A-Za-z0-9]+-[ab][A-Za-z]+-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}-[ab][A-Za-z]+(-[lx].*)?:', expr ) != None:
+    return( [        '\\p', '\\f', '\\q', '\\r', '\\s', 'p', Univ, [ '\\x'+sVar, 'f', 'q', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar                           ], ['r','e'+sVar] ], 's'       ] ] )
+  ## Take construction...
+  elif re.search( '^@[A-Za-z0-9]+-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}-[ab][A-Za-z]+-[ab][A-Za-z]+(-[lx].*)?:', expr ) != None:
+    return( [        '\\p', '\\q', '\\f', '\\r', '\\s', 'f', 'p', 'r', [ '\\e'+sVar, '^', ['s','e'+sVar], [ 'q', Univ, ['\\y'+sVar,expr[1:],'e'+sVar,'y'+sVar] ] ] ] )
   ## Sent comp...
   elif re.search( '^@[A-Za-z0-9]+-[ab][A-Za-z]+-[ab][ABCEFGIVQRSVa-z]+(-[lx].*)?:', expr ) != None:
     return( [        '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [ expr[1:], 'e'+sVar, 'x'+sVar, [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'+sVar] ], 's' ] ] )
@@ -329,7 +342,7 @@ def unpack( expr ):
 ########################################
 
 def replace( expr, old, new ):
-#  if VERBOSE: print( 'replacing:', old, 'with', new, 'in', expr )
+  if VERBOSE: print( 'replacing:', old, 'with', new, 'in', expr )
   if expr == old:
     return( new )
   elif isinstance( expr, str ):
@@ -399,9 +412,16 @@ def simplify( expr ):
 
   ## Eliminate existentials with conjunctions with equality...
 #  if expr[0]=='Some': print( expr )
+  if expr[0]=='Some' and expr[2][1]=='Equal':
+    print( 'pruningA:', expr )
+    expr[:] = replace( expr[1][1:], expr[1][0], expr[2][3] )
+  if len(expr)==4 and expr[1]=='Some' and expr[3][1]=='Equal':
+    print( 'pruningB:', expr )
+    expr[:] = [ expr[0] ] + replace( expr[2][1:], expr[2][0], expr[3][3] )
   if expr[0]=='Some' and expr[2][1]=='^' and expr[2][3][0]=='Equal' and expr[2][3][1]==expr[2][0][1:]:
-#    print( 'input:', expr )
+    print( 'pruningC:', expr )
     expr[:] = [ '^', replace( expr[1][1:], expr[1][0][1:], expr[2][3][2] ), replace( expr[2][1:], expr[2][0][1:], expr[2][3][2] ) ]
+
 #    print( 'output:', expr )
 #   if 'Some' in expr:
 #     print( expr )
@@ -423,6 +443,17 @@ def simplify( expr ):
       simplify( subexpr )
 
 
+########################################
+#
+#  II.E. Pretty print...
+#
+########################################
+
+def prettyPrint( expr ):
+  if isinstance( expr, str ):  return( expr )
+  else:  return( '(' + ' '.join([ prettyPrint(subexpr) for subexpr in expr ]) + ')' )
+
+
 ################################################################################
 ##
 ##  III. MAIN LOOP
@@ -439,7 +470,7 @@ while True:
   Anaphs = {}
   Trees = []
 
-#  if nArticle == 75: VERBOSE = True
+  if nArticle == ONLY: VERBOSE = True
 
   ## For each tree in article...
   for nLine,line in enumerate( sys.stdin ):
@@ -485,7 +516,7 @@ while True:
 
     print( '----------' )
     simplify( fullExpr )
-    print( fullExpr )
+    print( prettyPrint(fullExpr) )
 
   if '!ARTICLE' not in line:
     break
