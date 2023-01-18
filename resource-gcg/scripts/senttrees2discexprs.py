@@ -177,26 +177,16 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lD' in t.ch[1].c or t.ch[1].c[0] in ',;:.!?':  output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
     elif '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
     elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
+    elif re.match( '^[A-Za-z]+-[ghriv]\{[A-Za-z]+-[ab][A-Za-z]+\}-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\ff', translate( t.ch[1], Scopes, Anaphs, [ 'ff' ] + lsNolo[m:] ) ] ]
     elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 0:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ),      'r', 's' ] ] ]
     elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 1:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\p', '\\q', '\\r', '\\s', 'p', Univ, [ '\\x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ), 'q', 'r', 's' ] ] ]
-#    elif '-lI' in t.ch[0].c and getLocalArity(t.ch[1].c) == 0:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+t.ch[0].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ),         'r', 's' ] ] ]  # [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), [ 'SelfStore', 'x'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ) ] ]
-#    elif '-lI' in t.ch[0].c and getLocalArity(t.ch[1].c) == 1:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+t.ch[0].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ), 'Some', 'r', 's' ] ] ]  # [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), [ 'SelfStore', 'x'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ) ] ]
-#    elif '-lI' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ) ] ]
     elif '-lM' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
     elif '-lM' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
     elif '-lC' in t.ch[0].c:  output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
     elif '-lC' in t.ch[1].c:  output = translate( t.ch[1], Scopes, Anaphs, lsNolo )
     elif '-lG' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ] + lsNolo[m:] ) ]
-##    elif '-lG' in t.ch[0].c:  output = [ 'Store', 'x'+t.ch[0].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ) ]
-#    elif '-lG' in t.ch[0].c and getLocalArity(t.ch[0].c)==0:  output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), Univ, [ '\\x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ), 'r', 's' ] ]
-#    elif '-lG' in t.ch[0].c and getLocalArity(t.ch[0].c)==1:  output = [ translate( t.ch[1], Scopes, Anaphs, [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ] + lsNolo[m:] ) ]
     elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = translate( t.ch[0], Scopes, Anaphs, [ [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\z'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','z'+t.ch[1].sVar] ] + lsNolo[:m] ) ] ] ] + lsNolo[:m] )
-#    elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = [ 'Store', 'x'+t.ch[1].sVar, [ 'SelfStore', 'x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ] ) ],
-#                                                                        translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ) ]
     elif '-lH' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ) ] + lsNolo[:m-1] ) ]
-##    elif '-lH' in t.ch[1].c:  output = [ 'Store', 'x'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ) ]
-#    elif '-lH' in t.ch[1].c and getLocalArity(t.c)==1:  output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), Univ, [ '\\x'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ), 'q', 'r', 's' ] ]
-#    elif '-lH' in t.ch[1].c and getLocalArity(t.c)==0:  output = [        '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), Univ, [ '\\x'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ),      'r', 's' ] ]
     ## Relative clause modification by C-rN-lR...
     elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==0:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
     ## Relative clause modification by I-aN-gN-lR (e.g. 'a job to do _') -- event should be in future...
@@ -205,8 +195,6 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lR' in t.ch[1].c and getLocalArity(t.c)==1:  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ), 'q', 'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
     ## Relative clause modification of complete phrase or clause...
     elif '-lR' in t.ch[0].c and getLocalArity(t.c)==0:  output = [        '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),      'r', [ '\\x'+t.ch[1].sVar, '^', [ translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m-1] ), Univ, Univ ], ['s','x'+t.ch[1].sVar] ] ]
-#    elif '-lR' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, lsNolo ), translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] ) ]
-#    elif '-lR' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] ) ]
     else:  print( '\nERROR: unhandled rule from ' + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
     ## Propagate child stores...
     t.qstore += (t.ch[0].qstore if hasattr(t.ch[0],'qstore') else []) + (t.ch[1].qstore if hasattr(t.ch[1],'qstore') else [])
@@ -294,6 +282,9 @@ def unpack( expr ):
   elif expr.split(':')[0] == '@Acomp-aN-b{V-g{V-aN}}':
     return( [ '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'f', [ '\\p', '\\t', '\\u', 'p', Univ, [ '\\y'+sVar, '^', ['u','y'+sVar], [ 'More', ['\\z','Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','x'+sVar,'z'+sVar]],'u'],
                                                                                                                                                        ['\\z','Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','y'+sVar,'z'+sVar]],'u'] ] ] ], 'r', 's' ] ] )
+  ## Bare relative N-b{V-g{R-aN}}...
+  elif re.search( '^@[A-Za-z0-9]+-[ab]\{[A-Za-z0-9]+-[ghirv]\{[A-Za-z]+-[ab][A-Za-z]+\}\}(-[lx].*)?:', expr ) != None:
+    return( [ '\\f', '\\r', '\\s', 'f', [ '\\q', '\\t', '\\u', 'All', Univ, [ '\\x'+sVar, 'q', Univ, [ '\\y'+sVar, expr[1:], 'x'+sVar, 'y'+sVar ] ] ], 'r', 's' ] )
 #  elif expr.split(':')[0] == '@B-aN-b{A-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
 #  elif expr.split(':')[0] == '@B-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
 #  elif expr.split(':')[0] == '@I-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
