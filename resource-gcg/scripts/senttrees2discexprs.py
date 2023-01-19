@@ -140,6 +140,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   elif len(t.ch) == 1:
     form = re.sub( '-[lmnstuwxy][^ ]*', '', t.ch[0].c + ' ' + t.c )
     if   '-lF' in t.ch[0].c and re.search( '^V-iN((?:-[ghirv][^ ]*)?) N\\1$', form ) != None:  output = [ '\\r', '\\s', 'All', [ '\\x'+t.sVar, '^', ['r','x'+t.sVar], translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ], 's' ]
+    ## Apply -lZ to extracted filler...
+    elif '-lE' in t.ch[0].c and re.search( '(.*)-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}(-[lx].*)? \\1-[ghriv][A-Za-z]+(-[lx].*)?$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] ), [ 'Prop', lsNolo[-1] ] ]
     elif '-lE' in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] ), lsNolo[-1] ]
     elif '-lE' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] ), lsNolo[-1] ]
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 1:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'p' ]
@@ -184,8 +186,12 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lM' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
     elif '-lC' in t.ch[0].c:  output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
     elif '-lC' in t.ch[1].c:  output = translate( t.ch[1], Scopes, Anaphs, lsNolo )
+    elif '-lG' in t.ch[0].c and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g\\1 \\3\\2\\4$', form ) == None and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)-g{\\1}((?:-[ghirv][^ ]*)?) \\3\\2\\4$', form ) == None:
+      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     elif '-lG' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ] + lsNolo[m:] ) ]
-    elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = translate( t.ch[0], Scopes, Anaphs, [ [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\z'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','z'+t.ch[1].sVar] ] + lsNolo[:m] ) ] ] ] + lsNolo[:m] )
+    elif '-lH' in t.ch[1].c and re.search( '^(.*)-h(.*) \\2 \\1$', form ) == None and re.search( '^(.*)-h{(.*)} \\2 \\1$', form ) == None:
+      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+    elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = translate( t.ch[0], Scopes, Anaphs, [ [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\z'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','z'+t.ch[1].sVar] ] + lsNolo[:m] ), 'r', 'r' ] ] ] + lsNolo[:m] )
     elif '-lH' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ) ] + lsNolo[:m-1] ) ]
     ## Relative clause modification by C-rN-lR...
     elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==0:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
@@ -253,6 +259,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 ########################################
 
 Univ = [ '\\z', 'True' ]
+Equal = [ '\\a', '\\b', 'Equal', 'b', 'a' ]
+QuantEq = [ '\\z', '\\t', '\\u', '^', ['t','z'], ['u','z'] ]
 
 def unpack( expr ):
   if '@' in expr[1:]:
@@ -279,9 +287,15 @@ def unpack( expr ):
   elif expr.split(':')[0] == '@N-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@NNORD-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ],
                                                                                                                [ expr[1:]+'MinusOne', [ '\\y'+sVar, '^', [ 'f', 'q', 'r', ['\\y','Equal','y','y'+sVar] ], ['Prec','x'+sVar,'y'+sVar] ], 's' ] ] ] )
+  elif expr.split(':')[0] == '@NNSUP3-aD-b{N-aD}-b{A-aN}':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
+                                                                                                                                    [ 'None', [ '\\y'+sVar, 'g', 'q', 'r', [Equal,'y'+sVar] ],
+                                                                                                                                              [ '\\y'+sVar, expr[1:], ['\\z','f',[QuantEq,'y'+sVar],[Equal,'z'],Univ],
+                                                                                                                                                                      ['\\z','f',[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
+  elif expr.split(':')[0] == '@A-aN-b{F-gN}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\zz', 'q', Univ, [Equal,'zz'] ],
+                                                                                               [ '\\zz', 'f', [QuantEq,'zz'], 'r', 's' ] ] )
   elif expr.split(':')[0] == '@Acomp-aN-b{V-g{V-aN}}':
-    return( [ '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'f', [ '\\p', '\\t', '\\u', 'p', Univ, [ '\\y'+sVar, '^', ['u','y'+sVar], [ 'More', ['\\z','Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','x'+sVar,'z'+sVar]],'u'],
-                                                                                                                                                       ['\\z','Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','y'+sVar,'z'+sVar]],'u'] ] ] ], 'r', 's' ] ] )
+    return( [ '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'f', [ '\\p', '\\t', '\\u', 'p', Univ, [ '\\y'+sVar, '^', ['u','y'+sVar], [ 'More', ['\\z','Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','e','x'+sVar,'z']],'u'],
+                                                                                                                                                       ['\\z','Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','e','y'+sVar,'z']],'u'] ] ] ], 'r', 's' ] ] )
   ## Bare relative N-b{V-g{R-aN}}...
   elif re.search( '^@[A-Za-z0-9]+-[ab]\{[A-Za-z0-9]+-[ghirv]\{[A-Za-z]+-[ab][A-Za-z]+\}\}(-[lx].*)?:', expr ) != None:
     return( [ '\\f', '\\r', '\\s', 'f', [ '\\q', '\\t', '\\u', 'All', Univ, [ '\\x'+sVar, 'q', Univ, [ '\\y'+sVar, expr[1:], 'x'+sVar, 'y'+sVar ] ] ], 'r', 's' ] )
