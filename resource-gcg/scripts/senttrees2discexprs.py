@@ -131,8 +131,9 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     if   pred == '' and t.c == 'N-b{N-aD}-x%|':  output = 'IdentSome'
     elif pred == '' and t.c == 'Ne-x%|':         output = 'Some'
     elif pred == '':                             output = 'Ident'
-    elif t.c == 'R-aN-rN-xR%|A%':                output = [ '@'+pred+'@'+t.sVar, lsNolo[-1] ]
-    elif t.c == 'N-rN':                          output = [ '@'+pred+'@'+t.sVar, lsNolo[-1] ]
+    elif re.match( '^.*-[ri][A-Za-z0-9]+(-[lx].*)?$', t.c ) != None:  output = [ '@'+pred+'@'+t.sVar, lsNolo[-1] ]
+#    elif t.c == 'R-aN-rN-xR%|A%':                output = [ '@'+pred+'@'+t.sVar, lsNolo[-1] ]
+#    elif t.c == 'N-rN':                          output = [ '@'+pred+'@'+t.sVar, lsNolo[-1] ]
     else:                                        output = '@'+pred+'@'+t.sVar
 #    output = '@'+pred if pred != '' else ('IdentSome' if t.c == 'N-b{N-aD}-x%|'  else  'Some' if t.c == 'Ne-x%|'  else 'Ident')
 
@@ -152,6 +153,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Prop', [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ] ]
     elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Prop', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
     elif '-lz' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Prop', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
+    elif form == 'Q-iN S':  output = [ '\\r', '\\s', 'All', [ '\\x'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','\\x'+t.sVar] ] + lsNolo ), 'r', 's' ],
+                                                            [ '\\x'+t.sVar, 'Explain', 'ThisArticle', 'x'+t.sVar ] ]
     elif '-l' not in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ]
     elif '-l' not in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
     else:
@@ -180,7 +183,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
     elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
     elif re.match( '^[A-Za-z]+-[ghriv]\{[A-Za-z]+-[ab][A-Za-z]+\}-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\ff', translate( t.ch[1], Scopes, Anaphs, [ 'ff' ] + lsNolo[m:] ) ] ]
-    elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 0:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ),      'r', 's' ] ] ]
+    elif re.match( '^[A-Za-z]+-[ghriv][A-Za-z]+-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\ff', translate( t.ch[1], Scopes, Anaphs, [ 'ff' ] + lsNolo[m:] ) ] ]
+#    elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 0:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ),      'r', 's' ] ] ]
     elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 1:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\p', '\\q', '\\r', '\\s', 'p', Univ, [ '\\x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ), 'q', 'r', 's' ] ] ]
     elif '-lM' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
     elif '-lM' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
@@ -302,8 +306,10 @@ def unpack( expr ):
 #  elif expr.split(':')[0] == '@B-aN-b{A-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
 #  elif expr.split(':')[0] == '@B-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
 #  elif expr.split(':')[0] == '@I-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
-  elif expr.split(':')[0] == '@N-rN':  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar], ['r','e'+sVar] ], 's' ] ] )
-  elif expr.split(':')[0] == '@A-aN-rN':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y', 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar], ['r','e'+sVar] ], 's' ] ] ] )
+  elif re.search( '^@N-[ri]N:', expr ):  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar], ['r','e'+sVar] ], 's' ] ] )
+#  elif expr.split(':')[0] == '@N-rN':  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar], ['r','e'+sVar] ], 's' ] ] )
+  elif re.search( '^@A-aN-[ri]N:', expr ):  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y', 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar], ['r','e'+sVar] ], 's' ] ] ] )
+#  elif expr.split(':')[0] == '@A-aN-rN':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y', 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar], ['r','e'+sVar] ], 's' ] ] ] )
 #  elif expr.split(':')[0] == '@B-aN-bA':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\e', '^', [ expr[1:], 'e', 'x', [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'] ], 's' ] ] )
   ## Intransitive...
   elif re.search( '^@[A-Za-z0-9]+-[ab][A-Za-z]*(-[lx].*)?:', expr ) != None:
@@ -418,13 +424,13 @@ def simplify( expr ):
   ## Eliminate existentials with conjunctions with equality...
 #  if expr[0]=='Some': print( expr )
   if expr[0]=='Some' and expr[2][1]=='Equal':
-    print( 'pruningA:', expr )
-    expr[:] = replace( expr[1][1:], expr[1][0], expr[2][3] )
+    print( 'pruningA with', expr[2][3], 'replacing', expr[1][0][1:], 'in', expr )
+    expr[:] = replace( expr[1][1:], expr[1][0][1:], expr[2][3] )
   if len(expr)==4 and expr[1]=='Some' and expr[3][1]=='Equal':
-    print( 'pruningB:', expr )
-    expr[:] = [ expr[0] ] + replace( expr[2][1:], expr[2][0], expr[3][3] )
+    print( 'pruningB with', expr[3][3], 'replacing', expr[2][0][1:], 'in', expr )
+    expr[:] = [ expr[0] ] + replace( expr[2][1:], expr[2][0][1:], expr[3][3] )
   if expr[0]=='Some' and expr[2][1]=='^' and expr[2][3][0]=='Equal' and expr[2][3][1]==expr[2][0][1:]:
-    print( 'pruningC:', expr )
+    print( 'pruningC with', expr[2][3][2], 'replacing', expr[2][0][1:], 'in', expr )
     expr[:] = [ '^', replace( expr[1][1:], expr[1][0][1:], expr[2][3][2] ), replace( expr[2][1:], expr[2][0][1:], expr[2][3][2] ) ]
 
 #    print( 'output:', expr )
