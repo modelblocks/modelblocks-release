@@ -140,9 +140,9 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   ## 3.c. Unary branch...
   elif len(t.ch) == 1:
     form = re.sub( '-[lmnstuwxy][^ ]*', '', t.ch[0].c + ' ' + t.c )
-    if   '-lF' in t.ch[0].c and re.search( '^V-iN((?:-[ghirv][^ ]*)?) N\\1$', form ) != None:  output = [ '\\r', '\\s', 'All', [ '\\x'+t.sVar, '^', ['r','x'+t.sVar], translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ], 's' ]
+#    if   '-lF' in t.ch[0].c and re.search( '^V-iN((?:-[ghirv][^ ]*)?) N\\1$', form ) != None:  output = [ '\\r', '\\s', 'All', [ '\\x'+t.sVar, '^', ['r','x'+t.sVar], translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ], 's' ]
     ## Apply -lZ to extracted filler...
-    elif '-lE' in t.ch[0].c and re.search( '(.*)-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}(-[lx].*)? \\1-[ghriv][A-Za-z]+(-[lx].*)?$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] ), [ 'Prop', lsNolo[-1] ] ]
+    if '-lE' in t.ch[0].c and re.search( '(.*)-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}(-[lx].*)? \\1-[ghriv][A-Za-z]+(-[lx].*)?$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] ), [ 'Prop', lsNolo[-1] ] ]
     elif '-lE' in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] ), lsNolo[-1] ]
     elif '-lE' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] ), lsNolo[-1] ]
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 1:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'p' ]
@@ -153,8 +153,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Prop', [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ] ]
     elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Prop', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
     elif '-lz' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Prop', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
-    elif form == 'Q-iN S':  output = [ '\\r', '\\s', 'All', [ '\\x'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','\\x'+t.sVar] ] + lsNolo ), 'r', 's' ],
-                                                            [ '\\x'+t.sVar, 'Explain', 'ThisArticle', 'x'+t.sVar ] ]
+    elif re.match( '^[A-Za-z0-9]+-i[A-Za-z0-9]+ [A-Za-z0-9]+', form ):  output = [ '\\r', '\\s', 'Gen', [ '\\x'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','\\x'+t.sVar] ] + lsNolo ), 'r', Univ ], 's' ]
+                                                                                                        # [ '\\x'+t.sVar, 'Explain', 'ThisArticle', 'x'+t.sVar ] ]
     elif '-l' not in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ]
     elif '-l' not in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
     else:
