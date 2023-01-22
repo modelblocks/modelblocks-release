@@ -57,6 +57,7 @@ def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, nWord=0 ):
     t.sVar = str(nSent*100+nWord)
   elif len(t.ch) == 1:
     t.sVar = t.ch[0].sVar
+    if t.c[:3] == 'V-g' and t.ch[0].c[:4] == 'N-lE': t.sVar += '?'  ## Special case for function extraction.
   elif len(t.ch) == 2:
     t.sVar = t.ch[0].sVar if '-lU' in t.ch[0].c else t.ch[1].sVar if '-lU' in t.ch[1].c else t.ch[0].sVar if '-l' not in t.ch[0].c else t.ch[1].sVar if '-l' not in t.ch[1].c else None
   else: print( '\nERROR: too many children in ', t )
@@ -142,16 +143,24 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 #    form = re.sub( '-[lmnstuwxy][^ ]*', '', t.ch[0].c + ' ' + t.c )
     form = re.sub( '-[mnstuwxy][^ ]*', '', re.sub('-x-','-',t.ch[0].c) ) + ' ' + re.sub( '-[lx][^ ]*', '', t.c )
 #    print( 'form:', form )
-#    bform = re.sub( '-[lx][^ ]*', '', t.c ) + ' ' + re.sub( '-[mnstuwxy][^ ]*', '', t.ch[0].c )
+    bform = re.sub( '-[lx][^ ]*', '', t.c ) + ' ' + re.sub( '-[mnstuwxy][^ ]*', '', t.ch[0].c )
 #    if   '-lF' in t.ch[0].c and re.search( '^V-iN((?:-[ghirv][^ ]*)?) N\\1$', form ) != None:  output = [ '\\r', '\\s', 'All', [ '\\x'+t.sVar, '^', ['r','x'+t.sVar], translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ], 's' ]
-    ## Apply -lZ to extracted filler: V-aN-gN -> V-aN-b{A-aN}...
-    if re.search( '(.*)-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}-lE \\1-[ghriv][A-Za-z]+(-[lx].*)?$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), [ 'Pred', lsNolo[0] ] ]
-#    elif '-lE' in t.ch[0].c and not( re.search( '^(.*)-[ab]([^ ]+)((?:-[ghirv][^ ]*)?) \\1-[ghirv]\\2\\3$', form ) ) and not( re.search( '^(.*)((?:-[ghirv][^ ]*)?) \\1-[ghirv]\{[^ ]*\}\\2$', form ) ):
-    elif re.search( '^(.*)-lE \\1$', form ):
-      print( 'ERROR: Ill-formed extraction:', t.c, '->', t.ch[0].c )
-      exit( 0 )
-    elif '-lE' in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
-    elif '-lE' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
+    ## Extractions / non-local introduction...
+    if '-lE' in t.ch[0].c:
+      ## Argument extraction with zero-head rule applied to filler: e.g. V-aN-gN -> V-aN-b{A-aN}-lE...
+      if re.search( '^(.*)-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}((?:-[ghirv][^ ]*)?)-lE \\1-[ghriv][A-Za-z]+\\2$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), [ 'Pred', lsNolo[0] ] ]
+      ## Function extraction: e.g. V-g{V-aN} -> N-lE...
+      elif re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE ([A-Za-z]+)-[ghirv]\{\\3-[abghirv](\\1|\{\\1\})\}\\2$', form ):  output = [ lsNolo[0], translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ) ]
+      ## Argument extraction with exact match: e.g. V-aN-gN -> V-aN-bN-lE... 
+      elif re.search( '^(.*)-[ab]([^ ]+)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\\2\\3$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
+      ## Modifier extraction: e.g. V-aN-g{R-aN} -> V-aN-lE... 
+      elif re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\{[^ ]*\}\\2$', form ):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
+#      elif '-lE' in t.ch[0].c and not( re.search( '^(.*)-[ab]([^ ]+)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\\2\\3$', form ) ) and not( re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\{[^ ]*\}\\2$', form ) ):
+#      elif '-lE' in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
+#      elif '-lE' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
+      else: 
+        print( 'ERROR: Ill-formed extraction:', t.c, '->', t.ch[0].c )
+        exit( 0 )
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 1:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'p' ]
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 2:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'q', 'p' ]
     elif re.search( '^L-aN-vN((?:-[ghirv][^ ]*)?)-lV A-aN\\1$', form ) != None:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ), 'Some', 'r', 's' ] ]
@@ -193,6 +202,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lD' in t.ch[1].c or t.ch[1].c[0] in ',;:.!?':  output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
     elif '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
     elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
+    ## Non-local elimination in argument: e.g. V-aN -> V-aN-b{I-aN-gN} I-aN-gN-lI...
     elif re.match( '^[A-Za-z]+-[ghriv]\{[A-Za-z]+-[ab][A-Za-z]+\}-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\ff', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ 'ff' ] ) ] ]
     elif re.match( '^[A-Za-z]+-[ghriv][A-Za-z]+-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\ff', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ 'ff' ] ) ] ]
 #    elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 0:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ),      'r', 's' ] ] ]
@@ -206,7 +216,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lG' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ] ) ]
     elif '-lH' in t.ch[1].c and re.search( '^(.*)-h(.*) \\2 \\1$', form ) == None and re.search( '^(.*)-h{(.*)} \\2 \\1$', form ) == None:
       sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
-    ## Non-local in non-local: -h{V-g{V-aN}}...
+    ## Non-local in non-local: N -> N-h{V-g{V-aN}} V-g{V-aN}-lH...
     elif re.match( '^[A-Za-z]+-[ghirv]\{[A-Za-z]+-[ab][A-Z-az]+\}-lH$', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\ff', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] + [ 'ff' ] ) ] ] ) ]
       #  output = translate( t.ch[0], Scopes, Anaphs, [ [ '\\f', '\\r', '\\s', 'f', [ '\\q', '\\t', '\\u', 'q', Univ, [ '\\x'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ), 't', 'u' ] ], 'r', 's' ] ] + lsNolo[:m] )
     ## Non-local in non-local: -h{C-rN}
@@ -255,8 +265,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
       else:
         break
 
-  ## 5. If scoped and cannot be in situ, store...
-  if t.bMax and t.sVar in Scopes and t.sVar in Scopes.values():
+  ## 5. If scoped and cannot be in situ, store quantified noun phrase...
+  if t.bMax and lsNolo == [] and t.sVar in Scopes and t.sVar in Scopes.values():
     t.qstore = [( t.qstore, output, t.sVar )]
     output = [ 'RaiseTrace', 'x'+t.sVar ]
 
@@ -273,7 +283,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 
 ########################################
 #
-#  II.A. Replace constants with lambda functions...
+#  II.A. Replace lexical (`non-logical') constants with lambda functions...
 #
 ########################################
 
@@ -312,6 +322,8 @@ def unpack( expr ):
                                                                                                                                                                       ['\\z','f',[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
   elif expr.split(':')[0] == '@A-aN-b{F-gN}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\zz', 'q', Univ, [Equal,'zz'] ],
                                                                                                [ '\\zz', 'f', [QuantEq,'zz'], 'r', 's' ] ] )
+  ## Sentential subject e.g. A-a{V-iN}:clear
+  elif re.search( '^@[A-Za-z0-9]+-[ab]\{[A-Za-z0-9]+-[abghirv][A-Za-z0-9]+\}(-[lx].*)?:', expr ):  return( [ '\\f', '\\r', '\\s', 'Gen', [ '\\z', 'f', [QuantEq,'z'], 'r', 's' ] ] )
   ## Comparatives: A-aN-b{V-g{V-aN}}...
 #  elif expr.split(':')[0] == '@Acomp-aN-b{V-g{V-aN}}':
   elif re.search( '^@[A-Za-z0-9]+-[ab][A-Za-z0-9]+-[ab]\{[A-Za-z0-9]+-[abghirv]\{[A-Za-z0-9]+-[abghirv][A-Za-z0-9]+\}\}(-[lx].*)?:', expr ):
