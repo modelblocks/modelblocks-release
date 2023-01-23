@@ -304,6 +304,8 @@ def unpack( expr ):
     expr,sVar = expr[1:].split('@')
     expr = '@'+expr
   if not isinstance( expr, str ):  return([ unpack(subexpr) for subexpr in expr ])
+  elif expr == 'Anaphor':  return( [ '\\v', '\\q', '\\r', '\\s', 'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
+  elif expr == 'Antecedent':  return( [ '\\v', '\\q', '\\r', '\\s', 'q', ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )
   elif expr == 'And0':  return( [ '\\f', '\\g',               '\\r', '\\s', '^', [ 'g',           'r', 's' ], [ 'f',           'r', 's' ] ] )
   elif expr == 'And1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', '^', [ 'g',      'q', 'r', 's' ], [ 'f',      'q', 'r', 's' ] ] )
   elif expr == 'And2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', '^', [ 'g', 'p', 'q', 'r', 's' ], [ 'f', 'p', 'q', 'r', 's' ] ] )
@@ -467,13 +469,13 @@ def simplify( expr ):
     ## Eliminate existentials with conjunctions with equality...
   #  if expr[0]=='Some': print( expr )
     if expr[0]=='Some' and expr[2][1]=='Equal':
-      print( 'pruningA with', expr[2][3], 'replacing', expr[1][0][1:], 'in', expr )
+      if VERBOSE:  print( 'pruningA with', expr[2][3], 'replacing', expr[1][0][1:], 'in', expr )
       expr[:] = replace( expr[1][1:], expr[1][0][1:], expr[2][3] )
     if len(expr)==4 and expr[1]=='Some' and expr[3][1]=='Equal':
-      print( 'pruningB with', expr[3][3], 'replacing', expr[2][0][1:], 'in', expr )
+      if VERBOSE:  print( 'pruningB with', expr[3][3], 'replacing', expr[2][0][1:], 'in', expr )
       expr[:] = [ expr[0] ] + replace( expr[2][1:], expr[2][0][1:], expr[3][3] )
     if expr[0]=='Some' and expr[2][1]=='^' and expr[2][3][0]=='Equal' and expr[2][3][1]==expr[2][0][1:]:
-      print( 'pruningC with', expr[2][3][2], 'replacing', expr[2][0][1:], 'in', expr )
+      if VERBOSE:  print( 'pruningC with', expr[2][3][2], 'replacing', expr[2][0][1:], 'in', expr )
       expr[:] = [ '^', replace( expr[1][1:], expr[1][0][1:], expr[2][3][2] ), replace( expr[2][1:], expr[2][0][1:], expr[2][3][2] ) ]
   except:
     print( 'ERROR: unreduced expr (had set-valued variable):', expr )
@@ -506,9 +508,9 @@ def simplify( expr ):
 #
 ########################################
 
-def prettyPrint( expr ):
+def prettyForm( expr ):
   if isinstance( expr, str ):  return( expr )
-  else:  return( '(' + ' '.join([ prettyPrint(subexpr) for subexpr in expr ]) + ')' )
+  else:  return( '(' + ' '.join([ prettyForm(subexpr) for subexpr in expr ]) + ')' )
 
 
 ################################################################################
@@ -561,19 +563,19 @@ while True:
     if t.qstore != []:
       print( 'ERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
       exit(0)
-    print( shortExpr )
+    print( prettyForm(shortExpr) )
   
-    print( '----------' )
+    if VERBOSE:  print( '----------' )
     fullExpr = [ unpack(shortExpr), Univ, Univ ]
-    print( fullExpr )
+    if VERBOSE:  print( fullExpr )
 
-    print( '----------' )
+    if VERBOSE:  print( '----------' )
     betaReduce( fullExpr )
-    print( fullExpr )
+    if VERBOSE:  print( fullExpr )
 
     print( '----------' )
     simplify( fullExpr )
-    print( prettyPrint(fullExpr) )
+    print( prettyForm(fullExpr) )
 
   if '!ARTICLE' not in line:
     break
