@@ -57,7 +57,7 @@ def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, nWord=0 ):
     t.sVar = str(nSent*100+nWord)
   elif len(t.ch) == 1:
     t.sVar = t.ch[0].sVar
-    if t.c[:3] == 'V-g' and t.ch[0].c[:4] == 'N-lE': t.sVar += '?'  ## Special case for function extraction.
+    if t.c[:3] == 'V-g' and ( t.ch[0].c == 'N-lE' or t.ch[0].c == 'R-aN-lE' ): t.sVar += '?'  ## Special case for function extraction.
   elif len(t.ch) == 2:
     t.sVar = t.ch[0].sVar if '-lU' in t.ch[0].c else t.ch[1].sVar if '-lU' in t.ch[1].c else t.ch[0].sVar if '-l' not in t.ch[0].c else t.ch[1].sVar if '-l' not in t.ch[1].c else None
   else: print( '\nERROR: too many children in ', t )
@@ -151,6 +151,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
       if re.search( '^(.*)-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}((?:-[ghirv][^ ]*)?)-lE \\1-[ghriv][A-Za-z]+\\2$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), [ 'Pred', lsNolo[0] ] ]
       ## Function extraction: e.g. V-g{V-aN} -> N-lE...
       elif re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE ([A-Za-z]+)-[ghirv]\{\\3-[abghirv](\\1|\{\\1\})\}\\2$', form ):  output = [ lsNolo[0], translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ) ]
+      ## Function extraction: e.g. V-gV -> R-aN-lE...
+      elif re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE ([A-Za-z]+)-[ghirv]\\3\\2$', form ):  output = [ 'Mod'+str(getLocalArity(t.c)), lsNolo[0], translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ) ]
       ## Argument extraction with exact match: e.g. V-aN-gN -> V-aN-bN-lE... 
       elif re.search( '^(.*)-[ab]([^ ]+)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\\2\\3$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
       ## Modifier extraction: e.g. V-aN-g{R-aN} -> V-aN-lE... 
