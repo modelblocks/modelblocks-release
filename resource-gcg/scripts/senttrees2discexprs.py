@@ -163,10 +163,14 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 #      elif '-lE' in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
 #      elif '-lE' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
       else: 
-        print( 'ERROR: Ill-formed extraction:', t.c, '->', t.ch[0].c )
+        print( 'ERROR: Ill-formed extraction:', form ) # t.c, '->', t.ch[0].c )
         exit( 0 )
+    ## Unary modifier...
+    elif re.search( '^A-aN((?:-[ghirv][^ ]*)?)-lM N-aD\\1$', form ):  output = [ 'Mod1', ['\\q','\\t','\\u','True'], translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
+    ## Reordering rules...
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 1:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'p' ]
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 2:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'q', 'p' ]
+    ## Passive rule...
     elif re.search( '^L-aN-vN((?:-[ghirv][^ ]*)?)-lV A-aN\\1$', form ) != None:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ), 'Some', 'r', 's' ] ]
 #   elif '-lV' in t.ch[0].c:  output = [ 'Pasv', 'x'+ t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ]
     ## ACCOMMODATE SLOPPY ANNOTATION of '-lZ' with arg elision...
