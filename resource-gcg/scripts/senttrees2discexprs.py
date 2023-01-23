@@ -58,8 +58,10 @@ def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, nWord=0 ):
   elif len(t.ch) == 1:
     t.sVar = t.ch[0].sVar
     if t.c[:3] == 'V-g' and ( t.ch[0].c == 'N-lE' or t.ch[0].c == 'R-aN-lE' ): t.sVar += '?'  ## Special case for function extraction.
+    if '-lZ' in t.ch[0].c: t.sVar += '?'  ## Special case for zero-head rule.
   elif len(t.ch) == 2:
     t.sVar = t.ch[0].sVar if '-lU' in t.ch[0].c else t.ch[1].sVar if '-lU' in t.ch[1].c else t.ch[0].sVar if '-l' not in t.ch[0].c else t.ch[1].sVar if '-l' not in t.ch[1].c else None
+    if t.sVar == None: print( 'ERROR: Illegal categories in', t.c, '->', t.ch[0].c, t.ch[1].c )
   else: print( '\nERROR: too many children in ', t )
 
   ## Store scopes and anaphora...
@@ -318,10 +320,15 @@ def unpack( expr ):
   elif expr.split(':')[0] == '@N-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@NNORD-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ],
                                                                                                                     [ expr[1:]+'MinusOne', [ '\\y'+sVar, 'f', 'q', 'r', ['\\y','Equal','y','y'+sVar] ], ['\\y'+sVar, 'Prec','x'+sVar,'y'+sVar] ] ], 's' ] )
-  elif expr.split(':')[0] == '@NNSUP3-aD-b{N-aD}-b{A-aN}':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
-                                                                                                                                    [ 'None', [ '\\y'+sVar, 'g', 'q', 'r', [Equal,'y'+sVar] ],
-                                                                                                                                              [ '\\y'+sVar, expr[1:], ['\\z','f',[QuantEq,'y'+sVar],[Equal,'z'],Univ],
-                                                                                                                                                                      ['\\z','f',[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
+  elif expr.split(':')[0] == '@ANORDSUP-aD-b{N-aD}-b{A-aN}':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
+                                                                                                                                      [ expr[1:]+'MinusOne', [ '\\y'+sVar, 'g', 'q', 'r', [Equal,'y'+sVar] ],
+                                                                                                                                                             [ '\\y'+sVar, 'More', ['\\z','f',[QuantEq,'y'+sVar],[Equal,'z'],Univ],
+                                                                                                                                                                                   ['\\z','f',[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
+#  elif expr.split(':')[0] == '@NNSUP3-aD-b{N-aD}-b{A-aN}':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
+  elif re.search( '@[AN]NSUP3?-aD-b{N-aD}-b{A-aN}:', expr ):  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
+                                                                                                                                      [ 'None', [ '\\y'+sVar, 'g', 'q', 'r', [Equal,'y'+sVar] ],
+                                                                                                                                                [ '\\y'+sVar, expr[1:], ['\\z','f',[QuantEq,'y'+sVar],[Equal,'z'],Univ],
+                                                                                                                                                                        ['\\z','f',[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
   elif expr.split(':')[0] == '@A-aN-b{F-gN}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\zz', 'q', Univ, [Equal,'zz'] ],
                                                                                                [ '\\zz', 'f', [QuantEq,'zz'], 'r', 's' ] ] )
   ## Sentential subject e.g. A-a{V-iN}:clear
