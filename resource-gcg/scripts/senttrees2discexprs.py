@@ -247,9 +247,9 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 
   ## 3. Mark anaphora...
   if ANAPH and t.bMax and t.sVar in Anaphs:
-    output = [ 'Anaphor', Anaphs[t.sVar], output ]
+    output = [ 'Anaphor'+str(getLocalArity(t.c)), Anaphs[t.sVar], output ]
   if ANAPH and t.bMax and t.sVar in Anaphs.values():
-    output = [ 'Antecedent', t.sVar, output ]
+    output = [ 'Antecedent'+str(getLocalArity(t.c)), t.sVar, output ]
 
   ## 4. Retrieve quantifier...
   if VERBOSE: print( ' '*indent, 'cat and scopes:', t.c, Scopes )
@@ -304,8 +304,10 @@ def unpack( expr ):
     expr,sVar = expr[1:].split('@')
     expr = '@'+expr
   if not isinstance( expr, str ):  return([ unpack(subexpr) for subexpr in expr ])
-  elif expr == 'Anaphor':  return( [ '\\v', '\\q', '\\r', '\\s', 'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
-  elif expr == 'Antecedent':  return( [ '\\v', '\\q', '\\r', '\\s', 'q', ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )
+  elif expr == 'Anaphor0':  return( [ '\\v',        '\\q', '\\r', '\\s',      'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
+  elif expr == 'Anaphor1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
+  elif expr == 'Antecedent0':  return( [ '\\v',        '\\q', '\\r', '\\s',      'q', ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )
+  elif expr == 'Antecedent1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )
   elif expr == 'And0':  return( [ '\\f', '\\g',               '\\r', '\\s', '^', [ 'g',           'r', 's' ], [ 'f',           'r', 's' ] ] )
   elif expr == 'And1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', '^', [ 'g',      'q', 'r', 's' ], [ 'f',      'q', 'r', 's' ] ] )
   elif expr == 'And2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', '^', [ 'g', 'p', 'q', 'r', 's' ], [ 'f', 'p', 'q', 'r', 's' ] ] )
@@ -352,7 +354,7 @@ def unpack( expr ):
 #  elif expr.split(':')[0] == '@I-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
   elif re.search( '^@N-[ri]N:', expr ):  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar], ['r','e'+sVar] ], 's' ] ] )
 #  elif expr.split(':')[0] == '@N-rN':  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar], ['r','e'+sVar] ], 's' ] ] )
-  elif re.search( '^@A-aN-[ri]N:', expr ):  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y', 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar], ['r','e'+sVar] ], 's' ] ] ] )
+  elif re.search( '^@A-aN-[ri]N:', expr ):  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar], ['r','e'+sVar] ], 's' ] ] ] )
 #  elif expr.split(':')[0] == '@A-aN-rN':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y', 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar], ['r','e'+sVar] ], 's' ] ] ] )
 #  elif expr.split(':')[0] == '@B-aN-bA':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\e', '^', [ expr[1:], 'e', 'x', [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'] ], 's' ] ] )
   ## Intransitive...
@@ -449,37 +451,59 @@ def betaReduce( expr ):
 
 def simplify( expr ):
 
+  ## Base case...
   if isinstance( expr, str ):  return
 
+  ## Recurse...
+  for i in range( len(expr) ):
+    simplify( expr[i] )
+#    ## Remove unaries...
+#    if isinstance( expr[i], list ) and len(expr[i]) == 1:  expr[i] = expr[i][0]
+
   try:
+#    ## Eliminate unaries...
+#    if len(expr)==1:
+#      print( 'was:', expr )
+#      expr[:] = expr[0]
+#      print( 'now:', expr )
+
     ## Eliminate conjunctions with tautology...
     if len(expr)==3 and expr[0]=='^' and expr[1]==['True']:
       expr[:] = expr[2]
-      simplify( expr )
+#      simplify( expr )
     elif len(expr)==3 and expr[0]=='^' and expr[2]==['True']:
       expr[:] = expr[1]
-      simplify( expr )
+#      simplify( expr )
     elif len(expr)==4 and expr[0][0]=='\\' and expr[1]=='^' and expr[2]==['True']:
       expr[:] = [ expr[0], expr[3] ]
-      simplify( expr )
+#      simplify( expr )
     elif len(expr)==4 and expr[0][0]=='\\' and expr[1]=='^' and expr[3]==['True']:
       expr[:] = [ expr[0], expr[2] ]
-      simplify( expr )
+#      simplify( expr )
 
     ## Eliminate existentials with conjunctions with equality...
-  #  if expr[0]=='Some': print( expr )
     if expr[0]=='Some' and expr[2][1]=='Equal':
-      if VERBOSE:  print( 'pruningA with', expr[2][3], 'replacing', expr[1][0][1:], 'in', expr )
+      if VERBOSE:  print( 'pruningA with', expr[2][3], 'replacing', expr[1][0][1:], 'in', prettyForm(expr) )
       expr[:] = replace( expr[1][1:], expr[1][0][1:], expr[2][3] )
     if len(expr)==4 and expr[1]=='Some' and expr[3][1]=='Equal':
-      if VERBOSE:  print( 'pruningB with', expr[3][3], 'replacing', expr[2][0][1:], 'in', expr )
+      if VERBOSE:  print( 'pruningB with', expr[3][3], 'replacing', expr[2][0][1:], 'in', prettyForm(expr) )
       expr[:] = [ expr[0] ] + replace( expr[2][1:], expr[2][0][1:], expr[3][3] )
     if expr[0]=='Some' and expr[2][1]=='^' and expr[2][3][0]=='Equal' and expr[2][3][1]==expr[2][0][1:]:
-      if VERBOSE:  print( 'pruningC with', expr[2][3][2], 'replacing', expr[2][0][1:], 'in', expr )
-      expr[:] = [ '^', replace( expr[1][1:], expr[1][0][1:], expr[2][3][2] ), replace( expr[2][1:], expr[2][0][1:], expr[2][3][2] ) ]
+      if VERBOSE:  print( 'pruningC with', expr[2][3][2], 'replacing', expr[2][0][1:], 'in', prettyForm(expr) )
+      expr[:] = [ '^', replace( expr[1][1:], expr[1][0][1:], expr[2][3][2] ), replace( expr[2][2], expr[2][0][1:], expr[2][3][2] ) ]
+    if len(expr)==4 and expr[1]=='Some' and expr[3][1]=='^' and expr[3][3][0]=='Equal' and expr[3][3][1]==expr[3][0][1:]:
+      if VERBOSE:  print( 'pruningD with', expr[3][3][2], 'replacing', expr[3][0][1:], 'in', prettyForm(expr) )
+      expr[:] = [ expr[0], '^', replace( expr[2][1:], expr[2][0][1:], expr[3][3][2] ), replace( expr[3][2], expr[3][0][1:], expr[3][3][2] ) ]
   except:
     print( 'ERROR: unreduced expr (had set-valued variable):', expr )
     exit( 0 )
+
+  ## Remove unaries...
+  while len( expr ) == 1 and isinstance( expr[0], list ):
+    expr[:] = expr[0]
+  ## Remove parents left lambda...
+  if len( expr ) == 2 and expr[0][0] == '\\' and isinstance( expr[1], list ):
+    expr[:] = [ expr[0] ] + expr[1]
 
 #    print( 'output:', expr )
 #   if 'Some' in expr:
@@ -495,11 +519,6 @@ def simplify( expr ):
 #             expr[:] = expr[:-3] + replace( expr[i][k][1:], expr[i][0][1:], expr[i][j][2] )
 #             print( 'output:', expr )
 #             break
-
-  ## Recurse...
-  else:
-    for subexpr in expr:
-      simplify( subexpr )
 
 
 ########################################
@@ -558,7 +577,7 @@ while True:
     print( t )
   
     print( '----------' )
-    if VERBOSE: print( 'Scopes', Scopes )
+    if VERBOSE:  print( 'Scopes', Scopes )
     shortExpr = translate( t, Scopes, Anaphs )
     if t.qstore != []:
       print( 'ERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
