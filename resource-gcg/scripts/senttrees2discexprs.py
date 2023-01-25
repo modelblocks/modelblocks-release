@@ -140,7 +140,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     else:                                        output = '@'+pred+'@'+t.sVar
 #    output = '@'+pred if pred != '' else ('IdentSome' if t.c == 'N-b{N-aD}-x%|'  else  'Some' if t.c == 'Ne-x%|'  else 'Ident')
 
-  ## 3.c. Unary branch...
+  ## 2.c. Unary branch...
   elif len(t.ch) == 1:
 #    form = re.sub( '-[lmnstuwxy][^ ]*', '', t.ch[0].c + ' ' + t.c )
     form = re.sub( '-[mnstuwxy][^ ]*', '', re.sub('-x-','-',t.ch[0].c) ) + ' ' + re.sub( '-[lx][^ ]*', '', t.c )
@@ -191,7 +191,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     ## Propagate child stores...
     t.qstore = t.ch[0].qstore
 
-  ## 2.d. Binary branch...
+  ## 2d. Binary branch...
   elif len(t.ch) == 2:
     m = getNoloArity(t.ch[0].c)
     if VERBOSE: print( ' '*indent, 'child cats and nolos:', t.ch[0].c, t.ch[1].c, m, lsNolo[:m], lsNolo[m:] )
@@ -245,11 +245,33 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   ## 2.e. Fail...
   else: print( '\nERROR: too many children in ', t )
 
-  ## 3. Mark anaphora...
+  ## 3. Mark and propagate antecedents and anaphors...
+  t.Ants = [ ]
+  t.Anas = [ ]
+  ## Mark low if anaphor...
   if ANAPH and t.bMax and t.sVar in Anaphs:
+    t.Anas += [ Anaphs[t.sVar] ]
     output = [ 'Anaphor'+str(getLocalArity(t.c)), Anaphs[t.sVar], output ]
+  ## Mark high if antecedent...
   if ANAPH and t.bMax and t.sVar in Anaphs.values():
+    t.Ants += [ t.sVar ]
     output = [ 'Antecedent'+str(getLocalArity(t.c)), t.sVar, output ]
+  ## Propagate antecedents and anaphors up tree...
+  for st in t.ch:
+    if hasattr( st, 'Ants' ):  t.Ants += st.Ants
+    if hasattr( st, 'Anas' ):  t.Anas += st.Anas
+#      for a,e in t.ch[i].Ants:
+#        if re.search( '^@N-b{N-aD}:', t.ch[:i] ): t.Ants += [( a, ['Some'] + t.ch[1:i] + [e] + t.ch[i+1:] )]
+#        else:                                     t.Ants += [( a, t.ch[:i] + e + t.ch[i+1:] )]
+#        tAnts += [( a, output )]
+  ## Mark merge locations...
+  for a in t.Ants:
+    if a in t.Anas:
+      t.Anas.remove( a )
+      output = [ 'DefineAntecedent'+str(getLocalArity(t.c)), a, output ]
+#      print( 'Antec!!!', a, e, t )
+#      if output[0] == 'And0':  output[1][:] = [        'SomeSet', [ '\\a'+a, e ], [ '\\a'+a, output[1]      ] ]
+#      if output[0] == 'And1':  output[1][:] = [ '\\q', 'SomeSet', [ '\\a'+a, e ], [ '\\a'+a, output[1], 'q' ] ]
 
   ## 4. Retrieve quantifier...
   if VERBOSE: print( ' '*indent, 'cat and scopes:', t.c, Scopes )
@@ -291,7 +313,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 
 ########################################
 #
-#  II.A. Replace lexical (`non-logical') constants with lambda functions...
+#  II.A. Unpack lexical (`non-logical') constants with lambda functions...
 #
 ########################################
 
@@ -306,8 +328,10 @@ def unpack( expr ):
   if not isinstance( expr, str ):  return([ unpack(subexpr) for subexpr in expr ])
   elif expr == 'Anaphor0':  return( [ '\\v',        '\\q', '\\r', '\\s',      'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
   elif expr == 'Anaphor1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
-  elif expr == 'Antecedent0':  return( [ '\\v',        '\\q', '\\r', '\\s',      'q', ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )
+  elif expr == 'Antecedent0':  return( [ '\\v', '\\q',        '\\r', '\\s', 'q',      ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )
   elif expr == 'Antecedent1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )
+  elif expr == 'DefineAntecedent0':  return( [ '\\v', '\\q',        '\\r', '\\s', 'q',      ['\\a','^',['r','a'],['InDefineAntecedentSet','v','a']], 's' ] )
+  elif expr == 'DefineAntecedent1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InDefineAntecedentSet','v','a']], 's' ] )
   elif expr == 'And0':  return( [ '\\f', '\\g',               '\\r', '\\s', '^', [ 'g',           'r', 's' ], [ 'f',           'r', 's' ] ] )
   elif expr == 'And1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', '^', [ 'g',      'q', 'r', 's' ], [ 'f',      'q', 'r', 's' ] ] )
   elif expr == 'And2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', '^', [ 'g', 'p', 'q', 'r', 's' ], [ 'f', 'p', 'q', 'r', 's' ] ] )
@@ -394,7 +418,7 @@ def unpack( expr ):
 
 ########################################
 #
-#  II.B. Replace in beta reduce...
+#  II.B. Replace variable with substituted expression in beta reduce...
 #
 ########################################
 
