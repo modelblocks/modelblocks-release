@@ -588,11 +588,67 @@ while True:
     setHeadScopeAnaph( t, nLine, Scopes, Anaphs )
     markSites( t, Scopes )
 
-  ## Skip articles...
+  ## Skip article if specified in command line...
   if nArticle in SKIPS:
     print( 'NOTE: skipping article', nArticle, 'as specified in command line arguments.' )
     continue
 
+  if len(Trees) == 0:  continue
+
+  ## Combine article's trees in conjunction...
+  t = None
+  for i in range(len(Trees)):
+    if i == 0:
+      t = tree.Tree()
+      t.aboveAllInSitu = True
+      t.bMax = False
+      t.sVar = '0'
+      t.c = 'S-cS'
+      t.ch = [ Trees[-1], tree.Tree() ]
+      t.ch[1].aboveAllInSitu = True
+      t.ch[1].bMax = False
+      t.ch[1].sVar = '0'
+      t.ch[1].c = 'X-cX-cX'
+      t.ch[1].ch = [ tree.Tree() ]
+      t.ch[1].ch[0].c = 'and'
+    else:
+      ch = [ Trees[-1-i], t ]
+      t = tree.Tree()
+      t.aboveAllInSitu = True
+      t.bMax = False
+      t.sVar = '0'
+      t.c = 'S-cS'
+      t.ch = ch
+    t.ch[0].c = t.ch[0].c.replace( '-lS', '-lC' )
+
+  print( '========== Article ' + str(nArticle) + ' ==========' )
+  print( t )
+
+  print( '----------' )
+  if VERBOSE:  print( 'Scopes', Scopes )
+  shortExpr = translate( t, Scopes, Anaphs )
+  if t.qstore != []:
+    print( 'ERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
+    exit(0)
+  print( prettyForm(shortExpr) )
+
+  if VERBOSE:  print( '----------' )
+  fullExpr = [ unpack(shortExpr), Univ, Univ ]
+  if VERBOSE:  print( fullExpr )
+
+  if VERBOSE:  print( '----------' )
+  betaReduce( fullExpr )
+  if VERBOSE:  print( fullExpr )
+
+  print( '----------' )
+  simplify( fullExpr )
+  print( prettyForm(fullExpr) )
+
+  if '!ARTICLE' not in line:
+    break
+
+
+  '''
   ## Process trees given anaphs...
   for nLine,t in enumerate( Trees ):
 
@@ -622,5 +678,6 @@ while True:
 
   if '!ARTICLE' not in line:
     break
+  '''
 
 
