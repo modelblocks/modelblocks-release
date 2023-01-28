@@ -233,10 +233,19 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     ## Non-local in non-local: -h{C-rN}
     elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\z'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[:m-1] + [ ['Trace','z'+t.ch[1].sVar] ] ), 'r', 's' ] ] ] )
     elif '-lH' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ) ] ) ]
+#    ## Relative clause modification by C-rN-lR...
+#    elif '-lR' in t.ch[1].c and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-r\\1 \\1\\2\\4$', form ) == None:  
+#      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     ## Relative clause modification by C-rN-lR...
-    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==0:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+    elif '-lR' in t.ch[1].c and re.search( '^([A-Za-z]+)((?:-[ghirv][^ ]*)?) [A-Za-z]+((?:-[ghirv][^ ]*)?)-r[A-Za-z]+ \\1\\2\\3$', form ):  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+    ## Relative clause modification by F-g{R-aN}-lR...
+    elif '-lR' in t.ch[1].c and re.search( '^([A-Za-z]+)((?:-[ghirv][^ ]*)?) [A-Za-z]+((?:-[ghirv][^ ]*)?)-[gr]\{[A-Za-z]+-[ab][A-Za-z]+\} \\1\\2\\3$', form ):  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+#    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==0:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
     ## Relative clause modification by I-aN-gN-lR (e.g. 'a job to do _') -- event should be in future...
-    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==1:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+    elif '-lR' in t.ch[1].c and re.search( '^([A-Za-z]+)((?:-[ghirv][^ ]*)?) [A-Za-z]+-[ab][A-Za-z]+((?:-[ghirv][^ ]*)?)-[gr]\\1 \\1\\2\\3$', form ):  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+    ## Relative clause modification by I-aN-g{R-aN}-lR (e.g. 'a job to do _') -- event should be in future...
+    elif '-lR' in t.ch[1].c and re.search( '^([A-Za-z]+)((?:-[ghirv][^ ]*)?) [A-Za-z]+-[ab][A-Za-z]+((?:-[ghirv][^ ]*)?)-[gr]\{[A-Za-z]+-[ab][A-Za-z]+\} \\1\\2\\3$', form ):  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+#    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==1:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
     ## Relative clause modification of verb phrase...
     elif '-lR' in t.ch[1].c and getLocalArity(t.c)==1:  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ), 'q', 'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
     ## Relative clause modification of complete phrase or clause...
@@ -331,7 +340,7 @@ def unpack( expr ):
   elif expr == 'Mod0':  return( [ '\\f', '\\g',               '\\r', '\\s', 'f',           [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Mod1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', 'f',      'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Mod2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', 'f', 'p', 'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
-  elif expr == 'Pred':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Relate','y','x'] ] ] )
+  elif expr == 'Pred':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Equal','y','x'] ] ] )
 #  elif expr == 'Pasv':  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Equal','y','x'] ] ] )
   elif expr == 'Ident':  return( [ '\\f', 'f' ] )
   elif expr == 'IdentSome':  return( [ '\\f', 'f', 'Some' ] )
@@ -477,6 +486,10 @@ def simplify( expr ):
 #    ## Remove unaries...
 #    if isinstance( expr[i], list ) and len(expr[i]) == 1:  expr[i] = expr[i][0]
 
+  if 'AntecTmp' in expr:
+    i = expr.index( 'AntecTmp' )
+    expr[:] = expr[:i] + expr[i+2:]
+
   try:
 #    ## Eliminate unaries...
 #    if len(expr)==1:
@@ -562,7 +575,7 @@ def percAntAna( expr, Anaphs ):
   if expr[0] == 'InAntecedentSet':
     Ants += [ expr[1] ]
     Vars += [ expr[2] ]
-    expr[:] = [ 'TrueAntec@' + expr[1] ]
+    expr[:] = [ 'True' ]
 
   ## Recurse and percolate...
   AntsAnasVars = [ percAntAna( subexpr, Anaphs ) for subexpr in expr ]
@@ -577,26 +590,27 @@ def percAntAna( expr, Anaphs ):
       a =  AntsAnasVars[iAnt][0][i]
       for iAna in range( len( expr ) ):
         if a in AntsAnasVars[iAna][1]:
-          print('grabbing',a,'...')
-          print('I went from this:',prettyForm(expr))
+          if VERBOSE: print('grabbing',a,'for antecedent var:',AntsAnasVars[iAnt][2][i],'...')
+          if VERBOSE: print('I went from this:',prettyForm(expr))
           ## If antecedent is restrictor...
 #          for i in range( len( AntsAnasVars[iAnt][0] ) ):
 #            if AntsAnasVars[iAnt][0][i] == a and AntsAnasVars[iAnt][2][i] == expr[iAnt][0][1:]:
           if AntsAnasVars[iAnt][2][i] == expr[iAnt][0][1:]:
             print( 'FOUND MATCH', a, expr[iAnt][0][1:] )
-            expr[iAna][:] = [ expr[iAna][0], 'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\v'+a, 'Equal', 'v'+a, expr[iAna][0][1:] ]                                      ], [ '\\a'+a ] + expr[iAna][1:] ]
+            expr[iAna][:] = [ expr[iAna][0], 'Some', [ '\\a'+a, 'Equal', 'a'+a, [ '\\v'+a, 'Equal', 'v'+a, expr[iAna][0][1:] ]                                      ], [ '\\a'+a ] + expr[iAna][1:] ]
           ## If antecedent is in restrictor...
           elif expr[iAnt][0][0] == '\\' and expr[iAna][0][0] == '\\':
-            expr[iAna][:] = [ expr[iAna][0], 'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\v'+a ] + access(replace(expr[iAnt][1:],expr[iAnt][0][1:],expr[iAna][0][1:]),a) ], [ '\\a'+a ] + expr[iAna][1:] ]
+#            expr[iAna][:] = [ expr[iAna][0], 'Some', [ '\\a'+a, 'Equal', 'a'+a, [ '\\v'+a ] + access(replace(expr[iAnt][1:],expr[iAnt][0][1:],expr[iAna][0][1:]),a) ], [ '\\a'+a ] + expr[iAna][1:] ]
+            expr[iAna][:] = [ expr[iAna][0], 'Some', [ '\\a'+a, 'Equal', 'a'+a, [ '\\v'+a ] + access( replace(expr[iAnt][1:],AntsAnasVars[iAnt][2][i],'v'+a), a )   ], [ '\\a'+a ] + expr[iAna][1:] ]
 #          ## If antecedent is in restrictor...
 #          if expr[iAnt][0][0] == '\\' and expr[iAna][0][0] == '\\':  expr[iAna][:] = [ expr[iAna][1], 'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\v'+a, 'Equal', 'v'+a, expr[iAna][1] ] ], [ '\\a'+a ] + expr[iAna][1:] ]
           ## If antecedent is not in restrictor...
           else:
-            expr[iAna][:] = [                'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\v'+a ] + access(copy.deepcopy(expr[iAnt][:]                               ),a) ], [ '\\a'+a ] + expr[iAna][:]  ]
+            expr[iAna][:] = [                'Some', [ '\\a'+a, 'Equal', 'a'+a, [ '\\v'+a ] + access( replace(expr[iAnt][:],AntsAnasVars[iAnt][2][i],'v'+a), a )    ], [ '\\a'+a ] + expr[iAna][:]  ]
           while a in AntsAnasVars[iAna][1]:
             AntsAnasVars[iAna][1].remove( a )
           Anas = [ b for b in Anas if b != a ]
-          print('I went  to  this:',prettyForm(expr))
+          if VERBOSE: print('I went  to  this:',prettyForm(expr))
 
   ## If quantifier over antecedent variable...
   if len(expr) > 2 and isinstance( expr[-2], list ) and expr[-2][0][0] == '\\' and expr[-1][0][0] == '\\':  # and expr[-1][0][1:] in Vars:
@@ -617,7 +631,8 @@ def percAntAna( expr, Anaphs ):
 #
 ########################################
 
-def access( expr, a ):
+def access( expr, a, bSpine=True ):
+  if VERBOSE: print( 'access', a, prettyForm(expr) )
 
   if isinstance( expr, list ):
     ## If antecedent quantifier, make union of restrictor and nuclear scope...
@@ -626,8 +641,10 @@ def access( expr, a ):
     if len(expr) > 4 and expr[-5] == 'AntecTmp' and expr[-4] == a:
       return( expr[:-5] + [ '^', replace(expr[-2][1:],expr[-2][0][1:],'v'+expr[-4]), replace(expr[-1][1:],expr[-1][0][1:],'v'+expr[-4]) ] )
     ## If normal quantifier, make existential and recurse into nuclear scope...
-    elif len(expr) > 2 and expr[-2][0][0]=='\\' and expr[-1][0][0]=='\\':
-      return( expr[:-3] + [ 'SomeOutscopingAnt', expr[-2], access(expr[-1],a) ] )
+    elif bSpine and len(expr) > 2 and expr[-2][0][0]=='\\' and expr[-1][0][0]=='\\':
+      return( expr[:-3] + [ 'Some', access(expr[-2],a,False), access(expr[-1],a,bSpine) ] )
+    else:
+      return( [ access(subexpr,a,bSpine) for subexpr in expr ] )
 
   return( expr )
 
@@ -730,11 +747,11 @@ while True:
 
   if VERBOSE:  print( '----- unpack -----' )
   fullExpr = [ unpack(shortExpr), Univ, Univ ]
-  if VERBOSE:  print( fullExpr )
+  if VERBOSE:  print( prettyForm(fullExpr) )
 
   if VERBOSE:  print( '----- beta reduce -----' )
   betaReduce( fullExpr )
-  if VERBOSE:  print( fullExpr )
+  if VERBOSE:  print( prettyForm(fullExpr) )
 
   if VERBOSE:  print( '----- simplify -----' )
   simplify( fullExpr )
@@ -742,6 +759,10 @@ while True:
 
   print( '----- percolate -----' )
   percAntAna( fullExpr, Anaphs )
+  if VERBOSE:  print( prettyForm(fullExpr) )
+
+  if VERBOSE:  print( '----- simplify -----' )
+  simplify( fullExpr )
   print( prettyForm(fullExpr) )
 
   if '!ARTICLE' not in line:
