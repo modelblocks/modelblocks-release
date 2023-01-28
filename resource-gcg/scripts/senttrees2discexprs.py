@@ -82,6 +82,8 @@ def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, nWord=0 ):
   for st in t.ch:
     st.bMax = ( st.sVar!= t.sVar )
 
+  if VERBOSE: print( 'head:', t.sVar, t )
+
   return( nWord )
 
 
@@ -245,33 +247,23 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   ## 2.e. Fail...
   else: print( '\nERROR: too many children in ', t )
 
-  ## 3. Mark and propagate antecedents and anaphors...
-  t.Ants = [ ]
-  t.Anas = [ ]
+  ## 3. Mark antecedents and anaphors...
+#  t.Ants = [ ]
+#  t.Anas = [ ]
   ## Mark low if anaphor...
   if ANAPH and t.bMax and t.sVar in Anaphs:
-    t.Anas += [ Anaphs[t.sVar] ]
+#    t.Anas += [ Anaphs[t.sVar] ]
     output = [ 'Anaphor'+str(getLocalArity(t.c)), Anaphs[t.sVar], output ]
   ## Mark high if antecedent...
   if ANAPH and t.bMax and t.sVar in Anaphs.values():
-    t.Ants += [ t.sVar ]
+#    t.Ants += [ t.sVar ]
     output = [ 'Antecedent'+str(getLocalArity(t.c)), t.sVar, output ]
-  ## Propagate antecedents and anaphors up tree...
-  for st in t.ch:
-    if hasattr( st, 'Ants' ):  t.Ants += st.Ants
-    if hasattr( st, 'Anas' ):  t.Anas += st.Anas
-#      for a,e in t.ch[i].Ants:
-#        if re.search( '^@N-b{N-aD}:', t.ch[:i] ): t.Ants += [( a, ['Some'] + t.ch[1:i] + [e] + t.ch[i+1:] )]
-#        else:                                     t.Ants += [( a, t.ch[:i] + e + t.ch[i+1:] )]
-#        tAnts += [( a, output )]
-  ## Mark merge locations...
-  for a in t.Ants:
-    if a in t.Anas:
-      t.Anas.remove( a )
-      output = [ 'DefineAntecedent'+str(getLocalArity(t.c)), a, output ]
-#      print( 'Antec!!!', a, e, t )
-#      if output[0] == 'And0':  output[1][:] = [        'SomeSet', [ '\\a'+a, e ], [ '\\a'+a, output[1]      ] ]
-#      if output[0] == 'And1':  output[1][:] = [ '\\q', 'SomeSet', [ '\\a'+a, e ], [ '\\a'+a, output[1], 'q' ] ]
+#  ## Mark set def sites for anaphors...
+#  for a,st in t.SomeSets:
+#    ## Non-discourse anaphor...
+#    if st == None:  output = [ 'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\x', 'Equal', 'x', 'x'+a         ] ], [ '\\a'+a, output ] ]
+#    ## Discourse anaphor...
+#    else:           output = [ 'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\x'+a, access( translate( st, Scopes, Anaphs, lsNolo ) ) ] ], [ '\\a'+a, output ] ]
 
   ## 4. Retrieve quantifier...
   if VERBOSE: print( ' '*indent, 'cat and scopes:', t.c, Scopes )
@@ -325,20 +317,20 @@ def unpack( expr ):
   if '@' in expr[1:]:
     expr,sVar = expr[1:].split('@')
     expr = '@'+expr
-  if not isinstance( expr, str ):  return([ unpack(subexpr) for subexpr in expr ])
+  ## Recurse...
+  if not isinstance( expr, str ):  return( [ unpack(subexpr) for subexpr in expr ] )
+  ## Unpack terminals...
   elif expr == 'Anaphor0':  return( [ '\\v',        '\\q', '\\r', '\\s',      'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
   elif expr == 'Anaphor1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
-  elif expr == 'Antecedent0':  return( [ '\\v', '\\q',        '\\r', '\\s', 'q',      ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )
-  elif expr == 'Antecedent1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )
-  elif expr == 'DefineAntecedent0':  return( [ '\\v', '\\q',        '\\r', '\\s', 'q',      ['\\a','^',['r','a'],['InDefineAntecedentSet','v','a']], 's' ] )
-  elif expr == 'DefineAntecedent1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InDefineAntecedentSet','v','a']], 's' ] )
+  elif expr == 'Antecedent0':  return( [ '\\v', '\\q',        '\\r', '\\s', 'q',      ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
+  elif expr == 'Antecedent1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
   elif expr == 'And0':  return( [ '\\f', '\\g',               '\\r', '\\s', '^', [ 'g',           'r', 's' ], [ 'f',           'r', 's' ] ] )
   elif expr == 'And1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', '^', [ 'g',      'q', 'r', 's' ], [ 'f',      'q', 'r', 's' ] ] )
   elif expr == 'And2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', '^', [ 'g', 'p', 'q', 'r', 's' ], [ 'f', 'p', 'q', 'r', 's' ] ] )
   elif expr == 'Mod0':  return( [ '\\f', '\\g',               '\\r', '\\s', 'f',           [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Mod1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', 'f',      'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Mod2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', 'f', 'p', 'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
-  elif expr == 'Pred':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Equal','y','x'] ] ] )
+  elif expr == 'Pred':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Relate','y','x'] ] ] )
 #  elif expr == 'Pasv':  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Equal','y','x'] ] ] )
   elif expr == 'Ident':  return( [ '\\f', 'f' ] )
   elif expr == 'IdentSome':  return( [ '\\f', 'f', 'Some' ] )
@@ -418,7 +410,7 @@ def unpack( expr ):
 
 ########################################
 #
-#  II.B. Replace variable with substituted expression in beta reduce...
+#  II.B. Non-destructive replace variable with substituted expression in beta reduce...
 #
 ########################################
 
@@ -547,7 +539,80 @@ def simplify( expr ):
 
 ########################################
 #
-#  II.E. Pretty print...
+#  II.E. percolate unbound anaphora and antecedents up expr...
+#
+########################################
+
+def percAntAna( expr, Anaphs ):
+
+  Anas = [ ]
+  Ants = [ ]
+  Vars = [ ]
+
+  if VERBOSE: print( 'working on:', expr )
+
+  if isinstance( expr, str ): return( [], [], [] )
+
+  ## If anaphor, add...
+  if expr[0] == 'InAnaphorSet':
+    Anas += [ expr[1] ]
+    expr[:] = [ 'a'+expr[1], expr[2] ]
+  ## If antecedent, add...
+  if expr[0] == 'InAntecedentSet':
+    Ants += [ expr[1] ]
+    Vars += [ expr[2] ]
+
+  ## Recurse and percolate...
+  AntsAnasVars = [ percAntAna( subexpr, Anaphs ) for subexpr in expr ]
+  for subAnts,subAnas,subVars in AntsAnasVars:
+    Anas += subAnas
+    Ants += subAnts
+    Vars += subVars
+
+  ## If antecedent and anaphor meet, define antecedent set at top of anaphor branch...
+  for iAnt in range( len( expr ) ):
+    for a in AntsAnasVars[iAnt][0]:
+      for iAna in range( len( expr ) ):
+        if a in AntsAnasVars[iAna][1]:
+          expr[iAna][:] = [ 'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\v'+a ] + access(expr[iAnt][:]) ], [ '\\a'+a ] + expr[iAna][:] ]
+          AntsAnasVars[iAna][1].remove( a )
+          Anas.remove( a )
+
+  ## If quantifier over antecedent variable...
+  if len(expr) > 2 and isinstance( expr[-2], list ) and expr[-2][0][0] == '\\' and expr[-1][0][0] == '\\':  # and expr[-1][0][1:] in Vars:
+#    expr[:] = [ 'AntecTmp', Vars[0] ] + 
+    for i in range( len( Vars ) ):
+      if Vars[i] == expr[-2][0][1:]:
+        expr[:] = [ 'AntecTmp', Ants[i] ] + expr[:]
+#    expr[:] = [ '^' [ replace( expr[-2], expr[-2][0][1:], expr[-1][0][1:] ) ], replace( expr[-1], expr[-1][0][1:], 'v'+Vars[0] ]
+
+  if VERBOSE: print( 'I made this:', expr )
+
+  return( Ants, Anas, Vars )
+
+
+########################################
+#
+#  II.F. access for anaphors...
+#
+########################################
+
+def access( expr ):
+
+  if isinstance( expr, list ):
+    ## If antecedent quantifier, make union of restrictor and nuclear scope...
+    if 'AntecTmp' == expr[0]:
+      return( expr[2:-3] + [ '^', replace(expr[-2][1:],expr[-2][0][1:],'v'+expr[1]), replace(expr[-1][1:],expr[-1][0][1:],'v'+expr[1]) ] )
+    ## If normal quantifier, make existential and recurse into nuclear scope...
+    elif len(expr) > 2 and expr[-2][0][0]=='\\' and expr[-1][0][0]=='\\':
+      return( expr[:-3] + [ 'SomeOutscopingAnt', expr[-2], access(expr[-1]) ] )
+
+  return( expr )
+
+
+########################################
+#
+#  II.G. Pretty print...
 #
 ########################################
 
@@ -603,12 +668,18 @@ while True:
       t.aboveAllInSitu = True
       t.bMax = False
       t.sVar = '0'
+      t.Anas = [ ]
+      t.Ants = [ ]
+      t.SomeSets = [ ]
       t.c = 'S-cS'
       t.ch = [ Trees[-1], tree.Tree() ]
       t.ch[1].aboveAllInSitu = True
       t.ch[1].bMax = False
       t.ch[1].sVar = '0'
-      t.ch[1].c = 'X-cX-cX'
+      t.ch[1].Anas = [ ]
+      t.ch[1].Ants = [ ]
+      t.ch[1].SomeSets = [ ]
+      t.ch[1].c = 'X-cX-cX-x%|'
       t.ch[1].ch = [ tree.Tree() ]
       t.ch[1].ch[0].c = 'and'
     else:
@@ -617,6 +688,9 @@ while True:
       t.aboveAllInSitu = True
       t.bMax = False
       t.sVar = '0'
+      t.Anas = [ ]
+      t.Ants = [ ]
+      t.SomeSets = [ ]
       t.c = 'S-cS'
       t.ch = ch
     t.ch[0].c = t.ch[0].c.replace( '-lS', '-lC' )
@@ -624,7 +698,7 @@ while True:
   print( '========== Article ' + str(nArticle) + ' ==========' )
   print( t )
 
-  print( '----------' )
+  print( '----- translate -----' )
   if VERBOSE:  print( 'Scopes', Scopes )
   shortExpr = translate( t, Scopes, Anaphs )
   if t.qstore != []:
@@ -632,16 +706,20 @@ while True:
     exit(0)
   print( prettyForm(shortExpr) )
 
-  if VERBOSE:  print( '----------' )
+  if VERBOSE:  print( '----- unpack -----' )
   fullExpr = [ unpack(shortExpr), Univ, Univ ]
   if VERBOSE:  print( fullExpr )
 
-  if VERBOSE:  print( '----------' )
+  if VERBOSE:  print( '----- beta reduce -----' )
   betaReduce( fullExpr )
   if VERBOSE:  print( fullExpr )
 
-  print( '----------' )
+  if VERBOSE:  print( '----- simplify -----' )
   simplify( fullExpr )
+  if VERBOSE:  print( prettyForm(fullExpr) )
+
+  print( '----- percolate -----' )
+  percAntAna( fullExpr, Anaphs )
   print( prettyForm(fullExpr) )
 
   if '!ARTICLE' not in line:
