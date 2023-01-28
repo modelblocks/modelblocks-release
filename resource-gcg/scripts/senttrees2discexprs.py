@@ -1,5 +1,6 @@
 import sys
 import re
+import copy
 import tree
 import lex
 
@@ -324,9 +325,9 @@ def unpack( expr ):
   elif expr == 'Anaphor1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
   elif expr == 'Antecedent0':  return( [ '\\v', '\\q',        '\\r', '\\s', 'q',      ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
   elif expr == 'Antecedent1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
-  elif expr == 'And0':  return( [ '\\f', '\\g',               '\\r', '\\s', '^', [ 'g',           'r', 's' ], [ 'f',           'r', 's' ] ] )
-  elif expr == 'And1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', '^', [ 'g',      'q', 'r', 's' ], [ 'f',      'q', 'r', 's' ] ] )
-  elif expr == 'And2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', '^', [ 'g', 'p', 'q', 'r', 's' ], [ 'f', 'p', 'q', 'r', 's' ] ] )
+  elif expr == 'And0':  return( [ '\\f', '\\g',               '\\r', '\\s', '^', [ 'f',           'r', 's' ], [ 'g',           'r', 's' ] ] )
+  elif expr == 'And1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', '^', [ 'f',      'q', 'r', 's' ], [ 'g',      'q', 'r', 's' ] ] )
+  elif expr == 'And2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', '^', [ 'f', 'p', 'q', 'r', 's' ], [ 'g', 'p', 'q', 'r', 's' ] ] )
   elif expr == 'Mod0':  return( [ '\\f', '\\g',               '\\r', '\\s', 'f',           [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Mod1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', 'f',      'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Mod2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', 'f', 'p', 'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
@@ -561,6 +562,7 @@ def percAntAna( expr, Anaphs ):
   if expr[0] == 'InAntecedentSet':
     Ants += [ expr[1] ]
     Vars += [ expr[2] ]
+    expr[:] = [ 'TrueAntec@' + expr[1] ]
 
   ## Recurse and percolate...
   AntsAnasVars = [ percAntAna( subexpr, Anaphs ) for subexpr in expr ]
@@ -571,19 +573,37 @@ def percAntAna( expr, Anaphs ):
 
   ## If antecedent and anaphor meet, define antecedent set at top of anaphor branch...
   for iAnt in range( len( expr ) ):
-    for a in AntsAnasVars[iAnt][0]:
+    for i in range( len( AntsAnasVars[iAnt][0] ) ):
+      a =  AntsAnasVars[iAnt][0][i]
       for iAna in range( len( expr ) ):
         if a in AntsAnasVars[iAna][1]:
-          expr[iAna][:] = [ 'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\v'+a ] + access(expr[iAnt][:]) ], [ '\\a'+a ] + expr[iAna][:] ]
-          AntsAnasVars[iAna][1].remove( a )
-          Anas.remove( a )
+          print('grabbing',a,'...')
+          print('I went from this:',prettyForm(expr))
+          ## If antecedent is restrictor...
+#          for i in range( len( AntsAnasVars[iAnt][0] ) ):
+#            if AntsAnasVars[iAnt][0][i] == a and AntsAnasVars[iAnt][2][i] == expr[iAnt][0][1:]:
+          if AntsAnasVars[iAnt][2][i] == expr[iAnt][0][1:]:
+            print( 'FOUND MATCH', a, expr[iAnt][0][1:] )
+            expr[iAna][:] = [ expr[iAna][0], 'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\v'+a, 'Equal', 'v'+a, expr[iAna][0][1:] ]                                      ], [ '\\a'+a ] + expr[iAna][1:] ]
+          ## If antecedent is in restrictor...
+          elif expr[iAnt][0][0] == '\\' and expr[iAna][0][0] == '\\':
+            expr[iAna][:] = [ expr[iAna][0], 'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\v'+a ] + access(replace(expr[iAnt][1:],expr[iAnt][0][1:],expr[iAna][0][1:]),a) ], [ '\\a'+a ] + expr[iAna][1:] ]
+#          ## If antecedent is in restrictor...
+#          if expr[iAnt][0][0] == '\\' and expr[iAna][0][0] == '\\':  expr[iAna][:] = [ expr[iAna][1], 'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\v'+a, 'Equal', 'v'+a, expr[iAna][1] ] ], [ '\\a'+a ] + expr[iAna][1:] ]
+          ## If antecedent is not in restrictor...
+          else:
+            expr[iAna][:] = [                'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\v'+a ] + access(copy.deepcopy(expr[iAnt][:]                               ),a) ], [ '\\a'+a ] + expr[iAna][:]  ]
+          while a in AntsAnasVars[iAna][1]:
+            AntsAnasVars[iAna][1].remove( a )
+          Anas = [ b for b in Anas if b != a ]
+          print('I went  to  this:',prettyForm(expr))
 
   ## If quantifier over antecedent variable...
   if len(expr) > 2 and isinstance( expr[-2], list ) and expr[-2][0][0] == '\\' and expr[-1][0][0] == '\\':  # and expr[-1][0][1:] in Vars:
 #    expr[:] = [ 'AntecTmp', Vars[0] ] + 
     for i in range( len( Vars ) ):
       if Vars[i] == expr[-2][0][1:]:
-        expr[:] = [ 'AntecTmp', Ants[i] ] + expr[:]
+        expr[:] = expr[:-3] + [ 'AntecTmp', Ants[i] ] + copy.deepcopy(expr[-3:])
 #    expr[:] = [ '^' [ replace( expr[-2], expr[-2][0][1:], expr[-1][0][1:] ) ], replace( expr[-1], expr[-1][0][1:], 'v'+Vars[0] ]
 
   if VERBOSE: print( 'I made this:', expr )
@@ -597,15 +617,17 @@ def percAntAna( expr, Anaphs ):
 #
 ########################################
 
-def access( expr ):
+def access( expr, a ):
 
   if isinstance( expr, list ):
     ## If antecedent quantifier, make union of restrictor and nuclear scope...
-    if 'AntecTmp' == expr[0]:
-      return( expr[2:-3] + [ '^', replace(expr[-2][1:],expr[-2][0][1:],'v'+expr[1]), replace(expr[-1][1:],expr[-1][0][1:],'v'+expr[1]) ] )
+#    if len(expr) > 2 and 'AntecTmp' == expr[0]:
+#      return( expr[2:-3] + [ '^', replace(expr[-2][1:],expr[-2][0][1:],'v'+expr[1]), replace(expr[-1][1:],expr[-1][0][1:],'v'+expr[1]) ] )
+    if len(expr) > 4 and expr[-5] == 'AntecTmp' and expr[-4] == a:
+      return( expr[:-5] + [ '^', replace(expr[-2][1:],expr[-2][0][1:],'v'+expr[-4]), replace(expr[-1][1:],expr[-1][0][1:],'v'+expr[-4]) ] )
     ## If normal quantifier, make existential and recurse into nuclear scope...
     elif len(expr) > 2 and expr[-2][0][0]=='\\' and expr[-1][0][0]=='\\':
-      return( expr[:-3] + [ 'SomeOutscopingAnt', expr[-2], access(expr[-1]) ] )
+      return( expr[:-3] + [ 'SomeOutscopingAnt', expr[-2], access(expr[-1],a) ] )
 
   return( expr )
 
