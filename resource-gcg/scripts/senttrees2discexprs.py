@@ -174,14 +174,14 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 1:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'p' ]
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 2:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'q', 'p' ]
     ## Passive rule...
-    elif re.search( '^L-aN-vN((?:-[ghirv][^ ]*)?)-lV A-aN\\1$', form ) != None:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ), 'Some', 'r', 's' ] ]
+    elif re.search( '^L-aN-vN((?:-[ghirv][^ ]*)?)-lV A-aN\\1$', form ) != None:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\zz'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','zz'+t.sVar] ] + lsNolo ), 'Some', 'r', 's' ] ]
 #   elif '-lV' in t.ch[0].c:  output = [ 'Pasv', 'x'+ t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ]
     ## ACCOMMODATE SLOPPY ANNOTATION of '-lZ' with arg elision...
     elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Pred', [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ] ]
     elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Pred', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
     elif '-lz' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Pred', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
     ## S -> Q-iN or N -> V-iN
-    elif re.search( '^[A-Za-z0-9]+-i[A-Za-z0-9]+(-lF)? [A-Za-z0-9]+$', form ):  output = [ '\\r', '\\s', 'Gen', [ '\\x'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ), 'r', Univ ], 's' ]
+    elif re.search( '^[A-Za-z0-9]+-i[A-Za-z0-9]+(-lF)? [A-Za-z0-9]+$', form ):  output = [ '\\r', '\\s', 'Gen', [ '\\zz'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','zz'+t.sVar] ] + lsNolo ), 'r', Univ ], 's' ]
                                                                                                         # [ '\\x'+t.sVar, 'Explain', 'ThisArticle', 'x'+t.sVar ] ]
     ## Elision...
     elif re.search( '^(.*)-[ab]\{[A-Za-z0-9]+-[abghirv]\{[A-Za-z0-9]+-[abghirv][A-Za-z0-9]+\}\} \\1$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
@@ -216,8 +216,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     ## Non-local elimination in argument: e.g. V-aN -> V-aN-b{I-aN-gN} I-aN-gN-lI...
     elif re.match( '^[A-Za-z]+-[ghriv]\{[A-Za-z]+-[ab][A-Za-z]+\}-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\ff', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ 'ff' ] ) ] ]
     elif re.match( '^[A-Za-z]+-[ghriv][A-Za-z]+-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\ff', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ 'ff' ] ) ] ]
-#    elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 0:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[0].sVar] ] + lsNolo[m:] ),      'r', 's' ] ] ]
-    elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 1:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\p', '\\q', '\\r', '\\s', 'p', Univ, [ '\\x'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ] ), 'q', 'r', 's' ] ] ]
+#    elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 0:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\zz'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','zz'+t.ch[0].sVar] ] + lsNolo[m:] ),      'r', 's' ] ] ]
+    elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 1:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\p', '\\q', '\\r', '\\s', 'p', Univ, [ '\\zz'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ] ), 'q', 'r', 's' ] ] ]
     elif '-lM' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
     elif '-lM' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
     elif '-lC' in t.ch[0].c:  output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
@@ -229,7 +229,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
       sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     ## Non-local in non-local: N -> N-h{V-g{V-aN}} V-g{V-aN}-lH...
     elif re.match( '^[A-Za-z]+-[ghirv]\{[A-Za-z]+-[ab][A-Z-az]+\}-lH$', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\ff', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] + [ 'ff' ] ) ] ] ) ]
-      #  output = translate( t.ch[0], Scopes, Anaphs, [ [ '\\f', '\\r', '\\s', 'f', [ '\\q', '\\t', '\\u', 'q', Univ, [ '\\x'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','x'+t.ch[1].sVar] ] + lsNolo[:m] ), 't', 'u' ] ], 'r', 's' ] ] + lsNolo[:m] )
+      #  output = translate( t.ch[0], Scopes, Anaphs, [ [ '\\f', '\\r', '\\s', 'f', [ '\\q', '\\t', '\\u', 'q', Univ, [ '\\zz'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','zz'+t.ch[1].sVar] ] + lsNolo[:m] ), 't', 'u' ] ], 'r', 's' ] ] + lsNolo[:m] )
     ## Non-local in non-local: -h{C-rN}
     elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\z'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[:m-1] + [ ['Trace','z'+t.ch[1].sVar] ] ), 'r', 's' ] ] ] )
     elif '-lH' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ) ] ) ]
@@ -237,19 +237,19 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 #    elif '-lR' in t.ch[1].c and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-r\\1 \\1\\2\\4$', form ) == None:  
 #      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     ## Relative clause modification by C-rN-lR...
-    elif '-lR' in t.ch[1].c and re.search( '^([A-Za-z]+)((?:-[ghirv][^ ]*)?) [A-Za-z]+((?:-[ghirv][^ ]*)?)-r[A-Za-z]+ \\1\\2\\3$', form ):  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+    elif '-lR' in t.ch[1].c and re.search( '^([A-Za-z]+)((?:-[ghirv][^ ]*)?) [A-Za-z]+((?:-[ghirv][^ ]*)?)-r[A-Za-z]+ \\1\\2\\3$', form ):  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','zz'+t.ch[0].sVar] ] ]
     ## Relative clause modification by F-g{R-aN}-lR...
-    elif '-lR' in t.ch[1].c and re.search( '^([A-Za-z]+)((?:-[ghirv][^ ]*)?) [A-Za-z]+((?:-[ghirv][^ ]*)?)-[gr]\{[A-Za-z]+-[ab][A-Za-z]+\} \\1\\2\\3$', form ):  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
-#    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==0:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+    elif '-lR' in t.ch[1].c and re.search( '^([A-Za-z]+)((?:-[ghirv][^ ]*)?) [A-Za-z]+((?:-[ghirv][^ ]*)?)-[gr]\{[A-Za-z]+-[ab][A-Za-z]+\} \\1\\2\\3$', form ):  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','zz'+t.ch[0].sVar] ] ]
+#    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==0:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','zz'+t.ch[0].sVar] ] ]
     ## Relative clause modification by I-aN-gN-lR (e.g. 'a job to do _') -- event should be in future...
-    elif '-lR' in t.ch[1].c and re.search( '^([A-Za-z]+)((?:-[ghirv][^ ]*)?) [A-Za-z]+-[ab][A-Za-z]+((?:-[ghirv][^ ]*)?)-[gr]\\1 \\1\\2\\3$', form ):  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+    elif '-lR' in t.ch[1].c and re.search( '^([A-Za-z]+)((?:-[ghirv][^ ]*)?) [A-Za-z]+-[ab][A-Za-z]+((?:-[ghirv][^ ]*)?)-[gr]\\1 \\1\\2\\3$', form ):  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ], ['s','zz'+t.ch[0].sVar] ] ]
     ## Relative clause modification by I-aN-g{R-aN}-lR (e.g. 'a job to do _') -- event should be in future...
-    elif '-lR' in t.ch[1].c and re.search( '^([A-Za-z]+)((?:-[ghirv][^ ]*)?) [A-Za-z]+-[ab][A-Za-z]+((?:-[ghirv][^ ]*)?)-[gr]\{[A-Za-z]+-[ab][A-Za-z]+\} \\1\\2\\3$', form ):  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
-#    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==1:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+    elif '-lR' in t.ch[1].c and re.search( '^([A-Za-z]+)((?:-[ghirv][^ ]*)?) [A-Za-z]+-[ab][A-Za-z]+((?:-[ghirv][^ ]*)?)-[gr]\{[A-Za-z]+-[ab][A-Za-z]+\} \\1\\2\\3$', form ):  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ], ['s','zz'+t.ch[0].sVar] ] ]
+#    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==1:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ], ['s','zz'+t.ch[0].sVar] ] ]
     ## Relative clause modification of verb phrase...
-    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==1:  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ), 'q', 'r', [ '\\x'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','x'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','x'+t.ch[0].sVar] ] ]
+    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==1:  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ), 'q', 'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','zz'+t.ch[0].sVar] ] ]
     ## Relative clause modification of complete phrase or clause...
-    elif '-lR' in t.ch[0].c and getLocalArity(t.c)==0:  output = [        '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),      'r', [ '\\x'+t.ch[1].sVar, '^', [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['Trace','x'+t.ch[1].sVar] ] ), Univ, Univ ], ['s','x'+t.ch[1].sVar] ] ]
+    elif '-lR' in t.ch[0].c and getLocalArity(t.c)==0:  output = [        '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),      'r', [ '\\zz'+t.ch[1].sVar, '^', [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['Trace','zz'+t.ch[1].sVar] ] ), Univ, Univ ], ['s','zz'+t.ch[1].sVar] ] ]
     else:  print( '\nERROR: unhandled rule from ' + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
     ## Propagate child stores...
     t.qstore += (t.ch[0].qstore if hasattr(t.ch[0],'qstore') else []) + (t.ch[1].qstore if hasattr(t.ch[1],'qstore') else [])
@@ -351,6 +351,7 @@ def unpack( expr ):
   elif re.search( '^@N(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   ## NOTE: SHOULD ADD NNGEN, ETC...
   elif re.search( '^@NNREL[A-Za-z0-9]*-[ab][A-Za-z]*(-[lx].*)?:', expr ):  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\y'+sVar, 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar,'y'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] ] )
+  elif re.search( '^@N[A-Za-z0-9]*-[ab][A-Za-z]*-[ab][A-Za-z]*(-[lx].*)?:', expr ):  return( [ '\\p', '\\q', '\\r', '\\s', 'p', Univ, [ '\\y'+sVar, 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar,'y'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] ] )
   elif re.search( '^@N[A-Za-z0-9]*-[ab][A-Za-z]*(-[lx].*)?:', expr ):  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
 #  elif expr.split(':')[0] == '@N-aD':  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@N-b{N-aD}':  return( [ '\\f', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'Some', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
@@ -595,16 +596,16 @@ def percAntAna( expr, Anaphs ):
         if a in AntsAnasVars[iAna][1]:
           if VERBOSE: print('grabbing',a,'for antecedent var:',AntsAnasVars[iAnt][2][i],'...')
           if VERBOSE: print('I went from this:',prettyForm(expr))
-          ## If antecedent is restrictor...
+          ## If antecedent is restrictor / nuclear scope...
 #          for i in range( len( AntsAnasVars[iAnt][0] ) ):
 #            if AntsAnasVars[iAnt][0][i] == a and AntsAnasVars[iAnt][2][i] == expr[iAnt][0][1:]:
           if AntsAnasVars[iAnt][2][i] == expr[iAnt][0][1:]:
 #            print( 'FOUND MATCH', a, expr[iAnt][0][1:] )
             expr[iAna][:] = [ expr[iAna][0], 'Some', [ '\\a'+a, 'Equal', 'a'+a, [ '\\v'+a, 'Equal', 'v'+a, expr[iAna][0][1:] ]                                      ], [ '\\a'+a ] + expr[iAna][1:] ]
-          ## If antecedent is in restrictor...
-          elif expr[iAnt][0][0] == '\\' and expr[iAna][0][0] == '\\':
+          ## If antecedent is in restrictor / nuclear scope (and anaphor is in nuclear scope / restrictor)...
+          elif expr[iAnt][0][0] == '\\' and expr[iAna][0][0] == '\\': # and iAnt == len(expr)-2:
 #            expr[iAna][:] = [ expr[iAna][0], 'Some', [ '\\a'+a, 'Equal', 'a'+a, [ '\\v'+a ] + access(replace(expr[iAnt][1:],expr[iAnt][0][1:],expr[iAna][0][1:]),a) ], [ '\\a'+a ] + expr[iAna][1:] ]
-            expr[iAna][:] = [ expr[iAna][0], 'Some', [ '\\a'+a, 'Equal', 'a'+a, [ '\\v'+a ] + access( replace(expr[iAnt][1:],AntsAnasVars[iAnt][2][i],'v'+a), a )   ], [ '\\a'+a ] + expr[iAna][1:] ]
+            expr[iAna][:] = [ expr[iAna][0], 'Some', [ '\\a'+a, 'Equal', 'a'+a, [ '\\v'+a ] + access( replace( replace(expr[iAnt][1:],AntsAnasVars[iAnt][2][i],'v'+a), expr[iAnt][0][1:], expr[iAna][0][1:] ), a )   ], [ '\\a'+a ] + expr[iAna][1:] ]
 #          ## If antecedent is in restrictor...
 #          if expr[iAnt][0][0] == '\\' and expr[iAna][0][0] == '\\':  expr[iAna][:] = [ expr[iAna][1], 'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\v'+a, 'Equal', 'v'+a, expr[iAna][1] ] ], [ '\\a'+a ] + expr[iAna][1:] ]
           ## If antecedent is not in restrictor...
