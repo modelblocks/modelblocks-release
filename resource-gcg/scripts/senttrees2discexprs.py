@@ -299,8 +299,14 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 
   ## 5. If scoped and cannot be in situ, store quantified noun phrase...
   if t.bMax and lsNolo == [] and t.sVar in Scopes and t.sVar in Scopes.values():
-    t.qstore = [( t.qstore, output, t.sVar )]
-    output = [ 'RaiseTrace', 'xx'+t.sVar ]
+    ## If modal opeartor or negation...
+    if getLocalArity(t.c) == 2:
+      t.qstore = [( t.qstore, [ output, ['\\q','Some'], 'Some' ], t.sVar )]
+      output = [ 'RaiseTraceModal', 'xx'+t.sVar ]
+    ## If quantified noun phrase...
+    else:
+      t.qstore = [( t.qstore, output, t.sVar )]
+      output = [ 'RaiseTrace', 'xx'+t.sVar ]
 
   if VERBOSE: print( ' '*indent, 'returning:', output )
   indent -= 2
@@ -347,13 +353,9 @@ def unpack( expr ):
 #  elif expr == 'Store':  return( [ '\\n', '\\f', '\\q', '\\r', '\\s', 'q', Univ, ['\\x','f','r','s'] ] )
   elif expr == 'Trace':  return( [ '\\v', '\\t', '\\u', '^', ['t','v'], ['u','v'] ] )
   elif expr == 'RaiseTrace':  return( [ '\\v', '\\t', '\\u', '^', ['t','v'], ['u','v'] ] )
+  elif expr == 'RaiseTraceModal': return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\d','^',['Equal','d','v'],['r','d']], 's' ] )
 #  elif expr == 'SelfStore':  return( [ '\\v', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+?????
-  elif re.search( '^@N(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
-  ## NOTE: SHOULD ADD NNGEN, ETC...
-  elif re.search( '^@NNREL[A-Za-z0-9]*-[ab][A-Za-z]*(-[lx].*)?:', expr ):  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\y'+sVar, 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar,'y'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] ] )
-  elif re.search( '^@N[A-Za-z0-9]*-[ab][A-Za-z]*-[ab][A-Za-z]*(-[lx].*)?:', expr ):  return( [ '\\p', '\\q', '\\r', '\\s', 'p', Univ, [ '\\y'+sVar, 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar,'y'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] ] )
-  elif re.search( '^@N[A-Za-z0-9]*-[ab][A-Za-z]*(-[lx].*)?:', expr ):  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
-#  elif expr.split(':')[0] == '@N-aD':  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
+  elif expr.split(':')[0] == '@N-bO':  return( [ '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'q', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@N-b{N-aD}':  return( [ '\\f', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'Some', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@N-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@NNORD-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ],
@@ -367,6 +369,12 @@ def unpack( expr ):
                                                                                                                                       [ 'None', [ '\\y'+sVar, 'g', 'q', 'r', [Equal,'y'+sVar] ],
                                                                                                                                                 [ '\\y'+sVar, expr[1:], ['\\z','f',[QuantEq,'y'+sVar],[Equal,'z'],Univ],
                                                                                                                                                                         ['\\z','f',[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
+  elif re.search( '^@N(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
+  ## NOTE: SHOULD ADD NNGEN, ETC...
+  elif re.search( '^@NNREL[A-Za-z0-9]*-[ab][A-Za-z]*(-[lx].*)?:', expr ):  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\y'+sVar, 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar,'y'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] ] )
+  elif re.search( '^@N[A-Za-z0-9]*-[ab][A-Za-z]*-[ab][A-Za-z]*(-[lx].*)?:', expr ):  return( [ '\\p', '\\q', '\\r', '\\s', 'p', Univ, [ '\\y'+sVar, 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar,'y'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] ] )
+  elif re.search( '^@N[A-Za-z0-9]*-[ab][A-Za-z]*(-[lx].*)?:', expr ):  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
+#  elif expr.split(':')[0] == '@N-aD':  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@A-aN-b{F-gN}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\zz', 'q', Univ, [Equal,'zz'] ],
                                                                                                [ '\\zz', 'f', [QuantEq,'zz'], 'r', 's' ] ] )
   ## Sentential subject e.g. A-a{V-iN}:clear
@@ -396,7 +404,10 @@ def unpack( expr ):
   ## Ditransitive...
   elif re.search( '^@[A-Za-z0-9]+-[ab][A-Za-z]+-[ab][A-Za-z]+-[ab][A-Za-z]+(-[lx].*)?:', expr ) != None:
     return( [ '\\o', '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar, 'o', Univ, ['\\z', 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar,'z'+sVar], ['r','e'+sVar] ], 's' ] ] ] ] )
-  ## Raising...
+  ## Modal auxiliary...
+  elif re.search( '^@[A-Z]MDL-[ab][A-Za-z]+-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}(-[lx].*)?:', expr ) != None:
+    return( [        '\\f', '\\q', '\\r', '\\s', expr[1:], 'r', [ '\\e', 'f', 'q', ['\\d', 'Equal','d','e'], 's' ] ] )
+  ## Raising auxiliary...
   elif re.search( '^@[A-Za-z0-9]+-[ab][A-Za-z]+-[ab]\{[A-Za-z]+-[ab][A-Za-z]+\}(-[lx].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s',                                                                    'f', 'q', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar                           ], ['r','e'+sVar] ], 's'       ] )
   ## Range modifier (??)...
@@ -429,7 +440,7 @@ def unpack( expr ):
 ########################################
 
 def replace( expr, old, new ):
-  if VERBOSE: print( 'replacing:', old, 'with', new, 'in', expr )
+#  if VERBOSE: print( 'replacing:', old, 'with', new, 'in', expr )
   if expr == old:
     return( new )
   elif isinstance( expr, str ):
