@@ -170,7 +170,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
         print( 'ERROR: Ill-formed extraction:', form ) # t.c, '->', t.ch[0].c )
         exit( 0 )
     ## Unary modifier...
-    elif re.search( '^A-aN((?:-[ghirv][^ ]*)?)-lM N-aD\\1$', form ):  output = [ 'Mod1', ['\\q','\\t','\\u','True'], translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
+    elif re.search( '^A-aN((?:-[ghirv][^ ]*)?)-lM N-aD\\1$', form ):  output = [ 'Mod1', ['\\q','\\t','\\u','q','t','u'], translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
     ## Reordering rules...
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 1:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'p' ]
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 2:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'q', 'p' ]
@@ -349,7 +349,7 @@ def unpack( expr ):
   elif expr == 'Mod0':  return( [ '\\f', '\\g',               '\\r', '\\s', 'f',           [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Mod1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', 'f',      'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Mod2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', 'f', 'p', 'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
-  elif expr == 'Pred':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Equal','y','x'] ] ] )
+  elif expr == 'Pred':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', 'r', [ '\\x', '^', [ 'p', Univ, ['\\y','Equal','y','x'] ], [ 's', 'x' ] ] ] )
 #  elif expr == 'Pasv':  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, ['\\y','Equal','y','x'] ] ] )
   elif expr == 'Ident':  return( [ '\\f', 'f' ] )
   elif expr == 'IdentSome':  return( [ '\\f', 'f', 'Some' ] )
