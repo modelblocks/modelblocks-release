@@ -336,9 +336,11 @@ def unpack( expr ):
   if '@' in expr[1:]:
     expr,sVar = expr[1:].split('@')
     expr = '@'+expr
+
   ## Recurse...
   if not isinstance( expr, str ):  return( [ unpack(subexpr) for subexpr in expr ] )
-  ## Unpack terminals...
+
+  ## Unpack grammatical functions...
   elif expr == 'Anaphor0':  return( [ '\\v',        '\\q', '\\r', '\\s',      'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
   elif expr == 'Anaphor1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
   elif expr == 'Antecedent0':  return( [ '\\v', '\\q',        '\\r', '\\s', 'q',      ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
@@ -358,21 +360,27 @@ def unpack( expr ):
   elif expr == 'RaiseTrace':  return( [ '\\v', '\\t', '\\u', '^', ['t','v'], ['u','v'] ] )
   elif expr == 'RaiseTraceModal': return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\d','^',['Equal','d','v'],['r','d']], 's' ] )
 #  elif expr == 'SelfStore':  return( [ '\\v', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+?????
+
+  ## Unpack terminals...
+  ## Quantifier...
   elif expr.split(':')[0] in ['@N-bO','@N-bN']:  return( [ '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'q', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@N-b{N-aD}':  return( [ '\\f', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'Some', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@N-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
+  ## Ordinal quantifier...
   elif expr.split(':')[0] == '@NNORD-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ],
                                                                                                                     [ expr[1:]+'MinusOne', [ '\\y'+sVar, 'f', 'q', 'r', ['\\y','Equal','y','y'+sVar] ], ['\\y'+sVar, 'Prec','x'+sVar,'y'+sVar] ] ], 's' ] )
   elif expr.split(':')[0] == '@ANORDSUP-aD-b{N-aD}-b{A-aN}':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
                                                                                                                                       [ expr[1:]+'MinusOne', [ '\\y'+sVar, 'g', 'q', 'r', [Equal,'y'+sVar] ],
                                                                                                                                                              [ '\\y'+sVar, 'More', ['\\z'+sVar,'f',[QuantEq,'y'+sVar],[Equal,'z'+sVar],Univ],
                                                                                                                                                                                    ['\\z'+sVar,'f',[QuantEq,'x'+sVar],[Equal,'z'+sVar],Univ] ] ] ], 's' ] )
+  ## Superlative quantifier...
 #  elif expr.split(':')[0] == '@NNSUP3-aD-b{N-aD}-b{A-aN}':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
   elif re.search( '@[AN]NSUP3?-aD-b{N-aD}-b{A-aN}:', expr ):  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
                                                                                                                                       [ 'None', [ '\\y'+sVar, 'g', 'q', 'r', [Equal,'y'+sVar] ],
                                                                                                                                                 [ '\\y'+sVar, expr[1:], ['\\z','f',[QuantEq,'y'+sVar],[Equal,'z'],Univ],
                                                                                                                                                                         ['\\z','f',[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
   ## Pronoun...
+  elif re.search( '^@NNGEN[A-Za-z0-9]*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Gen', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   elif re.search( '^@N[A-Za-z0-9]*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   ## Two-argument noun using possessive as possessor e.g. NNASSOC*-aD...
   elif re.search( '^@NNASSOC[A-Za-z0-9]*-[ab][A-Za-z]*(-[lx].*)?:', expr ):
@@ -384,6 +392,8 @@ def unpack( expr ):
   elif re.search( '^@N[A-Za-z0-9]*-[ab][A-Za-z]*-[ab][A-Za-z]*(-[lx].*)?:', expr ):
     return( [ '\\p', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'p', Univ, [ '\\z'+sVar, 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar,'z'+sVar ], Univ ] ], ['r','x'+sVar] ], 's' ] )
   ## One-argument noun e.g. N-aD --- NOTE: middle (determiner) argument 'q'/'y' gets ignored...
+  elif re.search( '^@NNGEN[A-Za-z0-9]*-[ab][A-Za-z]*(-[lx].*)?:', expr ):
+    return( [        '\\q', '\\r', '\\s', 'Gen', [ '\\x'+sVar, '^', [                          'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar          ], Univ   ], ['r','x'+sVar] ], 's' ] )
   elif re.search( '^@N[A-Za-z0-9]*-[ab][A-Za-z]*(-[lx].*)?:', expr ):
     return( [        '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [                          'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar          ], Univ   ], ['r','x'+sVar] ], 's' ] )
 #  elif expr.split(':')[0] == '@N-aD':  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
