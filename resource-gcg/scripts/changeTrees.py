@@ -20,6 +20,7 @@ def change( t ):
     t.ch[0].c = 'N'
     t.ch[0].ch = [ tmp ]
 
+  '''
   ## Fix numbers being adjectives instead of quantifiers...
   if len(t.ch)==2 and 'A-aN-x-lM' in t.ch[0].c and len(t.ch[0].ch)==1 and len(t.ch[0].ch[0].ch)==1 and len(t.ch[0].ch[0].ch[0].ch)==0 and re.search('^[0-9]+$',t.ch[0].ch[0].ch[0].c) != None:
     sys.stderr.write( 'Fixing ' + t.ch[0].c + ' ' + t.ch[1].c + ' => ' + t.c + '\n' )
@@ -29,9 +30,28 @@ def change( t ):
     t.ch[1] = tree.Tree()
     t.ch[1].ch = [ tmp ]
     t.ch[1].c = 'N-aD-lU'
-#    print( 'Fixed:', t )
+  '''
+
+  ## Fix S -> NP VP...
+  if len(t.ch)==2 and 'S' == t.c and 'V-aN' == t.ch[1].c:
+    sys.stderr.write( 'Fixing ' + t.ch[0].c + ' ' + t.ch[1].c + ' => ' + t.c + '\n' )
+    tmp = t.ch
+    t.ch = [ tree.Tree() ]
+    t.ch[0].c = 'V'
+    t.ch[0].ch = tmp
+
+  ## Fix missing modifier extractions...
+  if len(t.ch)==2 and '-g' in t.c and '-g' not in t.ch[0].c and '-g' not in t.ch[1].c:
+    sys.stderr.write( 'Fixing ' + t.ch[0].c + ' ' + t.ch[1].c + ' => ' + t.c + '\n' )
+    tmp = t.ch
+    t.ch = [ tree.Tree() ]
+    t.ch[0].c = re.sub( '-g.*', '', t.c ) + '-lE'
+    t.ch[0].ch = tmp
+
+  ## Recurse...
   for st in t.ch:
     change( st )
+
 
 ## For each tree in input...
 for line in sys.stdin:

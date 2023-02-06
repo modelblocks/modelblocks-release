@@ -61,7 +61,7 @@ def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, nWord=0 ):
     if t.c[:3] == 'V-g' and ( t.ch[0].c == 'N-lE' or t.ch[0].c == 'R-aN-lE' ): t.sVar += '?'  ## Special case for function extraction.
     if '-lZ' in t.ch[0].c: t.sVar += '?'  ## Special case for zero-head rule.
   elif len(t.ch) == 2:
-    t.sVar = t.ch[0].sVar if '-lU' in t.ch[0].c else t.ch[1].sVar if '-lU' in t.ch[1].c else t.ch[0].sVar if '-l' not in t.ch[0].c else t.ch[1].sVar if '-l' not in t.ch[1].c else None
+    t.sVar = t.ch[0].sVar if '-lU' in t.ch[0].c else t.ch[1].sVar if '-lU' in t.ch[1].c else t.ch[0].sVar if '-l' not in t.ch[0].c and t.ch[0].c[0] not in ',;' else t.ch[1].sVar if '-l' not in t.ch[1].c else None
     if t.sVar == None: print( 'ERROR: Illegal categories in', t.c, '->', t.ch[0].c, t.ch[1].c )
   else: print( '\nERROR: too many children in ', t )
 
@@ -375,10 +375,16 @@ def unpack( expr ):
                                                                                                                                                                                    ['\\z'+sVar,'f',[QuantEq,'x'+sVar],[Equal,'z'+sVar],Univ] ] ] ], 's' ] )
   ## Superlative quantifier...
 #  elif expr.split(':')[0] == '@NNSUP3-aD-b{N-aD}-b{A-aN}':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
-  elif re.search( '@[AN]NSUP3?-aD-b{N-aD}-b{A-aN}:', expr ):  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
-                                                                                                                                      [ 'None', [ '\\y'+sVar, 'g', 'q', 'r', [Equal,'y'+sVar] ],
-                                                                                                                                                [ '\\y'+sVar, expr[1:], ['\\z','f',[QuantEq,'y'+sVar],[Equal,'z'],Univ],
-                                                                                                                                                                        ['\\z','f',[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
+  elif re.search( '@[AN]NSUP3?-aD-b{N-aD}-b{A-aN}:', expr ) or re.search( '@ANSUP3-aN:', expr ):
+    return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
+                                                                            [ 'None', [ '\\y'+sVar, 'g', 'q', 'r', [Equal,'y'+sVar] ],
+                                                                                      [ '\\y'+sVar, expr[1:], ['\\z','f',[QuantEq,'y'+sVar],[Equal,'z'],Univ],
+                                                                                                              ['\\z','f',[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
+  elif re.search( '@[AN]NSUP-aD-b{N-aD}:', expr ) or re.search( '@ANSUP-aN:', expr ):
+    return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'f', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
+                                                                     [ 'None', [ '\\y'+sVar, 'f', 'q', 'r', [Equal,'y'+sVar] ],
+                                                                               [ '\\y'+sVar, 'More', ['\\z',expr[1:],[QuantEq,'y'+sVar],[Equal,'z'],Univ],
+                                                                                                     ['\\z',expr[1:],[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
   ## Pronoun...
   elif re.search( '^@NNGEN[A-Za-z0-9]*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Gen', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   elif re.search( '^@N[A-Za-z0-9]*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
