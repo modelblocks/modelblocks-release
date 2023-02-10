@@ -68,7 +68,7 @@ def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, nWord=0 ):
     if '-lZ' in t.ch[0].c: t.sVar += '?'  ## Special case for zero-head rule.
   elif len(t.ch) == 2:
     t.sVar = t.ch[0].sVar if '-lU' in t.ch[0].c else t.ch[1].sVar if '-lU' in t.ch[1].c else t.ch[0].sVar if '-l' not in t.ch[0].c and t.ch[0].c[0] not in ',;' else t.ch[1].sVar if '-l' not in t.ch[1].c else None
-    if t.sVar == None: print( 'ERROR: Illegal categories in', t.c, '->', t.ch[0].c, t.ch[1].c )
+    if t.sVar == None: print( 'ERROR: Illegal categories in ', t )  #, t.c, '->', t.ch[0].c, t.ch[1].c )
   else: print( '\nERROR: too many children in ', t )
 
   ## Store scopes and anaphora...
@@ -137,7 +137,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   if len(t.ch) == 1 and len(t.ch[0].ch) == 0:
     if '=' in t.c:
       print( 'pre-empting', t.c )
-      t.c = re.sub( '-x[^-} ].*', '', t.c )  ## Pre-empt any equations.
+      t.c = re.sub( '-x[^x]*=.*', '', t.c )  #re.sub( '-x[^-} ].*', '', t.c )  ## Pre-empt any equations.
       print( 'pre-empted', t.c )
     pred = lex.getFn( t.c, t.ch[0].c )
     if   pred == '' and t.c == 'N-b{N-aD}-x%|':        output = 'IdentSome'
@@ -175,7 +175,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 #      elif '-lE' in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
 #      elif '-lE' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
       else: 
-        print( 'ERROR: Ill-formed extraction:', form ) # t.c, '->', t.ch[0].c )
+        print( 'ERROR: Ill-formed extraction:', t )  #, form ) # t.c, '->', t.ch[0].c )
         exit( 0 )
     ## Unary modifier...
     elif re.search( '^A-aN((?:-[ghirv][^ ]*)?)-lM N-aD\\1$', form ):  output = [ 'Mod1', ['\\q','\\t','\\u','q','t','u'], translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
@@ -200,7 +200,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-l' not in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ]
     elif '-l' not in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
     else:
-      print( 'WARNING: Assuming', t.c, '->', t.ch[0].c, getLocalArity(t.c), getLocalArity(t.ch[0].c), 'is simple type change' )
+      print( 'WARNING: Assuming simple type change in', t )    #', t.c, '->', t.ch[0].c, getLocalArity(t.c), getLocalArity(t.ch[0].c), 'is simple type change' )
       output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
     ## Propagate child stores...
     t.qstore = t.ch[0].qstore
@@ -211,14 +211,14 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     if VERBOSE: print( ' '*indent, 'child cats and nolos:', t.ch[0].c, t.ch[1].c, m, lsNolo[:m], lsNolo[m:] )
     ## Check...
     form = re.sub( '-[lmnstuwxy][^ ]*', '', t.ch[0].c + ' ' + t.ch[1].c + ' ' + t.c )
-    if   ('-lA' in t.ch[0].c or '-lU' in t.ch[0].c) and getLocalArity(t.ch[1].c) != getLocalArity(t.c)+1:  sys.stdout.write( 'ERROR: Bad arity in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+    if   ('-lA' in t.ch[0].c or '-lU' in t.ch[0].c) and getLocalArity(t.ch[1].c) != getLocalArity(t.c)+1:  sys.stdout.write( 'ERROR: Bad arity in ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     elif ('-lA' in t.ch[0].c or '-lU' in t.ch[0].c) and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)-a\\1((?:-[ghirv][^ ]*)?) \\3\\2\\4$', form ) == None and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)-a{\\1}((?:-[ghirv][^ ]*)?) \\3\\2\\4$', form ) == None:
-      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
-    elif ('-lA' in t.ch[1].c or '-lU' in t.ch[1].c) and getLocalArity(t.ch[0].c) != getLocalArity(t.c)+1:  sys.stdout.write( 'ERROR: Bad arity in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+      sys.stdout.write( 'WARNING: Bad category in ' + str(t) + '\n' )  #+ t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+    elif ('-lA' in t.ch[1].c or '-lU' in t.ch[1].c) and getLocalArity(t.ch[0].c) != getLocalArity(t.c)+1:  sys.stdout.write( 'ERROR: Bad arity in ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     elif ('-lA' in t.ch[1].c or '-lU' in t.ch[1].c) and re.search( '^(.*)-b(.*)((?:-[ghirv][^ ]*)?) \\2((?:-[ghirv][^ ]*)?) \\1\\3\\4$', form ) == None and re.search( '^(.*)-b{(.*)}((?:-[ghirv][^ ]*)?) \\2((?:-[ghirv][^ ]*)?) \\1\\3\\4$', form ) == None:
-      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
-    elif '-lM' in t.ch[0].c and getLocalArity(t.ch[1].c) != getLocalArity(t.c):  sys.stdout.write( 'ERROR: Bad arity in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
-    elif '-lM' in t.ch[1].c and getLocalArity(t.ch[0].c) != getLocalArity(t.c):  sys.stdout.write( 'ERROR: Bad arity in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+      sys.stdout.write( 'WARNING: Bad category in ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+    elif '-lM' in t.ch[0].c and getLocalArity(t.ch[1].c) != getLocalArity(t.c):  sys.stdout.write( 'ERROR: Bad arity in ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+    elif '-lM' in t.ch[1].c and getLocalArity(t.ch[0].c) != getLocalArity(t.c):  sys.stdout.write( 'ERROR: Bad arity in ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     ## In-situ ops...
     if   '-lD' in t.ch[0].c or t.ch[0].c[0] in ',;:.!?':  output = translate( t.ch[1], Scopes, Anaphs, lsNolo )
     elif '-lD' in t.ch[1].c or t.ch[1].c[0] in ',;:.!?':  output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
@@ -244,7 +244,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
         output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ),
                                  [ '\\t'+t.ch[0].sVar, '\\u'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['\\p', '\\t', '\\u', 'p', 't'+t.ch[0].sVar, 'u'+t.ch[0].sVar ] ] ), 'r', 's' ] ]
       else:
-        sys.stdout.write( 'WARNING: Bad G rule: ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+        sys.stdout.write( 'WARNING: Bad G rule: ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
 #    elif '-lG' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ] ) ]
 #    elif '-lH' in t.ch[1].c and re.search( '^(.*)-h(.*) \\2 \\1$', form ) == None and re.search( '^(.*)-h{(.*)} \\2 \\1$', form ) == None:
 #      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
@@ -252,9 +252,9 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
       ## Zero-ary (complete) non-local with simple argument: N -> N-hO O...
       if re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h(\w+) \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ), Univ, [ '\\xx'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['Trace','xx'+t.ch[1].sVar] ] ), 'r', 's' ] ]
-      ## Unary non-local with simple argument: N -> N-hO O...
-      elif re.search( '^(\w+-[ab]\w+)((?:-[ghirv][^ ]*)?)-h(\w+) \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ), Univ, [ '\\xx'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['Trace','xx'+t.ch[1].sVar] ] ), 'q', 'r', 's' ] ]
+      ## Unary non-local with simple argument: B-aN -> B-aN-hO O...
+      elif re.search( '^(\w+-[ab](?:\w+|{\w+-[a-z]\w+}))((?:-[ghirv][^ ]*)?)-h(\w+) \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
+        output = [ '\\f', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ), Univ, [ '\\xx'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['Trace','xx'+t.ch[1].sVar] ] ), 'f', 'r', 's' ] ]
       ## Zero-ary (complete) non-local with modifier: N -> N-h{A-aN} A-aN...
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ab]\w+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),
@@ -278,7 +278,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 #      elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ghirv](?:\w+|{.*}))} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
 #        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] + lsNolo[:m-1] ), 'r', 's' ] ] + lsNolo[m-1:] ) ]
       else:
-        sys.stdout.write( 'WARNING: Bad H rule: ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+        sys.stdout.write( 'WARNING: Bad H rule: ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     ## Non-local in non-local: N -> N-h{V-g{V-aN}} V-g{V-aN}-lH...
     elif re.match( '^\w+-[ghirv]\{\w+-[ab][A-Z-az]+\}-lH$', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\ff', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] + [ 'ff' ] ) ] ] ) ]
       #  output = translate( t.ch[0], Scopes, Anaphs, [ [ '\\f', '\\r', '\\s', 'f', [ '\\q', '\\t', '\\u', 'q', Univ, [ '\\zz'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','zz'+t.ch[1].sVar] ] + lsNolo[:m] ), 't', 'u' ] ], 'r', 's' ] ] + lsNolo[:m] )
@@ -302,7 +302,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lR' in t.ch[1].c and getLocalArity(t.c)==1:  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ), 'q', 'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','zz'+t.ch[0].sVar] ] ]
     ## Relative clause modification of complete phrase or clause...
     elif '-lR' in t.ch[0].c and getLocalArity(t.c)==0:  output = [        '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),      'r', [ '\\zz'+t.ch[1].sVar, '^', [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['Trace','zz'+t.ch[1].sVar] ] ), Univ, Univ ], ['s','zz'+t.ch[1].sVar] ] ]
-    else:  print( '\nERROR: unhandled rule from ' + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
+    else:  print( '\nERROR: unhandled rule from ' + str(t) + '\n' )  # + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
     ## Propagate child stores...
     t.qstore += (t.ch[0].qstore if hasattr(t.ch[0],'qstore') else []) + (t.ch[1].qstore if hasattr(t.ch[1],'qstore') else [])
 
@@ -419,10 +419,12 @@ def unpack( expr ):
   ## Ordinal quantifier...
   elif expr.split(':')[0] == '@NNORD-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ],
                                                                                                                     [ expr[1:]+'MinusOne', [ '\\y'+sVar, 'f', 'q', 'r', ['\\y','Equal','y','y'+sVar] ], ['\\y'+sVar, 'Prec','x'+sVar,'y'+sVar] ] ], 's' ] )
-  elif expr.split(':')[0] == '@ANORDSUP-aD-b{N-aD}-b{A-aN}':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
-                                                                                                                                      [ expr[1:]+'MinusOne', [ '\\y'+sVar, 'g', 'q', 'r', [Equal,'y'+sVar] ],
-                                                                                                                                                             [ '\\y'+sVar, 'More', ['\\z'+sVar,'f',[QuantEq,'y'+sVar],[Equal,'z'+sVar],Univ],
-                                                                                                                                                                                   ['\\z'+sVar,'f',[QuantEq,'x'+sVar],[Equal,'z'+sVar],Univ] ] ] ], 's' ] )
+  ## Ordinal superlative quantifier...
+  elif re.search( '@[AN]NORDSUP3?-aD-b{N-aD}-b{A-aN}:', expr ):  #expr.split(':')[0] == '@ANORDSUP-aD-b{N-aD}-b{A-aN}':
+    return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
+                                                                            [ expr[1:]+'MinusOne', [ '\\y'+sVar, 'g', 'q', 'r', [Equal,'y'+sVar] ],
+                                                                                                   [ '\\y'+sVar, 'More', ['\\z'+sVar,'f',[QuantEq,'y'+sVar],[Equal,'z'+sVar],Univ],
+                                                                                                                         ['\\z'+sVar,'f',[QuantEq,'x'+sVar],[Equal,'z'+sVar],Univ] ] ] ], 's' ] )
   ## Superlative quantifier...
 #  elif expr.split(':')[0] == '@NNSUP3-aD-b{N-aD}-b{A-aN}':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
   elif re.search( '@[AN]NSUP3?-aD-b{N-aD}-b{A-aN}:', expr ) or re.search( '@ANSUP3-aN:', expr ):
@@ -465,13 +467,17 @@ def unpack( expr ):
   ## Bare relative: N-b{V-g{R-aN}}...
   elif re.search( '^@\w+-[ab]\{\w+-[ghirv]\{\w+-[ab]\w+\}\}(-[lx].*)?:', expr ) != None:
     return( [ '\\f', '\\r', '\\s', 'f', [ '\\q', '\\t', '\\u', 'All', Univ, [ '\\x'+sVar, 'q', Univ, [ '\\y'+sVar, expr[1:], 'x'+sVar, 'y'+sVar ] ] ], 'r', 's' ] )
+  ## Bare relative: N-b{V-gN}-b{N-aD}...
+  elif re.search( '^@\w+-[ab]\{\w+-[ghirv]\w+\}-[ab]\{\w+-[ab]\w+\}(-[lx].*)?:', expr ) != None:
+    return( [ '\\f', '\\g', '\\r', '\\s', 'All', [ '\\z'+sVar, '^', [ '^', [ 'f', 'Some', [Equal,'z'+sVar], Univ ], [ 'g', [QuantEq,'z'+sVar], Univ, Univ ] ], ['r','z'+sVar] ],
+                                                 's' ] )
 #  elif expr.split(':')[0] == '@B-aN-b{A-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
 #  elif expr.split(':')[0] == '@B-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
 #  elif expr.split(':')[0] == '@I-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
-  ## Nominal relative or interrogative pronoun...
+  ## Nominal relative or interrogative pronoun: N-rN...
   elif re.search( '^@N-[ri]N:', expr ):  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar], ['r','e'+sVar] ], 's' ] ] )
 #  elif expr.split(':')[0] == '@N-rN':  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar], ['r','e'+sVar] ], 's' ] ] )
-  ## Adverbial relative or interrogative pronoun...
+  ## Adverbial relative or interrogative pronoun: R-aN-rN...
   elif re.search( '^@A-aN-[ri]N:', expr ):  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar], ['r','e'+sVar] ], 's' ] ] ] )
 #  elif expr.split(':')[0] == '@A-aN-rN':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y', 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar], ['r','e'+sVar] ], 's' ] ] ] )
 #  elif expr.split(':')[0] == '@B-aN-bA':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\e', '^', [ expr[1:], 'e', 'x', [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'] ], 's' ] ] )
