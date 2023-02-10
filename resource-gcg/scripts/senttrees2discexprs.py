@@ -251,30 +251,30 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lH' in t.ch[1].c:
       ## Zero-ary (complete) non-local with simple argument: N -> N-hO O...
       if re.search( '^([A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h([A-Za-z0-9]+) \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ), Univ, [ '\\xx'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','xx'+t.ch[1].sVar] ] + lsNolo[:m-1] ), 'r', 's' ] ]
+        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ), Univ, [ '\\xx'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['Trace','xx'+t.ch[1].sVar] ] ), 'r', 's' ] ]
       ## Unary non-local with simple argument: N -> N-hO O...
       elif re.search( '^([A-Za-z0-9]+-[ab][A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h([A-Za-z0-9]+) \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ), Univ, [ '\\xx'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','xx'+t.ch[1].sVar] ] + lsNolo[:m-1] ), 'q', 'r', 's' ] ]
+        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ), Univ, [ '\\xx'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['Trace','xx'+t.ch[1].sVar] ] ), 'q', 'r', 's' ] ]
       ## Zero-ary (complete) non-local with modifier: N -> N-h{A-aN} A-aN...
       elif re.search( '^([A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h{([A-Za-z0-9]+-[ab][A-Za-z0-9]+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),
-                                 [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] + lsNolo[:m-1] ), 'r', 's' ] ]
+                                 [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'r', 's' ] ]
       ## Unary non-local with modifier: N -> N-h{A-aN} A-aN...
       elif re.search( '^([A-Za-z0-9]+-[ab[A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h{([A-Za-z0-9]+-[ab][A-Za-z0-9]+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),
-                                        [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] + lsNolo[:m-1] ), 'q', 'r', 's' ] ]
+                                        [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'q', 'r', 's' ] ]
       ## Zero-ary (complete) non-local containing zero-ary (complete) non-local: N -> N-h{C-rN} C-rN...
       elif re.search( '^([A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h{([A-Za-z0-9]+-[ghirv][A-Za-z0-9]+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] + lsNolo[:m-1] ), 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
+        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
       ## Unary non-local containing zero-ary (complete) non-local: A-aN -> A-aN-h{F-gN} F-gN...
       elif re.search( '^([A-Za-z0-9]+-[ab][A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h{([A-Za-z0-9]+-[ghirv][A-Za-z0-9]+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] + lsNolo[:m-1] ), 'q', 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
+        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'q', 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
       ## Zero-ary (complete) non-local containing unary non-local: N -> N-h{Cas-g{V-aN}} Cas-g{V-aN}...
       elif re.search( '^([A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h{([A-Za-z0-9]+-[ghirv]{[A-Za-z0-9]+-[ab][A-Za-z0-9]+})} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\q', '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, 'q', Univ, [ '\\xh'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ [ '\\fh', 'fh', [QuantEq,'xh'+t.ch[1].sVar] ] ] + lsNolo[:m-1] ), 'r', 's' ] ] ] + lsNolo[m-1:] ), Univ, Univ ]
+        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\q', '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, 'q', Univ, [ '\\xh'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\fh', 'fh', [QuantEq,'xh'+t.ch[1].sVar] ] ] ), 'r', 's' ] ] ] + lsNolo[m-1:] ), Univ, Univ ]
       ## Unary non-local containing unary non-local: B-aN -> B-aN-h{Cas-g{V-aN}} Cas-g{V-aN}...
       elif re.search( '^([A-Za-z0-9]+-[ab][A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h{([A-Za-z0-9]+-[ghirv]{[A-Za-z0-9]+-[ab][A-Za-z0-9]+})} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\p', '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, 'p', Univ, [ '\\xh'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ [ '\\fh', 'fh', [QuantEq,'xh'+t.ch[1].sVar] ] ] + lsNolo[:m-1] ), 'q', 'r', 's' ] ] ] + lsNolo[m-1:] ), Univ, Univ ]
+        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\p', '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, 'p', Univ, [ '\\xh'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\fh', 'fh', [QuantEq,'xh'+t.ch[1].sVar] ] ] ), 'q', 'r', 's' ] ] ] + lsNolo[m-1:] ), Univ, Univ ]
 #      elif re.search( '^([A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h{([A-Za-z0-9]+-[ghirv](?:[A-Za-z0-9]+|{.*}))} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
 #        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] + lsNolo[:m-1] ), 'r', 's' ] ] + lsNolo[m-1:] ) ]
       else:
