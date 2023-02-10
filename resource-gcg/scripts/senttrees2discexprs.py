@@ -233,21 +233,21 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lM' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
     elif '-lC' in t.ch[0].c:  output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
     elif '-lC' in t.ch[1].c:  output = translate( t.ch[1], Scopes, Anaphs, lsNolo )
-    elif '-lG' in t.ch[0].c and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g\\1 \\3\\2\\4$', form ) == None and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g{\\1} \\3\\2\\4$', form ) == None:
-      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+#    elif '-lG' in t.ch[0].c and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g\\1 \\3\\2\\4$', form ) == None and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g{\\1} \\3\\2\\4$', form ) == None:
+#      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     elif '-lG' in t.ch[0].c:
       ## Non-local simple argument: V-rN -> N-rN V-gN...
       if re.search( '^(\w+)((?:-[ghirv][^ ]*)?) (\w+)((?:-[ghirv][^ ]*)?)-g\\1 \\3\\2\\4$', form ):
-        output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), Univ, [ '\\xx'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','xx'+t.ch[0].sVar] ] + lsNolo[m:] ), 'r', 's' ] ]
+        output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), Univ, [ '\\xx'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','xx'+t.ch[0].sVar] ] ), 'r', 's' ] ]
       ## Non-local modifier argument: V-rN -> R-aN-rN V-g{R-aN}...
       elif re.search( '^(\w+-[ab]\w+)((?:-[ghirv][^ ]*)?) (\w+)((?:-[ghirv][^ ]*)?)-g{\\1} \\3\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ),
-                                 [ '\\t'+t.ch[0].sVar, '\\u'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['\\p', '\\t', '\\u', 'p', 't'+t.ch[0].sVar, 'u'+t.ch[0].sVar ] ] + lsNolo[m:] ), 'r', 's' ] ]
+                                 [ '\\t'+t.ch[0].sVar, '\\u'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['\\p', '\\t', '\\u', 'p', 't'+t.ch[0].sVar, 'u'+t.ch[0].sVar ] ] ), 'r', 's' ] ]
       else:
-        sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+        sys.stdout.write( 'WARNING: Bad G rule: ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
 #    elif '-lG' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ] ) ]
-    elif '-lH' in t.ch[1].c and re.search( '^(.*)-h(.*) \\2 \\1$', form ) == None and re.search( '^(.*)-h{(.*)} \\2 \\1$', form ) == None:
-      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+#    elif '-lH' in t.ch[1].c and re.search( '^(.*)-h(.*) \\2 \\1$', form ) == None and re.search( '^(.*)-h{(.*)} \\2 \\1$', form ) == None:
+#      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     elif '-lH' in t.ch[1].c:
       ## Zero-ary (complete) non-local with simple argument: N -> N-hO O...
       if re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h(\w+) \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
@@ -278,7 +278,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 #      elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ghirv](?:\w+|{.*}))} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
 #        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] + lsNolo[:m-1] ), 'r', 's' ] ] + lsNolo[m-1:] ) ]
       else:
-        sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+        sys.stdout.write( 'WARNING: Bad H rule: ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     ## Non-local in non-local: N -> N-h{V-g{V-aN}} V-g{V-aN}-lH...
     elif re.match( '^\w+-[ghirv]\{\w+-[ab][A-Z-az]+\}-lH$', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\ff', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] + [ 'ff' ] ) ] ] ) ]
       #  output = translate( t.ch[0], Scopes, Anaphs, [ [ '\\f', '\\r', '\\s', 'f', [ '\\q', '\\t', '\\u', 'q', Univ, [ '\\zz'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','zz'+t.ch[1].sVar] ] + lsNolo[:m] ), 't', 'u' ] ], 'r', 's' ] ] + lsNolo[:m] )
