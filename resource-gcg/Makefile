@@ -17,6 +17,10 @@
 ##                                                                            ##
 ################################################################################
 
+
+# TO MAKE simplewikiC1:  cat wikisemc1.casp.toktrees | perl ../resource-linetrees/scripts/editabletrees2linetrees.pl| python3 scripts/senttrees2discexprs.py -s41 -s82 -s91 -s20 -s35 -s49 -s114  -s61 -s40 -s127  > eraseme
+
+
 ################################################################################
 #
 #  Macros & variables

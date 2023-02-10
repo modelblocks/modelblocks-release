@@ -30,14 +30,14 @@ for a in sys.argv:
 ########################################
 
 def getNoloArity( cat ):
-  cat = re.sub( '-x.*', '', cat )
+#  cat = re.sub( '-x[^-} ].*', '', cat )
   while '{' in cat:
     cat = re.sub('\{[^\{\}]*\}','X',cat)
   return len(re.findall('-[ghirv]',cat))
 
 
 def getLocalArity( cat ):
-  cat = re.sub( '-x.*', '', cat )
+#  cat = re.sub( '-x[^-} ].*', '', cat )
   while '{' in cat:
     cat = re.sub('\{[^\{\}]*\}','X',cat)
   return len(re.findall('-[ab]',cat))
@@ -50,6 +50,9 @@ def getLocalArity( cat ):
 ########################################
 
 def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, nWord=0 ):
+
+  ## Flush '-x' singletons as pre-process...
+  t.c = re.sub( '-x([-} ])', '\\1', t.c )
 
   ## Recurse...
   for st in t.ch:
@@ -134,14 +137,16 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   if len(t.ch) == 1 and len(t.ch[0].ch) == 0:
     if '=' in t.c:
       print( 'pre-empting', t.c )
-      t.c = re.sub( '-x.*', '', t.c )  ## Pre-empt any equations.
+      t.c = re.sub( '-x[^-} ].*', '', t.c )  ## Pre-empt any equations.
       print( 'pre-empted', t.c )
     pred = lex.getFn( t.c, t.ch[0].c )
     if   pred == '' and t.c == 'N-b{N-aD}-x%|':        output = 'IdentSome'
     elif pred == '' and t.c == 'Ne-x%|':               output = 'Some'
     elif pred == '' and re.search( '^P[a-z]+', t.c ):  output = 'Some'
     elif pred == '':                                   output = 'Ident'
-    elif re.match( '^.*-[ri][A-Za-z0-9]+(-[lx].*)?$', t.c ) != None:  output = [ '@'+pred+'@'+t.sVar, lsNolo[-1] ]
+    elif re.match( '^.*-[ri][A-Za-z0-9]+(-[lx].*)?$', t.c ) != None:
+      if lsNolo == []: print( 'ERROR: missing nolo in ', t.c )
+      output = [ '@'+pred+'@'+t.sVar, lsNolo[-1] ]
 #    elif t.c == 'R-aN-rN-xR%|A%':                output = [ '@'+pred+'@'+t.sVar, lsNolo[-1] ]
 #    elif t.c == 'N-rN':                          output = [ '@'+pred+'@'+t.sVar, lsNolo[-1] ]
     else:                                        output = '@'+pred+'@'+t.sVar
@@ -150,7 +155,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   ## 2.c. Unary branch...
   elif len(t.ch) == 1:
 #    form = re.sub( '-[lmnstuwxy][^ ]*', '', t.ch[0].c + ' ' + t.c )
-    form = re.sub( '-[mnstuwxy][^ ]*', '', re.sub('-x-','-',t.ch[0].c) ) + ' ' + re.sub( '-[lx][^ ]*', '', t.c )
+    form = re.sub( '-[mnstuwxy][^ ]*', '', re.sub('-x([-} ])','\\1',t.ch[0].c) ) + ' ' + re.sub( '-[lx][^ ]*', '', t.c )
 #    print( 'form:', form )
     bform = re.sub( '-[lx][^ ]*', '', t.c ) + ' ' + re.sub( '-[mnstuwxy][^ ]*', '', t.ch[0].c )
 #    if   '-lF' in t.ch[0].c and re.search( '^V-iN((?:-[ghirv][^ ]*)?) N\\1$', form ) != None:  output = [ '\\r', '\\s', 'All', [ '\\x'+t.sVar, '^', ['r','x'+t.sVar], translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ], 's' ]
@@ -244,23 +249,30 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lH' in t.ch[1].c and re.search( '^(.*)-h(.*) \\2 \\1$', form ) == None and re.search( '^(.*)-h{(.*)} \\2 \\1$', form ) == None:
       sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     elif '-lH' in t.ch[1].c:
-      ## Complete non-local with simple argument: N -> N-hO O...
+      ## Zero-ary (complete) non-local with simple argument: N -> N-hO O...
       if re.search( '^([A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h([A-Za-z0-9]+) \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ), Univ, [ '\\xx'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','xx'+t.ch[1].sVar] ] + lsNolo[:m-1] ), 'r', 's' ] ]
       ## Unary non-local with simple argument: N -> N-hO O...
       elif re.search( '^([A-Za-z0-9]+-[ab][A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h([A-Za-z0-9]+) \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ), Univ, [ '\\xx'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','xx'+t.ch[1].sVar] ] + lsNolo[:m-1] ), 'q', 'r', 's' ] ]
-      ## Non-local with modifier: N -> N-h{A-aN} A-aN...
+      ## Zero-ary (complete) non-local with modifier: N -> N-h{A-aN} A-aN...
       elif re.search( '^([A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h{([A-Za-z0-9]+-[ab][A-Za-z0-9]+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),
                                  [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] + lsNolo[:m-1] ), 'r', 's' ] ]
-      ## Non-local in non-local: N -> N-h{C-rN} C-rN...
+      ## Unary non-local with modifier: N -> N-h{A-aN} A-aN...
+      elif re.search( '^([A-Za-z0-9]+-[ab[A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h{([A-Za-z0-9]+-[ab][A-Za-z0-9]+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
+        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),
+                                        [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] + lsNolo[:m-1] ), 'q', 'r', 's' ] ]
+      ## Zero-ary (complete) non-local containing zero-ary (complete) non-local: N -> N-h{C-rN} C-rN...
       elif re.search( '^([A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h{([A-Za-z0-9]+-[ghirv][A-Za-z0-9]+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] + lsNolo[:m-1] ), 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
-      ## Unary non-local in non-local: N -> N-h{Cas-g{V-aN}} Cas-g{V-aN}...
+      ## Unary non-local containing zero-ary (complete) non-local: A-aN -> A-aN-h{F-gN} F-gN...
+      elif re.search( '^([A-Za-z0-9]+-[ab][A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h{([A-Za-z0-9]+-[ghirv][A-Za-z0-9]+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
+        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] + lsNolo[:m-1] ), 'q', 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
+      ## Zero-ary (complete) non-local containing unary non-local: N -> N-h{Cas-g{V-aN}} Cas-g{V-aN}...
       elif re.search( '^([A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h{([A-Za-z0-9]+-[ghirv]{[A-Za-z0-9]+-[ab][A-Za-z0-9]+})} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\q', '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, 'q', Univ, [ '\\xh'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ [ '\\fh', 'fh', [QuantEq,'xh'+t.ch[1].sVar] ] ] + lsNolo[:m-1] ), 'r', 's' ] ] ] + lsNolo[m-1:] ), Univ, Univ ]
-      ## Unary non-local in non-local: B-aN -> B-aN-h{Cas-g{V-aN}} Cas-g{V-aN}...
+      ## Unary non-local containing unary non-local: B-aN -> B-aN-h{Cas-g{V-aN}} Cas-g{V-aN}...
       elif re.search( '^([A-Za-z0-9]+-[ab][A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h{([A-Za-z0-9]+-[ghirv]{[A-Za-z0-9]+-[ab][A-Za-z0-9]+})} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\p', '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, 'p', Univ, [ '\\xh'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ [ '\\fh', 'fh', [QuantEq,'xh'+t.ch[1].sVar] ] ] + lsNolo[:m-1] ), 'q', 'r', 's' ] ] ] + lsNolo[m-1:] ), Univ, Univ ]
 #      elif re.search( '^([A-Za-z0-9]+)((?:-[ghirv][^ ]*)?)-h{([A-Za-z0-9]+-[ghirv](?:[A-Za-z0-9]+|{.*}))} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
