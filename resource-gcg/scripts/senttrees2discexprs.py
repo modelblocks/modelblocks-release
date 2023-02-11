@@ -161,6 +161,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 #    if   '-lF' in t.ch[0].c and re.search( '^V-iN((?:-[ghirv][^ ]*)?) N\\1$', form ) != None:  output = [ '\\r', '\\s', 'All', [ '\\x'+t.sVar, '^', ['r','x'+t.sVar], translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ], 's' ]
     ## Extractions / non-local introduction...
     if '-lE' in t.ch[0].c:
+      if lsNolo == []: print( 'ERROR: no non-locals in', t )
       ## Argument extraction with zero-head rule applied to filler: e.g. V-aN-gN -> V-aN-b{A-aN}-lE...
       if re.search( '^(.*)-[ab]\{\w+-[ab]\w+\}((?:-[ghirv][^ ]*)?)-lE \\1-[ghriv]\w+\\2$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), [ 'Pred', lsNolo[0] ] ]
       ## Function extraction: e.g. V-g{V-aN} -> N-lE...
@@ -225,8 +226,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
     elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
     ## Non-local elimination in argument: e.g. V-aN -> V-aN-b{I-aN-gN} I-aN-gN-lI...
-    elif re.match( '^\w+-[ghriv]\{\w+-[ab]\w+\}-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\ff', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ 'ff' ] ) ] ]
-    elif re.match( '^\w+-[ghriv]\w+-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\ff', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ 'ff' ] ) ] ]
+    elif re.match( '^\w+-[ghriv]\{\w+-[ab]\w+\}-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\fi', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ 'fi' ] ) ] ]
+    elif re.match( '^\w+-[ghriv]\w+-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\qi', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ 'qi' ] ) ] ]
 #    elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 0:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\zz'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','zz'+t.ch[0].sVar] ] + lsNolo[m:] ),      'r', 's' ] ] ]
     elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 1:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\p', '\\q', '\\r', '\\s', 'p', Univ, [ '\\zz'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ] ), 'q', 'r', 's' ] ] ]
     elif '-lM' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
@@ -259,7 +260,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ab]\w+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),
                                  [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'r', 's' ] ]
-      ## Unary non-local with modifier: N -> N-h{A-aN} A-aN...
+      ## Unary non-local with modifier: B-aN -> B-aN-h{A-aN} A-aN...
       elif re.search( '^(\w+-[ab]\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ab]\w+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),
                                         [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'q', 'r', 's' ] ]
@@ -451,14 +452,14 @@ def unpack( expr ):
     return( [ '\\p', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'p', Univ, [ '\\z'+sVar, 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar,'z'+sVar ], Univ ] ], ['r','x'+sVar] ], 's' ] )
   ## One-argument noun e.g. N-aD --- NOTE: middle (determiner) argument 'q'/'y' gets ignored...
   elif re.search( '^@NNGEN\w*-[ab]\w*(-[lx].*)?:', expr ):
-    return( [        '\\q', '\\r', '\\s', 'Gen', [ '\\x'+sVar, '^', [                          'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar          ], Univ   ], ['r','x'+sVar] ], 's' ] )
+    return( [        '\\q', '\\r', '\\s', 'Gen',  [ '\\x'+sVar, '^', [                          'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar          ], Univ   ], ['r','x'+sVar] ], 's' ] )
   elif re.search( '^@N\w*-[ab]\w*(-[lx].*)?:', expr ):
     return( [        '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [                          'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar          ], Univ   ], ['r','x'+sVar] ], 's' ] )
 #  elif expr.split(':')[0] == '@N-aD':  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@A-aN-b{F-gN}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\zz', 'q', Univ, [Equal,'zz'] ],
                                                                                                [ '\\zz', 'f', [QuantEq,'zz'], 'r', 's' ] ] )
-  ## Sentential subject e.g. A-a{V-iN}:clear
-  elif re.search( '^@\w+-[ab]\{\w+-[abghirv]\w+\}(-[lx].*)?:', expr ):  return( [ '\\f', '\\r', '\\s', 'Gen', [ '\\z', 'f', [QuantEq,'z'], 'r', 's' ] ] )
+  ## Sentential subject e.g. A-a{V-iN}:clear or bare relative: N-b{V-gN}:what
+  elif re.search( '^@\w+-[ab]\{\w+-[abghirv]\w+\}(-[lx].*)?:', expr ):  return( [ '\\f', '\\r', '\\s', 'Gen', [ '\\z', '^', [ 'f', [QuantEq,'z'], Univ, Univ ], ['r','z'] ], 's' ] )
   ## Comparatives: A-aN-b{V-g{V-aN}}...
 #  elif expr.split(':')[0] == '@Acomp-aN-b{V-g{V-aN}}':
   elif re.search( '^@\w+-[ab]\w+-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\}(-[lx].*)?:', expr ):
@@ -516,7 +517,9 @@ def unpack( expr ):
     return( [        '\\f',        '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ '^', [ 'Some', ['\\e'+sVar,expr[1:],'e'+sVar,'x'+sVar], Univ ], ['r','x'+sVar] ], [ 'f', [ '\\t', '\\u', '^', ['t','x'+sVar], ['u','x'+sVar] ], Univ, Univ ] ], 's' ] )
 #  elif expr[0]=='@' and getLocalArity( t.split(':')[0] ) == 1:  return( [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x',                     'Some', [ '\\e', '^', [expr[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
 #  elif expr[0]=='@' and getLocalArity( t.split(':')[0] ) == 2:  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'Some', [ '\\e', '^', [expr[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
-  else:  return( expr )
+  else:
+    if expr[0]=='@':  print( 'WARNING: no macro expansion for', expr )
+    return( expr )
 
 
 ########################################
