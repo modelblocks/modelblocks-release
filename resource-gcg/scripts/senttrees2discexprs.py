@@ -53,6 +53,8 @@ def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, nWord=0 ):
 
   ## Flush '-x' singletons as pre-process...
   t.c = re.sub( '-x([-} ])', '\\1', t.c )
+  ## Flush equations as pre-process...
+  t.c = re.sub( '^(.*)-x.*?=.*?(-[mnstuw].*)?$', '\\1\\2', t.c )
 
   ## Recurse...
   for st in t.ch:
@@ -135,10 +137,10 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 
   ## 2.b. Pre-terminal branch...
   if len(t.ch) == 1 and len(t.ch[0].ch) == 0:
-    if '=' in t.c:
-      print( 'pre-empting', t.c )
-      t.c = re.sub( '-x[^x]*=.*', '', t.c )  #re.sub( '-x[^-} ].*', '', t.c )  ## Pre-empt any equations.
-      print( 'pre-empted', t.c )
+#    if '=' in t.c:
+#      print( 'pre-empting', t.c )
+#      t.c = re.sub( '-x[^x]*=.*', '', t.c )  #re.sub( '-x[^-} ].*', '', t.c )  ## Pre-empt any equations.
+#      print( 'pre-empted', t.c )
     pred = lex.getFn( t.c, t.ch[0].c )
     if   pred == '' and t.c == 'N-b{N-aD}-x%|':        output = 'IdentSome'
     elif pred == '' and t.c == 'Ne-x%|':               output = 'Some'
@@ -245,8 +247,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
       output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
     elif '-lC' in t.ch[1].c and ( re.match( 'X-cX.*-dX (.*) \\1((?:-p\w+)?)-c\\1', form ) or re.match( 'X-cX-dX (.*) \\1((?:-p\w+)?)-c{\\1}', form ) ):
       output = translate( t.ch[1], Scopes, Anaphs, lsNolo )
-    elif '-lC' in t.ch[0].c and '-lC' in t.ch[1].c and re.match( '^(.*) \\1 \\1(-c\\1|-c{\\1})?$', form ):
-      output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
+#    elif '-lC' in t.ch[0].c and '-lC' in t.ch[1].c and re.match( '^(.*) \\1 \\1(-c\\1|-c{\\1})?$', form ):
+#      output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
 #    elif '-lG' in t.ch[0].c and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g\\1 \\3\\2\\4$', form ) == None and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g{\\1} \\3\\2\\4$', form ) == None:
 #      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     elif '-lG' in t.ch[0].c:
