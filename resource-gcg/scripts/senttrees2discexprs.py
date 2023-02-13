@@ -233,8 +233,12 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 1:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\p', '\\q', '\\r', '\\s', 'p', Univ, [ '\\zz'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ] ), 'q', 'r', 's' ] ] ]
     elif '-lM' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
     elif '-lM' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
-    elif '-lC' in t.ch[0].c:  output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
-    elif '-lC' in t.ch[1].c:  output = translate( t.ch[1], Scopes, Anaphs, lsNolo )
+    elif '-lC' in t.ch[0].c and ( re.match( '^(.*) \\1((?:-p\w+)?)-c\\1 \\1(-c\\1\\2)?$', form ) or re.match( '^\w+ (\w+)((?:-p\w+)?)-c\\1 \\1(-c\\1\\2)?$', form ) or
+                                  re.match( '^(.*) \\1((?:-p\w+)?)-c{\\1} \\1(-c{\\1}\\2)?$', form ) or 
+                                  re.match( '^\w+ X-cX-cX (\w+)-c\\1$', form ) ):
+      output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
+    elif '-lC' in t.ch[1].c and ( re.match( 'X-cX-dX (.*) \\1((?:-p\w+)?)-c\\1', form ) or re.match( 'X-cX-dX (.*) \\1((?:-p\w+)?)-c{\\1}', form ) ):
+      output = translate( t.ch[1], Scopes, Anaphs, lsNolo )
 #    elif '-lG' in t.ch[0].c and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g\\1 \\3\\2\\4$', form ) == None and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g{\\1} \\3\\2\\4$', form ) == None:
 #      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     elif '-lG' in t.ch[0].c:
@@ -431,6 +435,8 @@ def unpack( expr ):
   ## Unpack terminals...
   ## Cardinal...
   elif expr.split(':')[0] == '@K':  return( expr[1:] )
+  ## Possessive...
+  elif re.search( '@\w+POSS-[ab]{\w+-[ab]\w+}-[ab]\w+:', expr ):  return( [ '\\q', '\\f', '\\r', '\\s', 'q', Univ, [ '\\x', 'f', 'Some', ['\\z','^',['r','z'],['Have','x','z']], 's' ] ] )
   ## Quantifier...
   elif expr.split(':')[0] in ['@N-bO','@N-bN']:  return( [ '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'q', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@N-b{N-aD}':  return( [ '\\f', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'Some', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
