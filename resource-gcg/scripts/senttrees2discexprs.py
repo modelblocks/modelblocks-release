@@ -228,6 +228,12 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
     ## Non-local elimination in argument: e.g. V-aN -> V-aN-b{I-aN-gN} I-aN-gN-lI...
     elif re.match( '^\w+-[ghriv]\{\w+-[ab]\w+\}-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\fi', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ 'fi' ] ) ] ]
+# ## THESE TWO DIDNT WORK AND ARENT NEEDED AND DONT MAKE SENSE ANYWAY
+#    elif '-lI' in t.ch[1].c and re.match( '(\w+)-b{(\w+-[ghriv]\w+)} \\2 \\1', form ):
+#      output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] ), [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ], 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
+#    elif '-lI' in t.ch[1].c and re.match( '(\w+-[ab]\w+)-b{(\w+-[ghriv]\w+)} \\2 \\1', form ):
+#      output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] ), [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ], 'q', 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
+#    elif re.match( '^\w+-[ghriv]\w+-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\qi', 'r', 's', 'qi', Univ, [ '\\xi'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','xi'+t.ch[1].sVar] ] ), 'r', 's' ] ] ]
     elif re.match( '^\w+-[ghriv]\w+-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\qi', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ 'qi' ] ) ] ]
 #    elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 0:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\zz'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','zz'+t.ch[0].sVar] ] + lsNolo[m:] ),      'r', 's' ] ] ]
     elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 1:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\p', '\\q', '\\r', '\\s', 'p', Univ, [ '\\zz'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ] ), 'q', 'r', 's' ] ] ]
@@ -237,7 +243,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
                                   re.match( '^(.*) \\1((?:-p\w+)?)-c{\\1} \\1(-c{\\1}\\2)?$', form ) or 
                                   re.match( '^\w+ X-cX-cX (\w+)-c\\1$', form ) ):
       output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
-    elif '-lC' in t.ch[1].c and ( re.match( 'X-cX-dX (.*) \\1((?:-p\w+)?)-c\\1', form ) or re.match( 'X-cX-dX (.*) \\1((?:-p\w+)?)-c{\\1}', form ) ):
+    elif '-lC' in t.ch[1].c and ( re.match( 'X-cX.*-dX (.*) \\1((?:-p\w+)?)-c\\1', form ) or re.match( 'X-cX-dX (.*) \\1((?:-p\w+)?)-c{\\1}', form ) ):
       output = translate( t.ch[1], Scopes, Anaphs, lsNolo )
 #    elif '-lG' in t.ch[0].c and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g\\1 \\3\\2\\4$', form ) == None and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g{\\1} \\3\\2\\4$', form ) == None:
 #      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
@@ -507,6 +513,8 @@ def unpack( expr ):
 #  elif expr.split(':')[0] == '@N-rN':  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar], ['r','e'+sVar] ], 's' ] ] )
   ## Adverbial relative or interrogative pronoun: R-aN-rN...
   elif re.search( '^@A-aN-[ri]N:', expr ):  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar], ['r','e'+sVar] ], 's' ] ] ] )
+  ## Determiner relative or interrogative pronoun: N-b{N-aD}-iN...
+  elif re.search( '^@N-b{N-aD}-[ri]N:', expr ):  return( [ '\\q', '\\f', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'f', 'Some', [ '\\y'+sVar, '^', [Equal,'x'+sVar,'y'+sVar], ['r','y'+sVar] ], 's' ] ] )
 #  elif expr.split(':')[0] == '@A-aN-rN':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y', 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar], ['r','e'+sVar] ], 's' ] ] ] )
 #  elif expr.split(':')[0] == '@B-aN-bA':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\e', '^', [ expr[1:], 'e', 'x', [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'] ], 's' ] ] )
   ## Intransitive: B-aN...
