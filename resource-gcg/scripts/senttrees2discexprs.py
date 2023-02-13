@@ -144,7 +144,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif pred == '' and t.c == 'Ne-x%|':               output = 'Some'
     elif pred == '' and re.search( '^P[a-z]+', t.c ):  output = 'Some'
     elif pred == '':                                   output = 'Ident'
-    elif re.match( '^.*-[ri]\w+(-[lx].*)?$', t.c ) != None:
+    elif re.match( '^.*-[ri]\w+(-[lmnstuwxy].*)?$', t.c ) != None:
       if lsNolo == []:  print( 'ERROR: missing non-local argument in', t )
       output = [ '@'+pred+'@'+t.sVar, lsNolo[-1] ]
     elif lsNolo != []:  print( 'WARNING: un-extracted non-local argument', lsNolo, 'in', t )
