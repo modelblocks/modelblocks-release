@@ -245,6 +245,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
       output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
     elif '-lC' in t.ch[1].c and ( re.match( 'X-cX.*-dX (.*) \\1((?:-p\w+)?)-c\\1', form ) or re.match( 'X-cX-dX (.*) \\1((?:-p\w+)?)-c{\\1}', form ) ):
       output = translate( t.ch[1], Scopes, Anaphs, lsNolo )
+    elif '-lC' in t.ch[0].c and '-lC' in t.ch[1].c and re.match( '^(.*) \\1 \\1(-c\\1|-c{\\1})?$', form ):
+      output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
 #    elif '-lG' in t.ch[0].c and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g\\1 \\3\\2\\4$', form ) == None and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g{\\1} \\3\\2\\4$', form ) == None:
 #      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     elif '-lG' in t.ch[0].c:
@@ -455,22 +457,27 @@ def unpack( expr ):
                                                                                                                     [ expr[1:]+'MinusOne', [ '\\y'+sVar, 'f', 'q', 'r', ['\\y','Equal','y','y'+sVar] ], ['\\y'+sVar, 'Prec','x'+sVar,'y'+sVar] ] ], 's' ] )
   ## Ordinal superlative quantifier...
   elif re.search( '@[AN]NORDSUP3?-aD-b{N-aD}-b{A-aN}:', expr ):  #expr.split(':')[0] == '@ANORDSUP-aD-b{N-aD}-b{A-aN}':
-    return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
+    return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', [Equal,'x'+sVar] ],
                                                                             [ expr[1:]+'MinusOne', [ '\\y'+sVar, 'g', 'q', 'r', [Equal,'y'+sVar] ],
                                                                                                    [ '\\y'+sVar, 'More', ['\\z'+sVar,'f',[QuantEq,'y'+sVar],[Equal,'z'+sVar],Univ],
                                                                                                                          ['\\z'+sVar,'f',[QuantEq,'x'+sVar],[Equal,'z'+sVar],Univ] ] ] ], 's' ] )
   ## Superlative quantifier...
 #  elif expr.split(':')[0] == '@NNSUP3-aD-b{N-aD}-b{A-aN}':  return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
   elif re.search( '@[AN]NSUP3?-aD-b{N-aD}-b{A-aN}:', expr ) or re.search( '@ANSUP3-aN:', expr ):
-    return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
+    return( [ '\\f', '\\g', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'g', 'q', 'r', [Equal,'x'+sVar] ],
                                                                             [ 'None', [ '\\y'+sVar, 'g', 'q', 'r', [Equal,'y'+sVar] ],
                                                                                       [ '\\y'+sVar, expr[1:], ['\\z','f',[QuantEq,'y'+sVar],[Equal,'z'],Univ],
                                                                                                               ['\\z','f',[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
-  elif re.search( '@[AN]NSUP-aD-b{N-aD}:', expr ) or re.search( '@ANSUP-aN:', expr ):
-    return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'f', 'q', 'r', ['\\z',Equal,'x'+sVar] ],
+  elif re.search( '@[AN]NSUP-aD-b{N-aD}:', expr ):
+    return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'f', 'q', 'r', [Equal,'x'+sVar] ],
                                                                      [ 'None', [ '\\y'+sVar, 'f', 'q', 'r', [Equal,'y'+sVar] ],
                                                                                [ '\\y'+sVar, 'More', ['\\z',expr[1:],[QuantEq,'y'+sVar],[Equal,'z'],Univ],
                                                                                                      ['\\z',expr[1:],[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
+  elif re.search( '@[AN]NSUP-aD-bO:', expr ):
+    return( [ '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'q', 'r', [Equal,'x'+sVar] ],
+                                                              [ 'None', [ '\\y'+sVar, 'f', 'q', 'r', [Equal,'y'+sVar] ],
+                                                                        [ '\\y'+sVar, 'More', ['\\z',expr[1:],[QuantEq,'y'+sVar],[Equal,'z'],Univ],
+                                                                                              ['\\z',expr[1:],[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
   ## Pronoun...
   elif re.search( '^@NNGEN\w*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Gen', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   elif re.search( '^@[DN]\w*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
@@ -535,6 +542,9 @@ def unpack( expr ):
   ## Raising auxiliary: B-a{I-aN}-b{A-aN}...
   elif re.search( '^@\w+-[ab]{\w+-[ab]\w+}-[ab]\{\w+-[ab]\w+\}(-[lx].*)?:', expr ) != None:
     return( [        '\\f', '\\g', '\\r', '\\s',                                                                         'f', ['g','Some'], [ '\\e'+sVar, '^', [expr[1:],'e'+sVar                           ], ['r','e'+sVar] ], 's'       ] )
+  ## Raising goal: A-aN-aPin-b{I-aN}:order...
+  elif re.search( '^@\w+-[ab]\w+-[ab]\w+-[ab]{\w+-[ab]\w+}(-[lx].*)?:', expr ) != None:
+    return( [ '\\f', '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [ expr[1:], 'e'+sVar, 'x'+sVar, [ 'Intension', [ 'f', [QuantEq,'x'+sVar], Univ, Univ ] ] ], ['r','e'+sVar] ], 's' ] ] )
   ## Range modifier (??): A-aN-b{A-aN}-bN...
   elif re.search( '^@\w+-[ab]\w+-[ab]\{\w+-[ab]\w+\}-[ab]\w+(-[lx].*)?:', expr ) != None:
     return( [        '\\p', '\\f', '\\q', '\\r', '\\s', 'p', Univ, [ '\\x'+sVar,                                         'f', 'q', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar                           ], ['r','e'+sVar] ], 's'     ] ] )
