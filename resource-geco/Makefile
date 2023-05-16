@@ -105,7 +105,10 @@ genmodel/%.ini: $(GECO-SCRIPTS)/%.ini
 #
 ################################################################################    
 
-%/geco.itemmeasures: $$(DEP-GECO) $(GECODIR)/EnglishMaterial.csv $(GECO-SCRIPTS)/get_geco_itemmeasures.py $(RESOURCE-GECO)/srcmodel/geco_sent2trial.txt
+%/EnglishMaterial.csv: $(GECODIR)/EnglishMaterial.xlsx
+	xlsx2csv $<  >  $@
+
+%/geco.itemmeasures: $$(DEP-GECO) %/EnglishMaterial.csv $(GECO-SCRIPTS)/get_geco_itemmeasures.py $(RESOURCE-GECO)/srcmodel/geco_sent2trial.txt
 	cat $< | python3 $(word 2, $^) $(word 3, $^) > $@
 
 %/geco.sentitems: %/geco.itemmeasures $(GECO-SCRIPTS)/get_geco_sentitems.py
