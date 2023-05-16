@@ -96,6 +96,15 @@ CDR-SCRIPTS := $(RESOURCE-CDR)/scripts
 RESOURCE-DUNDEE := $(abspath $(MBDIR)/resource-dundee)
 DUNDEE-SCRIPTS := $(RESOURCE-DUNDEE)/scripts
 
+RESOURCE-PROVO := $(abspath $(MBDIR)/resource-provo)
+PROVO-SCRIPTS := $(RESOURCE-PROVO)/scripts
+
+RESOURCE-GECO := $(abspath $(MBDIR)/resource-geco)
+GECO-SCRIPTS := $(RESOURCE-GECO)/scripts
+
+RESOURCE-REPETITION := $(abspath $(MBDIR)/resource-repetition)
+REPETITION-SCRIPTS := $(RESOURCE-REPETITION)/scripts
+
 RESOURCE-EPIC := $(abspath $(MBDIR)/resource-epic)
 EPIC-SCRIPTS := $(RESOURCE-EPIC)/scripts
 
@@ -116,6 +125,9 @@ GENERAL-SCRIPTS := $(RESOURCE-GENERAL)/scripts
 
 RESOURCE-GIGAWORD := $(abspath $(MBDIR)/resource-gigaword)
 GIGAWORD-SCRIPTS := $(RESOURCE-GIGAWORD)/scripts
+
+RESOURCE-OPENWEBTEXT := $(abspath $(MBDIR)/resource-openwebtext)
+OPENWEBTEXT-SCRIPTS := $(RESOURCE-OPENWEBTEXT)/scripts
 
 RESOURCE-GLOVE := $(abspath $(MBDIR)/resource-glove)
 GLOVE-SCRIPTS := $(RESOURCE-GLOVE)/scripts
@@ -159,8 +171,17 @@ LVPCFG-SCRIPTS := $(RESOURCE-LVPCFG)/scripts
 RESOURCE-NATSTORIES := $(abspath $(MBDIR)/resource-naturalstories)
 NATSTORIES-SCRIPTS := $(RESOURCE-NATSTORIES)/scripts
 
+RESOURCE-NATSTORIESMAZE := $(abspath $(MBDIR)/resource-naturalstoriesmaze)
+NATSTORIESMAZE-SCRIPTS := $(RESOURCE-NATSTORIESMAZE)/scripts
+
 RESOURCE-NATSTORIESFMRI := $(abspath $(MBDIR)/resource-naturalstoriesfmri)
 NATSTORIESFMRI-SCRIPTS := $(RESOURCE-NATSTORIESFMRI)/scripts
+
+RESOURCE-NATSTORIESFMRI2 := $(abspath $(MBDIR)/resource-naturalstoriesfmri2)
+NATSTORIESFMRI2-SCRIPTS := $(RESOURCE-NATSTORIESFMRI2)/scripts
+
+RESOURCE-BROWN := $(abspath $(MBDIR)/resource-brown)
+BROWN-SCRIPTS := $(RESOURCE-BROWN)/scripts
 
 RESOURCE-PASSAGES := $(abspath $(MBDIR)/resource-passages)
 PASSAGES-SCRIPTS := $(RESOURCE-PASSAGES)/scripts
@@ -239,6 +260,7 @@ include $(RESOURCE-LCPARSE)/Makefile
 include $(RESOURCE-BNC)/Makefile
 include $(RESOURCE-TREEBANK)/Makefile
 include $(RESOURCE-GIGAWORD)/Makefile
+include $(RESOURCE-OPENWEBTEXT)/Makefile
 include $(RESOURCE-GLOVE)/Makefile
 include $(RESOURCE-GLSTM)/Makefile
 include $(RESOURCE-GPT2)/Makefile
@@ -259,11 +281,17 @@ include $(RESOURCE-BMMM)/Makefile
 include $(RESOURCE-CCL)/Makefile
 include $(RESOURCE-CHILDES)/Makefile
 include $(RESOURCE-DUNDEE)/Makefile
+include $(RESOURCE-PROVO)/Makefile
+include $(RESOURCE-GECO)/Makefile
+include $(RESOURCE-REPETITION)/Makefile
 include $(RESOURCE-CONLEN)/Makefile
 include $(RESOURCE-TOM)/Makefile
 include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
+include $(RESOURCE-NATSTORIESMAZE)/Makefile
 include $(RESOURCE-NATSTORIESFMRI)/Makefile
+include $(RESOURCE-NATSTORIESFMRI2)/Makefile
+include $(RESOURCE-BROWN)/Makefile
 include $(RESOURCE-PASSAGES)/Makefile
 include $(RESOURCE-ONTONOTES)/Makefile
 include $(RESOURCE-RHACKS)/Makefile

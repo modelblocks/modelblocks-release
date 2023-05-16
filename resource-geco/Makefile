@@ -1,0 +1,116 @@
+################################################################################
+##                                                                            ##
+##  This file is part of ModelBlocks. Copyright 2009, ModelBlocks developers. ##
+##                                                                            ##
+##  ModelBlocks is free software: you can redistribute it and/or modify       ##
+##  it under the terms of the GNU General Public License as published by      ##
+##  the Free Software Foundation, either version 3 of the License, or         ##
+##  (at your option) any later version.                                       ##
+##                                                                            ##
+##  ModelBlocks is distributed in the hope that it will be useful,            ##
+##  but WITHOUT ANY WARRANTY; without even the implied warranty of            ##
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             ##
+##  GNU General Public License for more details.                              ##
+##                                                                            ##
+##  You should have received a copy of the GNU General Public License         ##
+##  along with ModelBlocks.  If not, see <http://www.gnu.org/licenses/>.      ##
+##                                                                            ##
+################################################################################
+
+################################################################################
+#
+#  Includes
+#
+#  Include statements to this file should be preceded by the following includes
+#
+#  include $(dir $(CURDIR))resource-general/Makefile
+#  include $(RESOURCE-TOKENIZER)/Makefile
+#  include $(RESOURCE-LTREES)/Makefile
+#  include $(RESOURCE-GCG)/Makefile
+#  include $(RESOURCE-LVPCFG)/Makefile
+#  include $(RESOURCE-LCPARSE)/Makefile
+#  include $(RESOURCE-BNC)/Makefile
+#  include $(RESOURCE-TREEBANK)/Makefile
+#  include $(RESOURCE-GIGAWORD)/Makefile
+#  include $(RESOURCE-KENLM)/Makefile
+#  include $(RESOURCE-SRILM)/Makefile
+#  include $(RESOURCE-INCRSEM)/Makefile
+#
+################################################################################
+
+################################################################################
+#
+#  Macros & variables
+#
+################################################################################
+
+.SUFFIXES:
+.SECONDEXPANSION:
+.DELETE_ON_ERROR:
+
+
+################################################################################
+#
+#  User-specific parameter files (not shared; created by default with default values)
+#
+#  These parameter files differ from user to user, and should not be checked in.
+#  This script just establishes 'official' default values for these parameters.
+#
+################################################################################
+
+ifndef MAKECONFIG
+CONFIG := $(CONFIGDIR)/user-geco-directory.txt
+ifeq (,$(firstword $(wildcard $(CONFIG))))
+$(info $(call CONFIGWARN, $(CONFIG)))
+DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
+endif
+GECODIR := $(shell cat $(CONFIG))
+ifeq (, $(firstword $(wildcard $(GECODIR))))
+RESOURCE-NAME := The Provo eye-tracking corpus
+define RESOURCE-DESCR =
+
+NAME: The Provo eye-tracking corpus
+MB POINTER FILE: config/user-geco-directory.txt
+AVAILABILITY: Public
+DESCRIPTION: A corpus of eye-tracking measures from Luke & Christianson (2016)
+endef
+GECO-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+DEP-GECO = $(error $(GECO-ERROR))
+endif
+endif
+
+
+    
+%/user-geco-directory.txt: | %
+	echo '/data/corpora/original/english/geco' > $@
+    
+################################################################################
+#
+#  Eye-tracking data formatting items
+#
+################################################################################
+
+## copy partition ini into project genmodel directory
+genmodel/%.ini: $(GECO-SCRIPTS)/%.ini
+	cp $< $@
+
+%/geco.evmeasures: $$(DEP-GECO) $(GECO-SCRIPTS)/merge_geco.py $(GECODIR)/MonolingualReadingData.csv $(GECO-SCRIPTS)/process_geco.py \
+%/geco.itemmeasures | %
+	python3 $< <(cat $(word 2, $^) | python3 $(word 3,$^)) $(word 4, $^) > $@
+
+
+################################################################################
+#
+#  Sents files
+#
+################################################################################    
+
+%/geco.itemmeasures: $$(DEP-GECO) $(GECODIR)/EnglishMaterial.csv $(GECO-SCRIPTS)/get_geco_itemmeasures.py $(RESOURCE-GECO)/srcmodel/geco_sent2trial.txt
+	cat $< | python3 $(word 2, $^) $(word 3, $^) > $@
+
+%/geco.sentitems: %/geco.itemmeasures $(GECO-SCRIPTS)/get_geco_sentitems.py
+	cat $< | python3 $(word 2, $^) > $@
+
+%/geco.senttoks: %/geco.sentitems $(TOKENIZERDIR)/ptb_tokenizer.sed
+	cat $< | $(word 2, $^) | perl -pe 's/ +$$//g' > $@
+

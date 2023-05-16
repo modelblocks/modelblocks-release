@@ -9,20 +9,32 @@ argparser.add_argument('src', help='Path to source tokenization table <NSDIR>/na
 args = argparser.parse_args()
 
 docnames = [None, 'Boar', 'Aqua', 'MatchstickSeller', 'KingOfBirds', 'Elvis', 'MrSticky', 'HighSchool', 'Roswell', 'Tulips', 'Tourettes'] 
+name2discid = {docnames[i+1]: i for i in range(10)}
 
 docix_seq = pd.read_csv(args.src, sep='\t').item.values
 
-sentid = 0
 i = 0
+si = 0
 
-print('word sentid sentpos docid')
+word = []
+sentid = []
+sentpos = []
+docid = []
 
 for line in sys.stdin:
-    sentpos = 1
+    sp = 1
     words = line.strip().split()
-    for word in words:
-        print('%s %s %s %s' %(word, sentid, sentpos, docnames[docix_seq[i]]))
-        sentpos += 1
+    for w in words:
+        word.append(w)
+        sentid.append(si)
+        sentpos.append(sp)
+        docid.append(docnames[docix_seq[i]])
+        sp += 1
         i += 1
+    si += 1
 
-    sentid += 1
+out = pd.DataFrame({'word': word, 'sentid': sentid, 'sentpos': sentpos, 'docid': docid})
+out['discid'] = out.docid.map(name2discid)
+out['discpos'] = out.groupby('discid').cumcount() + 1
+
+out.to_csv(sys.stdout, index=False, sep=' ')

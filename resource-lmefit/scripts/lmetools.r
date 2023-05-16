@@ -11,8 +11,8 @@ processLMEArgs <- function() {
     library(optparse)
     opt_list <- list(
         make_option(c('-b', '--bformfile'), type='character', default='../resource-rt/scripts/mem.lmeform', help='Path to LME formula specification file (<name>.lmeform'),
-        make_option(c('-a', '--abl'), type='character', default=NULL, help='Effect(s) to ablate, delimited by "+". Effects that are not already in the baseline specification will be added as a random slope.'),
-        make_option(c('-A', '--all'), type='character', default=NULL, help='Effect(s) to add, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
+        make_option(c('-a', '--abl'), type='character', default=NULL, help='Effect(s) to ablate, delimited by "+". Effects that are not already in the baseline specification will be added as a random slope, unless --noMainRandomEffect is used.'),
+        make_option(c('-A', '--all'), type='character', default=NULL, help='Effect(s) to add, delimited by "+". Effects that are not already in the baseline specification will be added as fixed effects, and also as random slopes unless --noMainRandomEffect is used.'),
         make_option(c('-x', '--extra'), type='character', default=NULL, help='Additional (non-main) effect(s) to add, delimited by "+". Effects that are not already in the baseline specification will be added as fixed and random effects.'),
         make_option(c('-c', '--corpus'), type='character', default=NULL, help='Name of corpus (for output labeling). If not specified, will try to infer from output filename.'),
         make_option(c('-m', '--fitmode'), type='character', default='lme', help='Fit mode. Currently supports "lme" (linear mixed effects), "bme" (Bayesian mixed effects), and "lm" (simple linear regression, which discards all random terms). Defaults to "lme".'),
@@ -44,7 +44,8 @@ processLMEArgs <- function() {
         make_option(c('-w', '--testmse'), type='logical', action='store_true', default=FALSE, help='Generate error table for test partition.'),
         make_option(c('-T', '--totable'), type='logical', action='store_true', default=FALSE, help="Preprocess data and output table only (do not regress)."),
         make_option(c('--seed'), type='numeric', default=NULL, help='Set random seed.'),
-        make_option(c('--suppress_nlminb'), type='logical', action='store_true', default=FALSE, help='If BOBYQA fails, do not attempt to use NLMINB.')
+        make_option(c('--suppress_nlminb'), type='logical', action='store_true', default=FALSE, help='If BOBYQA fails, do not attempt to use NLMINB.'),
+        make_option(c('--noMainRandomEffect'), type='logical', action='store_true', default=FALSE, help='Remove per-subject random slopes for the main effects provided by the -a and -A options')
     )
     opt_parser <- OptionParser(option_list=opt_list)
     opts <- parse_args(opt_parser, positional_arguments=2)
@@ -240,9 +241,6 @@ cleanupData <- function(data, filterfiles=FALSE, filterlines=FALSE, filtersents=
 }
 
 addColumns <- function(data) {
-    for (x in colnames(data)[grepl('dlt',colnames(data))]) {
-        data[[paste(x, 'bin', sep='')]] <- sapply(data[[x]], binEffect)
-    }
     for (x in colnames(data)[grepl('prob',colnames(data))]) {
         data[[paste(x, 'surp', sep='')]] <- as.numeric(as.character(-data[[x]]))
     }
@@ -406,8 +404,8 @@ baseFormula <- function(bformfile, logdepvar=FALSE, lambda=NULL) {
 
 processForm <- function(formList, addEffects=NULL, extraEffects=NULL, ablEffects=NULL,
                         groupingfactor=NULL, indicatorlevel=NULL, crossfactor=NULL,
-                        logmain=FALSE, interact=TRUE, include_random=TRUE) {
-    formList <- addEffects(formList, addEffects, groupingfactor, indicatorlevel, crossfactor, logmain)
+                        logmain=FALSE, interact=TRUE, include_random=TRUE, noMainRandomEffect=FALSE) {
+    formList <- addEffects(formList, addEffects, groupingfactor, indicatorlevel, crossfactor, logmain, noMainRandomEffect)
     formList <- addEffects(formList, extraEffects, groupingfactor, indicatorlevel, crossfactor, FALSE)
     formList <- ablateEffects(formList, ablEffects, groupingfactor, indicatorlevel, crossfactor, logmain)
     return(formlist2form(formList,interact,include_random))
@@ -444,31 +442,39 @@ update.formStr <- function(x, new) {
     }
 }
 
-addEffect <- function(formList, newEffect, groupingfactor=NULL, indicator=NULL, crossfactor=NULL) {
+addEffect <- function(formList, newEffect, groupingfactor=NULL, indicator=NULL, crossfactor=NULL, noMainRandomEffect=FALSE) {
     smartPrint(paste0('Adding effect: ', newEffect))
     if (length(groupingfactor) > 0) {
         if (length(indicator) > 0) {
             formList$fixed <- update.formStr(formList$fixed, paste('+', newEffect, '+as.factor(', paste0(groupingfactor, 'Yes', indicator), ')+', paste0(newEffect, ':as.factor(', paste0(groupingfactor, 'Yes', indicator), ')')))
-            formList$by_subject <- update.formStr(formList$by_subject, paste('+', newEffect, '+as.factor(', paste0(groupingfactor, 'Yes', indicator), ')+', paste0(newEffect, ':as.factor(', paste0(groupingfactor, 'Yes', indicator), ')')))
+            if (!noMainRandomEffect) {
+                formList$by_subject <- update.formStr(formList$by_subject, paste('+', newEffect, '+as.factor(', paste0(groupingfactor, 'Yes', indicator), ')+', paste0(newEffect, ':as.factor(', paste0(groupingfactor, 'Yes', indicator), ')')))
+            }
             
         } else {
             formList$fixed <- update.formStr(formList$fixed, paste('+', newEffect, '+ as.factor(', groupingfactor, ')+', paste0(newEffect, ':as.factor(', groupingfactor, ')')))
-            formList$by_subject <- update.formStr(formList$by_subject, paste('+', newEffect, '+as.factor(', groupingfactor, ')'))
+            if (!noMainRandomEffect) {
+                formList$by_subject <- update.formStr(formList$by_subject, paste('+', newEffect, '+as.factor(', groupingfactor, ')'))
+            }
     }
     } else if (length(crossfactor) > 0) {
         formList$fixed <- update.formStr(formList$fixed, paste('+', newEffect, '+', crossfactor, '+', paste0(newEffect, ':', crossfactor)))
-        formList$by_subject <- update.formStr(formList$by_subject, paste('+', newEffect, '+', crossfactor))
+        if (!noMainRandomEffect) {
+            formList$by_subject <- update.formStr(formList$by_subject, paste('+', newEffect, '+', crossfactor))
+        }
     } else {
         formList$fixed <- update.formStr(formList$fixed, paste('+', newEffect))
-        formList$by_subject <- update.formStr(formList$by_subject, paste('+', newEffect))
+        if (!noMainRandomEffect) {
+            formList$by_subject <- update.formStr(formList$by_subject, paste('+', newEffect))
+        }
     }
     return(formList)
 }
 
-addEffects <- function(formList, newEffects, groupingfactor=NULL, indicator=NULL, crossfactor=NULL, logtrans) {
+addEffects <- function(formList, newEffects, groupingfactor=NULL, indicator=NULL, crossfactor=NULL, logtrans, noMainRandomEffect=FALSE) {
     newEffects <- processEffects(newEffects, data, logtrans)
     for (effect in newEffects) {
-        formList <- addEffect(formList, effect, groupingfactor, indicator, crossfactor)
+        formList <- addEffect(formList, effect, groupingfactor, indicator, crossfactor, noMainRandomEffect)
     }
     return(formList)
 }
@@ -700,7 +706,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
                    logmain=FALSE, logdepvar=FALSE, lambda=NULL,
                    addEffects=NULL, extraEffects=NULL, ablEffects=NULL, groupingfactor=NULL,
                    indicatorlevel=NULL, crossfactor=NULL, interact=TRUE,
-                   corpusname='corpus',suppress_nlminb=FALSE) {
+                   corpusname='corpus',suppress_nlminb=FALSE, noMainRandomEffect=FALSE) {
    
     if (fitmode == 'lm') {
         bform <- processForm(baseFormula(bformfile, logdepvar, lambda),
@@ -712,7 +718,8 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         bform <- processForm(baseFormula(bformfile, logdepvar, lambda),
                              addEffects, extraEffects, ablEffects,
                              groupingfactor, indicatorlevel,
-                             crossfactor, logmain, interact)
+                             crossfactor, logmain, interact,
+                             noMainRandomEffect=noMainRandomEffect)
     }
     
     correlations = getCorrelations(dataset, bform)

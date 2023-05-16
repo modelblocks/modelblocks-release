@@ -282,10 +282,10 @@ genmodel/rename_cols.params: | genmodel
 
 # Computes left-corner predictors
 %.lc.tokmeasures:  %.senttoks  $(RT-SCRIPTS)/calcEmbd.py  %.casp.nopunc.-u0_-c0_mlpdecpars
-	cat $<  |  grep -v '!ARTICLE'  |  python $(word 2, $^) $(word 3, $^)  >  $@
+	cat $<  |  grep -v '!ARTICLE'  |  python2 $(word 2, $^) $(word 3, $^)  >  $@
     
 %.lc.tokmeasures:  %.senttoks  $(RT-SCRIPTS)/calcEmbd.py  %.nopunc.-u0_-c0_mlpdecpars
-	cat $<  |  python $(word 2, $^) $(word 3, $^)  >  $@
+	cat $<  |  python2 $(word 2, $^) $(word 3, $^)  >  $@
 
 # Pastes DLT predictors to existing identically tokenized tokmeasures file
 %.dlt.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).dlt.tokmeasures
@@ -293,6 +293,8 @@ genmodel/rename_cols.params: | genmodel
  
 # Computes DLT predictors
 %.dlt.tokmeasures:  %.casp.senttrees  $(RT-SCRIPTS)/calcDLT.py
+	cat $<  |  grep -v '!ARTICLE'  |  python2 $(word 2, $^)  >  $@
+%.gold.dlt.tokmeasures:  %.gold.senttrees  $(RT-SCRIPTS)/calcDLT.py
 	cat $<  |  grep -v '!ARTICLE'  |  python2 $(word 2, $^)  >  $@
 #%.dlt.tokmeasures: %.linetrees $(RT-SCRIPTS)/calcDLT.py
 #	cat $< | python2 $(word 2, $^) > $@

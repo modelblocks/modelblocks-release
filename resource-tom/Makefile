@@ -103,3 +103,18 @@ genmodel/tom.lineitems: genmodel/tom.itemmeasures $(GENERAL-SCRIPTS)/itemmeasure
 %tom.gold.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-TOM)/srcmodel/tom.stripped.linetrees %tom.linetoks
 	python $^ > $@
 
+%tom2deen.itemmeasures: $$(DEP-TOM) $(TOMDIR)/tom2deen.itemmeasures $(CONFIGDIR)/user-tom-directory.txt | %
+	cp $< $@
+
+#genmodel/tom2deen.itemmeasures: $(RESOURCE-TOM)/srcmodel/tom2deen.itemmeasures
+#	cp $^
+
+genmodel/tom2deen.sentitems: genmodel/tom2deen.itemmeasures $(GENERAL-SCRIPTS)/itemmeasures2lineitems.py | genmodel
+	cat $< | python $(word 2, $^) > $@
+
+%tom2deen.senttoks: $$(DEP-TOKENIZER) %tom2deen.sentitems $(TOKENIZERDIR)/ptb_tokenizer.sed $(CONFIGDIR)/user-tokenizer-directory.txt
+	cat $< | $(word 2, $^) | sed 's/ $$//g'> $@
+
+%tom2deen.casp.senttrees: $(RESOURCE-TOM)/srcmodel/tom2deen.editabletrees $(RESOURCE-LTREES)/scripts/editabletrees2linetrees.pl $(RESOURCE-GCG)/scripts/lengthentrees.py
+	cat $< | perl $(word 2, $^) | python $(word 3, $^) > $@
+
