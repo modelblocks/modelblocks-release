@@ -106,16 +106,16 @@ genmodel/%.ini: $(GECO-SCRIPTS)/%.ini
 ################################################################################    
 
 %/GECOEnglishMaterial.csv: $$(DEP-GECO) $(GECODIR)/EnglishMaterial.xlsx
-	python -m xlsx2csv -n SENTENCE $< $@
+	xlsx2csv -n SENTENCE $< $@
 
 %/GECOEnglishMaterialsInterestAreas.csv: $$(DEP-GECO) $(GECODIR)/EnglishMaterial.xlsx
-	python -m xlsx2csv -n ALL $< $@
+	xlsx2csv -n ALL $< $@
 
 %/GECOMonolingualReadingData.csv: $$(DEP-GECO) $(GECODIR)/MonolingualReadingData.xlsx
-	python -m xlsx2csv -n DATA $< $@
+	xlsx2csv -n DATA $< $@
 
 %/GECOMonolingualReadingDataLegend.csv: $$(DEP-GECO) $(GECODIR)/MonolingualReadingData.xlsx
-	python -m xlsx2csv -n LEGEND $< $@
+	xlsx2csv -n LEGEND $< $@
 
 %/geco.itemmeasures: %/GECOEnglishMaterial.csv $(GECO-SCRIPTS)/get_geco_itemmeasures.py $(RESOURCE-GECO)/srcmodel/geco_sent2trial.txt
 	cat $< | python3 $(word 2, $^) $(word 3, $^) > $@
