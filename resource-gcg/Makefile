@@ -17,6 +17,11 @@
 ##                                                                            ##
 ################################################################################
 
+
+# TO MAKE simplewikiC1:  cat wikisemc1.casp.toktrees | perl ../resource-linetrees/scripts/editabletrees2linetrees.pl| python3 scripts/senttrees2discexprs.py -s41 -s82 -s91 -s20 -s35 -s49 -s114  -s61 -s40 -s127  > eraseme1
+# TO MAKE simplewikiC2:  cat wikisemc2.casp.toktrees | perl ../resource-linetrees/scripts/editabletrees2linetrees.pl| python3 scripts/senttrees2discexprs.py -s61 -s125  > eraseme2
+
+
 ################################################################################
 #
 #  Macros & variables
@@ -196,10 +201,10 @@ endef
 #### obtain discourse-aligned space-delimited cued-association graphs
 .PRECIOUS: %.discgraphs
 %.discgraphs:  %.senttrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
-	cat $<  |  sed 's/\^g//g' | python $(word 3,$^) -e  >  $@
+	cat $<  |  sed 's/\^g//g' | python2 $(word 3,$^) -e  >  $@
 # not for end-users, just for debugging:
 %.verbose-discgraphs:  %.senttrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
-	cat $<  |  sed 's/\^g//g' | python $(word 3,$^) -d -e  >  $@
+	cat $<  |  sed 's/\^g//g' | python2 $(word 3,$^) -d -e  >  $@
 
 # #### obtain pdf drawing of discgraph   (neato/dot)
 # %.discgraphs.pdf:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discgraphspdf.py
@@ -207,7 +212,7 @@ endef
 
 #### obtain tex drawing of discgraph
 %.discgraphs.tex:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discgraphstex.d  $(GCG-SCRIPTS)/discgraphs2discgraphstex.py
-	cat $<  |  python $(word 3,$^)  >  $@
+	cat $<  |  python2 $(word 3,$^)  >  $@
 
 #### obtain pdf from tex
 %.pdf:  %.tex
@@ -215,14 +220,14 @@ endef
 
 #### obtain discourse-aligned lambda expressions
 %.discgraphs.formerrors:  %.discgraphs  $(GCG-SCRIPTS)/discgraphvalidator.d  $(GCG-SCRIPTS)/discgraphvalidator.py
-	cat $<  |  python $(word 3,$^)  >  $@
+	cat $<  |  python2 $(word 3,$^)  >  $@
 
 #### obtain discourse-aligned lambda expressions
 %.discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
-	cat $<  |  python $(word 3,$^)  |  $(word 4,$^)  >  $@
+	cat $<  |  python2 $(word 3,$^)  |  $(word 4,$^)  >  $@
 #### obtain discourse-aligned lambda expressions, debugging stuff
 %.verbose-discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
-	cat $<  |  python $(word 3,$^) -d  |  $(word 4,$^)  >  $@
+	cat $<  |  python2 $(word 3,$^) -d  |  $(word 4,$^)  >  $@
 %.verbose-discexprs.last.discgraphs:  %.verbose-discexprs
 	cat $<  |  grep 'GRAPH:'  |  tail -n1  |  perl -pe 's/ *GRAPH: *//'  >  $@
 # also for debugging
