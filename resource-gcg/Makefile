@@ -85,7 +85,7 @@ endif
 #### NOTE: inline seds dispose of reannotation failures, then remove -f tags, then shift -l tags to end
 .PRECIOUS: %.senttrees
 %.senttrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).fixed.senttrees  $(LTREES-SCRIPTS)/killUnaries.pl $(GCG-SCRIPTS)/makefailtrees.py
-	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  python $(word 4,$^) |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' |  perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
+	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  python3 $(word 4,$^) |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' |  perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
 #cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  perl -pe 's/.*\([^a-z]+ .*//'  |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' |  perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
 ## add !ARTICLE delimiters...
 %artdelim.linetrees:  $(GCG-SCRIPTS)/addDelimiter.py  $$(basename %).linetrees
@@ -149,7 +149,7 @@ endef
 
 #### lengthen trees to full gcg derivation...
 %.long.senttrees:  %.senttrees  $(GCG-SCRIPTS)/lengthentrees.py  $(GCG-SCRIPTS)/lengthentrees.d
-	cat $<  |  python $(word 2,$^)  >  $@
+	cat $<  |  python3 $(word 2,$^)  >  $@
 
 #### Remove traces
 %.nt.linetrees: %.linetrees
