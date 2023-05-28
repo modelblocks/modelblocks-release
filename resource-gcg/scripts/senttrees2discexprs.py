@@ -165,15 +165,15 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     ## Extractions / non-local introduction...
     if '-lE' in t.ch[0].c:
       if lsNolo == []: print( 'ERROR: no non-locals in', t )
-      ## Argument extraction with zero-head rule applied to filler: e.g. V-aN-gN -> V-aN-b{A-aN}-lE...
+      ## E5. Argument extraction with zero-head rule applied to filler: e.g. V-aN-gN -> V-aN-b{A-aN}-lE...
       if re.search( '^(.*)-[ab]\{\w+-[ab]\w+\}((?:-[ghirv][^ ]*)?)-lE \\1-[ghriv]\w+\\2$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), [ 'Pred', lsNolo[0] ] ]
-      ## Function extraction: e.g. V-g{V-aN} -> N-lE...
+      ## E4. Function extraction: e.g. V-g{V-aN} -> N-lE...
       elif re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE (\w+)-[ghirv]\{\\3-[abghirv](\\1|\{\\1\})\}\\2$', form ):  output = [ lsNolo[0], translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ) ]
-      ## Function extraction: e.g. V-gV -> R-aN-lE...
+      ## E3. Function extraction: e.g. V-gV -> R-aN-lE...
       elif re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE (\w+)-[ghirv]\\3\\2$', form ):  output = [ 'Mod'+str(getLocalArity(t.c)), lsNolo[0], translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ) ]
-      ## Argument extraction with exact match: e.g. V-aN-gN -> V-aN-bN-lE... 
+      ## E1. Argument extraction with exact match: e.g. V-aN-gN -> V-aN-bN-lE... 
       elif re.search( '^(.*)-[ab]([^ ]+)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\\2\\3$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
-      ## Modifier extraction: e.g. V-aN-g{R-aN} -> V-aN-lE... 
+      ## E2. Modifier extraction: e.g. V-aN-g{R-aN} -> V-aN-lE... 
       elif re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\{[^ ]*\}\\2$', form ):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
 #      elif '-lE' in t.ch[0].c and not( re.search( '^(.*)-[ab]([^ ]+)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\\2\\3$', form ) ) and not( re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\{[^ ]*\}\\2$', form ) ):
 #      elif '-lE' in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
@@ -181,24 +181,24 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
       else: 
         print( 'ERROR: Ill-formed extraction:', t )  #, form ) # t.c, '->', t.ch[0].c )
         exit( 0 )
-    ## Unary modifier...
+    ## M3. Unary modifier...
     elif re.search( '^A-aN((?:-[ghirv][^ ]*)?)-lM N-aD\\1$', form ):  output = [ 'Mod1', ['\\q','\\t','\\u','q','t','u'], translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
-    ## Reordering rules...
+    ## O1-2. Reordering rules...
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 1:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'p' ]
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 2:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'q', 'p' ]
-    ## Passive rule...
+    ## V. Passive rule...
     elif re.search( '^L-aN-vN((?:-[ghirv][^ ]*)?)-lV A-aN\\1$', form ) != None:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\zz'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','zz'+t.sVar] ] + lsNolo ), 'Some', 'r', 's' ] ]
 #   elif '-lV' in t.ch[0].c:  output = [ 'Pasv', 'x'+ t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ]
-    ## Zero-head rule with expletive subject: e.g. A-aNe -> N-lZ...
+    ## Z3. Zero-head rule with expletive subject: e.g. A-aNe -> N-lZ...
     elif re.search( '^\w+-lZ \w+-[ab]Ne$', form ):  output = [ '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
-    ## ACCOMMODATE SLOPPY ANNOTATION of '-lZ' with arg elision...
+    ## Z1-2. ACCOMMODATE SLOPPY ANNOTATION of '-lZ' with arg elision...
     elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Pred', [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ] ]
     elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Pred', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
     elif '-lz' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Pred', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
-    ## S -> Q-iN or N -> V-iN
+    ## T1. S -> Q-iN or N -> V-iN
     elif re.search( '^\w+-i\w+(-lF)? \w+$', form ):  output = [ '\\r', '\\s', 'Gen', [ '\\zz'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','zz'+t.sVar] ] + lsNolo ), 'r', Univ ], 's' ]
                                                                                                         # [ '\\x'+t.sVar, 'Explain', 'ThisArticle', 'x'+t.sVar ] ]
-    ## Elision...
+    ## T2. Elision...
     elif re.search( '^(.*)-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\} \\1$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
     elif re.search( '^(.*)-[ab]\{\w+-[abghirv]\w+\} \\1$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
     elif '-l' not in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ]
@@ -213,7 +213,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   elif len(t.ch) == 2:
     m = getNoloArity(t.ch[0].c)
     if VERBOSE: print( ' '*indent, 'child cats and nolos:', t.ch[0].c, t.ch[1].c, m, lsNolo[:m], lsNolo[m:] )
-    ## Check...
+    ## Error check...
     form = re.sub( '-[lmnstuwxy][^ ]*', '', t.ch[0].c + ' ' + t.ch[1].c + ' ' + t.c )
     if   ('-lA' in t.ch[0].c or '-lU' in t.ch[0].c) and getLocalArity(t.ch[1].c) != getLocalArity(t.c)+1:  sys.stdout.write( 'ERROR: Bad arity in ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     elif ('-lA' in t.ch[0].c or '-lU' in t.ch[0].c) and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)-a\\1((?:-[ghirv][^ ]*)?) \\3\\2\\4$', form ) == None and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)-a{\\1}((?:-[ghirv][^ ]*)?) \\3\\2\\4$', form ) == None:
@@ -223,12 +223,12 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
       sys.stdout.write( 'WARNING: Bad category in ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     elif '-lM' in t.ch[0].c and getLocalArity(t.ch[1].c) != getLocalArity(t.c):  sys.stdout.write( 'ERROR: Bad arity in ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     elif '-lM' in t.ch[1].c and getLocalArity(t.ch[0].c) != getLocalArity(t.c):  sys.stdout.write( 'ERROR: Bad arity in ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
-    ## In-situ ops...
+    ## D1-2,A1-2. In-situ ops...
     if   '-lD' in t.ch[0].c or t.ch[0].c[0] in ',;:.!?':  output = translate( t.ch[1], Scopes, Anaphs, lsNolo )
     elif '-lD' in t.ch[1].c or t.ch[1].c[0] in ',;:.!?':  output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
     elif '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
     elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
-    ## Non-local elimination in argument: e.g. V-aN -> V-aN-b{I-aN-gN} I-aN-gN-lI...
+    ## I1-2. Non-local elimination in argument: e.g. V-aN -> V-aN-b{I-aN-gN} I-aN-gN-lI...
     elif re.match( '^\w+-[ghriv]\{\w+-[ab]\w+\}-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\fi', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ 'fi' ] ) ] ]
 # ## THESE TWO DIDNT WORK AND ARENT NEEDED AND DONT MAKE SENSE ANYWAY
 #    elif '-lI' in t.ch[1].c and re.match( '(\w+)-b{(\w+-[ghriv]\w+)} \\2 \\1', form ):
@@ -239,8 +239,10 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif re.match( '^\w+-[ghriv]\w+-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\qi', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ 'qi' ] ) ] ]
 #    elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 0:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\zz'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','zz'+t.ch[0].sVar] ] + lsNolo[m:] ),      'r', 's' ] ] ]
     elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 1:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\p', '\\q', '\\r', '\\s', 'p', Univ, [ '\\zz'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ] ), 'q', 'r', 's' ] ] ]
+    ## M1-2. Modifier...
     elif '-lM' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
     elif '-lM' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
+    ## C1-2. Conjunction...
     elif '-lC' in t.ch[0].c and ( re.match( '^(.*) \\1((?:-p\w+)?)-c\\1 \\1(-c\\1\\2)?$', form ) or re.match( '^\w+ (\w+)((?:-p\w+)?)-c\\1 \\1(-c\\1\\2)?$', form ) or
                                   re.match( '^(.*) \\1((?:-p\w+)?)-c{\\1} \\1(-c{\\1}\\2)?$', form ) or 
                                   re.match( '^\w+ X-cX-cX (\w+)-c\\1$', form ) ):
@@ -251,6 +253,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 #      output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
 #    elif '-lG' in t.ch[0].c and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g\\1 \\3\\2\\4$', form ) == None and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g{\\1} \\3\\2\\4$', form ) == None:
 #      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+    ## G1-2. Gap filler attachment...
     elif '-lG' in t.ch[0].c:
       ## Non-local simple argument: V-rN -> N-rN V-gN...
       if re.search( '^(\w+)((?:-[ghirv][^ ]*)?) (\w+)((?:-[ghirv][^ ]*)?)-g\\1 \\3\\2\\4$', form ):
@@ -264,6 +267,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 #    elif '-lG' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ] ) ]
 #    elif '-lH' in t.ch[1].c and re.search( '^(.*)-h(.*) \\2 \\1$', form ) == None and re.search( '^(.*)-h{(.*)} \\2 \\1$', form ) == None:
 #      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+    ## H. Heavy shift / extraposition...
     elif '-lH' in t.ch[1].c:
       ## Zero-ary (complete) non-local with simple argument: N -> N-hO O...
       if re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h(\w+) \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
@@ -304,6 +308,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 #    ## Relative clause modification by C-rN-lR...
 #    elif '-lR' in t.ch[1].c and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-r\\1 \\1\\2\\4$', form ) == None:  
 #      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
+    ## R1-2. Relative clause modification...
     elif '-lR' in t.ch[1].c:
       ## Relative clause modification by C-rN-lR...
       if re.search( '^(\w+)((?:-[ghirv][^ ]*)?) \w+((?:-[ghirv][^ ]*)?)-r\w+ \\1\\2\\3$', form ):
@@ -890,11 +895,7 @@ while True:
     Trees += [ t ]
     setHeadScopeAnaph( t, nLine, Scopes, Anaphs )
     markSites( t, Scopes )
-
-  ## Skip article if specified in command line...
-  if nArticle in SKIPS:
-    print( 'NOTE: skipping article', nArticle, 'as specified in command line arguments.' )
-    continue
+    print( nArticle, 'CG:', t )
 
   if len(Trees) == 0:  continue
 
@@ -910,16 +911,18 @@ while True:
       t.Ants = [ ]
       t.SomeSets = [ ]
       t.c = 'S-cS'
-      t.ch = [ Trees[-1], tree.Tree() ]
-      t.ch[1].aboveAllInSitu = True
-      t.ch[1].bMax = False
-      t.ch[1].sVar = '0'
-      t.ch[1].Anas = [ ]
-      t.ch[1].Ants = [ ]
-      t.ch[1].SomeSets = [ ]
-      t.ch[1].c = 'X-cX-cX-x%|'
-      t.ch[1].ch = [ tree.Tree() ]
-      t.ch[1].ch[0].c = 'and'
+      t.ch = [ Trees[-1] ]
+      t.ch[0].c = t.ch[0].c.replace( '-lS', '' )
+#      t.ch = [ Trees[-1], tree.Tree() ]
+#      t.ch[1].aboveAllInSitu = True
+#      t.ch[1].bMax = False
+#      t.ch[1].sVar = '0'
+#      t.ch[1].Anas = [ ]
+#      t.ch[1].Ants = [ ]
+#      t.ch[1].SomeSets = [ ]
+#      t.ch[1].c = 'X-cX-cX-x%|'
+#      t.ch[1].ch = [ tree.Tree() ]
+#      t.ch[1].ch[0].c = 'and'
     else:
       ch = [ Trees[-1-i], t ]
       t = tree.Tree()
@@ -931,18 +934,25 @@ while True:
       t.SomeSets = [ ]
       t.c = 'S-cS'
       t.ch = ch
-    t.ch[0].c = t.ch[0].c.replace( '-lS', '-lC' )
+      t.ch[0].c = t.ch[0].c.replace( '-lS', '-lC' )
 
-  print( '========== Article ' + str(nArticle) + ' ==========' )
-  print( t )
+  if VERBOSE:  print( '========== Article ' + str(nArticle) + ' ==========' )
+  print( nArticle, 'DERIV:', t )
 
-  print( '----- translate -----' )
+  ## Skip article if specified in command line...
+  if nArticle in SKIPS:
+    if VERBOSE:  print( 'NOTE: skipping article', nArticle, 'as specified in command line arguments.' )
+    print( nArticle, 'MACRO:' )
+    print( nArticle, 'LOGIC:' )
+    continue
+
+  if VERBOSE:  print( '----- translate -----' )
   if VERBOSE:  print( 'Scopes', Scopes )
   shortExpr = translate( t, Scopes, Anaphs )
   if t.qstore != []:
     print( 'ERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
     exit(0)
-  print( prettyForm(shortExpr) )
+  print( nArticle, 'MACRO:', prettyForm(shortExpr) )
 
   if VERBOSE:  print( '----- unpack -----' )
   fullExpr = [ unpack(shortExpr), Univ, Univ ]
@@ -956,14 +966,14 @@ while True:
   simplify( fullExpr )
   if VERBOSE:  print( prettyForm(fullExpr) )
 
-  print( '----- percolate -----' )
+  if VERBOSE:  print( '----- percolate -----' )
   if VERBOSE:  print( 'Anaphs', Anaphs )
   percAntAna( fullExpr, Anaphs )
   if VERBOSE:  print( prettyForm(fullExpr) )
 
   if VERBOSE:  print( '----- simplify -----' )
   simplify( fullExpr )
-  print( prettyForm(fullExpr) )
+  print( nArticle, 'LOGIC:', prettyForm(fullExpr) )
 
   checkUnboundVars( fullExpr )
 

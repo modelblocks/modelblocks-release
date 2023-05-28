@@ -19,7 +19,7 @@
 
 
 # TO MAKE simplewikiC1:  cat wikisemc1.casp.toktrees | perl ../resource-linetrees/scripts/editabletrees2linetrees.pl| python3 scripts/senttrees2discexprs.py -s41 -s82 -s91 -s20 -s35 -s49 -s114  -s61 -s40 -s127  > eraseme1
-# TO MAKE simplewikiC2:  cat wikisemc2.casp.toktrees | perl ../resource-linetrees/scripts/editabletrees2linetrees.pl| python3 scripts/senttrees2discexprs.py -s61 -s125  > eraseme2
+# TO MAKE simplewikiC2:  cat wikisemc2.casp.toktrees | perl ../resource-linetrees/scripts/editabletrees2linetrees.pl| python3 scripts/senttrees2discexprs.py -s61 -s125 -s43 -s50 -s72 -s83 -s85 -s113 -s127 > eraseme2
 
 
 ################################################################################
