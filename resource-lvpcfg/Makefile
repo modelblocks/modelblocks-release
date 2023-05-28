@@ -184,7 +184,7 @@ $(BERKPARSEDIR)/berkeleyParser.jar  $$(basename %).extrparplusops.senttrees $$(b
 	cat $<  |  perl -pe 's/\+(?=[^\)]* )/\-/g'  |  perl -pe 's/^ *\( *//;s/ *\) *$$//;s/-\d+ / /g'  >  $@
 
 #### Remove Berkeley split-merge annotation information
-%.noberkstuff.senttrees: %.senttrees
-	cat $^ | perl -pe 's/\^[^ ]*//g;s/_[0-9]+ / /g' | perl -pe 's/ *\( *\) *//' | python $(RESOURCE-LVPCFG)/scripts/removeAt.py > $@ 
+%.noberkstuff.senttrees: %.senttrees $(RESOURCE-LVPCFG)/scripts/removeAt.py
+	cat $<  |  perl -pe 's/\^[^ ]*//g;s/_[0-9]+ / /g'  |  perl -pe 's/ *\( *\) *//'  |  python3 $(word 2,$^)  >  $@ 
 
 

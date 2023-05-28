@@ -94,7 +94,7 @@ endif
 genmodel/%.ini: $(GECO-SCRIPTS)/%.ini
 	cp $< $@
 
-%/geco.evmeasures: $$(DEP-GECO) $(GECO-SCRIPTS)/merge_geco.py $(GECODIR)/MonolingualReadingData.csv $(GECO-SCRIPTS)/process_geco.py \
+%/geco.evmeasures: $(GECO-SCRIPTS)/merge_geco.py %/GECOMonolingualReadingData.csv $(GECO-SCRIPTS)/process_geco.py \
 %/geco.itemmeasures | %
 	python3 $< <(cat $(word 2, $^) | python3 $(word 3,$^)) $(word 4, $^) > $@
 
@@ -105,7 +105,19 @@ genmodel/%.ini: $(GECO-SCRIPTS)/%.ini
 #
 ################################################################################    
 
-%/geco.itemmeasures: $$(DEP-GECO) $(GECODIR)/EnglishMaterial.csv $(GECO-SCRIPTS)/get_geco_itemmeasures.py $(RESOURCE-GECO)/srcmodel/geco_sent2trial.txt
+%/GECOEnglishMaterial.csv: $$(DEP-GECO) $(GECODIR)/EnglishMaterial.xlsx
+	xlsx2csv -n SENTENCE $< $@
+
+%/GECOEnglishMaterialsInterestAreas.csv: $$(DEP-GECO) $(GECODIR)/EnglishMaterial.xlsx
+	xlsx2csv -n ALL $< $@
+
+%/GECOMonolingualReadingData.csv: $$(DEP-GECO) $(GECODIR)/MonolingualReadingData.xlsx
+	xlsx2csv -n DATA $< $@
+
+%/GECOMonolingualReadingDataLegend.csv: $$(DEP-GECO) $(GECODIR)/MonolingualReadingData.xlsx
+	xlsx2csv -n LEGEND $< $@
+
+%/geco.itemmeasures: %/GECOEnglishMaterial.csv $(GECO-SCRIPTS)/get_geco_itemmeasures.py $(RESOURCE-GECO)/srcmodel/geco_sent2trial.txt
 	cat $< | python3 $(word 2, $^) $(word 3, $^) > $@
 
 %/geco.sentitems: %/geco.itemmeasures $(GECO-SCRIPTS)/get_geco_sentitems.py
