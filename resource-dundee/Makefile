@@ -231,6 +231,6 @@ genmodel/dundee%.sentitems:  $(RESOURCE-DUNDEE)/srcmodel/dundee.text.headers  $(
 #	python2 $^ | awk 'NF' | awk '!/ARTICLE/' > $@
 
 %dundee.casp.notoks.senttrees:  $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees  $(RESOURCE-GCG)/scripts/lengthentrees.py
-	cat $<  |  python $(word 2,$^)  >  $@
+	cat $<  |  python3 $(word 2,$^)  >  $@
 
 
