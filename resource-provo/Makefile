@@ -96,7 +96,7 @@ genmodel/%.ini: $(PROVO-SCRIPTS)/%.ini
 
 %/provo.evmeasures: $$(DEP-PROVO) $(PROVO-SCRIPTS)/merge_provo.py $(PROVODIR)/Provo_Corpus-Additional_Eyetracking_Data-Fixation_Report.csv $(PROVO-SCRIPTS)/process_provo.py \
 %/provo.itemmeasures | %
-	python $< <(cat $(word 2, $^) | python3 $(word 3,$^)) $(word 4, $^) > $@
+	python3 $< <(cat $(word 2, $^) | python3 $(word 3,$^)) $(word 4, $^) > $@
 
 
 ################################################################################
