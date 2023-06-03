@@ -3,7 +3,7 @@ import pandas
 import csv
 import re
 
-X = pandas.read_csv( sys.stdin, sep=' ', index_col=False, quoting=0 ) #quotechar='|' ) # quoting=csv.QUOTE_ALL )  #, quotechar=None )  #, quoting=csv.QUOTE_NONE )
+X = pandas.read_csv( sys.stdin, sep=' ', index_col=False, quoting=0, converters={'word': str} ) #, na_values=default_missing ) #quotechar='|' ) # quoting=csv.QUOTE_ALL )  #, quotechar=None )  #, quoting=csv.QUOTE_NONE )
 #X.to_csv( sys.stdout, sep=' ', quoting=0 )
 
 ## Find breaks...
