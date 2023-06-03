@@ -6,6 +6,8 @@ resources for constructing and evaluating broad-coverage probabilistic
 models of cognitive processes, organized into projects centered around
 different tasks and data sets.
 
+Documentation is available at: https://www.asc.ohio-state.edu/schuler.77/overview-mb.pdf.
+
 Quickstart
 ----------
 To quickly get started using modelblocks, read through the quickstart
