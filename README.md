@@ -41,13 +41,6 @@ the repository to some previous state in order to reproduce a result. If
 you are encountering errors as you try to reproduce a result, please contact
 the ModelBlocks development team.
 
-Documentation for the targets provided by each Makefile is provided
-in the `docs` directory of this repository. For help building targets
-for common recipes, you can use the browser-based ModelBlocks Assistant
-tool. This can be created locally by navigating to the `docs` directory
-of ModelBlocks and typing `make mbassist`. A remote version can also
-be accessed online at http://go.osu.edu/mbassist.
-
 Included Resources
 ------------------
 Modelblocks makes use of several third-party data and software
