@@ -42,10 +42,9 @@ section 23 of the Wall Street Journal corpus, training on sections
 2 through 21. The target you will need to make (from the workspace
 directory) is:
 
-genmodel/wsj23.wsj02to21-nodashtags-5sm-synproc-+u_+c_+b5000_parsed.tokmeasures
+genmodel/wsj23.wsj02to21-gcg15-nol-prtrm-3sm-synproc-+u_+b5000_parsed.tokmeasures
 
-(See the docs and/or ModelBlocks Assistant for further explanation
-of the components of this target)
+(See the documentation for further explanation of the components of this target)
 
 The only external resources necessary to make this target are
 
