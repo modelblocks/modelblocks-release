@@ -359,7 +359,7 @@ $(RT-SCRIPTS)/filter_cols.py
 
 # Returns syntactic categories and semantic operations
 %.semop.tokmeasures %.syncat.tokmeasures: %.casp.-c0_mlpdecpars $(RT-SCRIPTS)/getSemOp.py
-	cat $<  |  python $(word 2, $^)  >  $@
+	cat $<  |  python3 $(word 2, $^)  >  $@
 
 # Pastes syntactic categories to existing identically tokenized tokmeasures file
 %.syncat.tokmeasures: %.tokmeasures $$(word 1, $$(subst ., ,%)).syncat.tokmeasures
@@ -368,7 +368,7 @@ $(RT-SCRIPTS)/filter_cols.py
 %.itemmeasures: $$(DEP-RHACKS) $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
-	cat $< | perl -pe 's/-LRB-/(/g;s/-RRB-/)/g;s/-LSB-/[/g;s/-RSB-/]/g' | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp | \
+	cat $< | perl -pe 's/-LRB-/(/g;s/-RRB-/)/g;s/-LSB-/[/g;s/-RSB-/]/g' | python3 $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
         paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python2 $(word 4, $^) -d | \
 	$(word 5, $^) > $@
@@ -376,7 +376,7 @@ $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.item
 %.t.itemmeasures: $$(basename %).t.tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
-	cat $< | perl -pe 's/-LRB-/(/g;s/-RRB-/)/g;s/-LSB-/[/g;s/-RSB-/]/g' | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp | \
+	cat $< | perl -pe 's/-LRB-/(/g;s/-RRB-/)/g;s/-LSB-/[/g;s/-RSB-/]/g' | python3 $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
         paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python2 $(word 4, $^) -d | \
 	$(word 5, $^) > $@
@@ -384,7 +384,7 @@ $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.item
 %.t.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.t.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
-	cat $< | perl -pe 's/-LRB-/(/g;s/-RRB-/)/g;s/-LSB-/[/g;s/-RSB-/]/g' | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp | \
+	cat $< | perl -pe 's/-LRB-/(/g;s/-RRB-/)/g;s/-LSB-/[/g;s/-RSB-/]/g' | python3 $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | \
         paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python2 $(word 4, $^) -d | \
 	$(word 5, $^) > $@
@@ -392,7 +392,7 @@ $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.item
 %.r.itemmeasures: $$(basename %).tokmeasures $$(word 1, $$(subst ., , %))$$(subst -,.,$$(suffix $$*)).ngram.itemmeasures $$(basename %).roark.itemmeasures \
 $(RT-SCRIPTS)/roll_toks.py $(RT-SCRIPTS)/filter_cols.py $(RT-SCRIPTS)/addCols.r $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
 $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.itemmeasures
-	cat $< | perl -pe 's/-LRB-/(/g;s/-RRB-/)/g;s/-LSB-/[/g;s/-RSB-/]/g' | python $(word 4, $^) $(word 2, $^) sentid embddepthMin timestamp | \
+	cat $< | perl -pe 's/-LRB-/(/g;s/-RRB-/)/g;s/-LSB-/[/g;s/-RSB-/]/g' | python3 $(word 4, $^) $(word 2, $^) sentid embddepthMin timestamp | \
 	paste -d' ' - <(cut -f 2- -d' ' $(word 2, $^)) | paste -d' ' - $(word 3, $^) | \
         paste -d' ' - <(cut -f 2- -d' ' $(word 8, $^)) | python2 $(word 5, $^) -d | \
 	$(word 6, $^) > $@
@@ -402,24 +402,24 @@ $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.item
 
 
 %.itemmeasures: %.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
-	cat $<  |  python $(word 2, $^) >  $@
+	cat $<  |  python3 $(word 2, $^) >  $@
 	#cat $<  |  grep -v '!ARTICLE'  |  python $(word 2, $^) >  $@
 
 %parsed.itemmeasures: %parsed.tokmeasures  $$(basename %).itemmeasures  $(RT-SCRIPTS)/roll_toks.py
-	cat $< | perl -pe 's/-LRB-/(/g;s/-RRB-/)/g;s/-LSB-/[/g;s/-RSB-/]/g' | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp  >  $@
+	cat $< | perl -pe 's/-LRB-/(/g;s/-RRB-/)/g;s/-LSB-/[/g;s/-RSB-/]/g' | python3 $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp  >  $@
 
 %.itemmeasures: %.tokmeasures $$(basename %).itemmeasures $(RT-SCRIPTS)/roll_toks.py
-	cat $< | perl -pe 's/-LRB-/(/g;s/-RRB-/)/g;s/-LSB-/[/g;s/-RSB-/]/g' | python $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp > $@
+	cat $< | perl -pe 's/-LRB-/(/g;s/-RRB-/)/g;s/-LSB-/[/g;s/-RSB-/]/g' | python3 $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp > $@
 
 %.all-itemmeasures:  $(RT-SCRIPTS)/evmeas2uniqcols.py  $(RT-SCRIPTS)/filter_cols.py  $(RT-SCRIPTS)/addCols.r  $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) \
                          $$(patsubst $$(pc),$$(notdir $$(word 1,$$(subst ., ,$$*))).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,$$*)),$$(subst ., ,%))) \
 			 $$(word 1, $$(subst ., ,%)).itemmeasures
-	paste -d ' ' $(wordlist 6,$(words $^),$^)  |  python2 $(word 1,$^)  |  python $(word 2,$^)  |   $(word 3,$^)  >  $@
+	paste -d ' ' $(wordlist 6,$(words $^),$^)  |  python3 $(word 1,$^)  |  python3 $(word 2,$^)  |   $(word 3,$^)  >  $@
 #%.core-itemmeasures: $$(patsubst $$(pc),$$(word 1,$$(subst ., ,%)).$$(pc).itemmeasures,$$(wordlist 2,$$(words $$(subst ., ,%)),$$(subst ., ,%))) 
 #	paste $^  >  $@
 
 %.delim.lineitems: %.itemmeasures $(RT-SCRIPTS)/itemmeasures2delimlineitems.py
-	cat $< | python $(word 2, $^) > $@
+	cat $< | python3 $(word 2, $^) > $@
 
 ## TO SPEC
 .PRECIOUS: %.core-evmeasures
