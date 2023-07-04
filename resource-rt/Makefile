@@ -429,9 +429,9 @@ $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.item
 ## PRD/RESMEASURES SPEC
 #.PRECIOUS: %.prdmeasures
 %.prdmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py  $(RT-SCRIPTS)/add_evid_col.py
-	python $(word 3, $^) $< $(word 2, $^) sentid sentpos | python $(word 4, $^)  >  $@
+	python3 $(word 3, $^) $< $(word 2, $^) sentid sentpos | python3 $(word 4, $^)  >  $@
 %.resmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/add_evid_col.py
-	cat $(word 2,$^) | python $(word 3, $^)  >  $@
+	cat $(word 2,$^) | python3 $(word 3, $^)  >  $@
 
 
 ## TO SPEC

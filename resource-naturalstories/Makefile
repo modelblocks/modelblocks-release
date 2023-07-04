@@ -200,7 +200,7 @@ $(CDR-SCRIPTS)/compute_timestamps_from_RT.py $(CONFIGDIR)/user-naturalstories-di
 #
 ################################################################################
 
-%naturalstories.casp.notoks.senttrees:  $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.coref.linetrees  $(RESOURCE-GCG)/scripts/lengthentrees.py
+%naturalstories.casp.notoks.senttrees:  $(RESOURCE-NATSTORIES)/srcmodel/naturalstories.stripped.coref.senttrees  $(RESOURCE-GCG)/scripts/lengthentrees.py
 	cat $<  |  python $(word 2,$^)  >  $@
 
 %naturalstories.noarticle.senttoks: %naturalstories.senttoks

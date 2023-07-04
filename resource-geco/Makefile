@@ -126,3 +126,6 @@ genmodel/%.ini: $(GECO-SCRIPTS)/%.ini
 %/geco.senttoks: %/geco.sentitems $(TOKENIZERDIR)/ptb_tokenizer.sed
 	cat $< | $(word 2, $^) | perl -pe 's/ +$$//g' > $@
 
+%geco.casp.notoks.senttrees:  $(RESOURCE-GECO)/srcmodel/geco.stripped.senttrees  $(RESOURCE-GCG)/scripts/lengthentrees.py
+	cat $<  |  python3 $(word 2,$^)  >  $@
+

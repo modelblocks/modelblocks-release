@@ -114,3 +114,6 @@ genmodel/%.ini: $(PROVO-SCRIPTS)/%.ini
 %/provo.senttoks: %/provo.sentitems $(TOKENIZERDIR)/ptb_tokenizer.sed
 	cat $< | $(word 2, $^) | perl -pe 's/ +$$//g' > $@
 
+%provo.casp.notoks.senttrees:  $(RESOURCE-PROVO)/srcmodel/provo.stripped.senttrees  $(RESOURCE-GCG)/scripts/lengthentrees.py
+	cat $<  |  python3 $(word 2,$^)  >  $@
+
