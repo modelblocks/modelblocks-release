@@ -181,6 +181,7 @@ def get_fdurs(x):
         'offscreenduringGP': offscreenduringGP,
         'inregression': inregression,
         'wdelta': wdelta,
+        'prevwasfix': prevwasfix,
     }
 
 
