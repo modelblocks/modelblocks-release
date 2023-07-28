@@ -426,13 +426,16 @@ $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.item
 %.core-evmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py
 	python $(word 3, $^) $< $(word 2, $^) sentid sentpos  >  $@
 
+# Add skipped words to eye-tracking evmeasures
+%_skip.evmeasures: $(RT-SCRIPTS)/add_skip_to_ET.py %.evmeasures %.itemmeasures
+	python $^ > $@
+
 ## PRD/RESMEASURES SPEC
 #.PRECIOUS: %.prdmeasures
 %.prdmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/merge_tables.py  $(RT-SCRIPTS)/add_evid_col.py
 	python $(word 3, $^) $< $(word 2, $^) sentid sentpos | python $(word 4, $^)  >  $@
 %.resmeasures:  %.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures  $(RT-SCRIPTS)/add_evid_col.py
 	cat $(word 2,$^) | python $(word 3, $^)  >  $@
-
 
 ## TO SPEC
 %.filt-evmeasures: $$(basename %).core-evmeasures scripts/$$(word 1, $$(subst _, ,$$(subst .,,$$(suffix $$*)))).lmeform \

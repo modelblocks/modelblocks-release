@@ -170,7 +170,7 @@ $(CONFIGDIR)/user-kenlm-directory.txt | genmodel
 	$(word 1, $^) -a 64 -T kenlmtmp -S 1G trie $(word 2, $^) $@
 	rm -rf kenlmtmp
 
-.PRECIOUS: genmodel/%.kenlm.tinybin
+.PRECIOUS: %.kenlm.tinybin
 # smaller memory footprint, but slower
 # uses array pointer compression and quantization
 %.kenlm.tinybin: $$(DEP-KENLM) $(KENLMDIR)/bin/build_binary %.kenlm \
@@ -196,20 +196,12 @@ $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmo
 	$(word 1, $^) -\n $(word 4,$^) <( cat $(word 2,$^) | grep -v '~ARTICLE' ) | python3 $(word 3,$^) --fwprobs - | \
 	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
 
-.PRECIOUS: %-kenlm.itemmeasures
-%-kenlm.itemmeasures: $$(DEP-KENLM) $(KENLMDIR)/bin/query \
+%-kenlmlocal.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLMDIR)/bin/query \
 $$(basename %).sentitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
-$$(subst .,,$$(suffix %))/gigaword$$(suffix $$*).kenlm.bin \
+$$(subst -,.,$$(subst .,,$$(suffix %))).kenlm.tinybin \
 $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
 	cat $(word 2,$^)  |  grep -v '!ARTICLE'  |  $(word 1, $^) -\n $(word 4,$^)  |  python3 $(word 3,$^) --fwprobs -  |  \
-	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  >  $@
-
-%-kenlm.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLMDIR)/bin/query \
-$$(basename %).sentitems $(KENLM-SCRIPTS)/calcngramprobtoks.kenlm.py  \
-$$(subst .,,$$(suffix %))/gigaword$$(suffix $$*).kenlm \
-$(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
-	$(word 1, $^) -\n $(word 4,$^) <( cat $(word 2,$^) | grep -v '~ARTICLE' ) | python3 $(word 3,$^) --fwprobs - | \
-	python $(word 5, $^) fwprob fwprob$(subst .,,$(suffix $*))  > $@
+	python $(word 5, $^) fwprob fwprob$(subst -,,$(subst .,,$(suffix $*)))  > $@
 
 %.unigram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLM-SCRIPTS)/unigram.py $(KENLMMODDIR)/gigaword.1.fw.kenlm %.sentitems \
 $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
