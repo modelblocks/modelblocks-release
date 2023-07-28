@@ -96,7 +96,7 @@ genmodel/%.ini: $(PROVO-SCRIPTS)/%.ini
 
 %/provo.evmeasures: $$(DEP-PROVO) $(PROVO-SCRIPTS)/merge_provo.py $(PROVODIR)/Provo_Corpus-Additional_Eyetracking_Data-Fixation_Report.csv $(PROVO-SCRIPTS)/process_provo.py \
 %/provo.itemmeasures | %
-	python $< <(cat $(word 2, $^) | python3 $(word 3,$^)) $(word 4, $^) > $@
+	python3 $< <(cat $(word 2, $^) | python3 $(word 3,$^)) $(word 4, $^) > $@
 
 
 ################################################################################
@@ -113,4 +113,7 @@ genmodel/%.ini: $(PROVO-SCRIPTS)/%.ini
 
 %/provo.senttoks: %/provo.sentitems $(TOKENIZERDIR)/ptb_tokenizer.sed
 	cat $< | $(word 2, $^) | perl -pe 's/ +$$//g' > $@
+
+%provo.casp.notoks.senttrees:  $(RESOURCE-PROVO)/srcmodel/provo.stripped.senttrees  $(RESOURCE-GCG)/scripts/lengthentrees.py
+	cat $<  |  python3 $(word 2,$^)  >  $@
 

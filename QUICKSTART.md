@@ -42,10 +42,9 @@ section 23 of the Wall Street Journal corpus, training on sections
 2 through 21. The target you will need to make (from the workspace
 directory) is:
 
-genmodel/wsj23.wsj02to21-nodashtags-5sm-synproc-+u_+c_+b5000_parsed.tokmeasures
+genmodel/wsj23.wsj02to21-gcg15-nol-prtrm-3sm-synproc-+u_+b5000_parsed.tokmeasures
 
-(See the docs and/or ModelBlocks Assistant for further explanation
-of the components of this target)
+(See the documentation for further explanation of the components of this target)
 
 The only external resources necessary to make this target are
 
@@ -69,34 +68,13 @@ Getting help
 ------------------------
 ModelBlocks automates a large array of data processing and analysis
 routines, text corpora, and experiment datasets. It can therefore
-be overwhelming to figure out where to begin. There are three ways
+be overwhelming to figure out where to begin. There are two ways
 to get help using ModelBlocks:
 
-1. Contact us (the developers) through Github: You can reach out privately
+1. Read the docs: https://www.asc.ohio-state.edu/schuler.77/overview-mb.pdf.
+
+2. Contact us (the developers) through Github: You can reach out privately
 by email to anyone listed as a contributor to the project, and/or
 you can publicly post an issue to the Issues page. We are happy to
 help anyone interested in using this resource, no matter how basic
 the question may seem.
-
-2. Explore using ModelBlocks Assistant: ModelBlocks Assistant is an 
-interactive browser-based target builder that supports the most commonly-
-used ModelBlocks targets. ModelBlocks Assistant provides a GUI that
-allows you to make choices about the various component modules of a
-target and automatically generates the corresponding well-formed
-Make command. This is a good way to quickly get the format of a target
-you want to build, as well as to play around with the components of a
-target in order to get a better handle on the syntax.
-
-ModelBlocks Assistant can be accessed remotely at http://go.osu.edu/mbassist
-or built locally by executing `make mbassist` from the `doc` directory.
-
-Targets should generally be made from the `workspace` directory.
-ModelBlocks Assistant is still in beta. If you run into any issues
-using it, we'd very much appreciate hearing from you.
-
-3. Read the docs: Navigate to the `doc` repository and run
-`make tech-report.pdf` for the most complete documentation available.
-Our docs are constantly being updated as ModelBlocks evolves, so if
-you find something that you believe is incorrect or out of date,
-please feel free to contact us.
-

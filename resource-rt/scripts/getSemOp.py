@@ -34,6 +34,15 @@ for op in sorted(ops):
 print()
 
 for line in sys.stdin:
+    # process the trees that aren't correctly parsed
+    if "(FAIL" in line.split():
+        for i in line.split():
+            reset(ops)
+            if i.endswith(")") and i != "T)":
+                print(i.strip(")") + " FAIL FAIL", end="")
+                for op in sorted(ops):
+                    print(" {}".format(ops[op]), end="")
+                print()
     if line.startswith("----"): 
         reset(ops)
         emod = 0

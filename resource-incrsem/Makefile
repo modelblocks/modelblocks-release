@@ -180,7 +180,7 @@ scripts/%.ini:  $(INCRSEM-SCRIPTS)/%.ini  |  scripts
 
 ## obtain lemma counts from trees...
 %.lemmacounts:  %.senttrees  $(INCRSEM-SCRIPTS)/printlemmas.py  $(INCRSEM-SCRIPTS)/printlemmas.d
-	cat $<  |  python $(word 2,$^)  |  LC_COLLATE=C sort  |  LC_COLLATE=C uniq -c  |  sed 's/^ *//'  >  $@
+	cat $<  |  python3 $(word 2,$^)  |  LC_COLLATE=C sort  |  LC_COLLATE=C uniq -c  |  sed 's/^ *//'  >  $@
 
 ## obtain predictors and responses for all semantic processing models...
 .PRECIOUS: %sm_semprocdecpars

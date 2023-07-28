@@ -11,6 +11,7 @@ for line in sys.stdin:
   ## For each paired preterminal and terminal...
   for preterm,term in re.findall( '\(([^\(\) ]+) ([^\(\) ]+)\)', line ):
     term = term.lower()
-    if DEBUG:  print( lex.getFn( preterm, term ), preterm )
-    else:      print( lex.getFn( preterm, term ) )
+    out = lex.getFn( preterm, term )
+    if DEBUG:  print( re.sub('^.*?:','',out), re.sub('^([A-Z])[A-Z0-9]+','\\1',out), preterm )
+    else:      print( re.sub('^.*?:','',out), re.sub('^([A-Z])[A-Z0-9]+','\\1',out) )
 

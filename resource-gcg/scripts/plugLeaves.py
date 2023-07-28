@@ -1,5 +1,5 @@
 import sys, os
-from itertools import izip
+#from itertools import izip
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import tree
 
@@ -7,7 +7,8 @@ import tree
 trees = open(sys.argv[1], 'r')
 # File containing all words in Dundee corpus
 words = open(sys.argv[2], 'r')
-curSent = words.next().split()
+#curSent = words.next().split()
+curSent = next(words).split()
 
 def plugWords(T):
     global curSent
@@ -15,7 +16,8 @@ def plugWords(T):
         if len(curSent) > 0:
             T.c = curSent.pop(0)
         else:
-            curSent = words.next().split()
+#            curSent = words.next().split()
+            curSent = next(words).split()
             T.c = curSent.pop(0)
     else:
         for x in T.ch:
@@ -32,7 +34,7 @@ T = tree.Tree()
 for line in trees:
     T.read(line)
     plugWords(T)
-    print T
+    print( T )
 
 words.close()
 trees.close()

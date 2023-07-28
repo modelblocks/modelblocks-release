@@ -19,7 +19,7 @@
 
 
 # TO MAKE simplewikiC1:  cat wikisemc1.casp.toktrees | perl ../resource-linetrees/scripts/editabletrees2linetrees.pl| python3 scripts/senttrees2discexprs.py -s41 -s82 -s91 -s20 -s35 -s49 -s114  -s61 -s40 -s127  > eraseme1
-# TO MAKE simplewikiC2:  cat wikisemc2.casp.toktrees | perl ../resource-linetrees/scripts/editabletrees2linetrees.pl| python3 scripts/senttrees2discexprs.py -s61 -s125  > eraseme2
+# TO MAKE simplewikiC2:  cat wikisemc2.casp.toktrees | perl ../resource-linetrees/scripts/editabletrees2linetrees.pl| python3 scripts/senttrees2discexprs.py -s61 -s125 -s43 -s50 -s72 -s83 -s85 -s113 -s127 > eraseme2
 
 
 ################################################################################
@@ -85,7 +85,7 @@ endif
 #### NOTE: inline seds dispose of reannotation failures, then remove -f tags, then shift -l tags to end
 .PRECIOUS: %.senttrees
 %.senttrees:  $(GCG-SCRIPTS)/annotate-$$(subst .,,$$(suffix $$*)).pl  $$(basename %).fixed.senttrees  $(LTREES-SCRIPTS)/killUnaries.pl $(GCG-SCRIPTS)/makefailtrees.py
-	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  python $(word 4,$^) |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' |  perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
+	cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  python3 $(word 4,$^) |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' |  perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
 #cat $(word 2,$^)  |  perl $(word 1,$^)  |  perl $(word 3,$^) -l  |  perl -pe 's/.*\([^a-z]+ .*//'  |  perl -pe 's/\(([^ ]*)-f[^ ]*/\(\1/g' |  perl -pe 's/\(([^ ]*)-l([A-Z])([^ ]*)/\(\1\3-l\2/g;'  >  $@
 ## add !ARTICLE delimiters...
 %artdelim.linetrees:  $(GCG-SCRIPTS)/addDelimiter.py  $$(basename %).linetrees
@@ -149,7 +149,7 @@ endef
 
 #### lengthen trees to full gcg derivation...
 %.long.senttrees:  %.senttrees  $(GCG-SCRIPTS)/lengthentrees.py  $(GCG-SCRIPTS)/lengthentrees.d
-	cat $<  |  python $(word 2,$^)  >  $@
+	cat $<  |  python3 $(word 2,$^)  >  $@
 
 #### Remove traces
 %.nt.linetrees: %.linetrees

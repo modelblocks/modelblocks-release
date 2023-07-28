@@ -230,7 +230,7 @@ genmodel/dundee%.sentitems:  $(RESOURCE-DUNDEE)/srcmodel/dundee.text.headers  $(
 #%dundee.gold.senttrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees %dundee.senttoks
 #	python2 $^ | awk 'NF' | awk '!/ARTICLE/' > $@
 
-%dundee.casp.notoks.senttrees:  $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.linetrees  $(RESOURCE-GCG)/scripts/lengthentrees.py
-	cat $<  |  python $(word 2,$^)  >  $@
+%dundee.casp.notoks.senttrees:  $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.senttrees  $(RESOURCE-GCG)/scripts/lengthentrees.py
+	cat $<  |  python3 $(word 2,$^)  >  $@
 
 
