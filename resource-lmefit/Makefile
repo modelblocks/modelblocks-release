@@ -77,22 +77,22 @@ scripts/%.lmerform scripts/%.nmrelmerform:  $(LMEFIT-SCRIPTS)/%.lmerform  |  scr
 
 bin/regress-lmer: $(LMEFIT-SCRIPTS)/regress-lmer.sh $(LMEFIT-SCRIPTS)/lmetools.r \
 $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
-$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R) | bin
 	cp $< $@
 
 bin/regress-nmrelmer: $(LMEFIT-SCRIPTS)/regress-nmrelmer.sh $(LMEFIT-SCRIPTS)/lmetools.r \
 $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
-$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R) | bin
 	cp $< $@
 
 bin/predict-lmer bin/predict-nmrelmer: $(LMEFIT-SCRIPTS)/predict-lmer.sh $(LMEFIT-SCRIPTS)/lmetools.r \
 $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
-$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R) | bin
 	cp $< $@
 
 bin/signif-lrt: $(LMEFIT-SCRIPTS)/signif-lrt.sh $(LMEFIT-SCRIPTS)/run_lrt.py \
 $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
-$(abspath $(RHACKS-SCRIPTS)/regression-utils.R)
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R) | bin
 	cp $< $@
 
 define ParamVal
