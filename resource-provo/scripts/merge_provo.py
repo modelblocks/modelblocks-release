@@ -24,7 +24,8 @@ def main():
     merged = merged * 1 # convert boolean to [1,0]
     merged.sort_values(['subject', 'time'], inplace=True)
     merged['wlen'] = merged.word.str.len()
-    merged['resid'] = merged['sentpos']
+#    merged['resid'] = merged['sentpos']
+    merged['resid'] = (merged['time']*1000).astype('int')
 
     merged[['word'] + [c for c in merged if c!='word']].to_csv(sys.stdout, ' ', index=False, na_rep='NaN')
 
