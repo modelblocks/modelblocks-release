@@ -15,7 +15,7 @@ def get_run(x):
 def get_fdurs(x):
     subjects = x.subject.values
     docids = x.docid.values
-    indices = x.trial_ix.values
+    indices = x.tr.values
     spdur = x.fdurSP
     blinkbefore = x.blinkbeforefix
     blinkafter = x.blinkafterfix
@@ -207,7 +207,7 @@ df['subject'] = 's' + df.RECORDING_SESSION_LABEL.str.replace('sub', '')
 df['docid'] = 'd' + df.page.astype(str)
 df['word'] = df.CURRENT_FIX_INTEREST_AREA_LABEL.str.strip()
 df.word[df.word == '.'] = 'OFFSCREEN'
-df['trial_ix'] = df.CURRENT_FIX_INTEREST_AREA_INDEX.str.replace('.', '0').astype(int) - 1
+df['tr'] = df.CURRENT_FIX_INTEREST_AREA_INDEX.str.replace('.', '0').astype(int) - 1
 df['time'] = (df.TRIAL_START_TIME.astype(int) + df.PREVIOUS_SAC_END_TIME.str.replace('.', '0').astype(int)) / 1000
 df.time = (df.time - df.groupby('RECORDING_SESSION_LABEL').time.transform('min')).round(3)
 run = []
