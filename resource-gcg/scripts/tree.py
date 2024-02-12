@@ -73,7 +73,7 @@ class Tree:
     def read(self,s,fIndex=0):
         self.ch = []
         # parse a string delimited by whitespace as a terminal branch (a leaf)
-        m = re.search('^ *([^ ()]+) *(.*)',s)
+        m = re.search('^ *([^ ()\n]+) *(.*)',s)
         if m != None:
             (self.c,s) = m.groups()
             self.l = fIndex
