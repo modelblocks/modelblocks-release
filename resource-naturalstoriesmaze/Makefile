@@ -80,7 +80,7 @@ DEP-NATSTORIESMAZE = $(error $(NATSTORIESMAZE-ERROR))
 endif
 endif
 
-%/user-naturalstories-directory.txt: | %   
+%/user-naturalstoriesmaze-directory.txt: | %
 	echo '/data/corpora/original/english/natural-stories-maze' > $@
 
 ################################################################################

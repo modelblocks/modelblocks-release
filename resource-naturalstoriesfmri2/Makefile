@@ -99,6 +99,8 @@ DEP-NATSTORIESFMRI2 = $(error $(NATSTORIESFMRI2-ERROR))
 endif
 endif
 
+%/user-naturalstories-fmri2-directory.txt: | %
+	echo '/data/corpora/original/english/naturalstories_fmri' > $@
 
 
 ################################################################################

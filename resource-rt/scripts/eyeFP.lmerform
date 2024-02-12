@@ -1,4 +1,4 @@
 log(fdurFP)
 z.(sentpos) + z.(wlen) + z.(wdelta) + z.(prevwasfix)
-z.(sentid) + z.(sentpos) + z.(wlen) + z.(wdelta) + z.(prevwasfix)
-(1 | word) + (1 | sentid)
+z.(sentpos) + z.(wlen) + z.(wdelta) + z.(prevwasfix)
+(1 | sentid)

@@ -74,7 +74,7 @@ out = pd.DataFrame(
     }
 )
 out['sentpos'] = out.groupby(sentid).cumcount() + 1
-out['trial_ix'] = out.groupby(docid).cumcount()
+out['tr'] = out.groupby(docid).cumcount()
 out['startofsentence'] = (out.sentpos == 1).astype('int')
 out['endofsentence'] = out.startofsentence.shift(-1).fillna(1).astype('int')
 

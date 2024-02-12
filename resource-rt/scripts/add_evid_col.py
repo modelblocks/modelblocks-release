@@ -4,7 +4,7 @@ import sys, argparse, pandas as pd
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(description='Add evid (event ID) column to data table')
     #argparser.add_argument('data', type=str, help='Path to data table')
-    argparser.add_argument('-i', '--id_columns', nargs='+', default=['docid', 'subject', 'sentid', 'resid'], help='Name(s) of column(s) that uniquely identify datapoints in table')
+    argparser.add_argument('-i', '--id_columns', nargs='+', default=['docid', 'subject', 'sentid', 'resid', 'tr'], help='Name(s) of column(s) that uniquely identify datapoints in table')
     args = argparser.parse_args()
 
     #df = pd.read_csv(args.data,sep=' ',skipinitialspace=True)

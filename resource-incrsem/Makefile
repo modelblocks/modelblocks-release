@@ -53,7 +53,7 @@ $(info Source code dependencies built and loaded.)
 endif
 
 ## include those dependencies
-include $(wildcard $(RESOURCE-INCRSEM)/*/*.d)
+#include $(wildcard $(RESOURCE-INCRSEM)/*/*.d)
 
 ################################################################################
 #

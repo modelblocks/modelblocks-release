@@ -15,7 +15,6 @@ def interp(x):
     return pd.Series(x, dtype=dtype)
         
     
-
 evmeasures_path, itemmeasures_path = sys.argv[1:]
 
 evmeasures = pd.read_csv(evmeasures_path, sep=' ')
@@ -26,18 +25,17 @@ blink_cols = [col for col in evmeasures.columns if col.startswith('blinkduring')
 
 out = []
 for (subject, discid), _evmeasures in evmeasures.groupby(['subject', 'discid']):
+    _evmeasures = _evmeasures.sort_values('time')
     _evmeasures['offset_tmp'] = _evmeasures.time + _evmeasures.fdurGP / 1000  # fdurGP is in ms
-    docid = list(evmeasures.docid.unique())[0]
+    docid = list(_evmeasures.docid.unique())[0]
     _itemmeasures = itemmeasures[discid].copy()
-    key_cols = list(set(_evmeasures.columns) & set(_itemmeasures.columns))
+    key_cols = ['word', 'discid', 'discpos']
     extra_cols = ['subject', 'time', 'offset_tmp']
-    for col in ['docid', 'sentid', 'sentpos']:
-        if col not in key_cols:
-            extra_cols.append(col)
-    _itemmeasures = _itemmeasures[key_cols]
+    __evmeasures = _evmeasures[~_evmeasures.fdurFP.isna()]
+    __evmeasures = __evmeasures[key_cols + extra_cols + blink_cols + duration_cols]
     _itemmeasures = pd.merge(
-        _itemmeasures[key_cols],
-        _evmeasures.drop_duplicates(['discid', 'discpos'])[key_cols + extra_cols + blink_cols + duration_cols],
+        _itemmeasures,
+        __evmeasures,
         how='outer',
         on=key_cols
     )
@@ -54,6 +52,10 @@ for (subject, discid), _evmeasures in evmeasures.groupby(['subject', 'discid']):
     _itemmeasures['wdelta'] = 0
     _itemmeasures['inregression'] = 0
     _out = pd.concat([_itemmeasures, _evmeasures], axis=0)
+    _out.skippedFP = _out.skippedFP.where((_out.fdurFP.isna()) | (_out.skippedFP > 0), other=0)
+    for col in _out.columns:
+        if col.startswith('startof') or col.startswith('endof'):
+            _out[col] = _out[col].fillna(0)  # Cannot infer starts/ends that are not already provided in itemmeasures 
     _out = _out.sort_values(['time', 'discpos'])
     out.append(_out)
 
