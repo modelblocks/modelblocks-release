@@ -89,8 +89,8 @@ if __name__ == '__main__':
         max_response_time = int(np.ceil(df_cur.time.max()))
         if max_response_time % 2 != 0:
            max_response_time += 1
-        tr = np.arange(0, max_response_time // args.step)
-        response_times = tr * args.step + args.start
+        tr = np.arange(1, 1 + (max_response_time // args.step))
+        response_times = (tr-1) * args.step + args.start
         D = response_times[..., None] - impulse_times[None, ...]
         G_mask = D >= 0
         G = double_gamma_hrf(D)
