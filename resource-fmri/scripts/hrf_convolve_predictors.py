@@ -56,7 +56,8 @@ if __name__ == '__main__':
     argparser.add_argument('data', type=str, help='Path to data table')
     argparser.add_argument('-s', '--step', type=float, default=2.0, help='Step size (in seconds) between fMRI samples')
     argparser.add_argument('-S', '--start', type=float, default=0.0, help='Start time (time of first scan)')
-    argparser.add_argument('-g', '--grouping_columns', nargs='+', default=['docid'], help='Name(s) of column(s) that define(s) unique time series.')
+    argparser.add_argument('-g', '--grouping_columns', nargs='+', default=['docid'], help='Name(s) of column(s) that define(s) unique time series')
+    argparser.add_argument('-t', '--extra_time', type=int, default=0, help='Number of seconds past the last word to calculate convolved predictors')
     args = argparser.parse_args()
 
     df = pd.read_csv(args.data,sep=' ',skipinitialspace=True)
@@ -78,15 +79,14 @@ if __name__ == '__main__':
     series_names = [x[0] for x in gb]
 
     out = []
-    for i in range(len(series)):
-        df_cur = series[i]
+    for i, df_cur in enumerate(series):
         if 'duration' in df_cur.columns:
             duration = df_cur['duration']
         else:
             duration = None
         X = df_cur[cols]
         impulse_times = df_cur.time.values
-        max_response_time = int(np.ceil(df_cur.time.max()))
+        max_response_time = int(np.ceil(df_cur.time.max())) + args.extra_time
         if max_response_time % 2 != 0:
            max_response_time += 1
         tr = np.arange(1, 1 + (max_response_time // args.step))
