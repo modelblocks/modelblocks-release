@@ -57,7 +57,7 @@ if __name__ == '__main__':
     argparser.add_argument('-s', '--step', type=float, default=2.0, help='Step size (in seconds) between fMRI samples')
     argparser.add_argument('-S', '--start', type=float, default=0.0, help='Start time (time of first scan)')
     argparser.add_argument('-g', '--grouping_columns', nargs='+', default=['docid'], help='Name(s) of column(s) that define(s) unique time series')
-    argparser.add_argument('-t', '--extra_time', type=int, default=0, help='Number of seconds past the last word to calculate convolved predictors')
+    argparser.add_argument('-t', '--extra_time', type=int, default=30, help='Number of seconds past the last word to calculate convolved predictors')
     args = argparser.parse_args()
 
     df = pd.read_csv(args.data,sep=' ',skipinitialspace=True)
