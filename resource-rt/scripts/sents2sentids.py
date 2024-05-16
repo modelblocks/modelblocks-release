@@ -2,7 +2,7 @@ import sys
 
 sentid=0
 
-print 'word sentid sentpos'
+print('word sentid sentpos')
 
 for line in sys.stdin:
     sentpos=1
