@@ -43,7 +43,7 @@ endif
 endif
 
 %/user-jlstm-directory.txt: | %   
-	echo '/data/compling/jlstm' > $@
+	echo '/project/lin-dept/compling/jlstm' > $@
 
 ################################################################################
 

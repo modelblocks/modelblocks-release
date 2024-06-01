@@ -71,7 +71,7 @@ endif
 endif
     
 %/user-skipdep-directory.txt: | %   
-	echo '/data/compling/skipdep' > $@
+	echo '/project/lin-dept/compling/skipdep' > $@
 
 ################################################################################
 #

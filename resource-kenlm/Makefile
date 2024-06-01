@@ -126,10 +126,10 @@ endif
 
 
 %/user-kenlm-directory.txt: | %
-	echo '/data/compling/kenlm_git' > $@
+	echo '/project/lin-dept/compling/kenlm_git' > $@
 
 %/user-kenlm-model-directory.txt: | %
-	echo '/data/compling/kenlm_models' > $@
+	echo '/project/lin-dept/compling/kenlm_models' > $@
 
 %/user-kenlm-flags.txt: | %
 	echo '-T kenlmtmp -S 50%' > $@

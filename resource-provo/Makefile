@@ -82,7 +82,7 @@ endif
 
     
 %/user-provo-directory.txt: | %
-	echo '/data/corpora/original/english/provo' > $@
+	echo '/project/lin-dept/corpora/original/english/provo' > $@
     
 ################################################################################
 #

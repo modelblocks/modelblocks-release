@@ -76,7 +76,7 @@ endif
 
 
 %/user-dmv-directory.txt: | %
-	echo '/data/compling/pr-dep-parsing.WILS' > $@
+	echo '/project/lin-dept/compling/pr-dep-parsing.WILS' > $@
 
 ################################################################################
 #

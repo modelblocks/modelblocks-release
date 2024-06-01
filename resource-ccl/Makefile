@@ -71,7 +71,7 @@ endif
 
 
 %/user-ccl-directory.txt: | %
-	echo '/data/compling/cclparser' > $@
+	echo '/project/lin-dept/compling/cclparser' > $@
 
 ################################################################################
 #

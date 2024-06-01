@@ -65,7 +65,7 @@ endif
 
     
 %/user-tiger-directory.txt: | %   
-	echo '/data/corpora/original/german/tigercorpus1' > $@
+	echo '/project/lin-dept/corpora/original/german/tigercorpus1' > $@
     
 ################################################################################
 #

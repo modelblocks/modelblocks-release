@@ -113,7 +113,7 @@ endif
 
 
 %/user-passages-directory.txt: | %   
-	echo '/data/corpora/original/english/MITpassages' > $@
+	echo '/project/lin-dept/corpora/original/english/MITpassages' > $@
 
 ################################################################################
 #

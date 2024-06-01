@@ -42,7 +42,7 @@ endif
 endif
 
 %/user-gpt2-directory.txt: | %
-	echo '/data/compling/gpt2' > $@
+	echo '/project/lin-dept/compling/gpt2' > $@
 
 ################################################################################
 

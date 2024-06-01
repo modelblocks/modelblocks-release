@@ -72,7 +72,7 @@ endif
 
 
 %/user-cdr-directory.txt: | %   
-	echo '/data/compling/cdr' > $@
+	echo '/project/lin-dept/compling/cdr' > $@
 
 ### WS: THIS LINE BREAKS ALL OF PYTHON ON DEASY NOW (2021-08-18)
 #PYTHONPATH= $(shell cat $(CONFIGDIR)/user-cdr-directory.txt)

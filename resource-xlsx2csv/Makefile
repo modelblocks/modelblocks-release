@@ -71,7 +71,7 @@ endif
 endif
     
 %/user-xlsx2csv-directory.txt: | %   
-	echo '/data/compling/xlsx2csv' > $@
+	echo '/project/lin-dept/compling/xlsx2csv' > $@
 
 ################################################################################
 #

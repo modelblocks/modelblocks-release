@@ -75,7 +75,7 @@ endif
 
 
 %/user-childes-directory.txt: | %   
-	echo '/data/corpora/original/english/childes' > $@
+	echo '/project/lin-dept/corpora/original/english/childes' > $@
 
 ################################################################################
 #

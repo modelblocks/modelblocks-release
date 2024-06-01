@@ -43,7 +43,7 @@ endif
 endif
 
 %/user-glstm-directory.txt: | %   
-	echo '/data/compling/glstm' > $@
+	echo '/project/lin-dept/compling/glstm' > $@
 
 ################################################################################
 

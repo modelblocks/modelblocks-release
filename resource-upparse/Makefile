@@ -74,7 +74,7 @@ endif
 
 
 %/user-upparse-directory.txt: | %
-	echo '/data/compling/upparse' > $@
+	echo '/project/lin-dept/compling/upparse' > $@
 
 ################################################################################
 #

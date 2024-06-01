@@ -75,7 +75,7 @@ endif
 
 
 %/user-ontonotes-directory.txt: | %   
-	echo '/data/corpora/original/english/ontonotes5' > $@
+	echo '/project/lin-dept/corpora/original/english/ontonotes5' > $@
 
 ################################################################################
 #
