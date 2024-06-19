@@ -138,6 +138,9 @@ GLSTM-SCRIPTS := $(RESOURCE-GLSTM)/scripts
 RESOURCE-GPT2 := $(abspath $(MBDIR)/resource-gpt2)
 GPT2-SCRIPTS := $(RESOURCE-GPT2)/scripts
 
+RESOURCE-HF := $(abspath $(MBDIR)/resource-hf)
+HF-SCRIPTS := $(RESOURCE-HF)/scripts
+
 RESOURCE-HUTH := $(abspath $(MBDIR)/resource-huth)
 HUTH-SCRIPTS := $(RESOURCE-HUTH)/scripts
 
@@ -304,6 +307,7 @@ include $(RESOURCE-WORDNET)/Makefile
 include $(RESOURCE-COREF-CONLL)/Makefile
 include $(RESOURCE-CONLLSCORER)/Makefile
 include $(RESOURCE-PREDRWHO)/Makefile
+include $(RESOURCE-HF)/Makefile
 endef
 
 ################################################################################
