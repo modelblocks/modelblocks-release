@@ -211,83 +211,83 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 STEPS := 0 1 2 4 8 16 32 64 128 256 512 $(shell seq 1000 1000 143000)
 
 define build_70m
+.PRECIOUS: %.pythia-70m-step$(1).tokmeasures
 %.pythia-70m-step$(1).tokmeasures: %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py
 	############################################################
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
 	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-70m step$(1) token  >  $$@  2>  $$@.log
-
 endef
 
 define build_160m
+.PRECIOUS: %.pythia-160m-step$(1).tokmeasures
 %.pythia-160m-step$(1).tokmeasures: %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py
 	############################################################
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
 	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-160m step$(1) token  >  $$@  2>  $$@.log
-
 endef
 
 define build_410m
+.PRECIOUS: %.pythia-410m-step$(1).tokmeasures
 %.pythia-410m-step$(1).tokmeasures: %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py
 	############################################################
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
 	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-410m step$(1) token  >  $$@  2>  $$@.log
-
 endef
 
 define build_1000m
+.PRECIOUS: %.pythia-1000m-step$(1).tokmeasures
 %.pythia-1000m-step$(1).tokmeasures: %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py
 	############################################################
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
 	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-1b step$(1) token  >  $$@  2>  $$@.log
-
 endef
 
 define build_1400m
+.PRECIOUS: %.pythia-1400m-step$(1).tokmeasures
 %.pythia-1400m-step$(1).tokmeasures: %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py
 	############################################################
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
 	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-1.4b step$(1) token  >  $$@  2>  $$@.log
-
 endef
 
 define build_2800m
+.PRECIOUS: %.pythia-2800m-step$(1).tokmeasures
 %.pythia-2800m-step$(1).tokmeasures: %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py
 	############################################################
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
 	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-2.8b step$(1) token  >  $$@  2>  $$@.log
-
 endef
 
 define build_6900m
+.PRECIOUS: %.pythia-6900m-step$(1).tokmeasures
 %.pythia-6900m-step$(1).tokmeasures: %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py
 	############################################################
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
 	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-6.9b step$(1) token  >  $$@  2>  $$@.log
-
 endef
 
 define build_12000m
+.PRECIOUS: %.pythia-12000m-step$(1).tokmeasures
 %.pythia-12000m-step$(1).tokmeasures: %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py
 	############################################################
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
 	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-12b step$(1) token  >  $$@  2>  $$@.log
-
 endef
 
 $(foreach i,$(STEPS),\
