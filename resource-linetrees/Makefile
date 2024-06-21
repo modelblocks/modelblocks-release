@@ -219,8 +219,8 @@ bin/%:  $(RESOURCE-LTREES)/src/$$(notdir $$@).cpp  $(CONFIGDIR)/user-cflags.txt 
 .PRECIOUS: %syneval
 %syneval:  bin/evalb \
            $(RESOURCE-GENERAL)/srcmodel/new.prm \
-           genmodel/$$(subst -,.,$$(basename $$(basename $$*)))$$(subst _,.,$$(suffix $$*))senttrees \
-           $$(subst -,.,$$(word 1,$$(subst ., ,%)))$$(suffix $$(basename $$*))$$(subst _,.,$$(suffix $$*))senttrees
+           genmodel/$$(subst, +,-,$$(subst -,.,$$(basename $$(basename $$*))))$$(subst _,.,$$(suffix $$*))senttrees \
+           $$(subst +,-,$$(subst -,.,$$(word 1,$$(subst ., ,%))))$$(suffix $$(basename $$*))$$(subst _,.,$$(suffix $$*))senttrees
 	$< -p $(word 2,$^) $(word 3,$^) $(word 4,$^) > $@
 
 ##### syntactic evaluation           #genmodel/$$(subst -,.,$$(basename $$(basename $$(basename $$(notdir $$*))))).linetrees  %.linetrees

@@ -205,11 +205,11 @@ $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmo
 
 %.unigram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLM-SCRIPTS)/unigram.py $(KENLMMODDIR)/gigaword.1.fw.kenlm %.sentitems \
 $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
-	python2 $(word 1, $^) $(word 2, $^) <( cat $(word 3, $^) | grep -v '!ARTICLE' ) > $@
+	python $(word 1, $^) $(word 2, $^) <( cat $(word 3, $^) | grep -v '!ARTICLE' ) > $@
 
 %-unigram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLM-SCRIPTS)/unigram.py $$(subst .,,$$(suffix %)).1.fw.kenlm $$(basename %).sentitems \
 $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
-	python2 $(word 1, $^) $(word 2, $^) <( cat $(word 3, $^) | grep -v '!ARTICLE' ) > $@
+	python $(word 1, $^) $(word 2, $^) <( cat $(word 3, $^) | grep -v '!ARTICLE' ) > $@
 
 ## not to spec
 .PRECIOUS: %.kenlm.ngram.itemmeasures
