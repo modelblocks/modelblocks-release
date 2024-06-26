@@ -17,7 +17,7 @@ include $(RESOURCE-LVPCFG)/Makefile
 
 #### location of treebank
 user-treebank-location.txt:
-	echo '/project/lin-dept/corpora/original/chinese/chinese_treebank_6' > $@
+	echo '/fs/project/schuler.77/corpora/original/chinese/chinese_treebank_6' > $@
 	@echo ''
 	@echo 'ATTENTION: I had to create "$@" for you, which may be wrong'
 	@echo 'edit it to point at your treebank repository, and re-run make to continue!'
@@ -25,14 +25,14 @@ user-treebank-location.txt:
 
 #### location of chinese treebank8
 user-treebank8-location.txt:
-	echo '/project/lin-dept/corpora/original/chinese/chinese_treebank_8' > $@
+	echo '/fs/project/schuler.77/corpora/original/chinese/chinese_treebank_8' > $@
 	@echo ''
 	@echo 'ATTENTION: I had to create "$@" for you, which may be wrong'
 	@echo 'edit it to point at your treebank repository, and re-run make to continue!'
 	@echo ''
 
 #edit it to point at your treebank repository
-user-chccgbank-location='/project/lin-dept/corpora/original/chinese/chinese_ccg/final'
+user-chccgbank-location='/fs/project/schuler.77/corpora/original/chinese/chinese_ccg/final'
 
 
 ### using chinese treebank 8

@@ -89,7 +89,7 @@ endif
 
 
 %/user-glove-directory.txt: | % 
-	echo '/project/lin-dept/compling/GloVe-1.2/' > $@
+	echo '/fs/project/schuler.77/compling/GloVe-1.2/' > $@
 
 ################################################################################
 #

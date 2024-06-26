@@ -102,7 +102,7 @@ endif
 
 
 %/user-naturalstories-fmri-directory.txt: | %   
-	echo '/project/lin-dept/corpora/original/english/naturalstories_fmri' > $@
+	echo '/fs/project/schuler.77/corpora/original/english/naturalstories_fmri' > $@
 
 ################################################################################
 #

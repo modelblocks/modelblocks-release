@@ -139,13 +139,13 @@ endif
 
 
 %/user-ucl-directory.txt: | %
-	echo '/project/lin-dept/corpora/original/english/ucl_novels' > $@
+	echo '/fs/project/schuler.77/corpora/original/english/ucl_novels' > $@
 
 %/user-esn-directory.txt: | %
-	echo '/project/lin-dept/corpora/original/english/dundee/echo_state' > $@
+	echo '/fs/project/schuler.77/corpora/original/english/dundee/echo_state' > $@
 
 %/user-geniatagger-directory.txt: | %
-	echo '/project/lin-dept/compling/geniatagger-2.0.2' > $@
+	echo '/fs/project/schuler.77/compling/geniatagger-2.0.2' > $@
 
 
 ################################################################################

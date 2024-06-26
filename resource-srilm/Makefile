@@ -84,7 +84,7 @@ endif
 
 
 %/user-srilm-directory.txt: | %
-	echo '/project/lin-dept/compling/srilm/bin/i686-m64' > $@
+	echo '/fs/project/schuler.77/compling/srilm/bin/i686-m64' > $@
 
 ################################################################################
 #

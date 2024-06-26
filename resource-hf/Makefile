@@ -42,7 +42,7 @@ endif
 endif
 
 %/user-hf-directory.txt: | %
-	echo '/project/lin-dept/compling/huggingface' > $@
+	echo '/fs/project/schuler.77/compling/huggingface' > $@
 
 ################################################################################
 

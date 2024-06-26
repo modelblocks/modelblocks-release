@@ -70,7 +70,7 @@ endif
 
 
 %/user-wordnet-directory.txt: | % 
-	echo '/project/lin-dept/corpora/original/english/wordnet-3.1' > $@
+	echo '/fs/project/schuler.77/corpora/original/english/wordnet-3.1' > $@
 
 ################################################################################
 #

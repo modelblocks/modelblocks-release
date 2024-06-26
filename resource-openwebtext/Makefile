@@ -70,7 +70,7 @@ endif
 endif
 
 %/user-openwebtext-directory.txt: | %
-	echo '/project/lin-dept/corpora/original/english/openwebtext' > $@
+	echo '/fs/project/schuler.77/corpora/original/english/openwebtext' > $@
 
 ################################################################################
 #

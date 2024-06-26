@@ -80,7 +80,7 @@ endif
 
 
 %/user-conllscorer-directory.txt: | %
-	echo '/project/lin-dept/compling/reference-coreference-scorers-master' > $@
+	echo '/fs/project/schuler.77/compling/reference-coreference-scorers-master' > $@
     
 ################################################################################
 #
