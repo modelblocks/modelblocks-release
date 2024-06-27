@@ -74,7 +74,7 @@ JAVAFLAGS := $(shell cat $(CONFIG))
 endif
 
 %/user-epicjar-directory.txt: | %
-	echo '/project/lin-dept/compling/epic' > $@
+	echo '/fs/project/lin-dept/compling/epic' > $@
 
 EPIC-TRAINER = target/scala-2.11/epic-assembly-0.4.4.jar epic.parser.models.ParserTrainer
 

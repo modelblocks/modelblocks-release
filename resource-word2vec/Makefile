@@ -78,7 +78,7 @@ endif
 
 
 %/user-word2vec-directory.txt: | % 
-	echo '/project/lin-dept/compling/word2vec/' > $@
+	echo '/fs/project/lin-dept/compling/word2vec/' > $@
 
 ################################################################################
 #

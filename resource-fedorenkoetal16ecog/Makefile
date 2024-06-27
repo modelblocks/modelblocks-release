@@ -90,7 +90,7 @@ endif
 
 
 %/user-fedorenkoetal16ecog-directory.txt: | %   
-	echo '/project/lin-dept/corpora/original/english/fedorenkoetal16_ecog' > $@
+	echo '/fs/project/lin-dept/corpora/original/english/fedorenkoetal16_ecog' > $@
 
 ################################################################################
 #

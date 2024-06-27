@@ -93,7 +93,7 @@ endif
 
     
 %/user-dundee-directory.txt: | %
-	echo '/project/lin-dept/corpora/original/english/dundee' > $@
+	echo '/fs/project/lin-dept/corpora/original/english/dundee' > $@
     
 ################################################################################
 #

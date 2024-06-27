@@ -101,7 +101,7 @@ endif
 endif
 
 %/user-alice-directory.txt: | %   
-	echo '/project/lin-dept/corpora/original/english/brennan_2016_fmri' > $@
+	echo '/fs/project/lin-dept/corpora/original/english/brennan_2016_fmri' > $@
 
 ################################################################################
 #

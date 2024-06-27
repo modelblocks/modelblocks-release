@@ -81,7 +81,7 @@ endif
 endif
 
 %/user-naturalstoriesmaze-directory.txt: | %
-	echo '/project/lin-dept/corpora/original/english/natural-stories-maze' > $@
+	echo '/fs/project/lin-dept/corpora/original/english/natural-stories-maze' > $@
 
 ################################################################################
 #

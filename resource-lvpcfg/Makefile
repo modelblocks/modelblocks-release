@@ -74,7 +74,7 @@ JAVAFLAGS := $(shell cat $(CONFIG))
 endif
 
 %/user-berkeleyparserjar-directory.txt: | %
-	echo '/project/lin-dept/compling/berkeleyparser' > $@
+	echo '/fs/project/lin-dept/compling/berkeleyparser' > $@
 
 %/user-javaflags.txt: | %
 	echo '-Xmx8g' > $@

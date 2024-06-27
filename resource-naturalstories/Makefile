@@ -89,7 +89,7 @@ endif
 endif
 
 %/user-naturalstories-directory.txt: | %   
-	echo '/project/lin-dept/corpora/original/english/naturalstories' > $@
+	echo '/fs/project/lin-dept/corpora/original/english/naturalstories' > $@
 
 ################################################################################
 #

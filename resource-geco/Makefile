@@ -82,7 +82,7 @@ endif
 
     
 %/user-geco-directory.txt: | %
-	echo '/project/lin-dept/corpora/original/english/geco' > $@
+	echo '/fs/project/lin-dept/corpora/original/english/geco' > $@
     
 ################################################################################
 #

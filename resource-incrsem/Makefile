@@ -110,7 +110,7 @@ scripts/%.ini:  $(INCRSEM-SCRIPTS)/%.ini  |  scripts
 ################################################################################
 
 ## obtain auto-parsed simplewiki corpus...
-%simplewikiFULLAUTO.gcg15.linetrees:  /project/lin-dept/corpora/original/english/simplewiki20140903/simplewiki-20140903-pages-articles.wsj02to21-comparativized-gcg15-4sm.berk.parsed.linetrees
+%simplewikiFULLAUTO.gcg15.linetrees:  /fs/project/lin-dept/corpora/original/english/simplewiki20140903/simplewiki-20140903-pages-articles.wsj02to21-comparativized-gcg15-4sm.berk.parsed.linetrees
 	ln -s $< $@
 
 ## remove % comments

@@ -83,7 +83,7 @@ endif
 
 
 %/user-tom-directory.txt: | %   
-	echo '/project/lin-dept/corpora/original/english/saxe_tom' > $@
+	echo '/fs/project/lin-dept/corpora/original/english/saxe_tom' > $@
 
 ################################################################################
 #

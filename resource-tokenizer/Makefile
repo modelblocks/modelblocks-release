@@ -72,7 +72,7 @@ endif
 
 
 %/user-tokenizer-directory.txt: | %
-	echo '/project/lin-dept/compling/extended_penn_tokenizer' > $@
+	echo '/fs/project/lin-dept/compling/extended_penn_tokenizer' > $@
 
 ################################################################################
 #

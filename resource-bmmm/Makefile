@@ -76,7 +76,7 @@ endif
 
 
 %/user-bmmm-directory.txt: | %
-	echo '/project/lin-dept/compling/bmmm' > $@
+	echo '/fs/project/lin-dept/compling/bmmm' > $@
 
 ################################################################################
 #
