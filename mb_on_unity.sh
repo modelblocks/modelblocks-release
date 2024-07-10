@@ -26,6 +26,9 @@ conda install -c pytorch pytorch torchvision cudatoolkit=10.1   # install compil
 # install up-to-date compilers that can use c++17
 conda install -c conda-forge compilers armadillo
 
+# install program to convert xls files to csv
+conda install conda-forge::xlsx2csv
+
 ## download armadillo from source
 #wget http://sourceforge.net/projects/arma/files/armadillo-9.900.3.tar.xz
 #tar -xJf armadillo-9.900.3.tar.xz
