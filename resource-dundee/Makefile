@@ -234,6 +234,6 @@ genmodel/dundee%.sentitems:  $(RESOURCE-DUNDEE)/srcmodel/dundee.text.headers  $(
 	cat $<  |  python3 $(word 2,$^)  >  $@
 
 %dundee.itemmeasures: %dundee.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
-       cat $<  |  python3 $(word 2, $^) >  $@
-       #cat $<  |  grep -v '!ARTICLE'  |  python $(word 2, $^) >  $@
+	cat $<  |  python3 $(word 2, $^) >  $@
+	#cat $<  |  grep -v '!ARTICLE'  |  python $(word 2, $^) >  $@
 
