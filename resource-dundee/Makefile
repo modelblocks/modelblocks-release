@@ -233,4 +233,7 @@ genmodel/dundee%.sentitems:  $(RESOURCE-DUNDEE)/srcmodel/dundee.text.headers  $(
 %dundee.casp.notoks.senttrees:  $(RESOURCE-DUNDEE)/srcmodel/dundee.stripped.senttrees  $(RESOURCE-GCG)/scripts/lengthentrees.py
 	cat $<  |  python3 $(word 2,$^)  >  $@
 
+%dundee.itemmeasures: %dundee.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
+       cat $<  |  python3 $(word 2, $^) >  $@
+       #cat $<  |  grep -v '!ARTICLE'  |  python $(word 2, $^) >  $@
 

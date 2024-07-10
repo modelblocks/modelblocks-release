@@ -401,9 +401,9 @@ $$(word 1, $$(subst ., , %))$$(suffix $$(subst -,.,$$(suffix $$*))).unigram.item
 	python $(word 3, $^) $(word 1, $^) $(word 2, $^) word sentpos sentid > $@
 
 
-%.itemmeasures: %.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
-	cat $<  |  python3 $(word 2, $^) >  $@
-	#cat $<  |  grep -v '!ARTICLE'  |  python $(word 2, $^) >  $@
+#%.itemmeasures: %.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
+#	cat $<  |  python3 $(word 2, $^) >  $@
+#	#cat $<  |  grep -v '!ARTICLE'  |  python $(word 2, $^) >  $@
 
 %parsed.itemmeasures: %parsed.tokmeasures  $$(basename %).itemmeasures  $(RT-SCRIPTS)/roll_toks.py
 	cat $< | perl -pe 's/-LRB-/(/g;s/-RRB-/)/g;s/-LSB-/[/g;s/-RSB-/]/g' | python3 $(word 3, $^) $(word 2, $^) sentid embddepthMin timestamp  >  $@
