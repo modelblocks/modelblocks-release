@@ -192,7 +192,7 @@ PASSAGES-SCRIPTS := $(RESOURCE-PASSAGES)/scripts
 RESOURCE-PREDRWHO := $(abspath $(MBDIR)/resource-predrwho)
 PREDRWHO-SCRIPTS := $(RESOURCE-PREDRWHO)/scripts
 
-RESOURCE-PYTHISPILE := $(abspath $(MBDIR)/resource-pythiapile)
+RESOURCE-PYTHIAPILE := $(abspath $(MBDIR)/resource-pythiapile)
 PYTHIAPILE-SCRIPTS := $(RESOURCE-PYTHIAPILE)/scripts
 
 RESOURCE-ONTONOTES := $(abspath $(MBDIR)/resource-ontonotes)
