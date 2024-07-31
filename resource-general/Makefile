@@ -189,6 +189,9 @@ BROWN-SCRIPTS := $(RESOURCE-BROWN)/scripts
 RESOURCE-PASSAGES := $(abspath $(MBDIR)/resource-passages)
 PASSAGES-SCRIPTS := $(RESOURCE-PASSAGES)/scripts
 
+RESOURCE-PEREIRA := $(abspath $(MBDIR)/resource-pereira)
+PEREIRA-SCRIPTS := $(RESOURCE-PEREIRA)/scripts
+
 RESOURCE-PREDRWHO := $(abspath $(MBDIR)/resource-predrwho)
 PREDRWHO-SCRIPTS := $(RESOURCE-PREDRWHO)/scripts
 
@@ -299,6 +302,7 @@ include $(RESOURCE-NATSTORIESFMRI)/Makefile
 include $(RESOURCE-NATSTORIESFMRI2)/Makefile
 include $(RESOURCE-BROWN)/Makefile
 include $(RESOURCE-PASSAGES)/Makefile
+include $(RESOURCE-PEREIRA)/Makefile
 include $(RESOURCE-ONTONOTES)/Makefile
 include $(RESOURCE-RHACKS)/Makefile
 include $(RESOURCE-XLSX2CSV)/Makefile
