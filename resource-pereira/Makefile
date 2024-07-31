@@ -47,4 +47,4 @@ endif
 ################################################################################
 
 genmodel/%.mat:  $(PEREIRA-SCRIPTS)/transform_mat.py  $(PEREIRADIR)/$$(basename %)/data_$$(subst .,,$$(suffix $$*))sentences.mat
-	python3  $<  -I $(word 2,$^)  -O genmodel
+	python3  $<  -I $(word 2,$^)  -O $@

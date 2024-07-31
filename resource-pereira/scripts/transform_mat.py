@@ -66,7 +66,8 @@ def transform_mat_data(mat_file_dir="P01/data_384sentences.mat", save_csv_dir="P
 
     # save the sentences and voxels
     df = pd.DataFrame(matrix,columns=['sentences'] + list(voxel_index.keys()))
-    output_path = f"{save_csv_dir}/{'_'.join(mat_file_dir.split('/')[-2:-1])}.csv"
+#    output_path = f"{save_csv_dir}/{'_'.join(mat_file_dir.split('/')[-2:-1])}.csv"
+    output_path = f"{save_csv_dir}"
     df.to_csv(output_path, index=False)
     print(f"processed data saved to: {output_path}")
 
@@ -74,7 +75,7 @@ def main():
     # Set up the argument parser
     parser = argparse.ArgumentParser(description='Transform the .mat data into .csv format')
     parser.add_argument('--input', '-I', type=str, default="/fs/project/schuler.77/corpora/original/english/pereira2018/M02/data_384sentences.mat", help='input file path')
-    parser.add_argument('--output', '-O', type=str, default="pereira_data", help='output file directory')
+    parser.add_argument('--output', '-O', type=str, default="pereira_data", help='output file path')
 
     # Look for surprisal_dict.json
     args = parser.parse_args()
