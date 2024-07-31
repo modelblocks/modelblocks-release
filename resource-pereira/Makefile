@@ -42,7 +42,7 @@ endif
 endif
 
 %/user-pereira-directory.txt: | %
-	echo '/fs/project/schuler.77/corpora/pereira2018' > $@
+	echo '/fs/project/schuler.77/corpora/original/english/pereira2018' > $@
 
 ################################################################################
 
