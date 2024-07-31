@@ -41,7 +41,7 @@ DEP-PERIERA :=
 endif
 endif
 
-%/user-periera-directory.txt: | %
+%/user-pereira-directory.txt: | %
 	echo '/fs/project/schuler.77/corpora/pereira2018' > $@
 
 ################################################################################
