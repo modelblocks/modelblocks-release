@@ -46,5 +46,5 @@ endif
 
 ################################################################################
 
-%.mat:  $(PEREIRA-SCRIPTS)/transform_mat.py  %.m
+%.mat:  $(PEREIRA-SCRIPTS)/transform_mat.py  %/data_384sentences.mat
 	python3  $<  -I $(word $^,2)  -O genmodel
