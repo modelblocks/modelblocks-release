@@ -24,20 +24,20 @@ $(info $(call CONFIGWARN $(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 PEREIRADIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(PERIERADIR))))
+ifeq (, $(firstword $(wildcard $(PEREIRADIR))))
 RESOURCE-NAME := Pythia Pile
 define RESOURCE-DESCR =
 
 NAME: Pereira et al. 2018
-MB POINTER FILE: config/user-periera-directory.txt
+MB POINTER FILE: config/user-pereira-directory.txt
 AVAILABILITY: Free
 URL: https://osf.io/crwz7/
 DESCRIPTION: Training data from Pereira et al. 2023
 endef
-PERIERA-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
+PEREIRA-ERROR := $(call DEPWARN, $(RESOURCE-NAME), $(CONFIG), $(RESOURCE-DESCR))
 DEP-PEREIRA = $(error $(PEREIRA-ERROR))
 else
-DEP-PERIERA :=
+DEP-PEREIRA :=
 endif
 endif
 
