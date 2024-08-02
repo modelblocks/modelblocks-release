@@ -46,5 +46,11 @@ endif
 
 ################################################################################
 
+## non-standard
 genmodel/%.csv:  $(PEREIRA-SCRIPTS)/transform_mat.py  $(PEREIRADIR)/$$(basename %)/data_$$(subst .,,$$(suffix $$*))sentences.mat
 	python3  $<  -I $(word 2,$^)  -O $@
+
+genmodel/pereira%.sent.resmeasures:  $(PEREIRA-SCRIPTS)/transform_mat.py  $(PEREIRADIR)/$$(word 1,$$(subst -, ,$$*))/data_$$(word 2,$$(subst -, ,$$*))sentences.mat
+	python3  $<  -I $(word 2,$^)  -O $@
+
+
