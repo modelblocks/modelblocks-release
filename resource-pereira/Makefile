@@ -50,7 +50,12 @@ endif
 genmodel/%.csv:  $(PEREIRA-SCRIPTS)/transform_mat.py  $(PEREIRADIR)/$$(basename %)/data_$$(subst .,,$$(suffix $$*))sentences.mat
 	python3  $<  -I $(word 2,$^)  -O $@
 
-genmodel/pereira%.sent.resmeasures:  $(PEREIRA-SCRIPTS)/transform_mat.py  $(PEREIRADIR)/$$(word 1,$$(subst -, ,$$*))/data_$$(word 2,$$(subst -, ,$$*))sentences.mat
-	python3  $<  -I $(word 2,$^)  -O $@
+#genmodel/pereira%.sent.resmeasures:  $(PEREIRA-SCRIPTS)/transform_mat.py  $(PEREIRADIR)/$$(word 1,$$(subst -, ,$$*))/data_$$(word 2,$$(subst -, ,$$*))sentences.mat
+#	python3  $<  -I $(word 2,$^)  -O $@
+genmodel/pereira%.sentitems genmodel/pereira-sent%.resmeasures:  $(PEREIRA-SCRIPTS)/get_sentences_and_voxels.py  $(PEREIRADIR)/$$(word 1,$$(subst -, ,$$*))/data_$$(word 2,$$(subst -, ,$$*))sentences.mat
+	python3  $<  -I $(word 2,$^)  -S $(word 1,$@)  -C $(word 2,$@)
+
+genmodel/pereira-sent%.prdmeasures:  $(PEREIRA-SCRIPTS)/integrate.py  genmodel/pereira%.sentitems  genmodel/pereira%.itemmeasures
+	python3  $<  -S $(word 2,$^)  -C $(word 3,$^)  -O $@
 
 
