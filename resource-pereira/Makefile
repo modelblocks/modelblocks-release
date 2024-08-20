@@ -56,6 +56,6 @@ genmodel/pereira%.sentitems genmodel/pereira-sent%.resmeasures:  $(PEREIRA-SCRIP
 	python3  $<  -I $(word 2,$^)  -S genmodel/pereira$*.sentitems  -C genmodel/pereira-sent$*.resmeasures
 
 genmodel/pereira-sent%.prdmeasures:  $(PEREIRA-SCRIPTS)/integrate.py  genmodel/pereira-sent$$(basename %).resmeasures  genmodel/pereira%.itemmeasures
-	python3  $<  -S $(word 2,$^)  -C $(word 3,$^)  -O $@
+	python3  $<  -C $(word 2,$^)  -S $(word 3,$^)  -O $@
 
 
