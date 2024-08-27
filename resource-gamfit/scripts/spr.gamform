@@ -1,0 +1,4 @@
+fdur
+sentpos + wlen + unigramsurpOWT
+
+s(subject, bs="re") + s(sentid, bs="re")
