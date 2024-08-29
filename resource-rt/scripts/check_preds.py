@@ -27,21 +27,21 @@ def formula2predictorstr(lines):
         preds += fields
     return preds
 
-tblfile, bform, preds_add, preds_ablate = sys.argv[1:]
-
-#get all predictors - strip z.() circumfixes
-with open(bform,'r') as iff:
-    lines = iff.readlines()
-allpreds = formula2predictorstr(lines)
-allpreds += [preds_ablate]
-
-#open tblfile and get header for colnames
-with open(tblfile, 'r') as iff:
-    header = iff.readline()
-    cols = header.strip().split(" ")
-
-#compare all predictors to colnames - warn if any missing
-for pred in allpreds:
-    if pred not in cols:
-        print("Warning! Could not find predictor {} in dataframe".format(pred))
-        sys.stderr.write("Warning! Could not find predictor {} in dataframe\n".format(pred))
+# tblfile, bform, preds_add, preds_ablate = sys.argv[1:]
+# 
+# #get all predictors - strip z.() circumfixes
+# with open(bform,'r') as iff:
+#     lines = iff.readlines()
+# allpreds = formula2predictorstr(lines)
+# allpreds += [preds_ablate]
+# 
+# #open tblfile and get header for colnames
+# with open(tblfile, 'r') as iff:
+#     header = iff.readline()
+#     cols = header.strip().split(" ")
+# 
+# #compare all predictors to colnames - warn if any missing
+# for pred in allpreds:
+#     if pred not in cols:
+#         print("Warning! Could not find predictor {} in dataframe".format(pred))
+#         sys.stderr.write("Warning! Could not find predictor {} in dataframe\n".format(pred))
