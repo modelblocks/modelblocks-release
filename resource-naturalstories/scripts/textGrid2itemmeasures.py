@@ -40,7 +40,8 @@ def get_timestamps(textgrid):
                 exclude = True
             else:
                 exclude = False
-            w = w.translate(None, string.punctuation)
+            #w = w.translate(None, string.punctuation)
+            w = re.sub( '[^\w\s]', '', w )
             if w == 'shrilll':
                 w = 'shrill'
             if w == 'noo':
@@ -71,7 +72,8 @@ with open(lineitems, 'r') as li:
             word = vals[col_map['word']]
             word = word.replace('-LRB-', '')
             word = word.replace('-RRB-', '')
-            word = word.lower().translate(None, string.punctuation)
+            #word = word.lower().translate(None, string.punctuation)
+            word = re.sub( '[^\w\s]', '', word.lower() )
             tg_word = tg[tg_ix][tg_pos][0]
             while len(word) > len(tg_word):
                 tg_pos += 1

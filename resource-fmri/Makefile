@@ -160,47 +160,47 @@ fMRICoreEvmeasures:
 endef
 .PRECIOUS: %.hrf.all-itemmeasures
 %.hrf.all-itemmeasures: %.t.all-itemmeasures $(FMRI-SCRIPTS)/hrf_convolve_predictors.py
-	python $(word 2, $^) $(word 1, $^) > $@
+	python3 $(word 2, $^) $(word 1, $^) > $@
 
 %.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py
-	cat $(word 1, $^) | python $(word 2, $^) > $@
+	cat $(word 1, $^) | python3 $(word 2, $^) > $@
 
 # TO SPEC
 %.bysent.all-itemmeasures: %.all-itemmeasures $(FMRI-SCRIPTS)/reducesents.py
-	cat $(word 1, $^) | python $(word 2, $^) > $@
+	cat $(word 1, $^) | python3 $(word 2, $^) > $@
 
 .PRECIOUS: %.hrf.core.evmeasures
 %.hrf.core.evmeasures : %.hrf.itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
-	cat $< | python $(word 3, $^) $< $(word 2, $^) sampleid > $@
+	cat $< | python3 $(word 3, $^) $< $(word 2, $^) sampleid > $@
 
 .PRECIOUS: %.hrf.prdmeasures
 %.hrf.prdmeasures : %.hrf.all-itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py $(RT-SCRIPTS)/add_evid_col.py
-	python $(word 3, $^) $< $(word 2, $^) sampleid | python $(word 4, $^) -i docid subject tr > $@
+	python3 $(word 3, $^) $< $(word 2, $^) sampleid | python3 $(word 4, $^) -i docid subject tr > $@
 
 .PRECIOUS: %.hrf.resmeasures
 %.hrf.resmeasures:  %.hrf.all-itemmeasures  $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/add_evid_col.py
-	cat $(word 2,$^) | python $(word 3, $^) -i docid subject tr > $@
+	cat $(word 2,$^) | python3 $(word 3, $^) -i docid subject tr > $@
 
 .PRECIOUS: %.tiled.core.evmeasures
 %.tiled.core.evmeasures: $(FMRI-SCRIPTS)/tile_stimuli.py %.itemmeasures $$(word 1,$$(subst ., ,%)).evmeasures
-	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+	python3 $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
 
 # TO SPEC
 .PRECIOUS: %.fmri-bywrd.prdmeasures
 %.fmri-bywrd.prdmeasures: $(FMRI-SCRIPTS)/tile_stimuli.py %.all-itemmeasures $$(word 1,$$(subst ., ,%)).evmeasures
-	python $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+	python3 $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
 
 # TO SPEC
 .PRECIOUS: %.fmri-bysent.prdmeasures
 %.fmri-bysent.prdmeasures: %.bysent.all-itemmeasures $$(word 1, $$(subst ., , %)).evmeasures \
 $(RT-SCRIPTS)/merge_tables.py
-	cat $< | python $(word 3, $^) $< $(word 2, $^) sentid > $@
+	cat $< | python3 $(word 3, $^) $< $(word 2, $^) sentid > $@
 
 %.bysent.itemmeasures: %.itemmeasures $(FMRI-SCRIPTS)/reducesents.py
-	cat $(word 1, $^) | python $(word 2, $^) > $@
+	cat $(word 1, $^) | python3 $(word 2, $^) > $@
 
 # TO SPEC
 %.fmri-bywrd.resmeasures: $$(word 1,$$(subst ., ,%)).evmeasures
@@ -213,7 +213,7 @@ $(RT-SCRIPTS)/merge_tables.py
 #	ln -sf $(abspath $(word 1,$^)) $@
 
 %.nm1.evmeasures: %.evmeasures $(FMRI-SCRIPTS)/average_nm1.py
-	cat $< | python $(word 2, $^) - > $@
+	cat $< | python3 $(word 2, $^) - > $@
 
 %.corr.txt: %.evmeasures $(FMRI-SCRIPTS)/corrAnalysis.r
 	cat $(word 1, $^) | $(word 2, $^) > $@

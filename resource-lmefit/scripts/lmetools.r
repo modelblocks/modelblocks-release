@@ -722,17 +722,17 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
                              noMainRandomEffect=noMainRandomEffect)
     }
     
-    correlations = getCorrelations(dataset, bform)
-    cat('\n')
-    cat('Correlation of numeric variables in model:\n')
-    print(correlations) 
-    cat('\n\n')
-    sd_vals = getSDs(dataset, bform)
-    cat('Standard deviations of numeric variables in model:\n')
-    for (c in names(sd_vals)) {
-        cat(paste0(c, ': ', sd_vals[[c]], '\n'))
-    }
-    cat('\n')
+#    correlations = getCorrelations(dataset, bform)
+#    cat('\n')
+#    cat('Correlation of numeric variables in model:\n')
+#    print(correlations) 
+#    cat('\n\n')
+#    sd_vals = getSDs(dataset, bform)
+#    cat('Standard deviations of numeric variables in model:\n')
+#    for (c in names(sd_vals)) {
+#        cat(paste0(c, ': ', sd_vals[[c]], '\n'))
+#    }
+#    cat('\n')
 
     smartPrint('Regressing model:')
     smartPrint(deparse(bform))
