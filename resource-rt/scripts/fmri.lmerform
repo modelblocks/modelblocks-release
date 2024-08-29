@@ -1,4 +1,4 @@
-log(L_IFG)
+log(BOLD)
 z.(sentpos) + z.(wlen)
 z.(sentpos) + z.(wlen)
 (1 | sentid:subject)
