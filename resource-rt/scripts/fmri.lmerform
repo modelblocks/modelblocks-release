@@ -1,4 +1,4 @@
 log(BOLD)
 z.(sentpos) + z.(wlen)
 z.(sentpos) + z.(wlen)
-(1 | sentid:subject)
+(1 | sentid2:subject)

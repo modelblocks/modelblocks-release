@@ -171,8 +171,8 @@ naturalstoriesfmri_Lang%.tokmeasures: naturalstories%.tokmeasures
 naturalstoriesfmri_Lang%.itemmeasures: naturalstories%.itemmeasures
 	cp $(word 1, $^) $@
 
-%naturalstoriesfmri_Lang.evmeasures: %naturalstoriesfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py
-	cat $(word 1, $^) | python3 $(word 2, $^) - "bold.*" -p 4 -k LangL.* | python3 $(word 3, $^) - > $@
+%naturalstoriesfmri_Lang.evmeasures: %naturalstoriesfmri.evmeasures $(GENERAL-SCRIPTS)/melt.py $(NATSTORIESFMRI-SCRIPTS)/add_network.py $(FMRI-SCRIPTS)/fmri_generate_evids.py
+	cat $(word 1, $^) | python3 $(word 2, $^) - "bold.*" -p 4 -k LangL.* | python3 $(word 3, $^) - | python3 $(word 4, $^) > $@
 
 # Link fMRI data (melted and filtered to Lang RH only) to NatStor text preprocessing pipeline
 
