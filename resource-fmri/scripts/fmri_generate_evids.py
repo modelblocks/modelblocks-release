@@ -4,9 +4,6 @@ import pandas as pd
 
 if __name__ == "__main__":
 
-    # data_file = sys.argv[1]
-    # data = pd.read_csv(data_file, sep=' ', skipinitialspace=True)
-
     data = pd.read_csv(sys.stdin, sep=' ', skipinitialspace=True)
 
     evids = []
