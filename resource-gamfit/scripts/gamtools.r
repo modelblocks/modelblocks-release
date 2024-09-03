@@ -461,7 +461,7 @@ addEffect <- function(formList, newEffect, groupingfactor=NULL, indicator=NULL, 
     formList$fixed <- update.formStr(formList$fixed, paste('+ s(', newEffect, ', bs="tp", k=6)'))
     # formList$fixed <- update.formStr(formList$fixed, paste('+', newEffect))
     if (!noMainRandomEffect) {
-        formList$by_subject <- update.formStr(formList$by_subject, paste0('s(subject, ', newEffect, ', bs="fs", m=1)'))
+        formList$by_subject <- update.formStr(formList$by_subject, paste0('s(', newEffect, ', subject, bs="fs", m=1)'))
     }
     return(formList)
 }

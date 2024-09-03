@@ -99,6 +99,9 @@ DUNDEE-SCRIPTS := $(RESOURCE-DUNDEE)/scripts
 RESOURCE-PROVO := $(abspath $(MBDIR)/resource-provo)
 PROVO-SCRIPTS := $(RESOURCE-PROVO)/scripts
 
+RESOURCE-GAMFIT := $(abspath $(MBDIR)/resource-gamfit)
+GAMFIT-SCRIPTS := $(RESOURCE-GAMFIT)/scripts
+
 RESOURCE-GECO := $(abspath $(MBDIR)/resource-geco)
 GECO-SCRIPTS := $(RESOURCE-GECO)/scripts
 
@@ -316,6 +319,7 @@ include $(RESOURCE-CONLLSCORER)/Makefile
 include $(RESOURCE-PREDRWHO)/Makefile
 include $(RESOURCE-HF)/Makefile
 include $(RESOURCE-PYTHIAPILE)/Makefile
+include $(RESOURCE-GAMFIT)/Makefile
 endef
 
 ################################################################################
