@@ -1,8 +1,8 @@
 #!/bin/bash
 
-model="$1.rdata";
+model="/fs/project/schuler.77/oh.531/$1.rdata";
 prdmeasures=$2;
 resmeasures=$3;
-../resource-lmefit/scripts/predict_lmer.r $model <(python3 ../resource-rt/scripts/merge_tables.py $prdmeasures $resmeasures evid)
+../resource-gamfit/scripts/predict_gam.r $model <(python3 ../resource-rt/scripts/merge_tables.py $prdmeasures $resmeasures evid)
 
 

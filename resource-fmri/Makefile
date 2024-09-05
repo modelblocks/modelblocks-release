@@ -190,8 +190,8 @@ $(RT-SCRIPTS)/add_evid_col.py
 
 # TO SPEC
 .PRECIOUS: %.fmri-bywrd.prdmeasures
-%.fmri-bywrd.prdmeasures: $(FMRI-SCRIPTS)/tile_stimuli.py %.all-itemmeasures $$(word 1,$$(subst ., ,%)).evmeasures
-	python3 $(word 1, $^) $(word 2, $^) $(word 3, $^) > $@
+%.fmri-bywrd.prdmeasures: $(FMRI-SCRIPTS)/tile_stimuli.py $(FMRI-SCRIPTS)/fmri_generate_evids.py %.all-itemmeasures $$(word 1,$$(subst ., ,%)).evmeasures 
+	python3 $(word 1, $^) $(word 3, $^) $(word 4, $^) | python3 $(word 2, $^) > $@
 
 # TO SPEC
 .PRECIOUS: %.fmri-bysent.prdmeasures
