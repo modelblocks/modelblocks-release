@@ -749,7 +749,7 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         bc_inv_out = getBoxCoxInvBetas(dataset, bform, lambda, outputModel, mixed=mixed) 
         beta_ms = bc_inv_out$beta_ms 
         y_mu = bc_inv_out$y_mu 
-        printBoxCoxInvBetas(beta_ms, lambda, y_mu, sd_vals) 
+        # printBoxCoxInvBetas(beta_ms, lambda, y_mu, sd_vals) 
     } else { 
         beta_ms = fixef(outputModel) 
         y_mu = NULL 
@@ -765,9 +765,10 @@ fitModel <- function(dataset, output, bformfile, fitmode='lme',
         logdepvar = logdepvar,
         lambda = lambda,
         beta_ms = beta_ms,
-        y_mu = y_mu,
-        correlations = correlations,
-        sd_vals = sd_vals
+        y_mu = y_mu
+        # y_mu = y_mu,
+        # correlations = correlations,
+        # sd_vals = sd_vals
     )
     save(fitOutput, file=output)
     return(list(m=outputModel, f=bform, fitmode=fitmode))
