@@ -201,10 +201,10 @@ endef
 #### obtain discourse-aligned space-delimited cued-association graphs
 .PRECIOUS: %.discgraphs
 %.discgraphs:  %.senttrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
-	cat $<  |  sed 's/\^g//g' | python2 $(word 3,$^) -e  >  $@
+	cat $<  |  sed 's/\^g//g' | python3 $(word 3,$^) -e  >  $@
 # not for end-users, just for debugging:
 %.verbose-discgraphs:  %.senttrees  $(GCG-SCRIPTS)/senttrees2discgraphs.d  $(GCG-SCRIPTS)/senttrees2discgraphs.py
-	cat $<  |  sed 's/\^g//g' | python2 $(word 3,$^) -d -e  >  $@
+	cat $<  |  sed 's/\^g//g' | python3 $(word 3,$^) -d -e  >  $@
 
 # #### obtain pdf drawing of discgraph   (neato/dot)
 # %.discgraphs.pdf:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discgraphspdf.py

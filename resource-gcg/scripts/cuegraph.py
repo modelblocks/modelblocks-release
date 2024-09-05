@@ -36,13 +36,13 @@ class CueGraph( dict ):
 
   def rename( G, xNew, xOld ):
     if xOld != xNew:
-      for z,l in G.keys():
+      for z,l in list( G.keys() ):
         if G[z,l] == xOld: G[z,l] = xNew     ## replace old destination with new
         if z == xOld:                        ## replace old source with new
           if (xNew,l) not in G:
             G[xNew,l] = G[xOld,l]
             del G[xOld,l]
-      for z,l in G.keys():
+      for z,l in list( G.keys() ):
         if z == xOld and (xNew,l) in G:
           G.rename( G[xNew,l], G[xOld,l] )
           del G[xOld,l]
