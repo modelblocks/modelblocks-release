@@ -48,6 +48,6 @@ colnames(ae) = c('ae')
 se = err^2
 colnames(se) = c('se')
 # write.table(cbind(y,y_hat,err,ae,se), file=outfile, quote=FALSE, row.names=FALSE)
-# write.table(se, file=stdout(), quote=FALSE, col.names=FALSE, row.names=FALSE)
-write.table(cbind(df,y,y_hat,err,se), file=stdout(), quote=FALSE, col.names=TRUE, row.names=FALSE)
+write.table(se, file=stdout(), quote=FALSE, col.names=FALSE, row.names=FALSE)
+# write.table(cbind(df,y,y_hat,err,se), file=stdout(), quote=FALSE, col.names=TRUE, row.names=FALSE)
 
