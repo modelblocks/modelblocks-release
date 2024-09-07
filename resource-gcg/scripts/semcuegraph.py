@@ -34,6 +34,9 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
 
 
   def getArity( G, cat ):
+    if re.findall( '\{[^{}]*-x[^{}]*\}', cat ):
+      sys.stderr.write( 'WARNING -- category should not have \'-x\' delimiter inside braces: ' + cat + ' -- truncating!\n' )
+      cat = re.sub( '\{([^{}]*)-x[^{}]*\}', '\\1', cat )
     cat = re.sub( '-x.*', '', cat )
     while '{' in cat:
       cat = re.sub('\{[^\{\}]*\}','X',cat)
