@@ -245,8 +245,8 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
       if a == d+'u': return  ## don't add 'u' node
       G.equate( G[d,l], l, a )
     else:
-      sys.stderr.write( 'ERROR: No analysis for annotated unnary expansion ' + sC + ' -> ' + sD + ' at ' + str(id) + '.\n' )
-      print(            'ERROR: No analysis for annotated unnary expansion ' + sC + ' -> ' + sD + ' at ' + str(id) )
+      sys.stderr.write( 'ERROR: No analysis for annotated unary expansion ' + sC + ' -> ' + sD + ' at ' + str(id) + '.\n' )
+      print(            'ERROR: No analysis for annotated unary expansion ' + sC + ' -> ' + sD + ' at ' + str(id) )
       return  ## don't add 'u' node
 
     ## add 'u' node
