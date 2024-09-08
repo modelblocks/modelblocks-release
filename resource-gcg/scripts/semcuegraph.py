@@ -40,6 +40,9 @@ class StoreStateCueGraph( cuegraph.CueGraph ):
     cat = re.sub( '-x.*', '', cat )
     while '{' in cat:
       cat = re.sub('\{[^\{\}]*\}','X',cat)
+      if re.findall('\{[^}]*$',cat) != [] or re.findall('^[^{]*\}',cat) != []:
+        sys.stderr.write( 'ERROR -- category has unmatched braces: ' + cat + '\n' )
+        exit(0)
     return len(re.findall('-[ab]',cat))
 
   ## match nolos back to front in cat and bottom up on store...
