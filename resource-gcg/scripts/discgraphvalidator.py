@@ -20,7 +20,6 @@
 import sys
 import os
 import collections
-import sets
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import discgraph
 

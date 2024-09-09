@@ -20,7 +20,6 @@
 import sys
 import os
 import collections
-import sets
 import copy
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import discgraph
@@ -128,20 +127,20 @@ for line in sys.stdin:
       if xFin not in D.Subs  and  xFin not in [s for _,_,_,s,_ in D.QuantTuples]:
         D.QuantTuples.append( (q,e,r,xFin,n) )
   ## Copy scopes down to final heirs -- NOTE: this is the same as using inheritance in S rules...
-  for x in D.Scopes.keys():
+  for x in list( D.Scopes.keys() ):
     for xFin in D.Heirs.get(x,[]):
       if xFin not in D.Subs  and  xFin not in D.Scopes:
         D.Scopes[ xFin ] = D.Scopes[ x ]
   ## Copy special scope markers (taint, upward) down to final heirs
-  for x in D.Taints.keys():
+  for x in list( D.Taints.keys() ):
     for xFin in D.Heirs.get(x,[]):
       if xFin not in D.Subs  and  xFin not in D.Taints:
         D.Taints[ xFin ] = D.Taints[ x ]
-  for x in D.Upward1.keys():
+  for x in list( D.Upward1.keys() ):
     for xFin in D.Heirs.get(x,[]):
       if xFin not in D.Subs  and  xFin not in D.Upward1:
         D.Upward1[ xFin ] = D.Upward1[ x ]
-  for x in D.Upward2.keys():
+  for x in list( D.Upward2.keys() ):
     for xFin in D.Heirs.get(x,[]):
       if xFin not in D.Subs  and  xFin not in D.Upward2:
         D.Upward2[ xFin ] = D.Upward2[ x ]
@@ -168,19 +167,19 @@ for line in sys.stdin:
   for x in D.Referents:
     if not outscopingInChain(x): ScopeLeaves.append( x )
 
-  L1 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
+  L1 = [ x  for x in sorted((set(D.Referents) | set(D.Subs)) - set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
   if len(L1) > 1:
     print(           '#WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences' )
     sys.stderr.write( 'WARNING: Discourse scope annotations do not converge to single top-level ancestor: ' + ' '.join(L1) + ' -- possibly due to missing anaphora between sentences\n' )
     for xHi in L1:
-      print(           '#    ' + xHi + ' subsumes ' + ' '.join(sorted(sets.Set([ xLo  for xLo in D.Referents  if D.reaches(xLo,xHi) ]))) )
-      sys.stderr.write( '    ' + xHi + ' subsumes ' + ' '.join(sorted(sets.Set([ xLo  for xLo in D.Referents  if D.reaches(xLo,xHi) ]))) + '\n' )
+      print(           '#    ' + xHi + ' subsumes ' + ' '.join(sorted(set([ xLo  for xLo in D.Referents  if D.reaches(xLo,xHi) ]))) )
+      sys.stderr.write( '    ' + xHi + ' subsumes ' + ' '.join(sorted(set([ xLo  for xLo in D.Referents  if D.reaches(xLo,xHi) ]))) + '\n' )
   elif L1 == []:
-    L2 = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
+    L2 = [ x  for x in sorted((set(D.Referents) | set(D.Subs)) - set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
     print(           '#NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + ' '.join(L2) )
     sys.stderr.write( 'NOTE: Discourse contains no scope annotations -- defaulting to legators of explicit quantifiers: ' + ' '.join(L2) + '\n' )
     if L2 == []:
-#      L = [ x  for x in sorted((sets.Set(D.Referents) | sets.Set(D.Subs)) - sets.Set(D.Inhs.keys()))  if not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
+#      L = [ x  for x in sorted((set(D.Referents) | set(D.Subs)) - set(D.Inhs.keys()))  if not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
       print(           '#WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents' )
       sys.stderr.write( 'WARNING: No explicit quantifiers annotated -- instead iterating over all legator referents\n' )
 
@@ -189,7 +188,7 @@ for line in sys.stdin:
 
 
   ## List of original (dominant) refts...
-#  RecencyConnected = sorted( [ ((0 if x not in D.Subs else -1) + (0 if x in ScopeLeaves else -2),x)  for x in D.Referents  if D.ceiling(x) in D.Chains.get(L[0],[]) ], reverse = True )   # | sets.Set([ ceiling(x) for x in Scopes.values() ])
+#  RecencyConnected = sorted( [ ((0 if x not in D.Subs else -1) + (0 if x in ScopeLeaves else -2),x)  for x in D.Referents  if D.ceiling(x) in D.Chains.get(L[0],[]) ], reverse = True )   # | set([ ceiling(x) for x in Scopes.values() ])
   RecencyConnected = [ y  for x in L1  for y in D.Referents  if any([ z in D.Chains.get(x,[]) for z in D.getCeils(y) ]) ]  #D.ceiling(y) in D.Chains.get(x,[]) ]
   if VERBOSE: print( 'RecencyConnected = ' + str(RecencyConnected) )
 
@@ -202,16 +201,16 @@ for line in sys.stdin:
   Complete = []
   while ok:
     ## Try using increasingly coarse sets of top-level scopes, starting with top of annotated scopes (preferred)...
-    L = [ x  for x in sorted(sets.Set(D.Referents) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
+    L = [ x  for x in sorted(set(D.Referents) - set(Complete) - set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for y in OrigScopes.values() ]) and not any([ y in D.Chains.get(x,[])  for y in OrigScopes ]) ]
     if VERBOSE and L != []: print( 'Legators as roots of annotated scope: ' + str(L) )
     ## Back off to explicitly annotated quantifiers (preferred)...
     if L == []:
-      L = [ x  for x in sorted(sets.Set(D.Referents) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in D.Scopes ]) ]
+      L = [ x  for x in sorted(set(D.Referents) - set(Complete) - set(D.Inhs.keys()))  if any([ r in D.Chains.get(x,[])  for q,e,n,r,s in D.QuantTuples ]) and not any([ y in D.Chains.get(x,[])  for y in D.Scopes ]) ]
 
       if VERBOSE and L != []: print( 'Legators as explicit quantifiers: ' + str(L) )
     ## Back off to any legator (dispreferred)...
     if L == []:
-      L = [ x  for x in sorted(sets.Set(D.Referents) - sets.Set(Complete) - sets.Set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for tup in D.PredTuples  for y in tup[1:] ]) and not any([ y in D.Chains.get(x,[])  for y in D.Scopes ]) ]
+      L = [ x  for x in sorted(set(D.Referents) - set(Complete) - set(D.Inhs.keys()))  if any([ y in D.Chains.get(x,[])  for tup in D.PredTuples  for y in tup[1:] ]) and not any([ y in D.Chains.get(x,[])  for y in D.Scopes ]) ]
       if VERBOSE and L != []: print( 'Legators as explicit quantifiers: ' + str(L) )
       if L != []:
         print(           '#WARNING: Insufficient explicitly annotated quantifiers, backing off to full set of legators: ' + str(L) )
@@ -232,7 +231,7 @@ for line in sys.stdin:
   if VERBOSE: print( D.Scopes )
   if VERBOSE: print( 'GRAPH: ' + D.strGraph() )
 
-  for xTarget in sets.Set( D.Scopes.values() ):
+  for xTarget in set( D.Scopes.values() ):
     if not any([ x in D.Scopes  for x in D.Chains.get(xTarget,[]) ]) and not any([ s in D.Chains.get(xTarget,[])  for q,e,r,s,n in D.QuantTuples ]):
       print(           '#WARNING: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!' )
       sys.stderr.write( 'WARNING: Top-scoping referent ' + xTarget + ' has no annotated quantifier, and will not be induced!\n' )
@@ -240,12 +239,12 @@ for line in sys.stdin:
 
   #### IV. ENFORCE NORMAL FORM (QUANTS AND SCOPE PARENTS AT MOST SPECIFIC INHERITANCES...
 
-#  DisjointPreds = sets.Set([ ( D.ceiling(xt[1]), D.ceiling(yt[1]) )  for xt in D.PredTuples  for yt in D.PredTuples  if xt[1] < yt[1] and not D.reachesInChain( xt[1], D.ceiling(yt[1]) ) ])
+#  DisjointPreds = set([ ( D.ceiling(xt[1]), D.ceiling(yt[1]) )  for xt in D.PredTuples  for yt in D.PredTuples  if xt[1] < yt[1] and not D.reachesInChain( xt[1], D.ceiling(yt[1]) ) ])
 #  if len(DisjointPreds) > 0:
 #    print(           '#WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences: ' + str(DisjointPreds) )
 #    sys.stderr.write( 'WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences: ' + str(DisjointPreds) + '\n' )
 
-#  DisjointRefts = sets.Set([ ( D.ceiling(x), D.ceiling(y) )  for xt in D.PredTuples  for x in xt[1:]  for yt in D.PredTuples  for y in yt[1:]  if x < y and not D.reachesInChain( x, D.ceiling(y) ) ])
+#  DisjointRefts = set([ ( D.ceiling(x), D.ceiling(y) )  for xt in D.PredTuples  for x in xt[1:]  for yt in D.PredTuples  for y in yt[1:]  if x < y and not D.reachesInChain( x, D.ceiling(y) ) ])
 #  if len(DisjointRefts) > 0:
 #    print(           '#WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences or unscoped argument of scoped predicate: ' + str(DisjointRefts) )
 #    sys.stderr.write( 'WARNING: Scopal maxima not connected, possibly due to missing anaphora between sentences or unscoped argument of scoped predicate: ' + str(DisjointRefts) + '\n' )
@@ -267,7 +266,7 @@ for line in sys.stdin:
   ## Induce low existential quants when only scope annotated...
 #  for xCh in sorted([x if x in NuscoValues else Nuscos[x] for x in Scopes.keys()] + [x for x in Scopes.values() if x in NuscoValues]):  #sorted([ s for s in NuscoValues if 'r' not in Inhs.get(Inhs.get(s,{}).get('r',''),{}) ]): #Scopes:
 #  ScopeyNuscos = [ x for x in NuscoValues if 'r' not in Inhs.get(Inhs.get(x,{}).get('r',''),{}) and (x in Scopes.keys()+Scopes.values() or Inhs.get(x,{}).get('r','') in Scopes.keys()+Scopes.values()) ]
-#  ScopeyNuscos = [ x for x in D.Referents | sets.Set(D.Inhs.keys()) if (x not in D.Nuscos or x in D.NuscoValues) and 'r' not in D.Inhs.get(D.Inhs.get(x,{}).get('r',''),{}) and (x in D.Scopes.keys()+D.Scopes.values() or D.Inhs.get(x,{}).get('r','') in D.Scopes.keys()+D.Scopes.values()) ]
+#  ScopeyNuscos = [ x for x in D.Referents | set(D.Inhs.keys()) if (x not in D.Nuscos or x in D.NuscoValues) and 'r' not in D.Inhs.get(D.Inhs.get(x,{}).get('r',''),{}) and (x in D.Scopes.keys()+D.Scopes.values() or D.Inhs.get(x,{}).get('r','') in D.Scopes.keys()+D.Scopes.values()) ]
   ScopeyNuscos = D.Scopes.keys()
   if VERBOSE: print( 'ScopeyNuscos = ' + str(ScopeyNuscos) )
   if VERBOSE: print( 'Referents = ' + str(D.Referents) )
@@ -341,14 +340,14 @@ for line in sys.stdin:
           active = True
 
     ## C rule...
-    for var,Structs in Abstractions.items():
+    for var,Structs in list( Abstractions.items() ):
       if len(Structs) > 1:
         if VERBOSE: print( 'applying C to add from A to A: \\' + var + '. ' + lambdaFormat( tuple( ['and'] + Structs ) ) )
         Abstractions[var] = [ tuple( ['and'] + Structs ) ]
         active = True
 
     ## M rule...
-    for var,Structs in Abstractions.items():
+    for var,Structs in list( Abstractions.items() ):
       if len(Structs) == 1 and var not in D.Scopes.values() and var not in D.Inhs and var not in D.DiscInhs:
         if VERBOSE: print( 'applying M to move from A to E: \\' + var + '. ' + lambdaFormat(Structs[0]) )
         Expressions[var] = Structs[0]
@@ -364,7 +363,7 @@ for line in sys.stdin:
         active = True
 
     ## D rule -- discourse anaphora...
-    for src,dst in D.DiscInhs.items():
+    for src,dst in list( D.DiscInhs.items() ):
       if dst in Expressions:
 #        expr = replaceVarName( Expressions[dst], dst, src )
         ## Find expr subsuming antecedent (dst) containing no unbound vars...
@@ -397,7 +396,7 @@ for line in sys.stdin:
         if expr == None: continue
 
         '''
-        EverUnbound = sets.Set()
+        EverUnbound = set()
         AlreadyTriedVars = []
         while len(DstUnbound)>0 and expr!=None:
           var = DstUnbound.pop()
@@ -408,7 +407,7 @@ for line in sys.stdin:
           expr = Expressions.get(var,None)
           if expr == None: break
           findUnboundVars( expr, DstUnbound, [var] )
-          EverUnbound |= sets.Set(DstUnbound)
+          EverUnbound |= set(DstUnbound)
         if expr == None: continue
         '''
 
@@ -445,8 +444,8 @@ for line in sys.stdin:
           active = True
 
     ## I2,I3,I4 rule...
-    for src,lbldst in D.Inhs.items():
-      for lbl,dst in lbldst.items():
+    for src,lbldst in list( D.Inhs.items() ):
+      for lbl,dst in list( lbldst.items() ):
         if dst in Expressions:
           if src in D.Scopes and dst in D.Traces and D.Scopes[src] in D.Scopes and D.Traces[dst] in D.Traces:
             Abstractions[ src ].append( replaceVarName( replaceVarName( replaceVarName( Expressions[dst], dst, src ), D.Traces[dst], D.Scopes[src] ), D.Traces[D.Traces[dst]], D.Scopes[D.Scopes[src]] ) )    ## I4 rule.

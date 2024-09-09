@@ -17,7 +17,7 @@
 ##                                                                           ##
 ###############################################################################
 
-import sys, os, collections, sets
+import sys, os, collections
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'resource-gcg', 'scripts'))
 import discgraph
 
@@ -49,7 +49,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
   def __init__( D, line ):
     discgraph.DiscGraph.__init__( D, line )
     ## List of referents that participate in elementary predications (which does not include the eventuality / elementary predication itself)...
-    D.Participants = sets.Set([ x for pred in D.PredTuples for x in pred[2:] ])
+    D.Participants = set([ x for pred in D.PredTuples for x in pred[2:] ])
     ## List of heirs for each inherited referent...
     D.Legators = collections.defaultdict( list )
     D.Heirs    = collections.defaultdict( list )
@@ -69,18 +69,18 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       L = [ xLeg  for l,xHi in D.Inhs.get( xLo, {} ).items()  if l!='w' and l!='o'  for xLeg in getTopLegators(xHi) ]
       return L if L != [] else [ xLo ]
 #       if D.Inhs.get( xLo, {} ).items() != []  else [ xLo ]
-    D.TopLegators = { xLo : sets.Set( getTopLegators(xLo) )  for xLo in D.Inhs }
+    D.TopLegators = { xLo : set( getTopLegators(xLo) )  for xLo in D.Inhs }
     if VERBOSE: print( 'TopLegators = ' + str(D.TopLegators) )
-    D.TopUnaryLegators = { xLo : sets.Set( getTopUnaryLegators(xLo) )  for xLo in D.Inhs }
+    D.TopUnaryLegators = { xLo : set( getTopUnaryLegators(xLo) )  for xLo in D.Inhs }
     if VERBOSE: print( 'TopUnaryLegators = ' + str(D.TopUnaryLegators) )
 #    D.PredRecency = { }
     ## List of heirs for each participant...
     D.HeirsOfParticipants = [ xLo for xHi in D.Participants for xLo in D.Heirs.get(xHi,[]) ] 
     if VERBOSE: print( 'HeirsOfParticipants = ' + str(D.HeirsOfParticipants) )
     ## Obtain inheritance chain for each reft...
-    D.Chains = { x : sets.Set( D.getChainFromSup(x) + D.getChainFromSub(x) ) for x in D.Referents }
+    D.Chains = { x : set( D.getChainFromSup(x) + D.getChainFromSub(x) ) for x in D.Referents }
     if VERBOSE: print( 'Chains = ' + str(D.Chains) )
-#    Inheritances = { x : sets.Set( getChainFromSup(x) ) for x in Referents }
+#    Inheritances = { x : set( getChainFromSup(x) ) for x in Referents }
     ## Mapping from referent to elementary predications containing it...
 #    D.RefToPredTuples = { xOrig : [ (ptup,xInChain)  for xInChain in D.Chains[xOrig]  for ptup in D.PredTuples  if xInChain in ptup[2:] ]  for xOrig in D.Referents }
     def orderTuplesFromSups( x ):
@@ -99,7 +99,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
         Out += orderTuplesFromSubs( src )
 #        Out += [ (ptup,src) for ptup in D.PredTuples if src in ptup[2:] ]
       return Out
-    D.FullRefToPredTuples = { x : sets.Set( orderTuplesFromSubs(x) + orderTuplesFromSups(x) )  for x in D.Referents }
+    D.FullRefToPredTuples = { x : set( orderTuplesFromSubs(x) + orderTuplesFromSups(x) )  for x in D.Referents }
     D.WeakRefToPredTuples = { x : orderTuplesFromSubs( D.Inhs.get(x,{}).get('r',x) )  for x in D.Referents }
     D.BareRefToPredTuples = { x : [ (ptup,x)  for ptup in D.PredTuples  if x in ptup[2:] ]  for x in D.Referents }
     if VERBOSE: print( 'FullRefToPredTuples = ' + str(D.FullRefToPredTuples) )
@@ -109,11 +109,11 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       return [ ptup  for ptup in D.PredTuples  if x in ptup[1:] ] + [ ptup  for _,xHi in D.Inhs.get(x,{}).items()  for ptup in constrainingTuplesFromSups( xHi ) ]
     def constrainingTuplesFromSubs( x ):
       return [ ptup  for ptup in D.PredTuples  if x in ptup[1:] ] + [ ptup  for xLo in D.Subs.get(x,[])  for ptup in constrainingTuplesFromSubs( xLo ) ]
-    D.ConstrainingTuples = { x : sets.Set( constrainingTuplesFromSups(x) + constrainingTuplesFromSubs(x) )  for x in D.Referents }
+    D.ConstrainingTuples = { x : set( constrainingTuplesFromSups(x) + constrainingTuplesFromSubs(x) )  for x in D.Referents }
     ## Calculate ceilings of scoped refts...
-#    D.AnnotatedCeilings = sets.Set([ y  for y in D.Referents  for x in D.Scopes.keys()  if D.ceiling(x) in D.Chains[y] ]) #D.Chains[D.ceiling(x)]  for x in D.Scopes.keys() ])
+#    D.AnnotatedCeilings = set([ y  for y in D.Referents  for x in D.Scopes.keys()  if D.ceiling(x) in D.Chains[y] ]) #D.Chains[D.ceiling(x)]  for x in D.Scopes.keys() ])
 #    if len(D.AnnotatedCeilings) == 0:
-#      D.AnnotatedCeilings = sets.Set( sorted([ (len(chain),chain)  for x,chain in D.Chains.items()  if x.startswith('000') ])[-1][1] )   # sets.Set(D.Chains['0001s'])
+#      D.AnnotatedCeilings = set( sorted([ (len(chain),chain)  for x,chain in D.Chains.items()  if x.startswith('000') ])[-1][1] )   # set(D.Chains['0001s'])
 #      print(           '#NOTE: Discourse contains no scope annotations -- defining root as longest chain through first sentence: ' + str(sorted(D.AnnotatedCeilings)) )
 #      sys.stderr.write( 'NOTE: Discourse contains no scope annotations -- defining root as longest chain through first sentence: ' + str(sorted(D.AnnotatedCeilings)) + '\n' )
 #    DisjointCeilingPairs = [ (x,y)  for x in D.AnnotatedCeilings  for y in D.AnnotatedCeilings  if x<y and not D.reachesInChain( x, y ) ]
@@ -137,7 +137,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 
   def getCeils( D, xHi ):
 #    print( 'ceil of ' + xHi )
-    return D.getCeils( D.Scopes[xHi] ) if xHi in D.Scopes else sets.Set([ y  for xLo in D.Subs.get(xHi,[])  for y in D.getCeils(xLo) ]) if len(D.Subs.get(xHi,[]))>0 else [ xHi ]
+    return D.getCeils( D.Scopes[xHi] ) if xHi in D.Scopes else set([ y  for xLo in D.Subs.get(xHi,[])  for y in D.getCeils(xLo) ]) if len(D.Subs.get(xHi,[]))>0 else [ xHi ]
 
 
   def ceiling( D, x ):
@@ -425,8 +425,8 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
 #    for x in D.Chains.get( D.Inhs.get(xTarg,{}).get('r',xTarg), D.Chains[xTarg] ):
     for xLo,xHi in D.Scopes.items():
       if xHi == xTarg:
-#        for xLeg in D.TopLegators.get( xLo, sets.Set([xLo]) ) | D.TopLegators.get( D.Inhs.get(xLo,{}).get('r',''), sets.Set([]) ) if isFull else D.TopUnaryLegators.get( xLo, [xLo] ):
-        for xLeg in D.TopLegators.get( xLo, sets.Set([xLo]) ):
+#        for xLeg in D.TopLegators.get( xLo, set([xLo]) ) | D.TopLegators.get( D.Inhs.get(xLo,{}).get('r',''), set([]) ) if isFull else D.TopUnaryLegators.get( xLo, [xLo] ):
+        for xLeg in D.TopLegators.get( xLo, set([xLo]) ):
           l = D.constrainDeepestReft( xLeg, step+1, Connected, xLo ) #D.Inhs.get(xLo,{}).get('r',xLo) )
           if l != []: return l
     ## Second, try all preds...
@@ -456,7 +456,7 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
       '''
       if VERBOSE: print( '  '*step + str(step) + '  l=' + str(l) )
       ## Add recommended scopings...
-      for xLo,xHi in sets.Set(l):
+      for xLo,xHi in set(l):
         ## Bail on fail...
         if xLo == None: return False
         ## Create additional scope in chain to avoid inheriting from wrong heir, unbound variables...
@@ -477,8 +477,8 @@ class InducibleDiscGraph( discgraph.DiscGraph ):
           D.Scopes[ x ] = xHi
 #        D.Scopes[ D.ceiling(xLo) ] = xHi
         ## Update recently connected...
-        Connected.extend( D.Chains.get(xLo,sets.Set([])) | D.Chains.get( D.Inhs.get(xLo,{}).get('r',''), sets.Set([]) ) )
-        if VERBOSE: print( 'Adding to Connected: ' + str(D.Chains.get(xLo,sets.Set([])) | D.Chains.get( D.Inhs.get(xLo,{}).get('r',''), sets.Set([]) ) ) )
+        Connected.extend( D.Chains.get(xLo,set([])) | D.Chains.get( D.Inhs.get(xLo,{}).get('r',''), set([]) ) )
+        if VERBOSE: print( 'Adding to Connected: ' + str(D.Chains.get(xLo,set([])) | D.Chains.get( D.Inhs.get(xLo,{}).get('r',''), set([]) ) ) )
         active = True
       if VERBOSE: D.check()
     return True

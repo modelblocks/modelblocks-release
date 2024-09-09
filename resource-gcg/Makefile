@@ -220,23 +220,23 @@ endef
 
 #### obtain discourse-aligned lambda expressions
 %.discgraphs.formerrors:  %.discgraphs  $(GCG-SCRIPTS)/discgraphvalidator.d  $(GCG-SCRIPTS)/discgraphvalidator.py
-	cat $<  |  python2 $(word 3,$^)  >  $@
+	cat $<  |  python3 $(word 3,$^)  >  $@
 
 #### obtain discourse-aligned lambda expressions
 %.discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
-	cat $<  |  python2 $(word 3,$^)  |  $(word 4,$^)  >  $@
+	cat $<  |  python3 $(word 3,$^)  |  $(word 4,$^)  >  $@
 #### obtain discourse-aligned lambda expressions, debugging stuff
 %.verbose-discexprs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py  bin/indent
-	cat $<  |  python2 $(word 3,$^) -d  |  $(word 4,$^)  >  $@
+	cat $<  |  python3 $(word 3,$^) -d  |  $(word 4,$^)  >  $@
 %.verbose-discexprs.last.discgraphs:  %.verbose-discexprs
 	cat $<  |  grep 'GRAPH:'  |  tail -n1  |  perl -pe 's/ *GRAPH: *//'  >  $@
 # also for debugging
 %.autoinduced.discgraphs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py
-	cat $<  |  python $(word 3,$^) -g  |  grep 'GRAPH:'  |  perl -pe 's/ *GRAPH: *//'  >  $@
+	cat $<  |  python3 $(word 3,$^) -g  |  grep 'GRAPH:'  |  perl -pe 's/ *GRAPH: *//'  >  $@
 
 #### obtain discgraphs after scope induction & assorted normalization, ready to translate to discexprs
 %.autonormed.discgraphs:  %.discgraphs  $(GCG-SCRIPTS)/discgraphs2discexprs.d  $(GCG-SCRIPTS)/discgraphs2discexprs.py
-	cat $<  |  python $(word 3,$^) -n  |  grep 'GRAPH:'  |  perl -pe 's/ *GRAPH: *//'  >  $@
+	cat $<  |  python3 $(word 3,$^) -n  |  grep 'GRAPH:'  |  perl -pe 's/ *GRAPH: *//'  >  $@
 
 #### obtain tree-restricted sentence-aligned space-delimited eventuality (semantic) dependencies
 .PRECIOUS: %.refconts

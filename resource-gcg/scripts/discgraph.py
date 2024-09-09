@@ -17,7 +17,7 @@
 ##                                                                           ##
 ###############################################################################
 
-import sys, collections, sets
+import sys, collections
 
 VERBOSE = False
 for a in sys.argv:
@@ -98,8 +98,8 @@ class DiscGraph:
           D.NuscoValues[xLo] = True
 
 #    ## List of referents that are or participate in elementary predications...
-#    D.Referents = sorted( sets.Set( [ x for pred in D.PredTuples for x in pred[1:] ] + D.Inhs.keys() ) )
-    D.Referents = sorted( sets.Set( D.Referents ) )
+#    D.Referents = sorted( set( [ x for pred in D.PredTuples for x in pred[1:] ] + D.Inhs.keys() ) )
+    D.Referents = sorted( set( D.Referents ) )
 
 
   #### Translate dict representation back into string representation...
@@ -194,7 +194,7 @@ class DiscGraph:
 
   #### Remove redundant nuclear scopes of predicative noun phrases from Subs and Inhs...
   def smite( D ):
-    for xHi,L in D.Subs.items():
+    for xHi,L in list( D.Subs.items() ):
       for xLo in L:
         ## Diagnose as redundant if reft xLo has rin which also has rin...
         if 'r' in D.Inhs.get(D.Inhs.get(xLo,[]).get('r',''),[]):
@@ -235,17 +235,17 @@ class DiscGraph:
   ## Check that no reft has multiple outscopers...
   def getBossesFromSup( D, xLo ):
 #      print( 'now getting sup ' + xLo )
-    L = sets.Set([ xBoss  for xNusco in D.Nuscos.get(xLo,[])  if xNusco in D.Scopes  for xBoss in D.getBossesInChain( D.Scopes[xNusco] ) ])  ## Outscoper of nusco is outscoper of restrictor.
+    L = set([ xBoss  for xNusco in D.Nuscos.get(xLo,[])  if xNusco in D.Scopes  for xBoss in D.getBossesInChain( D.Scopes[xNusco] ) ])  ## Outscoper of nusco is outscoper of restrictor.
     if L != []: return L
     if xLo in D.Scopes: return D.getBossesInChain( D.Scopes[xLo] )
-    return sets.Set( [ y  for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o'  for y in D.getBossesFromSup(xHi) ] )
+    return set( [ y  for l,xHi in D.Inhs.get(xLo,{}).items() if l!='w' and l!='o'  for y in D.getBossesFromSup(xHi) ] )
   def getBossesFromSub( D, xHi ):
 #      print( 'now getting sub ' + xHi )
     if xHi in D.Scopes: return D.getBossesInChain( D.Scopes[xHi] )
-    return sets.Set( [ y  for xLo in D.Subs.get(xHi,[])  for y in D.getBossesFromSub(xLo) ] )
+    return set( [ y  for xLo in D.Subs.get(xHi,[])  for y in D.getBossesFromSub(xLo) ] )
   def getBossesInChain( D, x ):
     out = D.getBossesFromSup(x) | D.getBossesFromSub(x)
-    return out if len(out)>0 else sets.Set( [x] )
+    return out if len(out)>0 else set( [x] )
   '''
 
 
@@ -297,7 +297,7 @@ class DiscGraph:
     def getScopersFromSub( xHi ):
       return ( [ (xHi,D.Scopes[xHi]) ] if xHi in D.Scopes else [] ) + [ x for xLo in D.Subs.get(xHi,[]) for x in getScopersFromSub(xLo) ]
     ## Obtain inheritance chain for each reft...
-    Scopers = { x : sets.Set( getScopersFromSup(x) ) for x in D.Referents }   #+ getScopersFromSub(x)
+    Scopers = { x : set( getScopersFromSup(x) ) for x in D.Referents }   #+ getScopersFromSub(x)
     ## Check for multiple outscopings...
     for x in D.Referents:
       if len( Scopers[x] ) > 1:
@@ -354,12 +354,12 @@ class DiscGraph:
 
   ## Scope ceiling...
 #  def getCeilingFromSup( xLo ):
-#    return getCeilingInChain( Scopes[xLo] ) if xLo in Scopes else sets.Set( [ y  for l,xHi in Inhs.get(xLo,{}).items() if l!='w'  for y in getCeilingFromSup(xHi) ] )
+#    return getCeilingInChain( Scopes[xLo] ) if xLo in Scopes else set( [ y  for l,xHi in Inhs.get(xLo,{}).items() if l!='w'  for y in getCeilingFromSup(xHi) ] )
 #  def getCeilingFromSub( xHi ):
-#    return getCeilingInChain( Scopes[xHi] ) if xHi in Scopes else sets.Set( [ y  for xLo in Subs.get(xHi,[])  for y in getCeilingFromSub(xLo) ] )
+#    return getCeilingInChain( Scopes[xHi] ) if xHi in Scopes else set( [ y  for xLo in Subs.get(xHi,[])  for y in getCeilingFromSub(xLo) ] )
 #  def getCeilingInChain( x ):
 #    out = getCeilingFromSup( x ) | getCeilingFromSub( x )
-#    return out if len(out)>0 else sets.Set( [x] )
+#    return out if len(out)>0 else set( [x] )
 
 
 
