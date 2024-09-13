@@ -43,6 +43,19 @@ def transform_mat_data(mat_file_dir="P01/data_384sentences.mat", save_csv_dir="s
         passage_sentence_count[label] += 1
         sentence_order_in_passage.append(passage_sentence_count[label])
 
+    # load keyPassages, categoryPassages(calculated by mapping labels to keys)
+    keyPassages = [s for s in data['keyPassages'][0]] if len(data['keyPassages'])==1 else [s[0] for s in data['keyPassages']]
+    
+    labelsPassageCategory =  [s for s in data['labelsPassageCategory'][0]] if len(data['labelsPassageCategory'])==1 else [s[0] for s in data['labelsPassageCategory']]
+    keyPassageCategory = [s for s in data['keyPassageCategory'][0]] if len(data['keyPassageCategory'])==1 else [s[0] for s in data['keyPassageCategory']]
+
+    categoryPassages = [str(keyPassageCategory[i-1][0]) for i in labelsPassageCategory]
+
+    # calculate keySentences, categorySentences
+    keySentences = [str(keyPassages[i-1][0]) for i in labelsPassageForEachSentence]
+    categorySentences = [categoryPassages[i-1] for i in labelsPassageForEachSentence]
+
+
     # load rois
     index_languageLH = -1
     index_languageRH = -1
@@ -66,8 +79,11 @@ def transform_mat_data(mat_file_dir="P01/data_384sentences.mat", save_csv_dir="s
             voxel_index[roi] = indexes
     print(f"Done getting voxel indexes...")
 
-    # concat the voxels (the first column being the sentences per se)
-    ave_columns = [np.array(sentences), np.array(sentence_order_in_passage)]
+    # concat the voxels (the first column being the subject, and then the evid, the sentences...)
+    subject_column = [mat_file_dir.split('/')[-2] for _ in sentences]
+    evid_column = ['_'.join([subject, key_sentence, str(order_in_passage)]) for subject, key_sentence, order_in_passage in zip(subject_column,keySentences,sentence_order_in_passage)]
+    
+    ave_columns = [subject_column, evid_column, sentences, sentence_order_in_passage, keySentences, categorySentences]
     for roi in voxel_index.keys():
         ave = voxels[:, voxel_index[roi]].mean(axis=1)
         ave = np.array(ave) if type(ave) is list else ave
@@ -75,7 +91,7 @@ def transform_mat_data(mat_file_dir="P01/data_384sentences.mat", save_csv_dir="s
     matrix = np.column_stack(ave_columns)
 
     # save the sentences and voxels
-    df = pd.DataFrame(matrix,columns=['sentences', 'sentence_order_in_passage'] + list(voxel_index.keys()))
+    df = pd.DataFrame(matrix,columns=['subject', 'evid', 'sentences', 'sentence_order_in_passage', 'keySentences', 'categorySentences'] + list(voxel_index.keys()))
     df.to_csv(save_csv_dir, index=False)
     print(f"processed data saved to: {save_csv_dir}")
 
