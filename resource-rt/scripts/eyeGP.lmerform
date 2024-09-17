@@ -1,4 +1,4 @@
-log(fdurGP)
+fdurGP
 z.(sentpos) + z.(wlen) + z.(wdelta) + z.(prevwasfix)
 z.(sentpos) + z.(wlen) + z.(wdelta) + z.(prevwasfix)
 (1 | sentid)
