@@ -60,6 +60,6 @@ genmodel/pereira-sent%.prdmeasures:  $(PEREIRA-SCRIPTS)/integrate.py  genmodel/p
 
 %/pereira.sentitems:  $(foreach subj,P01 M02 M03 M04 M07 M15,%/pereira$(subj)-243.sentitems)
 	cat $^ > $@
-%/pereira-sent.resmeasures:  $(foreach subj,P01 M02 M03 M04 M07 M15,%/pereira-sent$(subj)-234.resmeasures)
+%/pereira-sent.resmeasures:  $(foreach subj,P01 M02 M03 M04 M07 M15,%/pereira-sent$(subj)-243.resmeasures)
 	cat $^ > $@
 
