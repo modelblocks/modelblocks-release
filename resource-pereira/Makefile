@@ -58,8 +58,8 @@ genmodel/pereira%.sentitems genmodel/pereira-sent%.resmeasures:  $(PEREIRA-SCRIP
 genmodel/pereira-sent%.prdmeasures:  $(PEREIRA-SCRIPTS)/integrate.py  genmodel/pereira-sent$$(basename %).resmeasures  genmodel/pereira%.itemmeasures
 	python3  $<  -C $(word 2,$^)  -S $(word 3,$^)  -O $@
 
-%/pereira.sentitems:  $(foreach subj,M02-243,%/pereira$(subj).sentitems)
+%/pereira.sentitems:  $(foreach subj,P01 M02 M03 M04 M07 M15,%/pereira$(subj)-243.sentitems)
 	cat $^ > $@
-%/pereira-sent.resmeasures:  $(foreach subj,M02-243,%/pereira-sent$(subj).resmeasures)
+%/pereira-sent.resmeasures:  $(foreach subj,P01 M02 M03 M04 M07 M15,%/pereira-sent$(subj)-234.resmeasures)
 	cat $^ > $@
 
