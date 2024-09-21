@@ -52,14 +52,21 @@ genmodel/%.csv:  $(PEREIRA-SCRIPTS)/transform_mat.py  $(PEREIRADIR)/$$(basename 
 
 #genmodel/pereira%.sent.resmeasures:  $(PEREIRA-SCRIPTS)/transform_mat.py  $(PEREIRADIR)/$$(word 1,$$(subst -, ,$$*))/data_$$(word 2,$$(subst -, ,$$*))sentences.mat
 #	python3  $<  -I $(word 2,$^)  -O $@
-genmodel/pereira%.sentitems genmodel/pereira-sent%.resmeasures:  $(PEREIRA-SCRIPTS)/get_sentences_and_voxels.py  $(PEREIRADIR)/$$(word 1,$$(subst -, ,$$*))/data_$$(word 2,$$(subst -, ,$$*))sentences.mat
-	python3  $<  -I $(word 2,$^)  -S genmodel/pereira$*.sentitems  -C genmodel/pereira-sent$*.resmeasures
+genmodel/pereira%.sentitems genmodel/pereira-sent%.evmeasures:  $(PEREIRA-SCRIPTS)/get_sentences_and_voxels.py  $(PEREIRADIR)/$$(word 1,$$(subst -, ,$$*))/data_$$(word 2,$$(subst -, ,$$*))sentences.mat
+	python3  $<  -I $(word 2,$^)  -S genmodel/pereira$*.sentitems  -C genmodel/pereira-sent$*.evmeasures
 
-genmodel/pereira-sent%.prdmeasures:  $(PEREIRA-SCRIPTS)/integrate.py  genmodel/pereira-sent$$(basename %).resmeasures  genmodel/pereira%.itemmeasures
+%pereira.sentitems:  %pereiraP01-243.sentitems
+	cat $^ > $@
+%pereira.itemmeasures: %pereira.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
+	cat $<  |  python3 $(word 2, $^) >  $@
+
+%pereira-sent.evmeasures:  $(foreach subj,P01 M02 M03 M04 M07 M15,%pereira-sent$(subj)-243.evmeasures)
+	cat $^ > $@
+
+genmodel/pereira-sent%.prdmeasures:  $(PEREIRA-SCRIPTS)/integrate.py  genmodel/pereira-sent.evmeasures  genmodel/pereira$$*.all-itemmeasures
 	python3  $<  -C $(word 2,$^)  -S $(word 3,$^)  -O $@
+genmodel/pereira-sent%.resmeasures:  genmodel/pereira-sent.evmeasures  genmodel/pereira$$*.all-itemmeasures
+	cat $< > $@
 
-%/pereira.sentitems:  $(foreach subj,P01 M02 M03 M04 M07 M15,%/pereira$(subj)-243.sentitems)
-	cat $^ > $@
-%/pereira-sent.resmeasures:  $(foreach subj,P01 M02 M03 M04 M07 M15,%/pereira-sent$(subj)-243.resmeasures)
-	cat $^ > $@
+
 
