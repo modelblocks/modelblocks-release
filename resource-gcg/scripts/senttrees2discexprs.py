@@ -259,7 +259,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
       if re.search( '^(\w+)((?:-[ghirv][^ ]*)?) (\w+)((?:-[ghirv][^ ]*)?)-g\\1 \\3\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), Univ, [ '\\xx'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','xx'+t.ch[0].sVar] ] ), 'r', 's' ] ]
       ## Non-local modifier argument: V-rN -> R-aN-rN V-g{R-aN}...
-      elif re.search( '^(\w+-[ab]\w+)((?:-[ghirv][^ ]*)?) (\w+)((?:-[ghirv][^ ]*)?)-g{\\1} \\3\\2\\4$', form ):
+      elif re.search( '^(\w+-[ab]\w+)((?:-[ghirv][^ ]*)?) (\w+(?:-[ab]\w+)*)((?:-[ghirv][^ ]*)?)-g{\\1} \\3\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ),
                                  [ '\\t'+t.ch[0].sVar, '\\u'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['\\p', '\\t', '\\u', 'p', 't'+t.ch[0].sVar, 'u'+t.ch[0].sVar ] ] ), 'r', 's' ] ]
       else:
