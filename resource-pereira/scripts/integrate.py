@@ -24,7 +24,7 @@ def get_sentences_surprisal(csv_filename, measures_filename):
     with open(measures_filename, 'r', encoding='utf-8') as measuresfile:
         next(measuresfile)  # skip headers
         for line in measuresfile:
-            word, surprisal = line.strip().split()
+            word, surprisal = line.strip().split()[:2]
             surprisal_values.append((word,float(surprisal)))
 
     # create surprisal lists for each sentence
@@ -38,7 +38,7 @@ def get_sentences_surprisal(csv_filename, measures_filename):
                 if word == form:
                     surprisal_list.append(surprisal)
             except IndexError:
-                print(f"No surprisal value for word: {word}")
+                print(f"surprisal value mismatch: {word} != {form}")
                 surprisal_list.append(None)
 
         sentences_surprisal.append(surprisal_list)
