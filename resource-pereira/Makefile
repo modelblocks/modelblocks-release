@@ -61,11 +61,10 @@ genmodel/pereira%.sentitems genmodel/pereira-sent%.evmeasures:  $(PEREIRA-SCRIPT
 
 %pereira.sentitems:  %pereiraP01-243.sentitems
 	cat $^ > $@
+
 %pereira.itemmeasures: %pereira.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
 	cat $<  |  python3 $(word 2, $^) >  $@
 
-#%pereira-sent.evmeasures:  $(foreach subj,P01 M02 M03 M04 M07 M15,%pereira-sent$(subj)-243.evmeasures)
-#	cat $^ > $@
 %pereira-sent.evmeasures: $(foreach subj,P01 M02 M03 M04 M07 M15,%pereira-sent$(subj)-243.evmeasures)
 	cat $< >$@
 	for f in $(filter-out $<,$^); do \
@@ -74,8 +73,8 @@ genmodel/pereira%.sentitems genmodel/pereira-sent%.evmeasures:  $(PEREIRA-SCRIPT
 
 genmodel/pereira-sent%.prdmeasures:  $(PEREIRA-SCRIPTS)/integrate.py  genmodel/pereira-sent.evmeasures  genmodel/pereira$$*.all-itemmeasures
 	python3  $<  -C $(word 2,$^)  -S $(word 3,$^)  -O $@
+	python3 $(PEREIRA-SCRIPTS)/convert_csv.py $@
 genmodel/pereira-sent%.resmeasures:  genmodel/pereira-sent.evmeasures  genmodel/pereira$$*.all-itemmeasures
 	cat $< > $@
-
-
+	python3 $(PEREIRA-SCRIPTS)/convert_csv.py $@
 

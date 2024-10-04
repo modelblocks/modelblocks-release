@@ -29,16 +29,18 @@ def get_sentences_surprisal(csv_filename, measures_filename):
 
     # create surprisal lists for each sentence
     sentences_surprisal = []
+    count = 0
     for sentence in sentences:
         words = sentence.split()
         surprisal_list = []
         for word in words:
             try:
-                form, surprisal = surprisal_values.pop(0)
+                form, surprisal = surprisal_values[count%len(surprisal_values)]
+                count += 1
                 if word == form:
                     surprisal_list.append(surprisal)
             except IndexError:
-                print(f"surprisal value mismatch: {word} != {form}")
+                print(f"surprisal value mismatch: {word} != {form}; Linecount:{count}")
                 surprisal_list.append(None)
 
         sentences_surprisal.append(surprisal_list)
