@@ -125,6 +125,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	############################################################
 	python3 $(word 2,$^) $(word 1,$^) facebook/opt-2.7b token  >  $@  2>  $@.log
 
+.PRECIOUS: %.opt-6700m.tokmeasures
 %.opt-6700m.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py
 	############################################################
 	### This target assumes active (hf_env) conda environment ##

@@ -81,7 +81,7 @@ endif
 endif
 
 %/user-brown-directory.txt: | %   
-	echo '/fs/project/lin-dept/corpora/original/english/SPR_brown' > $@
+	echo '/fs/project/lin-dept/corpora/original/english/brown_SPR' > $@
 
 ################################################################################
 #
