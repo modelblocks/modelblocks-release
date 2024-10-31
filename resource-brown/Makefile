@@ -66,7 +66,7 @@ $(info $(call CONFIGWARN,$(CONFIG)))
 DUMMY := $(shell $(MAKE) $(CONFIG) MAKECONFIG=1)
 endif
 BROWNDIR := $(shell cat $(CONFIG))
-ifeq (, $(firstword $(wildcard $(NATSTORMAZEDIR))))
+ifeq (, $(firstword $(wildcard $(BROWNDIR))))
 RESOURCE-NAME := The Brown SPR Corpus
 define RESOURCE-DESCR =
 
