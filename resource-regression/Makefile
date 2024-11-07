@@ -202,6 +202,35 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 
 ################################################################################
 #
+#  Error files from prediction (for signif testing)
+#
+################################################################################
+
+## generic predicted errors file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.errors
+.PRECIOUS: %_predicted.evals
+%_predicted.evals %_prd.resmeasures %_obs.resmeasures:   bin/evaluate-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
+                                                         genmodel/$$(notdir $$(basename $$*)).fitmodel  \
+                                                         genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.prdmeasures \
+                                                         genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures  |  bin  genmodel
+	$^  >  $*_predicted.evals  2>  $*_predicted.evals.log
+
+
+################################################################################
+#
+#  Log-likelihood files for held-out evaluation
+#
+################################################################################
+
+## generic predicted loglik file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.loglik
+.PRECIOUS: %_predicted.loglik
+%_predicted.loglik %_prd.resmeasures %_obs.resmeasures:  bin/get-loglik-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
+                                                         genmodel/$$(notdir $$(basename $$*)).fitmodel  \
+                                                         genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.prdmeasures \
+                                                         genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures  |  bin  genmodel
+	$^  >  $*_predicted.loglik  2>  $*_predicted.loglik.log
+
+################################################################################
+#
 #  Items for significance testing
 #
 ################################################################################    

@@ -90,6 +90,11 @@ $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
 $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) | bin
 	cp $< $@
 
+bin/get-loglik-lmer: $(LMEFIT-SCRIPTS)/get-loglik-lmer.sh $(LMEFIT-SCRIPTS)/lmetools.r \
+$(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
+$(abspath $(RHACKS-SCRIPTS)/regression-utils.R) | bin
+	cp $< $@
+
 bin/signif-lrt: $(LMEFIT-SCRIPTS)/signif-lrt.sh $(LMEFIT-SCRIPTS)/run_lrt.py \
 $(abspath $(RHACKS-SCRIPTS)/mer-utils.R) \
 $(abspath $(RHACKS-SCRIPTS)/regression-utils.R) | bin
