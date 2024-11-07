@@ -21,18 +21,26 @@ def get_sentences_surprisal(csv_filename, measures_filename):
 
     # read surprisals from .itemmeasures
     surprisal_values = []
+    sent_ids = []
+    discids = []
     with open(measures_filename, 'r', encoding='utf-8') as measuresfile:
         next(measuresfile)  # skip headers
         for line in measuresfile:
-            word, surprisal = line.strip().split()[:2]
+            word, surprisal, rolled, word2, sentid, sentpos, discid, discpos, wlen = line.strip().split()
             surprisal_values.append((word,float(surprisal)))
+            sent_ids.append(sentid)
+            discids.append(discid)
 
     # create surprisal lists for each sentence
     sentences_surprisal = []
+    sentences_sentid = []
+    sentences_discid = []
     count = 0
     for sentence in sentences:
         words = sentence.split()
         surprisal_list = []
+        sentences_sentid.append(sent_ids[count%len(sent_ids)])
+        sentences_discid.append(discids[count%len(discids)])
         for word in words:
             try:
                 form, surprisal = surprisal_values[count%len(surprisal_values)]
@@ -46,9 +54,12 @@ def get_sentences_surprisal(csv_filename, measures_filename):
         sentences_surprisal.append(surprisal_list)
 
     # append surprisal values, token numbers to the new .csv file
-    df['ave_surprisal'] = [sum(i) for i in sentences_surprisal]
-    df['total_surprisal'] = [sum(i)/len(i) for i in sentences_surprisal]
-    df['num_tokens'] = [len(sentence.split()) for sentence in sentences]
+    df['totsurp'] = [sum(i) for i in sentences_surprisal]
+    df['avgsurp'] = [sum(i)/len(i) for i in sentences_surprisal]
+    df['lastwordsurp'] = [i[-1] for i in sentences_surprisal]
+    df['sentlen'] = [len(sentence.split()) for sentence in sentences]
+    df['sentid'] = sentences_sentid
+    df['discid'] = sentences_discid
 
     return df
 
