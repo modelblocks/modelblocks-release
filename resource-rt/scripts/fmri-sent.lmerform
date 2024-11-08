@@ -1,4 +1,4 @@
-log(L_IFG)
-z.(num_tokens)
-z.(num_tokens)
-(1 | sentid:subject)
+BOLD
+z.(sentlen) + z.(discid)
+z.(sentlen) + z.(discid)
+(1 | sentid)

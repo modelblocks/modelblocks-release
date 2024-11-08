@@ -91,7 +91,13 @@ def transform_mat_data(mat_file_dir="P01/data_384sentences.mat", save_csv_dir="s
     matrix = np.column_stack(ave_columns)
 
     # save the sentences and voxels
-    df = pd.DataFrame(matrix,columns=['subject', 'evid', 'sentences', 'sentence_order_in_passage', 'keySentences', 'categorySentences'] + list(voxel_index.keys()))
+    # ATTENTION:
+    # the 'sentpos' column marks the position of a sentence in paragraph;
+    # the 'sentid' column marks the index of a sentence in the corpus;
+    # This representation MAY BE CHANGED for potentially better ones.
+    df = pd.DataFrame(matrix,columns=['subject', 'evid', 'sentences', 'sentpos', 'keySentences', 'categorySentences'] + list(voxel_index.keys()))
+    df['BOLD'] = df[[col for col in df if col.startswith('L_')]].apply(pd.to_numeric).sum(axis=1)
+    df['sentid'],df['sentid2'] = df.index,df.index
     df.to_csv(save_csv_dir, index=False)
     print(f"processed data saved to: {save_csv_dir}")
 
