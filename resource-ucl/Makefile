@@ -179,18 +179,37 @@ $(UCLDIR)/eye_movement/stimuli.txt $(TOKENIZERDIR)/ptb_tokenizer.sed | %
 
 %/ucl.lineitems: $$(DEP-UCL) $(CONFIGDIR)/user-ucl-directory.txt \
 $(UCLDIR)/eye_movement/stimuli.txt | %
-	cut -f 2 $(word 3,$^) | tail -n+2 > $@
+	cut -f 2 $(word 2,$^) | tail -n+2 > $@
+
+%ucl.sentitems: $$(DEP-UCL) $(CONFIGDIR)/user-ucl-directory.txt \
+$(UCLDIR)/eye_movement/stimuli.txt $(UCL-SCRIPTS)/add_delim.py | %
+	cut -f 2 $(word 2,$^) | tail -n+2 | python3 $(word 3,$^) > $@
+
+%uclspr.sentitems: $$(DEP-UCL) $(CONFIGDIR)/user-ucl-directory.txt \
+$(UCLDIR)/eye_movement/stimuli.txt $(UCL-SCRIPTS)/add_delim.py | %
+	cut -f 2 $(word 2,$^) | tail -n+2 | python3 $(word 3,$^) > $@
 
 %ucl.linetrees: $(GCG-SCRIPTS)/plugLeaves.py $(RESOURCE-UCL)/srcmodel/ucl.stripped.linetrees %ucl.linetoks
 	python $^ > $@
 
-%/ucl.evmeasures: $$(DEP-UCL) \
+%ucl.evmeasures: $$(DEP-UCL) \
 $(CONFIGDIR)/user-ucl-directory.txt \
 $(UCL-SCRIPTS)/build_ucl_corpus.py \
 $(UCLDIR)/eye_movement/eyetracking.RT.txt \
 $(RT-SCRIPTS)/rename_cols.py \
 $(RT-SCRIPTS)/filter_cols.awk \
-$(DTSR-SCRIPTS)/compute_timestamps_from_RT.py | %
+$(CDR-SCRIPTS)/compute_timestamps_from_RT.py | %
+	cat $(word 3, $^) | python $(word 2,$^) > $@.tmp
+	paste -d' ' $@.tmp <(awk -f $(word 5, $^) -v cols=sentid $@.tmp | python $(word 4, $^) sentid docid) | python $(word 6, $^) > $@
+	rm $@.tmp
+
+%uclspr.evmeasures: $$(DEP-UCL) \
+$(CONFIGDIR)/user-ucl-directory.txt \
+$(UCL-SCRIPTS)/build_ucl_corpus_spr.py \
+$(UCLDIR)/eye_movement/selfpacedreading.RT.txt \
+$(RT-SCRIPTS)/rename_cols.py \
+$(RT-SCRIPTS)/filter_cols.awk \
+$(CDR-SCRIPTS)/compute_timestamps_from_RT.py | %
 	cat $(word 3, $^) | python $(word 2,$^) > $@.tmp
 	paste -d' ' $@.tmp <(awk -f $(word 5, $^) -v cols=sentid $@.tmp | python $(word 4, $^) sentid docid) | python $(word 6, $^) > $@
 	rm $@.tmp
@@ -223,3 +242,9 @@ $(UCL-SCRIPTS)/do_testESN.m $(UCL-SCRIPTS)/pull_surp.py
 	#uses ucl_postags.mat, though they aren't explicitly referenced in the recipe
 	matlab -nosplash -nodesktop -r "run('$(basename $(word 2,$^))');quit;"
 	python $(word 3,$^) > $@
+
+%ucl.itemmeasures: %ucl.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
+	cat $<  |  python3 $(word 2, $^) >  $@
+
+%uclspr.itemmeasures: %uclspr.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
+	cat $<  |  python3 $(word 2, $^) >  $@
