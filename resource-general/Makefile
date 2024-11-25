@@ -250,6 +250,9 @@ UPPARSE-SCRIPTS := $(RESOURCE-UPPARSE)/scripts
 RESOURCE-WORD2VEC := $(abspath $(MBDIR)/resource-word2vec)
 WORD2VEC-SCRIPTS := $(RESOURCE-WORD2VEC)/scripts
 
+RESOURCE-WORDFREQ := $(abspath $(MBDIR)/resource-wordfreq)
+WORDFREQ-SCRIPTS := $(RESOURCE-WORDFREQ)/scripts
+
 RESOURCE-WORDNET := $(abspath $(MBDIR)/resource-wordnet)
 WORDNET-SCRIPTS := $(RESOURCE-WORDNET)/scripts
 
@@ -313,6 +316,7 @@ include $(RESOURCE-UCL)/Makefile
 include $(RESOURCE-UPPARSE)/Makefile
 include $(RESOURCE-WILLIAMS)/Makefile
 include $(RESOURCE-WORD2VEC)/Makefile
+include $(RESOURCE-WORDFREQ)/Makefile
 include $(RESOURCE-WORDNET)/Makefile
 include $(RESOURCE-COREF-CONLL)/Makefile
 include $(RESOURCE-CONLLSCORER)/Makefile
