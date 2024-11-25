@@ -839,7 +839,7 @@ def coref( expr, Ants, ScopedAnts ):
       prefix = [ 'AntecTmp', antvar ]
     for antnum in Ants:
       if antnum not in ScopedAnts and findAnaph( expr[-1], antvar ):
-        return( coref( prefix + exprOut + [ [ 'Some', [ '\\a'+antnum, 'Equal', 'a'+antnum, [ '\\v'+antnum, access( exprOut[-1], antnum ) ] ], [ '\\a'+antnum, '^'] + expr[i+1:] ] ], Ants, ScopedAnts + [ antnum ] ) )
+        return( coref( prefix + exprOut + [ [ 'Some', [ '\\a'+antnum, 'Equal', 'a'+antnum, [ '\\v'+antnum, access( exprOut[-1], antnum ) ] ], [ '\\a'+antnum, expr[-1] ] ] ], Ants, ScopedAnts + [ antnum ] ) )
     return( prefix + exprOut + coref( expr[-1], Ants, ScopedAnts ) )
 
   ## If conjunction...
@@ -849,7 +849,7 @@ def coref( expr, Ants, ScopedAnts ):
       exprOut += [ coref( expr[i] ) ]
       for antnum in Ants:
         if antnum not in ScopedAnts and findAnaph( expr[i+1:], antvar ):
-          return( coref( exprOut[:i+1] + [ [ 'Some', [ '\\a'+antnum, 'Equal', 'a'+antnum, [ '\\v'+antnum, access( exprOut[i], antnum ) ] ], [ '\\a'+antnum, '^'] + expr[i+1:] ] ], Ants, ScopedAnts + [ antnum ] ) )
+          return( coref( exprOut[:i+1] + [ [ 'Some', [ '\\a'+antnum, 'Equal', 'a'+antnum, [ '\\v'+antnum, access( exprOut[i], antnum ) ] ], [ '\\a'+antnum, '^' ] + expr[i+1:] ] ], Ants, ScopedAnts + [ antnum ] ) )
     return( exprOut )
  
   ## If encountering InAntecedentSet keyword, index antecedent number by lambda variable name...
