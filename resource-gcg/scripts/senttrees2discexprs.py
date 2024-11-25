@@ -813,50 +813,56 @@ def percAntAna( expr, Anaphs ):
 
 
 def findAnaph( expr, antvar ):
-  if isinstance( expr, list ) and 'InAnaphorSet' in expr: return expr[ expr.index( 'InAnaphorSet' ) + 1 ] == antvar
+  print( 'Trying ' + str(expr) )
+  if isinstance( expr, list ):
+    if 'InAnaphorSet' in expr: return expr[ expr.index( 'InAnaphorSet' ) + 1 ] == antvar
 #  if isinstance( expr, str ): return expr == antvar
-  for subexpr in expr:
-    if findAnaph( subexpr, antvar ): return True
+    for subexpr in expr:
+      if findAnaph( subexpr, antvar ): return True
   return False
 
 
+def corefScoper( ant, expr, Ants, ScopedAnts ):
+  for antnum in Ants:
+    if antnum not in ScopedAnts and findAnaph( expr, antnum ):
+      return( corefScoper( ant, [ [ 'Some', [ '\\a'+antnum, 'Equal', 'a'+antnum, [ '\\v'+antnum, access( ant, antnum ) ] ], [ '\\a'+antnum, expr ] ] ], Ants, ScopedAnts + [ antnum ] ) )
+  return( coref( expr, Ants, ScopedAnts ) )
+
+
 def coref( expr, Ants, ScopedAnts ):
+  print( 'Now examining ' + str(expr) )
 
   ## If lambdas, copy over...
   if isinstance( expr, list ) and '\\' == expr[0][0]:
     return( [ expr[0] ] + coref( expr[1:], Ants, ScopedAnts ) )
 
   ## If encountering quantifier...
-  if isinstance( expr[-2], list ) and len(expr) > 2 and expr[-2][0][0] == '\\':
+  if isinstance( expr, list ) and len(expr) > 2 and isinstance( expr[-2], list ) and len(expr[-2]) > 2 and expr[-2][0][0] == '\\':
     lambdavar = expr[-2][0][1:]
     exprOut = expr[:-2] + [ coref( expr[-2], Ants, ScopedAnts ) ]
-    prefix = ''
+    prefix = []
     ## If quantifier variable is indexed lambda variable, index expression by antecedent number...
     if lambdavar in Ants:
       antvar = Ants[ lambdavar ]
       Ants[ antvar ] = True
       del Ants[ lambdavar ]
       prefix = [ 'AntecTmp', antvar ]
-    for antnum in Ants:
-      if antnum not in ScopedAnts and findAnaph( expr[-1], antvar ):
-        return( coref( prefix + exprOut + [ [ 'Some', [ '\\a'+antnum, 'Equal', 'a'+antnum, [ '\\v'+antnum, access( exprOut[-1], antnum ) ] ], [ '\\a'+antnum, expr[-1] ] ] ], Ants, ScopedAnts + [ antnum ] ) )
-    return( prefix + exprOut + coref( expr[-1], Ants, ScopedAnts ) )
+    return( prefix + exprOut + corefScoper( exprOut[-1], expr[-1], Ants, ScopedAnts ) )
 
   ## If conjunction...
-  if isinstance( expr, list ) and '^' == expr[0]:
+  if isinstance( expr, list ) and len(expr) > 0 and '^' == expr[0]:
     exprOut = [ ]
     for i in range( len( expr ) ):
-      exprOut += [ coref( expr[i] ) ]
-      for antnum in Ants:
-        if antnum not in ScopedAnts and findAnaph( expr[i+1:], antvar ):
-          return( coref( exprOut[:i+1] + [ [ 'Some', [ '\\a'+antnum, 'Equal', 'a'+antnum, [ '\\v'+antnum, access( exprOut[i], antnum ) ] ], [ '\\a'+antnum, '^' ] + expr[i+1:] ] ], Ants, ScopedAnts + [ antnum ] ) )
+      exprOut += [ coref( expr[i], Ants, ScopedAnts ) ]
+      if any([ antnum not in ScopedAnts and findAnaph( expr[i+1:], antnum ) for antnum in Ants ]):
+        return( exprOut[:i+1] + corefScoper( exprOut[i], [ '^' ] + expr[i+1:], Ants, ScopedAnts ) )
     return( exprOut )
  
   ## If encountering InAntecedentSet keyword, index antecedent number by lambda variable name...
   if 'InAntecedentSet' in expr:
     i = expr.index( 'InAntecedentSet' )
     Ants[ expr[ i + 2 ] ] = expr[ i + 1 ]
-    return( expr[:i] + 'True' + expr[i+2:] )
+    return( expr[:i] + [ 'True' ] + expr[i+2:] )
 
 #  ## If encountering InAnaphorSet keyword, replace with antecedent variable...
 #  if 'InAnaphorSet' in expr:
@@ -1030,7 +1036,8 @@ while True:
   if VERBOSE:  print( 'Anaphs', Anaphs )
 #  percAntAna( fullExpr, Anaphs )
   Anaphs = { }
-  coref( fullExpr, Anaphs )
+  ScopedAnts = [ ]
+  coref( fullExpr, Anaphs, ScopedAnts )
   if VERBOSE:  print( prettyForm(fullExpr) )
 
   if VERBOSE:  print( '----- simplify -----' )
