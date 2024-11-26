@@ -621,7 +621,7 @@ def replace( expr, old, new ):
 ########################################
 
 def betaReduce( expr ):
-  if VERBOSE: print( 'reducing:', expr )
+  if VERBOSE: print( 'reducing:', prettyForm(expr) )
   ## If string, skip...
   if isinstance(expr,str):
     return
@@ -690,6 +690,7 @@ def simplify( expr ):
 #      simplify( expr )
 
     ## Eliminate existentials with conjunctions with equality...
+    print( prettyForm(expr) )
     if expr[0]=='Some' and expr[2][1]=='Equal':
       newVar = expr[2][3] if expr[2][3] != expr[2][0][1:] else expr[2][2]
       if VERBOSE:  print( 'pruningA replacing', expr[1][0][1:], 'with', newVar, 'in', prettyForm(expr) )
@@ -708,8 +709,9 @@ def simplify( expr ):
       if VERBOSE:  print( 'pruningD replacing', expr[3][0][1:], 'with', expr[3][3][2], 'in', prettyForm(expr) )
       expr[:] = [ expr[0], '^', replace( expr[2][1:], expr[2][0][1:], expr[3][3][2] ), replace( expr[3][2], expr[3][0][1:], expr[3][3][2] ) ]
       if VERBOSE:  print( '    yields', prettyForm(expr) )
-  except:
+  except ValueError:  # Exception as e:
     print( 'ERROR: unreduced expr (had set-valued variable):', prettyForm(expr) )
+    print( e )
     exit( 0 )
 
   ## Remove unaries...
@@ -741,7 +743,7 @@ def simplify( expr ):
 #
 ########################################
 
-'''
+#'''
 def percAntAna( expr, Anaphs ):
 
   Anas = [ ]
@@ -808,11 +810,11 @@ def percAntAna( expr, Anaphs ):
   if VERBOSE: print( 'I made this:', expr )
 
   return( Ants, Anas, Vars )
-'''
+#'''
 
 
 def findAnaph( expr, antvar ):
-  print( 'Trying ' + prettyForm(expr) + ' ' + antvar )
+#  print( 'findAnaph ' + prettyForm(expr) + ' ' + antvar )
   if isinstance( expr, list ):
     if 'InAnaphorSet' in expr: return expr[ expr.index( 'InAnaphorSet' ) + 1 ] == antvar
 #  if isinstance( expr, str ): return expr == antvar
@@ -825,13 +827,13 @@ def corefScoper( ant, expr, Ants, ScopedAnts ):
 #  print( 'corefScoper ' + str(Ants) + ' ' + str(ScopedAnts) )
   for antnum in Ants:
     if antnum not in ScopedAnts and findAnaph( expr, antnum ):
-      print( '  found ' + antnum )
+#      print( '  found ' + antnum )
       return( [ 'Some', [ '\\a'+antnum, 'Equal', 'a'+antnum, [ '\\v'+antnum, access( ant, antnum ) ] ], [ '\\a'+antnum, corefScoper( ant, expr, Ants, ScopedAnts + [ antnum ] ) ] ] )
   return( coref( expr, Ants, ScopedAnts ) )
 
 
 def coref( expr, Ants, ScopedAnts ):
-  print( 'Now examining ' + prettyForm(expr) )
+#  print( 'coref ' + prettyForm(expr) )
 
   ## If lambdas, copy over...
   if isinstance( expr, list ) and '\\' == expr[0][0]:
@@ -848,16 +850,18 @@ def coref( expr, Ants, ScopedAnts ):
       Ants[ antvar ] = True
       del Ants[ lambdavar ]
       prefix = [ 'AntecTmp', antvar ]
-    print( 'replacing ' + expr[-2][0][1:] + ' ' + expr[-1][0][1:] )
+#    print( 'replacing ' + expr[-2][0][1:] + ' ' + expr[-1][0][1:] )
+#    print( 'building from ' + prettyForm(exprOut) )
     return( prefix + exprOut + [ [ expr[-1][0], corefScoper( replace( exprOut[-1][1:], expr[-2][0][1:], expr[-1][0][1:] ), expr[-1][1:], Ants, ScopedAnts ) ] ] )
 
   ## If conjunction...
   if isinstance( expr, list ) and len(expr) > 0 and '^' == expr[0]:
+    print( 'thinking conjunction ' + prettyForm(expr) )
     exprOut = [ ]
     for i in range( len( expr ) ):
       exprOut += [ coref( expr[i], Ants, ScopedAnts ) ]
       if any([ antnum not in ScopedAnts and findAnaph( expr[i+1:], antnum ) for antnum in Ants ]):
-        return( exprOut[:i+1] + [ corefScoper( exprOut[i], [ '^' ] + expr[i+1:], Ants, ScopedAnts ) ] )
+        return( exprOut[:i+1] + [ corefScoper( exprOut[i], ( ( [ '^' ] + expr[i+1:] ) if len(expr)>i+2 else expr[i+1] ), Ants, ScopedAnts ) ] )
     return( exprOut )
  
   ## If encountering InAntecedentSet keyword, index antecedent number by lambda variable name...
@@ -871,7 +875,7 @@ def coref( expr, Ants, ScopedAnts ):
 #    i = expr.index( 'InAnaphorSet' )
 #    return( expr[:i] + 'a' + expr[i+1] + expr[i+2:] )
 
-  print( 'NOPE: ' + prettyForm(expr) )
+#  print( 'NOPE: ' + prettyForm(expr) )
 
   ## If other predicate...
   return( expr )
@@ -931,6 +935,36 @@ def checkUnboundVars( expr, Bound=[] ):
   else:
     for subexpr in expr:
       checkUnboundVars( subexpr, Bound )
+
+
+########################################
+#
+#  II.F. Check well-formed...
+#
+########################################
+
+def isWellFormedProp( expr ):
+  ## Quantifier...
+  if isinstance( expr, list ) and len(expr) > 2 and isinstance( expr[0], str ) and expr[0][0] != '\\' and isinstance( expr[1], list ) and len(expr[1]) > 0 and expr[1][0][0]=='\\' and isinstance( expr[2], list ) and len(expr[2]) > 0 and expr[2][0][0]=='\\' and isWellFormedSet( expr[1] ) and isWellFormedSet( expr[2] ):  return True
+  ## Conjunction...
+  if len(expr) > 0 and expr[0] == '^' and all([ isWellFormedProp(subexpr) for subexpr in expr[1:] ]):  return True
+  ## Predicate...
+  if isinstance( expr, list ) and len(expr) > 0 and expr[0][0] != '\\' and all([ isWellFormedEntity(subexpr) for subexpr in expr ]):  return True
+  print( 'Ill-formed proposition: ' + prettyForm(expr) )
+  return False
+
+def isWellFormedEntity( expr ):
+  ## Atom...
+  if isinstance( expr, str ) and len(expr) > 0 and expr[0] != '\\':  return True
+  ## Intension...
+  if isinstance( expr, list) and len(expr) > 1 and expr[0] == 'Intension' and isWellFormedProp( expr[1] ):  return True
+  print( 'Ill-formed entity: ' + prettyForm(expr) )
+  return False
+
+def isWellFormedSet( expr ):
+  if isinstance( expr, list ) and len(expr) > 1 and isinstance( expr[0], str ) and len(expr[0]) > 0 and expr[0][0] == '\\' and isWellFormedProp( expr[1:] ):  return True
+  print( 'Ill-formed set: ' + prettyForm(expr) )
+  return False
 
 
 ################################################################################
@@ -1026,10 +1060,14 @@ while True:
   if VERBOSE:  print( '----- unpack -----' )
   fullExpr = [ unpack(shortExpr), Univ, Univ ]
   if VERBOSE:  print( prettyForm(fullExpr) )
+  print( nArticle, 'UNPACK:', prettyForm(fullExpr) )
 
   if VERBOSE:  print( '----- beta reduce -----' )
   betaReduce( fullExpr )
   if VERBOSE:  print( prettyForm(fullExpr) )
+  print( nArticle, 'BETARED:', prettyForm(fullExpr) )
+
+  isWellFormedProp( fullExpr )
 
   if VERBOSE:  print( '----- simplify -----' )
   simplify( fullExpr )
@@ -1043,6 +1081,7 @@ while True:
   ScopedAnts = [ ]
   fullExpr = coref( fullExpr, Anaphs, ScopedAnts )
   if VERBOSE:  print( prettyForm(fullExpr) )
+  print( nArticle, 'COREFD:', prettyForm(fullExpr) )
 
   if VERBOSE:  print( '----- simplify -----' )
   simplify( fullExpr )
