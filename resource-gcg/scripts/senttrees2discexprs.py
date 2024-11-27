@@ -479,13 +479,17 @@ def unpack( expr ):
   elif re.search( '@[AN]NSUP-aD-b{N-aD}:', expr ):
     return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'f', 'q', 'r', [Equal,'x'+sVar] ],
                                                                      [ 'None', [ '\\y'+sVar, 'f', 'q', 'r', [Equal,'y'+sVar] ],
-                                                                               [ '\\y'+sVar, 'More', ['\\z',expr[1:],[QuantEq,'y'+sVar],[Equal,'z'],Univ],
-                                                                                                     ['\\z',expr[1:],[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
+                                                                               [ '\\y'+sVar, 'More', ['\\z',expr[1:],'y'+sVar,'z'],
+                                                                                                     ['\\z',expr[1:],'x'+sVar,'z'] ] ] ], 's' ] )
+#                                                                               [ '\\y'+sVar, 'More', ['\\z',expr[1:],[QuantEq,'y'+sVar],[Equal,'z'],Univ],
+#                                                                                                     ['\\z',expr[1:],[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
   elif re.search( '@[AN]NSUP-aD-bO:', expr ):
     return( [ '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'q', 'r', [Equal,'x'+sVar] ],
                                                               [ 'None', [ '\\y'+sVar, 'f', 'q', 'r', [Equal,'y'+sVar] ],
-                                                                        [ '\\y'+sVar, 'More', ['\\z',expr[1:],[QuantEq,'y'+sVar],[Equal,'z'],Univ],
-                                                                                              ['\\z',expr[1:],[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
+                                                                        [ '\\y'+sVar, 'More', ['\\z',expr[1:],'y'+sVar,'z'],
+                                                                                              ['\\z',expr[1:],'x'+sVar,'z'] ] ] ], 's' ] )
+#                                                                        [ '\\y'+sVar, 'More', ['\\z',expr[1:],[QuantEq,'y'+sVar],[Equal,'z'],Univ],
+#                                                                                              ['\\z',expr[1:],[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
   ## Pronoun...
   elif re.search( '^@NNGEN\w*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Gen', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   elif re.search( '^@[DN]\w*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
