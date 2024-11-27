@@ -261,7 +261,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
       ## Non-local modifier argument: V-rN -> R-aN-rN V-g{R-aN}...
       elif re.search( '^(\w+-[ab]\w+)((?:-[ghirv][^ ]*)?) (\w+(?:-[ab]\w+)*)((?:-[ghirv][^ ]*)?)-g{\\1} \\3\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ),
-                                 [ '\\t'+t.ch[0].sVar, '\\u'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['\\p', '\\t', '\\u', 'p', 't'+t.ch[0].sVar, 'u'+t.ch[0].sVar ] ] ), 'r', 's' ] ]
+                                 [ '\\t'+t.ch[0].sVar, '\\u'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['\\p', '\\t', '\\u', 'p', 't'+t.ch[0].sVar, 'u'+t.ch[0].sVar ] ] ), 'r', 's' ],
+                                 Univ, Univ ]
       else:
         sys.stdout.write( 'WARNING: Bad G rule: ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
 #    elif '-lG' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ] ) ]
@@ -690,7 +691,7 @@ def simplify( expr ):
 #      simplify( expr )
 
     ## Eliminate existentials with conjunctions with equality...
-    print( prettyForm(expr) )
+#    print( prettyForm(expr) )
     if expr[0]=='Some' and expr[2][1]=='Equal':
       newVar = expr[2][3] if expr[2][3] != expr[2][0][1:] else expr[2][2]
       if VERBOSE:  print( 'pruningA replacing', expr[1][0][1:], 'with', newVar, 'in', prettyForm(expr) )
@@ -856,7 +857,7 @@ def coref( expr, Ants, ScopedAnts ):
 
   ## If conjunction...
   if isinstance( expr, list ) and len(expr) > 0 and '^' == expr[0]:
-    print( 'thinking conjunction ' + prettyForm(expr) )
+#    print( 'thinking conjunction ' + prettyForm(expr) )
     exprOut = [ ]
     for i in range( len( expr ) ):
       exprOut += [ coref( expr[i], Ants, ScopedAnts ) ]
@@ -944,10 +945,13 @@ def checkUnboundVars( expr, Bound=[] ):
 ########################################
 
 def isWellFormedProp( expr ):
+  ## Conjunction...
+  if isinstance( expr, list ) and len(expr) > 0 and expr[0] == '^':
+    if all([ isWellFormedProp(subexpr) for subexpr in expr[1:] ]):  return True
+    print( 'Ill-formed proposition: ' + prettyForm(expr) )
+    return False
   ## Quantifier...
   if isinstance( expr, list ) and len(expr) > 2 and isinstance( expr[0], str ) and expr[0][0] != '\\' and isinstance( expr[1], list ) and len(expr[1]) > 0 and expr[1][0][0]=='\\' and isinstance( expr[2], list ) and len(expr[2]) > 0 and expr[2][0][0]=='\\' and isWellFormedSet( expr[1] ) and isWellFormedSet( expr[2] ):  return True
-  ## Conjunction...
-  if len(expr) > 0 and expr[0] == '^' and all([ isWellFormedProp(subexpr) for subexpr in expr[1:] ]):  return True
   ## Predicate...
   if isinstance( expr, list ) and len(expr) > 0 and expr[0][0] != '\\' and all([ isWellFormedEntity(subexpr) for subexpr in expr ]):  return True
   print( 'Ill-formed proposition: ' + prettyForm(expr) )
@@ -1067,28 +1071,32 @@ while True:
   if VERBOSE:  print( prettyForm(fullExpr) )
   print( nArticle, 'BETARED:', prettyForm(fullExpr) )
 
-  isWellFormedProp( fullExpr )
+  print( nArticle, 'FIRST: ', end='' )
+  bWell = isWellFormedProp( fullExpr )
+  print()
+  print( nArticle, 'WELL-FORMED:', bWell )
+  if bWell:
 
-  if VERBOSE:  print( '----- simplify -----' )
-  simplify( fullExpr )
-  if VERBOSE:  print( prettyForm(fullExpr) )
-  print( nArticle, 'PRE-LOGIC:', prettyForm(fullExpr) )
-
-  if VERBOSE:  print( '----- percolate -----' )
-  if VERBOSE:  print( 'Anaphs', Anaphs )
-#  percAntAna( fullExpr, Anaphs )
-  Anaphs = { }
-  ScopedAnts = [ ]
-  fullExpr = coref( fullExpr, Anaphs, ScopedAnts )
-  if VERBOSE:  print( prettyForm(fullExpr) )
-  print( nArticle, 'COREFD:', prettyForm(fullExpr) )
-
-  if VERBOSE:  print( '----- simplify -----' )
-  simplify( fullExpr )
-  print( nArticle, 'LOGIC:', prettyForm(fullExpr) )
-
-  checkUnboundVars( fullExpr )
-
+    if VERBOSE:  print( '----- simplify -----' )
+    simplify( fullExpr )
+    if VERBOSE:  print( prettyForm(fullExpr) )
+    print( nArticle, 'PRE-LOGIC:', prettyForm(fullExpr) )
+  
+    if VERBOSE:  print( '----- percolate -----' )
+    if VERBOSE:  print( 'Anaphs', Anaphs )
+#    percAntAna( fullExpr, Anaphs )
+    Anaphs = { }
+    ScopedAnts = [ ]
+    fullExpr = coref( fullExpr, Anaphs, ScopedAnts )
+    if VERBOSE:  print( prettyForm(fullExpr) )
+    print( nArticle, 'COREFD:', prettyForm(fullExpr) )
+  
+    if VERBOSE:  print( '----- simplify -----' )
+    simplify( fullExpr )
+    print( nArticle, 'LOGIC:', prettyForm(fullExpr) )
+  
+    checkUnboundVars( fullExpr )
+  
   if '!ARTICLE' not in line:
     break
 
