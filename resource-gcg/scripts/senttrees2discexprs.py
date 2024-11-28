@@ -279,11 +279,11 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
       ## Zero-ary (complete) non-local with modifier: N -> N-h{A-aN} A-aN...
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ab]\w+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),
-                                 [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'r', 's' ] ]
+                                 [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'r', 's' ], Univ, Univ ]
       ## Unary non-local with modifier: B-aN -> B-aN-h{A-aN} A-aN...
       elif re.search( '^(\w+-[ab]\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ab]\w+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),
-                                        [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'q', 'r', 's' ] ]
+                                        [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'q', 'r', 's' ], Univ, Univ ]
       ## Zero-ary (complete) non-local containing zero-ary (complete) non-local: N -> N-h{C-rN} C-rN...
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ghirv]\w+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
@@ -494,38 +494,38 @@ def unpack( expr ):
   elif re.search( '^@NNGEN\w*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Gen', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   elif re.search( '^@[DN]\w*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   ## Two-argument noun using possessive as possessor e.g. NNASSOC*-aD...
-  elif re.search( '^@NNASSOC\w*-[ab]\w*(-[lx].*)?:', expr ):
+  elif re.search( '^@NNASSOC\w*-[ab]\w*(-[stuwxyz].*)?:', expr ):
     return( [        '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'q', Univ, [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar,'z'+sVar ], Univ ], [ 'Assoc', 'x'+sVar, 'z'+sVar ] ] ], ['r','x'+sVar] ], 's' ] )
   ## Two-argument noun using possessive as argument e.g. NNREL*-aD...
-  elif re.search( '^@NNREL\w*-[ab]\w*(-[lx].*)?:', expr ):
+  elif re.search( '^@NNREL\w*-[ab]\w*(-[stuwxyz].*)?:', expr ):
     return( [        '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'q', Univ, [ '\\z'+sVar, 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar,'z'+sVar ], Univ ] ], ['r','x'+sVar] ], 's' ] )
   ## Two-argument noun e.g. N-aD-bO --- NOTE: middle (determiner) argument 'q'/'y' gets ignored!...
-  elif re.search( '^@N\w*-[ab]\w*-[ab]\w*(-[lx].*)?:', expr ):
+  elif re.search( '^@N\w*-[ab]\w*-[ab]\w*(-[stuwxyz].*)?:', expr ):
     return( [ '\\p', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'p', Univ, [ '\\z'+sVar, 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar,'z'+sVar ], Univ ] ], ['r','x'+sVar] ], 's' ] )
   ## One-argument noun e.g. N-aD with generic force --- NOTE: middle (determiner) argument 'q'/'y' gets ignored...
-  elif re.search( '^@NNGEN\w*-[ab]\w*(-[lx].*)?:', expr ):
+  elif re.search( '^@NNGEN\w*-[ab]\w*(-[stuwxyz].*)?:', expr ):
     return( [        '\\q', '\\r', '\\s', 'Gen',  [ '\\x'+sVar, '^', [                          'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar          ], Univ   ], ['r','x'+sVar] ], 's' ] )
   ## One-argument noun with determiner argument interpreted as possessive e.g. N-aD...
   elif re.search( '@\w+POSS-[ab]\w+:', expr ):
     return( [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\z'+sVar, '^', [      'Some', [ '\\e'+sVar, expr[1:], 'e'+sVar, 'z'+sVar        ], Univ   ], [ '^', [ 'r','z'+sVar], ['Have','x','z'+sVar] ] ], 's' ] ] )
   ## One-argument noun e.g. N-aD --- NOTE: middle (determiner) argument 'q'/'y' gets ignored...
-  elif re.search( '^@N\w*-[ab]\w*(-[lx].*)?:', expr ):
+  elif re.search( '^@N\w*-[ab]\w*(-[stuwxyz].*)?:', expr ):
     return( [        '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [                          'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar          ], Univ   ], ['r','x'+sVar] ], 's' ] )
 #  elif expr.split(':')[0] == '@N-aD':  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@A-aN-b{F-gN}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\zz', 'q', Univ, [Equal,'zz'] ],
                                                                                                [ '\\zz', 'f', [QuantEq,'zz'], 'r', 's' ] ] )
   ## Sentential subject e.g. A-a{V-iN}:clear or bare relative: N-b{V-gN}:what
-  elif re.search( '^@\w+-[ab]\{\w+-[abghirv]\w+\}(-[lx].*)?:', expr ):  return( [ '\\f', '\\r', '\\s', 'Gen', [ '\\z', '^', [ 'f', [QuantEq,'z'], Univ, Univ ], ['r','z'] ], 's' ] )
+  elif re.search( '^@\w+-[ab]\{\w+-[abghirv]\w+\}(-[stuwxyz].*)?:', expr ):  return( [ '\\f', '\\r', '\\s', 'Gen', [ '\\z', '^', [ 'f', [QuantEq,'z'], Univ, Univ ], ['r','z'] ], 's' ] )
   ## Comparatives: A-aN-b{V-g{V-aN}}...
 #  elif expr.split(':')[0] == '@Acomp-aN-b{V-g{V-aN}}':
-  elif re.search( '^@\w+-[ab]\w+-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\}(-[lx].*)?:', expr ):
+  elif re.search( '^@\w+-[ab]\w+-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\}(-[stuwxyz].*)?:', expr ):
     return( [ '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'f', [ '\\p', '\\t', '\\u', 'p', Univ, [ '\\y'+sVar, '^', ['u','y'+sVar], [ 'More', ['\\z'+sVar,'Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','e','x'+sVar,'z'+sVar]],'u'],
                                                                                                                                                        ['\\z'+sVar,'Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','e','y'+sVar,'z'+sVar]],'u'] ] ] ], 'r', 's' ] ] )
   ## Bare relative: N-b{V-g{R-aN}}...
-  elif re.search( '^@\w+-[ab]\{\w+-[ghirv]\{\w+-[ab]\w+\}\}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\{\w+-[ghirv]\{\w+-[ab]\w+\}\}(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\f', '\\r', '\\s', 'f', [ '\\q', '\\t', '\\u', 'All', Univ, [ '\\x'+sVar, 'q', Univ, [ '\\y'+sVar, expr[1:], 'x'+sVar, 'y'+sVar ] ] ], 'r', 's' ] )
   ## Bare relative: N-b{V-gN}-b{N-aD}...
-  elif re.search( '^@\w+-[ab]\{\w+-[ghirv]\w+\}-[ab]\{\w+-[ab]\w+\}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\{\w+-[ghirv]\w+\}-[ab]\{\w+-[ab]\w+\}(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\f', '\\g', '\\r', '\\s', 'All', [ '\\z'+sVar, '^', [ '^', [ 'f', 'Some', [Equal,'z'+sVar], Univ ], [ 'g', [QuantEq,'z'+sVar], Univ, Univ ] ], ['r','z'+sVar] ],
                                                  's' ] )
 #  elif expr.split(':')[0] == '@B-aN-b{A-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
@@ -540,59 +540,62 @@ def unpack( expr ):
   elif re.search( '^@N-b{N-aD}-[ri]N:', expr ):  return( [ '\\q', '\\f', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'f', 'Some', [ '\\y'+sVar, '^', [Equal,'x'+sVar,'y'+sVar], ['r','y'+sVar] ], 's' ] ] )
 #  elif expr.split(':')[0] == '@A-aN-rN':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y', 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar], ['r','e'+sVar] ], 's' ] ] ] )
 #  elif expr.split(':')[0] == '@B-aN-bA':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\e', '^', [ expr[1:], 'e', 'x', [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'] ], 's' ] ] )
+  ## Formula: B...
+  elif re.search( '^@B(-[stuwxyz].*)?:', expr ) != None:
+    return( [                      '\\r', '\\s',                                                                           'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar                  ], ['r','e'+sVar] ], 's'       ] )
   ## Intransitive: B-aN...
-  elif re.search( '^@\w+-[ab]\w*(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w*(-[stuwxyz].*)?:', expr ) != None:
     return( [               '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar,                                                  'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar                  ], ['r','e'+sVar] ], 's'     ] ] )
   ## Transitive: B-aN-bN...
-  elif re.search( '^@\w+-[ab]\w+-[ab][DNOPa-z]+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab][DNOPa-z]+(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar,                         'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar         ], ['r','e'+sVar] ], 's'   ] ] ] )
   ## Ditransitive: B-aN-bN-bN...
-  elif re.search( '^@\w+-[ab]\w+-[ab]\w+-[ab]\w+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]\w+-[ab]\w+(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\o', '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar, 'o', Univ, ['\\z'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar,'z'+sVar], ['r','e'+sVar] ], 's' ] ] ] ] )
   ## Modal auxiliary: BMDL-aN-b{A-aN}...
-  elif re.search( '^@[A-Z]MDL-[ab]\w+-[ab]\{\w+-[ab]\w+\}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@[A-Z]MDL-[ab]\w+-[ab]\{\w+-[ab]\w+\}(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s', expr[1:], 'r', [ '\\e', 'f', 'q', ['\\d', 'Equal','d','e'], 's' ] ] )
   ## Raising auxiliary: B-aN-b{A-aN}...
-  elif re.search( '^@\w+-[ab]\w+-[ab]\{\w+-[ab]\w+\}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]\{\w+-[ab]\w+\}(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s',                                                                         'f', 'q', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar                           ], ['r','e'+sVar] ], 's'       ] )
   ## Raising auxiliary: B-a{I-aN}-b{A-aN}...
-  elif re.search( '^@\w+-[ab]{\w+-[ab]\w+}-[ab]\{\w+-[ab]\w+\}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]{\w+-[ab]\w+}-[ab]\{\w+-[ab]\w+\}(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f', '\\g', '\\r', '\\s',                                                                         'f', ['g','Some'], [ '\\e'+sVar, '^', [expr[1:],'e'+sVar                           ], ['r','e'+sVar] ], 's'       ] )
   ## Raising goal: A-aN-aPin-b{I-aN}:order...
-  elif re.search( '^@\w+-[ab]\w+-[ab]\w+-[ab]{\w+-[ab]\w+}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]\w+-[ab]{\w+-[ab]\w+}(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\f', '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [ expr[1:], 'e'+sVar, 'x'+sVar, [ 'Intension', [ 'f', [QuantEq,'x'+sVar], Univ, Univ ] ] ], ['r','e'+sVar] ], 's' ] ] )
   ## Range modifier (??): A-aN-b{A-aN}-bN...
-  elif re.search( '^@\w+-[ab]\w+-[ab]\{\w+-[ab]\w+\}-[ab]\w+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]\{\w+-[ab]\w+\}-[ab]\w+(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\p', '\\f', '\\q', '\\r', '\\s', 'p', Univ, [ '\\x'+sVar,                                         'f', 'q', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar                           ], ['r','e'+sVar] ], 's'     ] ] )
   ## Take construction: B-a{A-aN}-bN-bO...
-  elif re.search( '^@\w+-[ab]\{\w+-[ab]\w+\}-[ab]\w+-[ab]\w+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\{\w+-[ab]\w+\}-[ab]\w+-[ab]\w+(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\p', '\\q', '\\f', '\\r', '\\s', 'f', 'p', 'r', [ '\\e'+sVar, '^', ['s','e'+sVar], [ 'q', Univ, ['\\y'+sVar,expr[1:],'e'+sVar,'y'+sVar] ] ] ] )
   ## Sent comp: B-aN-bC:think...
-  elif re.search( '^@\w+-[ab]\w+-[ab][ABCEFGIVQRSVa-z]+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab][ABCEFGIVQRSVa-z]+(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [ expr[1:], 'e'+sVar, 'x'+sVar, [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'+sVar] ], 's' ] ] )
   ## Sent comp: A-aN-b{I-gN}:for...
-  elif re.search( '^@\w+-[ab]\w+-[ab]{\w+-[ghirv]\w+}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]{\w+-[ghirv]\w+}(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [ expr[1:], 'e'+sVar, 'x'+sVar, [ 'Intension', [ 'f', [QuantEq,'x'+sVar], Univ, Univ ] ] ], ['r','e'+sVar] ], 's' ] ] )
   ## Sent comp: B-aN-b{V-iN}-bN:tell...
-  elif re.search( '^@\w+-[ab]\w+-[ab]{\w+-[ghirv]\w+}-[ab]\w+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]{\w+-[ghirv]\w+}-[ab]\w+(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\p', '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar, 'Some', [ '\\e'+sVar, '^', [ expr[1:], 'e'+sVar, 'x'+sVar, [ 'Intension', [ 'f', [QuantEq,'y'+sVar], Univ, Univ ] ] ], ['r','e'+sVar] ], 's' ] ] ] )
   ## Tough constructions: A-aN-b{I-aN-gN}...
-  elif re.search( '^@\w+-[ab]\w+-[ab]{I-aN-gN}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]{I-aN-gN}(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Gen', [ '\\e'+sVar, 'f', [ '\\t', '\\u', '^', ['t','x'+sVar], ['u','x'+sVar] ], 'Some', 'r', [ '\\d'+sVar, '^', ['s','d'+sVar], ['Equal','d'+sVar,'e'+sVar] ] ], [ '\\e'+sVar,expr[1:],'e'+sVar] ] ] )
   ## Tough constructions with comparative: A-aN-b{I-aN-gN}-b{Cthan-g{V-aN}}...
-  elif re.search( '^@\w+-[ab]\w+-[ab]{I-aN-gN}-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]{I-aN-gN}-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\}(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\fCgVaN', '\\gIaNgN', '\\q', '\\r', '\\s', 'fCgVaN', [ '\\p', '\\t', '\\u', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar, 'Gen', [ '\\eX', 'Gen', [ '\\eY', '^', ['u','y'+sVar], [ 'More', ['\\z'+sVar, 'gIaNgN', [ QuantEq,'x'+sVar], 'Some', 'r', [ '\\d'+sVar, '^', [ '^', ['s','d'+sVar], ['Equal','d'+sVar,'eX'] ], [ expr[1:]+'nessContains','d'+sVar,'z'+sVar] ] ],
                                                                                                                                                                                                                ['\\z'+sVar, 'gIaNgN', [ QuantEq,'y'+sVar], 'Some', 'r', [ '\\d'+sVar, '^', [ '^', ['s','d'+sVar], ['Equal','d'+sVar,'eY'] ], [ expr[1:]+'nessContains','d'+sVar,'z'+sVar] ] ] ] ], Univ ], Univ ] ] ] ] )
 #    return( [ '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'f', [ '\\p', '\\t', '\\u', 'p', Univ, [ '\\y'+sVar, '^', ['u','y'+sVar], [ 'More', ['\\z'+sVar,'Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','e','x'+sVar,'z'+sVar]],'u'],
 #                                                                                                                                                       ['\\z'+sVar,'Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','e','y'+sVar,'z'+sVar]],'u'] ] ] ], 'r', 's' ] ] )
   ## Embedded question: B-aN-b{V-iN}...
-  elif re.search( '^@\w+-[ab]\w+-[ab]{V-iN}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]{V-iN}(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'f', [ '\\t', '\\u', '^', ['t','x'+sVar], ['u','x'+sVar] ], Univ, [ '\\d'+sVar, 'Some', 'r', ['\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'d'+sVar], ['s','d'+sVar] ] ] ] ] )
   ## 'No matter' construction: A-aN-b{V-iN}-aPno...
-  elif re.search( '^@\w+-[ab]\w+-[ab]{V-iN}-aP[a-z]+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]{V-iN}-aP[a-z]+(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'f', [ '\\t', '\\u', '^', ['t','x'+sVar], ['u','x'+sVar] ], Univ, [ '\\d'+sVar, 'Some', 'r', ['\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'d'+sVar], ['s','d'+sVar] ] ] ] ] )
   ## Bare relatives (bad take as eventuality of V is not constrained by wh-noun): N-b{V-gN}...
-  elif re.search( '^@\w+-[ab]{V-gN}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]{V-gN}(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f',        '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ '^', [ 'Some', ['\\e'+sVar,expr[1:],'e'+sVar,'x'+sVar], Univ ], ['r','x'+sVar] ], [ 'f', [ '\\t', '\\u', '^', ['t','x'+sVar], ['u','x'+sVar] ], Univ, Univ ] ], 's' ] )
 #  elif expr[0]=='@' and getLocalArity( t.split(':')[0] ) == 1:  return( [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x',                     'Some', [ '\\e', '^', [expr[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
 #  elif expr[0]=='@' and getLocalArity( t.split(':')[0] ) == 2:  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'Some', [ '\\e', '^', [expr[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
