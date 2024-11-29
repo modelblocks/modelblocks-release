@@ -195,10 +195,12 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Pred', [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ] ]
     elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Pred', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
     elif '-lz' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Pred', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
-    ## T1. S -> Q-iN or N -> V-iN
+    ## T1. S -> Q-iN or N -> V-iN...
     elif re.search( '^\w+-i\w+(-lF)? \w+$', form ):  output = [ '\\r', '\\s', 'Gen', [ '\\zz'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','zz'+t.sVar] ] + lsNolo ), 'r', Univ ], 's' ]
                                                                                                         # [ '\\x'+t.sVar, 'Explain', 'ThisArticle', 'x'+t.sVar ] ]
-    ## T2. Elision...
+    ## T2. V-rN -> V-g{R-aN}...
+    elif '-l' not in t.ch[0].c and re.search( '^\w+-[ghirv]\{\w+-[abghirv]\w+\} \w+-[ghirv]\w+$', form ): output = translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] + [ [ 'Pred', lsNolo[-1] ] ] )
+    ## T3. Elision...
     elif re.search( '^(.*)-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\} \\1$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
     elif re.search( '^(.*)-[ab]\{\w+-[abghirv]\w+\} \\1$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
     elif '-l' not in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ]
@@ -357,6 +359,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   if ANAPH and t.bMax and t.sVar in Anaphs.values():
 #    t.Ants += [ t.sVar ]
     output = [ 'Antecedent'+str(getLocalArity(t.c)), t.sVar, output ]
+  if VERBOSE and ANAPH: print( ' '*indent, 'anaph/antec tags:', prettyForm(output) )
 #  ## Mark set def sites for anaphors...
 #  for a,st in t.SomeSets:
 #    ## Non-discourse anaphor...
@@ -396,6 +399,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     ## If quantified noun phrase...
     else:
       t.qstore = [( t.qstore, output, t.sVar )]
+      if VERBOSE: print( ' '*indent, 'stored ' + prettyForm(output) )
       output = [ 'RaiseTrace', 'xx'+t.sVar ]
 
   if VERBOSE: print( ' '*indent, 'returning:', output )
