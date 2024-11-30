@@ -184,6 +184,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     ## M3. Unary modifier...
     elif re.search( '^A-aN((?:-[ghirv][^ ]*)?)-lM N-aD\\1$', form ):  output = [ 'Mod1', ['\\q','\\t','\\u','q','t','u'], translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
     ## O1-2. Reordering rules...
+    elif re.search( '^\w+-a\w+-lQ \w+-a\w+-b\{\w+-[abghirv]\w+\}$', form ):  output = [ '\\f', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ 'f', 'Some' ] ]
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 1:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'p' ]
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 2:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'q', 'p' ]
     ## V. Passive rule...
@@ -494,6 +495,8 @@ def unpack( expr ):
                                                                                               ['\\z',expr[1:],'x'+sVar,'z'] ] ] ], 's' ] )
 #                                                                        [ '\\y'+sVar, 'More', ['\\z',expr[1:],[QuantEq,'y'+sVar],[Equal,'z'],Univ],
 #                                                                                              ['\\z',expr[1:],[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
+  ## Nominal clause: how adj a thing is...
+  elif re.search( '^@N-b\{\w+-g\{\w+-a\w+\}\}-b\{\w+-a\w+\}(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\f', '\\g', '\\r', '\\s', expr[1:], [ '\\a'+sVar, 'g', [ '\\q', '\\t', '\\u', 'f', 'q', ['\\e'+sVar, '^', [ 't', 'e'+sVar ], ['In', 'a'+sVar, 'e'+sVar] ], 'u' ], 'r', 's' ], Univ ] )
   ## Pronoun...
   elif re.search( '^@NNGEN\w*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Gen', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   elif re.search( '^@[DN]\w*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
