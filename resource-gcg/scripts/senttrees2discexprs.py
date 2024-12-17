@@ -31,14 +31,14 @@ for a in sys.argv:
 
 def getNoloArity( cat ):
 #  cat = re.sub( '-x[^-} ].*', '', cat )
-  while '{' in cat:
+  while '{' in cat and '}' in cat:
     cat = re.sub('\{[^\{\}]*\}','X',cat)
   return len(re.findall('-[ghirv]',cat))
 
 
 def getLocalArity( cat ):
 #  cat = re.sub( '-x[^-} ].*', '', cat )
-  while '{' in cat:
+  while '{' in cat and '}' in cat:
     cat = re.sub('\{[^\{\}]*\}','X',cat)
   return len(re.findall('-[ab]',cat))
 
@@ -69,7 +69,7 @@ def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, nWord=0 ):
     if t.c[:3] == 'V-g' and ( t.ch[0].c == 'N-lE' or t.ch[0].c == 'R-aN-lE' ): t.sVar += '?'  ## Special case for function extraction.
     if '-lZ' in t.ch[0].c: t.sVar += '?'  ## Special case for zero-head rule.
   elif len(t.ch) == 2:
-    t.sVar = t.ch[0].sVar if '-lU' in t.ch[0].c else t.ch[1].sVar if '-lU' in t.ch[1].c else t.ch[0].sVar if '-l' not in t.ch[0].c and t.ch[0].c[0] not in ',;' else t.ch[1].sVar if '-l' not in t.ch[1].c else None
+    t.sVar = t.ch[0].sVar if '-lU' in t.ch[0].c else t.ch[1].sVar if '-lU' in t.ch[1].c else t.ch[0].sVar if '-l' not in t.ch[0].c and len(t.ch[0].c)>0 and t.ch[0].c[0] not in ',;' else t.ch[1].sVar if '-l' not in t.ch[1].c else None
     if t.sVar == None: print( 'ERROR: Illegal categories in ', t )  #, t.c, '->', t.ch[0].c, t.ch[1].c )
   else: print( '\nERROR: too many children in ', t )
 
