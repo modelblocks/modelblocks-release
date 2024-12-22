@@ -440,6 +440,7 @@ def unpack( expr ):
   elif expr == 'And0':  return( [ '\\f', '\\g',               '\\r', '\\s', '^', [ 'f',           'r', 's' ], [ 'g',           'r', 's' ] ] )
   elif expr == 'And1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', '^', [ 'f',      'q', 'r', 's' ], [ 'g',      'q', 'r', 's' ] ] )
   elif expr == 'And2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', '^', [ 'f', 'p', 'q', 'r', 's' ], [ 'g', 'p', 'q', 'r', 's' ] ] )
+  elif expr == 'And3':  return( [ '\\f', '\\g', '\\o', '\\p', '\\q', '\\r', '\\s', '^', [ 'f', 'o', 'p', 'q', 'r', 's' ], [ 'g', 'o', 'p', 'q', 'r', 's' ] ] )
   elif expr == 'Mod0':  return( [ '\\f', '\\g',               '\\r', '\\s', 'f',           [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Mod1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', 'f',      'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Mod2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', 'f', 'p', 'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
@@ -465,6 +466,9 @@ def unpack( expr ):
   elif re.search( '@\w+-bO-aK:', expr ):  return( [ '\\n', '\\q', '\\r', '\\s', 'CountEq', [ expr[1:], 'n' ], [ '\\z', '^', [ 'r', 'z' ], [ 'q', [Equal,'z'], Univ ] ], 's' ] )
 #  elif re.search( '@\w+-bO-b{N-aD-b{N-aD}}:', expr ):
 #    return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
+#  ## Without: AMDL-aN-bN...
+#  elif re.search( '^@[A-Z]MDL-[ab]\w+-[ab]\w+(-[stuwxyz].*)?:', expr ) != None:
+#    return( [        '\\p', '\\q', '\\r', '\\s', expr[1:], [ '\\e', '^', ['r', 'e'], ['q', Univ, ['\\x', 'p', Univ, ['\\y', expr[1:-3],'e','x','y'] ] ] ], 's' ] )
   ## Ordinal quantifier...
   elif expr.split(':')[0] == '@NNORD-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ],
                                                                                                                     [ expr[1:]+'MinusOne', [ '\\y'+sVar, 'f', 'q', 'r', ['\\y','Equal','y','y'+sVar] ], ['\\y'+sVar, 'Prec','x'+sVar,'y'+sVar] ] ], 's' ] )
@@ -499,6 +503,7 @@ def unpack( expr ):
   elif re.search( '^@N-b\{\w+-g\{\w+-a\w+\}\}-b\{\w+-a\w+\}(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\f', '\\g', '\\r', '\\s', expr[1:], [ '\\a'+sVar, 'g', [ '\\q', '\\t', '\\u', 'f', 'q', ['\\e'+sVar, '^', [ 't', 'e'+sVar ], ['In', 'a'+sVar, 'e'+sVar] ], 'u' ], 'r', 's' ], Univ ] )
   ## Pronoun...
   elif re.search( '^@NNGEN\w*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Gen', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
+  elif re.search( '^@NNNEG\w*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'None', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   elif re.search( '^@[DN]\w*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   ## Two-argument noun using possessive as possessor e.g. NNASSOC*-aD...
   elif re.search( '^@NNASSOC\w*-[ab]\w*(-[stuwxyz].*)?:', expr ):
@@ -559,6 +564,9 @@ def unpack( expr ):
   ## Ditransitive: B-aN-bN-bN...
   elif re.search( '^@\w+-[ab]\w+-[ab]\w+-[ab]\w+(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\o', '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar, 'o', Univ, ['\\z'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar,'z'+sVar], ['r','e'+sVar] ], 's' ] ] ] ] )
+  ## Tritransitive: B-aN-bN-bN-bN...
+  elif re.search( '^@\w+-[ab]\w+-[ab]\w+-[ab]\w+-[ab]\w+(-[stuwxyz].*)?:', expr ) != None:
+    return( [ '\\n', '\\o', '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\w'+sVar, 'p', Univ, [ '\\x'+sVar, 'o', Univ, ['\\y'+sVar, 'n', Univ, ['\\z'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'w'+sVar,'x'+sVar,'y'+sVar,'z'+sVar], ['r','e'+sVar] ], 's' ] ] ] ] ] )
   ## Modal auxiliary: BMDL-aN-b{A-aN}...
   elif re.search( '^@[A-Z]MDL-[ab]\w+-[ab]\{\w+-[ab]\w+\}(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s', expr[1:], 'r', [ '\\e', 'f', 'q', ['\\d', 'Equal','d','e'], 's' ] ] )
