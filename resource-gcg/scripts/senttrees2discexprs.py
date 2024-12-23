@@ -433,10 +433,12 @@ def unpack( expr ):
   if not isinstance( expr, str ):  return( [ unpack(subexpr) for subexpr in expr ] )
 
   ## Unpack grammatical functions...
-  elif expr == 'Anaphor0':  return( [ '\\v',        '\\q', '\\r', '\\s',      'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
-  elif expr == 'Anaphor1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
-  elif expr == 'Antecedent0':  return( [ '\\v', '\\q',        '\\r', '\\s', 'q',      ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
-  elif expr == 'Antecedent1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
+  elif expr == 'Anaphor0':  return( [ '\\v', '\\q',               '\\r', '\\s', 'q',           ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
+  elif expr == 'Anaphor1':  return( [ '\\v', '\\f',        '\\q', '\\r', '\\s', 'f', 'q',      ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
+  elif expr == 'Anaphor2':  return( [ '\\v', '\\f', '\\p', '\\q', '\\r', '\\s', 'f', 'p', 'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
+  elif expr == 'Antecedent0':  return( [ '\\v', '\\q',               '\\r', '\\s', 'q',           ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
+  elif expr == 'Antecedent1':  return( [ '\\v', '\\f',        '\\q', '\\r', '\\s', 'f', 'q',      ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
+  elif expr == 'Antecedent2':  return( [ '\\v', '\\f', '\\p', '\\q', '\\r', '\\s', 'f', 'p', 'q', ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
   elif expr == 'And0':  return( [ '\\f', '\\g',               '\\r', '\\s', '^', [ 'f',           'r', 's' ], [ 'g',           'r', 's' ] ] )
   elif expr == 'And1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', '^', [ 'f',      'q', 'r', 's' ], [ 'g',      'q', 'r', 's' ] ] )
   elif expr == 'And2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', '^', [ 'f', 'p', 'q', 'r', 's' ], [ 'g', 'p', 'q', 'r', 's' ] ] )
@@ -460,6 +462,7 @@ def unpack( expr ):
   ## Possessive marker...
   elif re.search( '@\w+POSS-[ab]{\w+-[ab]\w+}-[ab]\w+:', expr ):  return( [ '\\q', '\\f', '\\r', '\\s', 'q', Univ, [ '\\x', 'f', 'Some', ['\\z','^',['r','z'],['Have','x','z']], 's' ] ] )
   ## Quantifier...
+  elif expr.split(':')[0] == '@S-bS-bV':  return( [ '\\p', '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'p', 'r', ['\\x','Equal','x','x'+sVar] ], [ '\\x'+sVar, 'q', 's', ['\\x','Equal','x','x'+sVar] ] ] )
   elif expr.split(':')[0] in ['@N-bO','@N-bN']:  return( [ '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'q', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@N-b{N-aD}':  return( [ '\\f', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'Some', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@N-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
