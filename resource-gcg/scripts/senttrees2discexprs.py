@@ -31,14 +31,14 @@ for a in sys.argv:
 
 def getNoloArity( cat ):
 #  cat = re.sub( '-x[^-} ].*', '', cat )
-  while '{' in cat:
+  while '{' in cat and '}' in cat:
     cat = re.sub('\{[^\{\}]*\}','X',cat)
   return len(re.findall('-[ghirv]',cat))
 
 
 def getLocalArity( cat ):
 #  cat = re.sub( '-x[^-} ].*', '', cat )
-  while '{' in cat:
+  while '{' in cat and '}' in cat:
     cat = re.sub('\{[^\{\}]*\}','X',cat)
   return len(re.findall('-[ab]',cat))
 
@@ -69,7 +69,7 @@ def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, nWord=0 ):
     if t.c[:3] == 'V-g' and ( t.ch[0].c == 'N-lE' or t.ch[0].c == 'R-aN-lE' ): t.sVar += '?'  ## Special case for function extraction.
     if '-lZ' in t.ch[0].c: t.sVar += '?'  ## Special case for zero-head rule.
   elif len(t.ch) == 2:
-    t.sVar = t.ch[0].sVar if '-lU' in t.ch[0].c else t.ch[1].sVar if '-lU' in t.ch[1].c else t.ch[0].sVar if '-l' not in t.ch[0].c and t.ch[0].c[0] not in ',;' else t.ch[1].sVar if '-l' not in t.ch[1].c else None
+    t.sVar = t.ch[0].sVar if '-lU' in t.ch[0].c else t.ch[1].sVar if '-lU' in t.ch[1].c else t.ch[0].sVar if '-l' not in t.ch[0].c and len(t.ch[0].c)>0 and t.ch[0].c[0] not in ',;' else t.ch[1].sVar if '-l' not in t.ch[1].c else None
     if t.sVar == None: print( 'ERROR: Illegal categories in ', t )  #, t.c, '->', t.ch[0].c, t.ch[1].c )
   else: print( '\nERROR: too many children in ', t )
 
@@ -184,10 +184,11 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     ## M3. Unary modifier...
     elif re.search( '^A-aN((?:-[ghirv][^ ]*)?)-lM N-aD\\1$', form ):  output = [ 'Mod1', ['\\q','\\t','\\u','q','t','u'], translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
     ## O1-2. Reordering rules...
+    elif re.search( '^\w+-a\w+-lQ \w+-a\w+-b\{\w+-[abghirv]\w+\}$', form ):  output = [ '\\f', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ 'f', 'Some' ] ]
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 1:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'p' ]
     elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 2:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'q', 'p' ]
     ## V. Passive rule...
-    elif re.search( '^L-aN-vN((?:-[ghirv][^ ]*)?)-lV A-aN\\1$', form ) != None:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\zz'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','zz'+t.sVar] ] + lsNolo ), 'Some', 'r', 's' ] ]
+    elif re.search( '^L-aN-vN((?:-[ghirv][^ ]*)?)-lV [AR]-aN\\1$', form ) != None:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\zz'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','zz'+t.sVar] ] + lsNolo ), 'Some', 'r', 's' ] ]
 #   elif '-lV' in t.ch[0].c:  output = [ 'Pasv', 'x'+ t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ]
     ## Z3. Zero-head rule with expletive subject: e.g. A-aNe -> N-lZ...
     elif re.search( '^\w+-lZ \w+-[ab]Ne$', form ):  output = [ '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
@@ -195,10 +196,12 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Pred', [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ] ]
     elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Pred', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
     elif '-lz' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Pred', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
-    ## T1. S -> Q-iN or N -> V-iN
+    ## T1. S -> Q-iN or N -> V-iN...
     elif re.search( '^\w+-i\w+(-lF)? \w+$', form ):  output = [ '\\r', '\\s', 'Gen', [ '\\zz'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','zz'+t.sVar] ] + lsNolo ), 'r', Univ ], 's' ]
                                                                                                         # [ '\\x'+t.sVar, 'Explain', 'ThisArticle', 'x'+t.sVar ] ]
-    ## T2. Elision...
+    ## T2. V-rN -> V-g{R-aN}...
+    elif '-l' not in t.ch[0].c and re.search( '^\w+-[ghirv]\{\w+-[abghirv]\w+\} \w+-[ghirv]\w+$', form ): output = translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] + [ [ 'Pred', lsNolo[-1] ] ] )
+    ## T3. Elision...
     elif re.search( '^(.*)-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\} \\1$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
     elif re.search( '^(.*)-[ab]\{\w+-[abghirv]\w+\} \\1$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
     elif '-l' not in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ]
@@ -261,7 +264,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
       ## Non-local modifier argument: V-rN -> R-aN-rN V-g{R-aN}...
       elif re.search( '^(\w+-[ab]\w+)((?:-[ghirv][^ ]*)?) (\w+(?:-[ab]\w+)*)((?:-[ghirv][^ ]*)?)-g{\\1} \\3\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ),
-                                 [ '\\t'+t.ch[0].sVar, '\\u'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['\\p', '\\t', '\\u', 'p', 't'+t.ch[0].sVar, 'u'+t.ch[0].sVar ] ] ), 'r', 's' ] ]
+                                 [ '\\t'+t.ch[0].sVar, '\\u'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['\\p', '\\t', '\\u', 'p', 't'+t.ch[0].sVar, 'u'+t.ch[0].sVar ] ] ), 'r', 's' ],
+                                 Univ, Univ ]
       else:
         sys.stdout.write( 'WARNING: Bad G rule: ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
 #    elif '-lG' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ] ) ]
@@ -278,11 +282,11 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
       ## Zero-ary (complete) non-local with modifier: N -> N-h{A-aN} A-aN...
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ab]\w+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),
-                                 [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'r', 's' ] ]
+                                 [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'r', 's' ], Univ, Univ ]
       ## Unary non-local with modifier: B-aN -> B-aN-h{A-aN} A-aN...
       elif re.search( '^(\w+-[ab]\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ab]\w+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),
-                                        [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'q', 'r', 's' ] ]
+                                        [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'q', 'r', 's' ], Univ, Univ ]
       ## Zero-ary (complete) non-local containing zero-ary (complete) non-local: N -> N-h{C-rN} C-rN...
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ghirv]\w+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
         output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
@@ -310,22 +314,22 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 #      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     ## R1-2. Relative clause modification...
     elif '-lR' in t.ch[1].c:
-      ## Relative clause modification by C-rN-lR...
+      ## Relative clause modification by N -> N C-rN-lR...
       if re.search( '^(\w+)((?:-[ghirv][^ ]*)?) \w+((?:-[ghirv][^ ]*)?)-r\w+ \\1\\2\\3$', form ):
         output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), Univ, Univ ],
                                                                                                                                   [ 's', 'zz'+t.ch[0].sVar ] ] ]
-      ## Relative clause modification by F-g{R-aN}-lR...
+      ## Relative clause modification by N -> N F-g{R-aN}-lR...
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?) \w+((?:-[ghirv][^ ]*)?)-[gr]\{\w+-[ab]\w+\} \\1\\2\\3$', form ):
-        output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), Univ, Univ ],
+        output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ [ '\\p', '\\t', '\\u', 'p', Univ, ['\\xx', 'Some', ['\\ee', 'A-aN-bN:for', 'ee', 'xx', 'zz'+t.ch[0].sVar], Univ ] ] ]   ), Univ, Univ ],
                                                                                                                                   ['s','zz'+t.ch[0].sVar] ] ]
 #    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==0:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','zz'+t.ch[0].sVar] ] ]
-      ## Relative clause modification by I-aN-gN-lR (e.g. 'a job to do _') -- event should be in future...
+      ## Relative clause modification by N -> N I-aN-gN-lR (e.g. 'a job to do _') -- event should be in future...
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?) \w+-[ab]\w+((?:-[ghirv][^ ]*)?)-[gr]\\1 \\1\\2\\3$', form ):
         output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ],
                                                                                                                                   ['s','zz'+t.ch[0].sVar] ] ]
-      ## Relative clause modification by I-aN-g{R-aN}-lR (e.g. 'a job to do _') -- event should be in future...
+      ## Relative clause modification by N -> N I-aN-g{R-aN}-lR (e.g. 'a time to rest _') -- event should be in future...
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?) \w+-[ab]\w+((?:-[ghirv][^ ]*)?)-[gr]\{\w+-[ab]\w+\} \\1\\2\\3$', form ):
-        output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ],
+        output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ [ '\\p', '\\t', '\\u', 'p', Univ, ['\\xx', 'Some', ['\\ee', 'A-aN-bN:for', 'ee', 'xx', 'zz'+t.ch[0].sVar], Univ ] ] ] ), 'Some', Univ, Univ ],
                                                                                                                                   ['s','zz'+t.ch[0].sVar] ] ]
 #    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==1:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ], ['s','zz'+t.ch[0].sVar] ] ]
       ## Relative clause modification of verb phrase...
@@ -356,6 +360,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   if ANAPH and t.bMax and t.sVar in Anaphs.values():
 #    t.Ants += [ t.sVar ]
     output = [ 'Antecedent'+str(getLocalArity(t.c)), t.sVar, output ]
+  if VERBOSE and ANAPH: print( ' '*indent, 'anaph/antec tags:', prettyForm(output) )
 #  ## Mark set def sites for anaphors...
 #  for a,st in t.SomeSets:
 #    ## Non-discourse anaphor...
@@ -395,6 +400,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     ## If quantified noun phrase...
     else:
       t.qstore = [( t.qstore, output, t.sVar )]
+      if VERBOSE: print( ' '*indent, 'stored ' + prettyForm(output) )
       output = [ 'RaiseTrace', 'xx'+t.sVar ]
 
   if VERBOSE: print( ' '*indent, 'returning:', output )
@@ -427,13 +433,16 @@ def unpack( expr ):
   if not isinstance( expr, str ):  return( [ unpack(subexpr) for subexpr in expr ] )
 
   ## Unpack grammatical functions...
-  elif expr == 'Anaphor0':  return( [ '\\v',        '\\q', '\\r', '\\s',      'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
-  elif expr == 'Anaphor1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
-  elif expr == 'Antecedent0':  return( [ '\\v', '\\q',        '\\r', '\\s', 'q',      ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
-  elif expr == 'Antecedent1':  return( [ '\\v', '\\f', '\\q', '\\r', '\\s', 'f', 'q', ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
+  elif expr == 'Anaphor0':  return( [ '\\v', '\\q',               '\\r', '\\s', 'q',           ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
+  elif expr == 'Anaphor1':  return( [ '\\v', '\\f',        '\\q', '\\r', '\\s', 'f', 'q',      ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
+  elif expr == 'Anaphor2':  return( [ '\\v', '\\f', '\\p', '\\q', '\\r', '\\s', 'f', 'p', 'q', ['\\a','^',['r','a'],['InAnaphorSet','v','a']], 's' ] )
+  elif expr == 'Antecedent0':  return( [ '\\v', '\\q',               '\\r', '\\s', 'q',           ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
+  elif expr == 'Antecedent1':  return( [ '\\v', '\\f',        '\\q', '\\r', '\\s', 'f', 'q',      ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
+  elif expr == 'Antecedent2':  return( [ '\\v', '\\f', '\\p', '\\q', '\\r', '\\s', 'f', 'p', 'q', ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
   elif expr == 'And0':  return( [ '\\f', '\\g',               '\\r', '\\s', '^', [ 'f',           'r', 's' ], [ 'g',           'r', 's' ] ] )
   elif expr == 'And1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', '^', [ 'f',      'q', 'r', 's' ], [ 'g',      'q', 'r', 's' ] ] )
   elif expr == 'And2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', '^', [ 'f', 'p', 'q', 'r', 's' ], [ 'g', 'p', 'q', 'r', 's' ] ] )
+  elif expr == 'And3':  return( [ '\\f', '\\g', '\\o', '\\p', '\\q', '\\r', '\\s', '^', [ 'f', 'o', 'p', 'q', 'r', 's' ], [ 'g', 'o', 'p', 'q', 'r', 's' ] ] )
   elif expr == 'Mod0':  return( [ '\\f', '\\g',               '\\r', '\\s', 'f',           [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Mod1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', 'f',      'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Mod2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', 'f', 'p', 'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
@@ -453,12 +462,16 @@ def unpack( expr ):
   ## Possessive marker...
   elif re.search( '@\w+POSS-[ab]{\w+-[ab]\w+}-[ab]\w+:', expr ):  return( [ '\\q', '\\f', '\\r', '\\s', 'q', Univ, [ '\\x', 'f', 'Some', ['\\z','^',['r','z'],['Have','x','z']], 's' ] ] )
   ## Quantifier...
+  elif expr.split(':')[0] == '@S-bS-bV':  return( [ '\\p', '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'p', 'r', ['\\x','Equal','x','x'+sVar] ], [ '\\x'+sVar, 'q', 's', ['\\x','Equal','x','x'+sVar] ] ] )
   elif expr.split(':')[0] in ['@N-bO','@N-bN']:  return( [ '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'q', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@N-b{N-aD}':  return( [ '\\f', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'Some', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@N-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
   elif re.search( '@\w+-bO-aK:', expr ):  return( [ '\\n', '\\q', '\\r', '\\s', 'CountEq', [ expr[1:], 'n' ], [ '\\z', '^', [ 'r', 'z' ], [ 'q', [Equal,'z'], Univ ] ], 's' ] )
 #  elif re.search( '@\w+-bO-b{N-aD-b{N-aD}}:', expr ):
 #    return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\x'+sVar, 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ], 's' ] )
+#  ## Without: AMDL-aN-bN...
+#  elif re.search( '^@[A-Z]MDL-[ab]\w+-[ab]\w+(-[stuwxyz].*)?:', expr ) != None:
+#    return( [        '\\p', '\\q', '\\r', '\\s', expr[1:], [ '\\e', '^', ['r', 'e'], ['q', Univ, ['\\x', 'p', Univ, ['\\y', expr[1:-3],'e','x','y'] ] ] ], 's' ] )
   ## Ordinal quantifier...
   elif expr.split(':')[0] == '@NNORD-aD-b{N-aD}':  return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'f', 'q', 'r', ['\\x','Equal','x','x'+sVar] ],
                                                                                                                     [ expr[1:]+'MinusOne', [ '\\y'+sVar, 'f', 'q', 'r', ['\\y','Equal','y','y'+sVar] ], ['\\y'+sVar, 'Prec','x'+sVar,'y'+sVar] ] ], 's' ] )
@@ -478,49 +491,56 @@ def unpack( expr ):
   elif re.search( '@[AN]NSUP-aD-b{N-aD}:', expr ):
     return( [ '\\f', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'f', 'q', 'r', [Equal,'x'+sVar] ],
                                                                      [ 'None', [ '\\y'+sVar, 'f', 'q', 'r', [Equal,'y'+sVar] ],
-                                                                               [ '\\y'+sVar, 'More', ['\\z',expr[1:],[QuantEq,'y'+sVar],[Equal,'z'],Univ],
-                                                                                                     ['\\z',expr[1:],[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
+                                                                               [ '\\y'+sVar, 'More', ['\\z',expr[1:],'y'+sVar,'z'],
+                                                                                                     ['\\z',expr[1:],'x'+sVar,'z'] ] ] ], 's' ] )
+#                                                                               [ '\\y'+sVar, 'More', ['\\z',expr[1:],[QuantEq,'y'+sVar],[Equal,'z'],Univ],
+#                                                                                                     ['\\z',expr[1:],[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
   elif re.search( '@[AN]NSUP-aD-bO:', expr ):
     return( [ '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'q', 'r', [Equal,'x'+sVar] ],
                                                               [ 'None', [ '\\y'+sVar, 'f', 'q', 'r', [Equal,'y'+sVar] ],
-                                                                        [ '\\y'+sVar, 'More', ['\\z',expr[1:],[QuantEq,'y'+sVar],[Equal,'z'],Univ],
-                                                                                              ['\\z',expr[1:],[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
+                                                                        [ '\\y'+sVar, 'More', ['\\z',expr[1:],'y'+sVar,'z'],
+                                                                                              ['\\z',expr[1:],'x'+sVar,'z'] ] ] ], 's' ] )
+#                                                                        [ '\\y'+sVar, 'More', ['\\z',expr[1:],[QuantEq,'y'+sVar],[Equal,'z'],Univ],
+#                                                                                              ['\\z',expr[1:],[QuantEq,'x'+sVar],[Equal,'z'],Univ] ] ] ], 's' ] )
+  ## Nominal clause: how adj a thing is...
+  elif re.search( '^@N-b\{\w+-g\{\w+-a\w+\}\}-b\{\w+-a\w+\}(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\f', '\\g', '\\r', '\\s', expr[1:], [ '\\a'+sVar, 'g', [ '\\q', '\\t', '\\u', 'f', 'q', ['\\e'+sVar, '^', [ 't', 'e'+sVar ], ['In', 'a'+sVar, 'e'+sVar] ], 'u' ], 'r', 's' ], Univ ] )
   ## Pronoun...
   elif re.search( '^@NNGEN\w*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Gen', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
+  elif re.search( '^@NNNEG\w*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'None', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   elif re.search( '^@[DN]\w*(-[lmnstuxyz].*)?:', expr ) != None:  return( [ '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   ## Two-argument noun using possessive as possessor e.g. NNASSOC*-aD...
-  elif re.search( '^@NNASSOC\w*-[ab]\w*(-[lx].*)?:', expr ):
+  elif re.search( '^@NNASSOC\w*-[ab]\w*(-[stuwxyz].*)?:', expr ):
     return( [        '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'q', Univ, [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar,'z'+sVar ], Univ ], [ 'Assoc', 'x'+sVar, 'z'+sVar ] ] ], ['r','x'+sVar] ], 's' ] )
   ## Two-argument noun using possessive as argument e.g. NNREL*-aD...
-  elif re.search( '^@NNREL\w*-[ab]\w*(-[lx].*)?:', expr ):
+  elif re.search( '^@NNREL\w*-[ab]\w*(-[stuwxyz].*)?:', expr ):
     return( [        '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'q', Univ, [ '\\z'+sVar, 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar,'z'+sVar ], Univ ] ], ['r','x'+sVar] ], 's' ] )
   ## Two-argument noun e.g. N-aD-bO --- NOTE: middle (determiner) argument 'q'/'y' gets ignored!...
-  elif re.search( '^@N\w*-[ab]\w*-[ab]\w*(-[lx].*)?:', expr ):
+  elif re.search( '^@N\w*-[ab]\w*-[ab]\w*(-[stuwxyz].*)?:', expr ):
     return( [ '\\p', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'p', Univ, [ '\\z'+sVar, 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar,'z'+sVar ], Univ ] ], ['r','x'+sVar] ], 's' ] )
   ## One-argument noun e.g. N-aD with generic force --- NOTE: middle (determiner) argument 'q'/'y' gets ignored...
-  elif re.search( '^@NNGEN\w*-[ab]\w*(-[lx].*)?:', expr ):
+  elif re.search( '^@NNGEN\w*-[ab]\w*(-[stuwxyz].*)?:', expr ):
     return( [        '\\q', '\\r', '\\s', 'Gen',  [ '\\x'+sVar, '^', [                          'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar          ], Univ   ], ['r','x'+sVar] ], 's' ] )
   ## One-argument noun with determiner argument interpreted as possessive e.g. N-aD...
   elif re.search( '@\w+POSS-[ab]\w+:', expr ):
     return( [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\z'+sVar, '^', [      'Some', [ '\\e'+sVar, expr[1:], 'e'+sVar, 'z'+sVar        ], Univ   ], [ '^', [ 'r','z'+sVar], ['Have','x','z'+sVar] ] ], 's' ] ] )
   ## One-argument noun e.g. N-aD --- NOTE: middle (determiner) argument 'q'/'y' gets ignored...
-  elif re.search( '^@N\w*-[ab]\w*(-[lx].*)?:', expr ):
+  elif re.search( '^@N\w*-[ab]\w*(-[stuwxyz].*)?:', expr ):
     return( [        '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [                          'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar          ], Univ   ], ['r','x'+sVar] ], 's' ] )
 #  elif expr.split(':')[0] == '@N-aD':  return( [ '\\q', '\\r', '\\s', 'Some', [ '\\z'+sVar, '^', [ 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'z'+sVar ], Univ ], ['r','z'+sVar] ], 's' ] )
   elif expr.split(':')[0] == '@A-aN-b{F-gN}':  return( [ '\\f', '\\q', '\\r', '\\s', expr[1:], [ '\\zz', 'q', Univ, [Equal,'zz'] ],
                                                                                                [ '\\zz', 'f', [QuantEq,'zz'], 'r', 's' ] ] )
   ## Sentential subject e.g. A-a{V-iN}:clear or bare relative: N-b{V-gN}:what
-  elif re.search( '^@\w+-[ab]\{\w+-[abghirv]\w+\}(-[lx].*)?:', expr ):  return( [ '\\f', '\\r', '\\s', 'Gen', [ '\\z', '^', [ 'f', [QuantEq,'z'], Univ, Univ ], ['r','z'] ], 's' ] )
+  elif re.search( '^@\w+-[ab]\{\w+-[abghirv]\w+\}(-[stuwxyz].*)?:', expr ):  return( [ '\\f', '\\r', '\\s', 'Gen', [ '\\z', '^', [ 'f', [QuantEq,'z'], Univ, Univ ], ['r','z'] ], 's' ] )
   ## Comparatives: A-aN-b{V-g{V-aN}}...
 #  elif expr.split(':')[0] == '@Acomp-aN-b{V-g{V-aN}}':
-  elif re.search( '^@\w+-[ab]\w+-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\}(-[lx].*)?:', expr ):
+  elif re.search( '^@\w+-[ab]\w+-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\}(-[stuwxyz].*)?:', expr ):
     return( [ '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'f', [ '\\p', '\\t', '\\u', 'p', Univ, [ '\\y'+sVar, '^', ['u','y'+sVar], [ 'More', ['\\z'+sVar,'Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','e','x'+sVar,'z'+sVar]],'u'],
                                                                                                                                                        ['\\z'+sVar,'Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','e','y'+sVar,'z'+sVar]],'u'] ] ] ], 'r', 's' ] ] )
   ## Bare relative: N-b{V-g{R-aN}}...
-  elif re.search( '^@\w+-[ab]\{\w+-[ghirv]\{\w+-[ab]\w+\}\}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\{\w+-[ghirv]\{\w+-[ab]\w+\}\}(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\f', '\\r', '\\s', 'f', [ '\\q', '\\t', '\\u', 'All', Univ, [ '\\x'+sVar, 'q', Univ, [ '\\y'+sVar, expr[1:], 'x'+sVar, 'y'+sVar ] ] ], 'r', 's' ] )
   ## Bare relative: N-b{V-gN}-b{N-aD}...
-  elif re.search( '^@\w+-[ab]\{\w+-[ghirv]\w+\}-[ab]\{\w+-[ab]\w+\}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\{\w+-[ghirv]\w+\}-[ab]\{\w+-[ab]\w+\}(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\f', '\\g', '\\r', '\\s', 'All', [ '\\z'+sVar, '^', [ '^', [ 'f', 'Some', [Equal,'z'+sVar], Univ ], [ 'g', [QuantEq,'z'+sVar], Univ, Univ ] ], ['r','z'+sVar] ],
                                                  's' ] )
 #  elif expr.split(':')[0] == '@B-aN-b{A-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
@@ -535,59 +555,68 @@ def unpack( expr ):
   elif re.search( '^@N-b{N-aD}-[ri]N:', expr ):  return( [ '\\q', '\\f', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'f', 'Some', [ '\\y'+sVar, '^', [Equal,'x'+sVar,'y'+sVar], ['r','y'+sVar] ], 's' ] ] )
 #  elif expr.split(':')[0] == '@A-aN-rN':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y', 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar], ['r','e'+sVar] ], 's' ] ] ] )
 #  elif expr.split(':')[0] == '@B-aN-bA':  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'Some', [ '\\e', '^', [ expr[1:], 'e', 'x', [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'] ], 's' ] ] )
+  ## Formula: B...
+  elif re.search( '^@B(-[stuwxyz].*)?:', expr ) != None:
+    return( [                      '\\r', '\\s',                                                                           'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar                  ], ['r','e'+sVar] ], 's'       ] )
   ## Intransitive: B-aN...
-  elif re.search( '^@\w+-[ab]\w*(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w*(-[stuwxyz].*)?:', expr ) != None:
     return( [               '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar,                                                  'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar                  ], ['r','e'+sVar] ], 's'     ] ] )
   ## Transitive: B-aN-bN...
-  elif re.search( '^@\w+-[ab]\w+-[ab][DNOPa-z]+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab][DNOPa-z]+(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar,                         'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar         ], ['r','e'+sVar] ], 's'   ] ] ] )
   ## Ditransitive: B-aN-bN-bN...
-  elif re.search( '^@\w+-[ab]\w+-[ab]\w+-[ab]\w+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]\w+-[ab]\w+(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\o', '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar, 'o', Univ, ['\\z'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar,'z'+sVar], ['r','e'+sVar] ], 's' ] ] ] ] )
+  ## Tritransitive: B-aN-bN-bN-bN...
+  elif re.search( '^@\w+-[ab]\w+-[ab]\w+-[ab]\w+-[ab]\w+(-[stuwxyz].*)?:', expr ) != None:
+    return( [ '\\n', '\\o', '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\w'+sVar, 'p', Univ, [ '\\x'+sVar, 'o', Univ, ['\\y'+sVar, 'n', Univ, ['\\z'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'w'+sVar,'x'+sVar,'y'+sVar,'z'+sVar], ['r','e'+sVar] ], 's' ] ] ] ] ] )
   ## Modal auxiliary: BMDL-aN-b{A-aN}...
-  elif re.search( '^@[A-Z]MDL-[ab]\w+-[ab]\{\w+-[ab]\w+\}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@[A-Z]MDL-[ab]\w+-[ab]\{\w+-[ab]\w+\}(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s', expr[1:], 'r', [ '\\e', 'f', 'q', ['\\d', 'Equal','d','e'], 's' ] ] )
   ## Raising auxiliary: B-aN-b{A-aN}...
-  elif re.search( '^@\w+-[ab]\w+-[ab]\{\w+-[ab]\w+\}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]\{\w+-[ab]\w+\}(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s',                                                                         'f', 'q', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar                           ], ['r','e'+sVar] ], 's'       ] )
   ## Raising auxiliary: B-a{I-aN}-b{A-aN}...
-  elif re.search( '^@\w+-[ab]{\w+-[ab]\w+}-[ab]\{\w+-[ab]\w+\}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]{\w+-[ab]\w+}-[ab]\{\w+-[ab]\w+\}(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f', '\\g', '\\r', '\\s',                                                                         'f', ['g','Some'], [ '\\e'+sVar, '^', [expr[1:],'e'+sVar                           ], ['r','e'+sVar] ], 's'       ] )
   ## Raising goal: A-aN-aPin-b{I-aN}:order...
-  elif re.search( '^@\w+-[ab]\w+-[ab]\w+-[ab]{\w+-[ab]\w+}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]\w+-[ab]{\w+-[ab]\w+}(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\f', '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [ expr[1:], 'e'+sVar, 'x'+sVar, [ 'Intension', [ 'f', [QuantEq,'x'+sVar], Univ, Univ ] ] ], ['r','e'+sVar] ], 's' ] ] )
   ## Range modifier (??): A-aN-b{A-aN}-bN...
-  elif re.search( '^@\w+-[ab]\w+-[ab]\{\w+-[ab]\w+\}-[ab]\w+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]\{\w+-[ab]\w+\}-[ab]\w+(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\p', '\\f', '\\q', '\\r', '\\s', 'p', Univ, [ '\\x'+sVar,                                         'f', 'q', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar                           ], ['r','e'+sVar] ], 's'     ] ] )
   ## Take construction: B-a{A-aN}-bN-bO...
-  elif re.search( '^@\w+-[ab]\{\w+-[ab]\w+\}-[ab]\w+-[ab]\w+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\{\w+-[ab]\w+\}-[ab]\w+-[ab]\w+(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\p', '\\q', '\\f', '\\r', '\\s', 'f', 'p', 'r', [ '\\e'+sVar, '^', ['s','e'+sVar], [ 'q', Univ, ['\\y'+sVar,expr[1:],'e'+sVar,'y'+sVar] ] ] ] )
   ## Sent comp: B-aN-bC:think...
-  elif re.search( '^@\w+-[ab]\w+-[ab][ABCEFGIVQRSVa-z]+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab][ABCEFGIVQRSVa-z]+(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [ expr[1:], 'e'+sVar, 'x'+sVar, [ 'Intension', [ 'p', Univ, Univ ] ] ], ['r','e'+sVar] ], 's' ] ] )
   ## Sent comp: A-aN-b{I-gN}:for...
-  elif re.search( '^@\w+-[ab]\w+-[ab]{\w+-[ghirv]\w+}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]{\w+-[ghirv]\w+}(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [ expr[1:], 'e'+sVar, 'x'+sVar, [ 'Intension', [ 'f', [QuantEq,'x'+sVar], Univ, Univ ] ] ], ['r','e'+sVar] ], 's' ] ] )
   ## Sent comp: B-aN-b{V-iN}-bN:tell...
-  elif re.search( '^@\w+-[ab]\w+-[ab]{\w+-[ghirv]\w+}-[ab]\w+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]{\w+-[ghirv]\w+}-[ab]\w+(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\p', '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar, 'Some', [ '\\e'+sVar, '^', [ expr[1:], 'e'+sVar, 'x'+sVar, [ 'Intension', [ 'f', [QuantEq,'y'+sVar], Univ, Univ ] ] ], ['r','e'+sVar] ], 's' ] ] ] )
   ## Tough constructions: A-aN-b{I-aN-gN}...
-  elif re.search( '^@\w+-[ab]\w+-[ab]{I-aN-gN}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]{I-aN-gN}(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Gen', [ '\\e'+sVar, 'f', [ '\\t', '\\u', '^', ['t','x'+sVar], ['u','x'+sVar] ], 'Some', 'r', [ '\\d'+sVar, '^', ['s','d'+sVar], ['Equal','d'+sVar,'e'+sVar] ] ], [ '\\e'+sVar,expr[1:],'e'+sVar] ] ] )
   ## Tough constructions with comparative: A-aN-b{I-aN-gN}-b{Cthan-g{V-aN}}...
-  elif re.search( '^@\w+-[ab]\w+-[ab]{I-aN-gN}-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]{I-aN-gN}-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\}(-[stuwxyz].*)?:', expr ) != None:
     return( [ '\\fCgVaN', '\\gIaNgN', '\\q', '\\r', '\\s', 'fCgVaN', [ '\\p', '\\t', '\\u', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar, 'Gen', [ '\\eX', 'Gen', [ '\\eY', '^', ['u','y'+sVar], [ 'More', ['\\z'+sVar, 'gIaNgN', [ QuantEq,'x'+sVar], 'Some', 'r', [ '\\d'+sVar, '^', [ '^', ['s','d'+sVar], ['Equal','d'+sVar,'eX'] ], [ expr[1:]+'nessContains','d'+sVar,'z'+sVar] ] ],
                                                                                                                                                                                                                ['\\z'+sVar, 'gIaNgN', [ QuantEq,'y'+sVar], 'Some', 'r', [ '\\d'+sVar, '^', [ '^', ['s','d'+sVar], ['Equal','d'+sVar,'eY'] ], [ expr[1:]+'nessContains','d'+sVar,'z'+sVar] ] ] ] ], Univ ], Univ ] ] ] ] )
+  ## Use to V P _ constructions: B-aN-b{I-aN-gN}-bN...
+  elif re.search( '^@\w+-[ab]\w+-[ab]{I-aN-gN}-[ab]\w+(-[stuwxyz].*)?:', expr ) != None:
+    return( [ '\\p', '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar, 'Gen', [ '\\e'+sVar, 'f', [ '\\tt', '\\uu', '^', ['tt','y'+sVar], ['uu','y'+sVar] ], [ '\\t', '\\u', '^', ['t','x'+sVar], ['u','x'+sVar] ], 'r', [ '\\d'+sVar, '^', ['s','d'+sVar], ['Equal','d'+sVar,'e'+sVar] ] ], [ '\\e'+sVar,expr[1:],'e'+sVar] ] ] ] )
 #    return( [ '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'f', [ '\\p', '\\t', '\\u', 'p', Univ, [ '\\y'+sVar, '^', ['u','y'+sVar], [ 'More', ['\\z'+sVar,'Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','e','x'+sVar,'z'+sVar]],'u'],
 #                                                                                                                                                       ['\\z'+sVar,'Some',['\\e','^',['t','e'],[expr[1:]+'nessContains','e','y'+sVar,'z'+sVar]],'u'] ] ] ], 'r', 's' ] ] )
   ## Embedded question: B-aN-b{V-iN}...
-  elif re.search( '^@\w+-[ab]\w+-[ab]{V-iN}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]{V-iN}(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'f', [ '\\t', '\\u', '^', ['t','x'+sVar], ['u','x'+sVar] ], Univ, [ '\\d'+sVar, 'Some', 'r', ['\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'d'+sVar], ['s','d'+sVar] ] ] ] ] )
   ## 'No matter' construction: A-aN-b{V-iN}-aPno...
-  elif re.search( '^@\w+-[ab]\w+-[ab]{V-iN}-aP[a-z]+(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]\w+-[ab]{V-iN}-aP[a-z]+(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'f', [ '\\t', '\\u', '^', ['t','x'+sVar], ['u','x'+sVar] ], Univ, [ '\\d'+sVar, 'Some', 'r', ['\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'d'+sVar], ['s','d'+sVar] ] ] ] ] )
   ## Bare relatives (bad take as eventuality of V is not constrained by wh-noun): N-b{V-gN}...
-  elif re.search( '^@\w+-[ab]{V-gN}(-[lx].*)?:', expr ) != None:
+  elif re.search( '^@\w+-[ab]{V-gN}(-[stuwxyz].*)?:', expr ) != None:
     return( [        '\\f',        '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ '^', [ 'Some', ['\\e'+sVar,expr[1:],'e'+sVar,'x'+sVar], Univ ], ['r','x'+sVar] ], [ 'f', [ '\\t', '\\u', '^', ['t','x'+sVar], ['u','x'+sVar] ], Univ, Univ ] ], 's' ] )
 #  elif expr[0]=='@' and getLocalArity( t.split(':')[0] ) == 1:  return( [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\x',                     'Some', [ '\\e', '^', [expr[1:],'e','x'    ], ['r','e'] ], 's'   ] ] )
 #  elif expr[0]=='@' and getLocalArity( t.split(':')[0] ) == 2:  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x', 'p', Univ, [ '\\y', 'Some', [ '\\e', '^', [expr[1:],'e','x','y'], ['r','e'] ], 's' ] ] ] )
@@ -621,7 +650,7 @@ def replace( expr, old, new ):
 ########################################
 
 def betaReduce( expr ):
-  if VERBOSE: print( 'reducing:', expr )
+  if VERBOSE: print( 'reducing:', prettyForm(expr) )
   ## If string, skip...
   if isinstance(expr,str):
     return
@@ -690,6 +719,7 @@ def simplify( expr ):
 #      simplify( expr )
 
     ## Eliminate existentials with conjunctions with equality...
+#    print( prettyForm(expr) )
     if expr[0]=='Some' and expr[2][1]=='Equal':
       newVar = expr[2][3] if expr[2][3] != expr[2][0][1:] else expr[2][2]
       if VERBOSE:  print( 'pruningA replacing', expr[1][0][1:], 'with', newVar, 'in', prettyForm(expr) )
@@ -708,8 +738,9 @@ def simplify( expr ):
       if VERBOSE:  print( 'pruningD replacing', expr[3][0][1:], 'with', expr[3][3][2], 'in', prettyForm(expr) )
       expr[:] = [ expr[0], '^', replace( expr[2][1:], expr[2][0][1:], expr[3][3][2] ), replace( expr[3][2], expr[3][0][1:], expr[3][3][2] ) ]
       if VERBOSE:  print( '    yields', prettyForm(expr) )
-  except:
-    print( 'ERROR: unreduced expr (had set-valued variable):', expr )
+  except ValueError:  # Exception as e:
+    print( 'ERROR: unreduced expr (had set-valued variable):', prettyForm(expr) )
+    print( e )
     exit( 0 )
 
   ## Remove unaries...
@@ -741,6 +772,7 @@ def simplify( expr ):
 #
 ########################################
 
+#'''
 def percAntAna( expr, Anaphs ):
 
   Anas = [ ]
@@ -807,6 +839,76 @@ def percAntAna( expr, Anaphs ):
   if VERBOSE: print( 'I made this:', expr )
 
   return( Ants, Anas, Vars )
+#'''
+
+
+def findAnaph( expr, antvar ):
+#  print( 'findAnaph ' + prettyForm(expr) + ' ' + antvar )
+  if isinstance( expr, list ):
+    if 'InAnaphorSet' in expr: return expr[ expr.index( 'InAnaphorSet' ) + 1 ] == antvar
+#  if isinstance( expr, str ): return expr == antvar
+    for subexpr in expr:
+      if findAnaph( subexpr, antvar ): return True
+  return False
+
+
+def corefScoper( ant, expr, Ants, ScopedAnts ):
+#  print( 'corefScoper ' + str(Ants) + ' ' + str(ScopedAnts) )
+  for antnum in Ants:
+    if antnum not in ScopedAnts and findAnaph( expr, antnum ):
+#      print( '  found ' + antnum )
+      return( [ 'Some', [ '\\a'+antnum, 'Equal', 'a'+antnum, [ '\\v'+antnum, access( ant, antnum ) ] ], [ '\\a'+antnum, corefScoper( ant, expr, Ants, ScopedAnts + [ antnum ] ) ] ] )
+  return( coref( expr, Ants, ScopedAnts ) )
+
+
+def coref( expr, Ants, ScopedAnts ):
+#  print( 'coref ' + prettyForm(expr) )
+
+  ## If lambdas, copy over...
+  if isinstance( expr, list ) and '\\' == expr[0][0]:
+    return( [ expr[0] ] + coref( expr[1:], Ants, ScopedAnts ) )
+
+  ## If encountering quantifier...
+  if isinstance( expr, list ) and len(expr) > 2 and isinstance( expr[-2], list ) and len(expr[-2]) > 0 and expr[-2][0][0] == '\\':
+    lambdavar = expr[-2][0][1:]
+    exprOut = expr[:-2] + [ coref( expr[-2], Ants, ScopedAnts ) ]
+    prefix = []
+    ## If quantifier variable is indexed lambda variable, index expression by antecedent number...
+    if lambdavar in Ants:
+      antvar = Ants[ lambdavar ]
+      Ants[ antvar ] = True
+      del Ants[ lambdavar ]
+      prefix = [ 'AntecTmp', antvar ]
+#    print( 'replacing ' + expr[-2][0][1:] + ' ' + expr[-1][0][1:] )
+#    print( 'building from ' + prettyForm(exprOut) )
+    return( prefix + exprOut + [ [ expr[-1][0], corefScoper( replace( exprOut[-1][1:], expr[-2][0][1:], expr[-1][0][1:] ), expr[-1][1:], Ants, ScopedAnts ) ] ] )
+
+  ## If conjunction...
+  if isinstance( expr, list ) and len(expr) > 0 and '^' == expr[0]:
+#    print( 'thinking conjunction ' + prettyForm(expr) )
+    exprOut = [ ]
+    for i in range( len( expr ) ):
+      exprOut += [ coref( expr[i], Ants, ScopedAnts ) ]
+      if any([ antnum not in ScopedAnts and findAnaph( expr[i+1:], antnum ) for antnum in Ants ]):
+        return( exprOut[:i+1] + [ corefScoper( exprOut[i], ( ( [ '^' ] + expr[i+1:] ) if len(expr)>i+2 else expr[i+1] ), Ants, ScopedAnts ) ] )
+    return( exprOut )
+ 
+  ## If encountering InAntecedentSet keyword, index antecedent number by lambda variable name...
+  if 'InAntecedentSet' in expr:
+    i = expr.index( 'InAntecedentSet' )
+    Ants[ expr[ i + 2 ] ] = expr[ i + 1 ]
+    return( expr[:i] + [ 'True' ] + expr[i+3:] )
+
+#  ## If encountering InAnaphorSet keyword, replace with antecedent variable...
+#  if 'InAnaphorSet' in expr:
+#    i = expr.index( 'InAnaphorSet' )
+#    return( expr[:i] + 'a' + expr[i+1] + expr[i+2:] )
+
+#  print( 'NOPE: ' + prettyForm(expr) )
+
+  ## If other predicate...
+  return( expr )
+    
 
 
 ########################################
@@ -862,6 +964,39 @@ def checkUnboundVars( expr, Bound=[] ):
   else:
     for subexpr in expr:
       checkUnboundVars( subexpr, Bound )
+
+
+########################################
+#
+#  II.F. Check well-formed...
+#
+########################################
+
+def isWellFormedProp( expr ):
+  ## Conjunction...
+  if isinstance( expr, list ) and len(expr) > 0 and expr[0] == '^':
+    if all([ isWellFormedProp(subexpr) for subexpr in expr[1:] ]):  return True
+    print( 'Ill-formed proposition: ' + prettyForm(expr) )
+    return False
+  ## Quantifier...
+  if isinstance( expr, list ) and len(expr) > 2 and isinstance( expr[0], str ) and expr[0][0] != '\\' and isinstance( expr[1], list ) and len(expr[1]) > 0 and expr[1][0][0]=='\\' and isinstance( expr[2], list ) and len(expr[2]) > 0 and expr[2][0][0]=='\\' and isWellFormedSet( expr[1] ) and isWellFormedSet( expr[2] ):  return True
+  ## Predicate...
+  if isinstance( expr, list ) and len(expr) > 0 and expr[0][0] != '\\' and all([ isWellFormedEntity(subexpr) for subexpr in expr ]):  return True
+  print( 'Ill-formed proposition: ' + prettyForm(expr) )
+  return False
+
+def isWellFormedEntity( expr ):
+  ## Atom...
+  if isinstance( expr, str ) and len(expr) > 0 and expr[0] != '\\':  return True
+  ## Intension...
+  if isinstance( expr, list) and len(expr) > 1 and expr[0] == 'Intension' and isWellFormedProp( expr[1] ):  return True
+  print( 'Ill-formed entity: ' + prettyForm(expr) )
+  return False
+
+def isWellFormedSet( expr ):
+  if isinstance( expr, list ) and len(expr) > 1 and isinstance( expr[0], str ) and len(expr[0]) > 0 and expr[0][0] == '\\' and isWellFormedProp( expr[1:] ):  return True
+  print( 'Ill-formed set: ' + prettyForm(expr) )
+  return False
 
 
 ################################################################################
@@ -957,26 +1092,39 @@ while True:
   if VERBOSE:  print( '----- unpack -----' )
   fullExpr = [ unpack(shortExpr), Univ, Univ ]
   if VERBOSE:  print( prettyForm(fullExpr) )
+  print( nArticle, 'UNPACK:', prettyForm(fullExpr) )
 
   if VERBOSE:  print( '----- beta reduce -----' )
   betaReduce( fullExpr )
   if VERBOSE:  print( prettyForm(fullExpr) )
+  print( nArticle, 'BETARED:', prettyForm(fullExpr) )
 
-  if VERBOSE:  print( '----- simplify -----' )
-  simplify( fullExpr )
-  if VERBOSE:  print( prettyForm(fullExpr) )
+  print( nArticle, 'FIRST: ', end='' )
+  bWell = isWellFormedProp( fullExpr )
+  print()
+  print( nArticle, 'WELL-FORMED:', bWell )
+  if bWell:
 
-  if VERBOSE:  print( '----- percolate -----' )
-  if VERBOSE:  print( 'Anaphs', Anaphs )
-  percAntAna( fullExpr, Anaphs )
-  if VERBOSE:  print( prettyForm(fullExpr) )
-
-  if VERBOSE:  print( '----- simplify -----' )
-  simplify( fullExpr )
-  print( nArticle, 'LOGIC:', prettyForm(fullExpr) )
-
-  checkUnboundVars( fullExpr )
-
+    if VERBOSE:  print( '----- simplify -----' )
+    simplify( fullExpr )
+    if VERBOSE:  print( prettyForm(fullExpr) )
+    print( nArticle, 'PRE-LOGIC:', prettyForm(fullExpr) )
+  
+    if VERBOSE:  print( '----- percolate -----' )
+    if VERBOSE:  print( 'Anaphs', Anaphs )
+#    percAntAna( fullExpr, Anaphs )
+    Anaphs = { }
+    ScopedAnts = [ ]
+    fullExpr = coref( fullExpr, Anaphs, ScopedAnts )
+    if VERBOSE:  print( prettyForm(fullExpr) )
+    print( nArticle, 'COREFD:', prettyForm(fullExpr) )
+  
+    if VERBOSE:  print( '----- simplify -----' )
+    simplify( fullExpr )
+    print( nArticle, 'LOGIC:', prettyForm(fullExpr) )
+  
+    checkUnboundVars( fullExpr )
+  
   if '!ARTICLE' not in line:
     break
 
