@@ -42,7 +42,8 @@ class BatchIterator:
         batch_start = (index % 1000) * self.batch_size
         batch_end = batch_start + self.batch_size
         # load data using np.memmap
-        mmapped_data = np.memmap(file_name, dtype='uint16', mode='r', shape=(2098176000,))
+        # mmapped_data = np.memmap(file_name, dtype='uint16', mode='r', shape=(2098176000,))
+        mmapped_data = np.load(file_name)
         batch_data = mmapped_data[batch_start:batch_end]
         return batch_data
 
