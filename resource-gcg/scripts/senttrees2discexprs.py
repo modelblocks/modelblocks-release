@@ -548,6 +548,7 @@ def unpack( expr ):
 #  elif expr.split(':')[0] == '@I-aN-b{B-aN}':  return( [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\e', '^', [expr[1:],'e'], ['r','e'] ], 's' ] )
   ## Nominal relative or interrogative pronoun: N-rN...
   elif re.search( '^@[DN]-[ri]N:', expr ):  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar], ['r','e'+sVar] ], 's' ] ] )
+  elif re.search( '^@[DN]NGEN-[ri]N:', expr ):  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Gen', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar], ['r','e'+sVar] ], 's' ] ] )
 #  elif expr.split(':')[0] == '@N-rN':  return( [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar], ['r','e'+sVar] ], 's' ] ] )
   ## Adverbial relative or interrogative pronoun: R-aN-rN...
   elif re.search( '^@A-aN-[ri]N:', expr ):  return( [ '\\p', '\\q', '\\r', '\\s', 'q', Univ, [ '\\x'+sVar, 'p', Univ, [ '\\y'+sVar, 'Some', [ '\\e'+sVar, '^', [expr[1:],'e'+sVar,'x'+sVar,'y'+sVar], ['r','e'+sVar] ], 's' ] ] ] )
