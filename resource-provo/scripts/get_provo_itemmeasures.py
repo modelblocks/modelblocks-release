@@ -95,6 +95,7 @@ out['clozesurp'] = -np.log(out.clozeprob)
 name2discid = {x: i for i, x in enumerate(sorted(list(out['docid'].unique())))}
 out['discid'] = out.docid.map(name2discid)
 out['discpos'] = out.groupby('discid').cumcount() + 1
+out = out.sort_values(by=['discid', 'discpos'], ascending=[True, True])
 
 del out['Text_ID']
 

@@ -21,6 +21,20 @@ each with checkpoints specified by training steps:
 
 import os, sys, torch, transformers
 from transformers import AutoTokenizer, AutoModelForCausalLM, GPTNeoXTokenizerFast, GPTNeoXForCausalLM
+import math
+
+
+def get_space_subword_idx(tokenizer):
+    space_idx = []
+    subword_idx = []
+
+    for token, idx in tokenizer.vocab.items():
+        if token.startswith("Ġ"):
+            space_idx.append(idx)
+        else:
+            subword_idx.append(idx)
+
+    return space_idx, subword_idx
 
 
 def generate_stories(fn):
@@ -45,25 +59,27 @@ def generate_stories(fn):
 def main():
     stories = generate_stories(sys.argv[1])
     model_variant = sys.argv[2].split("/")[-1]
-    mode = sys.argv[-1]
-    assert mode in {"token", "word"}, ValueError('Calculation mode must be "token" or "word"')
 
     if "gpt-neox" in model_variant:
         tokenizer = GPTNeoXTokenizerFast.from_pretrained(sys.argv[2])
     elif "gpt" in model_variant:
-        tokenizer = AutoTokenizer.from_pretrained(sys.argv[2], use_fast=False)
+        tokenizer = AutoTokenizer.from_pretrained(sys.argv[2])
     elif "opt" in model_variant:
-        tokenizer = AutoTokenizer.from_pretrained(sys.argv[2], use_fast=False)
+        tokenizer = AutoTokenizer.from_pretrained(sys.argv[2])
     elif "pythia" in model_variant:
-        tokenizer = AutoTokenizer.from_pretrained(sys.argv[2], revision=sys.argv[3])
+        tokenizer = AutoTokenizer.from_pretrained(sys.argv[2], revision=sys.argv[3], cache_dir=f"hf_models/{model_variant}_{sys.argv[3]}")
+
     else:
         raise ValueError("Unsupported LLM variant")
 
+    space_idx, subword_idx = get_space_subword_idx(tokenizer)
+
     if "pythia" in model_variant:
-        model = GPTNeoXForCausalLM.from_pretrained(sys.argv[2], revision=sys.argv[3])
+        model = GPTNeoXForCausalLM.from_pretrained(sys.argv[2], revision=sys.argv[3], cache_dir=f"hf_models/{model_variant}_{sys.argv[3]}")
     else:
         model = AutoModelForCausalLM.from_pretrained(sys.argv[2])
 
+    # model.cuda()
     model.eval()
     softmax = torch.nn.Softmax(dim=-1)
     ctx_size = model.config.max_position_embeddings
@@ -104,18 +120,15 @@ def main():
 
         # remaining tokens
         if "gpt-neox" in model_variant or "pythia" in model_variant or "opt" in model_variant:
-            batches.append((transformers.BatchEncoding({"input_ids": torch.tensor(ids[:-1]).unsqueeze(0),
-                                                        "attention_mask": torch.tensor(attn[:-1]).unsqueeze(0)}),
-                           torch.tensor(ids[1:]), start_idx, False))
+            batches.append((transformers.BatchEncoding({"input_ids": torch.tensor(ids).unsqueeze(0),
+                                                        "attention_mask": torch.tensor(attn).unsqueeze(0)}),
+                            torch.tensor(ids[1:]), start_idx, False))
         elif "gpt" in model_variant:
-            batches.append((transformers.BatchEncoding({"input_ids": torch.tensor(ids[:-1]),
-                                                        "attention_mask": torch.tensor(attn[:-1])}),
-                           torch.tensor(ids[1:]), start_idx, False))
+            batches.append((transformers.BatchEncoding({"input_ids": torch.tensor(ids),
+                                                        "attention_mask": torch.tensor(attn)}),
+                            torch.tensor(ids[1:]), start_idx, False))
 
-    print("word totsurp")
-    curr_word_surp = []
-    curr_toks = []
-    curr_word_ix = 0
+    print("word totsurp bori bprob iprob")
     is_continued = False
     for batch in batches:
         batch_input, output_ids, start_idx, will_continue = batch
@@ -125,34 +138,22 @@ def main():
 
         toks = tokenizer.convert_ids_to_tokens(output_ids)
         index = torch.arange(0, output_ids.shape[0])
-        surp = -1 * torch.log2(softmax(model_output.logits).squeeze(0)[index, output_ids])
+        probs = softmax(model_output.logits.squeeze(0))
+        all_surp = -1 * torch.log2(probs)
+        actual_surp = all_surp[index, output_ids]
 
-        if mode == "token":
-            # token-level surprisal
-            for i in range(start_idx, len(toks)):
-                cleaned_tok = tokenizer.convert_tokens_to_string([toks[i]]).replace(" ", "")
-                print(cleaned_tok, surp[i].item())
+        for i in range(start_idx, len(toks)):
+            # necessary for diacritics in Dundee
+            cleaned_tok = tokenizer.convert_tokens_to_string([toks[i]]).replace(" ", "")
+            if toks[i].startswith("Ġ"):
+                print(cleaned_tok, actual_surp[i].item(), "B", torch.log2(torch.sum(probs[i][space_idx])).item(), torch.log2(torch.sum(probs[i][subword_idx])).item())
+            else:
+                print(cleaned_tok, actual_surp[i].item(), "I", torch.log2(torch.sum(probs[i][space_idx])).item(), torch.log2(torch.sum(probs[i][subword_idx])).item())
 
-        elif mode == "word":
-            # word-level surprisal
-            # if the batch starts a new story
-            if not is_continued:
-                curr_word_surp = []
-                curr_toks = []
-            for i in range(start_idx, len(toks)):
-                curr_word_surp.append(surp[i].item())
-                curr_toks += [toks[i]]
-                curr_toks_str = tokenizer.convert_tokens_to_string(curr_toks)
-                # summing token-level surprisal
-                if words[curr_word_ix] == curr_toks_str.strip():
-                    print(curr_toks_str.strip(), sum(curr_word_surp))
-                    curr_word_surp = []
-                    curr_toks = []
-                    curr_word_ix += 1
+        if not is_continued:
+            print("<eos>", -1 * torch.log2(torch.sum(probs[-1][space_idx])).item(), "B", torch.log2(torch.sum(probs[-1][space_idx])).item(), torch.log2(torch.sum(probs[-1][subword_idx])).item())
 
         is_continued = will_continue
-
-        del model_output
 
 
 if __name__ == "__main__":
