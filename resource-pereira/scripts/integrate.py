@@ -26,7 +26,7 @@ def get_sentences_surprisal(csv_filename, measures_filename):
     with open(measures_filename, 'r', encoding='utf-8') as measuresfile:
         next(measuresfile)  # skip headers
         for line in measuresfile:
-            word, surprisal, rolled, word2, sentid, sentpos, discid, discpos, wlen = line.strip().split()
+            word, surprisal, word2, sentid, sentpos, discid, discpos, wlen = line.strip().split()
             surprisal_values.append((word,float(surprisal)))
             sent_ids.append(sentid)
             discids.append(discid)

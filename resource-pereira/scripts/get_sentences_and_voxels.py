@@ -79,11 +79,13 @@ def transform_mat_data(mat_file_dir="P01/data_384sentences.mat", save_csv_dir="s
             voxel_index[roi] = indexes
     print(f"Done getting voxel indexes...")
 
-    # concat the voxels (the first column being the subject, and then the evid, the sentences...)
+    # concat the voxels (the first column being the corpus, and then subject, and then evid, the sentences...)
+    corpus_name = '243' if '243' in mat_file_dir else '384'
+    corpus_column = [corpus_name for _ in sentences]
     subject_column = [mat_file_dir.split('/')[-2] for _ in sentences]
     evid_column = ['_'.join([subject, key_sentence, str(order_in_passage)]) for subject, key_sentence, order_in_passage in zip(subject_column,keySentences,sentence_order_in_passage)]
     
-    ave_columns = [subject_column, evid_column, sentences, sentence_order_in_passage, keySentences, categorySentences]
+    ave_columns = [corpus_column, subject_column, evid_column, sentences, sentence_order_in_passage, keySentences, categorySentences]
     for roi in voxel_index.keys():
         ave = voxels[:, voxel_index[roi]].mean(axis=1)
         ave = np.array(ave) if type(ave) is list else ave
@@ -95,7 +97,7 @@ def transform_mat_data(mat_file_dir="P01/data_384sentences.mat", save_csv_dir="s
     # the 'sentpos' column marks the position of a sentence in paragraph;
     # the 'sentid' column marks the index of a sentence in the corpus;
     # This representation MAY BE CHANGED for potentially better ones.
-    df = pd.DataFrame(matrix,columns=['subject', 'evid', 'sentences', 'sentpos', 'keySentences', 'categorySentences'] + list(voxel_index.keys()))
+    df = pd.DataFrame(matrix,columns=['corpus', 'subject', 'evid', 'sentences', 'sentpos', 'keySentences', 'categorySentences'] + list(voxel_index.keys()))
     df['BOLD'] = df[[col for col in df if col.startswith('L_')]].apply(pd.to_numeric).sum(axis=1)
     df['sentid'],df['sentid2'] = df.index,df.index
     df.to_csv(save_csv_dir, index=False)
