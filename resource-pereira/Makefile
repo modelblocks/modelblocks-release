@@ -59,13 +59,14 @@ genmodel/%.csv:  $(PEREIRA-SCRIPTS)/transform_mat.py  $(PEREIRADIR)/$$(basename 
 genmodel/pereira%.sentitems genmodel/pereira-sent%.evmeasures:  $(PEREIRA-SCRIPTS)/get_sentences_and_voxels.py  $(PEREIRADIR)/$$(word 1,$$(subst -, ,$$*))/data_$$(word 2,$$(subst -, ,$$*))sentences.mat
 	python3  $<  -I $(word 2,$^)  -S genmodel/pereira$*.sentitems  -C genmodel/pereira-sent$*.evmeasures
 
-%pereira.sentitems:  %pereiraP01-243.sentitems
+%pereira.sentitems:  %pereiraP01-243.sentitems  %pereiraP01-384.sentitems
 	cat $^ > $@
 
-%pereira.itemmeasures: %pereira.sentitems $(RT-SCRIPTS)/lineitems2itemmeasures.py
-	cat $<  |  python3 $(word 2, $^) >  $@
+%pereira.itemmeasures:  $(RT-SCRIPTS)/lineitems2itemmeasures.py  %pereiraP01-243.sentitems  %pereiraP01-384.sentitems
+	cat $(word 2,$^)  |  python3 $< 243  >  $@
+	cat $(word 3,$^)  |  python3 $< 384  >>  $@
 
-%pereira-sent.evmeasures: $(foreach subj,P01 M02 M03 M04 M07 M15,%pereira-sent$(subj)-243.evmeasures)
+%pereira-sent.evmeasures: $(foreach subj,P01 M02 M03 M04 M07 M15,%pereira-sent$(subj)-243.evmeasures) $(foreach subj,P01 M02 M04 M07 M08 M09 M14 M15,%pereira-sent$(subj)-384.evmeasures)
 	cat $< >$@
 	for f in $(filter-out $<,$^); do \
 		tail -n +2 $$f >> $@; \
