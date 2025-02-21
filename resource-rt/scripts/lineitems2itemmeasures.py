@@ -16,7 +16,7 @@ for line in sys.stdin:
     if line:
         sentpos = 1
         for w in line.split():
-            print('%s %d %d %d %d %d' % (w, sentid, sentpos, discid, discpos, corpus))
+            print('%s %d %d %d %d %s' % (w, sentid, sentpos, discid, discpos, corpus))
             sentpos += 1
             discpos += 1
         sentid += 1
