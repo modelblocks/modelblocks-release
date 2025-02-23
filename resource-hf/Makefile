@@ -61,7 +61,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) gpt2 | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) gpt2 | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 .PRECIOUS: %.gpt2-medium.tokmeasures
 %.gpt2-medium.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py $(HF-SCRIPTS)/postprocess_bi.py
@@ -69,7 +69,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) gpt2-medium | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) gpt2-medium | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 .PRECIOUS: %.gpt2-large.tokmeasures
 %.gpt2-large.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py $(HF-SCRIPTS)/postprocess_bi.py
@@ -77,7 +77,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) gpt2-large | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) gpt2-large | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 .PRECIOUS: %.gpt2-xl.tokmeasures
 %.gpt2-xl.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py $(HF-SCRIPTS)/postprocess_bi.py
@@ -85,7 +85,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) gpt2-xl | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) gpt2-xl | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 ################################################################################
 #
@@ -99,7 +99,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) facebook/opt-125m | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) facebook/opt-125m | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 .PRECIOUS: %.opt-350m.tokmeasures
 %.opt-350m.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py $(HF-SCRIPTS)/postprocess_bi.py
@@ -107,7 +107,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) facebook/opt-350m | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) facebook/opt-350m | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 .PRECIOUS: %.opt-1300m.tokmeasures
 %.opt-1300m.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py $(HF-SCRIPTS)/postprocess_bi.py
@@ -115,7 +115,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) facebook/opt-1.3b | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) facebook/opt-1.3b | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 .PRECIOUS: %.opt-2700m.tokmeasures
 %.opt-2700m.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py $(HF-SCRIPTS)/postprocess_bi.py
@@ -123,7 +123,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) facebook/opt-2.7b | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) facebook/opt-2.7b | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 .PRECIOUS: %.opt-6700m.tokmeasures
 %.opt-6700m.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py $(HF-SCRIPTS)/postprocess_bi.py
@@ -131,7 +131,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) facebook/opt-6.7b | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) facebook/opt-6.7b | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 .PRECIOUS: %.opt-13000m.tokmeasures
 %.opt-13000m.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py $(HF-SCRIPTS)/postprocess_bi.py
@@ -139,7 +139,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) facebook/opt-13b | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) facebook/opt-13b | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 .PRECIOUS: %.opt-30000m.tokmeasures
 %.opt-30000m.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py $(HF-SCRIPTS)/postprocess_bi.py
@@ -147,7 +147,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) facebook/opt-30b | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) facebook/opt-30b | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 .PRECIOUS: %.opt-66000m.tokmeasures
 %.opt-66000m.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py $(HF-SCRIPTS)/postprocess_bi.py
@@ -155,7 +155,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) facebook/opt-66b | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) facebook/opt-66b | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 ################################################################################
 #
@@ -169,7 +169,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) EleutherAI/gpt-neo-125M | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) EleutherAI/gpt-neo-125M | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 .PRECIOUS: %.gpt-neo-1300m.tokmeasures
 %.gpt-neo-1300m.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py $(HF-SCRIPTS)/postprocess_bi.py
@@ -177,7 +177,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) EleutherAI/gpt-neo-1.3B | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) EleutherAI/gpt-neo-1.3B | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 .PRECIOUS: %.gpt-neo-2700m.tokmeasures
 %.gpt-neo-2700m.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py $(HF-SCRIPTS)/postprocess_bi.py
@@ -185,7 +185,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) EleutherAI/gpt-neo-2.7B | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) EleutherAI/gpt-neo-2.7B | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 .PRECIOUS: %.gpt-j-6000m.tokmeasures
 %.gpt-j-6000m.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py $(HF-SCRIPTS)/postprocess_bi.py
@@ -193,7 +193,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) EleutherAI/gpt-j-6B | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) EleutherAI/gpt-j-6B | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 .PRECIOUS: %.gpt-neox-20000m.tokmeasures
 %.gpt-neox-20000m.tokmeasures:  %.sentitems $(HF-SCRIPTS)/get_llm_surprisal.py $(HF-SCRIPTS)/postprocess_bi.py
@@ -201,7 +201,7 @@ hf_env: $(RESOURCE-HF)/hf_conda_env.sh
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $(word 2,$^) $(word 1,$^) EleutherAI/gpt-neox-20b | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $@  2>  $@.log
+	python3 $(word 2,$^) $(word 1,$^) EleutherAI/gpt-neox-20b | python3 $(word 3,$^) | grep -v "<eos>"  >  $@  2>  $@.log
 
 ################################################################################
 #
@@ -218,7 +218,7 @@ define build_70m
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-70m step$(1) | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
+	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-70m step$(1) | python3 $(word 3,$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
 endef
 
 define build_160m
@@ -228,7 +228,7 @@ define build_160m
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-160m step$(1) | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
+	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-160m step$(1) | python3 $(word 3,$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
 endef
 
 define build_410m
@@ -238,7 +238,7 @@ define build_410m
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-410m step$(1) | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
+	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-410m step$(1) | python3 $(word 3,$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
 endef
 
 define build_1000m
@@ -248,7 +248,7 @@ define build_1000m
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-1b step$(1) | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
+	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-1b step$(1) | python3 $(word 3,$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
 endef
 
 define build_1400m
@@ -258,7 +258,7 @@ define build_1400m
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-1.4b step$(1) | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
+	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-1.4b step$(1) | python3 $(word 3,$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
 endef
 
 define build_2800m
@@ -268,7 +268,7 @@ define build_2800m
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-2.8b step$(1) | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
+	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-2.8b step$(1) | python3 $(word 3,$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
 endef
 
 define build_6900m
@@ -278,7 +278,7 @@ define build_6900m
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-6.9b step$(1) | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
+	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-6.9b step$(1) | python3 $(word 3,$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
 endef
 
 define build_12000m
@@ -288,7 +288,7 @@ define build_12000m
 	### This target assumes active (hf_env) conda environment ##
 	### Please run "make hf_env" and "conda activate hf_env" ###
 	############################################################
-	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-12b step$(1) | python3 $$(word 3,$$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
+	python3 $$(word 2,$$^) $$(word 1,$$^) EleutherAI/pythia-12b step$(1) | python3 $(word 3,$^) | grep -v "<eos>"  >  $$@  2>  $$@.log
 endef
 
 $(foreach i,$(STEPS),\
