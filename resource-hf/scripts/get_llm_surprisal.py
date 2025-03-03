@@ -103,31 +103,36 @@ def main():
         # sliding windows with 50% overlap
         # start_idx is for correctly indexing the "later 50%" of sliding windows
         while len(ids) > ctx_size:
-            # for models that explicitly require the first dimension (batch_size)
-            if "gpt-neox" in model_variant or "pythia" in model_variant or "opt" in model_variant:
-                batches.append((transformers.BatchEncoding({"input_ids": torch.tensor(ids[:ctx_size]).unsqueeze(0),
-                                                            "attention_mask": torch.tensor(attn[:ctx_size]).unsqueeze(0)}),
-                                torch.tensor(ids[1:ctx_size+1]), start_idx, True))
-            # for other models
-            elif "gpt" in model_variant:
-                batches.append((transformers.BatchEncoding({"input_ids": torch.tensor(ids[:ctx_size]),
-                                                            "attention_mask": torch.tensor(attn[:ctx_size])}),
-                                torch.tensor(ids[1:ctx_size+1]), start_idx, True))
-
+            # # for models that explicitly require the first dimension (batch_size)
+            # if "gpt-neox" in model_variant or "pythia" in model_variant or "opt" in model_variant:
+            #     batches.append((transformers.BatchEncoding({"input_ids": torch.tensor(ids[:ctx_size]).unsqueeze(0),
+            #                                                 "attention_mask": torch.tensor(attn[:ctx_size]).unsqueeze(0)}),
+            #                     torch.tensor(ids[1:ctx_size+1]), start_idx, True))
+            # # for other models
+            # elif "gpt" in model_variant:
+            #     batches.append((transformers.BatchEncoding({"input_ids": torch.tensor(ids[:ctx_size]),
+            #                                                 "attention_mask": torch.tensor(attn[:ctx_size])}),
+            #                     torch.tensor(ids[1:ctx_size+1]), start_idx, True))
+            batches.append((transformers.BatchEncoding({"input_ids": torch.tensor(ids[:ctx_size]).unsqueeze(0),
+                                                        "attention_mask": torch.tensor(attn[:ctx_size]).unsqueeze(0)}),
+                            torch.tensor(ids[1:ctx_size+1]), start_idx, True))
             ids = ids[int(ctx_size/2):]
             attn = attn[int(ctx_size/2):]
             start_idx = int(ctx_size/2)
 
-        # remaining tokens
-        if "gpt-neox" in model_variant or "pythia" in model_variant or "opt" in model_variant:
-            batches.append((transformers.BatchEncoding({"input_ids": torch.tensor(ids).unsqueeze(0),
-                                                        "attention_mask": torch.tensor(attn).unsqueeze(0)}),
-                            torch.tensor(ids[1:]), start_idx, False))
-        elif "gpt" in model_variant:
-            batches.append((transformers.BatchEncoding({"input_ids": torch.tensor(ids),
-                                                        "attention_mask": torch.tensor(attn)}),
-                            torch.tensor(ids[1:]), start_idx, False))
-
+        # # remaining tokens
+        # if "gpt-neox" in model_variant or "pythia" in model_variant or "opt" in model_variant:
+        #     batches.append((transformers.BatchEncoding({"input_ids": torch.tensor(ids).unsqueeze(0),
+        #                                                 "attention_mask": torch.tensor(attn).unsqueeze(0)}),
+        #                     torch.tensor(ids[1:]), start_idx, False))
+        # elif "gpt" in model_variant:
+        #     batches.append((transformers.BatchEncoding({"input_ids": torch.tensor(ids),
+        #                                                 "attention_mask": torch.tensor(attn)}),
+        #                     torch.tensor(ids[1:]), start_idx, False))
+        batches.append((transformers.BatchEncoding({"input_ids": torch.tensor(ids).unsqueeze(0),
+                                                    "attention_mask": torch.tensor(attn).unsqueeze(0)}),
+                        torch.tensor(ids[1:]), start_idx, False))
+    
     print("word totsurp bori bprob iprob")
     is_continued = False
     for batch in batches:
