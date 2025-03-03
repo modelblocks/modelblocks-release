@@ -32,7 +32,8 @@ def transform_mat_data(mat_file_dir="P01/data_384sentences.mat", save_csv_dir="s
     voxels = np.stack(data['examples_passagesentences'],axis=0)
 
     # load sentences, calculate sentence order in passages
-    sentences = [s[0][0] for s in data['keySentences']]
+    sentences = [s[0][0].strip() for s in data['keySentences']]
+    sentences = [sent.replace("  ", " ") for sent in sentences] # replace double spaces with single spaces
     labelsPassageForEachSentence = [s for s in data['labelsPassageForEachSentence'][0]] if len(data['labelsPassageForEachSentence'])==1 else [s[0] for s in data['labelsPassageForEachSentence']]
 
     sentence_order_in_passage = []
