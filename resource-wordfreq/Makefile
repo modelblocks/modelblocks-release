@@ -54,11 +54,11 @@ endef
 #%.enunigram.itemmeasures: $(WORDFREQ-SCRIPTS)/unigram.py %.sentitems | genmodel
 #	python3 $(word 1, $^) en <( cat $(word 2, $^) | grep -v '!ARTICLE' ) > $@
 
-LANGS := ar bn bs bg ca zh hr cs da nl en fi fr de el he hi hu is id it ja ko lv lt mk ms nb fa pl pt ro ru sk sl sr es sv fil ta tr uk ur vi
+LANGS := ar bn bs bg ca zh hr cs da nl du en fi fr de ge el gr he hi hu is id it ja ko lv lt mk ms nb no fa pl pt ro ru sk sl sr es sp sv fil ta tr uk ur vi 
 
 define build_multiling_unigram
 %.$(1)unigram.itemmeasures: $(WORDFREQ-SCRIPTS)/unigram.py %.sentitems | genmodel
-	python3 $$(word 1, $$^) $(1) <( cat $$(word 2, $$^) | grep -v '!ARTICLE' ) > $$@
+	python3 $$(word 1, $$^) $(1) <( cat $$(word 2, $$^) ) | sed 's/"//g' > $$@
 endef
 
 $(foreach i,$(LANGS),\
