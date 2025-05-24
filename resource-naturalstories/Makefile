@@ -154,8 +154,8 @@ $(CONFIGDIR)/user-naturalstories-directory.txt
 %naturalstories.t.itemmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/audio %naturalstories.itemmeasures $$(NATSTORIES-SCRIPTS)/textGrid2itemmeasures.py $(NATSTORIES-SCRIPTS)/add_start_and_end_of_sentence.py
 	python3 $(word 3, $^) $(word 2, $^) $(word 1, $^)  |  python3 $(word 4,$^)  >  $@
 
-%naturalstories.processed_RTs.tsv: $$(DEP-NATSTORIES) $(NATSTORIES-SCRIPTS)/process_RTs.py $(NATSTORDIR)/naturalstories_RTS/batch1_pro.csv $(NATSTORDIR)/naturalstories_RTS/batch2_pro.csv $(NATSTORDIR)/naturalstories_RTS/all_stories.tok
-	python3 $^  >  $@
+%naturalstories.processed_RTs.tsv: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.tsv
+	cp $^ $@
 
 #%naturalstories.evmeasures: $$(DEP-NATSTORIES) $(NATSTORDIR)/naturalstories_RTS/processed_RTs.tsv \
 $(RT-SCRIPTS)/rename_cols.py $(NATSTORIES-SCRIPTS)/merge_natstor.py %naturalstories.mfields.itemmeasures \
