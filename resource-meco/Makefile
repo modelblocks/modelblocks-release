@@ -121,7 +121,7 @@ define build_meco_sentitems
 endef
 
 %meco.itemmeasures: %meco.sentitems $(MECO-SCRIPTS)/lineitems2itemmeasures.py
-	cat $<  |  python3 $(word 2, $^) >  $@
+	cat $<  |  python3 $(word 2, $^) | sed 's/"//g' >  $@
 
 $(foreach i,$(MECOLANGS),\
 	$(eval $(call build_meco_sentitems,$(i)))\
