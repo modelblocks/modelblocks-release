@@ -54,7 +54,16 @@ full_Zt <- rt$Zt
 lt <- getME(model,"Lambdat")
 var_e <- sigma(model)^2
 # according to Eq. 4 of Bates et al.
-var_u <- var_e * crossprod(lt[1:n_re, 1:n_re])
+#print(n_re)
+#quit()
+
+if (n_re > 1) {
+  var_u <- var_e * crossprod(lt[1:n_re, 1:n_re])
+} else {
+  var_u <- as.vector(VarCorr(model)$subject)
+}
+#var_u <- var_e * crossprod(lt[1:n_re, 1:n_re])
+#var_u <- as.vector(VarCorr(model)$subject)
 
 start_idx <- 0
 total_ll <- 0
@@ -65,7 +74,13 @@ for (row in seq_len(nrow(subj_table))){
     Zt <- full_Zt[((row-1)*n_re+1):(row*n_re), (start_idx+1):(start_idx+curr_subj_count)]
     curr_data <- df[(start_idx+1):(start_idx+curr_subj_count),]
     curr_y <- y[(start_idx+1):(start_idx+curr_subj_count),]
-    var_y <- (t(Zt) %*% var_u %*% Zt)
+    if (n_re > 1) {
+      var_y <- (t(Zt) %*% var_u %*% Zt)
+    } else {
+      var_y <- (t(t(c(Zt))) %*% var_u %*% c(Zt))
+    }
+    #var_y <- (t(Zt) %*% var_u %*% Zt)
+    #var_y <- (t(t(c(Zt))) %*% var_u %*% c(Zt))
     var_y <- var_y + var_e * Diagonal(nrow(var_y))
     xb <- predict(model, re.form=NA, newdata=curr_data)
     curr_ll <- dmvnorm(curr_y, mean=xb, sigma=as.matrix(var_y), log=TRUE)
