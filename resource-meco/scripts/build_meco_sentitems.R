@@ -250,7 +250,9 @@ if (args[2] == "en") {  # English
   idx[nrow(idx) + 1,] <- list(7, 5, 13, "더")
   idx[nrow(idx) + 1,] <- list(8, 2, 5, "는")
 } else if (args[2] == "no") {  # Norwegian
-  idx[nrow(idx) + 1,] <- list(2, 8, 18, "mid")
+  idx[nrow(idx) + 1,] <- list(2, 8, 18, "med")
+  idx[nrow(idx) + 1,] <- list(2, 8, 20, "heraldiske")
+  idx[nrow(idx) + 1,] <- list(2, 8, 21, "praksis.")
 } else if (args[2] == "sp") {  # Spanish
   idx[nrow(idx) + 1,] <- list(8, 4, 3, "ya")
   idx[nrow(idx) + 1,] <- list(9, 4, 11, "y")
@@ -259,6 +261,7 @@ if (args[2] == "en") {  # English
 }
 
 idx <- idx[with(idx, order(trialid, sentnum, sent.word)),]
+# print(idx)
 
 trialid <- 1
 sentid <- 1

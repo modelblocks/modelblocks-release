@@ -177,6 +177,9 @@ LVPCFG-SCRIPTS := $(RESOURCE-LVPCFG)/scripts
 RESOURCE-MECO := $(abspath $(MBDIR)/resource-meco)
 MECO-SCRIPTS := $(RESOURCE-MECO)/scripts
 
+RESOURCE-MECO2 := $(abspath $(MBDIR)/resource-meco2)
+MECO2-SCRIPTS := $(RESOURCE-MECO2)/scripts
+
 RESOURCE-NATSTORIES := $(abspath $(MBDIR)/resource-naturalstories)
 NATSTORIES-SCRIPTS := $(RESOURCE-NATSTORIES)/scripts
 
@@ -306,6 +309,7 @@ include $(RESOURCE-CONLEN)/Makefile
 include $(RESOURCE-TOM)/Makefile
 include $(RESOURCE-DMV)/Makefile
 include $(RESOURCE-MECO)/Makefile
+include $(RESOURCE-MECO2)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
 include $(RESOURCE-NATSTORIESMAZE)/Makefile
 include $(RESOURCE-NATSTORIESFMRI)/Makefile
