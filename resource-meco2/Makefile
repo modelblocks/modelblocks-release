@@ -53,6 +53,7 @@
 
 MECOW1LANGS = du ee en fi ge gr he it ko no ru sp tr
 MECOW2LANGS = ba bp sp_ch da ge_po ge_zu hi_iiith hi_iitk ic no ru_mo se tr en_uk
+MECOALLLANGS = en no ru tr
 
 
 ################################################################################
@@ -108,6 +109,11 @@ define build_meco_w2_part_params
 	cp $$< $$@
 endef
 
+define build_meco_all_part_params
+%$(1)meco_all.part_params.ini: $(MECO2-SCRIPTS)/meco.part_params.ini
+	cp $$< $$@
+endef
+
 define build_meco_w1_evmeasures
 %$(1)meco_w1.evmeasures: $(MECO2DIR)/joint_l1_fixation_version2.0.rda $(MECO2DIR)/joint_l1_acc_breakdown.rda $(MECO2-SCRIPTS)/preprocess_meco.R $(MECO2-SCRIPTS)/process_meco.py %$(1)meco_w1.sentitems
 	Rscript $$(word 3,$$^) $$(word 1,$$^) $$(word 2,$$^) $(1) | python3 $$(word 4,$$^) $$(word 5,$$^) > $$@
@@ -117,6 +123,18 @@ define build_meco_w2_evmeasures
 %$(1)meco_w2.evmeasures: $(MECO2DIR)/joint_fix_trimmed_l1_wave2_MinusCh_version2.0.RDA $(MECO2DIR)/joint_l1_Wave2_acc_breakdown_trimmed.rda $(MECO2-SCRIPTS)/preprocess_meco.R $(MECO2-SCRIPTS)/process_meco.py %$(1)meco_w2.sentitems
 	Rscript $$(word 3,$$^) $$(word 1,$$^) $$(word 2,$$^) $(1) | python3 $$(word 4,$$^) $$(word 5,$$^) > $$@
 endef
+
+%enmeco_all.evmeasures: %enmeco_w1.evmeasures %en_ukmeco_w2.evmeasures
+	cat $(word 1, $^) <(tail --lines=+2 $(word 2, $^)) > $@
+
+%nomeco_all.evmeasures: %nomeco_w1.evmeasures %nomeco_w2.evmeasures
+	cat $(word 1, $^) <(tail --lines=+2 $(word 2, $^)) > $@
+
+%rumeco_all.evmeasures: %rumeco_w1.evmeasures %ru_momeco_w2.evmeasures
+	cat $(word 1, $^) <(tail --lines=+2 $(word 2, $^)) > $@
+
+%trmeco_all.evmeasures: %trmeco_w1.evmeasures %trmeco_w2.evmeasures
+	cat $(word 1, $^) <(tail --lines=+2 $(word 2, $^)) > $@
 
 
 ################################################################################
@@ -137,10 +155,19 @@ define build_meco_w2_sentitems
 	Rscript $$(word 2,$$^) $$(word 1,$$^) $(1) > $$@
 endef
 
+define build_meco_all_sentitems
+.PRECIOUS: %$(1)meco_all.sentitems
+%$(1)meco_all.sentitems: %$(1)meco_w1.sentitems
+	cp $$< $$@
+endef
+
 %meco_w1.itemmeasures: %meco_w1.sentitems $(MECO2-SCRIPTS)/lineitems2itemmeasures.py
 	cat $<  |  python3 $(word 2, $^) | sed 's/"//g' >  $@
 
 %meco_w2.itemmeasures: %meco_w2.sentitems $(MECO2-SCRIPTS)/lineitems2itemmeasures.py
+	cat $<  |  python3 $(word 2, $^) | sed 's/"//g' >  $@
+
+%meco_all.itemmeasures: %meco_all.sentitems $(MECO2-SCRIPTS)/lineitems2itemmeasures.py
 	cat $<  |  python3 $(word 2, $^) | sed 's/"//g' >  $@
 
 $(foreach i,$(MECOW1LANGS),\
@@ -153,4 +180,9 @@ $(foreach i,$(MECOW2LANGS),\
 	$(eval $(call build_meco_w2_sentitems,$(i)))\
 	$(eval $(call build_meco_w2_evmeasures,$(i)))\
 	$(eval $(call build_meco_w2_part_params,$(i)))\
+)
+
+$(foreach i,$(MECOALLLANGS),\
+	$(eval $(call build_meco_all_sentitems,$(i)))\
+	$(eval $(call build_meco_all_part_params,$(i)))\
 )
