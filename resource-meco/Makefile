@@ -87,7 +87,7 @@ endif
 
 
 %/user-meco-directory.txt: | %
-	echo '/fs/project/schuler.77/meco' > $@
+	echo '/fs/project/lin-dept/corpora/original/various/meco' > $@
 
 
 ################################################################################
