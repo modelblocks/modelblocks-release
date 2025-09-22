@@ -73,7 +73,7 @@ if __name__ == '__main__':
     elif arity == 1:
         names = ['fit']
     else:
-        names = [str(x) for x in range(args.n)]
+        names = [str(x) for x in range(mod)]
 
     select_new = None
     for name in args.partition:

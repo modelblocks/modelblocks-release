@@ -221,13 +221,28 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 #
 ################################################################################
 
-## generic predicted loglik file: <data>.<fit-part>.<baseline>_(<predr>_)*<regrmodel>.<eval-part>_predicted.loglik
+## generic predicted loglik file: <data>.<filtering>.<fit-part>_<formula>_(<predr>_)*<regrmodel>.<eval-part>_predicted.loglik
 .PRECIOUS: %_predicted.loglik
 %_predicted.loglik %_prd.resmeasures %_obs.resmeasures:  bin/get-loglik-$$(subst .,,$$(suffix $$(subst _,.,$$(basename $$*))))  \
                                                          genmodel/$$(notdir $$(basename $$*)).fitmodel  \
                                                          genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.prdmeasures \
                                                          genmodel/$$(notdir $$(basename $$(basename $$*)))$$(suffix $$*)_part.resmeasures  |  bin  genmodel
 	$^  >  $*_predicted.loglik  2>  $*_predicted.loglik.log
+
+## LOOCV loglik file: <data>.<filtering>.<formula>_(<predr>_)*<regrmodel>.loocvloglik
+## genmodel/$$(basename $$*).1_$$(subst $$(space),_,$$(wordlist 2,100,$$(subst _, ,$$(suffix $$*)))).fitmodel
+.PRECIOUS: %.loocvloglik
+%.loocvloglik: $$(basename $$*).1+2+3+4+5+6+7+8+9_$$(subst .,,$$(suffix $$*)).0_predicted.loglik  \
+               $$(basename $$*).0+2+3+4+5+6+7+8+9_$$(subst .,,$$(suffix $$*)).1_predicted.loglik  \
+               $$(basename $$*).0+1+3+4+5+6+7+8+9_$$(subst .,,$$(suffix $$*)).2_predicted.loglik  \
+               $$(basename $$*).0+1+2+4+5+6+7+8+9_$$(subst .,,$$(suffix $$*)).3_predicted.loglik  \
+               $$(basename $$*).0+1+2+3+5+6+7+8+9_$$(subst .,,$$(suffix $$*)).4_predicted.loglik  \
+               $$(basename $$*).0+1+2+3+4+6+7+8+9_$$(subst .,,$$(suffix $$*)).5_predicted.loglik  \
+               $$(basename $$*).0+1+2+3+4+5+7+8+9_$$(subst .,,$$(suffix $$*)).6_predicted.loglik  \
+               $$(basename $$*).0+1+2+3+4+5+6+8+9_$$(subst .,,$$(suffix $$*)).7_predicted.loglik  \
+               $$(basename $$*).0+1+2+3+4+5+6+7+9_$$(subst .,,$$(suffix $$*)).8_predicted.loglik  \
+               $$(basename $$*).0+1+2+3+4+5+6+7+8_$$(subst .,,$$(suffix $$*)).9_predicted.loglik
+	cat $^ > $@
 
 ################################################################################
 #
