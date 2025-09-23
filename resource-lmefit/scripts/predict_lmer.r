@@ -12,9 +12,9 @@ cliargs <- args[-(1:2)]
 options('warn'=1) #report non-convergences, etc
 
 library(lme4)
-library(languageR)
+# library(languageR)
 library(optimx)
-library(ggplot2)
+# library(ggplot2)
 #The below scripts cannot be distributed with Modelblocks
 # Relative path code from Suppressingfire on StackExchange
 initial.options <- commandArgs(trailingOnly = FALSE)

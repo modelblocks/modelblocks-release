@@ -264,4 +264,9 @@ bin/signif-%: $(REGRESSION-SCRIPTS)/signif-%.sh  |  bin
 	    |  bin  genmodel
 	$^  >  $@  2>  $@.log
 
+## generic signif file: <data>.<fit-part>_<baseline>_(<predr>_)*<regrmodel>.<eval-part>.(<predr>_)*<signif-type>signif
+.PRECIOUS: %.loocvptsignif
+%.loocvptsignif:  bin/signif-pt  \
+	    $$(word 1, $$(subst __, ,$$*)).loocvloglik  genmodel/$$(word 2, $$(subst __, ,$$*)).loocvloglik
+	$^ -m loglik  >  $@  2>  $@.log
 
