@@ -207,6 +207,7 @@ $(RT-SCRIPTS)/rename_cols.py $(CONFIGDIR)/user-kenlm-model-directory.txt | genmo
 $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
 	python3 $(word 1, $^) $(word 2, $^) <( cat $(word 3, $^) | grep -v '!ARTICLE' ) > $@
 
+.PRECIOUS: %.owtunigram.itemmeasures
 %.owtunigram.itemmeasures: $$(DEP-KENLM) $$(DEP-KENLMMOD) $(KENLM-SCRIPTS)/unigram.py $(KENLMMODDIR)/openwebtext.1.fw.kenlm %.sentitems \
 $(CONFIGDIR)/user-kenlm-model-directory.txt | genmodel
 	python3 $(word 1, $^) $(word 2, $^) <( cat $(word 3, $^) | grep -v '!ARTICLE' ) > $@

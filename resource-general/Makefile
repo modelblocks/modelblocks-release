@@ -69,14 +69,23 @@ endef
 RESOURCE-ALICE := $(abspath $(MBDIR)/resource-alice)
 ALICE-SCRIPTS := $(RESOURCE-ALICE)/scripts
 
-RESOURCE-BNC := $(abspath $(MBDIR)/resource-bnc)
-BNC-SCRIPTS := $(RESOURCE-BCN)/scripts
+RESOURCE-BK21 := $(abspath $(MBDIR)/resource-bk21cloze)
+BK21-SCRIPTS := $(RESOURCE-BK21)/scripts
 
 RESOURCE-BMMM := $(abspath $(MBDIR)/resource-bmmm)
 BMMM-SCRIPTS := $(RESOURCE-BMMM)/scripts
 
+RESOURCE-BNC := $(abspath $(MBDIR)/resource-bnc)
+BNC-SCRIPTS := $(RESOURCE-BCN)/scripts
+
+RESOURCE-BROWN := $(abspath $(MBDIR)/resource-brown)
+BROWN-SCRIPTS := $(RESOURCE-BROWN)/scripts
+
 RESOURCE-CCL := $(abspath $(MBDIR)/resource-ccl)
 CCL-SCRIPTS := $(RESOURCE-CCL)/scripts
+
+RESOURCE-CDR := $(abspath $(MBDIR)/resource-cdr)
+CDR-SCRIPTS := $(RESOURCE-CDR)/scripts
 
 RESOURCE-CHILDES := $(abspath $(MBDIR)/resource-childes)
 CHILDES-SCRIPTS := $(RESOURCE-CHILDES)/scripts
@@ -84,29 +93,16 @@ CHILDES-SCRIPTS := $(RESOURCE-CHILDES)/scripts
 RESOURCE-CONLEN := $(abspath $(MBDIR)/resource-conlen)
 CONLEN-SCRIPTS := $(RESOURCE-CONLEN)/scripts
 
+RESOURCE-CONLLSCORER := $(abspath $(MBDIR)/resource-conllscorer)
+
 RESOURCE-COREF-CONLL := $(abspath $(MBDIR)/resource-coref-conll)
 CONLL-SCRIPTS := $(RESOURCE-COREF-CONLL)/scripts
 
 RESOURCE-DMV := $(abspath $(MBDIR)/resource-dmv)
 DMV-SCRIPTS := $(RESOURCE-DMV)/scripts
 
-RESOURCE-CDR := $(abspath $(MBDIR)/resource-cdr)
-CDR-SCRIPTS := $(RESOURCE-CDR)/scripts
-
 RESOURCE-DUNDEE := $(abspath $(MBDIR)/resource-dundee)
 DUNDEE-SCRIPTS := $(RESOURCE-DUNDEE)/scripts
-
-RESOURCE-PROVO := $(abspath $(MBDIR)/resource-provo)
-PROVO-SCRIPTS := $(RESOURCE-PROVO)/scripts
-
-RESOURCE-GAMFIT := $(abspath $(MBDIR)/resource-gamfit)
-GAMFIT-SCRIPTS := $(RESOURCE-GAMFIT)/scripts
-
-RESOURCE-GECO := $(abspath $(MBDIR)/resource-geco)
-GECO-SCRIPTS := $(RESOURCE-GECO)/scripts
-
-RESOURCE-REPETITION := $(abspath $(MBDIR)/resource-repetition)
-REPETITION-SCRIPTS := $(RESOURCE-REPETITION)/scripts
 
 RESOURCE-EPIC := $(abspath $(MBDIR)/resource-epic)
 EPIC-SCRIPTS := $(RESOURCE-EPIC)/scripts
@@ -120,17 +116,20 @@ FMRI-SCRIPTS := $(RESOURCE-FMRI)/scripts
 RESOURCE-FORREST := $(abspath $(MBDIR)/resource-forrest)
 FORREST-SCRIPTS := $(RESOURCE-FORREST)/scripts
 
+RESOURCE-GAMFIT := $(abspath $(MBDIR)/resource-gamfit)
+GAMFIT-SCRIPTS := $(RESOURCE-GAMFIT)/scripts
+
 RESOURCE-GCG := $(abspath $(MBDIR)/resource-gcg)
 GCG-SCRIPTS := $(RESOURCE-GCG)/scripts
+
+RESOURCE-GECO := $(abspath $(MBDIR)/resource-geco)
+GECO-SCRIPTS := $(RESOURCE-GECO)/scripts
 
 RESOURCE-GENERAL := $(abspath $(MBDIR)/resource-general)
 GENERAL-SCRIPTS := $(RESOURCE-GENERAL)/scripts
 
 RESOURCE-GIGAWORD := $(abspath $(MBDIR)/resource-gigaword)
 GIGAWORD-SCRIPTS := $(RESOURCE-GIGAWORD)/scripts
-
-RESOURCE-OPENWEBTEXT := $(abspath $(MBDIR)/resource-openwebtext)
-OPENWEBTEXT-SCRIPTS := $(RESOURCE-OPENWEBTEXT)/scripts
 
 RESOURCE-GLOVE := $(abspath $(MBDIR)/resource-glove)
 GLOVE-SCRIPTS := $(RESOURCE-GLOVE)/scripts
@@ -147,9 +146,6 @@ HF-SCRIPTS := $(RESOURCE-HF)/scripts
 RESOURCE-HUTH := $(abspath $(MBDIR)/resource-huth)
 HUTH-SCRIPTS := $(RESOURCE-HUTH)/scripts
 
-RESOURCE-WILLIAMS := $(abspath $(MBDIR)/resource-williams)
-WILLIAMS-SCRIPTS := $(RESOURCE-WILLIAMS)/scripts
-
 RESOURCE-INCRSEM := $(abspath $(MBDIR)/resource-incrsem)
 INCRSEM-SCRIPTS := $(RESOURCE-INCRSEM)/scripts
 
@@ -162,14 +158,14 @@ KENLM-SCRIPTS := $(RESOURCE-KENLM)/scripts
 RESOURCE-LCPARSE := $(abspath $(MBDIR)/resource-lcparse)
 LCPARSE-SCRIPTS := $(RESOURCE-LCPARSE)/scripts
 
-RESOURCE-LTREES := $(abspath $(MBDIR)/resource-linetrees)
-LTREES-SCRIPTS := $(RESOURCE-LTREES)/scripts
-
 RESOURCE-LMEFIT := $(abspath $(MBDIR)/resource-lmefit)
 LMEFIT-SCRIPTS := $(RESOURCE-LMEFIT)/scripts
 
 RESOURCE-LOGREG := $(abspath $(MBDIR)/resource-logreg)
 LOGREG-SCRIPTS := $(RESOURCE-LOGREG)/scripts
+
+RESOURCE-LTREES := $(abspath $(MBDIR)/resource-linetrees)
+LTREES-SCRIPTS := $(RESOURCE-LTREES)/scripts
 
 RESOURCE-LVPCFG := $(abspath $(MBDIR)/resource-lvpcfg)
 LVPCFG-SCRIPTS := $(RESOURCE-LVPCFG)/scripts
@@ -186,17 +182,20 @@ MECO3-SCRIPTS := $(RESOURCE-MECO3)/scripts
 RESOURCE-NATSTORIES := $(abspath $(MBDIR)/resource-naturalstories)
 NATSTORIES-SCRIPTS := $(RESOURCE-NATSTORIES)/scripts
 
-RESOURCE-NATSTORIESMAZE := $(abspath $(MBDIR)/resource-naturalstoriesmaze)
-NATSTORIESMAZE-SCRIPTS := $(RESOURCE-NATSTORIESMAZE)/scripts
-
 RESOURCE-NATSTORIESFMRI := $(abspath $(MBDIR)/resource-naturalstoriesfmri)
 NATSTORIESFMRI-SCRIPTS := $(RESOURCE-NATSTORIESFMRI)/scripts
 
 RESOURCE-NATSTORIESFMRI2 := $(abspath $(MBDIR)/resource-naturalstoriesfmri2)
 NATSTORIESFMRI2-SCRIPTS := $(RESOURCE-NATSTORIESFMRI2)/scripts
 
-RESOURCE-BROWN := $(abspath $(MBDIR)/resource-brown)
-BROWN-SCRIPTS := $(RESOURCE-BROWN)/scripts
+RESOURCE-NATSTORIESMAZE := $(abspath $(MBDIR)/resource-naturalstoriesmaze)
+NATSTORIESMAZE-SCRIPTS := $(RESOURCE-NATSTORIESMAZE)/scripts
+
+RESOURCE-ONTONOTES := $(abspath $(MBDIR)/resource-ontonotes)
+ONTONOTES-SCRIPTS := $(RESOURCE-ONTONOTES)/scripts
+
+RESOURCE-OPENWEBTEXT := $(abspath $(MBDIR)/resource-openwebtext)
+OPENWEBTEXT-SCRIPTS := $(RESOURCE-OPENWEBTEXT)/scripts
 
 RESOURCE-PASSAGES := $(abspath $(MBDIR)/resource-passages)
 PASSAGES-SCRIPTS := $(RESOURCE-PASSAGES)/scripts
@@ -207,14 +206,17 @@ PEREIRA-SCRIPTS := $(RESOURCE-PEREIRA)/scripts
 RESOURCE-PREDRWHO := $(abspath $(MBDIR)/resource-predrwho)
 PREDRWHO-SCRIPTS := $(RESOURCE-PREDRWHO)/scripts
 
+RESOURCE-PROVO := $(abspath $(MBDIR)/resource-provo)
+PROVO-SCRIPTS := $(RESOURCE-PROVO)/scripts
+
 RESOURCE-PYTHIAPILE := $(abspath $(MBDIR)/resource-pythiapile)
 PYTHIAPILE-SCRIPTS := $(RESOURCE-PYTHIAPILE)/scripts
 
-RESOURCE-ONTONOTES := $(abspath $(MBDIR)/resource-ontonotes)
-ONTONOTES-SCRIPTS := $(RESOURCE-ONTONOTES)/scripts
-
 RESOURCE-REGRESSION := $(abspath $(MBDIR)/resource-regression)
 REGRESSION-SCRIPTS := $(RESOURCE-REGRESSION)/scripts
+
+RESOURCE-REPETITION := $(abspath $(MBDIR)/resource-repetition)
+REPETITION-SCRIPTS := $(RESOURCE-REPETITION)/scripts
 
 RESOURCE-RHACKS := $(abspath $(MBDIR)/resource-rhacks)
 RHACKS-SCRIPTS := $(RESOURCE-RHACKS)/scripts
@@ -225,14 +227,17 @@ ROARK-SCRIPTS := $(RESOURCE-ROARK)/scripts
 RESOURCE-RT := $(abspath $(MBDIR)/resource-rt)
 RT-SCRIPTS := $(RESOURCE-RT)/scripts
 
-RESOURCE-TOKENIZE := $(abspath $(MBDIR)/resource-segment-tokenize)
-TOKENIZE-SCRIPTS := $(RESOURCE-TOKENIZE)/scripts
-
 RESOURCE-SKIPDEP := $(abspath $(MBDIR)/resource-skipdep)
 SKIPDEP-SCRIPTS := $(RESOURCE-SKIPDEP)/scripts
 
 RESOURCE-SRILM := $(abspath $(MBDIR)/resource-srilm)
 SRILM-SCRIPTS := $(RESOURCE-SRILM)/scripts
+
+RESOURCE-TIGER := $(abspath $(MBDIR)/resource-tiger)
+TIGER-SCRIPTS := $(RESOURCE-TIGER)/scripts
+
+RESOURCE-TOKENIZE := $(abspath $(MBDIR)/resource-segment-tokenize)
+TOKENIZE-SCRIPTS := $(RESOURCE-TOKENIZE)/scripts
 
 RESOURCE-TOKENIZER := $(abspath $(MBDIR)/resource-tokenizer)
 TOKENIZER-SCRIPTS := $(RESOURCE-TOKENIZER)/scripts
@@ -241,11 +246,9 @@ RESOURCE-TOM := $(abspath $(MBDIR)/resource-tom)
 TOM-SCRIPTS := $(RESOURCE-TOM)/scripts
 
 RESOURCE-TREEBANK := $(abspath $(MBDIR)/resource-treebank)
-RESOURCE-TREEBANK-VADAS := $(abspath $(MBDIR)/resource-treebank-vadas)
 TREEBANK-SCRIPTS := $(RESOURCE-TREEBANK)/scripts
 
-RESOURCE-TIGER := $(abspath $(MBDIR)/resource-tiger)
-TIGER-SCRIPTS := $(RESOURCE-TIGER)/scripts
+RESOURCE-TREEBANK-VADAS := $(abspath $(MBDIR)/resource-treebank-vadas)
 
 RESOURCE-UCL := $(abspath $(MBDIR)/resource-ucl)
 UCL-SCRIPTS := $(RESOURCE-UCL)/scripts
@@ -255,6 +258,9 @@ UHHMM-SCRIPTS := $(RESOURCE-UHHMM)/scripts
 
 RESOURCE-UPPARSE := $(abspath $(MBDIR)/resource-upparse)
 UPPARSE-SCRIPTS := $(RESOURCE-UPPARSE)/scripts
+
+RESOURCE-WILLIAMS := $(abspath $(MBDIR)/resource-williams)
+WILLIAMS-SCRIPTS := $(RESOURCE-WILLIAMS)/scripts
 
 RESOURCE-WORD2VEC := $(abspath $(MBDIR)/resource-word2vec)
 WORD2VEC-SCRIPTS := $(RESOURCE-WORD2VEC)/scripts
@@ -268,74 +274,73 @@ WORDNET-SCRIPTS := $(RESOURCE-WORDNET)/scripts
 RESOURCE-XLSX2CSV := $(abspath $(MBDIR)/resource-xlsx2csv)
 XLSX2CSV-SCRIPTS := $(RESOURCE-XLSX2CSV)/scripts
 
-RESOURCE-CONLLSCORER := $(abspath $(MBDIR)/resource-conllscorer)
-
 BIN      := bin
 GENMODEL := genmodel
 
 define INCLUDE-ALL :=
-include $(RESOURCE-TOKENIZER)/Makefile
-include $(RESOURCE-LTREES)/Makefile
-include $(RESOURCE-GCG)/Makefile
-include $(RESOURCE-LVPCFG)/Makefile
-include $(RESOURCE-SKIPDEP)/Makefile
-include $(RESOURCE-EPIC)/Makefile
-include $(RESOURCE-LCPARSE)/Makefile
+include $(RESOURCE-ALICE)/Makefile
+include $(RESOURCE-BK21)/Makefile
+include $(RESOURCE-BMMM)/Makefile
 include $(RESOURCE-BNC)/Makefile
-include $(RESOURCE-TREEBANK)/Makefile
+include $(RESOURCE-BROWN)/Makefile
+include $(RESOURCE-CCL)/Makefile
+include $(RESOURCE-CDR)/Makefile
+include $(RESOURCE-CHILDES)/Makefile
+include $(RESOURCE-CONLEN)/Makefile
+include $(RESOURCE-CONLLSCORER)/Makefile
+include $(RESOURCE-COREF-CONLL)/Makefile
+include $(RESOURCE-DMV)/Makefile
+include $(RESOURCE-DUNDEE)/Makefile
+include $(RESOURCE-EPIC)/Makefile
+include $(RESOURCE-FEDECOG)/Makefile
+include $(RESOURCE-FMRI)/Makefile
+include $(RESOURCE-GAMFIT)/Makefile
+include $(RESOURCE-GCG)/Makefile
+include $(RESOURCE-GECO)/Makefile
 include $(RESOURCE-GIGAWORD)/Makefile
-include $(RESOURCE-OPENWEBTEXT)/Makefile
 include $(RESOURCE-GLOVE)/Makefile
 include $(RESOURCE-GLSTM)/Makefile
 include $(RESOURCE-GPT2)/Makefile
+include $(RESOURCE-HF)/Makefile
 include $(RESOURCE-HUTH)/Makefile
-include $(RESOURCE-KENLM)/Makefile
-include $(RESOURCE-SRILM)/Makefile
 include $(RESOURCE-INCRSEM)/Makefile
 include $(RESOURCE-JLSTM)/Makefile
-include $(RESOURCE-RT)/Makefile
-include $(RESOURCE-REGRESSION)/Makefile
-include $(RESOURCE-CDR)/Makefile
-include $(RESOURCE-FEDECOG)/Makefile
-include $(RESOURCE-FMRI)/Makefile
+include $(RESOURCE-KENLM)/Makefile
+include $(RESOURCE-LCPARSE)/Makefile
 include $(RESOURCE-LMEFIT)/Makefile
 include $(RESOURCE-LOGREG)/Makefile
-include $(RESOURCE-ALICE)/Makefile
-include $(RESOURCE-BMMM)/Makefile
-include $(RESOURCE-CCL)/Makefile
-include $(RESOURCE-CHILDES)/Makefile
-include $(RESOURCE-DUNDEE)/Makefile
-include $(RESOURCE-PROVO)/Makefile
-include $(RESOURCE-GECO)/Makefile
-include $(RESOURCE-REPETITION)/Makefile
-include $(RESOURCE-CONLEN)/Makefile
-include $(RESOURCE-TOM)/Makefile
-include $(RESOURCE-DMV)/Makefile
+include $(RESOURCE-LTREES)/Makefile
+include $(RESOURCE-LVPCFG)/Makefile
 include $(RESOURCE-MECO)/Makefile
 include $(RESOURCE-MECO2)/Makefile
 include $(RESOURCE-MECO3)/Makefile
 include $(RESOURCE-NATSTORIES)/Makefile
-include $(RESOURCE-NATSTORIESMAZE)/Makefile
 include $(RESOURCE-NATSTORIESFMRI)/Makefile
 include $(RESOURCE-NATSTORIESFMRI2)/Makefile
-include $(RESOURCE-BROWN)/Makefile
+include $(RESOURCE-NATSTORIESMAZE)/Makefile
+include $(RESOURCE-ONTONOTES)/Makefile
+include $(RESOURCE-OPENWEBTEXT)/Makefile
 include $(RESOURCE-PASSAGES)/Makefile
 include $(RESOURCE-PEREIRA)/Makefile
-include $(RESOURCE-ONTONOTES)/Makefile
+include $(RESOURCE-PREDRWHO)/Makefile
+include $(RESOURCE-PROVO)/Makefile
+include $(RESOURCE-PYTHIAPILE)/Makefile
+include $(RESOURCE-REGRESSION)/Makefile
+include $(RESOURCE-REPETITION)/Makefile
 include $(RESOURCE-RHACKS)/Makefile
-include $(RESOURCE-XLSX2CSV)/Makefile
+include $(RESOURCE-RT)/Makefile
+include $(RESOURCE-SKIPDEP)/Makefile
+include $(RESOURCE-SRILM)/Makefile
+include $(RESOURCE-TOKENIZER)/Makefile
+include $(RESOURCE-TOM)/Makefile
+include $(RESOURCE-TREEBANK)/Makefile
 include $(RESOURCE-UCL)/Makefile
 include $(RESOURCE-UPPARSE)/Makefile
 include $(RESOURCE-WILLIAMS)/Makefile
 include $(RESOURCE-WORD2VEC)/Makefile
 include $(RESOURCE-WORDFREQ)/Makefile
 include $(RESOURCE-WORDNET)/Makefile
-include $(RESOURCE-COREF-CONLL)/Makefile
-include $(RESOURCE-CONLLSCORER)/Makefile
-include $(RESOURCE-PREDRWHO)/Makefile
-include $(RESOURCE-HF)/Makefile
-include $(RESOURCE-PYTHIAPILE)/Makefile
-include $(RESOURCE-GAMFIT)/Makefile
+include $(RESOURCE-XLSX2CSV)/Makefile
 endef
 
 ################################################################################
