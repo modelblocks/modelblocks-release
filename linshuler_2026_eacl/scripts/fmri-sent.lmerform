@@ -1,0 +1,4 @@
+BOLD
+z.(sentlen) + z.(discid)
+z.(sentlen) + z.(discid)
+(1 + z.(sentlen) + z.(lastwordsurp) | sentid)
