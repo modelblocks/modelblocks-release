@@ -11,4 +11,4 @@ else:
 X['time'] = X.groupby(['subject', 'docid'])[fdur].shift(1).fillna(value=0)
 X.time = X.groupby(['subject', 'docid']).time.cumsum() / 1000 # Convert ms to s
 
-X.to_csv(sys.stdout, ' ', index=False, na_rep='NaN')
+X.to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN')

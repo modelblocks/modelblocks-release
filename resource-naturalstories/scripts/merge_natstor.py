@@ -2,7 +2,7 @@ import sys, argparse
 import pandas as pd
 
 argparser = argparse.ArgumentParser(description='Generates naturalstories.evmeasures data table.')
-argparser.add_argument('f1', type=str, nargs=1, help='Path to experminet data table')
+argparser.add_argument('f1', type=str, nargs=1, help='Path to experiment data table')
 argparser.add_argument('f2', type=str, nargs=1, help='Path to itemmeasures data table')
 args, unknown = argparser.parse_known_args()
 
@@ -28,6 +28,6 @@ def main():
     merged['wlen'] = merged.word.str.len()
     merged['resid'] = merged['sentpos']
 
-    merged[['word'] + [c for c in merged if c!='word']].to_csv(sys.stdout, ' ', index=False, na_rep='NaN')
+    merged[['word'] + [c for c in merged if c!='word']].to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN')
 
 main()   
