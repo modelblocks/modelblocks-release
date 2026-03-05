@@ -10,6 +10,9 @@ def main():
     data1 = pd.read_csv(args.f1[0],sep=' ',skipinitialspace=True)
     data2 = pd.read_csv(args.f2[0],sep=' ',skipinitialspace=True)
 
+    data2['startofsentence'] = (data2.sentpos == 1).astype('int')
+    data2['endofsentence'] = data2.startofsentence.shift(-1).fillna(1).astype('int')
+
     no_dups = [c for c in data2.columns.values if c not in data1.columns.values] + ['item', 'zone', 'word']
     data2 = data2.filter(items=no_dups)
 
@@ -23,8 +26,8 @@ def main():
     merged = pd.concat(frames)
     merged = merged * 1 # convert boolean to [1,0]
     merged.sort_values(['subject', 'item', 'zone'], inplace=True)
-    merged['startofsentence'] = (merged.sentpos == 1).astype('int')
-    merged['endofsentence'] = merged.startofsentence.shift(-1).fillna(1).astype('int')
+    # merged['startofsentence'] = (merged.sentpos == 1).astype('int')
+    # merged['endofsentence'] = merged.startofsentence.shift(-1).fillna(1).astype('int')
     merged['wlen'] = merged.word.str.len()
     merged['resid'] = merged['sentpos']
 
