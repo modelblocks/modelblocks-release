@@ -37,4 +37,4 @@ Following are the examples for getting the surprisal estimates from gpt2-small a
     pereirafmri_get_loglik.sh gpt2
     ```
 
-The bash scripts include a series of `make` commands. Any missing intermediate files will be identified and generated during the execution of the scripts. Detailed breakdown of the steps can be found in the bash scripts. The formulas used in this study are specified in `fmri.lmerform` (for Natural Stories fMRI) and `fmri-sent.lmerform` (for Pereira fMRI). If you wish to use your own formulas, you can do this by modifying the `.lmerform` files.
+Each bash script consists of a series of `make` commands. Any missing intermediate files will be identified and generated during the execution of the scripts. Detailed breakdown of the steps can be found in the bash scripts. The formulas used in this study are specified in `fmri.lmerform` (for Natural Stories fMRI) and `fmri-sent.lmerform` (for Pereira fMRI). If you wish to use your own formulas, you can do this by modifying the `.lmerform` files.
