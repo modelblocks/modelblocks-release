@@ -53,7 +53,7 @@ def main():
 #            if 'subject' in merged.columns:
 #                merged.sort_values(['subject'] + args.key_cols, inplace=True)
 
-    merged.to_csv(sys.stdout, ' ', index=False, na_rep='NaN')
+    merged.to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN')
       
 main()
 

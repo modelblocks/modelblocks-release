@@ -1,0 +1,4 @@
+BOLD
+z.(sentpos) + z.(wlen)
+z.(wlen)
+(1 + z.(totsurp) | docid)

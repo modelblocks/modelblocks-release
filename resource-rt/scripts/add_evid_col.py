@@ -32,5 +32,5 @@ if __name__ == '__main__':
                 df.evid = df.evid + "_" + col + "-" + df[col].astype("str")
         #df.key = df[col].astype('str').str.cat(df.key, sep='-')
         
-    df.to_csv(sys.stdout, ' ', index=False, na_rep='NaN')
+    df.to_csv(sys.stdout, sep=' ', index=False, na_rep='NaN')
 

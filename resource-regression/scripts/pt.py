@@ -132,42 +132,44 @@ if __name__ == '__main__':
     for i in range(len(paths)):
         for j in range(i+1, len(paths)):
             a, b, pred, is_nested = nested(paths[i], paths[j])
+            a_data = pd.read_csv(a, header=None).values
+            b_data = pd.read_csv(b, header=None).values
+
+            if args.mode == 'corr':
+                y = pd.read_csv(obs_paths[j], header=None).values
+                y = zscore(y)
+                denom = len(y) - 1
+
+                a_data = zscore(a_data)
+                b_data = zscore(b_data)
+
+                r_a_b = (a_data * b_data).sum() / denom
+
+                a_data = a_data * y
+                b_data = b_data * y
+
+                r_a_y = a_data.sum() / denom
+                r_b_y = b_data.sum() / denom
+
+            p_value, base_diff, diffs = permutation_test(a_data, b_data, n_iter=args.n_iter, n_tails=args.n_tails, mode=args.mode, nested=is_nested)
+
+            select = np.logical_and(np.isfinite(np.array(a_data)), np.isfinite(np.array(b_data)))
+            diff = float(len(a) - select.sum())
+            summary += '='*50 + '\n'
             if is_nested:
-                a_data = pd.read_csv(a, header=None).values
-                b_data = pd.read_csv(b, header=None).values
-
-                if args.mode == 'corr':
-                    y = pd.read_csv(obs_paths[j], header=None).values
-                    y = zscore(y)
-                    denom = len(y) - 1
-                    
-                    a_data = zscore(a_data)
-                    b_data = zscore(b_data)
-                    
-                    r_a_b = (a_data * b_data).sum() / denom
-                    
-                    a_data = a_data * y
-                    b_data = b_data * y
-                    
-                    r_a_y = a_data.sum() / denom
-                    r_b_y = b_data.sum() / denom
-
-                p_value, base_diff, diffs = permutation_test(a_data, b_data, n_iter=args.n_iter, n_tails=args.n_tails, mode=args.mode, nested=True)
-
-                select = np.logical_and(np.isfinite(np.array(a_data)), np.isfinite(np.array(b_data)))
-                diff = float(len(a) - select.sum())
-                summary += '='*50 + '\n'
                 summary += 'Model comparison for predictor %s\n' % ', '.join(pred)
-                summary += 'Baseline file: %s\n' %a
-                summary += 'Test file: %s\n' %b
-                summary += 'Metric: %s\n' % args.mode
-                if args.mode == 'corr':
-                    summary += 'r(a, y): %s\n' % r_a_y
-                    summary += 'r(b, y): %s\n' % r_b_y
-                    summary += 'r(a, b): %s\n' % r_a_b
-                summary += 'Difference: %s\n' % base_diff
-                summary += 'p: %.4e%s\n' % (p_value, '' if p_value > 0.05 else '*' if p_value > 0.01 else '**' if p_value > 0.001 else '***')
-                summary += '='*50 + '\n\n'
+            else:
+                summary += 'Model comparison for non-nested models\n'
+            summary += 'First file: %s\n' %a
+            summary += 'Second file: %s\n' %b
+            summary += 'Metric: %s\n' % args.mode
+            if args.mode == 'corr':
+                summary += 'r(a, y): %s\n' % r_a_y
+                summary += 'r(b, y): %s\n' % r_b_y
+                summary += 'r(a, b): %s\n' % r_a_b
+            summary += 'Difference (First-Second): %s\n' % base_diff
+            summary += 'p: %.4e%s\n' % (p_value, '' if p_value > 0.05 else '*' if p_value > 0.01 else '**' if p_value > 0.001 else '***')
+            summary += '='*50 + '\n\n'
 
     sys.stdout.write(summary)
 

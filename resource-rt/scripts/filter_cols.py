@@ -19,6 +19,6 @@ def main():
     if args.x != None:
         for x in args.x:
             data.drop(x, axis=1, inplace=True)
-    data.to_csv(sys.stdout, ' ', na_rep='NaN', index=False, quoting=3)
+    data.to_csv(sys.stdout, sep=' ', na_rep='NaN', index=False, quoting=3)
     
 main()
