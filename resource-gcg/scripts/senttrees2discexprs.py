@@ -190,6 +190,47 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     ## V. Passive rule...
     elif re.search( '^L-aN-vN((?:-[ghirv][^ ]*)?)-lV [AR]-aN\\1$', form ) != None:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\zz'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','zz'+t.sVar] ] + lsNolo ), 'Some', 'r', 's' ] ]
 #   elif '-lV' in t.ch[0].c:  output = [ 'Pasv', 'x'+ t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ]
+    ## Z12. Zero-head rule with ordinal and cardinal as quantifier: e.g. N-aD-b{N-aD}-b{A-aN}-bK -> Ko-lZ...
+    elif re.search( '^Ko\w*-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}-[ab]\{A\w*-[ab]\w+\}-[ab]K$', form ):
+      output = [ '\\p', '\\f', '\\g', '\\q', '\\r', '\\s', 'p',  #translate( t.ch[0], Scopes, Anaphs, lsNolo ),   ### <== NOTE: ONLY WORKS FOR 'FIRST'!!!!
+                                                           Univ, [ '\\n', 'g', 'q', [ '\\x', '^', [ 'r', 'x' ],
+                                                                                                  [ 'f', [ '\\t', '\\u', '^', [ 't', 'x' ], [ 'u', 'x' ] ],
+                                                                                                         Univ,
+                                                                                                         [ '\\d', 'Count<', 'n', [ '\\y', 'g', 'q', [ '\\z', 'Equal', 'y', 'z' ], 'r' ],
+                                                                                                                                 [ '\\y', 'f', [ '\\t', '\\u', '^', [ 't', 'y' ], [ 'u', 'y' ] ],
+                                                                                                                                               Univ,
+                                                                                                                                               [ '\\e', 'All', [ '\\o', 'Count=', 'o', [ '\\a', 'Contain', 'a', 'd' ], Univ ],
+                                                                                                                                                               [ '\\o', 'Count>', 'o', [ '\\aa', 'Contain', 'aa', 'e' ], Univ ] ] ] ] ] ],
+                                                                                    's' ] ]
+    ## Z11. Zero-head rule with ordinal and cardinal as quantifier: e.g. N-aD-b{N-aD}-bK -> Ko-lZ...
+    elif re.search( '^Ko\w*-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}-[ab]K$', form ):
+      output = [ '\\p', '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ),   ### <== NOTE: ONLY WORKS FOR 'FIRST'!!!!
+                                                    Univ, [ '\\m', 'p', Univ, [ '\\n', 'f', 'q', [ '\\x', '^', [ 'r', 'x' ],
+                                                                                                               [ 'Count<', 'n', [ '\\y', 'f', 'q', [ '\\z', 'Equal', 'y', 'z' ], 'r' ],
+                                                                                                                                [ '\\y', 'Precede', 'y', 'x' ] ] ],
+                                                                                                 's' ] ] ]
+    ## Z10. Zero-head rule with ordinal as quantifier: e.g. N-aD-b{N-aD}-b{A-aN} -> Ko-lZ...
+    elif re.search( '^Ko\w*-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}-[ab]\{A\w*-[ab]\w+\}$', form ):
+      output = [ '\\f', '\\g', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ),
+                                                    Univ, [ '\\n', 'All', [ '\\m', 'MinusOne', 'n', 'm' ],
+                                                                          [ '\\m', 'g', 'q', [ '\\x', '^', [ 'r', 'x' ],
+                                                                                                           [ 'f', [ '\\t', '\\u', '^', [ 't', 'x' ], [ 'u', 'x' ] ],
+                                                                                                                  Univ,
+                                                                                                                  [ '\\d', 'Count=', 'm', [ '\\y', 'g', 'q', [ '\\z', 'Equal', 'y', 'z' ], 'r' ],
+                                                                                                                                          [ '\\y', 'f', [ '\\t', '\\u', '^', [ 't', 'y' ], [ 'u', 'y' ] ],
+                                                                                                                                                        Univ,
+                                                                                                                                                        [ '\\e', 'All', [ '\\o', 'Count=', 'o', [ '\\a', 'Contain', 'a', 'd' ], Univ ],
+                                                                                                                                                                        [ '\\o', 'Count>', 'o', [ '\\aa', 'Contain', 'aa', 'e' ], Univ ] ] ] ] ] ],
+                                                                                             's' ] ] ]
+    ## Z9. Zero-head rule with ordinal as quantifier: e.g. N-aD-b{N-aD} -> Ko-lZ...
+    elif re.search( '^Ko\w*-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}$', form ):
+      output = [ '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ), Univ, [ '\\n', 'All', [ '\\m', 'MinusOne', 'n', 'm' ],
+                                                                                                                 [ '\\m', 'f', 'q', [ '\\x', '^', [ 'r', 'x' ],
+                                                                                                                                                  [ 'Count=', 'm', [ '\\y', 'f', 'q', [ '\\z', 'Equal', 'y', 'z' ], 'r' ],
+                                                                                                                                                                   [ '\\y', 'Precede', 'y', 'x' ] ] ],
+                                                                                                                                    's' ] ] ]
+    ## Z8. Zero-head rule as measure phrase: e.g. R-aN -> K-lZ...
+    elif re.search( '^K\w*-lZ [AR]\w*-[ab]\w+$', form ):  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ), ['\\n', 'Count=', 'n', ['\\xx', 'q', ['\\e', '^', [ 'Contain', 'xx', 'e'], ['r', 'e'] ], 's' ], Univ ], Univ ]
     ## Z7. Zero-head rule with proportion as quantificational adjunct: e.g. A-aN-b{A-aN} -> K-lZ...
     elif re.search( '^K\w*-lZ A\w*-[ab]\w+-[ab]\{A\w*-[ab]\w+\}$', form ):  output = [ '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ), ['\\n', 'Ratio=', 'n', ['\\x', 'q', ['\\z', 'Equal', 'x', 'z'], Univ ], ['\\x', 'f', ['\\t', '\\u', 'Some', ['\\z', '^', [ 'Equal', 'x', 'z' ], [ 't', 'z' ] ], 'u' ], 'r', 's'] ], Univ ]
     ## Z6. Zero-head rule with cardinal as quantifier: e.g. N-bO -> K-lZ...
