@@ -2,7 +2,7 @@ import sys
 import re
 
 def getFn( c, w ):
-  c = re.sub('(-l.|-[mnstuw][0-9]+r?|-yQ)','',c)
+  c = re.sub('(-l.|-[mnstuw]t?[0-9]+r?|-yQ)','',c)
   s = c + ':' + w.lower()
   expr = re.sub( '-x.*:', ':', s )
   for xrule in re.split( '-x', c )[1:] :
