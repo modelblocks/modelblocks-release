@@ -597,6 +597,9 @@ def unpack( expr ):
   ## Two-argument noun using possessive as argument e.g. NNREL*-aD...
   elif re.search( '^@NNREL\w*-[ab]\w*(-[stuwxyz].*)?:', expr ):
     return( [        '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'q', Univ, [ '\\z'+sVar, 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar,'z'+sVar ], Univ ] ], ['r','x'+sVar] ], 's' ] )
+  ## Two-argument noun using genitive argument e.g. N-aDg...
+  elif re.search( '^@N\w*-[ab]\w*g(-[stuwxyz].*)?:', expr ):
+    return( [        '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'q', Univ, [ '\\z'+sVar, 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar,'z'+sVar ], Univ ] ], ['r','x'+sVar] ], 's' ] )
   ## Two-argument noun e.g. N-aD-bO --- NOTE: middle (determiner) argument 'q'/'y' gets ignored!...
   elif re.search( '^@N\w*-[ab]\w*-[ab]\w*(-[stuwxyz].*)?:', expr ):
     return( [ '\\p', '\\q', '\\r', '\\s', 'Some', [ '\\x'+sVar, '^', [ 'p', Univ, [ '\\z'+sVar, 'Some', [ '\\e'+sVar, expr[1:],'e'+sVar,'x'+sVar,'z'+sVar ], Univ ] ], ['r','x'+sVar] ], 's' ] )
