@@ -190,7 +190,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     ## V. Passive rule...
     elif re.search( '^L-aN-vN((?:-[ghirv][^ ]*)?)-lV [AR]-aN\\1$', form ) != None:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\zz'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','zz'+t.sVar] ] + lsNolo ), 'Some', 'r', 's' ] ]
 #   elif '-lV' in t.ch[0].c:  output = [ 'Pasv', 'x'+ t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ]
-    ## Z15. Zero-head rule with ordinal and cardinal as quantifier: e.g. N-aD-bO -> As-aN-lZ...
+    ## Z15. Zero-head rule with superlative as quantifier: e.g. N-aD-bO -> As-aN-lZ...
     elif re.search( '^As\w*-[ab]\w+((?:-[ghirv][^ ]*)?)-lZ N\w*-[ab]\w+-[ab]\w+\\1$', form ):
       output = [ '\\p', '\\q', '\\r', '\\s', 'p', [ '\\x', '^', [ 'r', 'x' ], [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\t', '\\u', '^', [ 't', 'x' ], [ 'u', 'x' ] ],
                                                                                                                               Univ, [ '\\d', 'All', [ '\\y', 'p', [ '\\z', 'Equal', 'y', 'z' ], 'r' ], 
@@ -198,7 +198,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
                                                                                                                                                                                                            Univ, [ '\\e', 'All', [ '\\o', 'Count=', 'o', [ '\\a', 'Contain', 'a', 'd' ], Univ ],
                                                                                                                                                                                                                                  [ '\\o', 'Count<', 'o', [ '\\a', 'Contain', 'a', 'e' ], Univ ] ] ] ] ] ],
                                                   's' ]
-    ## Z14. Zero-head rule with ordinal and cardinal as quantifier: e.g. N-aD-b{N-aD} -> As-aN-lZ...
+    ## Z14. Zero-head rule with superlative as quantifier: e.g. N-aD-b{N-aD} -> As-aN-lZ...
     elif re.search( '^As\w*-[ab]\w+((?:-[ghirv][^ ]*)?)-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}\\1$', form ):
       output = [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\x', '^', [ 'r', 'x' ], [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\t', '\\u', '^', [ 't', 'x' ], [ 'u', 'x' ] ],
                                                                                                                                    Univ, [ '\\d', 'All', [ '\\y', 'f', 'q', [ '\\z', 'Equal', 'y', 'z' ], 'r' ], 
