@@ -282,8 +282,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     ## T3. N-aD-bO -> N-aD-b{N-aD}...
     elif re.search( '^N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\} \w+-[ab]\w+-[ab]\w+$', form ):  output = [ '\\p', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ), ['\\o', '\\t', '\\u', 'p', 't', 'u' ], 'q', 'r', 's' ]
     ## T4. Elision...
-    elif re.search( '^(.*)-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\} \\1$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
-    elif re.search( '^(.*)-[ab]\{\w+-[abghirv]\w+\} \\1$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
+    elif re.search( '^(.*)-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\}((?:-[ghirv][^ ]*)?) \\1\\2$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
+    elif re.search( '^(.*)-[ab]\{\w+-[abghirv]\w+\}((?:-[ghirv][^ ]*)?) \\1\\2$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
     elif '-l' not in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ]
     elif '-l' not in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
     else:
