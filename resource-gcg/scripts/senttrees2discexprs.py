@@ -49,7 +49,7 @@ def getLocalArity( cat ):
 #
 ########################################
 
-def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, MaxProjs, MaxClauses, tMaxProj, tMaxClause, nWord=0 ):
+def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tMaxProj, tMaxClause, nWord=0 ):
 
   ## Flush '-x' singletons as pre-process...
   t.c = re.sub( '-x([-} ])', '\\1', t.c )
@@ -58,7 +58,7 @@ def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, MaxProjs, MaxClauses, tMaxProj,
 
   ## Recurse...
   for st in t.ch:
-    nWord = setHeadScopeAnaph( st, nSent, Scopes, Anaphs, MaxProjs, MaxClauses, tMaxProj if '-l' not in st.c or '-lU' in st.c or '-lE' in st.c else st, tMaxClause if ('-l' not in st.c or '-lU' in st.c or '-lE' in st.c) or st.c[0] not in 'CVIBLARG' else st, nWord )
+    nWord = setHeadScopeAnaph( st, nSent, Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tMaxProj if '-l' not in st.c or '-lU' in st.c or '-lE' in st.c else st, tMaxClause if ('-l' not in st.c or '-lU' in st.c or '-lE' in st.c) or st.c[0] not in 'CVIBLARG' else st, nWord )
 
   ## Account head words as done in gcg annotation guidelines, in order to track scope...
   if len(t.ch) == 0:
@@ -91,7 +91,7 @@ def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, MaxProjs, MaxClauses, tMaxProj,
   ## Weak accessibility...
   m = re.search( '-w([0-9][0-9])?([0-9][0-9])', t.c )
   if m != None and 'Othan-b' in t.c:
-    WeakAcc[t.sVar] = str( (nSent if m.group(1)==None else int(m.group(1))) * 100 + int(m.group(2)) )
+    WeakAccs[t.sVar] = str( (nSent if m.group(1)==None else int(m.group(1))) * 100 + int(m.group(2)) )
 
   t.bMax = True
   for st in t.ch:
@@ -1110,6 +1110,7 @@ while True:
   nArticle += 1
   Scopes = {}
   Anaphs = {}
+  WeakAccs = {}
   MaxProjs = {}
   MaxClauses = {}
   Trees = []
@@ -1127,7 +1128,7 @@ while True:
     t = tree.Tree()
     t.read( line )
     Trees += [ t ]
-    setHeadScopeAnaph( t, nLine, Scopes, Anaphs, MaxProjs, MaxClauses, t, t )
+    setHeadScopeAnaph( t, nLine, Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, t, t )
     markSites( t, Scopes )
     print( nArticle, 'CG:', t )
 
