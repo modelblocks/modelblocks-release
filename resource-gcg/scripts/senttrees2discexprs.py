@@ -128,7 +128,7 @@ def markSites( t, Scopes, aboveAllInSitu=True ):
 ########################################
 
 indent = 0
-def translate( t, Scopes, Anaphs, lsNolo=[] ):
+def translate( t, Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst=None, sSubst=None, lsNolo=[] ):
 
   ## 1. Verbose reporting...
   global indent
@@ -136,12 +136,18 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
   if VERBOSE: print( ' '*indent, 'var,max,tree:', t.sVar, t.bMax, t )
   if VERBOSE: print( ' '*indent, 'non-locals:', lsNolo )
 
-  ## 2.a. If scoped and cannot be in situ, mark possible sites...
+  ## 2.a. If substitution...
+  if t == tSubst:
+    output = sSubst
+    print( '==> substituting ' + sSubst + ' at ' + str(t) )
+    return( output )
+
+  ## 2.b. If scoped and cannot be in situ, mark possible sites...
   t.qstore = []
   if t.bMax and t.sVar in Scopes and t.sVar in Scopes.values():
     markSites( t, Scopes )
 
-  ## 2.b. Pre-terminal branch...
+  ## 2.c. Pre-terminal branch...
   if len(t.ch) == 1 and len(t.ch[0].ch) == 0:
 #    if '=' in t.c:
 #      print( 'pre-empting', t.c )
@@ -151,6 +157,8 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     if   pred == '' and t.c == 'N-b{N-aD}-x%|':        output = 'IdentSome'
     elif pred == '' and t.c == 'Ne-x%|':               output = 'Some'
     elif pred == '' and re.search( '^P[a-z]+', t.c ):  output = 'Some'
+    elif pred == '' and re.search( '^Othan-b[^K]', t.c ) and tSubst==None: output = [ '\\q'+t.sVar, '\\r'+t.sVar, '\\s'+t.sVar, 'Some', [ '\\n'+t.sVar, '^', [ 'r'+t.sVar, 'n'+t.sVar ], [ 's'+t.sVar, 'n'+t.sVar ] ], [ '\\n'+t.sVar, translate( MaxClauses[WeakAccs[t.sVar]], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, MaxProjs[WeakAccs[t.sVar]], 'q'+t.sVar, lsNolo ), Univ, Univ ] ]
+    elif pred == '' and re.search( '^Othan-b[^K]', t.c ) and tSubst!=None: output = [ '\\q'+t.sVar, '\\r'+t.sVar, '\\s'+t.sVar, 'Some', [ '\\m'+t.sVar, '^', [ 'r'+t.sVar, 'm'+t.sVar ], [ 's'+t.sVar, 'm'+t.sVar ] ], [ '\\m'+t.sVar, 'Precede', 'n'+t.sVar, 'm'+t.sVar ] ]
     elif pred == '':                                   output = 'Ident'
     elif re.match( '^.*-[ri]\w+(-[lmnstuwxy].*)?$', t.c ) != None:
       if lsNolo == []:  print( 'ERROR: missing non-local argument in', t )
@@ -167,54 +175,54 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     form = re.sub( '-[mnstuwxy][^ ]*', '', re.sub('-x([-} ])','\\1',t.ch[0].c) ) + ' ' + re.sub( '-[lx][^ ]*', '', t.c )
 #    print( 'form:', form )
     bform = re.sub( '-[lx][^ ]*', '', t.c ) + ' ' + re.sub( '-[mnstuwxy][^ ]*', '', t.ch[0].c )
-#    if   '-lF' in t.ch[0].c and re.search( '^V-iN((?:-[ghirv][^ ]*)?) N\\1$', form ) != None:  output = [ '\\r', '\\s', 'All', [ '\\x'+t.sVar, '^', ['r','x'+t.sVar], translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ], 's' ]
+#    if   '-lF' in t.ch[0].c and re.search( '^V-iN((?:-[ghirv][^ ]*)?) N\\1$', form ) != None:  output = [ '\\r', '\\s', 'All', [ '\\x'+t.sVar, '^', ['r','x'+t.sVar], translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, [ ['Trace','x'+t.sVar] ] + lsNolo ) ], 's' ]
     ## Extractions / non-local introduction...
     if '-lE' in t.ch[0].c:
       if lsNolo == []: print( 'ERROR: no non-locals in', t )
       ## E5. Argument extraction with zero-head rule applied to filler: e.g. V-aN-gN -> V-aN-b{A-aN}-lE...
-      if re.search( '^(.*)-[ab]\{\w+-[ab]\w+\}((?:-[ghirv][^ ]*)?)-lE \\1-[ghriv]\w+\\2$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), [ 'Pred', lsNolo[0] ] ]
+      if re.search( '^(.*)-[ab]\{\w+-[ab]\w+\}((?:-[ghirv][^ ]*)?)-lE \\1-[ghriv]\w+\\2$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[1:] ), [ 'Pred', lsNolo[0] ] ]
       ## E4. Function extraction: e.g. V-g{V-aN} -> N-lE...
-      elif re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE (\w+)-[ghirv]\{\\3-[abghirv](\\1|\{\\1\})\}\\2$', form ):  output = [ lsNolo[0], translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ) ]
+      elif re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE (\w+)-[ghirv]\{\\3-[abghirv](\\1|\{\\1\})\}\\2$', form ):  output = [ lsNolo[0], translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[1:] ) ]
       ## E3. Function extraction: e.g. V-gV -> R-aN-lE...
-      elif re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE (\w+)-[ghirv]\\3\\2$', form ):  output = [ 'Mod'+str(getLocalArity(t.c)), lsNolo[0], translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ) ]
+      elif re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE (\w+)-[ghirv]\\3\\2$', form ):  output = [ 'Mod'+str(getLocalArity(t.c)), lsNolo[0], translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[1:] ) ]
       ## E1. Argument extraction with exact match: e.g. V-aN-gN -> V-aN-bN-lE... 
-      elif re.search( '^(.*)-[ab]([^ ]+)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\\2\\3$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
+      elif re.search( '^(.*)-[ab]([^ ]+)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\\2\\3$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[1:] ), lsNolo[0] ]
       ## E2. Modifier extraction: e.g. V-aN-g{R-aN} -> V-aN-lE... 
-      elif re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\{[^ ]*\}\\2$', form ):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
+      elif re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\{[^ ]*\}\\2$', form ):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[1:] ), lsNolo[0] ]
 #      elif '-lE' in t.ch[0].c and not( re.search( '^(.*)-[ab]([^ ]+)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\\2\\3$', form ) ) and not( re.search( '^(.*)((?:-[ghirv][^ ]*)?)-lE \\1-[ghirv]\{[^ ]*\}\\2$', form ) ):
-#      elif '-lE' in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
-#      elif '-lE' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[1:] ), lsNolo[0] ]
+#      elif '-lE' in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[1:] ), lsNolo[0] ]
+#      elif '-lE' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[1:] ), lsNolo[0] ]
       else: 
         print( 'ERROR: Ill-formed extraction:', t )  #, form ) # t.c, '->', t.ch[0].c )
         exit( 0 )
     ## M3. Unary modifier...
-    elif re.search( '^A-aN((?:-[ghirv][^ ]*)?)-lM N-aD\\1$', form ):  output = [ 'Mod1', ['\\q','\\t','\\u','q','t','u'], translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
+    elif re.search( '^A-aN((?:-[ghirv][^ ]*)?)-lM N-aD\\1$', form ):  output = [ 'Mod1', ['\\q','\\t','\\u','q','t','u'], translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ) ]
     ## O1-2. Reordering rules...
-    elif re.search( '^\w+-a\w+((?:-[ghirv][^ ]*)?)-lQ \w+-a\w+-b\{\w+-[abghirv]\w+\}\\1$', form ):  output = [ '\\f', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ 'f', 'Some' ] ]
-    elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 1:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'p' ]
-    elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 2:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'q', 'p' ]
+    elif re.search( '^\w+-a\w+((?:-[ghirv][^ ]*)?)-lQ \w+-a\w+-b\{\w+-[abghirv]\w+\}\\1$', form ):  output = [ '\\f', '\\q', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), [ 'f', 'Some' ] ]
+    elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 1:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), 'p' ]
+    elif '-lQ' in t.ch[0].c and getLocalArity(t.ch[0].c) == 2:  output = [ '\\p', '\\q', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), 'q', 'p' ]
     ## V. Passive rule...
-    elif re.search( '^L-aN-vN((?:-[ghirv][^ ]*)?)-lV [AR]-aN\\1$', form ) != None:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\zz'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','zz'+t.sVar] ] + lsNolo ), 'Some', 'r', 's' ] ]
-#   elif '-lV' in t.ch[0].c:  output = [ 'Pasv', 'x'+ t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','x'+t.sVar] ] + lsNolo ) ]
+    elif re.search( '^L-aN-vN((?:-[ghirv][^ ]*)?)-lV [AR]-aN\\1$', form ) != None:  output = [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\zz'+t.sVar, translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, [ ['Trace','zz'+t.sVar] ] + lsNolo ), 'Some', 'r', 's' ] ]
+#   elif '-lV' in t.ch[0].c:  output = [ 'Pasv', 'x'+ t.sVar, translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, [ ['Trace','x'+t.sVar] ] + lsNolo ) ]
     ## Z15. Zero-head rule with superlative as quantifier: e.g. N-aD-bO -> As-aN-lZ...
     elif re.search( '^As\w*-[ab]\w+((?:-[ghirv][^ ]*)?)-lZ N\w*-[ab]\w+-[ab]\w+\\1$', form ):
-      output = [ '\\p', '\\q', '\\r', '\\s', 'p', [ '\\x', '^', [ 'r', 'x' ], [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\t', '\\u', '^', [ 't', 'x' ], [ 'u', 'x' ] ],
+      output = [ '\\p', '\\q', '\\r', '\\s', 'p', [ '\\x', '^', [ 'r', 'x' ], [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), [ '\\t', '\\u', '^', [ 't', 'x' ], [ 'u', 'x' ] ],
                                                                                                                               Univ, [ '\\d', 'All', [ '\\y', 'p', [ '\\z', 'Equal', 'y', 'z' ], 'r' ], 
-                                                                                                                                                    [ '\\y', translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\t', '\\u', '^', [ 't', 'y' ], [ 'u', 'y' ] ],
+                                                                                                                                                    [ '\\y', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), [ '\\t', '\\u', '^', [ 't', 'y' ], [ 'u', 'y' ] ],
                                                                                                                                                                                                            Univ, [ '\\e', 'All', [ '\\o', 'Count=', 'o', [ '\\a', 'Contain', 'a', 'd' ], Univ ],
                                                                                                                                                                                                                                  [ '\\o', 'Count<', 'o', [ '\\a', 'Contain', 'a', 'e' ], Univ ] ] ] ] ] ],
                                                   's' ]
     ## Z14. Zero-head rule with superlative as quantifier: e.g. N-aD-b{N-aD} -> As-aN-lZ...
     elif re.search( '^As\w*-[ab]\w+((?:-[ghirv][^ ]*)?)-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}\\1$', form ):
-      output = [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\x', '^', [ 'r', 'x' ], [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\t', '\\u', '^', [ 't', 'x' ], [ 'u', 'x' ] ],
+      output = [ '\\f', '\\q', '\\r', '\\s', 'f', 'q', [ '\\x', '^', [ 'r', 'x' ], [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), [ '\\t', '\\u', '^', [ 't', 'x' ], [ 'u', 'x' ] ],
                                                                                                                                    Univ, [ '\\d', 'All', [ '\\y', 'f', 'q', [ '\\z', 'Equal', 'y', 'z' ], 'r' ], 
-                                                                                                                                                         [ '\\y', translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\t', '\\u', '^', [ 't', 'y' ], [ 'u', 'y' ] ],
+                                                                                                                                                         [ '\\y', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), [ '\\t', '\\u', '^', [ 't', 'y' ], [ 'u', 'y' ] ],
                                                                                                                                                                                                                 Univ, [ '\\e', 'All', [ '\\o', 'Count=', 'o', [ '\\a', 'Contain', 'a', 'd' ], Univ ],
                                                                                                                                                                                                                                       [ '\\o', 'Count<', 'o', [ '\\a', 'Contain', 'a', 'e' ], Univ ] ] ] ] ] ],
                                                        's' ]
     ## Z13. Zero-head rule with ordinal and cardinal and superlative as quantifier: e.g. N-aD-b{N-aD}-b{As-aN}-bK -> Ko-lZ...
     elif re.search( '^Ko\w*((?:-[ghirv][^ ]*)?)-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}-[ab]\{A\w*-[ab]\w+\}-[ab]K\\1$', form ):
-      output = [ '\\p', '\\f', '\\g', '\\q', '\\r', '\\s', 'p',  #translate( t.ch[0], Scopes, Anaphs, lsNolo ),   ### <== NOTE: ONLY WORKS FOR 'FIRST'!!!!
+      output = [ '\\p', '\\f', '\\g', '\\q', '\\r', '\\s', 'p',  #translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ),   ### <== NOTE: ONLY WORKS FOR 'FIRST'!!!!
                                                            Univ, [ '\\n', 'g', 'q', [ '\\x', '^', [ 'r', 'x' ],
                                                                                                   [ 'f', [ '\\t', '\\u', '^', [ 't', 'x' ], [ 'u', 'x' ] ],
                                                                                                          Univ,
@@ -226,14 +234,14 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
                                                                                     's' ] ]
     ## Z12. Zero-head rule with ordinal and cardinal as quantifier: e.g. N-aD-b{N-aD}-bK -> Ko-lZ...
     elif re.search( '^Ko\w*((?:-[ghirv][^ ]*)?)-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}-[ab]K\\1$', form ):
-      output = [ '\\p', '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ),   ### <== NOTE: ONLY WORKS FOR 'FIRST'!!!!
+      output = [ '\\p', '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ),   ### <== NOTE: ONLY WORKS FOR 'FIRST'!!!!
                                                     Univ, [ '\\m', 'p', Univ, [ '\\n', 'f', 'q', [ '\\x', '^', [ 'r', 'x' ],
                                                                                                                [ 'Count<', 'n', [ '\\y', 'f', 'q', [ '\\z', 'Equal', 'y', 'z' ], 'r' ],
                                                                                                                                 [ '\\y', 'Precede', 'y', 'x' ] ] ],
                                                                                                  's' ] ] ]
     ## Z11. Zero-head rule with ordinal and superlative as quantifier: e.g. N-aD-b{N-aD}-b{As-aN} -> Ko-lZ...
     elif re.search( '^Ko\w*((?:-[ghirv][^ ]*)?)-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}-[ab]\{A\w*-[ab]\w+\}\\1$', form ):
-      output = [ '\\f', '\\g', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ),
+      output = [ '\\f', '\\g', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ),
                                                     Univ, [ '\\n', 'All', [ '\\m', 'MinusOne', 'n', 'm' ],
                                                                           [ '\\m', 'g', 'q', [ '\\x', '^', [ 'r', 'x' ],
                                                                                                            [ 'f', [ '\\t', '\\u', '^', [ 't', 'x' ], [ 'u', 'x' ] ],
@@ -246,7 +254,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
                                                                                              's' ] ] ]
     ## Z10. Zero-head rule with cardinal and superlative as quantifier: e.g. N-aD-b{N-aD}-b{As-aN} -> K-lZ...
     elif re.search( '^K\w*((?:-[ghirv][^ ]*)?)-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}-[ab]\{A\w*-[ab]\w+\}\\1$', form ):
-      output = [ '\\f', '\\g', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ),
+      output = [ '\\f', '\\g', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ),
                                                     Univ, [ '\\n', 'All', [ '\\m', 'MinusOne', 'n', 'm' ],
                                                                           [ '\\m', 'g', 'q', [ '\\x', '^', [ 'r', 'x' ],
                                                                                                            [ 'f', [ '\\t', '\\u', '^', [ 't', 'x' ], [ 'u', 'x' ] ],
@@ -259,46 +267,49 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
                                                                                              's' ] ] ]
     ## Z9. Zero-head rule with ordinal as quantifier: e.g. N-aD-b{N-aD} -> Ko-lZ...
     elif re.search( '^Ko\w*((?:-[ghirv][^ ]*)?)-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}\\1$', form ):
-      output = [ '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ), Univ, [ '\\n', 'All', [ '\\m', 'MinusOne', 'n', 'm' ],
+      output = [ '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), Univ, [ '\\n', 'All', [ '\\m', 'MinusOne', 'n', 'm' ],
                                                                                                                  [ '\\m', 'f', 'q', [ '\\x', '^', [ 'r', 'x' ],
                                                                                                                                                   [ 'Count=', 'm', [ '\\y', 'f', 'q', [ '\\z', 'Equal', 'y', 'z' ], 'r' ],
                                                                                                                                                                    [ '\\y', 'Precede', 'y', 'x' ] ] ],
                                                                                                                                     's' ] ] ]
     ## Z8. Zero-head rule as measure phrase: e.g. R-aN -> K-lZ...
-    elif re.search( '^K\w*-lZ [AR]\w*-[ab]\w+$', form ):  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ), ['\\n', 'Count=', 'n', ['\\xx', 'q', ['\\e', '^', [ 'Contain', 'xx', 'e'], ['r', 'e'] ], 's' ], Univ ], Univ ]
+    elif re.search( '^K\w*-lZ [AR]\w*-[ab]\w+$', form ):  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Count=', 'n', ['\\xx', 'q', ['\\e', '^', [ 'Contain', 'xx', 'e'], ['r', 'e'] ], 's' ], Univ ], Univ ]
     ## Z7. Zero-head rule with proportion as quantificational adjunct: e.g. A-aN-b{A-aN} -> K-lZ...
-    elif re.search( '^K\w*-lZ A\w*-[ab]\w+-[ab]\{A\w*-[ab]\w+\}$', form ):  output = [ '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ), ['\\n', 'Ratio=', 'n', ['\\x', 'q', ['\\z', 'Equal', 'x', 'z'], Univ ], ['\\x', 'f', ['\\t', '\\u', 'Some', ['\\z', '^', [ 'Equal', 'x', 'z' ], [ 't', 'z' ] ], 'u' ], 'r', 's'] ], Univ ]
+    elif re.search( '^K\w*-lZ A\w*-[ab]\w+-[ab]\{A\w*-[ab]\w+\}$', form ):  output = [ '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Ratio=', 'n', ['\\x', 'q', ['\\z', 'Equal', 'x', 'z'], Univ ], ['\\x', 'f', ['\\t', '\\u', 'Some', ['\\z', '^', [ 'Equal', 'x', 'z' ], [ 't', 'z' ] ], 'u' ], 'r', 's'] ], Univ ]
     ## Z6. Zero-head rule with cardinal as quantifier: e.g. N-bO -> K-lZ...
-    elif re.search( '^K\w*-lZ \w+-[ab]\w+$', form ):  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ), ['\\n', 'Ratio=', 'n', ['\\xx', 'q', ['\\z', '^', [ 'Equal', 'xx', 'z'], ['r', 'z'] ], Univ ], 's'], Univ ]
+    elif re.search( '^K\w*-lZ \w+-[ab]\w+$', form ):  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Ratio=', 'n', ['\\xx', 'q', ['\\z', '^', [ 'Equal', 'xx', 'z'], ['r', 'z'] ], Univ ], 's'], Univ ]
     ## Z5. Zero-head rule with fraction as quantifier: e.g. N-aD-bO -> K-lZ...
-    elif re.search( '^K\w*-lZ \w+-[ab]\w+-[ab]\w+$', form ):  output = [ '\\p', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ), ['\\n', 'Ratio=', 'n', ['\\xx', 'p', ['\\z', '^', [ 'Equal', 'xx', 'z'], ['r', 'z'] ], Univ ], 's'], Univ ]
+    elif re.search( '^K\w*-lZ \w+-[ab]\w+-[ab]\w+$', form ):  output = [ '\\p', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Ratio=', 'n', ['\\xx', 'p', ['\\z', '^', [ 'Equal', 'xx', 'z'], ['r', 'z'] ], Univ ], 's'], Univ ]
     ## Z4. Zero-head rule with cardinal as quantifier: e.g. N-aD-b{N-aD} -> K-lZ...
-    elif re.search( '^K\w*-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}$', form ):  output = [ '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ), ['\\n', 'Count=', 'n', ['\\x', 'f', 'q', ['\\z', '^', [ 'Equal', 'x', 'z'], ['r', 'z'] ], 's' ], Univ ], Univ ]
+    elif re.search( '^K\w*-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}$', form ):  output = [ '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Count=', 'n', ['\\x', 'f', 'q', ['\\z', '^', [ 'Equal', 'x', 'z'], ['r', 'z'] ], 's' ], Univ ], Univ ]
     ## Z3. Zero-head rule with expletive subject: e.g. A-aNe -> N-lZ...
-    elif re.search( '^\w+-lZ \w+-[ab]Ne$', form ):  output = [ '\\q', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
+    elif re.search( '^\w+-lZ \w+-[ab]Ne$', form ):  output = [ '\\q', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ) ]
     ## Z1-2. ACCOMMODATE SLOPPY ANNOTATION of '-lZ' with arg elision...
-    elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Pred', [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ] ]
-    elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Pred', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
-    elif '-lz' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Pred', translate( t.ch[0], Scopes, Anaphs, lsNolo ) ]
+    elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = [ 'Pred', [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), 'Some' ] ]
+    elif '-lZ' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Pred', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ) ]
+    elif '-lz' in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c) + 1:  output = [ 'Pred', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ) ]
     ## T1. S -> Q-iN or N -> V-iN...
-    elif re.search( '^\w+-i\w+(-lF)? \w+$', form ):  output = [ '\\r', '\\s', 'Gen', [ '\\zz'+t.sVar, translate( t.ch[0], Scopes, Anaphs, [ ['Trace','zz'+t.sVar] ] + lsNolo ), 'r', Univ ], 's' ]
+    elif re.search( '^\w+-i\w+(-lF)? \w+$', form ):  output = [ '\\r', '\\s', 'Gen', [ '\\zz'+t.sVar, translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, [ ['Trace','zz'+t.sVar] ] + lsNolo ), 'r', Univ ], 's' ]
                                                                                                         # [ '\\x'+t.sVar, 'Explain', 'ThisArticle', 'x'+t.sVar ] ]
     ## T2. V-rN -> V-g{R-aN}...
-    elif '-l' not in t.ch[0].c and re.search( '^\w+-[ghirv]\{\w+-[abghirv]\w+\} \w+-[ghirv]\w+$', form ): output = translate( t.ch[0], Scopes, Anaphs, lsNolo[:-1] + [ [ 'Pred', lsNolo[-1] ] ] )
+    elif '-l' not in t.ch[0].c and re.search( '^\w+-[ghirv]\{\w+-[abghirv]\w+\} \w+-[ghirv]\w+$', form ): output = translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:-1] + [ [ 'Pred', lsNolo[-1] ] ] )
     ## T3. N-aD-bO -> N-aD-b{N-aD}...
-    elif re.search( '^N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\} \w+-[ab]\w+-[ab]\w+$', form ):  output = [ '\\p', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo ), ['\\o', '\\t', '\\u', 'p', 't', 'u' ], 'q', 'r', 's' ]
-    ## T4. Elision...
-    elif re.search( '^(.*)-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\}((?:-[ghirv][^ ]*)?) \\1\\2$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
-    elif re.search( '^(.*)-[ab]\{\w+-[abghirv]\w+\}((?:-[ghirv][^ ]*)?) \\1\\2$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
-    elif '-l' not in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo ), 'Some' ]
-    elif '-l' not in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
+    elif re.search( '^N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\} \w+-[ab]\w+-[ab]\w+$', form ):  output = [ '\\p', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\o', '\\t', '\\u', 'p', 't', 'u' ], 'q', 'r', 's' ]
+    ## T4. Conversion with comparative as quantifier: e.g. A-aN-bOthan -> Ac-aN-lZ...
+    elif re.search( '^Ac\w*-[ab]\w+((?:-[ghirv][^ ]*)?) A\w*-[ab]\w+-[ab]\w+\\1$', form ):
+      output = [ '\\p', '\\q', '\\r', '\\s', 'p', [ '\\n', 'Count=', 'n', [ '\\a', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), 'q', [ '\\e', '^', [ 'r', 'e'], [ 'Contain', 'a', 'e' ] ], 's' ], Univ ], Univ ]
+    ## T5. Elision...
+    elif re.search( '^(.*)-[ab]\{\w+-[abghirv]\{\w+-[abghirv]\w+\}\}((?:-[ghirv][^ ]*)?) \\1\\2$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
+    elif re.search( '^(.*)-[ab]\{\w+-[abghirv]\w+\}((?:-[ghirv][^ ]*)?) \\1\\2$', form ):  output = [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), [ '\\f', '\\r', '\\s', 'True' ] ]
+    elif '-l' not in t.ch[0].c and getLocalArity(t.c) + 1 == getLocalArity(t.ch[0].c):  output = [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), 'Some' ]
+    elif '-l' not in t.ch[0].c and getLocalArity(t.c) == getLocalArity(t.ch[0].c):  output = translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo )
     else:
       print( 'WARNING: Assuming simple type change in', t )    #', t.c, '->', t.ch[0].c, getLocalArity(t.c), getLocalArity(t.ch[0].c), 'is simple type change' )
-      output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
+      output = translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo )
     ## Propagate child stores...
     t.qstore = t.ch[0].qstore
 
-  ## 2d. Binary branch...
+  ## 2e. Binary branch...
   elif len(t.ch) == 2:
     m = getNoloArity(t.ch[0].c)
     if VERBOSE: print( ' '*indent, 'child cats and nolos:', t.ch[0].c, t.ch[1].c, m, lsNolo[:m], lsNolo[m:] )
@@ -313,88 +324,88 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lM' in t.ch[0].c and getLocalArity(t.ch[1].c) != getLocalArity(t.c):  sys.stdout.write( 'ERROR: Bad arity in ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     elif '-lM' in t.ch[1].c and getLocalArity(t.ch[0].c) != getLocalArity(t.c):  sys.stdout.write( 'ERROR: Bad arity in ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     ## D1-2,A1-2. In-situ ops...
-    if   '-lD' in t.ch[0].c or t.ch[0].c[0] in ',;:.!?':  output = translate( t.ch[1], Scopes, Anaphs, lsNolo )
-    elif '-lD' in t.ch[1].c or t.ch[1].c[0] in ',;:.!?':  output = translate( t.ch[0], Scopes, Anaphs, lsNolo )
-    elif '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
-    elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
+    if   '-lD' in t.ch[0].c or t.ch[0].c[0] in ',;:.!?':  output = translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo )
+    elif '-lD' in t.ch[1].c or t.ch[1].c[0] in ',;:.!?':  output = translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo )
+    elif '-lA' in t.ch[0].c or '-lU' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m] ) ]
+    elif '-lA' in t.ch[1].c or '-lU' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] ) ]
     ## I1-2. Non-local elimination in argument: e.g. V-aN -> V-aN-b{I-aN-gN} I-aN-gN-lI...
-    elif re.match( '^\w+-[ghriv]\{\w+-[ab]\w+\}-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\fi', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ 'fi' ] ) ] ]
+    elif re.match( '^\w+-[ghriv]\{\w+-[ab]\w+\}-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m] ), [ '\\fi', translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] + [ 'fi' ] ) ] ]
 # ## THESE TWO DIDNT WORK AND ARENT NEEDED AND DONT MAKE SENSE ANYWAY
 #    elif '-lI' in t.ch[1].c and re.match( '(\w+)-b{(\w+-[ghriv]\w+)} \\2 \\1', form ):
-#      output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] ), [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ], 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
+#      output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] ), [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ], 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
 #    elif '-lI' in t.ch[1].c and re.match( '(\w+-[ab]\w+)-b{(\w+-[ghriv]\w+)} \\2 \\1', form ):
-#      output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] ), [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ], 'q', 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
-#    elif re.match( '^\w+-[ghriv]\w+-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\qi', 'r', 's', 'qi', Univ, [ '\\xi'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','xi'+t.ch[1].sVar] ] ), 'r', 's' ] ] ]
-    elif re.match( '^\w+-[ghriv]\w+-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\qi', translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ 'qi' ] ) ] ]
-#    elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 0:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\zz'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','zz'+t.ch[0].sVar] ] + lsNolo[m:] ),      'r', 's' ] ] ]
-    elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 1:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), [ '\\p', '\\q', '\\r', '\\s', 'p', Univ, [ '\\zz'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ] ), 'q', 'r', 's' ] ] ]
+#      output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] ), [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ], 'q', 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
+#    elif re.match( '^\w+-[ghriv]\w+-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m] ), [ '\\qi', 'r', 's', 'qi', Univ, [ '\\xi'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] + [ ['Trace','xi'+t.ch[1].sVar] ] ), 'r', 's' ] ] ]
+    elif re.match( '^\w+-[ghriv]\w+-lI', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m] ), [ '\\qi', translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] + [ 'qi' ] ) ] ]
+#    elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 0:  output = [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m] ), [        '\\q', '\\r', '\\s', 'q', Univ, [ '\\zz'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, [ ['Trace','zz'+t.ch[0].sVar] ] + lsNolo[m:] ),      'r', 's' ] ] ]
+    elif '-lI' in t.ch[1].c and getLocalArity(t.ch[1].c) == 1:  output = [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m] ), [ '\\p', '\\q', '\\r', '\\s', 'p', Univ, [ '\\zz'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ] ), 'q', 'r', 's' ] ] ]
     ## M1-2. Modifier...
-    elif '-lM' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ]
-    elif '-lM' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] ) ]
+    elif '-lM' in t.ch[0].c:  output = [ 'Mod'+str(getLocalArity(t.ch[1].c)), translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] ), translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m] ) ]
+    elif '-lM' in t.ch[1].c:  output = [ 'Mod'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m] ), translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] ) ]
     ## C1-2. Conjunction...
     elif '-lC' in t.ch[0].c and ( re.match( '^(.*) \\1((?:-p\w+)?)-c\\1 \\1(-c\\1\\2)?$', form ) or re.match( '^\w+ (\w+)((?:-p\w+)?)-c\\1 \\1(-c\\1\\2)?$', form ) or
                                   re.match( '^(.*) \\1((?:-p\w+)?)-c{\\1} \\1(-c{\\1}\\2)?$', form ) or 
                                   re.match( '^\w+ X-cX-cX (\w+)-c\\1$', form ) ):
-      output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
+      output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ) ]
     elif '-lC' in t.ch[1].c and ( re.match( 'X-cX.*-dX (.*) \\1((?:-p\w+)?)-c\\1', form ) or re.match( 'X-cX-dX (.*) \\1((?:-p\w+)?)-c{\\1}', form ) ):
-      output = translate( t.ch[1], Scopes, Anaphs, lsNolo )
+      output = translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo )
 #    elif '-lC' in t.ch[0].c and '-lC' in t.ch[1].c and re.match( '^(.*) \\1 \\1(-c\\1|-c{\\1})?$', form ):
-#      output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, lsNolo ), translate( t.ch[1], Scopes, Anaphs, lsNolo ) ]
+#      output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ) ]
 #    elif '-lG' in t.ch[0].c and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g\\1 \\3\\2\\4$', form ) == None and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-g{\\1} \\3\\2\\4$', form ) == None:
 #      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     ## G1-2. Gap filler attachment...
     elif '-lG' in t.ch[0].c:
       ## Non-local simple argument: V-rN -> N-rN V-gN...
       if re.search( '^(\w+)((?:-[ghirv][^ ]*)?) (\w+)((?:-[ghirv][^ ]*)?)-g\\1 \\3\\2\\4$', form ):
-        output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ), Univ, [ '\\xx'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','xx'+t.ch[0].sVar] ] ), 'r', 's' ] ]
+        output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m] ), Univ, [ '\\xx'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] + [ ['Trace','xx'+t.ch[0].sVar] ] ), 'r', 's' ] ]
       ## Non-local modifier argument: V-rN -> R-aN-rN V-g{R-aN}...
       elif re.search( '^(\w+-[ab]\w+)((?:-[ghirv][^ ]*)?) (\w+(?:-[ab]\w+)*)((?:-[ghirv][^ ]*)?)-g{\\1} \\3\\2\\4$', form ):
-        output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ),
-                                 [ '\\t'+t.ch[0].sVar, '\\u'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['\\p', '\\t', '\\u', 'p', 't'+t.ch[0].sVar, 'u'+t.ch[0].sVar ] ] ), 'r', 's' ],
+        output = [ '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m] ),
+                                 [ '\\t'+t.ch[0].sVar, '\\u'+t.ch[0].sVar, translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] + [ ['\\p', '\\t', '\\u', 'p', 't'+t.ch[0].sVar, 'u'+t.ch[0].sVar ] ] ), 'r', 's' ],
                                  Univ, Univ ]
       else:
         sys.stdout.write( 'WARNING: Bad G rule: ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
-#    elif '-lG' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m] ) ] ) ]
+#    elif '-lG' in t.ch[0].c:  output = [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m] ) ] ) ]
 #    elif '-lH' in t.ch[1].c and re.search( '^(.*)-h(.*) \\2 \\1$', form ) == None and re.search( '^(.*)-h{(.*)} \\2 \\1$', form ) == None:
 #      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     ## H. Heavy shift / extraposition...
     elif '-lH' in t.ch[1].c:
       ## Zero-ary (complete) non-local with simple argument: N -> N-hO O...
       if re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h(\w+) \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ), Univ, [ '\\xx'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['Trace','xx'+t.ch[1].sVar] ] ), 'r', 's' ] ]
+        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m-1:] ), Univ, [ '\\xx'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] + [ ['Trace','xx'+t.ch[1].sVar] ] ), 'r', 's' ] ]
       ## Unary non-local with simple argument: B-aN -> B-aN-hO O...
       elif re.search( '^(\w+-[ab](?:\w+|{\w+-[a-z]\w+}))((?:-[ghirv][^ ]*)?)-h(\w+) \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\f', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ), Univ, [ '\\xx'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['Trace','xx'+t.ch[1].sVar] ] ), 'f', 'r', 's' ] ]
+        output = [ '\\f', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m-1:] ), Univ, [ '\\xx'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] + [ ['Trace','xx'+t.ch[1].sVar] ] ), 'f', 'r', 's' ] ]
       ## Zero-ary (complete) non-local with modifier: N -> N-h{A-aN} A-aN...
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ab]\w+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),
-                                 [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'r', 's' ], Univ, Univ ]
+        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m-1:] ),
+                                 [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'r', 's' ], Univ, Univ ]
       ## Unary non-local with modifier: B-aN -> B-aN-h{A-aN} A-aN...
       elif re.search( '^(\w+-[ab]\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ab]\w+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),
-                                        [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'q', 'r', 's' ], Univ, Univ ]
+        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m-1:] ),
+                                        [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] + [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'q', 'r', 's' ], Univ, Univ ]
       ## Zero-ary (complete) non-local containing zero-ary (complete) non-local: N -> N-h{C-rN} C-rN...
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ghirv]\w+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
+        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] + [ [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
       ## Unary non-local containing zero-ary (complete) non-local: A-aN -> A-aN-h{F-gN} F-gN...
       elif re.search( '^(\w+-[ab]\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ghirv]\w+)} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'q', 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
+        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] + [ [ '\\qq', '\\t', '\\u', 'qq', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] ), 'q', 'r', 's' ] ] + lsNolo[m-1:] ), Univ, Univ ]
       ## Zero-ary (complete) non-local containing unary non-local: N -> N-h{Cas-g{V-aN}} Cas-g{V-aN}...
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ghirv]{\w+-[ab]\w+})} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\q', '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, 'q', Univ, [ '\\xh'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\fh', 'fh', [QuantEq,'xh'+t.ch[1].sVar] ] ] ), 'r', 's' ] ] ] + lsNolo[m-1:] ), Univ, Univ ]
+        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, [ [ '\\q', '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, 'q', Univ, [ '\\xh'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] + [ [ '\\fh', 'fh', [QuantEq,'xh'+t.ch[1].sVar] ] ] ), 'r', 's' ] ] ] + lsNolo[m-1:] ), Univ, Univ ]
       ## Unary non-local containing unary non-local: B-aN -> B-aN-h{Cas-g{V-aN}} Cas-g{V-aN}...
       elif re.search( '^(\w+-[ab]\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ghirv]{\w+-[ab]\w+})} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\p', '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, 'p', Univ, [ '\\xh'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\fh', 'fh', [QuantEq,'xh'+t.ch[1].sVar] ] ] ), 'q', 'r', 's' ] ] ] + lsNolo[m-1:] ), Univ, Univ ]
+        output = [ '\\q', '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, [ [ '\\p', '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, 'p', Univ, [ '\\xh'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] + [ [ '\\fh', 'fh', [QuantEq,'xh'+t.ch[1].sVar] ] ] ), 'q', 'r', 's' ] ] ] + lsNolo[m-1:] ), Univ, Univ ]
 #      elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?)-h{(\w+-[ghirv](?:\w+|{.*}))} \\3((?:-[ghirv][^ ]*)?) \\1\\2\\4$', form ):
-#        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] + lsNolo[:m-1] ), 'r', 's' ] ] + lsNolo[m-1:] ) ]
+#        output = [ '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, [ [ '\\t'+t.ch[1].sVar, '\\u'+t.ch[1].sVar, translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, [ ['\\ff', '\\t', '\\u', 'ff', 't'+t.ch[1].sVar, 'u'+t.ch[1].sVar ] ] + lsNolo[:m-1] ), 'r', 's' ] ] + lsNolo[m-1:] ) ]
       else:
         sys.stdout.write( 'WARNING: Bad H rule: ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
 #    ## Non-local in non-local: N -> N-h{V-g{V-aN}} V-g{V-aN}-lH...
-#    elif re.match( '^\w+-[ghirv]\{\w+-[ab][A-Z-az]+\}-lH$', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\ff', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] + [ 'ff' ] ) ] ] ) ]
-      #  output = translate( t.ch[0], Scopes, Anaphs, [ [ '\\f', '\\r', '\\s', 'f', [ '\\q', '\\t', '\\u', 'q', Univ, [ '\\zz'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, [ ['Trace','zz'+t.ch[1].sVar] ] + lsNolo[:m] ), 't', 'u' ] ], 'r', 's' ] ] + lsNolo[:m] )
+#    elif re.match( '^\w+-[ghirv]\{\w+-[ab][A-Z-az]+\}-lH$', t.ch[1].c ):  output = [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] + [ [ '\\ff', translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m-1:] + [ 'ff' ] ) ] ] ) ]
+      #  output = translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, [ [ '\\f', '\\r', '\\s', 'f', [ '\\q', '\\t', '\\u', 'q', Univ, [ '\\zz'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, [ ['Trace','zz'+t.ch[1].sVar] ] + lsNolo[:m] ), 't', 'u' ] ], 'r', 's' ] ] + lsNolo[:m] )
     ## Non-local in non-local: -h{C-rN}
-#    elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\z'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, lsNolo[:m-1] + [ ['Trace','z'+t.ch[1].sVar] ] ), 'r', 's' ] ] ] )
-#    elif '-lH' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ) ] ) ]
+#    elif '-lH' in t.ch[1].c and getNoloArity(t.ch[1].c)==1:  output = translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] + [ [ '\\q', '\\r', '\\s', 'q', Univ, [ '\\z'+t.ch[1].sVar, translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] + [ ['Trace','z'+t.ch[1].sVar] ] ), 'r', 's' ] ] ] )
+#    elif '-lH' in t.ch[1].c:  output = [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] + [ translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m-1:] ) ] ) ]
 #    ## Relative clause modification by C-rN-lR...
 #    elif '-lR' in t.ch[1].c and re.search( '^(.*)((?:-[ghirv][^ ]*)?) (.*)((?:-[ghirv][^ ]*)?)-r\\1 \\1\\2\\4$', form ) == None:  
 #      sys.stdout.write( 'WARNING: Bad category in ' + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
@@ -402,37 +413,37 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
     elif '-lR' in t.ch[1].c:
       ## Relative clause modification by N -> N C-rN-lR...
       if re.search( '^(\w+)((?:-[ghirv][^ ]*)?) \w+((?:-[ghirv][^ ]*)?)-r\w+ \\1\\2\\3$', form ):
-        output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), Univ, Univ ],
+        output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), Univ, Univ ],
                                                                                                                                   [ 's', 'zz'+t.ch[0].sVar ] ] ]
       ## Relative clause modification by N -> N F-g{R-aN}-lR...
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?) \w+((?:-[ghirv][^ ]*)?)-[gr]\{\w+-[ab]\w+\} \\1\\2\\3$', form ):
-        output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ [ '\\p', '\\t', '\\u', 'p', Univ, ['\\xx', 'Some', ['\\ee', 'A-aN-bN:for', 'ee', 'xx', 'zz'+t.ch[0].sVar], Univ ] ] ]   ), Univ, Univ ],
+        output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] + [ [ '\\p', '\\t', '\\u', 'p', Univ, ['\\xx', 'Some', ['\\ee', 'A-aN-bN:for', 'ee', 'xx', 'zz'+t.ch[0].sVar], Univ ] ] ]   ), Univ, Univ ],
                                                                                                                                   ['s','zz'+t.ch[0].sVar] ] ]
-#    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==0:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','zz'+t.ch[0].sVar] ] ]
+#    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==0:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), Univ, Univ ], ['s','zz'+t.ch[0].sVar] ] ]
       ## Relative clause modification by N -> N I-aN-gN-lR (e.g. 'a job to do _') -- event should be in future...
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?) \w+-[ab]\w+((?:-[ghirv][^ ]*)?)-[gr]\\1 \\1\\2\\3$', form ):
-        output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ],
+        output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ],
                                                                                                                                   ['s','zz'+t.ch[0].sVar] ] ]
       ## Relative clause modification by N -> N I-aN-g{R-aN}-lR (e.g. 'a time to rest _') -- event should be in future...
       elif re.search( '^(\w+)((?:-[ghirv][^ ]*)?) \w+-[ab]\w+((?:-[ghirv][^ ]*)?)-[gr]\{\w+-[ab]\w+\} \\1\\2\\3$', form ):
-        output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ [ '\\p', '\\t', '\\u', 'p', Univ, ['\\xx', 'Some', ['\\ee', 'A-aN-bN:for', 'ee', 'xx', 'zz'+t.ch[0].sVar], Univ ] ] ] ), 'Some', Univ, Univ ],
+        output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] + [ [ '\\p', '\\t', '\\u', 'p', Univ, ['\\xx', 'Some', ['\\ee', 'A-aN-bN:for', 'ee', 'xx', 'zz'+t.ch[0].sVar], Univ ] ] ] ), 'Some', Univ, Univ ],
                                                                                                                                   ['s','zz'+t.ch[0].sVar] ] ]
-#    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==1:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ], ['s','zz'+t.ch[0].sVar] ] ]
+#    elif '-lR' in t.ch[1].c and getLocalArity(t.c)==0 and getLocalArity(t.ch[1].c)==1:  output = [        '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m]   ),      'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), 'Some', Univ, Univ ], ['s','zz'+t.ch[0].sVar] ] ]
       ## Relative clause modification of verb phrase...
       elif getLocalArity(t.c)==1:
-        output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, lsNolo[:m]   ), 'q', 'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), Univ, Univ ],
+        output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m]   ), 'q', 'r', [ '\\zz'+t.ch[0].sVar, '^', [ translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m:] + [ ['Trace','zz'+t.ch[0].sVar] ]   ), Univ, Univ ],
                                                                                                                                   ['s','zz'+t.ch[0].sVar] ] ]
       else:
         sys.stdout.write( 'WARNING: Bad R rule: ' + str(t) + '\n' )  # + t.c + ' -> ' + t.ch[0].c + ' ' + t.ch[1].c + '\n' )
     ## Relative clause modification of complete phrase or clause...
     elif '-lR' in t.ch[0].c and getLocalArity(t.c)==0:
-      output = [        '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, lsNolo[m-1:] ),      'r', [ '\\zz'+t.ch[1].sVar, '^', [ translate( t.ch[0], Scopes, Anaphs, lsNolo[:m-1] + [ ['Trace','zz'+t.ch[1].sVar] ] ), Univ, Univ ],
+      output = [        '\\r', '\\s', translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[m-1:] ),      'r', [ '\\zz'+t.ch[1].sVar, '^', [ translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo[:m-1] + [ ['Trace','zz'+t.ch[1].sVar] ] ), Univ, Univ ],
                                                                                                                                 ['s','zz'+t.ch[1].sVar] ] ]
     else:  print( '\nERROR: unhandled rule from ' + str(t) + '\n' )  # + t.c + ' to ' + t.ch[0].c + ' ' + t.ch[1].c )
     ## Propagate child stores...
     t.qstore += (t.ch[0].qstore if hasattr(t.ch[0],'qstore') else []) + (t.ch[1].qstore if hasattr(t.ch[1],'qstore') else [])
 
-  ## 2.e. Fail...
+  ## 2.f. Fail...
   else: print( '\nERROR: too many children in ', t )
 
   ## 3. Mark antecedents and anaphors...
@@ -452,7 +463,7 @@ def translate( t, Scopes, Anaphs, lsNolo=[] ):
 #    ## Non-discourse anaphor...
 #    if st == None:  output = [ 'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\x', 'Equal', 'x', 'x'+a         ] ], [ '\\a'+a, output ] ]
 #    ## Discourse anaphor...
-#    else:           output = [ 'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\x'+a, access( translate( st, Scopes, Anaphs, lsNolo ) ) ] ], [ '\\a'+a, output ] ]
+#    else:           output = [ 'SomeSet', [ '\\a'+a, 'EqualSet', 'a'+a, [ '\\x'+a, access( translate( st, Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ) ) ] ], [ '\\a'+a, output ] ]
 
   ## 4. Retrieve quantifier...
   if VERBOSE: print( ' '*indent, 'cat and scopes:', t.c, Scopes )
@@ -1183,7 +1194,7 @@ while True:
 
   if VERBOSE:  print( '----- translate -----' )
   if VERBOSE:  print( 'Scopes', Scopes )
-  shortExpr = translate( t, Scopes, Anaphs )
+  shortExpr = translate( t, Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses )
   if t.qstore != []:
     print( 'ERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
     exit(0)
@@ -1239,7 +1250,7 @@ while True:
   
     print( '----------' )
     if VERBOSE:  print( 'Scopes', Scopes )
-    shortExpr = translate( t, Scopes, Anaphs )
+    shortExpr = translate( t, Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses )
     if t.qstore != []:
       print( 'ERROR: nothing in quant store', t.qstore, 'allowed by scope list', Scopes )
       exit(0)
