@@ -58,7 +58,7 @@ def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses,
 
   ## Recurse...
   for st in t.ch:
-    nWord = setHeadScopeAnaph( st, nSent, Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tMaxProj if '-l' not in st.c or '-lU' in st.c or '-lE' in st.c else st, tMaxClause if ('-l' not in st.c or '-lU' in st.c or '-lE' in st.c) or st.c[0] not in 'CVIBLARG' else st, nWord )
+    nWord = setHeadScopeAnaph( st, nSent, Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tMaxProj if '-l' not in st.c or '-lU' in st.c or '-lE' in st.c or '-lQ' in st.c else st, tMaxClause if ('-l' not in st.c or '-lU' in st.c or '-lE' in st.c or '-lQ' in st.c) or st.c[0] not in 'CVIBLARG' else st, nWord )
 
   ## Account head words as done in gcg annotation guidelines, in order to track scope...
   if len(t.ch) == 0:
@@ -273,15 +273,15 @@ def translate( t, Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst=None, s
                                                                                                                                                                    [ '\\y', 'Precede', 'y', 'x' ] ] ],
                                                                                                                                     's' ] ] ]
     ## Z8. Zero-head rule as measure phrase: e.g. R-aN -> K-lZ...
-    elif re.search( '^K\w*-lZ [AR]\w*-[ab]\w+$', form ):  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Count=', 'n', ['\\xx', 'q', ['\\e', '^', [ 'Contain', 'xx', 'e'], ['r', 'e'] ], 's' ], Univ ], Univ ]
+    elif re.search( '^K\w*((?:-[ghirv][^ ]*)?)-lZ [AR]\w*-[ab]\w+\\1$', form ):  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Count=', 'n', ['\\xx', 'q', ['\\e', '^', [ 'Contain', 'xx', 'e'], ['r', 'e'] ], 's' ], Univ ], Univ ]
     ## Z7. Zero-head rule with proportion as quantificational adjunct: e.g. A-aN-b{A-aN} -> K-lZ...
-    elif re.search( '^K\w*-lZ [AR]\w*-[ab]\w+-[ab]\{[AR]\w*-[ab]\w+\}$', form ):  output = [ '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Ratio=', 'n', ['\\x', 'q', ['\\z', 'Equal', 'x', 'z'], Univ ], ['\\x', 'f', ['\\t', '\\u', 'Some', ['\\z', '^', [ 'Equal', 'x', 'z' ], [ 't', 'z' ] ], 'u' ], 'r', 's'] ], Univ ]
+    elif re.search( '^K\w*((?:-[ghirv][^ ]*)?)-lZ [AR]\w*-[ab]\w+-[ab]\{[AR]\w*-[ab]\w+\}\\1$', form ):  output = [ '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Ratio=', 'n', ['\\x', 'q', ['\\z', 'Equal', 'x', 'z'], Univ ], ['\\x', 'f', ['\\t', '\\u', 'Some', ['\\z', '^', [ 'Equal', 'x', 'z' ], [ 't', 'z' ] ], 'u' ], 'r', 's'] ], Univ ]
     ## Z6. Zero-head rule with cardinal as quantifier: e.g. N-bO -> K-lZ...
-    elif re.search( '^K\w*-lZ \w+-[ab]\w+$', form ):  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Ratio=', 'n', ['\\xx', 'q', ['\\z', '^', [ 'Equal', 'xx', 'z'], ['r', 'z'] ], Univ ], 's'], Univ ]
+    elif re.search( '^K\w*((?:-[ghirv][^ ]*)?)-lZ \w+-[ab]\w+\\1$', form ):  output = [ '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Ratio=', 'n', ['\\xx', 'q', ['\\z', '^', [ 'Equal', 'xx', 'z'], ['r', 'z'] ], Univ ], 's'], Univ ]
     ## Z5. Zero-head rule with fraction as quantifier: e.g. N-aD-bO -> K-lZ...
-    elif re.search( '^K\w*-lZ \w+-[ab]\w+-[ab]\w+$', form ):  output = [ '\\p', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Ratio=', 'n', ['\\xx', 'p', ['\\z', '^', [ 'Equal', 'xx', 'z'], ['r', 'z'] ], Univ ], 's'], Univ ]
+    elif re.search( '^K\w*((?:-[ghirv][^ ]*)?)-lZ \w+-[ab]\w+-[ab]\w+\\1$', form ):  output = [ '\\p', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Ratio=', 'n', ['\\xx', 'p', ['\\z', '^', [ 'Equal', 'xx', 'z'], ['r', 'z'] ], Univ ], 's'], Univ ]
     ## Z4. Zero-head rule with cardinal as quantifier: e.g. N-aD-b{N-aD} -> K-lZ...
-    elif re.search( '^K\w*-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}$', form ):  output = [ '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Count=', 'n', ['\\x', 'f', 'q', ['\\z', '^', [ 'Equal', 'x', 'z'], ['r', 'z'] ], 's' ], Univ ], Univ ]
+    elif re.search( '^K\w*((?:-[ghirv][^ ]*)?)-lZ N\w*-[ab]\w+-[ab]\{N\w*-[ab]\w+\}\\1$', form ):  output = [ '\\f', '\\q', '\\r', '\\s', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), ['\\n', 'Count=', 'n', ['\\x', 'f', 'q', ['\\z', '^', [ 'Equal', 'x', 'z'], ['r', 'z'] ], 's' ], Univ ], Univ ]
     ## Z3. Zero-head rule with expletive subject: e.g. A-aNe -> N-lZ...
     elif re.search( '^\w+-lZ \w+-[ab]Ne$', form ):  output = [ '\\q', translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ) ]
     ## Z1-2. ACCOMMODATE SLOPPY ANNOTATION of '-lZ' with arg elision...
