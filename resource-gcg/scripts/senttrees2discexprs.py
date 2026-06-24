@@ -90,7 +90,7 @@ def setHeadScopeAnaph( t, nSent, Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses,
     Anaphs[t.sVar] = str( (nSent if m.group(1)==None else int(m.group(1))) * 100 + int(m.group(2)) )
   ## Weak accessibility...
   m = re.search( '-w([0-9][0-9])?([0-9][0-9])', t.c )
-  if m != None and 'Othan-b' in t.c:
+  if m != None and ('Othan-b' in t.c or 'Oas-b' in t.c):
     WeakAccs[t.sVar] = str( (nSent if m.group(1)==None else int(m.group(1))) * 100 + int(m.group(2)) )
 
   t.bMax = True
@@ -159,6 +159,8 @@ def translate( t, Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst=None, s
     elif pred == '' and re.search( '^P[a-z]+', t.c ):  output = 'Some'
     elif pred == '' and re.search( '^Othan-b[^K]', t.c ) and tSubst==None: output = [ '\\q'+t.sVar, '\\r'+t.sVar, '\\s'+t.sVar, 'Some', [ '\\n'+t.sVar, '^', [ 'r'+t.sVar, 'n'+t.sVar ], [ 's'+t.sVar, 'n'+t.sVar ] ], [ '\\n'+t.sVar, translate( MaxClauses[WeakAccs[t.sVar]], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, MaxProjs[WeakAccs[t.sVar]], 'q'+t.sVar, lsNolo ), Univ, Univ ] ]
     elif pred == '' and re.search( '^Othan-b[^K]', t.c ) and tSubst!=None: output = [ '\\q'+t.sVar, '\\r'+t.sVar, '\\s'+t.sVar, 'Some', [ '\\m'+t.sVar, '^', [ 'r'+t.sVar, 'm'+t.sVar ], [ 's'+t.sVar, 'm'+t.sVar ] ], [ '\\m'+t.sVar, 'Precede', 'n'+t.sVar, 'm'+t.sVar ] ]
+    elif pred == '' and re.search( '^Oas-b[^K]', t.c ) and tSubst==None: output = [ '\\q'+t.sVar, '\\r'+t.sVar, '\\s'+t.sVar, 'Some', [ '\\n'+t.sVar, '^', [ 'r'+t.sVar, 'n'+t.sVar ], [ 's'+t.sVar, 'n'+t.sVar ] ], [ '\\n'+t.sVar, translate( MaxClauses[WeakAccs[t.sVar]], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, MaxProjs[WeakAccs[t.sVar]], 'q'+t.sVar, lsNolo ), Univ, Univ ] ]
+    elif pred == '' and re.search( '^Oas-b[^K]', t.c ) and tSubst!=None: output = [ '\\q'+t.sVar, '\\r'+t.sVar, '\\s'+t.sVar, 'Some', [ '\\m'+t.sVar, '^', [ 'r'+t.sVar, 'm'+t.sVar ], [ 's'+t.sVar, 'm'+t.sVar ] ], [ '\\m'+t.sVar, 'Equal', 'n'+t.sVar, 'm'+t.sVar ] ]
     elif pred == '':                                   output = 'Ident'
     elif re.match( '^.*-[ri]\w+(-[lmnstuwxy].*)?$', t.c ) != None:
       if lsNolo == []:  print( 'ERROR: missing non-local argument in', t )
