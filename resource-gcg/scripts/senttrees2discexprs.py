@@ -350,7 +350,10 @@ def translate( t, Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst=None, s
     elif '-lC' in t.ch[0].c and ( re.match( '^(.*) \\1((?:-p\w+)?)-c\\1 \\1(-c\\1\\2)?$', form ) or re.match( '^\w+ (\w+)((?:-p\w+)?)-c\\1 \\1(-c\\1\\2)?$', form ) or
                                   re.match( '^(.*) \\1((?:-p\w+)?)-c{\\1} \\1(-c{\\1}\\2)?$', form ) or 
                                   re.match( '^\w+ X-cX-cX (\w+)-c\\1$', form ) ):
-      output = [ 'And'+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ) ]
+      rc = translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo )
+      output = [ ('Or' if (len(t.ch[1].ch)>0 and len(t.ch[1].ch[0].ch)>0 and t.ch[1].ch[0].ch[0].c == 'or') or
+                          (len(t.ch[1].ch)>1 and len(t.ch[1].ch[1].ch)>0 and len(t.ch[1].ch[1].ch[0].ch)>0 and t.ch[1].ch[1].ch[0].ch[0].c == 'or') or
+                          (len(rc)>0 and 'Or' in rc[0]) else 'And')+str(getLocalArity(t.ch[0].c)), translate( t.ch[0], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo ), rc ]
     elif '-lC' in t.ch[1].c and ( re.match( 'X-cX.*-dX (.*) \\1((?:-p\w+)?)-c\\1', form ) or re.match( 'X-cX-dX (.*) \\1((?:-p\w+)?)-c{\\1}', form ) ):
       output = translate( t.ch[1], Scopes, Anaphs, WeakAccs, MaxProjs, MaxClauses, tSubst, sSubst, lsNolo )
 #    elif '-lC' in t.ch[0].c and '-lC' in t.ch[1].c and re.match( '^(.*) \\1 \\1(-c\\1|-c{\\1})?$', form ):
@@ -540,10 +543,14 @@ def unpack( expr ):
   elif expr == 'Antecedent0':  return( [ '\\v', '\\q',               '\\r', '\\s', 'q',           ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
   elif expr == 'Antecedent1':  return( [ '\\v', '\\f',        '\\q', '\\r', '\\s', 'f', 'q',      ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
   elif expr == 'Antecedent2':  return( [ '\\v', '\\f', '\\p', '\\q', '\\r', '\\s', 'f', 'p', 'q', ['\\a','^',['r','a'],['InAntecedentSet','v','a']], 's' ] )  #return( [ unpack(expr[2:]) ] )  #
-  elif expr == 'And0':  return( [ '\\f', '\\g',               '\\r', '\\s', '^', [ 'f',           'r', 's' ], [ 'g',           'r', 's' ] ] )
-  elif expr == 'And1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', '^', [ 'f',      'q', 'r', 's' ], [ 'g',      'q', 'r', 's' ] ] )
-  elif expr == 'And2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', '^', [ 'f', 'p', 'q', 'r', 's' ], [ 'g', 'p', 'q', 'r', 's' ] ] )
+  elif expr == 'And0':  return( [ '\\f', '\\g',                      '\\r', '\\s', '^', [ 'f',           'r', 's' ], [ 'g',           'r', 's' ] ] )
+  elif expr == 'And1':  return( [ '\\f', '\\g',               '\\q', '\\r', '\\s', '^', [ 'f',      'q', 'r', 's' ], [ 'g',      'q', 'r', 's' ] ] )
+  elif expr == 'And2':  return( [ '\\f', '\\g',        '\\p', '\\q', '\\r', '\\s', '^', [ 'f', 'p', 'q', 'r', 's' ], [ 'g', 'p', 'q', 'r', 's' ] ] )
   elif expr == 'And3':  return( [ '\\f', '\\g', '\\o', '\\p', '\\q', '\\r', '\\s', '^', [ 'f', 'o', 'p', 'q', 'r', 's' ], [ 'g', 'o', 'p', 'q', 'r', 's' ] ] )
+  elif expr == 'Or0':  return( [ '\\f', '\\g',                      '\\r', '\\s', '|', [ 'f',           'r', 's' ], [ 'g',           'r', 's' ] ] )
+  elif expr == 'Or1':  return( [ '\\f', '\\g',               '\\q', '\\r', '\\s', '|', [ 'f',      'q', 'r', 's' ], [ 'g',      'q', 'r', 's' ] ] )
+  elif expr == 'Or2':  return( [ '\\f', '\\g',        '\\p', '\\q', '\\r', '\\s', '|', [ 'f', 'p', 'q', 'r', 's' ], [ 'g', 'p', 'q', 'r', 's' ] ] )
+  elif expr == 'Or3':  return( [ '\\f', '\\g', '\\o', '\\p', '\\q', '\\r', '\\s', '|', [ 'f', 'o', 'p', 'q', 'r', 's' ], [ 'g', 'o', 'p', 'q', 'r', 's' ] ] )
   elif expr == 'Mod0':  return( [ '\\f', '\\g',               '\\r', '\\s', 'f',           [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Mod1':  return( [ '\\f', '\\g',        '\\q', '\\r', '\\s', 'f',      'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
   elif expr == 'Mod2':  return( [ '\\f', '\\g', '\\p', '\\q', '\\r', '\\s', 'f', 'p', 'q', [ '\\x', '^', ['r', 'x' ], [ 'g', [ '\\t', '\\u', '^', ['t','x'], ['u','x'] ], Univ, Univ ] ], 's' ] )
@@ -1084,7 +1091,7 @@ def checkUnboundVars( expr, Bound=[] ):
 
 def isWellFormedProp( expr ):
   ## Conjunction...
-  if isinstance( expr, list ) and len(expr) > 0 and expr[0] == '^':
+  if isinstance( expr, list ) and len(expr) > 0 and (expr[0] == '^' or expr[0] == '|'):
     if all([ isWellFormedProp(subexpr) for subexpr in expr[1:] ]):  return True
     print( 'Ill-formed proposition: ' + prettyForm(expr) )
     return False
